@@ -1,3 +1,24 @@
+ver4.1 2011-10-10
+linux, x86, 64
+working_sandbox_ver_4.1.7z
+version with optional syscalls and unit tests. folder structure changed
+--------------------------------------------------------------------------------
+  to reduce size of sandbox package some changes were made:
+
+  "native_client/src/" moved to a new location "/" (to sandbox root folder)
+  "base/" moved to a new location "include/base/"
+  "build/" moved to a new location "include/build"
+  "nacl_syscall_handlers.c" moved to a new location "trusted/service_runtime/nacl_syscall_handlers.c"
+  "obj/" folder is added. here we store an object files. after sel_ldr built all ".o" files will be removed
+  "tests/" renamed to "test/"
+  "sel_ldr_chrome.c" removed from the package
+
+  includes are changed to fit a new order
+
+  todo:
+
+  in the next version replace the build script with the makefile
+
 ver4 2011-10-8
 linux, x86, 64
 working_sandbox_ver_4.7z
