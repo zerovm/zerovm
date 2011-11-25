@@ -1,3 +1,25 @@
+ver4 2011-10-8
+linux, x86, 64
+working_sandbox_ver_4.7z
+version with optional syscalls and unit tests
+--------------------------------------------------------------------------------
+    two main features now are available:
+    - new option "-Y" - allow syscalls (by default syscalls restricted to   SysbrkDecoder, ExitDecoder, Thread_ExitDecoder,
+    Tls_InitDecoder, Tls_GetDecoder and null)
+    - unit tests. five binaries with several tests each. to extract appropriate test the logger was used (see "3. unittests.txt")
+
+    syscals behavior is changed. in restricted mode (default) forbidden syscall cause abort and death message in log.
+    when "-Y" switch specified all syscalls are available and sandbox show WARNING on screen. warning is not logged.
+
+    also building scripts are reduced to one: "sandbox.sh". the script compile object files, construct libraties, build sandbox
+    and at the end compile and run unit tests. when tests complete intermediate files will be removed.
+
+    google test engine added to sandbox project: "libgtest.a" library and folder "gtest" with header files.
+
+    sandbox sources renewed from the newest nacl package. some files were changed (added and removed).
+
+
+
 2011-00-30
 linux, x86, 64
 working_sandbox_ver_3.7z
