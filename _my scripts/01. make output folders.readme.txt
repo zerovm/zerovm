@@ -1,0 +1,4 @@
+SHOULD BE RUN FROM THE SANDBOX ROOT FOLDER
+------------------------------------------
+
+create folders for output (object files, libs e.t.c will be located here)

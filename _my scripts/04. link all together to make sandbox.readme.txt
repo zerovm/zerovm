@@ -1,0 +1,2 @@
+#SHOULD BE RUN FROM THE SANDBOX ROOT FOLDER
+#------------------------------------------

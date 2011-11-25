@@ -1,0 +1,21 @@
+2011-09-24
+linux, x86, 64
+working_sandbox_ver_1.7z
+--------------------------------------------------------------------------------
+    1st version (finally working!) of sandbox. there are binaries in the archive
+    (object files, libraries and sel_ldr itself)
+
+    sel_ldr - compiled sandbox. right now it has no changes comparing to original (google nacl) version
+
+    todo:
+
+    pathes in compilation scripts are absolute. i have in plans to change them to relative.
+
+    there is one another problem: linker command line needs to be rewritten. i added
+    a new -L???? to link sel_ldr with sandbox libraries, now all libs should be
+    placed to one dir instead of being taken from original locations.
+
+
+GLOBAL TODO
+    write code to allow sandbox take some switches from the configuration
+    "sel_ldr_x86.h" contain definition of "NACL_THREAD_MAX". move it to configuration
