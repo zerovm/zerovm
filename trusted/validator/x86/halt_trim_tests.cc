@@ -109,7 +109,7 @@ TEST_F(HaltTrimTests, TrimFailsIfBlockAlignToBig) {
   EXPECT_EQ((NaClPcAddress) 20, vlimit);
 }
 
-};  // anonymous namespace
+}  // anonymous namespace
 
 int main(int argc, char *argv[]) {
   NaClLogModuleInit();

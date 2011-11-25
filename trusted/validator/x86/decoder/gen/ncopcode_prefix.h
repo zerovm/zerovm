@@ -31,7 +31,7 @@ typedef enum NaClInstPrefix {
   PrefixDD = 16,
   PrefixDE = 17,
   PrefixDF = 18,
-  NaClInstPrefixEnumSize = 19, /* special size marker */
+  NaClInstPrefixEnumSize = 19 /* special size marker */
 } NaClInstPrefix;
 
 /* Returns the name of an NaClInstPrefix constant. */

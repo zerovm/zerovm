@@ -24,11 +24,13 @@
 /* Defines to execute statement(s) s if in DEBUGGING mode, and compile
  * in either mode. This allows type checking to be applied at all times.
  */
+#undef DEBUG
 #define DEBUG(s) s
 #else
 /* Defines to compile but not include statement(s) s if not
  * in DEBUGGING mode.
  */
+#undef DEBUG
 #define DEBUG(s) do { if (0) { s; } } while (0)
 #endif
 

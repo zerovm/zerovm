@@ -28,7 +28,7 @@
 // Include static functions, so that we can test.
 extern "C" {
 #include "trusted/validator/x86/decoder/nc_inst_state_statics.c"
-};
+}
 
 namespace {
 
@@ -531,7 +531,7 @@ extern "C" {
     {kValueSEGES, kPrefixSEGES},
     {kValueSEGDS, kPrefixSEGDS}
   };
-};
+}
 
 // Test function NaClConsumePrefixBytes to verify it only recognizes
 // valid prefix values.
@@ -796,7 +796,7 @@ TEST_F(NcInstStateTests, ConsumeOneByteInstructions) {
   }
 }
 
-};  // anonymous namespace
+}  // anonymous namespace
 
 int main(int argc, char *argv[]) {
   NaClLogModuleInit();

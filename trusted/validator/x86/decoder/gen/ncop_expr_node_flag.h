@@ -28,7 +28,7 @@ typedef enum NaClExpFlag {
   ExprJumpTarget = 13,
   ExprDSrDICase = 14,
   ExprESrDICase = 15,
-  NaClExpFlagEnumSize = 16, /* special size marker */
+  NaClExpFlagEnumSize = 16 /* special size marker */
 } NaClExpFlag;
 
 /* Returns the name of an NaClExpFlag constant. */

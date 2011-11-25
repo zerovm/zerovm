@@ -136,7 +136,10 @@ int (*NaClDescInternalize[NACL_DESC_TYPE_MAX])(struct NaClDesc **,
 char const *NaClDescTypeString(enum NaClDescTypeTag type_tag) {
   /* default functions for the vtable - return NOT_IMPLEMENTED */
   switch (type_tag) {
+/* d'b: local define changed to avoid compiler warning
 #define MAP(E) case E: do { return #E; } while (0)
+*/
+#define MAP(E) case E: do { return #E; } while (0); break
     MAP(NACL_DESC_INVALID);
     MAP(NACL_DESC_DIR);
     MAP(NACL_DESC_HOST_IO);

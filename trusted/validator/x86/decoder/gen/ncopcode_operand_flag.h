@@ -23,7 +23,7 @@ typedef enum NaClOpFlag {
   OperandZeroExtends_v = 8,
   OperandSignExtends_v = 9,
   AllowGOperandWithOpcodeInModRm = 10,
-  NaClOpFlagEnumSize = 11, /* special size marker */
+  NaClOpFlagEnumSize = 11 /* special size marker */
 } NaClOpFlag;
 
 /* Returns the name of an NaClOpFlag constant. */

@@ -184,7 +184,7 @@ TEST_F(NCRemainingMemoryTests, AdvanceDataTests) {
   }
 }
 
-};  // anonymous namespace
+}  // anonymous namespace
 
 int main(int argc, char *argv[]) {
   testing::InitGoogleTest(&argc, argv);

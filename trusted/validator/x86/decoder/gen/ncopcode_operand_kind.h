@@ -225,7 +225,7 @@ typedef enum NaClOpKind {
   RegXMM15 = 210,
   RegGP7 = 211,
   Const_1 = 212,
-  NaClOpKindEnumSize = 213, /* special size marker */
+  NaClOpKindEnumSize = 213 /* special size marker */
 } NaClOpKind;
 
 /* Returns the name of an NaClOpKind constant. */

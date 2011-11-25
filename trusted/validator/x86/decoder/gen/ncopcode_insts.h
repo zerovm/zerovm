@@ -629,7 +629,7 @@ typedef enum NaClMnemonic {
   InstXor = 614,
   InstXorpd = 615,
   InstXorps = 616,
-  NaClMnemonicEnumSize = 617, /* special size marker */
+  NaClMnemonicEnumSize = 617 /* special size marker */
 } NaClMnemonic;
 
 /* Returns the name of an NaClMnemonic constant. */

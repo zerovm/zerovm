@@ -59,7 +59,7 @@ typedef enum NaClIFlag {
   JumpInstruction = 44,
   ConditionalJump = 45,
   PartialInstruction = 46,
-  NaClIFlagEnumSize = 47, /* special size marker */
+  NaClIFlagEnumSize = 47 /* special size marker */
 } NaClIFlag;
 
 /* Returns the name of an NaClIFlag constant. */

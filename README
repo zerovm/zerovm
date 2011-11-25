@@ -1,3 +1,43 @@
+ver 5.3 2011-11-9
+linux, x86, 64
+working_sandbox_ver_5.3.7z
+makefile instead of bash build script (big thanks goes to camuel and oleg)
+--------------------------------------------------------------------------------
+    fixes to get rid of compilation warnings:
+        nacl_desc_base.c -- small change in define to avoid compiler warnings (marked with "d'b" comment)
+        C:\1\trusted\validator\x86\nc_inst_bytes_tests.cc -- small syntax fixes
+        C:\1\trusted\validator\x86\nc_remaining_memory_tests.cc -- small syntax fixes
+        C:\1\trusted\validator\x86\halt_trim_tests.cc -- small syntax fixes
+        C:\1\trusted\validator\x86\decoder\nc_inst_state_tests.cc -- small syntax fixes
+        C:\1\trusted\validator\x86\decoder\gen\ncop_expr_node_kind.h -- small syntax fixes
+        C:\1\trusted\validator\x86\decoder\gen\ncop_expr_node_flag.h -- small syntax fixes
+        C:\1\trusted\validator\x86\decoder\gen\ncopcode_operand_flag.h -- small syntax fixes
+        C:\1\trusted\validator\x86\decoder\gen\ncopcode_operand_kind.h -- small syntax fixes
+        C:\1\trusted\validator\x86\decoder\gen\ncopcode_opcode_flags.h -- small syntax fixes
+        C:\1\trusted\validator\x86\decoder\gen\ncopcode_insts.h -- small syntax fixes
+        C:\1\trusted\validator\x86\decoder\gen\ncopcode_prefix.h -- small syntax fixes
+        C:\1\shared\utils\debugging.h -- small syntax fixes
+
+    sel_ldr renamed to zerovm. the project obtained official name:
+    "ZERO VM" which means: lightweight virtual machine.
+
+    the "lib" folder exist no more. intermediate part of it goes to "obj" folder and libgtest.a - to "gtest"
+
+    extra folder added to the project: "samples". so far the folder hold small "sort" project.
+
+    TODO:
+        zerovm bugfix. something wrong with "clock()". it returns invalid time. same program compiled with regular gcc version work fine
+        complete with input (and maybe output) file mapping
+        unit test for my zerovm code:
+            "trusted\service_runtime\manifest_parse.c" - parse as many cases as i can imagine. don't forget about getkey()
+            "trusted\service_runtime\manifest_parse.h" -- same as line above
+            "trusted\service_runtime\zmq_syscalls.c" -- show open/close/read/write case successful/failed. test for isswifturl().
+                                                                                                    open question how to make tests for "file mapping" part. put that case aside.
+            "trusted\service_runtime\zmq_syscalls.h" -- same as line above
+            also massive changes were made in "trusted\service_runtime\sel_main.c" main() how to make test? better way is
+            to rewrite main() and put my code into separate file(s)
+            
+
 ver5.2 2011-11-8
 linux, x86, 64
 working_sandbox_ver_5.2.7z

@@ -173,7 +173,7 @@ TEST_F(NCInstBytesTests, Reset) {
       << "Reset did not reset memory.";
 }
 
-};  // anonymous namespace
+}  // anonymous namespace
 
 int main(int argc, char *argv[]) {
   testing::InitGoogleTest(&argc, argv);

@@ -54,7 +54,7 @@ int IsSwiftURL(const char *name)
 		;
 
 	/*###*/
-	printf("returned by %s() BOOL_RESULT == %d\n", __func__, !(p - buf - URL_MARK_SIZE));
+	//printf("returned by %s() BOOL_RESULT == %d\n", __func__, !(p - buf - URL_MARK_SIZE));
 
 	return !(p - buf - URL_MARK_SIZE);
 }
