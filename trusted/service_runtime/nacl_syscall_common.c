@@ -240,6 +240,21 @@ cleanup_no_lock:
   return rv;
 }
 
+/* d'b: when set to 1 - restricted syscalls will be silently ignored.
+ * when 0 - 1st encountered restricted syscall will abort the nexe
+ */
+int NaClSilentSyscalls = 0; /* abort restricted syscalls by default */
+
+void NaClSilentRestrictedSyscalls(void) {
+  NaClLog(LOG_WARNING, "SILENT RESTRICTED SYSCALLS\n");
+  NaClSilentSyscalls = 1;
+}
+
+int NaClSilentRestrictedSyscallsEnabled() {
+  return NaClSilentSyscalls;
+}
+/* d'b end */
+
 int NaClAclBypassChecks = 0;
 
 void NaClInsecurelyBypassAllAclChecks(void) {

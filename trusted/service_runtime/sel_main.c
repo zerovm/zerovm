@@ -188,7 +188,15 @@ int main(int  argc,
   int                           enable_debug_stub = 0;
   int                           handle_signals = 0;
   /* d'b: enable/disable syscalls invocation option */
-  int                           enable_syscalls = 0;	/* by default syscalls are disabled */
+  char                          *syscalls_behavior = NULL;	/* by default syscalls are disabled */
+  // 0 - restrict all syscalls except vital, restricted syscalls will abort the program
+  // 1 - restrict all syscalls except vital, restricted syscalls will be silently ignored
+  // 2 - enable all syscalls
+  // TODO(d'b)
+  // how to make bitmask for all syscalls and pass it through command line?
+  // for 55 syscalls with 3 states for each it will be 28 x-s (xxxxxxxxxxxxxxxxxxxxxxxxxxxx)
+  // where x is a hexadecimal number, so "-Y 080000000000000000000000200f" would be too much
+  // for a one command line option.
   /* d'b end */
   struct NaClPerfCounter        time_all_main;
   const char                    **envp;
@@ -268,14 +276,11 @@ int main(int  argc,
 #if NACL_LINUX
                        "+"
 #endif
-		/* d'b
-                       "aB:cE:f:Fgh:i:Il:Qr:RsSvw:X:")) != -1) {
-		d'b end */
-                       "aB:cE:f:Fgh:i:Il:Qr:RsSvw:X:Y")) != -1) {
+                       "aB:cE:f:Fgh:i:Il:Qr:RsSvw:X:Y:")) != -1) {
     switch (opt) {
     	/* d'b: enable syscalls */
     	case 'Y':
-    		enable_syscalls = 1;
+    		syscalls_behavior = optarg;
     		break;
     	/* d'b end */
 
@@ -500,13 +505,34 @@ int main(int  argc,
   state.validator_stub_out_mode = stub_out_mode;
   state.enable_debug_stub = enable_debug_stub;
 
-  /* d'b: enable syscalls */
-  if (enable_syscalls == 1)
+  /* d'b: enable syscalls
+   *
+   * TODO:
+   * i plan to replace both switches: "-a" (by google) and "-Y" (by me),
+   * to "-A xxxxxxxx" where "xxxxxxxx" would be hexadecimal mask for
+   * enabling/disabling each syscal; with default value "0000001f"
+   * (to enable "must have" syscalls and to disable others)
+   */
+  state.enable_syscalls = 0; /* syscalls are disabled by default */
+  if (syscalls_behavior == NULL || !strcmp(syscalls_behavior, "0"))
+  	state.enable_syscalls = 0;
+  else if (!strcmp(syscalls_behavior, "1"))
+  	NaClSilentRestrictedSyscalls();
+  else if (!strcmp(syscalls_behavior, "2"))
   {
 	/* initialize syscalls */
 	NaClSyscallTableInit();
-  	fprintf(stderr, "DANGER! SYSCALLS ARE ENABLED\n");
-  	state.enable_syscalls = enable_syscalls;
+	NaClLog(LOG_WARNING, "DANGER! SYSCALLS ARE ENABLED\n");
+  	state.enable_syscalls = 1;
+
+  	/* also enable file i/o "-a" switch */
+  	NaClInsecurelyBypassAllAclChecks();
+  }
+  else if (strcmp(syscalls_behavior, "0"))
+  {
+    fprintf(stderr, "ERROR: unknown -Y option: [%s]\n\n", syscalls_behavior);
+    PrintUsage();
+    exit(-1);
   }
   /* d'b end */
 

@@ -1164,10 +1164,16 @@ static int32_t NaClSysTest_InfoLeakDecoder(struct NaClAppThread *natp) {
   return NaClSysTest_InfoLeak(natp);
 }
 
-/* d'b: put to the log restricted syscall detection  */
-static int32_t NaClSysRestricted(struct NaClAppThread *natp) {
-  NaClLog(LOG_FATAL, "Restricted syscall. Abort.\n");
-  UNREFERENCED_PARAMETER(natp);
+/* d'b: put to the log restricted syscall detection */
+static int32_t NaClSysRestricted() {
+  int silent_syscalls;
+  silent_syscalls = NaClSilentRestrictedSyscallsEnabled();
+
+  if (!silent_syscalls)
+  {
+	NaClLog(LOG_FATAL, "Restricted syscall. Abort.\n");
+  }
+
   return -NACL_ABI_ENOSYS;
 }
 
@@ -1175,7 +1181,7 @@ static int32_t NaClSysRestricted(struct NaClAppThread *natp) {
 void NaClSyscallTableInit() {
   int i;
   for (i = 0; i < NACL_MAX_SYSCALLS; ++i) {
-     nacl_syscall[i].handler = &NotImplementedDecoder;
+    nacl_syscall[i].handler = &NotImplementedDecoder;
   }
 
   NaClAddSyscall(NACL_sys_null, &NaClSysNullDecoder);

@@ -68,6 +68,18 @@ int32_t NaClCommonSysExit(struct NaClAppThread  *natp,
 int32_t NaClCommonSysThreadExit(struct NaClAppThread  *natp,
                                 int32_t               *stack_flag);
 
+/* d'b: when "NaClSilentSyscalls" is set to 1 - restricted syscalls
+ * will be silently ignored. when 0 - 1st encountered restricted
+ * syscall will abort the nexe.
+ * NaClSilentRestrictedSyscalls() - enable silent restricted syscalls
+ * NaClSilentRestrictedSyscallsEnabled() - check if silent restricted
+ * syscalls are enabled
+ */
+extern int NaClSilentSyscalls;
+void NaClSilentRestrictedSyscalls();
+int NaClSilentRestrictedSyscallsEnabled();
+/* d'b end */
+
 extern int NaClAclBypassChecks;
 
 void NaClInsecurelyBypassAllAclChecks(void);

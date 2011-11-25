@@ -1,3 +1,18 @@
+ver 4.2 2011-10-20
+linux, x86, 64
+working_sandbox_ver_4.2.7z
+command line option "-Y" redesigned. added a new restricted syscalls behavior
+--------------------------------------------------------------------------------
+    the "-Y" switch now have options: [0,1,2]. by default "-Y0" assumed even when not specified.
+    - 0: abort when restricted syscall encountred
+    - 1: silently ignore restricted syscalls
+    - 2: allow all syscalls
+
+    warning about enabled syscalls is now placed to WARN_LOG
+
+    now there is no need to specify "-a" (enable disk i/o) switch with "-Y": all means "all".
+
+
 ver4.1 2011-10-10
 linux, x86, 64
 working_sandbox_ver_4.1.7z
