@@ -22,23 +22,15 @@
 #ifdef __native_client__
 #include <bits/wordsize.h>
 #else
-#include "trusted/service_runtime/include/bits/wordsize.h"
+#include "src/service_runtime/include/bits/wordsize.h"
 #endif
 
 #include "include/nacl_compiler_annotations.h"
 
-#if NACL_WINDOWS
-/* disable warnings for deprecated functions like getenv, etc. */
-#pragma warning(disable : 4996)
-# include <malloc.h>
-/* TODO: eliminate port_win.h */
-# include "include/win/port_win.h"
-#else
-# include <sys/types.h>
-# include <stdint.h>
-# include <unistd.h>
-# include <sys/time.h>
-#endif  /*NACL_WINDOWS*/
+#include <sys/types.h>
+#include <stdint.h>
+#include <unistd.h>
+#include <sys/time.h>
 
 /*
  * Per C99 7.8.14, define __STDC_CONSTANT_MACROS before including <stdint.h>

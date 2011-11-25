@@ -19,14 +19,7 @@
 #endif
 
 /* mmap enums, e.g.  PROT_READ, PROT_WRITE*/
-#if NACL_WINDOWS
-#include "include/win/mman.h"
-#elif NACL_OSX
-# include <sys/mman.h>
-#ifndef MAP_ANONYMOUS
-#define MAP_ANONYMOUS MAP_ANON
-#endif
-#elif NACL_LINUX
+#if NACL_LINUX
 # include <sys/mman.h>
 #endif
 

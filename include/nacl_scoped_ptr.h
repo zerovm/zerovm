@@ -381,11 +381,11 @@ bool operator!=(C* p, const scoped_ptr_malloc<C, FP>& b) {
   return p != b.get();
 }
 
-// See src/trusted/nacl_base/nacl_refcount.h for
+// See src/src/nacl_base/nacl_refcount.h for
 // scoped_ptr_nacl_refcount which is intended for use with
 // scoped_ptr_malloc and NaClRefCount objects.
 
-// See src/shared/platform/scoped_ptr_refcount.h for a refcount
+// See src/src/platform/scoped_ptr_refcount.h for a refcount
 // pointer template class that is intended for general C++ objects,
 // but using the platform library's synchronization primitives.
 

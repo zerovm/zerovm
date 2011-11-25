@@ -1,0 +1,12 @@
+= by the way, manifest key/value are case sensitive
+= generate random data and put it to file
+= order of lines below doesn't matter, but it is more clear when put nexe name 1st, log 2nd, cmdline 3rd and only after that other keys
+
+nexe = mmap_test3.c_x86_64.nexe
+cmdline = mmap_test3.c 0
+
+= maybe it would be better to rename "input" to "input.data" or contraversa: "http://input.data" to "http://input"
+input = mmap_test3.c
+
+= data can be mapped from rw opened file. so any changes in memory will change the file
+datamap = mmap_test3.c

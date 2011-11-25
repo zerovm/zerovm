@@ -1,0 +1,153 @@
+args: -Y2 samples/mmap/mmap_test.c_x86_64.nexe samples/mmap/mmap_test.c 0
+====================================== good one from mmap_test.c
+-------------------------------------- at the start of mmap internal
+nap	struct NaClApp *	0x7fffffffdce0	
+start	void *	0x0	
+length	size_t	0x67c	
+prot	int	0x1	
+flags	int	0x2	
+d	int	0x4	
+offset	nacl_abi_off_t	0x0	
+allowed_flags	int	0x7fff	
+ndp	struct NaClDesc *	0x7fffffffdce0	
+usraddr	uintptr_t	0xfffffe28	
+usrpage	uintptr_t	0x8	
+sysaddr	uintptr_t	0x8180f8241530	
+endaddr	uintptr_t	0x7ffff7f0ac10	
+map_result	uintptr_t	0x101010101010101	
+holding_app_lock	int	0xf823f340	
+nmop	struct NaClMemObj *	0x68	
+stbuf	struct nacl_abi_stat	{...}	
+alloc_rounded_length	size_t	0x6e	
+file_size	nacl_off64_t	0x7ffff823f340	
+file_bytes	nacl_off64_t	0x0	
+host_rounded_file_bytes	nacl_off64_t	0x0	
+alloc_rounded_file_bytes	size_t	0x0	
+start_of_inaccessible	size_t	0x0	
+
+-------------------------------------- at the end of mmap internal
+nap	struct NaClApp *	0x7fffffffdce0	
+start	void *	0x0	
+length	size_t	0x1000	
+prot	int	0x1	
+flags	int	0x12	
+d	int	0x4	
+offset	nacl_abi_off_t	0x0	
+allowed_flags	int	0x33	
+ndp	struct NaClDesc *	0x7ffff823f340	
+usraddr	uintptr_t	0xfeff0000	
+usrpage	uintptr_t	0xfeff0	
+sysaddr	uintptr_t	0x7ff4feff0000	
+endaddr	uintptr_t	0xff000000	
+map_result	uintptr_t	0xfeff0000	
+holding_app_lock	int	0x1	
+nmop	struct NaClMemObj *	0x0	
+stbuf	struct nacl_abi_stat	{...}	
+alloc_rounded_length	size_t	0x10000	
+file_size	nacl_off64_t	0x67c	
+file_bytes	nacl_off64_t	0x67c	
+host_rounded_file_bytes	nacl_off64_t	0x1000	
+alloc_rounded_file_bytes	size_t	0x10000	
+start_of_inaccessible	size_t	0x10000	
+
+args: -Y2 -Msamples/mmap/generate_manifest.txt
+====================================== bad one (mine) from mmap_test.c
+-------------------------------------- at the start of mmap internal
+nap	struct NaClApp *	0x7fffffffdd10	
+start	void *	0x0	
+length	size_t	0x100000	
+prot	int	0x3	
+flags	int	0x1	/////////////////// 0x32 in good case
+d	int	0x4	//////// ??
+offset	nacl_abi_off_t	0x0	
+allowed_flags	int	0x7fff	
+ndp	struct NaClDesc *	0x7ffff8241df0	
+usraddr	uintptr_t	0x7ffff7f86f18	
+usrpage	uintptr_t	0x7ffff7f0a680	
+sysaddr	uintptr_t	0x4	
+endaddr	uintptr_t	0x7ffff7f0a680	
+map_result	uintptr_t	0x7fffffffdfa0	
+holding_app_lock	int	0xffffdd10	
+nmop	struct NaClMemObj *	0x7ffff8241df0	
+stbuf	struct nacl_abi_stat	{...}	
+alloc_rounded_length	size_t	0x7ffff7faaa9f	
+file_size	nacl_off64_t	0x7ffff7f0a650	
+file_bytes	nacl_off64_t	0x7fffffffdfa0	
+host_rounded_file_bytes	nacl_off64_t	0x7ffff7f0a760	
+alloc_rounded_file_bytes	size_t	0x7ffff7fa8c62	
+start_of_inaccessible	size_t	0x400000001	
+
+-------------------------------------- at the end of mmap internal
+nap	struct NaClApp *	0x7fffffffdd10	
+start	void *	0x0	
+length	size_t	0x100000	
+prot	int	0x3	
+flags	int	0x11	
+d	int	0x4	
+offset	nacl_abi_off_t	0x0	
+allowed_flags	int	0x33	
+ndp	struct NaClDesc *	0x7ffff8241df0	
+usraddr	uintptr_t	0xfede0000	
+usrpage	uintptr_t	0xfede0	
+sysaddr	uintptr_t	0x7ff4fede0000	
+endaddr	uintptr_t	0xfeee0000	
+map_result	uintptr_t	0xfede0000	
+holding_app_lock	int	0x1	
+nmop	struct NaClMemObj *	0x0	
+stbuf	struct nacl_abi_stat	{...}	
+alloc_rounded_length	size_t	0x100000	
+file_size	nacl_off64_t	0x100000	
+file_bytes	nacl_off64_t	0x100000	
+host_rounded_file_bytes	nacl_off64_t	0x100000	
+alloc_rounded_file_bytes	size_t	0x100000	
+start_of_inaccessible	size_t	0x100000	
+
+=========== next bad try
+nap	struct NaClApp *	0x7fffffffdd10	
+start	void *	0x0	
+length	size_t	0x100000	
+prot	int	0x1	
+flags	int	0x2	
+d	int	0x4	
+offset	nacl_abi_off_t	0x0	
+allowed_flags	int	0x7fff	
+ndp	struct NaClDesc *	0x7ffff8241df0	
+usraddr	uintptr_t	0x7ffff7f86f18	
+usrpage	uintptr_t	0x7ffff7f0a680	
+sysaddr	uintptr_t	0x4	
+endaddr	uintptr_t	0x7ffff7f0a680	
+map_result	uintptr_t	0x7fffffffdfa0	
+holding_app_lock	int	0xffffdd10	
+nmop	struct NaClMemObj *	0x7ffff8241df0	
+stbuf	struct nacl_abi_stat	{...}	
+alloc_rounded_length	size_t	0x7ffff7faaa9f	
+file_size	nacl_off64_t	0x7ffff7f0a650	
+file_bytes	nacl_off64_t	0x7fffffffdfa0	
+host_rounded_file_bytes	nacl_off64_t	0x7ffff7f0a760	
+alloc_rounded_file_bytes	size_t	0x7ffff7fa8c62	
+start_of_inaccessible	size_t	0x400000001	
+
+nap	struct NaClApp *	0x7fffffffdd10	
+start	void *	0x0	
+length	size_t	0x100000	
+prot	int	0x1	
+flags	int	0x12	
+d	int	0x4	
+offset	nacl_abi_off_t	0x0	
+allowed_flags	int	0x33	
+ndp	struct NaClDesc *	0x7ffff8241df0	
+usraddr	uintptr_t	0xfede0000	
+usrpage	uintptr_t	0xfede0	
+sysaddr	uintptr_t	0x7ff4fede0000	
+endaddr	uintptr_t	0xfeee0000	
+map_result	uintptr_t	0xfede0000	
+holding_app_lock	int	0x1	
+nmop	struct NaClMemObj *	0x0	
+stbuf	struct nacl_abi_stat	{...}	
+alloc_rounded_length	size_t	0x100000	
+file_size	nacl_off64_t	0x100000	
+file_bytes	nacl_off64_t	0x100000	
+host_rounded_file_bytes	nacl_off64_t	0x100000	
+alloc_rounded_file_bytes	size_t	0x100000	
+start_of_inaccessible	size_t	0x100000	
+

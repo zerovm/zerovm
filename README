@@ -1,3 +1,57 @@
+ver6 2011-11-23
+linux, x86, 64
+working_sandbox_ver_6.7z
+restructurization, further code ripping, patches, refactoring
+--------------------------------------------------------------------------------
+  code base has been reduced
+  several components has been removed. this is the short list of changes:
+  trusted/handle_pass/ldr_handle.h -- removed with its folder "handle_pass"
+  trusted/desc/pepper/nacl_pepper.c --removed
+  trusted/desc/pepper/nacl_pepper.h -- removed
+  trusted/desc/nacl_desc_quota.c -- removed
+  trusted/desc/nacl_desc_quota.h -- removed
+  trusted/service_runtime/win/exception_patch/ntdll_patch.h - removed  
+  trusted/service_runtime/generic_container/container.c - removed
+  trusted/service_runtime/generic_container/container.h - removed
+  include/win/mman.h -- removed
+  trusted/debug_stub/ -- removed
+  service_runtime/nacl_debug_init.h --removed
+  service_runtime/nacl_oop_debugger_hooks.h --removed
+  service_runtime/linux/nacl_oop_debugger_hooks.c -- removed
+  trusted/gdb_rsp/ -- removed
+  shared/srpc/ -- removed
+  trusted/service_runtime/nacl_kern_services.c -- removed
+  trusted/manifest_name_service_proxy/ -- removed
+  trusted/service_runtime/name_service/ -- removed
+  valgrind support has been removed together with srpc.
+  ...
+  ... removed a lot of files and folders
+  ... a lot of fixes has been made to the code
+    
+  current project folder structure is:
+  api/
+  gtest/
+  include/
+  obj/
+  samples/
+  src/
+  test/
+  
+  all source code has been joined in the new place: "src/".
+  "shared/" and "trusted" exists no more.
+  "shared/imc" and "trusted/imc" now dwell in "src/imc"
+  google testing framework lies in the same place "gtest/", same for "include/"
+  
+  notes:
+  name service has been removed. appropriate sysall should be removed as well.
+  i leave it until whole syscall module will be removed
+
+  TODO:
+  conspect all changes
+  test zerovm as full as possible
+    
+
+
 ver5.6  2011-11-19
 
 2011-11-18

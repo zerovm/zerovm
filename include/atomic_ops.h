@@ -55,8 +55,6 @@
 #error Unknown platform!
 #endif
 
-#elif NACL_WINDOWS
-#include "include/win/atomic_ops_win32.h"
 #else
 #error You need to implement atomic operations for this architecture
 #endif

@@ -153,7 +153,7 @@ static inline void *NaClArrayCheckHelper(void *arg) {
  * compile-time checking (or we figure out how to do it w/ visual
  * studio), check for those compilers here, and enable the
  * corresponding compile-failure tests in
- * src/trusted/service_runtime/build.scons.
+ * src/src/service_runtime/build.scons.
  */
 
 #  define NACL_ASSERT_IS_ARRAY(arr)
