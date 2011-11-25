@@ -1,2 +1,0 @@
-valgrind.h
-nacl/nacl_log.h

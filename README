@@ -1,3 +1,33 @@
+2011-09-29
+linux, x86, 64
+working_sandbox_ver_2.7z
+version without syscalls
+--------------------------------------------------------------------------------
+    2nd version of sandbox. some of syscalls still left untouched because they work in process of load/exit nexe.
+    without them (or part of them) nexe cannot be loaded and cannot be run (for example we will always get
+    "segmentation fault" w/o exit syscall)
+
+    there are no binaries in the archive. only sources and scripts
+
+    sel_ldr - compiled sandbox. this version differ from the original (most of syscalls are absent)
+
+    building scripts are fixed. extra "-I" options were removed. all absolute pathes changed to relative.
+    all libraries will be placed to one temporary folder. after sandbox compilation all intermediate
+    files (*.a, *.o) will be deleted.     script "build_all.sh" was added (now whole build process can
+    be done in one keystroke).
+
+    todo:
+
+    yet more simplify directory structure (1st of all completely remove "scons_out" and make one folder for intermediate files)
+
+    to solve problem with warnings (syscalls were not completely removed, just disables). now i see
+    warnings "defined but not used" due compilation. "02._compile_all_sources.sh" should be changed.
+    if solved i have to put back "-Werror" option (treat warnings as errors).
+
+    to remove "step 1": "01._make_output_folders.sh" since we need additional folders no more (except only one)
+
+
+
 2011-09-24
 linux, x86, 64
 working_sandbox_ver_1.7z
