@@ -48,7 +48,9 @@
 #include "native_client/src/trusted/service_runtime/outer_sandbox.h"
 #include "native_client/src/trusted/service_runtime/sel_ldr.h"
 #include "native_client/src/trusted/service_runtime/sel_qualify.h"
+/* d'b
 #include "native_client/src/trusted/service_runtime/win/exception_patch/ntdll_patch.h"
+*/
 
 static void VmentryPrinter(void           *state,
                     struct NaClVmmapEntry *vmep) {

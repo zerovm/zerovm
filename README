@@ -1,3 +1,27 @@
+2011-00-30
+linux, x86, 64
+working_sandbox_ver_3.7z
+version without syscalls. intermediate version. reduced file list
+--------------------------------------------------------------------------------
+    the only difference between this and previous versions is the smaller size of source distribution.
+    i managed to remove some needless header files and "sel_main_chrome.c".
+    some folders were removed completely with its content: valgrind (since it only needs
+    for user nexes), toolchain (same reason). scattered files for windows/osx platforms and arm were removed as well.
+
+    build script patched and work correctly. sel_ldr (sandbox) i made with the new source
+    distribution is exactly same as before (now it is 2805563 bytes only against 3900085 before)
+
+    latest note: sel_main_chrome.c was removed from distribution (so now sel_ldr binary differ from previous version:
+        some part of elf header and 1 byte in .text). actually it is strange because sel_main_chrome does not contain
+        parts used in sandbox files
+
+    native_client\src\trusted\service_runtime\win\exception_patch\ntdll_patch.h (this header disabled now and excluded from distr)
+        included from "sel_main.c" ("sel_main.c" still had #include string commented out by me)
+    native_client\src\include\win\mman.h (this header only contain a couple of defines that needed to build
+    sel_ldr under linux: PROT_READ and PROT_WRITE)
+        included from "sel_ldr_standard.c"
+
+
 2011-09-29
 linux, x86, 64
 working_sandbox_ver_2.7z
