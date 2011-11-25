@@ -1,3 +1,33 @@
+ver5 2011-10-28
+linux, x86, 64
+working_sandbox_ver_5.7z
+--------------------------------------------------------------------------------
+    despite the version number this is an intermediate version. the sandbox is prepared to integrate zmq.
+    mock functions implemented. now the file names with "http://" have special meaning - they are a channels.
+    proposed user API would be normal "file access" with a special names where the user program can get/set
+    the data using standart libc functions (like fread(), fwrite() e.t.c.)
+
+    four syscalls from "trusted\service_runtime\nacl_syscall_common.c" are changed:
+        - NaClCommonSysOpen()
+        - NaClCommonSysClose()
+        - NaClCommonSysRead()
+        - NaClCommonSysWrite()
+
+    the files
+        "shared\platform\linux\nacl_host_desc_types.h"
+        "shared\platform\linux\nacl_host_desc.c"
+    has appropriate changes (marked with "d'b")
+
+    two new files has been added:
+        "trusted\service_runtime\zmq_syscalls.c"
+        "trusted\service_runtime\zmq_syscalls.h"
+    the files contain functions to integrate zmq calls
+
+    TODO:
+        remove generic container. i found that "container.c" and "container.h" are not used by sandbox.
+        btw, it contain hashtable class. may be useful, maybe not. put it aside.
+
+
 ver 4.2 2011-10-20
 linux, x86, 64
 working_sandbox_ver_4.2.7z

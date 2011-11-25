@@ -1,6 +1,7 @@
 #----------------------#
 # compile object files #
 #----------------------#
+gcc -o obj/zmq_syscalls.o -c -std=gnu99 -Wdeclaration-after-statement -m64 -fPIE -Wall -pedantic -Wextra -Wno-long-long -Wswitch-enum -Wsign-compare -fvisibility=hidden -fstack-protector --param ssp-buffer-size=4 -O2 -D_FORTIFY_SOURCE=2 -DNACL_WINDOWS=0 -DNACL_OSX=0 -DNACL_LINUX=1 -D_BSD_SOURCE=1 -D_POSIX_C_SOURCE=199506 -D_XOPEN_SOURCE=600 -D_GNU_SOURCE=1 -D_LARGEFILE64_SOURCE=1 -D__STDC_LIMIT_MACROS=1 -D__STDC_FORMAT_MACROS=1 -DNACL_BLOCK_SHIFT=5 -DNACL_BLOCK_SIZE=32 -DNACL_BUILD_ARCH=x86 -DNACL_BUILD_SUBARCH=64 -DNACL_TARGET_ARCH=x86 -DNACL_TARGET_SUBARCH=64 -DNACL_STANDALONE=1 -DNACL_ENABLE_TMPFS_REDIRECT_VAR=0 -DNDEBUG -I. trusted/service_runtime/zmq_syscalls.c
 gcc -o obj/sel_main.o -c -std=gnu99 -Wdeclaration-after-statement -m64 -fPIE -Wall -pedantic -Wextra -Wno-long-long -Wswitch-enum -Wsign-compare -fvisibility=hidden -fstack-protector --param ssp-buffer-size=4 -O2 -D_FORTIFY_SOURCE=2 -DNACL_WINDOWS=0 -DNACL_OSX=0 -DNACL_LINUX=1 -D_BSD_SOURCE=1 -D_POSIX_C_SOURCE=199506 -D_XOPEN_SOURCE=600 -D_GNU_SOURCE=1 -D_LARGEFILE64_SOURCE=1 -D__STDC_LIMIT_MACROS=1 -D__STDC_FORMAT_MACROS=1 -DNACL_BLOCK_SHIFT=5 -DNACL_BLOCK_SIZE=32 -DNACL_BUILD_ARCH=x86 -DNACL_BUILD_SUBARCH=64 -DNACL_TARGET_ARCH=x86 -DNACL_TARGET_SUBARCH=64 -DNACL_STANDALONE=1 -DNACL_ENABLE_TMPFS_REDIRECT_VAR=0 -DNDEBUG -I. trusted/service_runtime/sel_main.c
 gcc -o obj/dyn_array.o -c -std=gnu99 -Wdeclaration-after-statement -m64 -fPIE -Wall -pedantic -Wextra -Wno-long-long -Wswitch-enum -Wsign-compare -fvisibility=hidden -fstack-protector --param ssp-buffer-size=4 -O2 -D_FORTIFY_SOURCE=2 -DNACL_WINDOWS=0 -DNACL_OSX=0 -DNACL_LINUX=1 -D_BSD_SOURCE=1 -D_POSIX_C_SOURCE=199506 -D_XOPEN_SOURCE=600 -D_GNU_SOURCE=1 -D_LARGEFILE64_SOURCE=1 -D__STDC_LIMIT_MACROS=1 -D__STDC_FORMAT_MACROS=1 -DNACL_BLOCK_SHIFT=5 -DNACL_BLOCK_SIZE=32 -DNACL_BUILD_ARCH=x86 -DNACL_BUILD_SUBARCH=64 -DNACL_TARGET_ARCH=x86 -DNACL_TARGET_SUBARCH=64 -DNACL_STANDALONE=1 -DNACL_ENABLE_TMPFS_REDIRECT_VAR=0 -DNDEBUG -I. trusted/service_runtime/dyn_array.c
 gcc -o obj/elf_util.o -c -std=gnu99 -Wdeclaration-after-statement -m64 -fPIE -Wall -pedantic -Wextra -Wno-long-long -Wswitch-enum -Wsign-compare -fvisibility=hidden -fstack-protector --param ssp-buffer-size=4 -O2 -D_FORTIFY_SOURCE=2 -DNACL_WINDOWS=0 -DNACL_OSX=0 -DNACL_LINUX=1 -D_BSD_SOURCE=1 -D_POSIX_C_SOURCE=199506 -D_XOPEN_SOURCE=600 -D_GNU_SOURCE=1 -D_LARGEFILE64_SOURCE=1 -D__STDC_LIMIT_MACROS=1 -D__STDC_FORMAT_MACROS=1 -DNACL_BLOCK_SHIFT=5 -DNACL_BLOCK_SIZE=32 -DNACL_BUILD_ARCH=x86 -DNACL_BUILD_SUBARCH=64 -DNACL_TARGET_ARCH=x86 -DNACL_TARGET_SUBARCH=64 -DNACL_STANDALONE=1 -DNACL_ENABLE_TMPFS_REDIRECT_VAR=0 -DNDEBUG -I. trusted/service_runtime/elf_util.c
@@ -175,7 +176,7 @@ g++ -o obj/thread_impl.o -c -std=c++98 -m64 -fPIE -Wall -pedantic -Wextra -Wno-l
 #---------------------#
 # construct libraries #
 #---------------------#
-ar rc lib/libsel.a obj/dyn_array.o obj/elf_util.o obj/nacl_all_modules.o obj/nacl_app_thread.o obj/nacl_desc_effector_ldr.o obj/nacl_globals.o obj/nacl_kern_services.o obj/nacl_memory_object.o obj/nacl_signal_common.o obj/nacl_stack_safety.o obj/nacl_syscall_common.o obj/nacl_syscall_handlers.o obj/nacl_syscall_hook.o obj/nacl_text.o obj/nacl_valgrind_hooks.o obj/default_name_service.o obj/name_service.o obj/sel_addrspace.o obj/sel_ldr.o obj/sel_ldr-inl.o obj/sel_ldr_standard.o obj/sel_ldr_thread_interface.o obj/sel_mem.o obj/sel_qualify.o obj/sel_util-inl.o obj/sel_validate_image.o obj/nacl_ldt_x86.o obj/nacl_app_64.o obj/nacl_switch_64.o obj/nacl_switch_to_app_64.o obj/nacl_syscall_64.o obj/nacl_tls_64.o obj/sel_addrspace_x86_64.o obj/sel_ldr_x86_64.o obj/sel_rt_64.o obj/tramp_64.o obj/sel_addrspace_posix_x86_64.o obj/sel_memory.o obj/nacl_oop_debugger_hooks.o obj/nacl_thread_nice.o obj/nacl_ldt.o obj/sel_segments.o obj/nacl_signal.o obj/nacl_signal_64.o
+ar rc lib/libsel.a obj/dyn_array.o obj/elf_util.o obj/nacl_all_modules.o obj/nacl_app_thread.o obj/nacl_desc_effector_ldr.o obj/nacl_globals.o obj/nacl_kern_services.o obj/nacl_memory_object.o obj/nacl_signal_common.o obj/nacl_stack_safety.o obj/nacl_syscall_common.o obj/nacl_syscall_handlers.o obj/nacl_syscall_hook.o obj/nacl_text.o obj/nacl_valgrind_hooks.o obj/default_name_service.o obj/name_service.o obj/sel_addrspace.o obj/sel_ldr.o obj/sel_ldr-inl.o obj/sel_ldr_standard.o obj/sel_ldr_thread_interface.o obj/sel_mem.o obj/sel_qualify.o obj/sel_util-inl.o obj/sel_validate_image.o obj/nacl_ldt_x86.o obj/nacl_app_64.o obj/nacl_switch_64.o obj/nacl_switch_to_app_64.o obj/nacl_syscall_64.o obj/nacl_tls_64.o obj/sel_addrspace_x86_64.o obj/sel_ldr_x86_64.o obj/sel_rt_64.o obj/tramp_64.o obj/sel_addrspace_posix_x86_64.o obj/sel_memory.o obj/nacl_oop_debugger_hooks.o obj/nacl_thread_nice.o obj/nacl_ldt.o obj/sel_segments.o obj/nacl_signal.o obj/nacl_signal_64.o obj/zmq_syscalls.o
 ar rc lib/libenv_cleanser.a obj/env_cleanser.o
 ar rc lib/libnacl_error_code.a obj/nacl_error_code.o
 ar rc lib/libmanifest_proxy.a obj/manifest_proxy.o
@@ -245,7 +246,7 @@ test/x86_validator_tests_nc_inst_bytes
 #---------------------------#
 #...... protect "libgtest.a" then restore "libgtest.a" original name
 rm obj/*
-rm test/*
+#rm test/*
 mv lib/libgtest.a Gr8
-rm lib/*
+#rm lib/*
 mv Gr8 lib/libgtest.a
