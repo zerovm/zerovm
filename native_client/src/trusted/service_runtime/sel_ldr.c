@@ -183,19 +183,6 @@ int NaClAppWithSyscallTableCtor(struct NaClApp               *nap,
   nap->skip_validator = 0;
   nap->validator_stub_out_mode = 0;
 
-  /*
-   * Allow debugging via environment variables.  Using environment
-   * variables allows this to work inside the browser while avoiding a
-   * Chromium-side change, since sel_main.c's functionality is
-   * duplicated in chrome/nacl/sel_main.cc.  We might remove this;
-   * non-browser debugging could be served by command line options.
-   */
-  NaClLog(4, "Checking for DANGEROUS modes\n");
-  if (IsEnvironmentVariableSet("NACL_DANGEROUS_IGNORE_VALIDATOR")) {
-    nap->ignore_validator_result = 1;
-    NaClLog(LOG_INFO, "DANGER: IGNORING VALIDATOR\n");
-  }
-
   if (!NaClMutexCtor(&nap->threads_mu)) {
     goto cleanup_name_service;
   }

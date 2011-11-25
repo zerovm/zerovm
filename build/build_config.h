@@ -1,4 +1,4 @@
-// Copyright (c) 2006-2008 The Chromium Authors. All rights reserved.
+// Copyright (c) 2011 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -43,12 +43,6 @@
 #error Please add support for your platform in build/build_config.h
 #endif
 
-// A flag derived from the above flags, used to cover GTK code in
-// both TOOLKIT_GTK and TOOLKIT_VIEWS.
-#if defined(TOOLKIT_GTK) || (defined(TOOLKIT_VIEWS) && !defined(OS_WIN))
-#define TOOLKIT_USES_GTK 1
-#endif
-
 #if defined(OS_LINUX) || defined(OS_FREEBSD) || defined(OS_OPENBSD) || \
     defined(OS_SOLARIS) || defined(OS_ANDROID)
 #if !defined(USE_OPENSSL)
@@ -69,8 +63,6 @@
     defined(OS_OPENBSD) || defined(OS_SOLARIS) || defined(OS_ANDROID) ||  \
     defined(OS_NACL)
 #define OS_POSIX 1
-// Use base::DataPack for name/value pairs.
-#define USE_BASE_DATA_PACK 1
 #endif
 
 // Use tcmalloc
@@ -112,6 +104,8 @@
 #define ARCH_CPU_32_BITS 1
 #define ARCH_CPU_LITTLE_ENDIAN 1
 #define WCHAR_T_IS_UNSIGNED 1
+#elif defined(__pnacl__)
+#define ARCH_CPU_32_BITS 1
 #else
 #error Please add support for your architecture in build/build_config.h
 #endif

@@ -344,7 +344,7 @@ inline Dest bit_cast(const Source& source) {
 //     ignore_result(my_var.release());
 //
 template<typename T>
-inline void ignore_result(const T& ignored) {
+inline void ignore_result(const T&) {
 }
 
 // The following enum should be used only as a constructor argument to indicate

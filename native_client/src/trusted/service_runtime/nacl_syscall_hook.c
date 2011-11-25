@@ -63,15 +63,24 @@ void NaClMicroSleep(int microseconds) {
 }
 
 NORETURN void NaClSyscallCSegHook(int32_t tls_idx) {
-  struct NaClAppThread      *natp = nacl_thread[tls_idx];
-  struct NaClApp            *nap = natp->nap;
-  struct NaClThreadContext  *user = &natp->user;
+  struct NaClAppThread      *natp;
+  struct NaClApp            *nap;
+  struct NaClThreadContext  *user;
   uintptr_t                 tramp_ret;
   nacl_reg_t                user_ret;
   size_t                    sysnum;
   uintptr_t                 sp_user;
   uintptr_t                 sp_sys;
 
+  /*
+   * Mark the thread as running on a trusted stack as soon as possible
+   * so that we can report any crashes that occur after this point.
+   */
+  NaClStackSafetyNowOnTrustedStack();
+
+  natp = nacl_thread[tls_idx];
+  nap = natp->nap;
+  user = &natp->user;
   sp_user = NaClGetThreadCtxSp(user);
 
   /* sp must be okay for control to have gotten here */
@@ -124,7 +133,6 @@ NORETURN void NaClSyscallCSegHook(int32_t tls_idx) {
   sp_user += NACL_SYSCALLRET_FIX;
   NaClSetThreadCtxSp(user, sp_user);
 
-  NaClStackSafetyNowOnTrustedStack();
   if (sysnum >= NACL_MAX_SYSCALLS) {
     NaClLog(2, "INVALID system call %"NACL_PRIdS"\n", sysnum);
     natp->sysret = -NACL_ABI_EINVAL;

@@ -427,6 +427,19 @@ void NaClAddImcHandle(struct NaClApp  *nap,
 int NaClAppLaunchServiceThreads(struct NaClApp *nap);
 
 /*
+ * Report the low eight bits of |exit_status| via the reverse channel
+ * in |nap|, if one exists, to whomever is interested.  This usually
+ * involves an RPC.  Returns true if successfully reported.
+ *
+ * Also mark nap's exit_status and running member variables, announce
+ * via condvar that the nexe should be considered no longer running.
+ *
+ * Returns true (non-zero) if exit status was reported via the reverse
+ * channel, and false (0) otherwise.
+ */
+int NaClReportExitStatus(struct NaClApp *nap, int exit_status);
+
+/*
  * Used to launch the main thread.  NB: calling thread may in the
  * future become the main NaCl app thread, and this function will
  * return only after the NaCl app main thread exits.  In such an

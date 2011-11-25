@@ -23,8 +23,12 @@
 #include "native_client/src/shared/platform/nacl_sync_checked.h"
 #include "native_client/src/shared/platform/nacl_time.h"
 
+#include "native_client/src/shared/srpc/nacl_srpc.h"
+
 #include "native_client/src/trusted/manifest_name_service_proxy/manifest_proxy.h"
 #include "native_client/src/trusted/perf_counter/nacl_perf_counter.h"
+
+#include "native_client/src/trusted/reverse_service/reverse_control_rpc.h"
 
 #include "native_client/src/trusted/service_runtime/include/sys/errno.h"
 #include "native_client/src/trusted/service_runtime/include/sys/fcntl.h"
@@ -654,6 +658,34 @@ done:
    */
   NaClRefCountSafeUnref((struct NaClRefCount *) manifest_proxy);
   NaClRefCountSafeUnref((struct NaClRefCount *) kern_service);
+  return rv;
+}
+
+int NaClReportExitStatus(struct NaClApp *nap, int exit_status) {
+  int           rv;
+  NaClSrpcError rpc_result;
+
+  NaClXMutexLock(&nap->mu);
+
+  if (NACL_REVERSE_CHANNEL_INITIALIZED !=
+      nap->reverse_channel_initialization_state) {
+    rv = 0;
+  } else {
+    rpc_result = NaClSrpcInvokeBySignature(&nap->reverse_channel,
+                                           NACL_REVERSE_CONTROL_REPORT_STATUS,
+                                           exit_status & 0xff);
+    rv = NACL_SRPC_RESULT_OK == rpc_result;
+    /*
+     * Due to cross-repository checkins, the Cr-side might not yet
+     * implement this RPC.  We return whether shutdown was reported.
+     */
+  }
+  nap->exit_status = exit_status;
+  nap->running = 0;
+  NaClXCondVarSignal(&nap->cv);
+
+  NaClXMutexUnlock(&nap->mu);
+
   return rv;
 }
 

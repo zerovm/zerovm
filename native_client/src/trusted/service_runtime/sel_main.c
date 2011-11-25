@@ -48,9 +48,6 @@
 #include "native_client/src/trusted/service_runtime/outer_sandbox.h"
 #include "native_client/src/trusted/service_runtime/sel_ldr.h"
 #include "native_client/src/trusted/service_runtime/sel_qualify.h"
-/* d'b
-#include "native_client/src/trusted/service_runtime/win/exception_patch/ntdll_patch.h"
-*/
 
 static void VmentryPrinter(void           *state,
                     struct NaClVmmapEntry *vmep) {
@@ -493,6 +490,9 @@ int main(int  argc,
 
   /*
    * Ensure the platform qualification checks pass.
+   *
+   * NACL_DANGEROUS_SKIP_QUALIFICATION_TEST is used by tsan / memcheck
+   * (see src/third_party/valgrind/).
    */
   if (!skip_qualification &&
       getenv("NACL_DANGEROUS_SKIP_QUALIFICATION_TEST") != NULL) {
@@ -737,7 +737,7 @@ int main(int  argc,
     errno = 0;  /* To distinguish between success/failure after call */
     fd_long = strtol(sandbox_fd_string, &endptr, 10);
 
-    fprintf(stdout, "Chrooting the NaCl module\n");
+    NaClLog(1, "Chrooting the NaCl module\n");
     if ((ERANGE == errno && (LONG_MAX == fd_long || LONG_MIN == fd_long)) ||
         (0 != errno && 0 == fd_long)) {
       perror("strtol");

@@ -12,9 +12,10 @@
  * client channel.
  */
 
-#define NACL_REVERSE_CONTROL_TEST         "test:s:"
-#define NACL_REVERSE_CONTROL_LOG          "log:s:"
-#define NACL_REVERSE_CONTROL_ADD_CHANNEL  "add_channel::b"
-#define NACL_REVERSE_CONTROL_INIT_DONE    "init_done::"
+#define NACL_REVERSE_CONTROL_TEST           "test:s:"
+#define NACL_REVERSE_CONTROL_LOG            "log:s:"
+#define NACL_REVERSE_CONTROL_ADD_CHANNEL    "add_channel::b"
+#define NACL_REVERSE_CONTROL_INIT_DONE      "init_done::"
+#define NACL_REVERSE_CONTROL_REPORT_STATUS  "exit_status:i:"
 
 #endif

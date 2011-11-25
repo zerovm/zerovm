@@ -16,11 +16,11 @@
 #endif
 #include <sys/types.h>
 
-#include "base/base_api.h"
+#include "base/base_export.h"
 
 namespace base {
 
-class BASE_API SyncSocket {
+class BASE_EXPORT SyncSocket {
  public:
 #if defined(OS_WIN)
   typedef HANDLE Handle;

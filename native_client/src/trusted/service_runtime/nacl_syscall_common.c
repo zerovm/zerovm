@@ -329,11 +329,7 @@ int32_t NaClCommonSysExit(struct NaClAppThread  *natp,
 
   nap = natp->nap;
 
-  NaClXMutexLock(&nap->mu);
-  nap->exit_status = status;
-  nap->running = 0;
-  NaClXCondVarSignal(&nap->cv);
-  NaClXMutexUnlock(&nap->mu);
+  (void) NaClReportExitStatus(nap, status);
 
   NaClAppThreadTeardown(natp);
   /* NOTREACHED */

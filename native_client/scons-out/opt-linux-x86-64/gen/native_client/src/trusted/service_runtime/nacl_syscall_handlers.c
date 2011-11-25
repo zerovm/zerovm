@@ -1174,82 +1174,6 @@ void NaClSyscallTableInit() {
      nacl_syscall[i].handler = &NotImplementedDecoder;
   }
 
-  /* d'b
-  	in this list of system calls 6 ones left untouched:
-  	(other syscalls set to "NaClSysExitDecoder")
-
-  	NaClSysNullDecoder *
-    NaClSysSysbrkDecoder
-    NaClSysExitDecoder
-    NaClSysThread_ExitDecoder *
-    NaClSysTls_InitDecoder
-    NaClSysTls_GetDecoder
-
-	  syscalls marked with asterisk (*) temporarily left untouched.
-	  pretty sure they can be blocked without consequences.
-
-	  to restore syscalls to the original version just delete everything
-	  until "d'b end" and uncomment commented code
-  */
-
-  NaClAddSyscall(NACL_sys_null, &NaClSysNullDecoder);
-  NaClAddSyscall(NACL_sys_nameservice, &NaClSysExitDecoder);
-  NaClAddSyscall(NACL_sys_dup, &NaClSysExitDecoder);
-  NaClAddSyscall(NACL_sys_dup2, &NaClSysExitDecoder);
-  NaClAddSyscall(NACL_sys_open, &NaClSysExitDecoder);
-  NaClAddSyscall(NACL_sys_close, &NaClSysExitDecoder);
-  NaClAddSyscall(NACL_sys_read, &NaClSysExitDecoder);
-  NaClAddSyscall(NACL_sys_write, &NaClSysExitDecoder);
-  NaClAddSyscall(NACL_sys_lseek, &NaClSysExitDecoder);
-  NaClAddSyscall(NACL_sys_ioctl, &NaClSysExitDecoder);
-  NaClAddSyscall(NACL_sys_fstat, &NaClSysExitDecoder);
-  NaClAddSyscall(NACL_sys_stat, &NaClSysExitDecoder);
-  NaClAddSyscall(NACL_sys_getdents, &NaClSysExitDecoder);
-  NaClAddSyscall(NACL_sys_sysbrk, &NaClSysSysbrkDecoder);
-  NaClAddSyscall(NACL_sys_mmap, &NaClSysExitDecoder);
-  NaClAddSyscall(NACL_sys_munmap, &NaClSysExitDecoder);
-  NaClAddSyscall(NACL_sys_exit, &NaClSysExitDecoder);
-  NaClAddSyscall(NACL_sys_getpid, &NaClSysExitDecoder);
-  NaClAddSyscall(NACL_sys_thread_exit, &NaClSysThread_ExitDecoder);
-  NaClAddSyscall(NACL_sys_gettimeofday, &NaClSysExitDecoder);
-  NaClAddSyscall(NACL_sys_clock, &NaClSysExitDecoder);
-  NaClAddSyscall(NACL_sys_nanosleep, &NaClSysExitDecoder);
-  NaClAddSyscall(NACL_sys_imc_makeboundsock, &NaClSysExitDecoder);
-  NaClAddSyscall(NACL_sys_imc_accept, &NaClSysExitDecoder);
-  NaClAddSyscall(NACL_sys_imc_connect, &NaClSysExitDecoder);
-  NaClAddSyscall(NACL_sys_imc_sendmsg, &NaClSysExitDecoder);
-  NaClAddSyscall(NACL_sys_imc_recvmsg, &NaClSysExitDecoder);
-  NaClAddSyscall(NACL_sys_imc_mem_obj_create, &NaClSysExitDecoder);
-  NaClAddSyscall(NACL_sys_tls_init, &NaClSysTls_InitDecoder);
-  NaClAddSyscall(NACL_sys_thread_create, &NaClSysExitDecoder);
-  NaClAddSyscall(NACL_sys_tls_get, &NaClSysTls_GetDecoder);
-  NaClAddSyscall(NACL_sys_thread_nice, &NaClSysExitDecoder);
-  NaClAddSyscall(NACL_sys_mutex_create, &NaClSysExitDecoder);
-  NaClAddSyscall(NACL_sys_mutex_lock, &NaClSysExitDecoder);
-  NaClAddSyscall(NACL_sys_mutex_unlock, &NaClSysExitDecoder);
-  NaClAddSyscall(NACL_sys_mutex_trylock, &NaClSysExitDecoder);
-  NaClAddSyscall(NACL_sys_cond_create, &NaClSysExitDecoder);
-  NaClAddSyscall(NACL_sys_cond_wait, &NaClSysExitDecoder);
-  NaClAddSyscall(NACL_sys_cond_signal, &NaClSysExitDecoder);
-  NaClAddSyscall(NACL_sys_cond_broadcast, &NaClSysExitDecoder);
-  NaClAddSyscall(NACL_sys_cond_timed_wait_abs, &NaClSysExitDecoder);
-  NaClAddSyscall(NACL_sys_imc_socketpair, &NaClSysExitDecoder);
-  NaClAddSyscall(NACL_sys_sem_create, &NaClSysExitDecoder);
-  NaClAddSyscall(NACL_sys_sem_wait, &NaClSysExitDecoder);
-  NaClAddSyscall(NACL_sys_sem_post, &NaClSysExitDecoder);
-  NaClAddSyscall(NACL_sys_sem_get_value, &NaClSysExitDecoder);
-  NaClAddSyscall(NACL_sys_sched_yield, &NaClSysExitDecoder);
-  NaClAddSyscall(NACL_sys_sysconf, &NaClSysExitDecoder);
-  NaClAddSyscall(NACL_sys_dyncode_create, &NaClSysExitDecoder);
-  NaClAddSyscall(NACL_sys_dyncode_modify, &NaClSysExitDecoder);
-  NaClAddSyscall(NACL_sys_dyncode_delete, &NaClSysExitDecoder);
-  NaClAddSyscall(NACL_sys_second_tls_set, &NaClSysExitDecoder);
-  NaClAddSyscall(NACL_sys_second_tls_get, &NaClSysExitDecoder);
-  NaClAddSyscall(NACL_sys_test_infoleak, &NaClSysExitDecoder);
-
-  /* d'b end */
-
-/****************************************************************
   NaClAddSyscall(NACL_sys_null, &NaClSysNullDecoder);
   NaClAddSyscall(NACL_sys_nameservice, &NaClSysNameServiceDecoder);
   NaClAddSyscall(NACL_sys_dup, &NaClSysDupDecoder);
@@ -1304,5 +1228,5 @@ void NaClSyscallTableInit() {
   NaClAddSyscall(NACL_sys_second_tls_set, &NaClSysSecond_Tls_SetDecoder);
   NaClAddSyscall(NACL_sys_second_tls_get, &NaClSysSecond_Tls_GetDecoder);
   NaClAddSyscall(NACL_sys_test_infoleak, &NaClSysTest_InfoLeakDecoder);
-****************************************************************/
 }
+

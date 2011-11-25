@@ -6,7 +6,7 @@
 #define BASE_RAND_UTIL_C_H_
 #pragma once
 
-#include "base/base_api.h"
+#include "base/base_export.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -17,7 +17,7 @@ extern "C" {
 
 // Returns an FD for /dev/urandom, possibly pre-opened before sandboxing
 // was switched on.  This is a C function so that Native Client can use it.
-BASE_API int GetUrandomFD(void);
+BASE_EXPORT int GetUrandomFD(void);
 
 #ifdef __cplusplus
 }

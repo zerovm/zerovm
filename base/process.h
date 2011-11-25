@@ -6,7 +6,7 @@
 #define BASE_PROCESS_H_
 #pragma once
 
-#include "base/base_api.h"
+#include "base/base_export.h"
 #include "base/basictypes.h"
 #include "build/build_config.h"
 
@@ -40,7 +40,7 @@ const ProcessId kNullProcessId = 0;
 const int kUnsetProcessPriority = 256;
 #endif
 
-class BASE_API Process {
+class BASE_EXPORT Process {
  public:
   Process() : process_(kNullProcessHandle) {
 #if defined(OS_POSIX) && !defined(OS_MACOSX)

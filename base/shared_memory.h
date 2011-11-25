@@ -15,7 +15,7 @@
 #endif
 #include <string>
 
-#include "base/base_api.h"
+#include "base/base_export.h"
 #include "base/basictypes.h"
 #include "base/process.h"
 
@@ -40,7 +40,7 @@ typedef ino_t SharedMemoryId;
 
 // Platform abstraction for shared memory.  Provides a C++ wrapper
 // around the OS primitive for a memory mapped file.
-class BASE_API SharedMemory {
+class BASE_EXPORT SharedMemory {
  public:
   SharedMemory();
 
