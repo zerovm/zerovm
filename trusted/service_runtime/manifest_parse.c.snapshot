@@ -13,6 +13,21 @@
  *      Author: d'b
  */
 
+// changes to answer the new manifest specification provided by camuel
+// now we have two manifest files 1st: input - we read it and obey. and
+// 2nd: output - we return fields asked with 1st manifest
+// unclear things:
+//  meaning of fields passed for nexe. how should i pass it? in command line?
+//  what is "etag" some md5 just to differ 1 request from another?
+//  what is maxinput/maxoutput? file size? for input it doesn't matter since zvm load it whole
+//  how i supposed to pass "timestamp"? always return it via time getting syscalls? btw, is that seconds?
+//  exact meaning "timeout" and "killtimeout". and what measures were used? minutes?
+//  as i understood keys started with '?' should be answered in outgoing manifest. i have a few question about it:
+//    - what is zvm status?
+//    - regarding "etag" should i just return "etag" passed in the input manifest?
+//    - is there special meaning about "x-object-meta-tag" key name? values also are unclear. if zvm pass to nexe "as is"
+//      its ok, otherwise i need to know exact meaning of each value, possible values e.t.c
+
 #include <stdio.h>
 #include <string.h>
 #include "trusted/service_runtime/sel_ldr.h"

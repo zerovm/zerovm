@@ -78,6 +78,12 @@ struct ManifestRecord
 	char *key;
 	char *value;
 };
+
+struct MappedFileRecord
+{
+  uint32_t p; /* pointer area mapped into the nexe address space */
+  uint32_t size;
+};
 /* d'b end */
 
 struct NaClApp {
@@ -330,6 +336,8 @@ struct NaClApp {
    */
   struct ManifestRecord     *manifest;
   int                       manifest_size; /* number of elements in manifest */
+  struct MappedFileRecord   *input_map_file;
+  struct MappedFileRecord   *output_map_file;
   /* d'b end */
 };
 

@@ -947,7 +947,6 @@ int main(int argc, char **argv)
    */
   if(nap->manifest_size)
   {
-    /* reserve place in stack to hold "binpacked" minor manifest */
     char minor_manifest[MAX_MANIFEST_LEN + sizeof(struct MinorManifest)];
 
     /* read proxy manifest and do requested actions */

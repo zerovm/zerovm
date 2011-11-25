@@ -1,5 +1,0 @@
-= generate random data and put it to file
-
-nexe = generator.uint32_t.c_x86_64.nexe
-log = generator.log
-cmdline = random.dat 128

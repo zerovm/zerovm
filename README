@@ -1,3 +1,39 @@
+ver5.6  2011-11-19
+
+2011-11-18
+linux, x86, 64
+working_sandbox_ver_5.5.7z
+file mapping
+--------------------------------------------------------------------------------
+  in a few words:
+  - nexe can get manifest throush argv[0]. special header files is needed.
+  - 2 mapped files can be available for nexe: input and output. it's pointers and sizes can be obtained through manifest (see above)
+  - mapped output automatically updates. in other words any changes made by nexe will be stored in output.
+  
+  input mapped file is a file specified in "master manifest" given to zerovm by proxy. zerovm will map it to nexe memory before nexe start
+  and pass pointer (and size) of that memory region to nexe via nexe stack (in argv[0]). if no input specified by manifest - NULL will be
+  given to nexe. input is always read only.
+  output mapped file -- same as above except the memory has read/write access.
+  
+  manifest parser has massive changes. format is changed. duplicate keys now are supported. now we have 3 types of manifests:
+  master - manifest given by proxy
+  minor - manifest passing to nexe by zerovm (is subset of master + links to mapped input/output)
+  report - manifest givem to proxy by zerovm
+  
+2011-11-19
+linux, x86, 64
+working_sandbox_ver_5.6.7z
+file mapping
+--------------------------------------------------------------------------------
+  fixes to report.
+  some functions were rewritten.
+  mallocs were replaced by stack memory (when possible).
+  more minor fixes.
+  
+  the final version of current milestone.
+ 
+
+
 ver 5.3 2011-11-9
 linux, x86, 64
 working_sandbox_ver_5.3.7z

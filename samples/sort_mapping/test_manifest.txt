@@ -1,0 +1,17 @@
+= test given file if it contain sorted 32-bit unsigned integers
+
+version            =11nov2011
+zerovm             =python
+nexe               =samples/sort_mapping/tester.uint32_t.c_x86_64.nexe
+maxnexe            =268435456
+input              =samples/sort_mapping/sorted.data
+maxinput           =67108864
+#content-type      =application/octet-stream
+output_mnfst       =samples/sort_mapping/test_report.txt
+?zerovm_retcode    =required
+?zerovm_status     =required
+?etag              =required
+?#retcode          =optional
+?#status           =optional
+log                = samples/sort_mapping/test.log
+

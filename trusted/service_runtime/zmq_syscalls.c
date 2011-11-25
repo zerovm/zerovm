@@ -21,20 +21,20 @@ uint32_t SysMapInput(struct NaClAppThread *natp, void *buf);
  */
 const char * GetFileName(struct NaClAppThread *natp, int d)
 {
-	struct NaClDesc *ndp;
-	uintptr_t sysaddr;
+  struct NaClDesc *ndp;
+  uintptr_t sysaddr;
 
-	/* get channel name */
-	ndp = NaClGetDesc(natp->nap, d);
+  /* get channel name */
+  ndp = NaClGetDesc(natp->nap, d);
 
-	/* check if NaClDesc address is valid */
-	sysaddr = NaClUserToSysAddr(natp->nap, (uintptr_t) ndp);
-	if (kNaClBadAddress == sysaddr || NULL != ndp)
-	{
-		return NULL;
-	}
+  /* check if NaClDesc address is valid */
+  sysaddr = NaClUserToSysAddr(natp->nap, (uintptr_t) ndp);
+  if (kNaClBadAddress == sysaddr || NULL != ndp)
+  {
+    return NULL;
+  }
 
-	return ((struct NaClDescIoDesc *) ndp)->hd->channel;
+  return ((struct NaClDescIoDesc *) ndp)->hd->channel;
 }
 
 /*
@@ -43,20 +43,15 @@ const char * GetFileName(struct NaClAppThread *natp, int d)
  */
 int IsSwiftURL(const char *name)
 {
-	char buf[] = URL_MARK;
-	char *p = buf;
+  char buf[] = URL_MARK;
+  char *p = buf;
 
-	if (name == NULL
-	)
-		return 0;
+  if (name == NULL )
+  return 0;
 
-	while (*p++ == tolower(*name++))
-		;
+  while (*p++ == tolower(*name++)) ;
 
-	/*###*/
-	//printf("returned by %s() BOOL_RESULT == %d\n", __func__, !(p - buf - URL_MARK_SIZE));
-
-	return !(p - buf - URL_MARK_SIZE);
+  return !(p - buf - URL_MARK_SIZE);
 }
 
 /* ###
@@ -134,7 +129,7 @@ int ZMQSysClose(struct NaClAppThread *natp, int d)
  * put (map) it to given memory region (NaClAppThread object)
  * return count of read bytes when success, otherwise - nacl error code
  */
-int ZMQSysRead(struct NaClAppThread *natp, int d, void *buf, size_t count)
+int ZMQSysRead(struct NaClAppThread *natp, int d, void *buf, uint32_t count)
 {
 	ssize_t read_result;
 	uintptr_t sysaddr;
@@ -200,7 +195,7 @@ int ZMQSysRead(struct NaClAppThread *natp, int d, void *buf, size_t count)
  * put (map) portion of data to opened channel (NaClAppThread object)
  * return count of written bytes when success, otherwise - nacl error code
  */
-int ZMQSysWrite(struct NaClAppThread *natp, int d, void *buf, size_t count)
+int ZMQSysWrite(struct NaClAppThread *natp, int d, void *buf, uint32_t count)
 {
 	ssize_t write_result;
 	uintptr_t sysaddr;
@@ -227,7 +222,7 @@ int ZMQSysWrite(struct NaClAppThread *natp, int d, void *buf, size_t count)
 		return -NACL_ABI_EFAULT;
 	}
 
-	NaClLog(4, "In NaClSysWrite(%d, %.*s, %"NACL_PRIdS")\n", d, (int) count, (char *) sysaddr,
+	NaClLog(4, "In NaClSysWrite(%d, %.*s, %d)\n", d, (int) count, (char *) sysaddr,
 			count);
 
 	/*
@@ -303,45 +298,106 @@ uint32_t SysMapInput(struct NaClAppThread *natp, void *buf)
 			((struct NaClDesc *) NaClDescIoDescMake(hd))); /* put to desc table and get index */
 
 	/* map whole file into the memory */
-	i = NaClCommonSysMmapIntern(natp->nap, NULL,
-			(size_t)fs.st_size, NACL_ABI_PROT_READ | NACL_ABI_PROT_WRITE,
-			NACL_ABI_MAP_SHARED, desc, 0);
-
-	/* hack!! try to avoid it */
-	//buf = (void*)((uintptr_t)buf & 0xffffffff); /* prevent sign flood */
-	//## delete it!
-	//printf("%lX\n", (uintptr_t)buf + natp->nap->mem_start);
-	/*
-	SHOWID;
-	char *p;SHOWID;
-
-	p = (char*)natp->nap->mem_start;SHOWID;
-
-	printf("natp->nap->mem_start = %lX\n", natp->nap->mem_start);SHOWID;
-	printf("p = %lX\n", (uintptr_t)p);SHOWID;
-	printf("buf = %lX\n", (uintptr_t)buf);SHOWID;
-
-	printf("p[0] = %c\n", p[0]);SHOWID;
-	printf("p[1] = %c\n", p[1]);SHOWID;
-
-	p	= buf + natp->nap->mem_start;SHOWID;
-
-	printf("p[0] = %c\n", p[0]);SHOWID;
-	printf("p[1] = %c\n", p[1]);SHOWID;
-
-	p[10] = '\0';SHOWID;
-
-	//printf("\n===============\n\n%s\n\n", (char*)((uintptr_t)buf + natp->nap->mem_start));
-	printf("\n===============\n\n%s\n\n", p);
-	*/
+  i = NaClCommonSysMmapIntern(natp->nap, NULL, (uint32_t)fs.st_size, 1, 2, desc, 0); // TODO: make it nice, use mnemonics defined by google
 
 	/* free resources, check result and return */
 	close(handle);
-	printf("i = %x\n", i);
 	buf = (void*)((uintptr_t)i);
 	NaClLog(4, "SysMapInput(): mapped to buf = %lX\n", (uintptr_t)buf);
 
 	/* the magic number is check for the largest nacl errno (i hope) */
 	//return (uintptr_t)buf > (uintptr_t)0xFFFFF000 ? buf = NULL, 0 : fs.st_size;
 	return (uint32_t)i;
+}
+
+/*
+ * simple version of file mapping. takes NaClApp object,
+ * name, mode and size. return pointer to mapped file (or 0)
+ * note: pointer in the nexe address space
+ */
+uint32_t MapFile(struct NaClApp *nap, char *name, int mode, int size)
+{
+  int handle;
+  int i = 0;
+  int desc;
+  struct NaClHostDesc *hd;
+  int file_mode;
+  int prot; /* depend on file_mode! */
+  int map_flag; /* depend on file_mode! */
+
+  /*
+   * set proper file open mode and mapping flag
+   * note: user only allowed read/write access (not execute!)
+   */
+  switch (mode)
+  {
+    case NACL_ABI_PROT_READ:
+      file_mode = O_RDONLY;
+      prot = NACL_ABI_PROT_READ;
+      map_flag = NACL_ABI_MAP_PRIVATE;
+      break;
+    case NACL_ABI_PROT_WRITE:
+      file_mode = O_WRONLY | O_CREAT;
+      prot = NACL_ABI_PROT_WRITE;
+      map_flag = NACL_ABI_MAP_SHARED;
+      break;
+    case NACL_ABI_PROT_READ | NACL_ABI_PROT_WRITE:
+      file_mode = O_RDWR;
+      prot = NACL_ABI_PROT_READ | NACL_ABI_PROT_WRITE;
+      map_flag = NACL_ABI_MAP_SHARED;
+      break;
+    default:
+      NaClLog(LOG_ERROR, "invalid file mapping mode\n");
+      return 0;
+      break;
+  }
+
+  /* get memory for NaClHostDesc object */
+  hd = malloc(sizeof *hd);
+  if (NULL == hd)
+  {
+    NaClLog(LOG_ERROR, "cannot allocate memory for NaClHostDesc\n");
+    return 0;
+  }
+
+  /* set all parameters and invoke syscall */
+  handle = open(name, file_mode); /* open file */
+  if(handle < 0)
+  {
+    NaClLog(LOG_ERROR, "file \"%s\" could not open, err_code = %d\n", name, handle);
+    free(hd);
+    return 0;
+  }
+  NaClLog(4, "SysMapInput() file [%s] opened with %d handle\n", name, handle);
+
+  hd->d = handle; /* construct nacl descriptor */
+  desc = NaClSetAvail(nap,
+      ((struct NaClDesc *) NaClDescIoDescMake(hd))); /* put to desc table and get index */
+
+  /* map whole file into the memory */
+  i = NaClCommonSysMmapIntern(nap, NULL, size, prot, map_flag, desc, 0);
+
+  /* free resources, check result and return */
+  close(handle);
+  NaClLog(4, "SysMapInput(): mapped to buf = %X\n", i);
+
+  /* the magic number is check for the largest nacl errno (i hope) */
+  return i > 0xFFFFF000 ? 0 : i;
+}
+
+/*
+ * return size of given file or -1 (max_size) if fail
+ */
+uint32_t GetFileSize(char *name)
+{
+  struct stat fs;
+  int handle;
+  int i;
+
+  handle = open(name, O_RDONLY);
+  if(handle < 0) return -1;
+
+  i = fstat(handle, &fs);
+  close(handle);
+  return i < 0 ? -1 : fs.st_size;
 }

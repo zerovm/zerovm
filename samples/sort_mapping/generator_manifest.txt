@@ -1,0 +1,16 @@
+= generate random data and put it to file
+
+version            =11nov2011
+zerovm             =python
+nexe               =samples/sort_mapping/generator.uint32_t.c_x86_64.nexe
+maxnexe            =268435456
+#content-type      =application/octet-stream
+output             =samples/sort_mapping/output.data
+maxoutput          =67108864
+output_mnfst       =samples/sort_mapping/generator_report.txt
+?zerovm_retcode    =required
+?zerovm_status     =required
+?etag              =required
+?#retcode          =optional
+?#status           =optional
+log                = samples/sort_mapping/generator.log
