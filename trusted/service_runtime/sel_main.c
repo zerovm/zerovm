@@ -44,7 +44,10 @@
 #include "trusted/service_runtime/nacl_globals.h"
 #include "trusted/service_runtime/nacl_signal.h"
 #include "trusted/service_runtime/nacl_syscall_common.h"
+#include "trusted/service_runtime/include/sys/mman.h" /* d'b */
 #include "trusted/service_runtime/nacl_syscall_handlers.h" /* d'b */
+#include "trusted/service_runtime/manifest_parse.h" /* d'b */
+#include "trusted/service_runtime/nacl_app_thread.h" /* d'b */
 #include "trusted/service_runtime/nacl_valgrind_hooks.h"
 #include "trusted/service_runtime/outer_sandbox.h"
 #include "trusted/service_runtime/sel_ldr.h"
@@ -114,9 +117,9 @@ static void PrintUsage() {
            the constant string size limit */
   fprintf(stderr,
           "Usage: sel_ldr [-h d:D] [-r d:D] [-w d:D] [-i d:D]\n"
-          "               [-f nacl_file]\n"
-          "               [-l log_file]\n"
-          "               [-X d] [-acFgImMRsQv] -- [nacl_file] [args]\n"
+          "               [-f nacl_file] [-l log_file] [-X d]\n"
+          "               [-M manifest file] [-acFgIRsQ] [-v d]\n" /* removed odd switches: mM */
+          "               [-Y d] -- [nacl_file] [args]\n"
           "\n");
   fprintf(stderr,
           " -h\n"
@@ -127,7 +130,7 @@ static void PrintUsage() {
           " -i associates an IMC handle D with app desc d\n"
           " -f file to load; if omitted, 1st arg after \"--\" is loaded\n"
           " -B additional ELF file to load as a blob library\n"
-          " -v increases verbosity\n"
+          " -v <level> verbosity\n"
           " -X create a bound socket and export the address via an\n"
           "    IMC message to a corresponding NaCl app descriptor\n"
           "    (use -1 to create the bound socket / address descriptor\n"
@@ -148,12 +151,13 @@ static void PrintUsage() {
           " -s safely stub out non-validating instructions\n"
           " -Q disable platform qualification (dangerous!)\n"
           " -E <name=value>|<name> set an environment variable\n"
-          " -Y enable syscalls (dangerous!)\n" /* d'b */
+          " -Y [0..2] disable/skip/enable syscalls (dangerous!)\n" /* d'b */
+		      " -M <file> load settings from manifest\n" /* d'b */
           );  /* easier to add new flags/lines */
 }
 
-int main(int  argc,
-         char **argv) {
+int main(int argc, char **argv)
+{
   int                           opt;
   char                          *rest;
   struct redir                  *entry;
@@ -187,35 +191,36 @@ int main(int  argc,
   int                           skip_qualification = 0;
   int                           enable_debug_stub = 0;
   int                           handle_signals = 0;
-  /* d'b: enable/disable syscalls invocation option */
-  char                          *syscalls_behavior = NULL;	/* by default syscalls are disabled */
-  // 0 - restrict all syscalls except vital, restricted syscalls will abort the program
-  // 1 - restrict all syscalls except vital, restricted syscalls will be silently ignored
-  // 2 - enable all syscalls
-  // TODO(d'b)
-  // how to make bitmask for all syscalls and pass it through command line?
-  // for 55 syscalls with 3 states for each it will be 28 x-s (xxxxxxxxxxxxxxxxxxxxxxxxxxxx)
-  // where x is a hexadecimal number, so "-Y 080000000000000000000000200f" would be too much
-  // for a one command line option.
+
+  /* d'b added variables */
+  int														i;
+  char                          *manifest = NULL;
+  int 													nexe_argc = 1;
+  char 													**nexe_argv = NULL;
+
+
+  /*
+   * 0 - restrict all syscalls except vital, restricted syscalls will abort the program
+   * 1 - restrict all syscalls except vital, restricted syscalls will be silently ignored
+   * 2 - enable all syscalls
+   * TODO(d'b)
+   * how to make bitmask for all syscalls and pass it through command line?
+   * for 55 syscalls with 3 states for each it will be 28 x-s (xxxxxxxxxxxxxxxxxxxxxxxxxxxx)
+   * where x is a hexadecimal number, so "-Y 080000000000000000000000200f" would be too much
+   * for a one command line option.
+   */
+  char                          *syscalls_behavior = NULL;
   /* d'b end */
-  struct NaClPerfCounter        time_all_main;
-  const char                    **envp;
-  struct NaClEnvCleanser        env_cleanser;
 
-
-  const char* sandbox_fd_string;
-
-#if NACL_OSX
+  struct NaClPerfCounter time_all_main;
+  const char **envp;
+  struct NaClEnvCleanser env_cleanser;
+  const char *sandbox_fd_string;
   /* Mac dynamic libraries cannot access the environ variable directly. */
-  envp = (const char **) *_NSGetEnviron();
-#else
   /* Overzealous code style check is overzealous. */
   /* @IGNORE_LINES_FOR_CODE_HYGIENE[1] */
   extern char **environ;
-  envp = (const char **) environ;
-#endif
-
-#if NACL_ARCH(NACL_BUILD_ARCH) == NACL_arm || NACL_SANDBOX_FIXED_AT_ZERO == 1
+  envp = (const char**)environ;
   /*
    * Set malloc not to use mmap even for large allocations.  This is currently
    * necessary when we must use a specific area of RAM for the sandbox.
@@ -234,33 +239,24 @@ int main(int  argc,
    * are discussed in this bug:
    *   http://code.google.com/p/nativeclient/issues/detail?id=232
    */
-  mallopt(M_MMAP_MAX, 0);
-#endif
-
-  ret_code = 1;
-  redir_queue = NULL;
-  redir_qend = &redir_queue;
-
-  /* d'b: cannot be moved. initialization failed
+    ret_code = 1;
+    redir_queue = NULL;
+    redir_qend = &redir_queue;
+    /* d'b: cannot be moved. initialization failed
    * when i tried to put it below command line parser switch
    */
-  NaClAllModulesInit();
-
-  verbosity = NaClLogGetVerbosity();
-
-  NaClPerfCounterCtor(&time_all_main, "SelMain");
-
-  fflush((FILE *) NULL);
-
-  if (!GioFileRefCtor(&gout, stdout)) {
+    NaClAllModulesInit();
+    verbosity = NaClLogGetVerbosity();
+    NaClPerfCounterCtor(&time_all_main, "SelMain");
+    fflush((FILE *) NULL);
+    if (!GioFileRefCtor(&gout, stdout)) {
     fprintf(stderr, "Could not create general standard output channel\n");
     exit(1);
   }
-
-  if (!DynArrayCtor(&env_vars, 0)) {
+    if (!DynArrayCtor(&env_vars, 0)) {
     NaClLog(LOG_FATAL, "Failed to allocate env var array\n");
   }
-  /*
+    /*
    * On platforms with glibc getopt, require POSIXLY_CORRECT behavior,
    * viz, no reordering of the arglist -- stop argument processing as
    * soon as an unrecognized argument is encountered, so that, for
@@ -272,16 +268,19 @@ int main(int  argc,
    * consumed by getopt.  This makes the behavior of the Linux build
    * of sel_ldr consistent with the Windows and OSX builds.
    */
-  while ((opt = getopt(argc, argv,
+    while ((opt = getopt(argc, argv,
 #if NACL_LINUX
                        "+"
 #endif
-                       "aB:cE:f:Fgh:i:Il:Qr:RsSvw:X:Y:")) != -1) {
+                       "aB:cE:f:Fgh:i:Il:Qr:RsSv:w:X:Y:M:")) != -1) {/* d'b */
     switch (opt) {
     	/* d'b: enable syscalls */
-    	case 'Y':
-    		syscalls_behavior = optarg;
-    		break;
+      case 'Y':
+      	syscalls_behavior = optarg;
+      	break;
+      case 'M':
+      	manifest = optarg;
+      	break;
     	/* d'b end */
 
       case 'c':
@@ -349,8 +348,15 @@ int main(int  argc,
         break;
       /* case 'r':  with 'h' and 'w' above */
       case 'v':
-        ++verbosity;
-        NaClLogIncrVerbosity();
+        /* d'b
+         * ugly but i don't want to change much files
+         */
+        /* ++verbosity; */
+      	i = atoi(optarg);
+      	i = verbosity = i < 1 ? 0 : i;
+        while(i--)
+        /* d'b end */
+        	NaClLogIncrVerbosity();
         break;
       /* case 'w':  with 'h' and 'r' above */
       case 'X':
@@ -389,60 +395,132 @@ int main(int  argc,
     }
   }
 
-  if (debug_mode_ignore_validator == 1)
-    fprintf(stderr, "DEBUG MODE ENABLED (ignore validator)\n");
-  else if (debug_mode_ignore_validator > 1)
-    fprintf(stderr, "DEBUG MODE ENABLED (skip validator)\n");
+	if (debug_mode_ignore_validator == 1)
+		fprintf(stderr, "DEBUG MODE ENABLED (ignore validator)\n");
+	else if (debug_mode_ignore_validator > 1)
+		fprintf(stderr, "DEBUG MODE ENABLED (skip validator)\n");
+	if (verbosity)
+	{
+		int ix;
+		char const *separator = "";
 
-  if (verbosity) {
-    int         ix;
-    char const  *separator = "";
+		fprintf(stderr, "sel_ldr argument list:\n");
+		for (ix = 0; ix < argc; ++ix)
+		{
+			fprintf(stderr, "%s%s", separator, argv[ix]);
+			separator = " ";
+		}
+		putc('\n', stderr);
+	}
+	if (NACL_DANGEROUS_STUFF_ENABLED)
+	{
+		fprintf(stderr, "WARNING WARNING WARNING WARNING"
+				" WARNING WARNING WARNING WARNING\n");
+		fprintf(stderr, "WARNING\n");
+		fprintf(stderr, "WARNING  Using a dangerous/debug configuration.\n");
+		fprintf(stderr, "WARNING\n");
+		fprintf(stderr, "WARNING WARNING WARNING WARNING"
+				" WARNING WARNING WARNING WARNING\n");
+	}
+	if (debug_mode_bypass_acl_checks)
+	{
+		NaClInsecurelyBypassAllAclChecks();
+	}
 
-    fprintf(stderr, "sel_ldr argument list:\n");
-    for (ix = 0; ix < argc; ++ix) {
-      fprintf(stderr, "%s%s", separator, argv[ix]);
-      separator = " ";
-    }
-    putc('\n', stderr);
-  }
+	/* d'b: enable syscalls
+	 *
+	 * TODO:
+	 * i plan to replace both switches: "-a" (by google) and "-Y" (by me),
+	 * to "-A xxxxxxxx" where "xxxxxxxx" would be hexadecimal mask for
+	 * enabling/disabling each syscal; with default value "0000001f"
+	 * (to enable "must have" syscalls and to disable others)
+	 */
 
-  if (NACL_DANGEROUS_STUFF_ENABLED) {
-    fprintf(stderr,
-            "WARNING WARNING WARNING WARNING"
-            " WARNING WARNING WARNING WARNING\n");
-    fprintf(stderr,
-            "WARNING\n");
-    fprintf(stderr,
-            "WARNING  Using a dangerous/debug configuration.\n");
-    fprintf(stderr,
-            "WARNING\n");
-    fprintf(stderr,
-            "WARNING WARNING WARNING WARNING"
-            " WARNING WARNING WARNING WARNING\n");
-  }
+  /* process manifest file specified in cmdline */
+	if (manifest == NULL)
+	{
+		state.manifest_size = 0;
+		state.manifest = NULL;
+	}
+	else {
+		if (!ParseManifest(manifest, &state))
+		{
+			fprintf(stderr, "Invalid manifest file \"%s\".\n", manifest);
+			exit(1);
+		}
+	}
 
-  if (debug_mode_bypass_acl_checks) {
-    NaClInsecurelyBypassAllAclChecks();
-  }
+	/* check if command line switches has duplicates in manifest */
+#define VALIDATE_KEY_FROM_MANIFEST(key, var)\
+  do {\
+  	char *buf = GetValueByKey(&state, key);\
+  	if(var != NULL && buf != NULL)\
+  	{\
+  		fprintf(stderr, "command line switch tried to override a manifest key\n"\
+  				"command line value = %s, manifest value = %s\n", var, buf);\
+  		return 1;\
+  	}\
+  	if(var == NULL) var = buf;\
+  } while (0)
 
-#if NACL_DANGEROUS_DEBUG_MODE_DISABLE_INNER_SANDBOX
-  if (debug_mode_bypass_acl_checks == 0 &&
-      debug_mode_ignore_validator == 0) {
-    fprintf(stderr,
-            "ERROR: dangerous debug version of sel_ldr can only "
-            "be invoked with -a/-c options");
-    exit(-1);
-  }
-#endif
-  /*
-   * change stdout/stderr to log file now, so that subsequent error
-   * messages will go there.  unfortunately, error messages that
-   * result from getopt processing -- usually out-of-memory, which
-   * shouldn't happen -- won't show up.
-   */
-  if (NULL != log_file) {
-    NaClLogSetFile(log_file);
-  }
+	/* nacl_file special case when name provided without -f */
+	if (NULL == nacl_file && optind < argc)
+		nacl_file = argv[optind++];
+
+  VALIDATE_KEY_FROM_MANIFEST("log", log_file);
+  VALIDATE_KEY_FROM_MANIFEST("nexe", nacl_file);
+  VALIDATE_KEY_FROM_MANIFEST("blob", blob_library_file);
+
+  /* construct nexe command line from manifest */
+#define SPACE " \t"
+#define ARGC_MAX 128*sizeof(char*)
+
+  nexe_argc = 1;
+  nexe_argv = (char**)malloc(ARGC_MAX);
+  nexe_argv[0] = "0"; /* own name is not available for nexe */
+  nexe_argv[nexe_argc] = strtok(GetValueByKey(&state, "cmdline"), SPACE);
+
+  while(nexe_argv[nexe_argc])
+   	nexe_argv[++nexe_argc] = strtok(NULL, SPACE);
+
+	/*
+	 * change stdout/stderr to log file now, so that subsequent error
+	 * messages will go there.  unfortunately, error messages that
+	 * result from getopt processing -- usually out-of-memory, which
+	 * shouldn't happen -- won't show up.
+	 */
+	if (NULL != log_file)
+	{
+		NaClLogSetFile(log_file);
+	}
+
+	state.enable_syscalls = 0; /* syscalls are disabled by default */
+	if (syscalls_behavior == NULL || !strcmp(syscalls_behavior, "0"))
+		state.enable_syscalls = 0;
+	else if (!strcmp(syscalls_behavior, "1"))
+		NaClSilentRestrictedSyscalls();
+	else if (!strcmp(syscalls_behavior, "2"))
+	{
+		/* initialize syscalls */
+		NaClSyscallTableInit();
+		NaClLog(LOG_WARNING, "DANGER! SYSCALLS ARE ENABLED\n");
+		state.enable_syscalls = 1;
+
+		/* also enable file i/o "-a" switch */
+		NaClInsecurelyBypassAllAclChecks(); // remove '-a' switch and appropriate init above
+	}
+	else if (strcmp(syscalls_behavior, "0"))
+	{
+		fprintf(stderr, "ERROR: unknown -Y option: [%s]\n", syscalls_behavior);
+		PrintUsage();
+		exit(-1);
+	}
+
+	// i need to check nacl code below which is using nexe name and other switches
+	// with parameters i set here and don't want to be messed
+	/* d'b end */
+
+	/* d'b: log initialization moved above */
 
   /*
    * NB: the following cast is okay since we only ever permit GioFile
@@ -450,15 +528,14 @@ int main(int  argc,
    * can only assign the log output to a file.  If neither were
    * called, logging goes to stderr.
    */
-  log_gio = (struct GioFile *) NaClLogGetGio();
-  /*
+    log_gio = (struct GioFile*)NaClLogGetGio();
+    /*
    * By default, the logging module logs to stderr, or descriptor 2.
    * If NaClLogSetFile was performed above, then log_desc will have
    * the non-default value.
    */
-  log_desc = fileno(log_gio->iop);
-
-  if (rpc_supplies_nexe) {
+    log_desc = fileno(log_gio->iop);
+    if (rpc_supplies_nexe) {
     if (NULL != nacl_file) {
       fprintf(stderr,
               "sel_ldr: mutually exclusive flags -f and -R both used\n");
@@ -471,17 +548,13 @@ int main(int  argc,
       exit(1);
     }
   } else {
-    if (NULL == nacl_file && optind < argc) {
-      nacl_file = argv[optind];
-      ++optind;
-    }
     if (NULL == nacl_file) {
       fprintf(stderr, "No nacl file specified\n");
       exit(1);
     }
     /* post: NULL != nacl_file */
   }
-  /*
+    /*
    * post condition established by the above code (in Hoare logic
    * terminology):
    *
@@ -490,56 +563,22 @@ int main(int  argc,
    * so hence forth, testing !rpc_supplies_nexe suffices for
    * establishing NULL != nacl_file.
    */
-  CHECK((NULL == nacl_file) == rpc_supplies_nexe);
-
-  /* to be passed to NaClMain, eventually... */
-  argv[--optind] = (char *) "NaClMain";
-
-  if (!NaClAppCtor(&state)) {
+    CHECK((NULL == nacl_file) == rpc_supplies_nexe);
+    /* to be passed to NaClMain, eventually... */
+    argv[--optind] = (char*)"NaClMain";
+    if (!NaClAppCtor(&state)) {
     fprintf(stderr, "Error while constructing app state\n");
     goto done_file_dtor;
   }
-
-  state.ignore_validator_result = (debug_mode_ignore_validator > 0);
-  state.skip_validator = (debug_mode_ignore_validator > 1);
-  state.validator_stub_out_mode = stub_out_mode;
-  state.enable_debug_stub = enable_debug_stub;
-
-  /* d'b: enable syscalls
-   *
-   * TODO:
-   * i plan to replace both switches: "-a" (by google) and "-Y" (by me),
-   * to "-A xxxxxxxx" where "xxxxxxxx" would be hexadecimal mask for
-   * enabling/disabling each syscal; with default value "0000001f"
-   * (to enable "must have" syscalls and to disable others)
-   */
-  state.enable_syscalls = 0; /* syscalls are disabled by default */
-  if (syscalls_behavior == NULL || !strcmp(syscalls_behavior, "0"))
-  	state.enable_syscalls = 0;
-  else if (!strcmp(syscalls_behavior, "1"))
-  	NaClSilentRestrictedSyscalls();
-  else if (!strcmp(syscalls_behavior, "2"))
-  {
-	/* initialize syscalls */
-	NaClSyscallTableInit();
-	NaClLog(LOG_WARNING, "DANGER! SYSCALLS ARE ENABLED\n");
-  	state.enable_syscalls = 1;
-
-  	/* also enable file i/o "-a" switch */
-  	NaClInsecurelyBypassAllAclChecks();
-  }
-  else if (strcmp(syscalls_behavior, "0"))
-  {
-    fprintf(stderr, "ERROR: unknown -Y option: [%s]\n\n", syscalls_behavior);
-    PrintUsage();
-    exit(-1);
-  }
-  /* d'b end */
+	state.ignore_validator_result = (debug_mode_ignore_validator > 0);
+	state.skip_validator = (debug_mode_ignore_validator > 1);
+	state.validator_stub_out_mode = stub_out_mode;
+	state.enable_debug_stub = enable_debug_stub;
 
   nap = &state;
-  errcode = LOAD_OK;
+	errcode = LOAD_OK;
 
-  /*
+	/*
    * in order to report load error to the browser plugin through the
    * secure command channel, we do not immediate jump to cleanup code
    * on error.  rather, we continue processing (assuming earlier
@@ -561,36 +600,38 @@ int main(int  argc,
   }
 
   /* We use the signal handler to verify a signal took place. */
-  NaClSignalHandlerInit();
-  if (!skip_qualification) {
-    NaClErrorCode pq_error = NACL_FI_VAL("pq", NaClErrorCode,
-                                         NaClRunSelQualificationTests());
-    if (LOAD_OK != pq_error) {
-      errcode = pq_error;
-      nap->module_load_status = pq_error;
-      fprintf(stderr, "Error while loading \"%s\": %s\n",
-              NULL != nacl_file ? nacl_file
-                                : "(no file, to-be-supplied-via-RPC)",
-              NaClErrorString(errcode));
-    }
-  }
+	NaClSignalHandlerInit();
+	if (!skip_qualification)
+	{
+		NaClErrorCode pq_error = NACL_FI_VAL("pq", NaClErrorCode,
+				NaClRunSelQualificationTests());
+		if (LOAD_OK != pq_error)
+		{
+			errcode = pq_error;
+			nap->module_load_status = pq_error;
+			fprintf(stderr, "Error while loading \"%s\": %s\n",
+					NULL != nacl_file ? nacl_file : "(no file, to-be-supplied-via-RPC)",
+					NaClErrorString(errcode));
+		}
+	}
 
   /* Remove the signal handler if we are not using it. */
-  if (!handle_signals) {
-    NaClSignalHandlerFini();
-    /* Sanity check. */
-    NaClSignalAssertNoHandlers();
+	if (!handle_signals)
+	{
+		NaClSignalHandlerFini();
+		/* Sanity check. */
+		NaClSignalAssertNoHandlers();
 
-    /*
-     * Patch the Windows exception dispatcher to be safe in the case
-     * of faults inside x86-64 sandboxed code.  The sandbox is not
-     * secure on 64-bit Windows without this.
-     */
+		/*
+		 * Patch the Windows exception dispatcher to be safe in the case
+		 * of faults inside x86-64 sandboxed code.  The sandbox is not
+		 * secure on 64-bit Windows without this.
+		 */
 #if (NACL_WINDOWS && NACL_ARCH(NACL_BUILD_ARCH) == NACL_x86 && \
      NACL_BUILD_SUBARCH == 64)
-    NaClPatchWindowsExceptionDispatcher();
+		NaClPatchWindowsExceptionDispatcher();
 #endif
-  }
+	}
 
   /*
    * Open both files first because (on Mac OS X at least)
@@ -619,27 +660,28 @@ int main(int  argc,
     NaClPerfCounterMark(&time_all_main, "SnapshotNaclFile");
     NaClPerfCounterIntervalLast(&time_all_main);
 
-    if (LOAD_OK == errcode) {
-      NaClLog(2, "Loading nacl file %s (non-RPC)\n", nacl_file);
-      errcode = NaClAppLoadFile((struct Gio *) &main_file, nap);
-      if (LOAD_OK != errcode) {
-        fprintf(stderr, "Error while loading \"%s\": %s\n",
-                nacl_file,
-                NaClErrorString(errcode));
-        fprintf(stderr,
-                ("Using the wrong type of nexe (nacl-x86-32"
-                 " on an x86-64 or vice versa)\n"
-                 "or a corrupt nexe file may be"
-                 " responsible for this error.\n"));
-      }
-      NaClPerfCounterMark(&time_all_main, "AppLoadEnd");
-      NaClPerfCounterIntervalLast(&time_all_main);
+    if (LOAD_OK == errcode)
+		{
+			NaClLog(2, "Loading nacl file %s (non-RPC)\n", nacl_file);
+			errcode = NaClAppLoadFile((struct Gio *) &main_file, nap);
+			if (LOAD_OK != errcode)
+			{
+				fprintf(stderr, "Error while loading \"%s\": %s\n", nacl_file,
+						NaClErrorString(errcode));
+				fprintf(stderr, ("Using the wrong type of nexe (nacl-x86-32"
+						" on an x86-64 or vice versa)\n"
+						"or a corrupt nexe file may be"
+						" responsible for this error.\n"));
+			}
 
-      NaClXMutexLock(&nap->mu);
-      nap->module_load_status = errcode;
-      NaClXCondVarBroadcast(&nap->cv);
-      NaClXMutexUnlock(&nap->mu);
-    }
+			NaClPerfCounterMark(&time_all_main, "AppLoadEnd");
+			NaClPerfCounterIntervalLast(&time_all_main);
+
+			NaClXMutexLock(&nap->mu);
+			nap->module_load_status = errcode;
+			NaClXCondVarBroadcast(&nap->cv);
+			NaClXMutexUnlock(&nap->mu);
+		}
 
     if (-1 == (*((struct Gio *) &main_file)->vtbl->Close)((struct Gio *)
                                                           &main_file)) {
@@ -858,8 +900,7 @@ int main(int  argc,
    * error reporting done; can quit now if there was an error earlier.
    */
   if (LOAD_OK != errcode) {
-    NaClLog(4,
-            "Not running app code since errcode is %s (%d)\n",
+    NaClLog(4, "Not running app code since errcode is %s (%d)\n",
             NaClErrorString(errcode),
             errcode);
     goto done;
@@ -879,6 +920,23 @@ int main(int  argc,
     fprintf(stderr, "Launch service threads failed\n");
     goto done;
   }
+
+  /* d'b
+   * provide nexe with given in manifest command line
+   */
+  if(nexe_argc == 1)
+  {
+  	nexe_argc = argc - optind;
+  	nexe_argv = argv + optind;
+  }
+  if (!NaClCreateMainThread(nap, nexe_argc, nexe_argv,
+  		NaClEnvCleanserEnvironment(&env_cleanser)))
+  {
+  	fprintf(stderr, "creating main thread failed\n");
+    goto done;
+  }
+  /* d'b */
+  /*
   if (!NaClCreateMainThread(nap,
                             argc - optind,
                             argv + optind,
@@ -886,6 +944,7 @@ int main(int  argc,
     fprintf(stderr, "creating main thread failed\n");
     goto done;
   }
+	*/
 
   NaClEnvCleanserDtor(&env_cleanser);
 

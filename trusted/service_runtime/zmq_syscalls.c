@@ -8,13 +8,18 @@
 #include "trusted/service_runtime/sel_ldr.h"
 #include "trusted/desc/nacl_desc_io.h"
 #include "trusted/service_runtime/nacl_app_thread.h"
+#include "trusted/service_runtime/nacl_syscall_common.h"
+
+
+//### remove it. mapping test
+uint32_t SysMapInput(struct NaClAppThread *natp, void *buf);
 
 /*
  * helper function. extract file name from given
  * NaClAppThread and position in desc_tbl
  * return file name if successfully extracted, otherwise - NULL
  */
-const char * GetFileName (struct NaClAppThread *natp, int d)
+const char * GetFileName(struct NaClAppThread *natp, int d)
 {
 	struct NaClDesc *ndp;
 	uintptr_t sysaddr;
@@ -24,11 +29,12 @@ const char * GetFileName (struct NaClAppThread *natp, int d)
 
 	/* check if NaClDesc address is valid */
 	sysaddr = NaClUserToSysAddr(natp->nap, (uintptr_t) ndp);
-	if (kNaClBadAddress == sysaddr || NULL != ndp) {
-	  return NULL;
+	if (kNaClBadAddress == sysaddr || NULL != ndp)
+	{
+		return NULL;
 	}
 
-	return ((struct NaClDescIoDesc *)ndp)->hd->channel;
+	return ((struct NaClDescIoDesc *) ndp)->hd->channel;
 }
 
 /*
@@ -40,9 +46,12 @@ int IsSwiftURL(const char *name)
 	char buf[] = URL_MARK;
 	char *p = buf;
 
-	if (name == NULL) return 0;
+	if (name == NULL
+	)
+		return 0;
 
-	while (*p++ == tolower(*name++));
+	while (*p++ == tolower(*name++))
+		;
 
 	/*###*/
 	printf("returned by %s() BOOL_RESULT == %d\n", __func__, !(p - buf - URL_MARK_SIZE));
@@ -55,42 +64,50 @@ int IsSwiftURL(const char *name)
  * populate given NaClAppThread object with channel info
  * return 0 when success, otherwise - nacl error code
  */
-int32_t ZMQSysOpen(struct NaClAppThread  *natp,
-			   	   char					 *name,
-			   	   int                   flags,
-			   	   int                   mode)
+int32_t ZMQSysOpen(struct NaClAppThread *natp, char *name, int flags, int mode)
 {
-	int32_t retval;
+	int32_t retval = 0;
 	struct NaClHostDesc *hd;
 
-	/* ### log to remove. i only use it to debug this class */
-	NaClLog(1, "int32_t ZMQSysOpen(struct NaClAppThread  *natp, char *pathname, int flags, int mode) -- entered\n");
+	NaClLog(3, "Entered ZMQSysOpen(natp, %s, %X, %X)\n", name, flags, mode);
 
 	/* ### dummy
 	 * just open the local file w/o "http://" prefix to test this function
 	 * example of file name: "http://dummy_zmq.dat" (will open "dummy_zmq.dat")
 	 */
-    hd = malloc(sizeof *hd);
-    if (NULL == hd) {
-      return -NACL_ABI_ENOMEM;
-    }
+	hd = malloc(sizeof *hd);
+	if (NULL == hd)
+	{
+		return -NACL_ABI_ENOMEM;
+	}
 
-    retval = NaClHostDescOpen(hd, name + URL_MARK_SIZE - 1, flags, mode);
+	//### test file mapping. remove it!
+	// make special file record in the file descriptors table
+	if(strcmp(name, "http://input.data") == 0)
+	{
+		hd->d = SysMapInput(natp, NULL);
+	} else
+	{ // "regular" zmq file
+		/* open file and put file descriptor in hd */
+		retval = NaClHostDescOpen(hd, name + URL_MARK_SIZE - 1, flags, mode);
+	}
 
-    strcpy(hd->channel, name);
+	/* add extra info to hd */
+	strcpy(hd->channel, name);
+	NaClLog(1, "NaClHostDescOpen(0x%08"NACL_PRIxPTR", %s, 0%o, 0%o) returned %d\n",
+			(uintptr_t) hd, name + URL_MARK_SIZE - 1, flags, mode, retval);
 
-    NaClLog(1, "NaClHostDescOpen(0x%08"NACL_PRIxPTR", %s, 0%o, 0%o) returned %d\n",
-            (uintptr_t) hd, name + URL_MARK_SIZE - 1, flags, mode, retval);
-    if (0 == retval) {
-      retval = NaClSetAvail(natp->nap,
-                            ((struct NaClDesc *) NaClDescIoDescMake(hd)));
-      NaClLog(1, "Entered url into open file table at %d\n", retval);
-    }
+	/* add a new record to the file descriptors table */
+	if (0 == retval)
+	{
+		retval = NaClSetAvail(natp->nap, ((struct NaClDesc *) NaClDescIoDescMake(hd)));
+		NaClLog(1, "Entered url into open file table at %d\n", retval);
+	}
 
-    /* ### log to remove. i only use it to debug this class */
-    NaClLog(1, "int32_t ZMQSysOpen(struct NaClAppThread  *natp, char "\
-    		"*pathname, int flags, int mode): channel == %s, desc == %d\n", hd->channel, hd->d);
-    return retval;
+	/* ### log to remove. i only use it to debug this class */
+	NaClLog(1, "int32_t ZMQSysOpen(struct NaClAppThread  *natp, char "
+			"*pathname, int flags, int mode): channel == %s, desc == %d\n", hd->channel, hd->d);
+	return retval;
 }
 
 /* ###
@@ -117,29 +134,28 @@ int ZMQSysClose(struct NaClAppThread *natp, int d)
  * put (map) it to given memory region (NaClAppThread object)
  * return count of read bytes when success, otherwise - nacl error code
  */
-int ZMQSysRead(struct NaClAppThread  *natp,
-        	   int                   d,
-        	   void                  *buf,
-        	   size_t                count)
+int ZMQSysRead(struct NaClAppThread *natp, int d, void *buf, size_t count)
 {
-	ssize_t         read_result;
-	uintptr_t       sysaddr;
+	ssize_t read_result;
+	uintptr_t sysaddr;
 	struct NaClDesc *ndp;
 
 	/* ### log to remove. i only use it to debug this class */
 	NaClLog(1, "int ZMQSysRead(struct NaClAppThread  *natp, int d, void *buf, size_t count) -- entered\n");
 
 	ndp = NaClGetDesc(natp->nap, d);
-	if (NULL == ndp) return -NACL_ABI_EINVAL;
+	if (NULL == ndp)
+		return -NACL_ABI_EINVAL;
 
 	/* ###
 	 * dummy code. just to test if class work proper
 	 * delete it after zmq integration
 	 */
 	sysaddr = NaClUserToSysAddrRange(natp->nap, (uintptr_t) buf, count);
-	if (kNaClBadAddress == sysaddr) {
-	  NaClDescUnref(ndp);
-	  return -NACL_ABI_EFAULT;
+	if (kNaClBadAddress == sysaddr)
+	{
+		NaClDescUnref(ndp);
+		return -NACL_ABI_EFAULT;
 	}
 
 	/*
@@ -147,17 +163,32 @@ int ZMQSysRead(struct NaClAppThread  *natp,
 	 * the return value would overflow. Passing larger values isn't an error--
 	 * we'll just clamp the request size if it's too large.
 	 */
-	if (count > INT32_MAX) {
-	  count = INT32_MAX;
+	if (count > INT32_MAX)
+	{
+		count = INT32_MAX;
 	}
 
-	read_result = (*((struct NaClDescVtbl const *) ndp->base.vtbl)->
-	               Read)(ndp, (void *) sysaddr, count);
-	if (read_result > 0) {
-	  NaClLog(4, "read returned %"NACL_PRIdS" bytes\n", read_result);
-	  NaClLog(8, "read result: %.*s\n", (int) read_result, (char *) sysaddr);
-	} else {
-	  NaClLog(4, "read returned %"NACL_PRIdS"\n", read_result);
+	// ### REMOVE IT FROM HERE
+	// check if the file is not zmq but mapped
+	if(strcmp(((struct NaClDescIoDesc *) ndp)->hd->channel, "http://input.data") == 0)
+	{
+		//##debug print
+		printf("hello from %s!\n", __func__);
+
+		// and return pointer to mapped file as "read bytes"
+		return ((struct NaClDescIoDesc *) ndp)->hd->d;
+	}
+
+	read_result = (*((struct NaClDescVtbl const *) ndp->base.vtbl)->Read)
+			(ndp, (void *) sysaddr,	count);
+	if (read_result > 0)
+	{
+		NaClLog(4, "read returned %"NACL_PRIdS" bytes\n", read_result);
+		NaClLog(8, "read result: %.*s\n", (int) read_result, (char *) sysaddr);
+	}
+	else
+	{
+		NaClLog(4, "read returned %"NACL_PRIdS"\n", read_result);
 	}
 	NaClDescUnref(ndp);
 
@@ -169,46 +200,48 @@ int ZMQSysRead(struct NaClAppThread  *natp,
  * put (map) portion of data to opened channel (NaClAppThread object)
  * return count of written bytes when success, otherwise - nacl error code
  */
-int ZMQSysWrite(struct NaClAppThread *natp,
-        		int                  d,
-        		void                 *buf,
-        		size_t               count)
+int ZMQSysWrite(struct NaClAppThread *natp, int d, void *buf, size_t count)
 {
-	ssize_t         write_result;
-	uintptr_t       sysaddr;
+	ssize_t write_result;
+	uintptr_t sysaddr;
 	struct NaClDesc *ndp;
 
 	/* ### log to remove. i only use it to debug this class */
 
-	NaClLog(1, "int ZMQSysWrite(struct NaClAppThread *natp, int d, void *buf, size_t count) -- entered\n");
+	NaClLog(
+			1,
+			"int ZMQSysWrite(struct NaClAppThread *natp, int d, void *buf, size_t count) -- entered\n");
 
 	ndp = NaClGetDesc(natp->nap, d);
-	if (NULL == ndp) return -NACL_ABI_EINVAL;
+	if (NULL == ndp)
+		return -NACL_ABI_EINVAL;
 
 	/* ###
 	 * dummy code. just to test if class work proper
 	 * delete it after zmq integration
 	 */
 	sysaddr = NaClUserToSysAddrRange(natp->nap, (uintptr_t) buf, count);
-	if (kNaClBadAddress == sysaddr) {
-	  NaClDescUnref(ndp);
-	  return -NACL_ABI_EFAULT;
+	if (kNaClBadAddress == sysaddr)
+	{
+		NaClDescUnref(ndp);
+		return -NACL_ABI_EFAULT;
 	}
 
-	NaClLog(4, "In NaClSysWrite(%d, %.*s, %"NACL_PRIdS")\n",
-	        d, (int) count, (char *) sysaddr, count);
+	NaClLog(4, "In NaClSysWrite(%d, %.*s, %"NACL_PRIdS")\n", d, (int) count, (char *) sysaddr,
+			count);
 
 	/*
 	 * The maximum length for read and write is INT32_MAX--anything larger and
 	 * the return value would overflow. Passing larger values isn't an error--
 	 * we'll just clamp the request size if it's too large.
 	 */
-	if (count > INT32_MAX) {
-	  count = INT32_MAX;
+	if (count > INT32_MAX)
+	{
+		count = INT32_MAX;
 	}
 
-	write_result = (*((struct NaClDescVtbl const *) ndp->base.vtbl)->
-	                Write)(ndp, (void *) sysaddr, count);
+	write_result = (*((struct NaClDescVtbl const *) ndp->base.vtbl)->Write)(ndp, (void *) sysaddr,
+			count);
 
 	NaClDescUnref(ndp);
 
@@ -216,42 +249,99 @@ int ZMQSysWrite(struct NaClAppThread *natp,
 	return (int32_t) write_result;
 }
 
-/* ###
- * may be no need to write this procedure
+/*-----------------------------------------------------------
+ * MAPPING METHODS NEED TO BE EXTRACTED.
+ * temporary placement. also manifest will be rewritten and
+ * get(key) shuoold be used instead of ugly loop
  */
-int ZMQSysDup()
-{
-	return 0;
-}
+/* put it out (put everything regarding file mapping to a new source)
+ * map whole input file (from manifest) into memory.
+ * return amount of read bytes when success, set given
+ * pointer to start of mapped file otherwise - 0
+ */
+/*
+ * syscalls cannot be used from inside of sandbox
+ * because of wrong address space.
+ */
+#include "trusted/service_runtime/include/sys/mman.h"
+#include "trusted/service_runtime/include/sys/stat.h"
+#include <sys/stat.h>
+#include <sys/mman.h>
+#include <fcntl.h>
 
-/* ###
- * may be no need to write this procedure
- */
-int ZMQSysDup2()
+uint32_t SysMapInput(struct NaClAppThread *natp, void *buf)
 {
-	return 0;
-}
+	struct stat fs;
+	int handle;
+	int i = 0;
+	int desc;
+	char *name;
+	struct NaClHostDesc *hd;
 
-/* ###
- * may be no need to write this procedure
- */
-int ZMQSysIoctl()
-{
-	return 0;
-}
+	NaClLog(3, "Entered SysMapInput()\n");
+	buf = NULL;
+	hd = malloc(sizeof *hd);
+	if (NULL == hd) return -NACL_ABI_ENOMEM;
 
-/* ###
- * may be no need to write this procedure
- */
-int ZMQSysSeek()
-{
-	return 0;
-}
+	/* get input file name for mapping */
+	while(i < natp->nap->manifest_size &&
+		strcmp(natp->nap->manifest[i].key, "input")) ++i;
+	name = natp->nap->manifest[i].value;
+	NaClLog(4, "SysMapInput() trying to open [%s] file\n", name);
 
-/* ###
- * may be no need to write this procedure
- */
-int ZMQSysFstat()
-{
-	return 0;
+	/* set all parameters and invoke syscall */
+	handle = open(name, O_RDONLY); /* open file */
+	if(handle < 0)
+	  NaClLog(LOG_ERROR, "file \"%s\" could not open, err_code = %d\n", name, handle);
+	NaClLog(4, "SysMapInput() file [%s] opened with %d handle\n", name, handle);
+
+	i = fstat(handle, &fs); /* get file size */
+	if(i < 0) NaClLog(LOG_ERROR, "file \"%s\" could get state, err_code = %d\n", name, i);
+
+	hd->d = handle; /* construct nacl descriptor */
+	desc = NaClSetAvail(natp->nap,
+			((struct NaClDesc *) NaClDescIoDescMake(hd))); /* put to desc table and get index */
+
+	/* map whole file into the memory */
+	i = NaClCommonSysMmapIntern(natp->nap, NULL,
+			(size_t)fs.st_size, NACL_ABI_PROT_READ | NACL_ABI_PROT_WRITE,
+			NACL_ABI_MAP_SHARED, desc, 0);
+
+	/* hack!! try to avoid it */
+	//buf = (void*)((uintptr_t)buf & 0xffffffff); /* prevent sign flood */
+	//## delete it!
+	//printf("%lX\n", (uintptr_t)buf + natp->nap->mem_start);
+	/*
+	SHOWID;
+	char *p;SHOWID;
+
+	p = (char*)natp->nap->mem_start;SHOWID;
+
+	printf("natp->nap->mem_start = %lX\n", natp->nap->mem_start);SHOWID;
+	printf("p = %lX\n", (uintptr_t)p);SHOWID;
+	printf("buf = %lX\n", (uintptr_t)buf);SHOWID;
+
+	printf("p[0] = %c\n", p[0]);SHOWID;
+	printf("p[1] = %c\n", p[1]);SHOWID;
+
+	p	= buf + natp->nap->mem_start;SHOWID;
+
+	printf("p[0] = %c\n", p[0]);SHOWID;
+	printf("p[1] = %c\n", p[1]);SHOWID;
+
+	p[10] = '\0';SHOWID;
+
+	//printf("\n===============\n\n%s\n\n", (char*)((uintptr_t)buf + natp->nap->mem_start));
+	printf("\n===============\n\n%s\n\n", p);
+	*/
+
+	/* free resources, check result and return */
+	close(handle);
+	printf("i = %x\n", i);
+	buf = (void*)((uintptr_t)i);
+	NaClLog(4, "SysMapInput(): mapped to buf = %lX\n", (uintptr_t)buf);
+
+	/* the magic number is check for the largest nacl errno (i hope) */
+	//return (uintptr_t)buf > (uintptr_t)0xFFFFF000 ? buf = NULL, 0 : fs.st_size;
+	return (uint32_t)i;
 }

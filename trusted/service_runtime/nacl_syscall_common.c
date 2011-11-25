@@ -763,9 +763,10 @@ int32_t NaClCommonSysRead(struct NaClAppThread  *natp,
    * call the swift daemon (proxy) if so
    */
   name = GetFileName (natp, d);
-  if (IsSwiftURL(name)) {
-	retval = ZMQSysRead(natp, d, buf, count);
-	goto cleanup;
+  if (IsSwiftURL(name))
+  {
+  	retval = ZMQSysRead(natp, d, buf, count);
+  	goto cleanup;
   }
   /* d'b end */
 
@@ -1244,8 +1245,7 @@ int32_t NaClCommonSysMmapIntern(struct NaClApp        *nap,
    * And offset must be a multiple of the allocation unit.
    */
   if (!NaClIsAllocPageMultiple((uintptr_t) offset)) {
-    NaClLog(1,
-            ("NaClSysMmap: file offset 0x%08"NACL_PRIxPTR" not multiple"
+    NaClLog(1, ("NaClSysMmap: file offset 0x%08"NACL_PRIxPTR" not multiple"
              " of allocation size\n"),
             (uintptr_t) offset);
     map_result = -NACL_ABI_EINVAL;
@@ -1258,8 +1258,7 @@ int32_t NaClCommonSysMmapIntern(struct NaClApp        *nap,
   }
   alloc_rounded_length = NaClRoundAllocPage(length);
   if (alloc_rounded_length != length) {
-    NaClLog(1,
-            "mmap: rounded length to 0x%"NACL_PRIxS"\n",
+    NaClLog(1, "mmap: rounded length to 0x%"NACL_PRIxS"\n",
             alloc_rounded_length);
   }
 
@@ -1299,14 +1298,16 @@ int32_t NaClCommonSysMmapIntern(struct NaClApp        *nap,
      */
     file_size = stbuf.nacl_abi_st_size;
 
+    //###
+    NaClLog(4, "NaClCommonSysMmapIntern: file_size = %ld, offset = %ld\n", file_size, offset);
+
     if (file_size < offset) {
       map_result = -NACL_ABI_EINVAL;
       goto cleanup;
     }
 
     file_bytes = file_size - offset;
-    NaClLog(4,
-            "NaClCommonSysMmapIntern: file_bytes 0x%016"NACL_PRIxNACL_OFF"\n",
+    NaClLog(4, "NaClCommonSysMmapIntern: file_bytes 0x%016"NACL_PRIxNACL_OFF"\n",
             file_bytes);
     if ((nacl_off64_t) kMaxUsableFileSize < file_bytes) {
       host_rounded_file_bytes = kMaxUsableFileSize;
@@ -1506,8 +1507,7 @@ int32_t NaClCommonSysMmapIntern(struct NaClApp        *nap,
        */
       size_t length_to_map = size_min(length, (size_t) file_bytes);
 
-      NaClLog(4,
-              ("NaClSysMmap: (*ndp->Map)(,,0x%08"NACL_PRIxPTR","
+      NaClLog(4, ("NaClSysMmap: (*ndp->Map)(,,0x%08"NACL_PRIxPTR","
                "0x%08"NACL_PRIxS",0x%x,0x%x,0x%08"NACL_PRIxPTR")\n"),
               sysaddr, length, prot, flags, (uintptr_t) offset);
 
@@ -1682,7 +1682,6 @@ int32_t NaClCommonSysMmap(struct NaClAppThread  *natp,
   offset = *(nacl_abi_off_t volatile *) sysaddr;
 
   NaClLog(4, " offset = 0x%08"NACL_PRIxNACL_OFF"\n", offset);
-
   retval = NaClCommonSysMmapIntern(natp->nap,
                                    start, length,
                                    prot,

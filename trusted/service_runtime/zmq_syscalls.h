@@ -52,29 +52,4 @@ int ZMQSysRead();
  */
 int ZMQSysWrite();
 
-/*
- * may be no need to write this procedure
- */
-int ZMQSysDup();
-
-/*
- * may be no need to write this procedure
- */
-int ZMQSysDup2();
-
-/*
- * may be no need to write this procedure
- */
-int ZMQSysIoctl();
-
-/*
- * may be no need to write this procedure
- */
-int ZMQSysSeek();
-
-/*
- * may be no need to write this procedure
- */
-int ZMQSysFstat();
-
 #endif

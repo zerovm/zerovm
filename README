@@ -1,3 +1,28 @@
+ver5.2 2011-11-8
+linux, x86, 64
+working_sandbox_ver_5.2.7z
+added manifest, command line switches were revised
+--------------------------------------------------------------------------------
+    manifest is the file provided in the command line with switch "-M". manifest can contain nexe file name, log file name,
+    nexe comamnd line (can contain up to 128 space delimited options). also manifest can contain any (key = value) pairs, for
+    example it can be mapped file mapping (will be available in the next release). any switches cannot be duplicated with sel_ldr
+    command line.
+
+    keys supported by current version of manifest:
+        "nexe" - file name of a nexe to load
+        "log" - file name of a sel_ldr log
+        "cmdline" - command line parameteres to give to loaded nexe
+        "input" - (under construction) file with input data to map into the nexe memory
+        "output" - (under construction)
+
+    a new source files were added:
+        "trusted\service_runtime\manifest_parse.c"
+        "trusted\service_runtime\manifest_parse.h"
+
+    TODO:
+        complete with input (and maybe output) file mapping
+
+
 ver5 2011-10-28
 linux, x86, 64
 working_sandbox_ver_5.7z
