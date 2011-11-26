@@ -135,7 +135,8 @@ static int NaClDescConnCapFdConnectAddr(struct NaClDesc *vself,
     goto cleanup;
   }
 
-  if (NACL_OSX) {
+#if NACL_OSX
+/*  if (NACL_OSX) {*/
     /*
      * Mac OS X has a kernel bug in which a socket descriptor that is
      * referenced only from the message queue of another socket can
@@ -185,12 +186,14 @@ static int NaClDescConnCapFdConnectAddr(struct NaClDesc *vself,
      * reference to sock_pair[0] and then receive the ack.
      * TODO(mseaborn): Add a test case to cover this scenario.
      */
-  }
+/*  }*/
+#endif
 
   (void) NaClClose(sock_pair[0]);
   sock_pair[0] = NACL_INVALID_HANDLE;
 
-  if (NACL_OSX) {
+#if NACL_OSX
+/*  if (NACL_OSX) {*/
     /* Receive the acknowledgement.  We do not expect this to block. */
     char ack_buffer[1];
     ssize_t received = recv(sock_pair[1], ack_buffer, sizeof(ack_buffer), 0);
@@ -198,7 +201,8 @@ static int NaClDescConnCapFdConnectAddr(struct NaClDesc *vself,
       retval = -NACL_ABI_EIO;
       goto cleanup;
     }
-  }
+/*  }*/
+#endif
 
   connected_socket = malloc(sizeof(*connected_socket));
   if (NULL == connected_socket ||

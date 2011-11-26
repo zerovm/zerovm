@@ -114,7 +114,7 @@ static void PrintUsage() {
   /* NOTE: this is broken up into multiple statements to work around
            the constant string size limit */
   fprintf(stderr,
-          "Usage: sel_ldr [-h d:D] [-r d:D] [-w d:D] [-i d:D]\n"
+          "Usage: zerovm [-h d:D] [-r d:D] [-w d:D] [-i d:D]\n"
           "               [-f nacl_file] [-l log_file] [-X d]\n"
           "               [-M manifest file] [-acFgIsQ] [-v d]\n" /* removed odd switches: mM */
           "               [-Y d] -- [nacl_file] [args]\n"
