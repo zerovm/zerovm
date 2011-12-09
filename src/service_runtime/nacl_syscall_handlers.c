@@ -55,6 +55,9 @@
 #include "src/service_runtime/include/sys/unistd.h"
 
 #include "src/service_runtime/linux/nacl_syscall_inl.h"
+#include "src/manifest/trap.h"
+#include "src/manifest/manifest_setup.h"
+#include "api/zvm_manifest.h"
 
 struct NaClSyscallTableEntry nacl_syscall[NACL_MAX_SYSCALLS] = {{0}};
 
@@ -1164,16 +1167,30 @@ static int32_t NaClSysTest_InfoLeakDecoder(struct NaClAppThread *natp) {
   return NaClSysTest_InfoLeak(natp);
 }
 
-/* d'b: put to the log restricted syscall detection */
-static int32_t NaClSysRestricted() {
-  int silent_syscalls;
-  silent_syscalls = NaClSilentRestrictedSyscallsEnabled();
-
-  if (!silent_syscalls)
+/*
+ * d'b: "One Ring" syscall hook. tonneling syscall. all system calls go trough it
+ * will be the only syscall in the future.
+ * accepts 2 parameters:
+ *   1st (input) - pointer to uint64_t (from user side it is array of uint64_t's)
+ *   2nd (output)- pointer to uint64_t (from user side it is array of uint64_t's)
+ * returns int32_t
+ * note: [0] element from input is always syscall id; [1].. are syscalls parameters
+ */
+static int32_t OneRingDecoder(struct NaClAppThread *natp)
+{
+  struct OneRingDecoderArgs
   {
-	NaClLog(LOG_FATAL, "Restricted syscall. Abort.\n");
-  }
+    uint32_t args;
+  } p = *(struct OneRingDecoderArgs*) natp->syscall_args;
 
+  return TrapHandler(natp, p.args);
+}
+
+/* d'b: put to the log restricted syscall detection */
+static int32_t NaClSysRestricted()
+{
+  if(!NaClSilentRestrictedSyscallsEnabled())
+    NaClLog(LOG_FATAL, "Restricted syscall. Abort.\n");
   return -NACL_ABI_ENOSYS;
 }
 
@@ -1186,6 +1203,7 @@ void NaClSyscallTableInit() {
 
   NaClAddSyscall(NACL_sys_null, &NaClSysNullDecoder);
   NaClAddSyscall(NACL_sys_nameservice, &NaClSysNameServiceDecoder);
+  NaClAddSyscall(One_ring, &OneRingDecoder); /* d'b: 3. added onering call */
   NaClAddSyscall(NACL_sys_dup, &NaClSysDupDecoder);
   NaClAddSyscall(NACL_sys_dup2, &NaClSysDup2Decoder);
   NaClAddSyscall(NACL_sys_open, &NaClSysOpenDecoder);
@@ -1240,21 +1258,22 @@ void NaClSyscallTableInit() {
   NaClAddSyscall(NACL_sys_test_infoleak, &NaClSysTest_InfoLeakDecoder);
 }
 
-/* d'b
-  in this list of system calls 6 ones left untouched:
-  (other syscalls set to "NaClSysExitDecoder")
+/*
+  d'b:
+  in this list of system calls 5 ones left untouched:
+  (other syscalls set to "NaClSysRestricted")
 
-  NaClSysNullDecoder *
-  NaClSysSysbrkDecoder
-  NaClSysExitDecoder
-  NaClSysThread_ExitDecoder *
-  NaClSysTls_InitDecoder
-  NaClSysTls_GetDecoder
+  syscalls for an empty nexe: "main(){}"
+  20 -- NACL_sys_sysbrk (NaClSysSysbrkDecoder)
+  30 -- NACL_sys_exit (NaClSysExitDecoder)
+  70 -- NACL_sys_mutex_create (NaClSysTls_InitDecoder)
+  82 -- NACL_sys_tls_init (NaClSysTls_GetDecoder)
+  84 -- NACL_sys_tls_get (NaClSysMutex_CreateDecoder)
 
-  syscalls marked with asterisk (*) temporarily left untouched.
-  pretty sure they can be blocked without consequences.
+  special case, tonneling call:
+  3 -- artificially added "One Ring" single syscall
 
-  to restore syscalls to the original version just delete everything
+  note: to restore syscalls to the original version just delete everything
   until "d'b end" and uncomment commented code
 */
 void NaClSyscallTableInitDisable() {
@@ -1263,8 +1282,9 @@ void NaClSyscallTableInitDisable() {
      nacl_syscall[i].handler = &NotImplementedDecoder;
   }
 
-  NaClAddSyscall(NACL_sys_null, &NaClSysNullDecoder);
+  NaClAddSyscall(NACL_sys_null, &NaClSysRestricted);
   NaClAddSyscall(NACL_sys_nameservice, &NaClSysRestricted);
+  NaClAddSyscall(One_ring, &OneRingDecoder); /* 3. added onering call */
   NaClAddSyscall(NACL_sys_dup, &NaClSysRestricted);
   NaClAddSyscall(NACL_sys_dup2, &NaClSysRestricted);
   NaClAddSyscall(NACL_sys_open, &NaClSysRestricted);
@@ -1276,12 +1296,12 @@ void NaClSyscallTableInitDisable() {
   NaClAddSyscall(NACL_sys_fstat, &NaClSysRestricted);
   NaClAddSyscall(NACL_sys_stat, &NaClSysRestricted);
   NaClAddSyscall(NACL_sys_getdents, &NaClSysRestricted);
-  NaClAddSyscall(NACL_sys_sysbrk, &NaClSysSysbrkDecoder);
+  NaClAddSyscall(NACL_sys_sysbrk, &NaClSysSysbrkDecoder); /* 20 */
   NaClAddSyscall(NACL_sys_mmap, &NaClSysRestricted);
   NaClAddSyscall(NACL_sys_munmap, &NaClSysRestricted);
-  NaClAddSyscall(NACL_sys_exit, &NaClSysExitDecoder);
+  NaClAddSyscall(NACL_sys_exit, &NaClSysExitDecoder); /* 30 */
   NaClAddSyscall(NACL_sys_getpid, &NaClSysRestricted);
-  NaClAddSyscall(NACL_sys_thread_exit, &NaClSysThread_ExitDecoder);
+  NaClAddSyscall(NACL_sys_thread_exit, &NaClSysRestricted);
   NaClAddSyscall(NACL_sys_gettimeofday, &NaClSysRestricted);
   NaClAddSyscall(NACL_sys_clock, &NaClSysRestricted);
   NaClAddSyscall(NACL_sys_nanosleep, &NaClSysRestricted);
@@ -1291,11 +1311,11 @@ void NaClSyscallTableInitDisable() {
   NaClAddSyscall(NACL_sys_imc_sendmsg, &NaClSysRestricted);
   NaClAddSyscall(NACL_sys_imc_recvmsg, &NaClSysRestricted);
   NaClAddSyscall(NACL_sys_imc_mem_obj_create, &NaClSysRestricted);
-  NaClAddSyscall(NACL_sys_tls_init, &NaClSysTls_InitDecoder);
+  NaClAddSyscall(NACL_sys_tls_init, &NaClSysTls_InitDecoder); /* 82 */
   NaClAddSyscall(NACL_sys_thread_create, &NaClSysRestricted);
-  NaClAddSyscall(NACL_sys_tls_get, &NaClSysTls_GetDecoder);
+  NaClAddSyscall(NACL_sys_tls_get, &NaClSysTls_GetDecoder); /* 84 */
   NaClAddSyscall(NACL_sys_thread_nice, &NaClSysRestricted);
-  NaClAddSyscall(NACL_sys_mutex_create, &NaClSysRestricted);
+  NaClAddSyscall(NACL_sys_mutex_create, &NaClSysMutex_CreateDecoder); /* 70 */
   NaClAddSyscall(NACL_sys_mutex_lock, &NaClSysRestricted);
   NaClAddSyscall(NACL_sys_mutex_unlock, &NaClSysRestricted);
   NaClAddSyscall(NACL_sys_mutex_trylock, &NaClSysRestricted);

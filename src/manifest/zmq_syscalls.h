@@ -54,17 +54,6 @@ int ZMQSysRead(struct NaClAppThread *natp, int d, void *buf, uint32_t count);
  */
 int ZMQSysWrite(struct NaClAppThread *natp, int d, void *buf, uint32_t count);
 
-/*
- * simple version of file mapping. takes NaClApp object,
- * name and mode. return pointer to mapped file (or 0)
- */
-uint32_t MapFile(struct NaClApp *nap, char *name, int mode, int size);
-
-/*
- * return size of given file or -1 (max_size) if fail
- */
-uint32_t GetFileSize(char *name);
-
 EXTERN_C_END
 
 #endif

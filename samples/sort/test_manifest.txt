@@ -1,5 +1,17 @@
 = test given file if it contain sorted 32-bit unsigned integers
 
-nexe = tester.uint32_t.c_x86_64.nexe
-log = test.log
-cmdline = sorted.dat
+version            =11nov2011
+zerovm             =python
+nexe               =samples/sort/tester.uint32_t.c_x86_64.nexe
+maxnexe            =268435456
+input              =samples/sort/sorted.data
+maxinput           =67108864
+#content-type      =application/octet-stream
+output_mnfst       =samples/sort/test_report.txt
+?zerovm_retcode    =required
+?zerovm_status     =required
+?etag              =required
+?#retcode          =optional
+?#status           =optional
+log                = samples/sort/test.log
+

@@ -67,20 +67,6 @@ struct NaClDebugCallbacks {
   void (*process_exit_hook)(int exit_status);
 };
 
-/* d'b */
-struct ManifestRecord
-{
-	char *key;
-	char *value;
-};
-
-struct MappedFileRecord
-{
-  uint32_t p; /* pointer area mapped into the nexe address space */
-  uint32_t size;
-};
-/* d'b end */
-
 struct NaClApp {
   /*
    * public, user settable prior to app start.
@@ -285,16 +271,7 @@ struct NaClApp {
 
 	/* d'b added fields */
   int                       enable_syscalls;
-  /*
-   *  (positions 0 and 1 are reserved)contain:
-   *  0. nexe file name
-   *  1. log name
-   *  2.. list of allowed files to open
-   */
-  struct ManifestRecord     *manifest;
-  int                       manifest_size; /* number of elements in manifest */
-  struct MappedFileRecord   *input_map_file;
-  struct MappedFileRecord   *output_map_file;
+  struct Manifest           *manifest;
   /* d'b end */
 };
 

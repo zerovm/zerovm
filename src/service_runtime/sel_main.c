@@ -45,8 +45,10 @@
 #include "src/service_runtime/nacl_syscall_common.h"
 #include "src/service_runtime/include/sys/mman.h" /* d'b */
 #include "src/service_runtime/nacl_syscall_handlers.h" /* d'b */
-#include "src/service_runtime/manifest_parser.h" /* d'b */
+#include "src/manifest/manifest_parser.h" /* d'b */
+#include "src/manifest/manifest_setup.h" /* d'b */
 #include "src/service_runtime/nacl_app_thread.h" /* d'b */
+#include "src/manifest/mount_channel.h" /* d'b */
 #include "src/service_runtime/outer_sandbox.h"
 #include "src/service_runtime/sel_ldr.h"
 #include "src/service_runtime/sel_qualify.h"
@@ -114,9 +116,9 @@ static void PrintUsage() {
   /* NOTE: this is broken up into multiple statements to work around
            the constant string size limit */
   fprintf(stderr,
-          "Usage: zerovm [-h d:D] [-r d:D] [-w d:D] [-i d:D]\n"
+          "Usage: sel_ldr [-h d:D] [-r d:D] [-w d:D] [-i d:D]\n"
           "               [-f nacl_file] [-l log_file] [-X d]\n"
-          "               [-M manifest file] [-acFgIsQ] [-v d]\n" /* removed odd switches: mM */
+          "               [-M manifest_file] [-acFgIsQ] [-v d]\n" /* removed odd switches: mM */
           "               [-Y d] -- [nacl_file] [args]\n"
           "\n");
   fprintf(stderr,
@@ -422,58 +424,82 @@ int main(int argc, char **argv)
 	}
 
 	/*
-	 * d'b: enable syscalls
+	 * d'b: enable syscalls. parse manifest.
+	 * check manifest resources. setup channels
 	 */
-
+	// ### todo: full main() refactoring
+	// every variable should be initialized in nap object, main must be split into functions
+	// it will simplify main() and will remove needlessly linked code pieces
   /* process manifest file specified in cmdline */
 	if (ma_name == NULL)
 	{
-		state.manifest_size = 0;
 		state.manifest = NULL;
 	}
+	/* manifest is provided */
 	else {
+	  int32_t size;
 		if (!ParseManifest(ma_name, &state))
 		{
 			fprintf(stderr, "Invalid manifest file \"%s\".\n", ma_name);
 			exit(1);
-		} else
-		{
-		  /* manifest docking moved below to place where mem_map already initialized */
 		}
-	}
 
-	/* check if command line switches has duplicates in manifest */
-#define SET_KEY_FROM_MANIFEST(key, var)\
-  do {\
-  	char *buf = GetValueByKey(&state, key);\
-  	if(var != NULL && buf != NULL)\
-  	{\
-  		fprintf(stderr, "command line switch tried to override a manifest key\n"\
-  				"command line value = %s, manifest value = %s\n", var, buf);\
-  		return 1;\
-  	}\
-  	if(var == NULL) var = buf;\
-  } while (0)
+		/* initialize user policy, zerovm settings */
+		SetupUserPolicy(&state);
+		SetupSystemPolicy(&state);
 
-	/* nacl_file special case when name provided without -f */
-	if (NULL == nacl_file && optind < argc)
-		nacl_file = argv[optind++];
 
-  SET_KEY_FROM_MANIFEST("log", log_file);
-  SET_KEY_FROM_MANIFEST("nexe", nacl_file);
-  SET_KEY_FROM_MANIFEST("blob", blob_library_file);
-
-  /* construct nexe command line from manifest */
+		// ### this part must be completelly removed when command line will be replaced by manifest
+	  /* check if command line switches has duplicates in manifest */
 #define SPACE " \t"
 #define ARGC_MAX 128*sizeof(char*)
+#define SET_KEY_FROM_MANIFEST(key, var)\
+	  do {\
+	    char *buf = GetValueByKey(&state, key);\
+	    if(var != NULL && buf != NULL)\
+	    {\
+	      fprintf(stderr, "command line switch tried to override a manifest key\n"\
+	          "command line value = %s, manifest value = %s\n", var, buf);\
+	      return 1;\
+	    }\
+	    if(var == NULL) var = buf;\
+	  } while (0)
 
-  nexe_argc = 1;
-  nexe_argv = (char**)malloc(ARGC_MAX);
-  nexe_argv[0] = "_"; /* not available for nexe (see minor manifest) */
-  nexe_argv[nexe_argc] = strtok(GetValueByKey(&state, "cmdline"), SPACE);
+    /* nacl_file special case when name provided without -f */
+    if(NULL == nacl_file && optind < argc) nacl_file = argv[optind++];
 
-  while(nexe_argv[nexe_argc])
-   	nexe_argv[++nexe_argc] = strtok(NULL, SPACE);
+    SET_KEY_FROM_MANIFEST("Log", log_file);
+    SET_KEY_FROM_MANIFEST("Nexe", nacl_file);
+    SET_KEY_FROM_MANIFEST("Blob", blob_library_file);
+    // ### this part must be completelly removed when command line will be replaced by manifest. until here
+
+    /* construct nexe command line from manifest */
+    nexe_argc = 1;
+    nexe_argv = (char**) malloc(ARGC_MAX);
+    nexe_argv[0] = "_"; /* not available for nexe (see minor manifest) */
+    nexe_argv[nexe_argc] = strtok(GetValueByKey(&state, "CommandLine"), SPACE);
+
+    while(nexe_argv[nexe_argc])
+      nexe_argv[++nexe_argc] = strtok(NULL, SPACE);
+#undef SPACE
+#undef ARGC_MAX
+#undef SET_KEY_FROM_MANIFEST
+
+    // bug: nacldesc array usage before it's initialization, will be solved after removing
+    // zvm command line. ###
+    /* initial checking for limits from manifest */
+    COND_ABORT(strcmp(state.manifest->system_setup->version, MANIFEST_VERSION),
+        "wrong manifest version\n");
+    size = GetFileSize(state.manifest->system_setup->nexe);
+    if(size < 0)
+    {
+      fprintf(stderr, "%s not found\n", state.manifest->system_setup->nexe);
+      return 1;
+    }
+    COND_ABORT(state.manifest->system_setup->nexe_max < size, "nexe file is greater then alowed\n");
+
+    /* ### channels initialization moved bellow because it is need initialized nacldesc dynarray */
+	}
 
 	/*
 	 * change stdout/stderr to log file now, so that subsequent error
@@ -481,10 +507,7 @@ int main(int argc, char **argv)
 	 * result from getopt processing -- usually out-of-memory, which
 	 * shouldn't happen -- won't show up.
 	 */
-	if (NULL != log_file)
-	{
-		NaClLogSetFile(log_file);
-	}
+	if (NULL != log_file) NaClLogSetFile(log_file);
 
 	state.enable_syscalls = 0; /* syscalls are disabled by default */
 	if (syscalls_behavior == NULL || !strcmp(syscalls_behavior, "0"))
@@ -507,9 +530,8 @@ int main(int argc, char **argv)
 		PrintUsage();
 		exit(-1);
 	}
-	/* d'b end */
-
 	/* d'b: log initialization moved above */
+	/* d'b end */
 
   /*
    * NB: the following cast is okay since we only ever permit GioFile
@@ -654,6 +676,18 @@ int main(int argc, char **argv)
 
   (*((struct Gio *) &main_file)->vtbl->Dtor)((struct Gio *) &main_file);
   if (fuzzing_quit_after_load) exit(0);
+
+  /* d'b: construct each mentioned in manifest channel and mount it */
+  if(nap->manifest)
+  {
+    enum ChannelType ch;
+    for(ch = InputChannel; ch < CHANNELS_COUNT; ++ch)
+    {
+      if(ConstructChannel(&state, ch)) continue;
+      MountChannel(&state, ch);
+    }
+  }
+  /* d'b end */
 
   NaClAppInitialDescriptorHookup(nap);
 
@@ -829,39 +863,13 @@ int main(int argc, char **argv)
     NaClLog(LOG_FATAL, "Failed to initialise env cleanser\n");
   }
 
-  /* d'b
-   * provide nexe with given in manifest command line
+  /*
+   * d'b: provide nexe with given in manifest command line
    */
   if(nexe_argc == 1)
   {
   	nexe_argc = argc - optind;
   	nexe_argv = argv + optind;
-  }
-
-  /*
-   * about manifests (files, not structure). we have 3 manifests:
-   * - provided by proxy (master) - used to initialize internal zvm struct
-   * - constructed for nexe (minor) - used to pass needful info to nexe
-   * - answer to proxy, constructed after nexe exit (report)
-   *
-   * dock "minor" manifest to argv[0]. it is best place
-   * since the real nexe name is not available for nexe
-   */
-  if(nap->manifest_size)
-  {
-    /* reserve place in stack to hold "binpacked" minor manifest */
-    char minor_manifest[MAX_MANIFEST_LEN + sizeof(struct MinorManifest)];
-
-    /* read proxy manifest and do requested actions */
-    if(!MasterManifestAnalize(nap))
-    {
-      NaClLog(LOG_FATAL, "master manifest is invalid\n");
-    }
-
-    /* build manifest for nexe and pack it into argv[0] */
-    NexeManifestConstruct(nap, manifest);
-    BinPackManifest(nap, manifest, (struct MinorManifest *)&minor_manifest);
-    nexe_argv[0] = minor_manifest;
   }
 
   if (!NaClCreateMainThread(nap, nexe_argc, nexe_argv,
@@ -886,27 +894,39 @@ int main(int argc, char **argv)
   NaClPerfCounterIntervalTotal(&time_all_main);
 
   /* d'b
-   * report manifest (for proxy) creation. reuse "manifest"
-   * since it's length is enough to hold the report
+   * manifest finalization
    */
-  if(nap->manifest_size)
+  if(nap->manifest)
   {
     FILE *f = NULL;
-    char *name = GetValueByKey(nap, "output_mnfst");
+    char *name = nap->manifest->system_setup->report;
 
-    /* open report manifest file */
+    /* open report file */
     if ((f = fopen(name, "w")) == NULL)
     {
       NaClLog(LOG_ERROR, "cannot open report manifest = %s\n", name);
       goto done;
     }
 
-    /* generate manifest */
-    AnswerManifestPut(nap, ret_code, manifest);
+    /* generate report, "manifest" reused for report, fix it ### */
+    SetupReportSettings(nap);
+    nap->manifest->report->ret_code = 0;
+    nap->manifest->report->user_ret_code = ret_code;
+    AnswerManifestPut(nap, manifest);
 
     /* write it and free resources */
     fwrite(manifest, 1, strlen(manifest), f);
     fclose(f);
+
+    /* trim user_log */
+    // refactor it to premap with name: UnmountChannel(nap, channel) to avoid truncate()
+    if (nap->manifest->user_setup->channels[LogChannel].buffer)
+    {
+      char *p = (char*) NaClUserToSys(nap, (uint32_t)nap->manifest->user_setup->channels[LogChannel].buffer);
+      off_t size = strlen(p);
+      munmap(p, nap->manifest->user_setup->channels[LogChannel].bsize);
+      truncate(GetValueByKey(nap, (char*)nap->manifest->user_setup->channels[LogChannel].name), size);
+    }
   }
   /* d'b end */
 

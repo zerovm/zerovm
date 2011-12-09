@@ -1,7 +1,9 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h> /* ### only need for strlen */
-#include "src/service_runtime/zmq_syscalls.h"
+#include "src/manifest/manifest_parser.h"
+#include "src/manifest/manifest_setup.h"
+#include "src/manifest/zmq_syscalls.h"
 #include "src/service_runtime/include/sys/errno.h"
 #include "src/platform/nacl_log.h"
 #include "src/platform/linux/nacl_host_desc_types.h"
@@ -10,11 +12,7 @@
 #include "src/service_runtime/nacl_app_thread.h"
 #include "src/service_runtime/nacl_syscall_common.h"
 
-
-//### remove it. mapping test
-uint32_t SysMapInput(struct NaClAppThread *natp, void *buf);
-
-/*
+/* ###
  * helper function. extract file name from given
  * NaClAppThread and position in desc_tbl
  * return file name if successfully extracted, otherwise - NULL
@@ -34,7 +32,8 @@ const char * GetFileName(struct NaClAppThread *natp, int d)
     return NULL;
   }
 
-  return ((struct NaClDescIoDesc *) ndp)->hd->channel;
+//  return ((struct NaClDescIoDesc *) ndp)->hd->channel;
+  return NULL; // ###
 }
 
 /*
@@ -76,19 +75,8 @@ int32_t ZMQSysOpen(struct NaClAppThread *natp, char *name, int flags, int mode)
 		return -NACL_ABI_ENOMEM;
 	}
 
-	//### test file mapping. remove it!
-	// make special file record in the file descriptors table
-	if(strcmp(name, "http://input.data") == 0)
-	{
-		hd->d = SysMapInput(natp, NULL);
-	} else
-	{ // "regular" zmq file
-		/* open file and put file descriptor in hd */
-		retval = NaClHostDescOpen(hd, name + URL_MARK_SIZE - 1, flags, mode);
-	}
-
 	/* add extra info to hd */
-	strcpy(hd->channel, name);
+//	strcpy(hd->channel, name); // ###
 	NaClLog(1, "NaClHostDescOpen(0x%08"NACL_PRIxPTR", %s, 0%o, 0%o) returned %d\n",
 			(uintptr_t) hd, name + URL_MARK_SIZE - 1, flags, mode, retval);
 
@@ -100,8 +88,8 @@ int32_t ZMQSysOpen(struct NaClAppThread *natp, char *name, int flags, int mode)
 	}
 
 	/* ### log to remove. i only use it to debug this class */
-	NaClLog(1, "int32_t ZMQSysOpen(struct NaClAppThread  *natp, char "
-			"*pathname, int flags, int mode): channel == %s, desc == %d\n", hd->channel, hd->d);
+//	NaClLog(1, "int32_t ZMQSysOpen(struct NaClAppThread  *natp, char "
+//			"*pathname, int flags, int mode): channel == %s, desc == %d\n", hd->channel, hd->d);
 	return retval;
 }
 
@@ -161,17 +149,6 @@ int ZMQSysRead(struct NaClAppThread *natp, int d, void *buf, uint32_t count)
 	if (count > INT32_MAX)
 	{
 		count = INT32_MAX;
-	}
-
-	// ### REMOVE IT FROM HERE
-	// check if the file is not zmq but mapped
-	if(strcmp(((struct NaClDescIoDesc *) ndp)->hd->channel, "http://input.data") == 0)
-	{
-		//##debug print
-		printf("hello from %s!\n", __func__);
-
-		// and return pointer to mapped file as "read bytes"
-		return ((struct NaClDescIoDesc *) ndp)->hd->d;
 	}
 
 	read_result = (*((struct NaClDescVtbl const *) ndp->base.vtbl)->Read)
@@ -242,162 +219,4 @@ int ZMQSysWrite(struct NaClAppThread *natp, int d, void *buf, uint32_t count)
 
 	/* This cast is safe because we clamped count above.*/
 	return (int32_t) write_result;
-}
-
-/*-----------------------------------------------------------
- * MAPPING METHODS NEED TO BE EXTRACTED.
- * temporary placement. also manifest will be rewritten and
- * get(key) shuoold be used instead of ugly loop
- */
-/* put it out (put everything regarding file mapping to a new source)
- * map whole input file (from manifest) into memory.
- * return amount of read bytes when success, set given
- * pointer to start of mapped file otherwise - 0
- */
-/*
- * syscalls cannot be used from inside of sandbox
- * because of wrong address space.
- */
-#include "src/service_runtime/include/sys/mman.h"
-#include "src/service_runtime/include/sys/stat.h"
-#include <sys/stat.h>
-#include <sys/mman.h>
-#include <fcntl.h>
-
-uint32_t SysMapInput(struct NaClAppThread *natp, void *buf)
-{
-	struct stat fs;
-	int handle;
-	int i = 0;
-	int desc;
-	char *name;
-	struct NaClHostDesc *hd;
-
-	NaClLog(3, "Entered SysMapInput()\n");
-	buf = NULL;
-	hd = malloc(sizeof *hd);
-	if (NULL == hd) return -NACL_ABI_ENOMEM;
-
-	/* get input file name for mapping */
-	while(i < natp->nap->manifest_size &&
-		strcmp(natp->nap->manifest[i].key, "input")) ++i;
-	name = natp->nap->manifest[i].value;
-	NaClLog(4, "SysMapInput() trying to open [%s] file\n", name);
-
-	/* set all parameters and invoke syscall */
-	handle = open(name, O_RDONLY); /* open file */
-	if(handle < 0)
-	  NaClLog(LOG_ERROR, "file \"%s\" could not open, err_code = %d\n", name, handle);
-	NaClLog(4, "SysMapInput() file [%s] opened with %d handle\n", name, handle);
-
-	i = fstat(handle, &fs); /* get file size */
-	if(i < 0) NaClLog(LOG_ERROR, "file \"%s\" could get state, err_code = %d\n", name, i);
-
-	hd->d = handle; /* construct nacl descriptor */
-	desc = NaClSetAvail(natp->nap,
-			((struct NaClDesc *) NaClDescIoDescMake(hd))); /* put to desc table and get index */
-
-	/* map whole file into the memory */
-  i = NaClCommonSysMmapIntern(natp->nap, NULL, (uint32_t)fs.st_size, 1, 2, desc, 0); // TODO: make it nice, use mnemonics defined by google
-
-	/* free resources, check result and return */
-	close(handle);
-	buf = (void*)((uintptr_t)i);
-	NaClLog(4, "SysMapInput(): mapped to buf = %lX\n", (uintptr_t)buf);
-
-	/* the magic number is check for the largest nacl errno (i hope) */
-	//return (uintptr_t)buf > (uintptr_t)0xFFFFF000 ? buf = NULL, 0 : fs.st_size;
-	return (uint32_t)i;
-}
-
-/*
- * simple version of file mapping. takes NaClApp object,
- * name, mode and size. return pointer to mapped file (or 0)
- * note: pointer in the nexe address space
- */
-uint32_t MapFile(struct NaClApp *nap, char *name, int mode, int size)
-{
-  int handle;
-  int i = 0;
-  int desc;
-  struct NaClHostDesc *hd;
-  int file_mode;
-  int prot; /* depend on file_mode! */
-  int map_flag; /* depend on file_mode! */
-
-  /*
-   * set proper file open mode and mapping flag
-   * note: user only allowed read/write access (not execute!)
-   */
-  switch (mode)
-  {
-    case NACL_ABI_PROT_READ:
-      file_mode = O_RDONLY;
-      prot = NACL_ABI_PROT_READ;
-      map_flag = NACL_ABI_MAP_PRIVATE;
-      break;
-    case NACL_ABI_PROT_WRITE:
-      file_mode = O_WRONLY | O_CREAT;
-      prot = NACL_ABI_PROT_WRITE;
-      map_flag = NACL_ABI_MAP_SHARED;
-      break;
-    case NACL_ABI_PROT_READ | NACL_ABI_PROT_WRITE:
-      file_mode = O_RDWR;
-      prot = NACL_ABI_PROT_READ | NACL_ABI_PROT_WRITE;
-      map_flag = NACL_ABI_MAP_SHARED;
-      break;
-    default:
-      NaClLog(LOG_ERROR, "invalid file mapping mode\n");
-      return 0;
-      break;
-  }
-
-  /* get memory for NaClHostDesc object */
-  hd = malloc(sizeof *hd);
-  if (NULL == hd)
-  {
-    NaClLog(LOG_ERROR, "cannot allocate memory for NaClHostDesc\n");
-    return 0;
-  }
-
-  /* set all parameters and invoke syscall */
-  handle = open(name, file_mode); /* open file */
-  if(handle < 0)
-  {
-    NaClLog(LOG_ERROR, "file \"%s\" could not open, err_code = %d\n", name, handle);
-    free(hd);
-    return 0;
-  }
-  NaClLog(4, "SysMapInput() file [%s] opened with %d handle\n", name, handle);
-
-  hd->d = handle; /* construct nacl descriptor */
-  desc = NaClSetAvail(nap,
-      ((struct NaClDesc *) NaClDescIoDescMake(hd))); /* put to desc table and get index */
-
-  /* map whole file into the memory */
-  i = NaClCommonSysMmapIntern(nap, NULL, size, prot, map_flag, desc, 0);
-
-  /* free resources, check result and return */
-  close(handle);
-  NaClLog(4, "SysMapInput(): mapped to buf = %X\n", i);
-
-  /* the magic number is check for the largest nacl errno (i hope) */
-  return i > 0xFFFFF000 ? 0 : i;
-}
-
-/*
- * return size of given file or -1 (max_size) if fail
- */
-uint32_t GetFileSize(char *name)
-{
-  struct stat fs;
-  int handle;
-  int i;
-
-  handle = open(name, O_RDONLY);
-  if(handle < 0) return -1;
-
-  i = fstat(handle, &fs);
-  close(handle);
-  return i < 0 ? -1 : fs.st_size;
 }

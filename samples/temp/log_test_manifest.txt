@@ -1,9 +1,7 @@
 version            =11nov2011
 zerovm             =python
-nexe               =samples/temp/argv0.c_x86_64.nexe
+nexe               =samples/temp/argv0_user_log.c_x86_64.nexe
 maxnexe            =268435456
-input              =samples/temp/input.data
-maxinput           =1073741824
 #etag              =123e56b5b54abf5cc7d0334d2312a84b
 #content-type      =application/octet-stream
 #x-timestamp       =1321020198.91233
@@ -11,8 +9,6 @@ maxinput           =1073741824
 #x-object-meta-tag =Base:10
 #x-object-meta-tag =Format:Pickle
 input_mnfst        =/tmp/tmpeK5RlD/tmp_test_object_server_ObjectController/sda1/tmp/tmpqBQw4P
-output             =samples/temp/output.data
-maxoutput          =67108864
 output_mnfst       =samples/temp/report_manifest.txt
 maxmnfstline       =1024
 maxmnfstlines      =128
@@ -25,7 +21,7 @@ kill_timeout       =1
 ?#status           =optional
 ?#content-type     =optional
 ?#x-object-meta-tag=optional
-log                = samples/temp/argv0.c_x86_64.log
+log                = samples/temp/log_test.c_x86_64.log
 
 == this is a new feature. user_log key expects int value [1..x]. value mean amopunt of pages allocated for the log
 == todo: make it like keys above: name, size. something like: user_log = nexe_log.txt \n max_user_log = 1

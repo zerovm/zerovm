@@ -96,9 +96,9 @@ int NaClSignalContextIsUntrusted(const struct NaClSignalContext *sigCtx) {
      * an equivalent of sigaltstack() and this signal handler is
      * insecure there.
      */
-#if NACL_WINDOWS
+    if (!NACL_WINDOWS) {
       DCHECK(!NaClIsUserAddr(thread->nap, (uintptr_t) pointer_into_stack));
-#endif
+    }
     return NaClIsUserAddr(thread->nap, sigCtx->prog_ctr);
   }
 #else

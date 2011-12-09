@@ -20,6 +20,17 @@
 #define NACL_sys_null                    1
 #define NACL_sys_nameservice             2
 
+/*
+ * d'b: onering syscall.
+ * todo: remove all other syscalls, simplify all regarded code
+ * - syscall handler
+ * - syscall common
+ * - syscall hook
+ * - syscall table loader
+ */
+#define One_ring                         3
+/* d'b end */
+
 #define NACL_sys_dup                     8
 #define NACL_sys_dup2                    9
 #define NACL_sys_open                   10

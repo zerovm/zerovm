@@ -12,6 +12,7 @@
 #include <time.h>
 #include <emmintrin.h>
 #include <smmintrin.h>
+#include "zerovm_manifest.h"
 
 #if 0
 #				define DEBUG
@@ -403,96 +404,73 @@ void aligned_free(void *ptr)
   free(((void**)ptr)[-1]);
 }
 
-void show_help_and_exit()
-{
-	printf("usage: sorter <input file name> <output file name>\n");
-	exit(1);
-}
-
-/*
- * get number of elements in the given file
- * and check if it is power of 2. otherwise return -1
- */
-int get_elements_count(FILE *in)
-{
-	int result = 0;
-
-  /* file open error */
-	if(in == NULL) return -1;
-
-	fseek(in, 0, SEEK_END);
-	result = ftell(in) /ELEMENT_SIZE;
-	fseek(in, 0, SEEK_SET);
-
-  /* file must contain power of 2 32-bit integers */
-	if(result & (result - 1)) return -1;
-
-	return result;
-}
-
 int main(int argc, char **argv)
 {
-	int32_t   err;
 	uint32_t  chunk_size = DEFAULT_CHUNK_SIZE;
 	uint32_t  cnt;
 	uint32_t  *d; /* data to sort */
 	uint32_t  *buf; /* extra space to sort */
-	FILE 			*in = NULL;
-	FILE			*out = NULL;
+	struct MinorManifest *m;	
 
-  /* check the command line */
- 	if (argc != 3)
-		show_help_and_exit();
-
-  /* open input file */
-  printf("open data to test.. ");
-	in = fopen(argv[1], "rb");
-	if(in == NULL)
+	/* check if in argv[0] we got manifest structure */
+  m = (struct MinorManifest *)argv[0];
+  if(m->mask)
+  {
+    printf("manifest structure wasn't passed; argv[0] = %s\n", argv[0]);
+    return 1;
+  }  
+  
+  /* check if output is valid */
+  if(m->input_map_file.p == 0 || m->input_map_file.size == 0)
+  {
+    printf("invalid input map\n");
+    return 3;
+  }
+  
+  /* check if output is valid */
+  if(m->output_map_file.p == 0 || m->output_map_file.size == 0)
+  {
+    printf("invalid output map\n");
+    return 4;
+  }
+  
+  /* check if input map size equal to output map size */
+  if(m->input_map_file.size != m->output_map_file.size)
 	{
-		printf("\rinput file open error\n");
-		return 1;
-	}
+		printf("size of input and output maps are not equal %u != %u\n", 
+		  m->input_map_file.size, m->output_map_file.size);
+		return 5;
+	}  
 
-	cnt = err = get_elements_count(in);
-	if(err < 0)
+	cnt = m->input_map_file.size / sizeof(*d);
+	if(cnt & (cnt - 1))
 	{
-		printf("\rwrong number of elements in the input file\n");
-		return 1;
+		printf("\rwrong number of elements in the input file - [%d]\n", cnt);
+		return 6;
 	}
 	printf("number of elements = %d\n", cnt);
-
-	/* Allocate Memory */
-	d = (uint32_t *) aligned_malloc(sizeof(uint32_t) * cnt, 16);
-	if (d == NULL) _eoutput("Can't allocate memory\n");
-	buf = (uint32_t *) aligned_malloc(sizeof(uint32_t) * cnt, 16);
+	
+	/*
+	 * about memory allocation, mapping and alignement:
+	 * since we got our data to sort through mapped file
+	 * we don't have to allocate memory. moreover zerovm
+	 * always align allocated files to 64k bound, so we
+	 * don't have to worry about alignement
+	 * note: for buf we have to allocate aligned memory :(
+	 */
+	/*
+	 * update: we cannot change input data. all data given
+	 * by proxy should be untouched. so we copy everything
+	 * from input to output
+	 */	
+	memcpy((void*)m->output_map_file.p, (void*)m->input_map_file.p, m->input_map_file.size);
+	d = (uint32_t *) m->output_map_file.p;
+	buf = (uint32_t *) aligned_malloc(sizeof(uint32_t) * cnt, 16);	
 	if (buf == NULL) _eoutput("Can't allocate memory\n");
-
-  /* read sorted data */
-  err = fread(d, sizeof(uint32_t), cnt, in);
-  printf("data to test been read\n");
 
 	/* Bitonic sort */
   printf("data sorting.. ");
 	CLOCK(bitonic_sort_chunked((float*)d, cnt, (float*)buf, 1u << chunk_size));
-
-  /* open output file */
-  printf("open file to save results.. ");
-	out = fopen(argv[2], "wb");
-	if(out == NULL)
-	{
-		printf("\routput file open error     \n");
-		return 1;
-	}
-  printf("OK\n");
-
-  /* store results */
-  printf("saving results.. ");
-  fwrite(d, sizeof(uint32_t), cnt, out);
-  printf("OK\n");	
-
-	/* Deallocating memory */
-	aligned_free(d);
-	aligned_free(buf);
-
+  
 	return EXIT_SUCCESS;
 }

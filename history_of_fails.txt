@@ -1,0 +1,8 @@
+________________________________________________________________
+2011.11.25
+
+task:
+extend user address space from 4gb (for x86/64) to 16gb
+result:
+total fail. i should read nacl paper, ilp32 doctrine. 1.5 day loss.
+

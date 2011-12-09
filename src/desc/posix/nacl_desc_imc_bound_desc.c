@@ -161,8 +161,7 @@ int NaClDescImcBoundDescAcceptConn(struct NaClDesc *vself,
     goto cleanup;
   }
 
-#if NACL_OSX
-/*  if (NACL_OSX) {*/
+  if (NACL_OSX) {
     /*
      * Send a message to acknowledge that we received the socket FD
      * successfully.  This is part of a workaround for a Mac OS X
@@ -174,8 +173,7 @@ int NaClDescImcBoundDescAcceptConn(struct NaClDesc *vself,
       retval = -NACL_ABI_EIO;
       goto cleanup;
     }
-/*  }*/
-#endif
+  }
 
   if (!NaClDescImcDescCtor(peer, received_fd)) {
     retval = -NACL_ABI_EMFILE;

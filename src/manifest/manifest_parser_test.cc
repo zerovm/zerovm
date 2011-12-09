@@ -7,10 +7,11 @@
  *      Author: d'b
  */
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include "gtest/gtest.h"
 #include "src/service_runtime/sel_ldr.h"
-#include "src/service_runtime/manifest_parser.h"
+#include "src/manifest/manifest_parser.h"
 
 #define MANIFEST_FILE "manifest_1.txt"
 

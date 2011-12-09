@@ -49,7 +49,7 @@
 #include "src/service_runtime/include/sys/mman.h"
 #include "src/service_runtime/include/sys/stat.h"
 
-#include "src/service_runtime/zmq_syscalls.h" /* d'b */
+#include "src/manifest/zmq_syscalls.h" /* d'b */
 
 
 /*

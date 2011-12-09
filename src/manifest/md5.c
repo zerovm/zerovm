@@ -288,7 +288,7 @@ UINT4 *in;
 
 /* d'b
  * return md5 hash of the given memory block
- * note: malloc(17)
+ * note: malloc()
  */
 char* MD5 (unsigned char *buf, unsigned size)
 {

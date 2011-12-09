@@ -198,19 +198,21 @@ int NaClHostDescUnmap(void    *start_addr,
           ? -NaClXlateErrno(errno) : retval);
 }
 
-/* d'b
+/* d'b ###
  * a new field initialization added (char *channel)
  * constructor signature is changed
  */
 int NaClHostDescCtor(struct NaClHostDesc  *d,
-                     int                  fd,
-                     char 				  *channel) {
+                     int                  fd) {
+//  int NaClHostDescCtor(struct NaClHostDesc  *d,
+//                       int                  fd,
+//                       char           *channel) {
   d->d = fd;
-  if (NULL != channel)
-  {
-	  strncpy(d->channel, channel, sizeof d->channel);
-	  d->channel[sizeof(d->channel) - 1] = '\0';
-  }
+//  if (NULL != channel)
+//  {
+//	  strncpy(d->channel, channel, sizeof d->channel);
+//	  d->channel[sizeof(d->channel) - 1] = '\0';
+//  }
   NaClLog(3, "NaClHostDescCtor: success.\n");
   return 0;
 }
@@ -271,7 +273,8 @@ int NaClHostDescOpen(struct NaClHostDesc  *d,
     /* cannot access anything other than a real file */
     return -NACL_ABI_EPERM;
   }
-  return NaClHostDescCtor(d, host_desc, NULL); /* d'b */
+//  return NaClHostDescCtor(d, host_desc, NULL); /* d'b ### */
+  return NaClHostDescCtor(d, host_desc);
 }
 
 int NaClHostDescPosixDup(struct NaClHostDesc  *d,

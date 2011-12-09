@@ -1,6 +1,20 @@
 = sort 32-bit unsigned integers from the given input file and put it to given output file
+= we use output.data as input and output. that's why in this manifest no "input" key used
 
-nexe = sort_uint_proper_with_args.c_x86_64.nexe
-log = sort.log
-cmdline = random.dat sorted.dat
+version            =11nov2011
+zerovm             =python
+nexe               =samples/sort/sort_uint_proper_with_args.c_x86_64.nexe
+maxnexe            =268435456
+#content-type      =application/octet-stream
+input              =samples/sort/output.data
+maxinput           =67108864
+output             =samples/sort/sorted.data
+maxoutput          =67108864
+output_mnfst       =samples/sort/sort_report.txt
+?zerovm_retcode    =required
+?zerovm_status     =required
+?etag              =required
+?#retcode          =optional
+?#status           =optional
+log                = samples/sort/sort.log
 

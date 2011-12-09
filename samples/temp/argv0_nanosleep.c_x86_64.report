@@ -1,0 +1,7 @@
+zerovm_retcode     =0
+zerovm_status      =samples/temp/argv0_nanosleep.c_x86_64.log
+etag               =6f3c943fc5078ee66948dceacf0ad6ba
+#retcode           =13
+#status            =ok.
+#content-type      =application/octet-stream
+#x-object-meta-tag =Format:Pickle

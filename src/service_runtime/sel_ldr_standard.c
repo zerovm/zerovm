@@ -40,7 +40,7 @@
 #include "src/service_runtime/sel_ldr_thread_interface.h"
 #include "src/service_runtime/sel_util.h"
 #include "src/service_runtime/sel_addrspace.h"
-#include "src/service_runtime/manifest_parser.h"
+#include "src/manifest/manifest_setup.h"
 
 #if !defined(SIZE_T_MAX)
 # define SIZE_T_MAX     (~(size_t) 0)
@@ -553,22 +553,7 @@ int NaClCreateMainThread(struct NaClApp     *nap,
    * code does not look like string data....
    */
 
-  /* d'b
-   * check if argv[0] holds manifest structure
-   * and correct "argv_len[0]" and "size" as need
-   */
-
-  i = *argv[0] ? 0 : 1;
-  if (i)
-  {
-    struct MinorManifest *m = (struct MinorManifest *) argv[0];
-    argv_len[0] = m->size;
-    size += argv_len[0];
-  }
-
-  /* for (i = 0; i < argc; ++i) { */
-  for (; i < argc; ++i) {
-  /* d'b */
+  for (i = 0; i < argc; ++i) {
     argv_len[i] = strlen(argv[i]) + 1;
     size += argv_len[i];
   }
@@ -644,25 +629,7 @@ int NaClCreateMainThread(struct NaClApp     *nap,
   *p++ = envc;
   *p++ = argc;
 
-  /* d'b
-   * under special condition argv[0] should be copied as binary data:
-   * if *argv == 0 it is manifest to pass to nexe, otherwise just strcpy() it
-   * if given, array has format: [0][(uint32_t) array size][..data..] where "data"
-   * is structure known to nexe (and to loader, of course)
-   */
-  i = *argv[0] ? 0 : 1;
-  if(i)
-  {
-    struct MinorManifest *m = (struct MinorManifest *)argv[0];
-    *p++ = (uint32_t) NaClSysToUser(nap, (uintptr_t) strp);
-    memcpy(strp, m, m->size);
-    strp += m->size;
-  }
-
-  /* for (i = 0; i < argc; ++i) { */
-  for (; i < argc; ++i) {
-  //### refactor it to one loop with memcpy instead of strcpy
-  /* d'b end */
+  for (i = 0; i < argc; ++i) {
     *p++ = (uint32_t) NaClSysToUser(nap, (uintptr_t) strp);
     NaClLog(2, "copying arg %d  %p -> %p\n",
             i, argv[i], strp);
