@@ -1,0 +1,79 @@
+=====================================================================
+== i/o switches. full list. optional. some switches now meaningless, 
+== placed here for completeness and future changes
+=====================================================================
+=Input = samples/onering/input.dat
+=InputMax = 9999
+=InputMaxGet = 10000
+=InputMaxGetCnt = 2
+=InputMaxPut = 0
+=InputMaxPutCnt = 0
+=InputMode = 1
+=Output = samples/onering/output.dat
+=OutputMax = 29999
+=OutputMaxGet = 30000
+=OutputMaxGetCnt = 3
+=OutputMaxPut = 40000
+=OutputMaxPutCnt = 4
+=OutputMode = 1
+=UserLog = samples/onering/user.log
+=UserLogMax = 8888
+=UserLogMaxGet = 10240
+=UserLogMaxGetCnt = 0
+=UserLogMaxPut = 0
+=UserLogMaxPutCnt = 0
+=UserLogMode = 0
+NetInput =
+NetInputMax = 
+NetInputMaxGet =
+NetInputMaxGetCnt =
+NetInputMaxPut =
+NetInputMaxPutCnt =
+NetInputMode =
+NetOutput =
+NetOutputMax = 
+NetOutputMaxGet =
+NetOutputMaxGetCnt =
+NetOutputMaxPut =
+NetOutputMaxPutCnt =
+NetOutputMode =
+
+=====================================================================
+== fields will be passed to nexe "as is"
+=====================================================================
+ContentType = application/octet-stream
+TimeStamp = 31415
+XObjectMetaTag = Format:Pickle
+UserETag = 1234567890
+
+=====================================================================
+== just need to be valid switches, value is ignored
+== actually all these fields are required, it always will 
+== be included in report. so they can be just skipped in the manifest
+=====================================================================
+ReportRetCode = 0
+ReportEtag = 0
+ReportUserRetCode = 0
+ReportContentType = 0
+ReportXObjectMetaTag = 0
+
+=====================================================================
+== switches for zerovm. some of them used to control nexe, some
+== for the internal zerovm needs
+=====================================================================
+Version = 11nov2011
+ZeroVM = don't know what is this for
+Log = samples/onering/zerovm.log
+Report = samples/onering/report.log
+Nexe = samples/syscallback/syscallback.nexe
+NexeMax = 10000000
+NexeEtag =
+Timeout = 60
+KillTimeout = 90
+MemMax = 1111
+CPUMax = 2222
+SyscallsMax = 3333
+SetupCallsMax = 2
+Blob =
+CommandLine = command line test 123
+
