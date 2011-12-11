@@ -683,8 +683,8 @@ int main(int argc, char **argv)
     enum ChannelType ch;
     for(ch = InputChannel; ch < CHANNELS_COUNT; ++ch)
     {
-      if(ConstructChannel(&state, ch)) continue;
-      MountChannel(&state, ch);
+      if(ConstructChannel(nap, ch)) continue;
+      MountChannel(nap, ch);
     }
   }
   /* d'b end */
@@ -872,13 +872,16 @@ int main(int argc, char **argv)
   	nexe_argv = argv + optind;
   }
 
+  /* set user space to max_mem */
+  PreallocateUserMemory(nap);
+
   if (!NaClCreateMainThread(nap, nexe_argc, nexe_argv,
   		NaClEnvCleanserEnvironment(&env_cleanser)))
   {
   	fprintf(stderr, "creating main thread failed\n");
     goto done;
   }
-  /* d'b */
+  /* d'b end */
 
   NaClEnvCleanserDtor(&env_cleanser);
 

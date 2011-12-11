@@ -20,7 +20,7 @@
 
 #include <src/manifest/manifest_parser.h>
 #include <src/manifest/manifest_setup.h>
-
+#include "src/service_runtime/nacl_syscall_common.h"
 /*
  * set "prefix" (channel name) by "ch" (channel id)
  * note: prefix must have enough space to hold it
@@ -160,9 +160,14 @@ void SetupUserPolicy(struct NaClApp *nap)
 
   /* setup counters */
   policy->cnt_cpu = 0;
+  policy->cnt_cpu_last = 0;
   policy->cnt_mem = 0;
   policy->cnt_setup_calls = 0;
   policy->cnt_syscalls = 0;
+  policy->heap_ptr = 0; /* set user heap to NULL until it allocated */
+
+  /* clear syscallback */
+  policy->syscallback = 0;
 
   /* setup custom attributes */
 #define STRNCPY_NULL(a, b, n) if ((a) && (b)) strncpy(a, b, n);
@@ -200,3 +205,23 @@ void SetupSystemPolicy(struct NaClApp *nap)
 
   nap->manifest->system_setup = policy;
 }
+
+/* ### temporary disabled
+ * preallocate memory area of given size. abort if fail
+ */
+void PreallocateUserMemory(struct NaClApp *nap)
+{
+  return; // ###
+
+//  struct SetupList *policy = nap->manifest->user_setup;
+//  policy->heap_ptr = NaClCommonSysMmapIntern(nap, 0, policy->max_mem, 3, 0x22, -1, 0);
+//
+//  /* why 0xfffff000? 1. 0x1000 reserved for error codes 2. it is still larger then 4gb - stack */
+//  COND_ABORT(policy->heap_ptr > 0xfffff000, "cannot preallocate memory for user\n");
+}
+
+
+
+
+
+

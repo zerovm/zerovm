@@ -826,6 +826,12 @@ static int32_t NaClSysMmapDecoder(struct NaClAppThread *natp) {
     uint32_t offp;
   } p = *(struct NaClSysMmapArgs *) natp->syscall_args;
 
+  // ### temporary disabled
+  /* d'b: disable user malloc() */
+////  return NACL_ABI_ENOMEM;
+//  return natp->nap->manifest->user_setup->heap_ptr;
+  /* d'b end */
+
   return NaClSysMmap(natp, (void *) (uintptr_t) p.start, (size_t)  p.length, (int)  p.prot, (int)  p.flags, (int)  p.d, (nacl_abi_off_t *) (uintptr_t) p.offp);
 }
 
@@ -835,6 +841,11 @@ static int32_t NaClSysMunmapDecoder(struct NaClAppThread *natp) {
     uint32_t start;
     uint32_t length;
   } p = *(struct NaClSysMunmapArgs *) natp->syscall_args;
+
+  // ### temporary disabled
+  /* d'b: disable user free() */
+//  return NACL_ABI_EFAULT;
+  /* d'b end */
 
   return NaClSysMunmap(natp, (void *) (uintptr_t) p.start, (size_t)  p.length);
 }

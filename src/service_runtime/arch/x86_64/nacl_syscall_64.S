@@ -32,6 +32,31 @@
 IDENTIFIER(NaClSyscallSeg):
         cld
 
+        /* d'b: do we have syscallback? */
+        movq    IDENTIFIER(syscallback)(%rip), %rax
+        test		%rax, %rax
+        je			no_intercept
+
+				/* get syscall number*/
+        movl    0x0(%rsp), %eax
+        subl 		$0x1000c, %eax
+        shrl		$0x5, %eax
+
+        /* is that exit/onering? */
+        cmpl		$0x3, %eax /* onering */
+        je      no_intercept
+        cmpl		$0x1e, %eax /* exit */
+        je      no_intercept
+
+        /* jump to the untrusted handler */
+        // get syscallback address. yes, again. we only may use rax and
+        // (re)storing register will take same or even more time/size
+        movq    IDENTIFIER(syscallback)(%rip), %rax
+        jmpq		*%rax
+
+no_intercept:
+        /* d'b end */
+
         /*
          * pushl   %r9d
          * pushl   %r8d

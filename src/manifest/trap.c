@@ -11,6 +11,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <errno.h>
+#include <sys/time.h>
 
 #include "src/manifest/trap.h"
 #include "src/manifest/manifest_setup.h"
@@ -18,15 +19,57 @@
 #include "src/platform/nacl_log.h"
 #include "api/zvm_manifest.h"
 #include "src/service_runtime/sel_ldr.h"
+#include "src/service_runtime/nacl_globals.h"
 
-/* ### pause cpu time counting */
-static void PauseCpuClock(struct SetupList *policy)
+/* pause cpu time counting. update cnt_cpu */
+void PauseCpuClock(struct SetupList *policy)
 {
+  clock_t current = clock();
+  policy->cnt_cpu += current - policy->cnt_cpu_last;
+  policy->cnt_cpu_last = current;
 }
 
-/* ### resume cpu time counting */
-static void ResumeCpuClock(struct SetupList *policy)
+/* resume cpu time counting */
+void ResumeCpuClock(struct SetupList *policy)
 {
+  policy->cnt_cpu_last = clock();
+}
+
+/*
+ * validate and set syscallback (both local and global)
+ * return 0 if syscallback installed, otherwise -1
+ */
+static int32_t UpdateSyscallback(struct NaClApp *nap, struct SetupList *hint)
+{
+  int32_t addr = hint->syscallback;
+  int32_t retcode = ERR_CODE;
+  syscallback = 0;
+  nap->manifest->user_setup->syscallback = 0;
+
+#define MAX_OP_SIZE 0x10 /* ### take it from the validator */
+#define OP_ALIGNEMENT 0x10 /* ### take it from the validator */
+
+  if(!addr) return OK_CODE; /* user wants to uninstall syscallback */
+
+  /* check alignement */
+  if(addr & (OP_ALIGNEMENT - 1)) return ERR_CODE;
+
+  /* seek syscallback in static text (aware of right border proximity) */
+  if(addr >= nap->dynamic_text_start && addr < nap->dynamic_text_end - MAX_OP_SIZE)
+    retcode = OK_CODE;
+
+  /* seek placement in dynamic text (aware of right border proximity) */
+  if(addr >= NACL_TRAMPOLINE_END && addr < nap->static_text_end - MAX_OP_SIZE )
+    retcode = OK_CODE;
+
+  /* set the new syscallback if found in the proper place */
+  if(retcode == OK_CODE)
+  {
+    nap->manifest->user_setup->syscallback = addr;
+    syscallback = NaClUserToSys(nap, (intptr_t) addr);
+  }
+
+  return retcode;
 }
 
 /*
@@ -70,14 +113,11 @@ int32_t TrapReadHandle(struct NaClApp *nap,
   if(size < 1) return -OUT_OF_LIMITS;
 
   /* update counters (even if syscall failed) */
-  ++nap->manifest->user_setup->cnt_syscalls;
   ++fd->cnt_gets;
   fd->cnt_get_size += size;
 
   /* read data */
-  PauseCpuClock(nap->manifest->user_setup);
   retcode = pread(fd->handle, sys_buffer, (size_t)size, (off_t)offset);
-  ResumeCpuClock(nap->manifest->user_setup);
 
   return retcode;
 }
@@ -122,91 +162,14 @@ int32_t TrapWriteHandle(struct NaClApp *nap,
   if(size < 1) return -OUT_OF_LIMITS;
 
   /* update counters (even if syscall failed) */
-  ++nap->manifest->user_setup->cnt_syscalls;
   ++fd->cnt_puts;
   fd->cnt_put_size += size;
 
   /* read data */
-  PauseCpuClock(nap->manifest->user_setup);
   retcode = pwrite(fd->handle, sys_buffer, (size_t)size, (off_t)offset);
-  ResumeCpuClock(nap->manifest->user_setup);
 
   return retcode;
 }
-
-///*
-// * the only purpouse of this function existance is removing code doubling
-// * for TrapReadHandle() and TrapWriteHandle(). (cure worse than the disease?)
-// */
-//static int32_t TrapAccessHandle(struct NaClApp *nap,
-//    int32_t desc, char *buffer, int32_t size, int64_t offset,
-//    int32_t *cnt_accs, int32_t *max_accs, int64_t *max_acc_size, int64_t *cnt_acc_size,
-//    ssize_t (*func)(int, void*, size_t, off_t), char *func_name)
-//{
-//  struct PreOpenedFileDesc *fd;
-//  int32_t tail;
-//  char *sys_buffer;
-//  int32_t retcode;
-//
-//  /* convert address and check buffer */
-//  sys_buffer = (char*)NaClUserToSys(nap, (uintptr_t) buffer);
-//
-//  NaClLog(4, "%s() invoked: desc=%d, buffer=0x%x, size=%d, offset=%d\n",
-//      func_name, desc, buffer, size, offset);
-//
-//  /* take fd from nap with given desc */
-//  if(nap == NULL) return -INTERNAL_ERR;
-//  fd = GetPreOpenedFileDesc(nap->manifest->user_setup, desc);
-//  if(fd == NULL) return -INVALID_DESC;
-//
-//  /* check arguments sanity */
-//  if(size < 1) return -INSANE_SIZE;
-//  if(offset < 0) return -INSANE_OFFSET;
-//
-//  /* check/update limits/counters */
-//  if(offset >= fd->fsize) return -OUT_OF_BOUNDS;
-//  if(*cnt_accs >= *max_accs) return -OUT_OF_LIMITS;
-//
-//  tail = *max_acc_size - *cnt_acc_size;
-//  if(size > tail) size = tail;
-//  if(size < 1) return -OUT_OF_LIMITS;
-//
-//  /* update counters (even if syscall failed) */
-//  ++nap->manifest->user_setup->cnt_syscalls;
-//  ++*cnt_accs;
-//  *cnt_acc_size += size;
-//
-//  /* read data */
-//  PauseClock();
-//  retcode = func(desc, buffer, (size_t)size, (off_t)offset);
-//  ResumeClock();
-//
-//  return retcode;
-//}
-//
-///*
-// * read specified amount of bytes from given desc/offset to buffer
-// * return amount of read bytes or -1 if call failed
-// */
-//static int32_t TrapReadHandle(struct NaClApp *nap,
-//    int32_t desc, char *buffer, int32_t size, int64_t offset)
-//{
-//  struct PreOpenedFileDesc *fd;
-//  return TrapAccessHandle(desc, buffer, size, offset, fd->cnt_puts, fd->max_puts,
-//                          fd->max_put_size, fd->cnt_put_size, pread(), __func__);
-//}
-//
-///*
-// * write specified amount of bytes from buffer to given desc/offset
-// * return amount of wrote bytes or -1 if call failed
-// */
-//static int32_t TrapWriteHandle(struct NaClApp *nap,
-//    int32_t desc, char *buffer, int32_t size, int64_t offset)
-//{
-//  struct PreOpenedFileDesc *fd;
-//  return TrapAccessHandle(desc, buffer, size, offset, fd->cnt_puts, fd->max_puts,
-//                          fd->max_put_size, fd->cnt_put_size, pwrite(), __func__);
-//}
 
 /*
  * user request to change limits for system resources. for now we only can decrease bounds
@@ -222,7 +185,11 @@ static int32_t TrapUserSetupHandle(struct NaClApp *nap, struct SetupList *h)
   int32_t retcode = OK_CODE;
   enum ChannelType ch;
 
-  /* check/count this call */
+  /*
+   * check/count this call. decrease number of syscalls
+   * since this call is not really "system"
+   */
+  --nap->manifest->user_setup->cnt_syscalls;
   if(policy->max_setup_calls < ++policy->cnt_setup_calls)
     return -OUT_OF_LIMITS;
 
@@ -264,10 +231,15 @@ static int32_t TrapUserSetupHandle(struct NaClApp *nap, struct SetupList *h)
 
   /* set system fields n/a to change */
   hint->self_size = policy->self_size; /* set self size */
+  hint->heap_ptr = policy->heap_ptr; /* set self size */
   STRNCPY_NULL(hint->content_type, policy->content_type, CONTENT_TYPE_LEN);
   STRNCPY_NULL(hint->timestamp, policy->timestamp, TIMESTAMP_LEN);
   STRNCPY_NULL(hint->user_etag, policy->user_etag, USER_TAG_LEN);
   STRNCPY_NULL(hint->x_object_meta_tag, policy->x_object_meta_tag, X_OBJECT_META_TAG_LEN);
+
+  /* update syscallback */
+  if(UpdateSyscallback(nap, hint) == ERR_CODE) retcode = ERR_CODE;
+
 #undef STRNCPY_NULL
 #undef TRY_UPDATE
   return retcode;
@@ -319,3 +291,4 @@ int32_t TrapHandler(struct NaClAppThread *natp, uint32_t args)
 
   return retcode;
 }
+

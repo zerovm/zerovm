@@ -20,7 +20,11 @@
  *
  * 2011-12-04
  * text user manifest removed. instead of it user can use UserSetup object.
- * with
+ *
+ * 2011-12-11
+ * SystemList and Report structures removed. zvm onering wrappers updated.
+ * SetupList structure updated with syscallback to support a new engine (see
+ * "syscall overloading" in progress.txt
  *
  * 2011-11-20
  * d'b
@@ -126,6 +130,7 @@ struct PreOpenedFileDesc
 struct SetupList
 {
   uint32_t self_size; /* size of this struct */
+  uint32_t heap_ptr; /* pointer to the start of available for user ram */
 
   /* memory, cpu and other system resources limits */
   int32_t max_mem; /* max memory space available for user program < 4gb */
@@ -136,6 +141,7 @@ struct SetupList
   /* memory, cpu and other system resources counters */
   int32_t cnt_mem; /* amount of memory available for user */
   int32_t cnt_cpu; /* n/a for user */
+  int32_t cnt_cpu_last; /* n/a for user. initially should be set when nexe start */
   int32_t cnt_syscalls; /* syscalls limit */
   int32_t cnt_setup_calls;
 
@@ -143,53 +149,38 @@ struct SetupList
   char content_type[CONTENT_TYPE_LEN];
   char timestamp[TIMESTAMP_LEN]; /* time/seed for user */
   char x_object_meta_tag[X_OBJECT_META_TAG_LEN]; /* extened user attributes */
-  char user_etag[USER_TAG_LEN]; /* user output space checksum. disabled now*/
+  char user_etag[USER_TAG_LEN]; /* user output space checksum. disabled now */
+
+  /*
+   * user controlled syscalls handler. should be provided by nexe due runtime
+   * the field has mirror in "nacl_globals.h". both variables must be set simultaniously
+   * there is a difference between them however: syscallback in this structure uses
+   * user coordinates and global syscallback point to same place but represented with
+   * system address
+   */
+  int32_t syscallback;
 
   /* array of channels. not constructed channel has NULL in "name" */
   struct PreOpenedFileDesc channels[CHANNELS_COUNT];
 };
 
-/*
- * ### move it to "src", this struct is not intended to use at user side
- */
-struct SystemList
-{
-  char *version; /* zerovm version */
-  char *zerovm;
-  char *log; /* zerovm log file name */
-  char *report;  /* report to proxy file name */
-  char *nexe; /* nexe file name */
-  char *cmd_line; /* command line for nexe */
-  char *blob; /* blob library name */
-  int32_t nexe_max; /* max allowed nexe length */
-  char *nexe_etag; /* digital signature. reserved for a future "short" nexe validation */
-  int32_t timeout;
-  int32_t kill_timeout;
-};
-
-/*
- * ### move it to "src", this struct is not intended to use at user side
- */
-struct Report
-{
-  int32_t ret_code; /* zerovm return code */
-  char *etag; /* user output memory digital signature */
-  int32_t user_ret_code; /* nexe return code */
-  char *content_type; /* custom user attribute */
-  char *x_object_meta_tag; /* custom user attribute */
-};
-
 #ifdef USER_SIDE
 /* "One Ring" wrappers and logger */
 
-/* positional read file */
-int _trap_pread(int desc, void *buffer, size_t size, off_t offset);
+/*
+ * wrapper for zerovm "TrapUserSetup"
+ */
+int32_t zvm_setup(struct SetupList *hint);
 
-/* positional write file */
-int _trap_pwrite(int desc, void *buffer, size_t size, off_t offset);
+/*
+ * wrapper for zerovm "TrapRead"
+ */
+int32_t zvm_pread(int desc, char *buffer, int32_t size, int64_t offset);
 
-/* get (update) user policy */
-int _trap_setup(struct UserSetup *hint);
+/*
+ * wrapper for zerovm "TrapWrite"
+ */
+int32_t zvm_write(int desc, char *buffer, int32_t size, int64_t offset);
 
 /*
  * log message. 0 - if success. 1 - if log is full or has no space to

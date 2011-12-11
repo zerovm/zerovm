@@ -224,8 +224,6 @@ int32_t NaClSetBreak(struct NaClAppThread *natp,
     }
   }
 
-
-
 cleanup:
   NaClXMutexUnlock(&nap->mu);
 cleanup_no_lock:

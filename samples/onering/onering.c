@@ -9,8 +9,9 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include <malloc.h>
 
-#include "/home/dazo/sandbox/api/zvm_manifest.h"
+#include "/home/dazo/git/zerovm/api/zvm_manifest.h"
 
   /*
    * WARNING!
@@ -60,13 +61,13 @@ void ShowPolicy (struct SetupList *policy)
   /* show input fields */
   for(ch = InputChannel; ch < CHANNELS_COUNT; ++ch)
   {
-    /* guts */
+    /* guts. some of them are not allowed for user */
     fprintf(stderr, "CHANNEL NUMBER: %u\n", ch);
     fprintf(stderr, "self_size = %u\n", policy->channels[ch].self_size);
-    fprintf(stderr, "handle = %d\n", policy->channels[ch].handle);
-    fprintf(stderr, "name = %s\n", (char*)(uintptr_t)policy->channels[ch].name);
+//    fprintf(stderr, "handle = %d\n", policy->channels[ch].handle); /* n/a */
+//    fprintf(stderr, "name = %s\n", (char*)(uintptr_t)policy->channels[ch].name); /* n/a */
     fprintf(stderr, "type = %u\n", policy->channels[ch].type);
-    fprintf(stderr, "mounted = %d\n", policy->channels[ch].mounted);
+//    fprintf(stderr, "mounted = %d\n", policy->channels[ch].mounted); /* n/a */
     fprintf(stderr, "fsize = %lld\n", policy->channels[ch].fsize);
     fprintf(stderr, "buffer = %X\n", policy->channels[ch].buffer);
     fprintf(stderr, "bsize = %d\n", policy->channels[ch].bsize);
@@ -78,21 +79,22 @@ void ShowPolicy (struct SetupList *policy)
     fprintf(stderr, "max_get_size = %lld\n", policy->channels[ch].max_get_size);
     fprintf(stderr, "max_put_size = %lld\n", policy->channels[ch].max_put_size);
 
-    /* counters */
-    fprintf(stderr, "cnt_gets = %d\n", policy->channels[ch].cnt_gets);
-    fprintf(stderr, "cnt_puts = %d\n", policy->channels[ch].cnt_puts);
-    fprintf(stderr, "cnt_get_size = %lld\n", policy->channels[ch].cnt_get_size);
-    fprintf(stderr, "cnt_put_size = %lld\n", policy->channels[ch].cnt_put_size);
+    /* counters not allowed for user */
+//    fprintf(stderr, "cnt_gets = %d\n", policy->channels[ch].cnt_gets); /* n/a */
+//    fprintf(stderr, "cnt_puts = %d\n", policy->channels[ch].cnt_puts); /* n/a */
+//    fprintf(stderr, "cnt_get_size = %lld\n", policy->channels[ch].cnt_get_size); /* n/a */
+//    fprintf(stderr, "cnt_put_size = %lld\n", policy->channels[ch].cnt_put_size); /* n/a */
   }
 
   fprintf(stderr, "------------------------------------ guts --\n");
   fprintf(stderr, "self_size = %u\n", policy->self_size);
+  fprintf(stderr, "heap_ptr = 0x%X\n", policy->heap_ptr);
 
-  /* show system counters */
-  fprintf(stderr, "cnt_cpu = %d\n", policy->cnt_cpu);
-  fprintf(stderr, "cnt_mem = %d\n", policy->cnt_mem);
-  fprintf(stderr, "cnt_setup_calls = %d\n", policy->cnt_setup_calls);
-  fprintf(stderr, "cnt_syscalls = %d\n", policy->cnt_syscalls);
+  /* show system counters (not allowed for user) */
+//  fprintf(stderr, "cnt_cpu = %d\n", policy->cnt_cpu); /* n/a */
+//  fprintf(stderr, "cnt_mem = %d\n", policy->cnt_mem); /* n/a */
+//  fprintf(stderr, "cnt_setup_calls = %d\n", policy->cnt_setup_calls); /* n/a */
+//  fprintf(stderr, "cnt_syscalls = %d\n", policy->cnt_syscalls); /* n/a */
 
   /* show system limits */
   fprintf(stderr, "max_cpu = %d\n", policy->max_cpu);
@@ -113,13 +115,20 @@ int main(int argc, char **argv)
 {
   int retcode;
   char *buffer;
-  //struct SetupList hint;
-  struct SetupList *hint = malloc(sizeof(struct SetupList));
+  struct SetupList setup;
+  struct SetupList *hint = &setup;
 
   /* request policy 1st time. construct call parameters */
   retcode = zvm_setup(hint);
   fprintf(stderr, "retcode = %d\n", retcode);
   ShowPolicy(hint);
+//  buffer = (char*)hint->heap_ptr;
+
+  /* allocate memory to test malloc() engine */
+//  fprintf(stderr, "setup->heap_ptr = 0x%X\n", (int32_t)buffer);
+//  int i;
+//  for(i = 0; i < 100000; ++i)
+//    fprintf(stderr, "malloc(%d) = 0x%X\n", i, (uint32_t)malloc(i)); //131060
 
   /* request policy 2nd time with hint */
   hint->max_mem += 1; /* try to increase amount of available memory */
@@ -131,6 +140,7 @@ int main(int argc, char **argv)
   int chunk_size = 100;
   int position = 0;
   if((buffer = (char*) malloc(chunk_size)) != NULL)
+  if(1)
   {
     do {
       retcode = zvm_pread(InputChannel, buffer, chunk_size, position);

@@ -25,6 +25,30 @@ struct MasterManifestRecord
   char *value;
 };
 
+struct SystemList
+{
+  char *version; /* zerovm version */
+  char *zerovm;
+  char *log; /* zerovm log file name */
+  char *report;  /* report to proxy file name */
+  char *nexe; /* nexe file name */
+  char *cmd_line; /* command line for nexe */
+  char *blob; /* blob library name */
+  int32_t nexe_max; /* max allowed nexe length */
+  char *nexe_etag; /* digital signature. reserved for a future "short" nexe validation */
+  int32_t timeout;
+  int32_t kill_timeout;
+};
+
+struct Report
+{
+  int32_t ret_code; /* zerovm return code */
+  char *etag; /* user output memory digital signature */
+  int32_t user_ret_code; /* nexe return code */
+  char *content_type; /* custom user attribute */
+  char *x_object_meta_tag; /* custom user attribute */
+};
+
 /*
  * BIG MANIFEST
  * contain all other manifests, reports and settings for zerovm, proxy and nexe
@@ -79,6 +103,11 @@ char* MD5(unsigned char *buf, unsigned size);
  * note: malloc()
  */
 int32_t ConstructChannel(struct NaClApp *nap, enum ChannelType ch);
+
+/*
+ * preallocate memory area of given size. abort if fail
+ */
+void PreallocateUserMemory(struct NaClApp *nap);
 
 EXTERN_C_END
 

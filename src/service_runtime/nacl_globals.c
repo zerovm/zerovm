@@ -23,6 +23,7 @@ struct NaClMutex            nacl_thread_mu;
 struct NaClThreadContext    *nacl_user[NACL_THREAD_MAX] = {NULL};
 struct NaClThreadContext    *nacl_sys[NACL_THREAD_MAX] = {NULL};
 struct NaClAppThread        *nacl_thread[NACL_THREAD_MAX] = {NULL};
+int64_t                     syscallback = 0; /* d'b */
 
 /*
  * Hack for gdb.  This records xlate_base in a place where (1) gdb can find it,

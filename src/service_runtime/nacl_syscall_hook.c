@@ -28,6 +28,8 @@
 #include "src/service_runtime/include/bits/nacl_syscalls.h"
 #include "src/service_runtime/nacl_app_thread.h"
 #include "src/service_runtime/nacl_stack_safety.h"
+#include "src/manifest/trap.h" /* d'b: ResumeCpuClock(), PauseCpuClock() */
+#include "src/manifest/manifest_setup.h" /* d'b: ResumeCpuClock(), PauseCpuClock() */
 
 int NaClArtificialDelay = -1;
 
@@ -80,6 +82,17 @@ NORETURN void NaClSyscallCSegHook(int32_t tls_idx) {
 
   natp = nacl_thread[tls_idx];
   nap = natp->nap;
+
+  /*
+   * d'b: nexe just invoked some syscall. stop cpu time counting
+   * increase syscalls counter (correction for setup call will be
+   * corrected later). small mallocs and other calls which are
+   * not really "system" will be accounted anyway!
+   */
+  PauseCpuClock(nap->manifest->user_setup);
+  ++nap->manifest->user_setup->cnt_syscalls;
+  /* d'b end */
+
   user = &natp->user;
   sp_user = NaClGetThreadCtxSp(user);
 
@@ -183,6 +196,8 @@ NORETURN void NaClSyscallCSegHook(int32_t tls_idx) {
   user_ret = (nacl_reg_t) NaClSandboxCodeAddr(nap, (uintptr_t)user_ret);
   NaClStackSafetyNowOnUntrustedStack();
 
+  /* d'b: give control to the nexe. start cpu time counting */
+  ResumeCpuClock(nap->manifest->user_setup);
   NaClSwitchToApp(natp, user_ret);
   /* NOTREACHED */
 

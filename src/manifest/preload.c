@@ -51,6 +51,7 @@ int PreloadChannel(struct NaClApp *nap, struct PreOpenedFileDesc* channel)
   COND_ABORT(!channel->name, "cannot resolve channel name\n");
 
   /* open file */
+  // ### add O_DIRECT needs #define _GNU_SOURCE
   channel->handle = open((char*)channel->name, GetChannelOpenFlags(channel), S_IRWXU);
   COND_ABORT(channel->handle < 0, "channel open error\n");
 

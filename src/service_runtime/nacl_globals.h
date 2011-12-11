@@ -19,6 +19,7 @@ struct NaClAppThread;
 struct NaClMutex;
 struct NaClApp;
 
+extern int64_t syscallback; /* d'b */
 extern struct NaClThreadContext *nacl_user[];
 extern struct NaClThreadContext *nacl_sys[];
 /*

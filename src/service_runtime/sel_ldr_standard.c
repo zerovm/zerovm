@@ -41,6 +41,7 @@
 #include "src/service_runtime/sel_util.h"
 #include "src/service_runtime/sel_addrspace.h"
 #include "src/manifest/manifest_setup.h"
+#include "src/manifest/trap.h" /* d'b: PauseCpuClock(), ResumeCpuClock() */
 
 #if !defined(SIZE_T_MAX)
 # define SIZE_T_MAX     (~(size_t) 0)
@@ -705,7 +706,11 @@ int NaClWaitForMainThreadToExit(struct NaClApp  *nap) {
   NaClXMutexLock(&nap->mu);
   NaClLog(3, " waiting for exit status\n");
   while (nap->running) {
+    /* d'b: cpu time accounting */
+    ResumeCpuClock(nap->manifest->user_setup);
     NaClXCondVarWait(&nap->cv, &nap->mu);
+    PauseCpuClock(nap->manifest->user_setup);
+    /* d'b end */
     NaClLog(3, " wakeup, nap->running %d, nap->exit_status %d\n",
             nap->running, nap->exit_status);
   }

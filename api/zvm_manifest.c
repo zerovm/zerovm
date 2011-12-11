@@ -9,7 +9,7 @@
 #include <stdio.h>
 
 #define USER_SIDE
-#include "api/zvm_manifest.h"
+#include "zvm_manifest.h"
 #undef USER_SIDE
 
 static char *log; /* pointer to log buffer available space */
@@ -33,10 +33,10 @@ int LogMessage(char *msg)
   if(!msg || *msg) return ERR_CODE;
   if(!log) return ERR_CODE;
   if(log_size < 1) return ERR_CODE;
+  msg_len =  strlen(msg);
   if(log_size < msg_len) ret_code = ERR_CODE;
 
   /* append message to log buffer */
-  msg_len =  strlen(msg);
   strncat(log, msg, log_size);
   log += msg_len;
   log_size -= msg_len;
@@ -44,28 +44,35 @@ int LogMessage(char *msg)
   return ret_code;
 }
 
-/* positional read file */
-int _trap_pread(enum ChannelType desc, void *buffer, size_t size, off_t offset)
+/* pointer to trampoline function */
+int32_t (*_trap)(uint64_t *in) = (int32_t (*)(uint64_t*))
+    0x10000 /* start of trampoline */ +
+    0x20 /* size of trampoline record */ *
+    3 /* onering syscall number */;
+
+/*
+ * wrapper for zerovm "TrapUserSetup"
+ */
+int32_t zvm_setup(struct SetupList *hint)
 {
-  int64_t in[] = { TrapRead, desc, buffer, size, offset };
-  int64_t out[1]; /* amount of read bytes or errno */
-  return nanosleep(in, out) ? ERR_CODE : *out;
-  // ### set errno like: errno = *out
+  uint64_t request[] = {TrapUserSetup, 0, (uint32_t)hint};
+  return _trap(request);
 }
 
-/* positional write file */
-int _trap_pwrite(enum ChannelType desc, void *buffer, size_t size, off_t offset)
+/*
+ * wrapper for zerovm "TrapRead"
+ */
+int32_t zvm_pread(int desc, char *buffer, int32_t size, int64_t offset)
 {
-  int64_t in[] = { TrapWrite, desc, buffer, size, offset };
-  int64_t out[1]; /* amount of written bytes or errno */
-  return nanosleep(in, out) ? ERR_CODE : *out;
-  // ### set errno like: errno = *out
+  uint64_t request[] = {TrapRead, 0, desc, (uint32_t)buffer, size, offset};
+  return _trap(request);
 }
 
-/* get (update) user policy */
-int _trap_setup(struct UserSetup *hint)
+/*
+ * wrapper for zerovm "TrapWrite"
+ */
+int32_t zvm_write(int desc, char *buffer, int32_t size, int64_t offset)
 {
-  int64_t in[] = { TrapUserSetup, hint };
-  if(hint) return nanosleep(in, NULL);
-  return ERR_CODE;
+  uint64_t request[] = {TrapWrite, 0, desc, (uint32_t)buffer, size, offset};
+  return _trap(request);
 }
