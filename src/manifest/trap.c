@@ -46,20 +46,19 @@ static int32_t UpdateSyscallback(struct NaClApp *nap, struct SetupList *hint)
   syscallback = 0;
   nap->manifest->user_setup->syscallback = 0;
 
-#define MAX_OP_SIZE 0x10 /* ### take it from the validator */
-#define OP_ALIGNEMENT 0x10 /* ### take it from the validator */
-
   if(!addr) return OK_CODE; /* user wants to uninstall syscallback */
+
+#define OP_ALIGNEMENT 0x20
 
   /* check alignement */
   if(addr & (OP_ALIGNEMENT - 1)) return ERR_CODE;
 
   /* seek syscallback in static text (aware of right border proximity) */
-  if(addr >= nap->dynamic_text_start && addr < nap->dynamic_text_end - MAX_OP_SIZE)
+  if(addr >= nap->dynamic_text_start && addr < nap->dynamic_text_end)
     retcode = OK_CODE;
 
   /* seek placement in dynamic text (aware of right border proximity) */
-  if(addr >= NACL_TRAMPOLINE_END && addr < nap->static_text_end - MAX_OP_SIZE )
+  if(addr >= NACL_TRAMPOLINE_END && addr < nap->static_text_end)
     retcode = OK_CODE;
 
   /* set the new syscallback if found in the proper place */
@@ -80,7 +79,7 @@ int32_t TrapReadHandle(struct NaClApp *nap,
     enum ChannelType desc, char *buffer, int32_t size, int64_t offset)
 {
   struct PreOpenedFileDesc *fd;
-  int32_t tail;
+  int64_t tail;
   char *sys_buffer;
   int32_t retcode;
 
@@ -130,7 +129,7 @@ int32_t TrapWriteHandle(struct NaClApp *nap,
     enum ChannelType desc, char *buffer, int32_t size, int64_t offset)
 {
   struct PreOpenedFileDesc *fd;
-  int32_t tail;
+  int64_t tail;
   char *sys_buffer;
   int32_t retcode;
 

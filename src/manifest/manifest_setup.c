@@ -49,10 +49,11 @@ int32_t ConstructChannel(struct NaClApp *nap, enum ChannelType ch)
 #define SET_LIMIT(a, limit)\
   do {\
     char str[1024];\
+    char *p;\
     if(!limit) break;\
     sprintf(str, "%s%s", prefix, limit);\
-    a = atoll(GetValueByKey(nap, str));\
-    if(a < 0) NaClLog(LOG_FATAL, "%s not allowed to be set to %ld\n", str, (int64_t)a);\
+    p = GetValueByKey(nap, str);\
+    a = p ? atoll(p) : 0;\
   } while (0);
 
   /* check if channel is set in manifest and set main attributes */

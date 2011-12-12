@@ -104,7 +104,7 @@ struct PreOpenedFileDesc
   int32_t bsize; /* buffer size */
 
   /* limits */
-  int32_t max_size; /* allowed channel size */
+  int64_t max_size; /* allowed channel size */
   int32_t max_gets; /* max allowed output read calls, 0 - no limit */
   int32_t max_puts; /* max allowed output write calls, 0 - no limit */
   int64_t max_get_size; /* amount of bytes allowed to read */

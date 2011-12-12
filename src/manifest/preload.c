@@ -46,9 +46,8 @@ static int GetChannelOpenFlags(struct PreOpenedFileDesc* channel)
 int PreloadChannel(struct NaClApp *nap, struct PreOpenedFileDesc* channel)
 {
   /* debug checks */
-  COND_ABORT(!channel, "channel is not constructed\n");
+  if(!channel->name) return -1; /* channel is not constructed. skip it */
   COND_ABORT(channel->mounted != LOADED, "channel is not supposed to be loaded\n");
-  COND_ABORT(!channel->name, "cannot resolve channel name\n");
 
   /* open file */
   // ### add O_DIRECT needs #define _GNU_SOURCE

@@ -140,7 +140,6 @@ int main(int argc, char **argv)
   int chunk_size = 100;
   int position = 0;
   if((buffer = (char*) malloc(chunk_size)) != NULL)
-  if(1)
   {
     do {
       retcode = zvm_pread(InputChannel, buffer, chunk_size, position);
