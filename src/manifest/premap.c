@@ -55,6 +55,23 @@ static int GetChannelMapProt(struct PreOpenedFileDesc* channel)
 }
 
 /*
+ * preallocate channel. for output files only. since we cannot say how much user
+ * program will use we only can allocate max size provided for current channel
+ * note: must be called from PremapChannel() after file opened and measured
+ * note: user_log file will be trimmed to asciiz string size it contain
+ */
+static void PreallocateChannel(struct PreOpenedFileDesc* channel)
+{
+  if(channel->fsize != channel->max_size &&
+      (channel->type == OutputChannel || channel->type == LogChannel))
+  {
+    int ret_code = ftruncate(channel->handle, channel->max_size);
+    COND_ABORT(ret_code < 0, "cannot set the channel size\n");
+    channel->fsize = channel->max_size;
+  }
+}
+
+/*
  * premap given file (channel). return 0 if success, otherwise negative errcode
  * note: malloc()
  */

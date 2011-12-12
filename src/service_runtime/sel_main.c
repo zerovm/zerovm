@@ -496,7 +496,9 @@ int main(int argc, char **argv)
       fprintf(stderr, "%s not found\n", state.manifest->system_setup->nexe);
       return 1;
     }
-    COND_ABORT(state.manifest->system_setup->nexe_max < size, "nexe file is greater then alowed\n");
+
+    if(state.manifest->system_setup->nexe_max)
+      COND_ABORT(state.manifest->system_setup->nexe_max < size, "nexe file is greater then alowed\n");
 
     /* ### channels initialization moved bellow because it is need initialized nacldesc dynarray */
 	}
@@ -928,7 +930,7 @@ int main(int argc, char **argv)
       char *p = (char*) NaClUserToSys(nap, (uint32_t)nap->manifest->user_setup->channels[LogChannel].buffer);
       off_t size = strlen(p);
       munmap(p, nap->manifest->user_setup->channels[LogChannel].bsize);
-      truncate(GetValueByKey(nap, (char*)nap->manifest->user_setup->channels[LogChannel].name), size);
+      truncate(GetValueByKey(nap, "UserLog"), size);
     }
   }
   /* d'b end */

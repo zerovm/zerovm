@@ -58,7 +58,8 @@ enum ChannelType {
 enum TrapCalls {
   TrapUserSetup = 17770430,
   TrapRead,
-  TrapWrite
+  TrapWrite,
+  TrapExit
 };
 
 /* nanosleep ret codes, only 2 because of nanosleep limitations */

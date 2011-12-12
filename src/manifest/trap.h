@@ -25,10 +25,10 @@ EXTERN_C_BEGIN
 int32_t TrapHandler(struct NaClAppThread *natp, uint32_t args);
 
 /* pause cpu time counting. update cnt_cpu */
-void PauseCpuClock(struct SetupList *policy);
+void PauseCpuClock(struct NaClApp *nap);
 
 /* resume cpu time counting */
-void ResumeCpuClock(struct SetupList *policy);
+void ResumeCpuClock(struct NaClApp *nap);
 
 EXTERN_C_END
 

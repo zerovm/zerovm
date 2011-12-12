@@ -41,6 +41,21 @@ static int GetChannelOpenFlags(struct PreOpenedFileDesc* channel)
 }
 
 /*
+ * preallocate channel. if size of the file is not 0 - skip. for output files only.
+ * note: must be called from PreloadChannel() after file opened and measured
+ */
+static void PreallocateChannel(struct PreOpenedFileDesc* channel)
+{
+  if(channel->fsize < 1 &&
+      (channel->type == OutputChannel || channel->type == LogChannel))
+  {
+    int ret_code = ftruncate(channel->handle, 1);
+    COND_ABORT(ret_code < 0, "cannot extend the channel\n");
+    channel->fsize = channel->max_size;
+  }
+}
+
+/*
  * preload given file (channel). return 0 if success, otherwise negative errcode
  */
 int PreloadChannel(struct NaClApp *nap, struct PreOpenedFileDesc* channel)

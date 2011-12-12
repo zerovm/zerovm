@@ -109,6 +109,24 @@ int32_t ConstructChannel(struct NaClApp *nap, enum ChannelType ch);
  */
 void PreallocateUserMemory(struct NaClApp *nap);
 
+/* system counters */
+int32_t AccountingSyscallsInc(struct NaClApp *nap);
+int32_t AccountingSyscallsDec(struct NaClApp *nap);
+int32_t AccountingMemInc(struct NaClApp *nap);
+int32_t AccountingMemDec(struct NaClApp *nap);
+int32_t AccountingSetupcallsInc(struct NaClApp *nap);
+int32_t AccountingSetupcallsDec(struct NaClApp *nap);
+
+/* channel counters */
+int32_t AccountingGetsInc(struct NaClApp *nap, enum ChannelType ch);
+int32_t AccountingGetsDec(struct NaClApp *nap, enum ChannelType ch);
+int32_t AccountingPutsInc(struct NaClApp *nap, enum ChannelType ch);
+int32_t AccountingPutsDec(struct NaClApp *nap, enum ChannelType ch);
+int32_t AccountingGetSizeInc(struct NaClApp *nap, enum ChannelType ch);
+int32_t AccountingGetSizeDec(struct NaClApp *nap, enum ChannelType ch);
+int32_t AccountingPutSizeInc(struct NaClApp *nap, enum ChannelType ch);
+int32_t AccountingPutSizeDec(struct NaClApp *nap, enum ChannelType ch);
+
 EXTERN_C_END
 
 #endif

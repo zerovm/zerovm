@@ -221,8 +221,31 @@ void PreallocateUserMemory(struct NaClApp *nap)
 //  COND_ABORT(policy->heap_ptr > 0xfffff000, "cannot preallocate memory for user\n");
 }
 
+/*
+ * user accounting. SetupList object counters
+ * all accounting procedures return 0 if succes and -1 if fail
+ */
 
+/* system counters */
+#define INCNT(cnt) if(nap->manifest) {++nap->manifest->user_setup->cnt; return 0;} return -1
+#define DECNT(cnt) if(nap->manifest) {--nap->manifest->user_setup->cnt; return 0;} return -1
 
+int32_t AccountingSyscallsInc(struct NaClApp *nap) { INCNT(cnt_syscalls); }
+int32_t AccountingSyscallsDec(struct NaClApp *nap) { INCNT(cnt_syscalls); }
+int32_t AccountingMemInc(struct NaClApp *nap) { INCNT(cnt_mem); }
+int32_t AccountingMemDec(struct NaClApp *nap) { INCNT(cnt_mem); }
+int32_t AccountingSetupcallsInc(struct NaClApp *nap) { INCNT(cnt_setup_calls); }
+int32_t AccountingSetupcallsDec(struct NaClApp *nap) { INCNT(cnt_setup_calls); }
 
+/* channel counters */
+#define INCHCNT(ch, cnt) if(nap->manifest) {++nap->manifest->user_setup->channels[ch].cnt; return 0;} return -1
+#define DECHCNT(ch, cnt) if(nap->manifest) {--nap->manifest->user_setup->channels[ch].cnt; return 0;} return -1
 
-
+int32_t AccountingGetsInc(struct NaClApp *nap, enum ChannelType ch) { INCHCNT(ch, cnt_gets); }
+int32_t AccountingGetsDec(struct NaClApp *nap, enum ChannelType ch) { DECHCNT(ch, cnt_gets); }
+int32_t AccountingPutsInc(struct NaClApp *nap, enum ChannelType ch) { INCHCNT(ch, cnt_puts); }
+int32_t AccountingPutsDec(struct NaClApp *nap, enum ChannelType ch) { DECHCNT(ch, cnt_puts); }
+int32_t AccountingGetSizeInc(struct NaClApp *nap, enum ChannelType ch) { INCHCNT(ch, cnt_get_size); }
+int32_t AccountingGetSizeDec(struct NaClApp *nap, enum ChannelType ch) { DECHCNT(ch, cnt_get_size); }
+int32_t AccountingPutSizeInc(struct NaClApp *nap, enum ChannelType ch) { INCHCNT(ch, cnt_put_size); }
+int32_t AccountingPutSizeDec(struct NaClApp *nap, enum ChannelType ch) { DECHCNT(ch, cnt_put_size); }

@@ -707,9 +707,9 @@ int NaClWaitForMainThreadToExit(struct NaClApp  *nap) {
   NaClLog(3, " waiting for exit status\n");
   while (nap->running) {
     /* d'b: cpu time accounting */
-    ResumeCpuClock(nap->manifest->user_setup);
+    ResumeCpuClock(nap);
     NaClXCondVarWait(&nap->cv, &nap->mu);
-    PauseCpuClock(nap->manifest->user_setup);
+    PauseCpuClock(nap);
     /* d'b end */
     NaClLog(3, " wakeup, nap->running %d, nap->exit_status %d\n",
             nap->running, nap->exit_status);

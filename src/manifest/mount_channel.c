@@ -71,18 +71,3 @@ uint64_t GetFileSize(const char *name)
   close(handle);
   return i < 0 ? -1 : fs.st_size;
 }
-
-/*
- * preallocate channel. if size of the file is not 0 - skip. for output files only.
- * note: must be called from PreloadChannel() after file opened and measured
- */
-void PreallocateChannel(struct PreOpenedFileDesc* channel)
-{
-  if(channel->fsize < 1 &&
-      (channel->type == OutputChannel || channel->type == LogChannel))
-  {
-    int ret_code = ftruncate(channel->handle, 1);
-    COND_ABORT(ret_code < 0, "cannot extend the channel\n");
-    channel->fsize = channel->max_size;
-  }
-}

@@ -1,44 +1,4 @@
 =====================================================================
-== i/o switches. full list. optional. some switches now meaningless, 
-== placed here for completeness and future changes
-=====================================================================
-=Input = samples/onering/input.dat
-=InputMax = 9999
-=InputMaxGet = 10000
-=InputMaxGetCnt = 2
-=InputMaxPut = 0
-=InputMaxPutCnt = 0
-=InputMode = 1
-=Output = samples/onering/output.dat
-=OutputMax = 29999
-=OutputMaxGet = 30000
-=OutputMaxGetCnt = 3
-=OutputMaxPut = 40000
-=OutputMaxPutCnt = 4
-=OutputMode = 1
-=UserLog = samples/onering/user.log
-=UserLogMax = 8888
-=UserLogMaxGet = 10240
-=UserLogMaxGetCnt = 0
-=UserLogMaxPut = 0
-=UserLogMaxPutCnt = 0
-=UserLogMode = 0
-NetInput =
-NetInputMax = 
-NetInputMaxGet =
-NetInputMaxGetCnt =
-NetInputMaxPut =
-NetInputMaxPutCnt =
-NetInputMode =
-NetOutput =
-NetOutputMax = 
-NetOutputMaxGet =
-NetOutputMaxGetCnt =
-NetOutputMaxPut =
-NetOutputMaxPutCnt =
-NetOutputMode =
-
-=====================================================================
 == fields will be passed to nexe "as is"
 =====================================================================
 ContentType = application/octet-stream
@@ -63,8 +23,8 @@ ReportXObjectMetaTag = 0
 =====================================================================
 Version = 11nov2011
 ZeroVM = don't know what is this for
-Log = samples/onering/zerovm.log
-Report = samples/onering/report.log
+Log = samples/syscallback/zerovm.log
+Report = samples/syscallback/report.log
 Nexe = samples/syscallback/syscallback.nexe
 NexeMax = 10000000
 NexeEtag =

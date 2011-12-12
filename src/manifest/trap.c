@@ -20,19 +20,40 @@
 #include "api/zvm_manifest.h"
 #include "src/service_runtime/sel_ldr.h"
 #include "src/service_runtime/nacl_globals.h"
+#include "src/service_runtime/nacl_syscall_common.h"
 
 /* pause cpu time counting. update cnt_cpu */
-void PauseCpuClock(struct SetupList *policy)
+void PauseCpuClock(struct NaClApp *nap)
 {
-  clock_t current = clock();
-  policy->cnt_cpu += current - policy->cnt_cpu_last;
-  policy->cnt_cpu_last = current;
+  if(nap->manifest)
+  {
+    clock_t current = clock();
+    struct SetupList *policy = nap->manifest->user_setup;
+    policy->cnt_cpu += current - policy->cnt_cpu_last;
+    policy->cnt_cpu_last = current;
+  }
 }
 
 /* resume cpu time counting */
-void ResumeCpuClock(struct SetupList *policy)
+void ResumeCpuClock(struct NaClApp *nap)
 {
-  policy->cnt_cpu_last = clock();
+  if(nap->manifest)
+  {
+    nap->manifest->user_setup->cnt_cpu_last = clock();
+  }
+}
+
+/*
+ * user exit. must not return
+ */
+static int32_t TrapExitHandle(struct NaClAppThread *natp, int32_t code)
+{
+  NaClLog(1, "Exit syscall handler: %d\n", code);
+  NaClSysCommonThreadSyscallEnter(natp);
+  (void) NaClReportExitStatus(natp->nap, code);
+
+  NaClAppThreadTeardown(natp);
+  return ERR_CODE; /* NOTREACHED */
 }
 
 /*
@@ -266,11 +287,15 @@ int32_t TrapHandler(struct NaClAppThread *natp, uint32_t args)
   int retcode = 0;
 
   /* translate address from user space to system. note: cannot set "trap error" */
+  if(!natp->nap->manifest) return -1; /* return error if not manifest found */
   sys_args = (uint64_t*)NaClUserToSys(natp->nap, (uintptr_t) args);
   NaClLog(4, "NaClSysNanosleep received in = 0x%lx\n", (intptr_t)sys_args);
 
   switch(*sys_args)
   {
+    case TrapExit:
+      retcode = TrapExitHandle(natp, (int32_t) sys_args[2]);
+      break;
     case TrapUserSetup:
       retcode = TrapUserSetupHandle(natp->nap, (struct SetupList*) sys_args[2]);
       break;

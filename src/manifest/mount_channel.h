@@ -30,13 +30,6 @@ int MountChannel(struct NaClApp *nap, enum ChannelType ch);
 uint64_t GetFileSize(const char *name);
 
 /*
- * preallocate channel. if size of the file less then allowed
- * extend it to allowed size. for output files only.
- * note: must be called from Pre*Channel() after file opened and measured
- */
-void PreallocateChannel(struct PreOpenedFileDesc* channel);
-
-/*
  * preload given file (channel). return 0 if success, otherwise negative errcode
  */
 int PreloadChannel(struct NaClApp *nap, struct PreOpenedFileDesc* channel);

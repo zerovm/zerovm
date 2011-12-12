@@ -89,8 +89,8 @@ NORETURN void NaClSyscallCSegHook(int32_t tls_idx) {
    * corrected later). small mallocs and other calls which are
    * not really "system" will be accounted anyway!
    */
-  PauseCpuClock(nap->manifest->user_setup);
-  ++nap->manifest->user_setup->cnt_syscalls;
+  PauseCpuClock(nap);
+  AccountingSyscallsInc(nap);
   /* d'b end */
 
   user = &natp->user;
@@ -197,7 +197,7 @@ NORETURN void NaClSyscallCSegHook(int32_t tls_idx) {
   NaClStackSafetyNowOnUntrustedStack();
 
   /* d'b: give control to the nexe. start cpu time counting */
-  ResumeCpuClock(nap->manifest->user_setup);
+  ResumeCpuClock(nap);
   NaClSwitchToApp(natp, user_ret);
   /* NOTREACHED */
 
