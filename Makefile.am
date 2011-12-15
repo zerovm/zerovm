@@ -17,7 +17,8 @@ noinst_LIBRARIES = libenv_cleanser.a \
 	libplatform.a \
 	libplatform_qual_lib.a \
 	libthread_interface.a \
-	libsel.a
+	libsel.a \
+	libmanifest.a
 libenv_cleanser_a_SOURCES = src/service_runtime/env_cleanser.c
 libgio_a_SOURCES = src/gio/gio.c \
 	src/gio/gio_mem.c \
@@ -119,7 +120,8 @@ libsel_a_SOURCES = src/service_runtime/dyn_array.c \
 	src/service_runtime/nacl_app_thread.c \
 	src/service_runtime/nacl_desc_effector_ldr.c \
 	src/service_runtime/nacl_globals.c \
-	src/service_runtime/nacl_memory_object.c src/service_runtime/nacl_signal_common.c \
+	src/service_runtime/nacl_memory_object.c \
+	src/service_runtime/nacl_signal_common.c \
 	src/service_runtime/nacl_stack_safety.c \
 	src/service_runtime/nacl_syscall_common.c \
 	src/service_runtime/nacl_syscall_handlers.c \
@@ -150,10 +152,16 @@ libsel_a_SOURCES = src/service_runtime/dyn_array.c \
 	src/service_runtime/linux/x86/nacl_ldt.c \
 	src/service_runtime/linux/x86/sel_segments.c \
 	src/service_runtime/posix/nacl_signal.c \
-	src/service_runtime/linux/nacl_signal_64.c \
-	src/service_runtime/zmq_syscalls.c \
-	src/service_runtime/manifest_parser.c \
-	src/service_runtime/md5.c
+	src/service_runtime/linux/nacl_signal_64.c 
+libmanifest_a_SOURCES = src/manifest/manifest_parser.c \
+	src/manifest/manifest_setup.c \
+	src/manifest/mount_channel.c \
+	src/manifest/prefetch.c \
+	src/manifest/preload.c \
+	src/manifest/premap.c \
+	src/manifest/trap.c \
+	src/manifest/zmq_syscalls.c \
+	src/manifest/md5.c
 bin_PROGRAMS = zerovm
 zerovm_LDFLAGS = -lstdc++ $(AM_LDFLAGS)
 zerovm_SOURCES = src/service_runtime/sel_main.c
@@ -176,13 +184,14 @@ zerovm_LDADD =  libsel.a \
         libnc_opcode_modeling_x86_64.a \
         libncval_base_x86_64.a \
         libplatform.a \
-        libgio.a 
+        libgio.a \
+	libmanifest.a
 check_PROGRAMS = x86_validator_tests_halt_trim \
 	service_runtime_tests \
 	x86_decoder_tests_nc_inst_state \
 	x86_validator_tests_nc_inst_bytes \
-	x86_validator_tests_nc_remaining_memory \
-	manifest_parser_test 
+	x86_validator_tests_nc_remaining_memory 
+#	manifest_parser_test 
 x86_validator_tests_halt_trim_CXXFLAGS = -DNACL_TRUSTED_BUT_NOT_TCB=1 $(AM_CXXFLAGS)
 x86_validator_tests_halt_trim_SOURCES = src/validator/x86/halt_trim_tests.cc
 x86_validator_tests_halt_trim_LDADD = libncvalidate_x86_64.a \
@@ -193,20 +202,20 @@ x86_validator_tests_halt_trim_LDADD = libncvalidate_x86_64.a \
 	libncval_base_x86_64.a \
 	libplatform.a \
 	libgio.a \
-	$(VPATH)/gtest/libgtest.a
+	$(top_srcdir)/gtest/libgtest.a
 service_runtime_tests_CXXFLAGS = -DNACL_TRUSTED_BUT_NOT_TCB=1 $(AM_CXXFLAGS)
 service_runtime_tests_SOURCES = src/service_runtime/sel_ldr_test.cc src/service_runtime/sel_mem_test.cc src/service_runtime/sel_memory_unittest.cc src/service_runtime/unittest_main.cc
-service_runtime_tests_LDADD = libsel.a libenv_cleanser.a libthread_interface.a libgio_wrapped_desc.a libnrd_xfer.a libnacl_perf_counter.a libnacl_base.a libimc.a libnacl_fault_inject.a libplatform.a libncvalidate_x86_64.a libncval_reg_sfi_x86_64.a libnccopy_x86_64.a libnc_decoder_x86_64.a libnc_opcode_modeling_x86_64.a libncval_base_x86_64.a libplatform.a libgio.a $(VPATH)/gtest/libgtest.a
+service_runtime_tests_LDADD = libsel.a libenv_cleanser.a libthread_interface.a libgio_wrapped_desc.a libnrd_xfer.a libnacl_perf_counter.a libnacl_base.a libimc.a libnacl_fault_inject.a libplatform.a libncvalidate_x86_64.a libncval_reg_sfi_x86_64.a libnccopy_x86_64.a libnc_decoder_x86_64.a libnc_opcode_modeling_x86_64.a libncval_base_x86_64.a libplatform.a libgio.a $(top_srcdir)/gtest/libgtest.a libmanifest.a
 x86_decoder_tests_nc_inst_state_CXXFLAGS = -DNACL_TRUSTED_BUT_NOT_TCB=1 $(AM_CXXFLAGS)
 x86_decoder_tests_nc_inst_state_SOURCES = src/validator/x86/decoder/nc_inst_state_tests.cc src/validator/x86/ncval_reg_sfi/ncval_decode_tables.c 
-x86_decoder_tests_nc_inst_state_LDADD = libnccopy_x86_64.a libnc_decoder_x86_64.a libnc_opcode_modeling_x86_64.a libncval_base_x86_64.a libplatform.a libgio.a $(VPATH)/gtest/libgtest.a
+x86_decoder_tests_nc_inst_state_LDADD = libnccopy_x86_64.a libnc_decoder_x86_64.a libnc_opcode_modeling_x86_64.a libncval_base_x86_64.a libplatform.a libgio.a $(top_srcdir)/gtest/libgtest.a
 x86_validator_tests_nc_inst_bytes_CXXFLAGS = -DNACL_TRUSTED_BUT_NOT_TCB=1 $(AM_CXXFLAGS)
 x86_validator_tests_nc_inst_bytes_SOURCES = src/validator/x86/nc_inst_bytes_tests.cc
-x86_validator_tests_nc_inst_bytes_LDADD = libncvalidate_x86_64.a libncval_reg_sfi_x86_64.a libnccopy_x86_64.a libnc_decoder_x86_64.a libnc_opcode_modeling_x86_64.a libncval_base_x86_64.a libplatform.a libgio.a $(VPATH)/gtest/libgtest.a
+x86_validator_tests_nc_inst_bytes_LDADD = libncvalidate_x86_64.a libncval_reg_sfi_x86_64.a libnccopy_x86_64.a libnc_decoder_x86_64.a libnc_opcode_modeling_x86_64.a libncval_base_x86_64.a libplatform.a libgio.a $(top_srcdir)/gtest/libgtest.a
 x86_validator_tests_nc_remaining_memory_CXXFLAGS = -DNACL_TRUSTED_BUT_NOT_TCB=1 $(AM_CXXFLAGS)
 x86_validator_tests_nc_remaining_memory_SOURCES = src/validator/x86/nc_remaining_memory_tests.cc
-x86_validator_tests_nc_remaining_memory_LDADD = libncvalidate_x86_64.a libncval_reg_sfi_x86_64.a libnccopy_x86_64.a libnc_decoder_x86_64.a libnc_opcode_modeling_x86_64.a libncval_base_x86_64.a libplatform.a libgio.a $(VPATH)/gtest/libgtest.a
+x86_validator_tests_nc_remaining_memory_LDADD = libncvalidate_x86_64.a libncval_reg_sfi_x86_64.a libnccopy_x86_64.a libnc_decoder_x86_64.a libnc_opcode_modeling_x86_64.a libncval_base_x86_64.a libplatform.a libgio.a $(top_srcdir)/gtest/libgtest.a
 manifest_parser_test_CXXFLAGS = -DNACL_TRUSTED_BUT_NOT_TCB=1 $(AM_CXXFLAGS)
-manifest_parser_test_SOURCES = src/service_runtime/manifest_parser_test.cc
-manifest_parser_test_LDADD = libsel.a libenv_cleanser.a libthread_interface.a libgio_wrapped_desc.a libnrd_xfer.a libnacl_perf_counter.a libnacl_base.a libimc.a libnacl_fault_inject.a libplatform.a libncvalidate_x86_64.a libncval_reg_sfi_x86_64.a libnccopy_x86_64.a libnc_decoder_x86_64.a libnc_opcode_modeling_x86_64.a libncval_base_x86_64.a libplatform.a libgio.a $(VPATH)/gtest/libgtest.a
+manifest_parser_test_SOURCES = src/manifest/manifest_parser_test.cc
+manifest_parser_test_LDADD = libsel.a libenv_cleanser.a libthread_interface.a libgio_wrapped_desc.a libnrd_xfer.a libnacl_perf_counter.a libnacl_base.a libimc.a libnacl_fault_inject.a libplatform.a libncvalidate_x86_64.a libncval_reg_sfi_x86_64.a libnccopy_x86_64.a libnc_decoder_x86_64.a libnc_opcode_modeling_x86_64.a libncval_base_x86_64.a libplatform.a libgio.a $(top_srcdir)/gtest/libgtest.a libmanifest.a
 TESTS = $(check_PROGRAMS)
