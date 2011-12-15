@@ -41,7 +41,8 @@ check_PROGRAMS = x86_validator_tests_halt_trim$(EXEEXT) \
 	service_runtime_tests$(EXEEXT) \
 	x86_decoder_tests_nc_inst_state$(EXEEXT) \
 	x86_validator_tests_nc_inst_bytes$(EXEEXT) \
-	x86_validator_tests_nc_remaining_memory$(EXEEXT)
+	x86_validator_tests_nc_remaining_memory$(EXEEXT) \
+	manifest_parser_test$(EXEEXT)
 subdir = .
 DIST_COMMON = README $(am__configure_deps) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in $(top_srcdir)/configure AUTHORS COPYING \
@@ -207,6 +208,21 @@ am_libthread_interface_a_OBJECTS = nacl_thread_interface.$(OBJEXT)
 libthread_interface_a_OBJECTS = $(am_libthread_interface_a_OBJECTS)
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
+am_manifest_parser_test_OBJECTS =  \
+	manifest_parser_test-manifest_parser_test.$(OBJEXT)
+manifest_parser_test_OBJECTS = $(am_manifest_parser_test_OBJECTS)
+manifest_parser_test_DEPENDENCIES = libsel.a libenv_cleanser.a \
+	libthread_interface.a libgio_wrapped_desc.a libnrd_xfer.a \
+	libnacl_perf_counter.a libnacl_base.a libimc.a \
+	libnacl_fault_inject.a libplatform.a libncvalidate_x86_64.a \
+	libncval_reg_sfi_x86_64.a libnccopy_x86_64.a \
+	libnc_decoder_x86_64.a libnc_opcode_modeling_x86_64.a \
+	libncval_base_x86_64.a libplatform.a libgio.a \
+	$(top_srcdir)/gtest/libgtest.a libmanifest.a
+manifest_parser_test_LINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CXXLD) \
+	$(manifest_parser_test_CXXFLAGS) $(CXXFLAGS) \
+	$(manifest_parser_test_LDFLAGS) $(LDFLAGS) -o $@
 am_service_runtime_tests_OBJECTS =  \
 	service_runtime_tests-sel_ldr_test.$(OBJEXT) \
 	service_runtime_tests-sel_mem_test.$(OBJEXT) \
@@ -329,6 +345,7 @@ SOURCES = $(libenv_cleanser_a_SOURCES) $(libgio_a_SOURCES) \
 	$(libncvalidate_x86_64_a_SOURCES) $(libnrd_xfer_a_SOURCES) \
 	$(libplatform_a_SOURCES) $(libplatform_qual_lib_a_SOURCES) \
 	$(libsel_a_SOURCES) $(libthread_interface_a_SOURCES) \
+	$(manifest_parser_test_SOURCES) \
 	$(service_runtime_tests_SOURCES) \
 	$(x86_decoder_tests_nc_inst_state_SOURCES) \
 	$(x86_validator_tests_halt_trim_SOURCES) \
@@ -349,6 +366,7 @@ DIST_SOURCES = $(libenv_cleanser_a_SOURCES) $(libgio_a_SOURCES) \
 	$(libncvalidate_x86_64_a_SOURCES) $(libnrd_xfer_a_SOURCES) \
 	$(libplatform_a_SOURCES) $(libplatform_qual_lib_a_SOURCES) \
 	$(libsel_a_SOURCES) $(libthread_interface_a_SOURCES) \
+	$(manifest_parser_test_SOURCES) \
 	$(service_runtime_tests_SOURCES) \
 	$(x86_decoder_tests_nc_inst_state_SOURCES) \
 	$(x86_validator_tests_halt_trim_SOURCES) \
@@ -695,7 +713,6 @@ zerovm_LDADD = libsel.a \
         libgio.a \
 	libmanifest.a
 
-#	manifest_parser_test 
 x86_validator_tests_halt_trim_CXXFLAGS = -DNACL_TRUSTED_BUT_NOT_TCB=1 $(AM_CXXFLAGS)
 x86_validator_tests_halt_trim_SOURCES = src/validator/x86/halt_trim_tests.cc
 x86_validator_tests_halt_trim_LDADD = libncvalidate_x86_64.a \
@@ -723,6 +740,7 @@ x86_validator_tests_nc_remaining_memory_LDADD = libncvalidate_x86_64.a libncval_
 manifest_parser_test_CXXFLAGS = -DNACL_TRUSTED_BUT_NOT_TCB=1 $(AM_CXXFLAGS)
 manifest_parser_test_SOURCES = src/manifest/manifest_parser_test.cc
 manifest_parser_test_LDADD = libsel.a libenv_cleanser.a libthread_interface.a libgio_wrapped_desc.a libnrd_xfer.a libnacl_perf_counter.a libnacl_base.a libimc.a libnacl_fault_inject.a libplatform.a libncvalidate_x86_64.a libncval_reg_sfi_x86_64.a libnccopy_x86_64.a libnc_decoder_x86_64.a libnc_opcode_modeling_x86_64.a libncval_base_x86_64.a libplatform.a libgio.a $(top_srcdir)/gtest/libgtest.a libmanifest.a
+manifest_parser_test_LDFLAGS = -L. -lmanifest
 TESTS = $(check_PROGRAMS)
 all: all-am
 
@@ -897,6 +915,9 @@ clean-checkPROGRAMS:
 	list=`for p in $$list; do echo "$$p"; done | sed 's/$(EXEEXT)$$//'`; \
 	echo " rm -f" $$list; \
 	rm -f $$list
+manifest_parser_test$(EXEEXT): $(manifest_parser_test_OBJECTS) $(manifest_parser_test_DEPENDENCIES) 
+	@rm -f manifest_parser_test$(EXEEXT)
+	$(manifest_parser_test_LINK) $(manifest_parser_test_OBJECTS) $(manifest_parser_test_LDADD) $(LIBS)
 service_runtime_tests$(EXEEXT): $(service_runtime_tests_OBJECTS) $(service_runtime_tests_DEPENDENCIES) 
 	@rm -f service_runtime_tests$(EXEEXT)
 	$(service_runtime_tests_LINK) $(service_runtime_tests_OBJECTS) $(service_runtime_tests_LDADD) $(LIBS)
@@ -939,6 +960,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/halt_trim.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lock.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/manifest_parser.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/manifest_parser_test-manifest_parser_test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/manifest_setup.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/md5.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mount_channel.Po@am__quote@
@@ -3153,6 +3175,20 @@ refcount_base.obj: src/platform/refcount_base.cc
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='src/platform/refcount_base.cc' object='refcount_base.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o refcount_base.obj `if test -f 'src/platform/refcount_base.cc'; then $(CYGPATH_W) 'src/platform/refcount_base.cc'; else $(CYGPATH_W) '$(srcdir)/src/platform/refcount_base.cc'; fi`
+
+manifest_parser_test-manifest_parser_test.o: src/manifest/manifest_parser_test.cc
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(manifest_parser_test_CXXFLAGS) $(CXXFLAGS) -MT manifest_parser_test-manifest_parser_test.o -MD -MP -MF $(DEPDIR)/manifest_parser_test-manifest_parser_test.Tpo -c -o manifest_parser_test-manifest_parser_test.o `test -f 'src/manifest/manifest_parser_test.cc' || echo '$(srcdir)/'`src/manifest/manifest_parser_test.cc
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/manifest_parser_test-manifest_parser_test.Tpo $(DEPDIR)/manifest_parser_test-manifest_parser_test.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='src/manifest/manifest_parser_test.cc' object='manifest_parser_test-manifest_parser_test.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(manifest_parser_test_CXXFLAGS) $(CXXFLAGS) -c -o manifest_parser_test-manifest_parser_test.o `test -f 'src/manifest/manifest_parser_test.cc' || echo '$(srcdir)/'`src/manifest/manifest_parser_test.cc
+
+manifest_parser_test-manifest_parser_test.obj: src/manifest/manifest_parser_test.cc
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(manifest_parser_test_CXXFLAGS) $(CXXFLAGS) -MT manifest_parser_test-manifest_parser_test.obj -MD -MP -MF $(DEPDIR)/manifest_parser_test-manifest_parser_test.Tpo -c -o manifest_parser_test-manifest_parser_test.obj `if test -f 'src/manifest/manifest_parser_test.cc'; then $(CYGPATH_W) 'src/manifest/manifest_parser_test.cc'; else $(CYGPATH_W) '$(srcdir)/src/manifest/manifest_parser_test.cc'; fi`
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/manifest_parser_test-manifest_parser_test.Tpo $(DEPDIR)/manifest_parser_test-manifest_parser_test.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='src/manifest/manifest_parser_test.cc' object='manifest_parser_test-manifest_parser_test.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(manifest_parser_test_CXXFLAGS) $(CXXFLAGS) -c -o manifest_parser_test-manifest_parser_test.obj `if test -f 'src/manifest/manifest_parser_test.cc'; then $(CYGPATH_W) 'src/manifest/manifest_parser_test.cc'; else $(CYGPATH_W) '$(srcdir)/src/manifest/manifest_parser_test.cc'; fi`
 
 service_runtime_tests-sel_ldr_test.o: src/service_runtime/sel_ldr_test.cc
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(service_runtime_tests_CXXFLAGS) $(CXXFLAGS) -MT service_runtime_tests-sel_ldr_test.o -MD -MP -MF $(DEPDIR)/service_runtime_tests-sel_ldr_test.Tpo -c -o service_runtime_tests-sel_ldr_test.o `test -f 'src/service_runtime/sel_ldr_test.cc' || echo '$(srcdir)/'`src/service_runtime/sel_ldr_test.cc

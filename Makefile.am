@@ -190,8 +190,8 @@ check_PROGRAMS = x86_validator_tests_halt_trim \
 	service_runtime_tests \
 	x86_decoder_tests_nc_inst_state \
 	x86_validator_tests_nc_inst_bytes \
-	x86_validator_tests_nc_remaining_memory 
-#	manifest_parser_test 
+	x86_validator_tests_nc_remaining_memory \
+	manifest_parser_test 
 x86_validator_tests_halt_trim_CXXFLAGS = -DNACL_TRUSTED_BUT_NOT_TCB=1 $(AM_CXXFLAGS)
 x86_validator_tests_halt_trim_SOURCES = src/validator/x86/halt_trim_tests.cc
 x86_validator_tests_halt_trim_LDADD = libncvalidate_x86_64.a \
@@ -218,4 +218,5 @@ x86_validator_tests_nc_remaining_memory_LDADD = libncvalidate_x86_64.a libncval_
 manifest_parser_test_CXXFLAGS = -DNACL_TRUSTED_BUT_NOT_TCB=1 $(AM_CXXFLAGS)
 manifest_parser_test_SOURCES = src/manifest/manifest_parser_test.cc
 manifest_parser_test_LDADD = libsel.a libenv_cleanser.a libthread_interface.a libgio_wrapped_desc.a libnrd_xfer.a libnacl_perf_counter.a libnacl_base.a libimc.a libnacl_fault_inject.a libplatform.a libncvalidate_x86_64.a libncval_reg_sfi_x86_64.a libnccopy_x86_64.a libnc_decoder_x86_64.a libnc_opcode_modeling_x86_64.a libncval_base_x86_64.a libplatform.a libgio.a $(top_srcdir)/gtest/libgtest.a libmanifest.a
+manifest_parser_test_LDFLAGS = -L. -lmanifest
 TESTS = $(check_PROGRAMS)
