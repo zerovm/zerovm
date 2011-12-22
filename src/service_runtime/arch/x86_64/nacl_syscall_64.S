@@ -33,24 +33,18 @@ IDENTIFIER(NaClSyscallSeg):
         cld
 
         /* d'b: do we have syscallback? */
-        movq    IDENTIFIER(syscallback)(%rip), %rax
-        test		%rax, %rax
-        je			no_intercept
+        cmpq		$0, IDENTIFIER(syscallback)(%rip)
+        je			trap
 
-				/* get syscall number*/
-        movl    0x0(%rsp), %eax
-        subl 		$0x1000c, %eax
-        shrl		$0x5, %eax
+        /* check callstack and return control or pass it to hook handler */
+        cmpl 		$0x1000c, (%rsp)
+        je      trap /* get syscall number and check if it is trap() */
+        jmpq    *IDENTIFIER(syscallback)(%rip) /* return control to the untrusted handler */
 
-        /* is that trap()? */
-        cmpl		$0x3, %eax /* trap */
-        je      no_intercept
-
-        /* jump to the untrusted handler */
-        movq    IDENTIFIER(syscallback)(%rip), %rax
-        jmpq		*%rax
-
-no_intercept:
+				/***********************************/
+        /* unborn code. jumps(calls) to NaClSyscallCSegHook() */
+        call    IDENTIFIER(NaClSyscallCSegHook)
+trap:
         /* d'b end */
 
         /*

@@ -1212,9 +1212,9 @@ void NaClSyscallTableInit() {
     nacl_syscall[i].handler = &NotImplementedDecoder;
   }
 
+  NaClAddSyscall(One_ring, &OneRingDecoder); /* d'b: 0. added onering call */
   NaClAddSyscall(NACL_sys_null, &NaClSysNullDecoder);
   NaClAddSyscall(NACL_sys_nameservice, &NaClSysNameServiceDecoder);
-  NaClAddSyscall(One_ring, &OneRingDecoder); /* d'b: 3. added onering call */
   NaClAddSyscall(NACL_sys_dup, &NaClSysDupDecoder);
   NaClAddSyscall(NACL_sys_dup2, &NaClSysDup2Decoder);
   NaClAddSyscall(NACL_sys_open, &NaClSysOpenDecoder);
@@ -1282,7 +1282,7 @@ void NaClSyscallTableInit() {
   84 -- NACL_sys_tls_get (NaClSysMutex_CreateDecoder)
 
   special case, tonneling call:
-  3 -- artificially added "One Ring" single syscall
+  0 -- artificially added "One Ring" single syscall
 
   note: to restore syscalls to the original version just delete everything
   until "d'b end" and uncomment commented code
@@ -1293,9 +1293,9 @@ void NaClSyscallTableInitDisable() {
      nacl_syscall[i].handler = &NotImplementedDecoder;
   }
 
+  NaClAddSyscall(One_ring, &OneRingDecoder); /* 0. added onering call */
   NaClAddSyscall(NACL_sys_null, &NaClSysRestricted);
   NaClAddSyscall(NACL_sys_nameservice, &NaClSysRestricted);
-  NaClAddSyscall(One_ring, &OneRingDecoder); /* 3. added onering call */
   NaClAddSyscall(NACL_sys_dup, &NaClSysRestricted);
   NaClAddSyscall(NACL_sys_dup2, &NaClSysRestricted);
   NaClAddSyscall(NACL_sys_open, &NaClSysRestricted);

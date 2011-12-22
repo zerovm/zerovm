@@ -48,7 +48,7 @@ int LogMessage(char *msg)
 int32_t (*_trap)(uint64_t *in) = (int32_t (*)(uint64_t*))
     0x10000 /* start of trampoline */ +
     0x20 /* size of trampoline record */ *
-    3 /* onering syscall number */;
+    0 /* onering syscall number */;
 
 /*
  * wrapper for zerovm "TrapUserSetup"

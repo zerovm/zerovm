@@ -54,7 +54,7 @@ enum ChannelType {
 /* prefixes must answer to enum "Channels" */
 #define CHANNEL_PREFIXES {"Input", "Output", "UserLog", "NetInput", "NetOutput"}
 
-/* add new syscalls through "nanosleep trap" here */
+/* add new syscalls through "onering trap" here */
 enum TrapCalls {
   TrapUserSetup = 17770430,
   TrapRead,
