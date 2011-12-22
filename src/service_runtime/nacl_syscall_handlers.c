@@ -57,7 +57,7 @@
 #include "src/service_runtime/linux/nacl_syscall_inl.h"
 #include "src/manifest/trap.h"
 #include "src/manifest/manifest_setup.h"
-#include "api/zvm_manifest.h"
+#include "api/zvm.h"
 
 struct NaClSyscallTableEntry nacl_syscall[NACL_MAX_SYSCALLS] = {{0}};
 

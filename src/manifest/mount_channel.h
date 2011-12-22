@@ -8,7 +8,7 @@
 #ifndef MOUNT_CHANNEL_H_
 #define MOUNT_CHANNEL_H_
 
-#include "api/zvm_manifest.h"
+#include "api/zvm.h"
 #include "src/service_runtime/sel_ldr.h"
 
 EXTERN_C_BEGIN

@@ -1,7 +1,0 @@
-zerovm_retcode     =0
-zerovm_status      =samples/temp/log_test.c_x86_64.log
-etag               =nexe didn't have output to generate md5 hash
-#retcode           =13
-#status            =ok.
-#content-type      =application/octet-stream
-#x-object-meta-tag =Format:Pickle

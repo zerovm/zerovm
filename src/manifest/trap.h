@@ -8,7 +8,7 @@
 #ifndef TRAP_H_
 #define TRAP_H_
 
-#include "api/zvm_manifest.h"
+#include "api/zvm.h"
 #include "src/service_runtime/nacl_app_thread.h"
 
 EXTERN_C_BEGIN

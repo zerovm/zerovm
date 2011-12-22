@@ -1,7 +1,0 @@
-= generate random data and put it to file
-= order of lines below doesn't matter, but it is more clear when put nexe name 1st, log 2nd, cmdline 3rd and only after that other keys
-
-nexe = mmap_test2.c_x86_64.nexe
-
-= maybe it would be better to rename "input" to "input.data" or contraversa: "http://input.data" to "http://input"
-input = mmap_test2.c

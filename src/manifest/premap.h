@@ -8,7 +8,7 @@
 #ifndef PREMAP_H_
 #define PREMAP_H_
 #include "src/service_runtime/sel_ldr.h"
-#include "api/zvm_manifest.h"
+#include "api/zvm.h"
 
 /* open/map flags/modes. must contain "channel types" number of elements -1 means absense of value */
 #define CHANNEL_OPEN_FLAGS {O_RDONLY, O_RDWR | O_CREAT , O_RDWR | O_CREAT , -1, -1}

@@ -10,7 +10,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "/home/dazo/git/zerovm/api/zvm_manifest.h"
+#include "zvm.h"
 
 /*
  * this function uninstall itself and show "hi" message

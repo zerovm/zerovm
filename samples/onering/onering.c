@@ -1,8 +1,9 @@
 /*
  * test for "onering" syscall (artificial syscall)
- * here i don't use api and call "onering" directly (api i will test later and in different program)
+ *
  * update 2011-12-04: new design. manifest must be requested from nexe
  * update 2011-12-08: new design. onering called directly via syscall table (not using glibc)
+ * update 2011-12-22: "onering" renamed to "_trap" and it should be used from "zvm.h" wrappers
  */
 
 #include <stdio.h>
@@ -11,46 +12,7 @@
 #include <string.h>
 #include <malloc.h>
 
-#include "/home/dazo/git/zerovm/api/zvm_manifest.h"
-
-  /*
-   * WARNING!
-   * nacl changes pointer in the 2nd place of "request"
-   * (probably at the 1st place too)
-   */
-
-/* pointer to trampoline function */
-int32_t (*_trap)(uint64_t *in) = (int32_t (*)(uint64_t*))
-    0x10000 /* start of trampoline */ +
-    0x20 /* size of tramp record */ *
-    3 /* onering syscall number */;
-
-/*
- * wrapper for zerovm "TrapUserSetup"
- */
-int32_t zvm_setup(struct SetupList *hint)
-{
-  uint64_t request[] = {TrapUserSetup, 0, (uint32_t)hint};
-  return _trap(request);
-}
-
-/*
- * wrapper for zerovm "TrapRead"
- */
-int32_t zvm_pread(int desc, char *buffer, int32_t size, int64_t offset)
-{
-  uint64_t request[] = {TrapRead, 0, desc, (uint32_t)buffer, size, offset};
-  return _trap(request);
-}
-
-/*
- * wrapper for zerovm "TrapWrite"
- */
-int32_t zvm_write(int desc, char *buffer, int32_t size, int64_t offset)
-{
-  uint64_t request[] = {TrapWrite, 0, desc, (uint32_t)buffer, size, offset};
-  return _trap(request);
-}
+#include "zvm.h"
 
 /* printf some policy fields */
 void ShowPolicy (struct SetupList *policy)
@@ -64,26 +26,19 @@ void ShowPolicy (struct SetupList *policy)
     /* guts. some of them are not allowed for user */
     fprintf(stderr, "CHANNEL NUMBER: %u\n", ch);
     fprintf(stderr, "self_size = %u\n", policy->channels[ch].self_size);
-//    fprintf(stderr, "handle = %d\n", policy->channels[ch].handle); /* n/a */
-//    fprintf(stderr, "name = %s\n", (char*)(uintptr_t)policy->channels[ch].name); /* n/a */
     fprintf(stderr, "type = %u\n", policy->channels[ch].type);
-//    fprintf(stderr, "mounted = %d\n", policy->channels[ch].mounted); /* n/a */
     fprintf(stderr, "fsize = %lld\n", policy->channels[ch].fsize);
     fprintf(stderr, "buffer = %X\n", policy->channels[ch].buffer);
     fprintf(stderr, "bsize = %d\n", policy->channels[ch].bsize);
 
     /* limits */
-    fprintf(stderr, "max_size = %d\n", policy->channels[ch].max_size);
+    fprintf(stderr, "max_size = %lld\n", policy->channels[ch].max_size);
     fprintf(stderr, "max_gets = %d\n", policy->channels[ch].max_gets);
     fprintf(stderr, "max_puts = %d\n", policy->channels[ch].max_puts);
     fprintf(stderr, "max_get_size = %lld\n", policy->channels[ch].max_get_size);
     fprintf(stderr, "max_put_size = %lld\n", policy->channels[ch].max_put_size);
 
     /* counters not allowed for user */
-//    fprintf(stderr, "cnt_gets = %d\n", policy->channels[ch].cnt_gets); /* n/a */
-//    fprintf(stderr, "cnt_puts = %d\n", policy->channels[ch].cnt_puts); /* n/a */
-//    fprintf(stderr, "cnt_get_size = %lld\n", policy->channels[ch].cnt_get_size); /* n/a */
-//    fprintf(stderr, "cnt_put_size = %lld\n", policy->channels[ch].cnt_put_size); /* n/a */
   }
 
   fprintf(stderr, "------------------------------------ guts --\n");
@@ -91,10 +46,6 @@ void ShowPolicy (struct SetupList *policy)
   fprintf(stderr, "heap_ptr = 0x%X\n", policy->heap_ptr);
 
   /* show system counters (not allowed for user) */
-//  fprintf(stderr, "cnt_cpu = %d\n", policy->cnt_cpu); /* n/a */
-//  fprintf(stderr, "cnt_mem = %d\n", policy->cnt_mem); /* n/a */
-//  fprintf(stderr, "cnt_setup_calls = %d\n", policy->cnt_setup_calls); /* n/a */
-//  fprintf(stderr, "cnt_syscalls = %d\n", policy->cnt_syscalls); /* n/a */
 
   /* show system limits */
   fprintf(stderr, "max_cpu = %d\n", policy->max_cpu);
@@ -114,7 +65,6 @@ void ShowPolicy (struct SetupList *policy)
 int main(int argc, char **argv)
 {
   int retcode;
-  char *buffer;
   struct SetupList setup;
   struct SetupList *hint = &setup;
 
@@ -122,40 +72,12 @@ int main(int argc, char **argv)
   retcode = zvm_setup(hint);
   fprintf(stderr, "retcode = %d\n", retcode);
   ShowPolicy(hint);
-//  buffer = (char*)hint->heap_ptr;
-
-  /* allocate memory to test malloc() engine */
-//  fprintf(stderr, "setup->heap_ptr = 0x%X\n", (int32_t)buffer);
-//  int i;
-//  for(i = 0; i < 100000; ++i)
-//    fprintf(stderr, "malloc(%d) = 0x%X\n", i, (uint32_t)malloc(i)); //131060
 
   /* request policy 2nd time with hint */
   hint->max_mem += 1; /* try to increase amount of available memory */
   retcode = zvm_setup(hint);
   fprintf(stderr, "retcode = %d\n", retcode);
   ShowPolicy(hint);
-
-  /* read from preloaded input */
-  int chunk_size = 100;
-  int position = 0;
-  if((buffer = (char*) malloc(chunk_size)) != NULL)
-  {
-    do {
-      retcode = zvm_pread(InputChannel, buffer, chunk_size, position);
-      if(retcode > 0)
-      {
-        position += chunk_size;
-        buffer[retcode] = '\0';
-        fprintf(stderr, "%s", buffer);
-      }
-    } while(retcode > 0);
-  }
-  fprintf(stderr, "\nzvm_pread retcode = %d\n", retcode);
-
-  /* write to preloaded output */
-  retcode = zvm_write(OutputChannel, buffer, chunk_size, 0);
-  fprintf(stderr, "zvm_write retcode = %d\n", retcode);
 
   /* exit with non zero to control report engine */
   return 13;

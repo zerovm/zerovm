@@ -9,7 +9,7 @@
 #include <stdio.h>
 
 #define USER_SIDE
-#include "zvm_manifest.h"
+#include "zvm.h"
 #undef USER_SIDE
 
 static char *log; /* pointer to log buffer available space */
@@ -71,7 +71,7 @@ int32_t zvm_pread(int desc, char *buffer, int32_t size, int64_t offset)
 /*
  * wrapper for zerovm "TrapWrite"
  */
-int32_t zvm_write(int desc, char *buffer, int32_t size, int64_t offset)
+int32_t zvm_pwrite(int desc, char *buffer, int32_t size, int64_t offset)
 {
   uint64_t request[] = {TrapWrite, 0, desc, (uint32_t)buffer, size, offset};
   return _trap(request);

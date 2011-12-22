@@ -17,7 +17,7 @@
 #include "src/manifest/manifest_setup.h"
 #include "src/manifest/mount_channel.h"
 #include "src/platform/nacl_log.h"
-#include "api/zvm_manifest.h"
+#include "api/zvm.h"
 #include "src/service_runtime/sel_ldr.h"
 #include "src/service_runtime/nacl_globals.h"
 #include "src/service_runtime/nacl_syscall_common.h"

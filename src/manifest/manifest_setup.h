@@ -10,7 +10,7 @@
 
 EXTERN_C_BEGIN
 
-#include "api/zvm_manifest.h"
+#include "api/zvm.h"
 
 #define COND_ABORT(cond, msg) if(cond) {fprintf(stderr, "%s\n", msg); exit(1);}
 #define MAX_MAP_SIZE 0x80000000u

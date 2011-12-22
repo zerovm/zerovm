@@ -9,7 +9,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
-#include "/home/dazo/git/zerovm/api/zvm_manifest.h"
+#include "zvm.h"
 
 #define CHUNK_SIZE 0x10000000 /* 256mb */
 #define LEAVE(a, c) {free(a); return (c);}

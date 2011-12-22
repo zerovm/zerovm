@@ -181,7 +181,7 @@ int32_t zvm_pread(int desc, char *buffer, int32_t size, int64_t offset);
 /*
  * wrapper for zerovm "TrapWrite"
  */
-int32_t zvm_write(int desc, char *buffer, int32_t size, int64_t offset);
+int32_t zvm_pwrite(int desc, char *buffer, int32_t size, int64_t offset);
 
 /*
  * log message. 0 - if success. 1 - if log is full or has no space to
