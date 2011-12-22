@@ -78,6 +78,13 @@ libimc_a_LIBADD =
 am_libimc_a_OBJECTS = nacl_imc.$(OBJEXT) nacl_imc_unistd.$(OBJEXT) \
 	nacl_imc_c.$(OBJEXT) nacl_imc_common.$(OBJEXT)
 libimc_a_OBJECTS = $(am_libimc_a_OBJECTS)
+libmanifest_a_AR = $(AR) $(ARFLAGS)
+libmanifest_a_LIBADD =
+am_libmanifest_a_OBJECTS = manifest_parser.$(OBJEXT) \
+	manifest_setup.$(OBJEXT) mount_channel.$(OBJEXT) \
+	prefetch.$(OBJEXT) preload.$(OBJEXT) premap.$(OBJEXT) \
+	trap.$(OBJEXT) zmq_syscalls.$(OBJEXT) md5.$(OBJEXT)
+libmanifest_a_OBJECTS = $(am_libmanifest_a_OBJECTS)
 libnacl_base_a_AR = $(AR) $(ARFLAGS)
 libnacl_base_a_LIBADD =
 am_libnacl_base_a_OBJECTS = nacl_refcount.$(OBJEXT)
@@ -193,8 +200,7 @@ am_libsel_a_OBJECTS = dyn_array.$(OBJEXT) elf_util.$(OBJEXT) \
 	tramp_64.$(OBJEXT) sel_addrspace_posix_x86_64.$(OBJEXT) \
 	sel_memory.$(OBJEXT) nacl_thread_nice.$(OBJEXT) \
 	nacl_ldt.$(OBJEXT) sel_segments.$(OBJEXT) \
-	nacl_signal.$(OBJEXT) nacl_signal_64.$(OBJEXT) \
-	zmq_syscalls.$(OBJEXT) manifest_parser.$(OBJEXT) md5.$(OBJEXT)
+	nacl_signal.$(OBJEXT) nacl_signal_64.$(OBJEXT)
 libsel_a_OBJECTS = $(am_libsel_a_OBJECTS)
 libthread_interface_a_AR = $(AR) $(ARFLAGS)
 libthread_interface_a_LIBADD =
@@ -212,11 +218,11 @@ manifest_parser_test_DEPENDENCIES = libsel.a libenv_cleanser.a \
 	libncval_reg_sfi_x86_64.a libnccopy_x86_64.a \
 	libnc_decoder_x86_64.a libnc_opcode_modeling_x86_64.a \
 	libncval_base_x86_64.a libplatform.a libgio.a \
-	$(VPATH)/gtest/libgtest.a
+	$(top_srcdir)/gtest/libgtest.a libmanifest.a
 manifest_parser_test_LINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CXXLD) \
-	$(manifest_parser_test_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) \
-	$(LDFLAGS) -o $@
+	$(manifest_parser_test_CXXFLAGS) $(CXXFLAGS) \
+	$(manifest_parser_test_LDFLAGS) $(LDFLAGS) -o $@
 am_service_runtime_tests_OBJECTS =  \
 	service_runtime_tests-sel_ldr_test.$(OBJEXT) \
 	service_runtime_tests-sel_mem_test.$(OBJEXT) \
@@ -230,7 +236,7 @@ service_runtime_tests_DEPENDENCIES = libsel.a libenv_cleanser.a \
 	libncval_reg_sfi_x86_64.a libnccopy_x86_64.a \
 	libnc_decoder_x86_64.a libnc_opcode_modeling_x86_64.a \
 	libncval_base_x86_64.a libplatform.a libgio.a \
-	$(VPATH)/gtest/libgtest.a
+	$(top_srcdir)/gtest/libgtest.a libmanifest.a
 service_runtime_tests_LINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CXXLD) \
 	$(service_runtime_tests_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) \
@@ -243,7 +249,7 @@ x86_decoder_tests_nc_inst_state_OBJECTS =  \
 x86_decoder_tests_nc_inst_state_DEPENDENCIES = libnccopy_x86_64.a \
 	libnc_decoder_x86_64.a libnc_opcode_modeling_x86_64.a \
 	libncval_base_x86_64.a libplatform.a libgio.a \
-	$(VPATH)/gtest/libgtest.a
+	$(top_srcdir)/gtest/libgtest.a
 x86_decoder_tests_nc_inst_state_LINK = $(LIBTOOL) --tag=CXX \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CXXLD) \
 	$(x86_decoder_tests_nc_inst_state_CXXFLAGS) $(CXXFLAGS) \
@@ -256,7 +262,7 @@ x86_validator_tests_halt_trim_DEPENDENCIES = libncvalidate_x86_64.a \
 	libncval_reg_sfi_x86_64.a libnccopy_x86_64.a \
 	libnc_decoder_x86_64.a libnc_opcode_modeling_x86_64.a \
 	libncval_base_x86_64.a libplatform.a libgio.a \
-	$(VPATH)/gtest/libgtest.a
+	$(top_srcdir)/gtest/libgtest.a
 x86_validator_tests_halt_trim_LINK = $(LIBTOOL) --tag=CXX \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CXXLD) \
 	$(x86_validator_tests_halt_trim_CXXFLAGS) $(CXXFLAGS) \
@@ -268,7 +274,7 @@ x86_validator_tests_nc_inst_bytes_DEPENDENCIES =  \
 	libncvalidate_x86_64.a libncval_reg_sfi_x86_64.a \
 	libnccopy_x86_64.a libnc_decoder_x86_64.a \
 	libnc_opcode_modeling_x86_64.a libncval_base_x86_64.a \
-	libplatform.a libgio.a $(VPATH)/gtest/libgtest.a
+	libplatform.a libgio.a $(top_srcdir)/gtest/libgtest.a
 x86_validator_tests_nc_inst_bytes_LINK = $(LIBTOOL) --tag=CXX \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CXXLD) \
 	$(x86_validator_tests_nc_inst_bytes_CXXFLAGS) $(CXXFLAGS) \
@@ -280,7 +286,7 @@ x86_validator_tests_nc_remaining_memory_DEPENDENCIES =  \
 	libncvalidate_x86_64.a libncval_reg_sfi_x86_64.a \
 	libnccopy_x86_64.a libnc_decoder_x86_64.a \
 	libnc_opcode_modeling_x86_64.a libncval_base_x86_64.a \
-	libplatform.a libgio.a $(VPATH)/gtest/libgtest.a
+	libplatform.a libgio.a $(top_srcdir)/gtest/libgtest.a
 x86_validator_tests_nc_remaining_memory_LINK = $(LIBTOOL) --tag=CXX \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CXXLD) \
 	$(x86_validator_tests_nc_remaining_memory_CXXFLAGS) \
@@ -294,7 +300,7 @@ zerovm_DEPENDENCIES = libsel.a libenv_cleanser.a libnacl_error_code.a \
 	libncvalidate_x86_64.a libncval_reg_sfi_x86_64.a \
 	libnccopy_x86_64.a libnc_decoder_x86_64.a \
 	libnc_opcode_modeling_x86_64.a libncval_base_x86_64.a \
-	libplatform.a libgio.a
+	libplatform.a libgio.a libmanifest.a
 zerovm_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(zerovm_LDFLAGS) \
 	$(LDFLAGS) -o $@
@@ -327,7 +333,8 @@ CXXLINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	$(LDFLAGS) -o $@
 SOURCES = $(libenv_cleanser_a_SOURCES) $(libgio_a_SOURCES) \
 	$(libgio_wrapped_desc_a_SOURCES) $(libimc_a_SOURCES) \
-	$(libnacl_base_a_SOURCES) $(libnacl_error_code_a_SOURCES) \
+	$(libmanifest_a_SOURCES) $(libnacl_base_a_SOURCES) \
+	$(libnacl_error_code_a_SOURCES) \
 	$(libnacl_fault_inject_a_SOURCES) \
 	$(libnacl_perf_counter_a_SOURCES) \
 	$(libnc_decoder_x86_64_a_SOURCES) \
@@ -347,7 +354,8 @@ SOURCES = $(libenv_cleanser_a_SOURCES) $(libgio_a_SOURCES) \
 	$(zerovm_SOURCES)
 DIST_SOURCES = $(libenv_cleanser_a_SOURCES) $(libgio_a_SOURCES) \
 	$(libgio_wrapped_desc_a_SOURCES) $(libimc_a_SOURCES) \
-	$(libnacl_base_a_SOURCES) $(libnacl_error_code_a_SOURCES) \
+	$(libmanifest_a_SOURCES) $(libnacl_base_a_SOURCES) \
+	$(libnacl_error_code_a_SOURCES) \
 	$(libnacl_fault_inject_a_SOURCES) \
 	$(libnacl_perf_counter_a_SOURCES) \
 	$(libnc_decoder_x86_64_a_SOURCES) \
@@ -523,7 +531,8 @@ noinst_LIBRARIES = libenv_cleanser.a \
 	libplatform.a \
 	libplatform_qual_lib.a \
 	libthread_interface.a \
-	libsel.a
+	libsel.a \
+	libmanifest.a
 
 libenv_cleanser_a_SOURCES = src/service_runtime/env_cleanser.c
 libgio_a_SOURCES = src/gio/gio.c \
@@ -636,7 +645,8 @@ libsel_a_SOURCES = src/service_runtime/dyn_array.c \
 	src/service_runtime/nacl_app_thread.c \
 	src/service_runtime/nacl_desc_effector_ldr.c \
 	src/service_runtime/nacl_globals.c \
-	src/service_runtime/nacl_memory_object.c src/service_runtime/nacl_signal_common.c \
+	src/service_runtime/nacl_memory_object.c \
+	src/service_runtime/nacl_signal_common.c \
 	src/service_runtime/nacl_stack_safety.c \
 	src/service_runtime/nacl_syscall_common.c \
 	src/service_runtime/nacl_syscall_handlers.c \
@@ -667,10 +677,17 @@ libsel_a_SOURCES = src/service_runtime/dyn_array.c \
 	src/service_runtime/linux/x86/nacl_ldt.c \
 	src/service_runtime/linux/x86/sel_segments.c \
 	src/service_runtime/posix/nacl_signal.c \
-	src/service_runtime/linux/nacl_signal_64.c \
-	src/service_runtime/zmq_syscalls.c \
-	src/service_runtime/manifest_parser.c \
-	src/service_runtime/md5.c
+	src/service_runtime/linux/nacl_signal_64.c 
+
+libmanifest_a_SOURCES = src/manifest/manifest_parser.c \
+	src/manifest/manifest_setup.c \
+	src/manifest/mount_channel.c \
+	src/manifest/prefetch.c \
+	src/manifest/preload.c \
+	src/manifest/premap.c \
+	src/manifest/trap.c \
+	src/manifest/zmq_syscalls.c \
+	src/manifest/md5.c
 
 zerovm_LDFLAGS = -lstdc++ $(AM_LDFLAGS)
 zerovm_SOURCES = src/service_runtime/sel_main.c
@@ -693,7 +710,8 @@ zerovm_LDADD = libsel.a \
         libnc_opcode_modeling_x86_64.a \
         libncval_base_x86_64.a \
         libplatform.a \
-        libgio.a 
+        libgio.a \
+	libmanifest.a
 
 x86_validator_tests_halt_trim_CXXFLAGS = -DNACL_TRUSTED_BUT_NOT_TCB=1 $(AM_CXXFLAGS)
 x86_validator_tests_halt_trim_SOURCES = src/validator/x86/halt_trim_tests.cc
@@ -705,23 +723,24 @@ x86_validator_tests_halt_trim_LDADD = libncvalidate_x86_64.a \
 	libncval_base_x86_64.a \
 	libplatform.a \
 	libgio.a \
-	$(VPATH)/gtest/libgtest.a
+	$(top_srcdir)/gtest/libgtest.a
 
 service_runtime_tests_CXXFLAGS = -DNACL_TRUSTED_BUT_NOT_TCB=1 $(AM_CXXFLAGS)
 service_runtime_tests_SOURCES = src/service_runtime/sel_ldr_test.cc src/service_runtime/sel_mem_test.cc src/service_runtime/sel_memory_unittest.cc src/service_runtime/unittest_main.cc
-service_runtime_tests_LDADD = libsel.a libenv_cleanser.a libthread_interface.a libgio_wrapped_desc.a libnrd_xfer.a libnacl_perf_counter.a libnacl_base.a libimc.a libnacl_fault_inject.a libplatform.a libncvalidate_x86_64.a libncval_reg_sfi_x86_64.a libnccopy_x86_64.a libnc_decoder_x86_64.a libnc_opcode_modeling_x86_64.a libncval_base_x86_64.a libplatform.a libgio.a $(VPATH)/gtest/libgtest.a
+service_runtime_tests_LDADD = libsel.a libenv_cleanser.a libthread_interface.a libgio_wrapped_desc.a libnrd_xfer.a libnacl_perf_counter.a libnacl_base.a libimc.a libnacl_fault_inject.a libplatform.a libncvalidate_x86_64.a libncval_reg_sfi_x86_64.a libnccopy_x86_64.a libnc_decoder_x86_64.a libnc_opcode_modeling_x86_64.a libncval_base_x86_64.a libplatform.a libgio.a $(top_srcdir)/gtest/libgtest.a libmanifest.a
 x86_decoder_tests_nc_inst_state_CXXFLAGS = -DNACL_TRUSTED_BUT_NOT_TCB=1 $(AM_CXXFLAGS)
 x86_decoder_tests_nc_inst_state_SOURCES = src/validator/x86/decoder/nc_inst_state_tests.cc src/validator/x86/ncval_reg_sfi/ncval_decode_tables.c 
-x86_decoder_tests_nc_inst_state_LDADD = libnccopy_x86_64.a libnc_decoder_x86_64.a libnc_opcode_modeling_x86_64.a libncval_base_x86_64.a libplatform.a libgio.a $(VPATH)/gtest/libgtest.a
+x86_decoder_tests_nc_inst_state_LDADD = libnccopy_x86_64.a libnc_decoder_x86_64.a libnc_opcode_modeling_x86_64.a libncval_base_x86_64.a libplatform.a libgio.a $(top_srcdir)/gtest/libgtest.a
 x86_validator_tests_nc_inst_bytes_CXXFLAGS = -DNACL_TRUSTED_BUT_NOT_TCB=1 $(AM_CXXFLAGS)
 x86_validator_tests_nc_inst_bytes_SOURCES = src/validator/x86/nc_inst_bytes_tests.cc
-x86_validator_tests_nc_inst_bytes_LDADD = libncvalidate_x86_64.a libncval_reg_sfi_x86_64.a libnccopy_x86_64.a libnc_decoder_x86_64.a libnc_opcode_modeling_x86_64.a libncval_base_x86_64.a libplatform.a libgio.a $(VPATH)/gtest/libgtest.a
+x86_validator_tests_nc_inst_bytes_LDADD = libncvalidate_x86_64.a libncval_reg_sfi_x86_64.a libnccopy_x86_64.a libnc_decoder_x86_64.a libnc_opcode_modeling_x86_64.a libncval_base_x86_64.a libplatform.a libgio.a $(top_srcdir)/gtest/libgtest.a
 x86_validator_tests_nc_remaining_memory_CXXFLAGS = -DNACL_TRUSTED_BUT_NOT_TCB=1 $(AM_CXXFLAGS)
 x86_validator_tests_nc_remaining_memory_SOURCES = src/validator/x86/nc_remaining_memory_tests.cc
-x86_validator_tests_nc_remaining_memory_LDADD = libncvalidate_x86_64.a libncval_reg_sfi_x86_64.a libnccopy_x86_64.a libnc_decoder_x86_64.a libnc_opcode_modeling_x86_64.a libncval_base_x86_64.a libplatform.a libgio.a $(VPATH)/gtest/libgtest.a
+x86_validator_tests_nc_remaining_memory_LDADD = libncvalidate_x86_64.a libncval_reg_sfi_x86_64.a libnccopy_x86_64.a libnc_decoder_x86_64.a libnc_opcode_modeling_x86_64.a libncval_base_x86_64.a libplatform.a libgio.a $(top_srcdir)/gtest/libgtest.a
 manifest_parser_test_CXXFLAGS = -DNACL_TRUSTED_BUT_NOT_TCB=1 $(AM_CXXFLAGS)
-manifest_parser_test_SOURCES = src/service_runtime/manifest_parser_test.cc
-manifest_parser_test_LDADD = libsel.a libenv_cleanser.a libthread_interface.a libgio_wrapped_desc.a libnrd_xfer.a libnacl_perf_counter.a libnacl_base.a libimc.a libnacl_fault_inject.a libplatform.a libncvalidate_x86_64.a libncval_reg_sfi_x86_64.a libnccopy_x86_64.a libnc_decoder_x86_64.a libnc_opcode_modeling_x86_64.a libncval_base_x86_64.a libplatform.a libgio.a $(VPATH)/gtest/libgtest.a
+manifest_parser_test_SOURCES = src/manifest/manifest_parser_test.cc
+manifest_parser_test_LDADD = libsel.a libenv_cleanser.a libthread_interface.a libgio_wrapped_desc.a libnrd_xfer.a libnacl_perf_counter.a libnacl_base.a libimc.a libnacl_fault_inject.a libplatform.a libncvalidate_x86_64.a libncval_reg_sfi_x86_64.a libnccopy_x86_64.a libnc_decoder_x86_64.a libnc_opcode_modeling_x86_64.a libncval_base_x86_64.a libplatform.a libgio.a $(top_srcdir)/gtest/libgtest.a libmanifest.a
+manifest_parser_test_LDFLAGS = -L. -lmanifest
 TESTS = $(check_PROGRAMS)
 all: all-am
 
@@ -780,6 +799,10 @@ libimc.a: $(libimc_a_OBJECTS) $(libimc_a_DEPENDENCIES)
 	-rm -f libimc.a
 	$(libimc_a_AR) libimc.a $(libimc_a_OBJECTS) $(libimc_a_LIBADD)
 	$(RANLIB) libimc.a
+libmanifest.a: $(libmanifest_a_OBJECTS) $(libmanifest_a_DEPENDENCIES) 
+	-rm -f libmanifest.a
+	$(libmanifest_a_AR) libmanifest.a $(libmanifest_a_OBJECTS) $(libmanifest_a_LIBADD)
+	$(RANLIB) libmanifest.a
 libnacl_base.a: $(libnacl_base_a_OBJECTS) $(libnacl_base_a_DEPENDENCIES) 
 	-rm -f libnacl_base.a
 	$(libnacl_base_a_AR) libnacl_base.a $(libnacl_base_a_OBJECTS) $(libnacl_base_a_LIBADD)
@@ -938,7 +961,9 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lock.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/manifest_parser.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/manifest_parser_test-manifest_parser_test.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/manifest_setup.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/md5.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mount_channel.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nacl_all_modules.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nacl_app_64.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nacl_app_thread.Po@am__quote@
@@ -1038,6 +1063,9 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nrd_xfer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nrd_xfer_effector.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/platform_init.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/prefetch.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/preload.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/premap.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/refcount_base.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sel_addrspace.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sel_addrspace_posix_x86_64.Po@am__quote@
@@ -1061,6 +1089,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/service_runtime_tests-unittest_main.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sysv_shm_and_mmap.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tramp_64.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/trap.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/x86_decoder_tests_nc_inst_state-nc_inst_state_tests.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/x86_insts.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/x86_validator_tests_halt_trim-halt_trim_tests.Po@am__quote@
@@ -1291,6 +1320,132 @@ gio_nacl_desc.obj: src/gio/gio_nacl_desc.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='src/gio/gio_nacl_desc.c' object='gio_nacl_desc.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o gio_nacl_desc.obj `if test -f 'src/gio/gio_nacl_desc.c'; then $(CYGPATH_W) 'src/gio/gio_nacl_desc.c'; else $(CYGPATH_W) '$(srcdir)/src/gio/gio_nacl_desc.c'; fi`
+
+manifest_parser.o: src/manifest/manifest_parser.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT manifest_parser.o -MD -MP -MF $(DEPDIR)/manifest_parser.Tpo -c -o manifest_parser.o `test -f 'src/manifest/manifest_parser.c' || echo '$(srcdir)/'`src/manifest/manifest_parser.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/manifest_parser.Tpo $(DEPDIR)/manifest_parser.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='src/manifest/manifest_parser.c' object='manifest_parser.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o manifest_parser.o `test -f 'src/manifest/manifest_parser.c' || echo '$(srcdir)/'`src/manifest/manifest_parser.c
+
+manifest_parser.obj: src/manifest/manifest_parser.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT manifest_parser.obj -MD -MP -MF $(DEPDIR)/manifest_parser.Tpo -c -o manifest_parser.obj `if test -f 'src/manifest/manifest_parser.c'; then $(CYGPATH_W) 'src/manifest/manifest_parser.c'; else $(CYGPATH_W) '$(srcdir)/src/manifest/manifest_parser.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/manifest_parser.Tpo $(DEPDIR)/manifest_parser.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='src/manifest/manifest_parser.c' object='manifest_parser.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o manifest_parser.obj `if test -f 'src/manifest/manifest_parser.c'; then $(CYGPATH_W) 'src/manifest/manifest_parser.c'; else $(CYGPATH_W) '$(srcdir)/src/manifest/manifest_parser.c'; fi`
+
+manifest_setup.o: src/manifest/manifest_setup.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT manifest_setup.o -MD -MP -MF $(DEPDIR)/manifest_setup.Tpo -c -o manifest_setup.o `test -f 'src/manifest/manifest_setup.c' || echo '$(srcdir)/'`src/manifest/manifest_setup.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/manifest_setup.Tpo $(DEPDIR)/manifest_setup.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='src/manifest/manifest_setup.c' object='manifest_setup.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o manifest_setup.o `test -f 'src/manifest/manifest_setup.c' || echo '$(srcdir)/'`src/manifest/manifest_setup.c
+
+manifest_setup.obj: src/manifest/manifest_setup.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT manifest_setup.obj -MD -MP -MF $(DEPDIR)/manifest_setup.Tpo -c -o manifest_setup.obj `if test -f 'src/manifest/manifest_setup.c'; then $(CYGPATH_W) 'src/manifest/manifest_setup.c'; else $(CYGPATH_W) '$(srcdir)/src/manifest/manifest_setup.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/manifest_setup.Tpo $(DEPDIR)/manifest_setup.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='src/manifest/manifest_setup.c' object='manifest_setup.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o manifest_setup.obj `if test -f 'src/manifest/manifest_setup.c'; then $(CYGPATH_W) 'src/manifest/manifest_setup.c'; else $(CYGPATH_W) '$(srcdir)/src/manifest/manifest_setup.c'; fi`
+
+mount_channel.o: src/manifest/mount_channel.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mount_channel.o -MD -MP -MF $(DEPDIR)/mount_channel.Tpo -c -o mount_channel.o `test -f 'src/manifest/mount_channel.c' || echo '$(srcdir)/'`src/manifest/mount_channel.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mount_channel.Tpo $(DEPDIR)/mount_channel.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='src/manifest/mount_channel.c' object='mount_channel.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mount_channel.o `test -f 'src/manifest/mount_channel.c' || echo '$(srcdir)/'`src/manifest/mount_channel.c
+
+mount_channel.obj: src/manifest/mount_channel.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mount_channel.obj -MD -MP -MF $(DEPDIR)/mount_channel.Tpo -c -o mount_channel.obj `if test -f 'src/manifest/mount_channel.c'; then $(CYGPATH_W) 'src/manifest/mount_channel.c'; else $(CYGPATH_W) '$(srcdir)/src/manifest/mount_channel.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mount_channel.Tpo $(DEPDIR)/mount_channel.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='src/manifest/mount_channel.c' object='mount_channel.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mount_channel.obj `if test -f 'src/manifest/mount_channel.c'; then $(CYGPATH_W) 'src/manifest/mount_channel.c'; else $(CYGPATH_W) '$(srcdir)/src/manifest/mount_channel.c'; fi`
+
+prefetch.o: src/manifest/prefetch.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT prefetch.o -MD -MP -MF $(DEPDIR)/prefetch.Tpo -c -o prefetch.o `test -f 'src/manifest/prefetch.c' || echo '$(srcdir)/'`src/manifest/prefetch.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/prefetch.Tpo $(DEPDIR)/prefetch.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='src/manifest/prefetch.c' object='prefetch.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o prefetch.o `test -f 'src/manifest/prefetch.c' || echo '$(srcdir)/'`src/manifest/prefetch.c
+
+prefetch.obj: src/manifest/prefetch.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT prefetch.obj -MD -MP -MF $(DEPDIR)/prefetch.Tpo -c -o prefetch.obj `if test -f 'src/manifest/prefetch.c'; then $(CYGPATH_W) 'src/manifest/prefetch.c'; else $(CYGPATH_W) '$(srcdir)/src/manifest/prefetch.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/prefetch.Tpo $(DEPDIR)/prefetch.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='src/manifest/prefetch.c' object='prefetch.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o prefetch.obj `if test -f 'src/manifest/prefetch.c'; then $(CYGPATH_W) 'src/manifest/prefetch.c'; else $(CYGPATH_W) '$(srcdir)/src/manifest/prefetch.c'; fi`
+
+preload.o: src/manifest/preload.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT preload.o -MD -MP -MF $(DEPDIR)/preload.Tpo -c -o preload.o `test -f 'src/manifest/preload.c' || echo '$(srcdir)/'`src/manifest/preload.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/preload.Tpo $(DEPDIR)/preload.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='src/manifest/preload.c' object='preload.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o preload.o `test -f 'src/manifest/preload.c' || echo '$(srcdir)/'`src/manifest/preload.c
+
+preload.obj: src/manifest/preload.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT preload.obj -MD -MP -MF $(DEPDIR)/preload.Tpo -c -o preload.obj `if test -f 'src/manifest/preload.c'; then $(CYGPATH_W) 'src/manifest/preload.c'; else $(CYGPATH_W) '$(srcdir)/src/manifest/preload.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/preload.Tpo $(DEPDIR)/preload.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='src/manifest/preload.c' object='preload.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o preload.obj `if test -f 'src/manifest/preload.c'; then $(CYGPATH_W) 'src/manifest/preload.c'; else $(CYGPATH_W) '$(srcdir)/src/manifest/preload.c'; fi`
+
+premap.o: src/manifest/premap.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT premap.o -MD -MP -MF $(DEPDIR)/premap.Tpo -c -o premap.o `test -f 'src/manifest/premap.c' || echo '$(srcdir)/'`src/manifest/premap.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/premap.Tpo $(DEPDIR)/premap.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='src/manifest/premap.c' object='premap.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o premap.o `test -f 'src/manifest/premap.c' || echo '$(srcdir)/'`src/manifest/premap.c
+
+premap.obj: src/manifest/premap.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT premap.obj -MD -MP -MF $(DEPDIR)/premap.Tpo -c -o premap.obj `if test -f 'src/manifest/premap.c'; then $(CYGPATH_W) 'src/manifest/premap.c'; else $(CYGPATH_W) '$(srcdir)/src/manifest/premap.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/premap.Tpo $(DEPDIR)/premap.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='src/manifest/premap.c' object='premap.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o premap.obj `if test -f 'src/manifest/premap.c'; then $(CYGPATH_W) 'src/manifest/premap.c'; else $(CYGPATH_W) '$(srcdir)/src/manifest/premap.c'; fi`
+
+trap.o: src/manifest/trap.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT trap.o -MD -MP -MF $(DEPDIR)/trap.Tpo -c -o trap.o `test -f 'src/manifest/trap.c' || echo '$(srcdir)/'`src/manifest/trap.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/trap.Tpo $(DEPDIR)/trap.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='src/manifest/trap.c' object='trap.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o trap.o `test -f 'src/manifest/trap.c' || echo '$(srcdir)/'`src/manifest/trap.c
+
+trap.obj: src/manifest/trap.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT trap.obj -MD -MP -MF $(DEPDIR)/trap.Tpo -c -o trap.obj `if test -f 'src/manifest/trap.c'; then $(CYGPATH_W) 'src/manifest/trap.c'; else $(CYGPATH_W) '$(srcdir)/src/manifest/trap.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/trap.Tpo $(DEPDIR)/trap.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='src/manifest/trap.c' object='trap.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o trap.obj `if test -f 'src/manifest/trap.c'; then $(CYGPATH_W) 'src/manifest/trap.c'; else $(CYGPATH_W) '$(srcdir)/src/manifest/trap.c'; fi`
+
+zmq_syscalls.o: src/manifest/zmq_syscalls.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT zmq_syscalls.o -MD -MP -MF $(DEPDIR)/zmq_syscalls.Tpo -c -o zmq_syscalls.o `test -f 'src/manifest/zmq_syscalls.c' || echo '$(srcdir)/'`src/manifest/zmq_syscalls.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/zmq_syscalls.Tpo $(DEPDIR)/zmq_syscalls.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='src/manifest/zmq_syscalls.c' object='zmq_syscalls.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o zmq_syscalls.o `test -f 'src/manifest/zmq_syscalls.c' || echo '$(srcdir)/'`src/manifest/zmq_syscalls.c
+
+zmq_syscalls.obj: src/manifest/zmq_syscalls.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT zmq_syscalls.obj -MD -MP -MF $(DEPDIR)/zmq_syscalls.Tpo -c -o zmq_syscalls.obj `if test -f 'src/manifest/zmq_syscalls.c'; then $(CYGPATH_W) 'src/manifest/zmq_syscalls.c'; else $(CYGPATH_W) '$(srcdir)/src/manifest/zmq_syscalls.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/zmq_syscalls.Tpo $(DEPDIR)/zmq_syscalls.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='src/manifest/zmq_syscalls.c' object='zmq_syscalls.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o zmq_syscalls.obj `if test -f 'src/manifest/zmq_syscalls.c'; then $(CYGPATH_W) 'src/manifest/zmq_syscalls.c'; else $(CYGPATH_W) '$(srcdir)/src/manifest/zmq_syscalls.c'; fi`
+
+md5.o: src/manifest/md5.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT md5.o -MD -MP -MF $(DEPDIR)/md5.Tpo -c -o md5.o `test -f 'src/manifest/md5.c' || echo '$(srcdir)/'`src/manifest/md5.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/md5.Tpo $(DEPDIR)/md5.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='src/manifest/md5.c' object='md5.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o md5.o `test -f 'src/manifest/md5.c' || echo '$(srcdir)/'`src/manifest/md5.c
+
+md5.obj: src/manifest/md5.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT md5.obj -MD -MP -MF $(DEPDIR)/md5.Tpo -c -o md5.obj `if test -f 'src/manifest/md5.c'; then $(CYGPATH_W) 'src/manifest/md5.c'; else $(CYGPATH_W) '$(srcdir)/src/manifest/md5.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/md5.Tpo $(DEPDIR)/md5.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='src/manifest/md5.c' object='md5.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o md5.obj `if test -f 'src/manifest/md5.c'; then $(CYGPATH_W) 'src/manifest/md5.c'; else $(CYGPATH_W) '$(srcdir)/src/manifest/md5.c'; fi`
 
 nacl_refcount.o: src/nacl_base/nacl_refcount.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT nacl_refcount.o -MD -MP -MF $(DEPDIR)/nacl_refcount.Tpo -c -o nacl_refcount.o `test -f 'src/nacl_base/nacl_refcount.c' || echo '$(srcdir)/'`src/nacl_base/nacl_refcount.c
@@ -2888,48 +3043,6 @@ nacl_signal_64.obj: src/service_runtime/linux/nacl_signal_64.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o nacl_signal_64.obj `if test -f 'src/service_runtime/linux/nacl_signal_64.c'; then $(CYGPATH_W) 'src/service_runtime/linux/nacl_signal_64.c'; else $(CYGPATH_W) '$(srcdir)/src/service_runtime/linux/nacl_signal_64.c'; fi`
 
-zmq_syscalls.o: src/service_runtime/zmq_syscalls.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT zmq_syscalls.o -MD -MP -MF $(DEPDIR)/zmq_syscalls.Tpo -c -o zmq_syscalls.o `test -f 'src/service_runtime/zmq_syscalls.c' || echo '$(srcdir)/'`src/service_runtime/zmq_syscalls.c
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/zmq_syscalls.Tpo $(DEPDIR)/zmq_syscalls.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='src/service_runtime/zmq_syscalls.c' object='zmq_syscalls.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o zmq_syscalls.o `test -f 'src/service_runtime/zmq_syscalls.c' || echo '$(srcdir)/'`src/service_runtime/zmq_syscalls.c
-
-zmq_syscalls.obj: src/service_runtime/zmq_syscalls.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT zmq_syscalls.obj -MD -MP -MF $(DEPDIR)/zmq_syscalls.Tpo -c -o zmq_syscalls.obj `if test -f 'src/service_runtime/zmq_syscalls.c'; then $(CYGPATH_W) 'src/service_runtime/zmq_syscalls.c'; else $(CYGPATH_W) '$(srcdir)/src/service_runtime/zmq_syscalls.c'; fi`
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/zmq_syscalls.Tpo $(DEPDIR)/zmq_syscalls.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='src/service_runtime/zmq_syscalls.c' object='zmq_syscalls.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o zmq_syscalls.obj `if test -f 'src/service_runtime/zmq_syscalls.c'; then $(CYGPATH_W) 'src/service_runtime/zmq_syscalls.c'; else $(CYGPATH_W) '$(srcdir)/src/service_runtime/zmq_syscalls.c'; fi`
-
-manifest_parser.o: src/service_runtime/manifest_parser.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT manifest_parser.o -MD -MP -MF $(DEPDIR)/manifest_parser.Tpo -c -o manifest_parser.o `test -f 'src/service_runtime/manifest_parser.c' || echo '$(srcdir)/'`src/service_runtime/manifest_parser.c
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/manifest_parser.Tpo $(DEPDIR)/manifest_parser.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='src/service_runtime/manifest_parser.c' object='manifest_parser.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o manifest_parser.o `test -f 'src/service_runtime/manifest_parser.c' || echo '$(srcdir)/'`src/service_runtime/manifest_parser.c
-
-manifest_parser.obj: src/service_runtime/manifest_parser.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT manifest_parser.obj -MD -MP -MF $(DEPDIR)/manifest_parser.Tpo -c -o manifest_parser.obj `if test -f 'src/service_runtime/manifest_parser.c'; then $(CYGPATH_W) 'src/service_runtime/manifest_parser.c'; else $(CYGPATH_W) '$(srcdir)/src/service_runtime/manifest_parser.c'; fi`
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/manifest_parser.Tpo $(DEPDIR)/manifest_parser.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='src/service_runtime/manifest_parser.c' object='manifest_parser.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o manifest_parser.obj `if test -f 'src/service_runtime/manifest_parser.c'; then $(CYGPATH_W) 'src/service_runtime/manifest_parser.c'; else $(CYGPATH_W) '$(srcdir)/src/service_runtime/manifest_parser.c'; fi`
-
-md5.o: src/service_runtime/md5.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT md5.o -MD -MP -MF $(DEPDIR)/md5.Tpo -c -o md5.o `test -f 'src/service_runtime/md5.c' || echo '$(srcdir)/'`src/service_runtime/md5.c
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/md5.Tpo $(DEPDIR)/md5.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='src/service_runtime/md5.c' object='md5.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o md5.o `test -f 'src/service_runtime/md5.c' || echo '$(srcdir)/'`src/service_runtime/md5.c
-
-md5.obj: src/service_runtime/md5.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT md5.obj -MD -MP -MF $(DEPDIR)/md5.Tpo -c -o md5.obj `if test -f 'src/service_runtime/md5.c'; then $(CYGPATH_W) 'src/service_runtime/md5.c'; else $(CYGPATH_W) '$(srcdir)/src/service_runtime/md5.c'; fi`
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/md5.Tpo $(DEPDIR)/md5.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='src/service_runtime/md5.c' object='md5.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o md5.obj `if test -f 'src/service_runtime/md5.c'; then $(CYGPATH_W) 'src/service_runtime/md5.c'; else $(CYGPATH_W) '$(srcdir)/src/service_runtime/md5.c'; fi`
-
 nacl_thread_interface.o: src/threading/nacl_thread_interface.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT nacl_thread_interface.o -MD -MP -MF $(DEPDIR)/nacl_thread_interface.Tpo -c -o nacl_thread_interface.o `test -f 'src/threading/nacl_thread_interface.c' || echo '$(srcdir)/'`src/threading/nacl_thread_interface.c
 @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/nacl_thread_interface.Tpo $(DEPDIR)/nacl_thread_interface.Po
@@ -3063,19 +3176,19 @@ refcount_base.obj: src/platform/refcount_base.cc
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o refcount_base.obj `if test -f 'src/platform/refcount_base.cc'; then $(CYGPATH_W) 'src/platform/refcount_base.cc'; else $(CYGPATH_W) '$(srcdir)/src/platform/refcount_base.cc'; fi`
 
-manifest_parser_test-manifest_parser_test.o: src/service_runtime/manifest_parser_test.cc
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(manifest_parser_test_CXXFLAGS) $(CXXFLAGS) -MT manifest_parser_test-manifest_parser_test.o -MD -MP -MF $(DEPDIR)/manifest_parser_test-manifest_parser_test.Tpo -c -o manifest_parser_test-manifest_parser_test.o `test -f 'src/service_runtime/manifest_parser_test.cc' || echo '$(srcdir)/'`src/service_runtime/manifest_parser_test.cc
+manifest_parser_test-manifest_parser_test.o: src/manifest/manifest_parser_test.cc
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(manifest_parser_test_CXXFLAGS) $(CXXFLAGS) -MT manifest_parser_test-manifest_parser_test.o -MD -MP -MF $(DEPDIR)/manifest_parser_test-manifest_parser_test.Tpo -c -o manifest_parser_test-manifest_parser_test.o `test -f 'src/manifest/manifest_parser_test.cc' || echo '$(srcdir)/'`src/manifest/manifest_parser_test.cc
 @am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/manifest_parser_test-manifest_parser_test.Tpo $(DEPDIR)/manifest_parser_test-manifest_parser_test.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='src/service_runtime/manifest_parser_test.cc' object='manifest_parser_test-manifest_parser_test.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='src/manifest/manifest_parser_test.cc' object='manifest_parser_test-manifest_parser_test.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(manifest_parser_test_CXXFLAGS) $(CXXFLAGS) -c -o manifest_parser_test-manifest_parser_test.o `test -f 'src/service_runtime/manifest_parser_test.cc' || echo '$(srcdir)/'`src/service_runtime/manifest_parser_test.cc
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(manifest_parser_test_CXXFLAGS) $(CXXFLAGS) -c -o manifest_parser_test-manifest_parser_test.o `test -f 'src/manifest/manifest_parser_test.cc' || echo '$(srcdir)/'`src/manifest/manifest_parser_test.cc
 
-manifest_parser_test-manifest_parser_test.obj: src/service_runtime/manifest_parser_test.cc
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(manifest_parser_test_CXXFLAGS) $(CXXFLAGS) -MT manifest_parser_test-manifest_parser_test.obj -MD -MP -MF $(DEPDIR)/manifest_parser_test-manifest_parser_test.Tpo -c -o manifest_parser_test-manifest_parser_test.obj `if test -f 'src/service_runtime/manifest_parser_test.cc'; then $(CYGPATH_W) 'src/service_runtime/manifest_parser_test.cc'; else $(CYGPATH_W) '$(srcdir)/src/service_runtime/manifest_parser_test.cc'; fi`
+manifest_parser_test-manifest_parser_test.obj: src/manifest/manifest_parser_test.cc
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(manifest_parser_test_CXXFLAGS) $(CXXFLAGS) -MT manifest_parser_test-manifest_parser_test.obj -MD -MP -MF $(DEPDIR)/manifest_parser_test-manifest_parser_test.Tpo -c -o manifest_parser_test-manifest_parser_test.obj `if test -f 'src/manifest/manifest_parser_test.cc'; then $(CYGPATH_W) 'src/manifest/manifest_parser_test.cc'; else $(CYGPATH_W) '$(srcdir)/src/manifest/manifest_parser_test.cc'; fi`
 @am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/manifest_parser_test-manifest_parser_test.Tpo $(DEPDIR)/manifest_parser_test-manifest_parser_test.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='src/service_runtime/manifest_parser_test.cc' object='manifest_parser_test-manifest_parser_test.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='src/manifest/manifest_parser_test.cc' object='manifest_parser_test-manifest_parser_test.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(manifest_parser_test_CXXFLAGS) $(CXXFLAGS) -c -o manifest_parser_test-manifest_parser_test.obj `if test -f 'src/service_runtime/manifest_parser_test.cc'; then $(CYGPATH_W) 'src/service_runtime/manifest_parser_test.cc'; else $(CYGPATH_W) '$(srcdir)/src/service_runtime/manifest_parser_test.cc'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(manifest_parser_test_CXXFLAGS) $(CXXFLAGS) -c -o manifest_parser_test-manifest_parser_test.obj `if test -f 'src/manifest/manifest_parser_test.cc'; then $(CYGPATH_W) 'src/manifest/manifest_parser_test.cc'; else $(CYGPATH_W) '$(srcdir)/src/manifest/manifest_parser_test.cc'; fi`
 
 service_runtime_tests-sel_ldr_test.o: src/service_runtime/sel_ldr_test.cc
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(service_runtime_tests_CXXFLAGS) $(CXXFLAGS) -MT service_runtime_tests-sel_ldr_test.o -MD -MP -MF $(DEPDIR)/service_runtime_tests-sel_ldr_test.Tpo -c -o service_runtime_tests-sel_ldr_test.o `test -f 'src/service_runtime/sel_ldr_test.cc' || echo '$(srcdir)/'`src/service_runtime/sel_ldr_test.cc
