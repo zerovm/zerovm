@@ -27,7 +27,7 @@ int main(int argc, char **argv)
   /* copy input channel to output channel */
   while((insize = zvm_pread(InputChannel, buffer, CHUNK_SIZE, position)) > 0)
   {
-    outsize = zvm_write(OutputChannel, buffer, insize, position);
+    outsize = zvm_pwrite(OutputChannel, buffer, insize, position);
     fprintf(stderr, "read [%lld] bytes, written %lld bytes\n", insize, outsize);
     if(insize != outsize) LEAVE(buffer, -2); /* check if some bytes lost in action */
     position += insize;

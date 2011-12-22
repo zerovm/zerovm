@@ -49,9 +49,6 @@
 #include "src/service_runtime/include/sys/mman.h"
 #include "src/service_runtime/include/sys/stat.h"
 
-#include "src/manifest/zmq_syscalls.h" /* d'b */
-
-
 /*
  * OSX defines SIZE_T_MAX in i386/limits.h; Linux has SIZE_MAX;
  * Windows has none.
@@ -521,16 +518,6 @@ int32_t NaClCommonSysOpen(struct NaClAppThread  *natp,
     goto cleanup;
   }
 
-  /* d'b
-   * check the pathname and if it is proper url
-   * call the swift daemon (proxy)
-   */
-  if (IsSwiftURL(path)) {
-  	retval = ZMQSysOpen(natp, path, flags, mode);
-  	goto cleanup;
-  }
-  /* d'b end */
-
   retval = NaClOpenAclCheck(natp->nap, path, flags, mode);
   if (0 != retval) {
     NaClLog(3, "Open ACL check rejected \"%s\".\n", path);
@@ -594,23 +581,11 @@ int32_t NaClCommonSysClose(struct NaClAppThread *natp,
                            int                  d) {
   int             retval = -NACL_ABI_EBADF;
   struct NaClDesc *ndp;
-  const char *name; /* d'b */
 
   NaClLog(3, "Entered NaClCommonSysClose(0x%08"NACL_PRIxPTR", %d)\n",
           (uintptr_t) natp, d);
   NaClSysCommonThreadSyscallEnter(natp);
 
-  /* d'b
-   * check this is the call to close channel
-   * call the swift daemon (proxy) if so
-   */
-  name = GetFileName (natp, d);
-  if (IsSwiftURL(name)) {
-    retval = ZMQSysClose(natp, d);
-  }
-
-  /* and allow nacl code to remove the descriptor structure from the table.. */
-  /* d'b end */
   NaClXMutexLock(&natp->nap->desc_mu);
   ndp = NaClGetDescMu(natp->nap, d);
   if (NULL != ndp) {
@@ -703,8 +678,6 @@ int32_t NaClCommonSysRead(struct NaClAppThread  *natp,
   ssize_t         read_result = -NACL_ABI_EINVAL;
   uintptr_t       sysaddr;
   struct NaClDesc *ndp;
-  const char *name; /* d'b */
-
 
   NaClLog(3, ("Entered NaClCommonSysRead(0x%08"NACL_PRIxPTR", "
            "%d, 0x%08"NACL_PRIxPTR", "
@@ -712,18 +685,6 @@ int32_t NaClCommonSysRead(struct NaClAppThread  *natp,
           (uintptr_t) natp, d, (uintptr_t) buf, count, count);
 
   NaClSysCommonThreadSyscallEnter(natp);
-
-  /* d'b
-   * check this is the call to read channel
-   * call the swift daemon (proxy) if so
-   */
-  name = GetFileName (natp, d);
-  if (IsSwiftURL(name))
-  {
-  	retval = ZMQSysRead(natp, d, buf, count);
-  	goto cleanup;
-  }
-  /* d'b end */
 
   ndp = NaClGetDesc(natp->nap, d);
   if (NULL == ndp) {
@@ -775,7 +736,6 @@ int32_t NaClCommonSysWrite(struct NaClAppThread *natp,
   ssize_t         write_result = -NACL_ABI_EINVAL;
   uintptr_t       sysaddr;
   struct NaClDesc *ndp;
-  const char *name; /* d'b */
 
   NaClLog(3, "Entered NaClCommonSysWrite(0x%08"NACL_PRIxPTR", "
           "%d, 0x%08"NACL_PRIxPTR", "
@@ -783,17 +743,6 @@ int32_t NaClCommonSysWrite(struct NaClAppThread *natp,
           (uintptr_t) natp, d, (uintptr_t) buf, count, count);
 
   NaClSysCommonThreadSyscallEnter(natp);
-
-  /* d'b
-   * check this is the call to read channel
-   * call the swift daemon (proxy) if so
-   */
-  name = GetFileName (natp, d);
-  if (IsSwiftURL(name)) {
-	retval = ZMQSysWrite(natp, d, buf, count);
-    goto cleanup;
-  }
-  /* d'b end */
 
   ndp = NaClGetDesc(natp->nap, d);
   if (NULL == ndp) {

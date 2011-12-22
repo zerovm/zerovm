@@ -26,9 +26,8 @@ tests: test_compile
 	test/x86_validator_tests_halt_trim
 	test/x86_validator_tests_nc_inst_bytes
 #	test/manifest_parser_test #disabled due to link error. repair it immidiatelly after ver7 completed
-#	test/zmq_syscalls_test # disabled until i will make valid naclapp object
 
-test_compile: test/x86_validator_tests_halt_trim test/service_runtime_tests test/x86_decoder_tests_nc_inst_state test/x86_validator_tests_nc_inst_bytes test/x86_validator_tests_nc_remaining_memory #test/manifest_parser_test #test/zmq_syscalls_test # disabled until i will make valid naclapp object
+test_compile: test/x86_validator_tests_halt_trim test/service_runtime_tests test/x86_decoder_tests_nc_inst_state test/x86_validator_tests_nc_inst_bytes test/x86_validator_tests_nc_remaining_memory #test/manifest_parser_test
 
 obj/halt_trim_tests.o: src/validator/x86/halt_trim_tests.cc
 	@g++ ${CXXFLAGS} -o obj/halt_trim_tests.o ${CXXFLAGS1} -Igtest/include src/validator/x86/halt_trim_tests.cc
@@ -40,11 +39,6 @@ obj/manifest_parser_test.o: src/manifest/manifest_parser_test.cc
 	@g++ ${CXXFLAGS} -o obj/manifest_parser_test.o ${CXXFLAGS1} src/manifest/manifest_parser_test.cc
 test/manifest_parser_test: obj/manifest_parser_test.o obj/libsel.a obj/libenv_cleanser.a obj/libthread_interface.a obj/libgio_wrapped_desc.a obj/libnrd_xfer.a obj/libnacl_perf_counter.a obj/libnacl_base.a obj/libimc.a obj/libnacl_fault_inject.a obj/libplatform.a obj/libncvalidate_x86_64.a obj/libncval_reg_sfi_x86_64.a obj/libnccopy_x86_64.a obj/libnc_decoder_x86_64.a obj/libnc_opcode_modeling_x86_64.a obj/libncval_base_x86_64.a obj/libplatform.a obj/libgio.a obj/libmanifest.a
 	@g++ ${CXXFLAGS} -o test/manifest_parser_test ${CXXFLAGS2} obj/manifest_parser_test.o -L/usr/lib -Lobj -Lgtest -lgtest -lsel -lenv_cleanser -lthread_interface -lgio_wrapped_desc -lnrd_xfer -lnacl_perf_counter -lnacl_base -limc -lnacl_fault_inject -lplatform -lncvalidate_x86_64 -lncval_reg_sfi_x86_64 -lnccopy_x86_64 -lnc_decoder_x86_64 -lnc_opcode_modeling_x86_64 -lncval_base_x86_64 -lplatform -lgio -lrt -lpthread -lcrypto -ldl -lmanifest
-
-obj/zmq_syscalls_test.o: src/manifest/zmq_syscalls_test.cc
-	@g++ ${CXXFLAGS} -o obj/zmq_syscalls_test.o ${CXXFLAGS1} src/manifest/zmq_syscalls_test.cc
-test/zmq_syscalls_test: obj/zmq_syscalls_test.o obj/libsel.a obj/libenv_cleanser.a obj/libthread_interface.a obj/libgio_wrapped_desc.a obj/libnrd_xfer.a obj/libnacl_perf_counter.a obj/libnacl_base.a obj/libimc.a obj/libnacl_fault_inject.a obj/libplatform.a obj/libncvalidate_x86_64.a obj/libncval_reg_sfi_x86_64.a obj/libnccopy_x86_64.a obj/libnc_decoder_x86_64.a obj/libnc_opcode_modeling_x86_64.a obj/libncval_base_x86_64.a obj/libplatform.a obj/libgio.a obj/libmanifest.a
-	@g++ ${CXXFLAGS} -o test/zmq_syscalls_test ${CXXFLAGS2} obj/zmq_syscalls_test.o -L/usr/lib -Lobj -Lgtest -lgtest -lsel -lenv_cleanser -lthread_interface -lgio_wrapped_desc -lnrd_xfer -lnacl_perf_counter -lnacl_base -limc -lnacl_fault_inject -lplatform -lncvalidate_x86_64 -lncval_reg_sfi_x86_64 -lnccopy_x86_64 -lnc_decoder_x86_64 -lnc_opcode_modeling_x86_64 -lncval_base_x86_64 -lplatform -lgio -lrt -lpthread -lcrypto -ldl -lmanifest
 
 obj/sel_ldr_test.o: src/service_runtime/sel_ldr_test.cc
 	@g++ ${CXXFLAGS} -o obj/sel_ldr_test.o ${CXXFLAGS1} ${CCFLAGS2} ${CCFLAGS4} -Igtest/include src/service_runtime/sel_ldr_test.cc
@@ -89,8 +83,8 @@ clean_intermediate:
 	@rm test/*
 	@echo unit tests has been deleted
 
-obj/libmanifest.a: obj/manifest_parser.o obj/manifest_setup.o obj/md5.o obj/mount_channel.o obj/prefetch.o obj/preload.o obj/premap.o obj/trap.o obj/zmq_syscalls.o
-	@ar rc obj/libmanifest.a obj/manifest_parser.o obj/manifest_setup.o obj/md5.o obj/mount_channel.o obj/prefetch.o obj/preload.o obj/premap.o obj/trap.o obj/zmq_syscalls.o
+obj/libmanifest.a: obj/manifest_parser.o obj/manifest_setup.o obj/md5.o obj/mount_channel.o obj/prefetch.o obj/preload.o obj/premap.o obj/trap.o
+	@ar rc obj/libmanifest.a obj/manifest_parser.o obj/manifest_setup.o obj/md5.o obj/mount_channel.o obj/prefetch.o obj/preload.o obj/premap.o obj/trap.o
 
 obj/libsel.a: obj/dyn_array.o obj/elf_util.o obj/nacl_all_modules.o obj/nacl_app_thread.o obj/nacl_desc_effector_ldr.o obj/nacl_globals.o obj/nacl_memory_object.o obj/nacl_signal_common.o obj/nacl_stack_safety.o obj/nacl_syscall_common.o obj/nacl_syscall_handlers.o obj/nacl_syscall_hook.o obj/nacl_text.o obj/sel_addrspace.o obj/sel_ldr.o obj/sel_ldr-inl.o obj/sel_ldr_standard.o obj/sel_ldr_thread_interface.o obj/sel_mem.o obj/sel_qualify.o obj/sel_util-inl.o obj/sel_validate_image.o obj/nacl_ldt_x86.o obj/nacl_app_64.o obj/nacl_switch_64.o obj/nacl_switch_to_app_64.o obj/nacl_syscall_64.o obj/nacl_tls_64.o obj/sel_addrspace_x86_64.o obj/sel_ldr_x86_64.o obj/sel_rt_64.o obj/tramp_64.o obj/sel_addrspace_posix_x86_64.o obj/sel_memory.o obj/nacl_thread_nice.o obj/nacl_ldt.o obj/sel_segments.o obj/nacl_signal.o obj/nacl_signal_64.o
 	@ar rc obj/libsel.a obj/dyn_array.o obj/elf_util.o obj/nacl_all_modules.o obj/nacl_app_thread.o obj/nacl_desc_effector_ldr.o obj/nacl_globals.o obj/nacl_memory_object.o obj/nacl_signal_common.o obj/nacl_stack_safety.o obj/nacl_syscall_common.o obj/nacl_syscall_handlers.o obj/nacl_syscall_hook.o obj/nacl_text.o obj/sel_addrspace.o obj/sel_ldr.o obj/sel_ldr-inl.o obj/sel_ldr_standard.o obj/sel_ldr_thread_interface.o obj/sel_mem.o obj/sel_qualify.o obj/sel_util-inl.o obj/sel_validate_image.o obj/nacl_ldt_x86.o obj/nacl_app_64.o obj/nacl_switch_64.o obj/nacl_switch_to_app_64.o obj/nacl_syscall_64.o obj/nacl_tls_64.o obj/sel_addrspace_x86_64.o obj/sel_ldr_x86_64.o obj/sel_rt_64.o obj/tramp_64.o obj/sel_addrspace_posix_x86_64.o obj/sel_memory.o obj/nacl_thread_nice.o obj/nacl_ldt.o obj/sel_segments.o obj/nacl_signal.o obj/nacl_signal_64.o
@@ -173,9 +167,6 @@ obj/md5.o: src/manifest/md5.c
 
 obj/manifest_parser.o: src/manifest/manifest_parser.c
 	@gcc ${CCFLAGS} -o obj/manifest_parser.o ${CCFLAGS0} ${CCFLAGS1} src/manifest/manifest_parser.c
-
-obj/zmq_syscalls.o: src/manifest/zmq_syscalls.c
-	@gcc ${CCFLAGS} -o obj/zmq_syscalls.o ${CCFLAGS0} ${CCFLAGS1} src/manifest/zmq_syscalls.c
 
 obj/ncvalidate.o: src/validator/x86/64/ncvalidate.c
 	@gcc ${CCFLAGS} -o obj/ncvalidate.o ${CCFLAGS0} ${CCFLAGS1} ${CCFLAGS4} src/validator/x86/64/ncvalidate.c

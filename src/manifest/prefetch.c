@@ -12,7 +12,6 @@
 #include "src/service_runtime/sel_mem.h"
 #include "src/service_runtime/nacl_memory_object.h"
 #include "src/platform/nacl_log.h"
-#include "src/manifest/zmq_syscalls.h"
 
 #include <src/manifest/manifest_parser.h>
 #include <src/manifest/manifest_setup.h>
