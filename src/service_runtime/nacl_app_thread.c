@@ -34,8 +34,10 @@ void WINAPI NaClThreadLauncher(void *state) {
   thread_idx = NaClGetThreadIdx(natp);
   NaClTlsSetIdx(thread_idx);
   nacl_thread[thread_idx] = natp;
-  nacl_user[thread_idx] = &natp->user;
-  nacl_sys[thread_idx] = &natp->sys;
+//  nacl_user[thread_idx] = &natp->user;
+//  nacl_sys[thread_idx] = &natp->sys;
+  nacl_user = &natp->user;
+  nacl_sys = &natp->sys;
 
   /*
    * We have to hold the threads_mu lock until after thread_num field
@@ -90,8 +92,12 @@ void NaClAppThreadTeardown(struct NaClAppThread *natp) {
    * any ldt-based lookups will not reach this dying thread's data.
    */
   thread_idx = NaClGetThreadIdx(natp);
-  nacl_sys[thread_idx] = NULL;
-  nacl_user[thread_idx] = NULL;
+//  nacl_sys[thread_idx] = NULL;
+//  nacl_user[thread_idx] = NULL;
+
+  nacl_sys = NULL;
+  nacl_user = NULL;
+
   nacl_thread[thread_idx] = NULL;
   NaClLog(3, " removing thread from thread table\n");
   NaClRemoveThreadMu(nap, natp->thread_num);

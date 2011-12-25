@@ -22,7 +22,7 @@ EXTERN_C_BEGIN
  * return 0 if successful, otherwise - 1 (nanosleep restriction)
  * note: in a future will be moved to "nacl_syscall_handler.c" to be only syscall
  */
-int32_t TrapHandler(struct NaClAppThread *natp, uint32_t args);
+int32_t TrapHandler(struct NaClApp *nap, uint32_t args);
 
 /* pause cpu time counting. update cnt_cpu */
 void PauseCpuClock(struct NaClApp *nap);

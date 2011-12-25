@@ -145,14 +145,14 @@ struct NaClApp {
 
   /* common to both ELF executables and relocatable load images */
 
-  uintptr_t                 springboard_addr;  /* relative to mem_start */
+  uintptr_t                 springboard_addr;  /* relative to mem_start */ // #1 to remove
   /*
    * springboard code addr for context switching into app sandbox, relative
    * to code sandbox CS
    */
 
-  struct NaClMutex          mu;
-  struct NaClCondVar        cv;
+  struct NaClMutex          mu; // #2 to remove
+  struct NaClCondVar        cv; // #3 to remove
 
   /*
    * invariant: !(vm_hole_may_exist && threads_launching != 0).
@@ -166,8 +166,8 @@ struct NaClApp {
    * way, in case we later introduce code that might want to
    * temporarily drop the process lock.
    */
-  int                       vm_hole_may_exist;
-  int                       threads_launching;
+  int                       vm_hole_may_exist; // #4 to remove
+  int                       threads_launching; // #5 to remove
 
   /*
    * An array of NaCl syscall handlers. The length of the array must be
@@ -199,14 +199,14 @@ struct NaClApp {
    * is used by this NaClApp when making NaClDesc method calls from
    * syscall handlers.
    */
-  struct NaClDescEffector   *effp;
+  struct NaClDescEffector   *effp; // #6 to remove
 
   /*
    * may reject nexes that are incompatible w/ dynamic-text in the near future
    */
   int                       use_shm_for_dynamic_text;
   struct NaClDesc           *text_shm;
-  struct NaClMutex          dynamic_load_mutex;
+  struct NaClMutex          dynamic_load_mutex; // #7 to remove
   /*
    * This records which pages in text_shm have been allocated.  When a
    * page is allocated, it is filled with halt instructions and then
@@ -237,13 +237,12 @@ struct NaClApp {
    */
   int                       dynamic_delete_generation;
 
+  int                       running; // #00 also can be removed. can't see how it may be useful
+  int                       exit_status; // has duplicate: exit also return code with longjump()
 
-  int                       running;
-  int                       exit_status;
-
-  int                       ignore_validator_result;
+  int                       ignore_validator_result; // #8 to remove
   int                       skip_validator;
-  int                       validator_stub_out_mode;
+  int                       validator_stub_out_mode; // #9 to remove
 
 #if NACL_ARCH(NACL_BUILD_ARCH) == NACL_x86 && NACL_BUILD_SUBARCH == 32
   uint16_t                  code_seg_sel;
@@ -258,13 +257,13 @@ struct NaClApp {
    * the thread locks, i.e., threads_mu must be acqured w/o holding
    * any per-thread lock (natp->mu).
    */
-  struct NaClMutex          threads_mu;
-  struct NaClCondVar        threads_cv;
-  struct DynArray           threads;   /* NaClAppThread pointers */
-  int                       num_threads;  /* number actually running */
+  struct NaClMutex          threads_mu; // #10 to remove
+  struct NaClCondVar        threads_cv; // #11 to remove
+  struct DynArray           threads;   /* NaClAppThread pointers */ // #12 to remove
+  int                       num_threads;  /* number actually running */ // #13 to remove
 
-  struct NaClMutex          desc_mu;
-  struct DynArray           desc_tbl;  /* NaClDesc pointers */
+  struct NaClMutex          desc_mu; // #14 to remove
+  struct DynArray           desc_tbl;  /* NaClDesc pointers */ // #15 to remove
 
   int                       enable_debug_stub;
   struct NaClDebugCallbacks *debug_stub_callbacks;
@@ -272,6 +271,13 @@ struct NaClApp {
 	/* d'b added fields */
   int                       enable_syscalls;
   struct Manifest           *manifest;
+
+  /* fileds taken from the natp */
+  void                      *signal_stack; /* Stack for signal handling, registered with sigaltstack(). */
+  uintptr_t                 *syscall_args;
+  uint32_t                  sysret; /* syscall return code */
+  uintptr_t                 sys_tls;  /* only need for nexe prolog */
+//  uint32_t                  tls_idx; /* only need for nexe prolog */
   /* d'b end */
 };
 

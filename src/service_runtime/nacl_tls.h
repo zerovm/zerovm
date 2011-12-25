@@ -72,8 +72,7 @@ uint32_t NaClTlsGetIdx(void);
  * call at module startup time.
  * It installs tls descriptor for the main thread and also returns it.
  */
-uint32_t NaClTlsChange(struct NaClAppThread *natp,
-                       void                 *thread_ptr) NACL_WUR;
+uint32_t NaClTlsChange(struct NaClApp *nap, void *thread_ptr) NACL_WUR;
 
 /*
  * Get the current thread index which is used to look up information in a

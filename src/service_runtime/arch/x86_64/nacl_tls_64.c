@@ -321,11 +321,10 @@ void NaClTlsFree(struct NaClAppThread *natp) {
   NaClThreadIdxFree(tls_idx - 1);
 }
 
-uint32_t NaClTlsChange(struct NaClAppThread   *natp,
-                       void                   *base_addr) {
-  natp->user.tls_base = base_addr;
-  return NaClGetThreadIdx(natp);
-}
+//uint32_t NaClTlsChange(struct NaClApp *nap, void *base_addr) {
+//  nap->sys_tls = (uintptr_t)base_addr;
+//  return NaClGetThreadIdx(nap);
+//}
 
 
 #else

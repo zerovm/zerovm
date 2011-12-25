@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 #include "include/elf_constants.h"
 #include "include/elf.h"
@@ -42,11 +43,52 @@
 #include "src/service_runtime/sel_addrspace.h"
 #include "src/manifest/manifest_setup.h"
 #include "src/manifest/trap.h" /* d'b: PauseCpuClock(), ResumeCpuClock() */
+#include "src/service_runtime/nacl_globals.h" /* d'b: nacl_user */
+
+/* d'b */
+#include "src/service_runtime/arch/x86/sel_rt.h"
+#include "src/validator/x86/nacl_cpuid.h"
+
+#define NORETURN_PTR NORETURN
+extern NORETURN void NaClSwitchSSE(struct NaClThreadContext *context);
+extern NORETURN void NaClSyscallCSegHook(void); /* d'b: we use tls no more */
+
+/* ###
+ * d'b: alternative mechanism to pass control to user side
+ * note: initializes "nacl_user" global
+ */
+NORETURN void SwitchToApp(struct NaClApp  *nap, uintptr_t stack_ptr)
+{
+  /* initialize "nacl_user" global */
+  if(!nacl_user) nacl_user = malloc(sizeof(*nacl_user));
+  assert(nacl_user != NULL);
+
+  /* construct "nacl_user" global */
+  NaClThreadContextCtor(nacl_user, nap, nap->initial_entry_pt,
+                        NaClSysToUserStackAddr(nap, stack_ptr), 0);
+  assert(NaClSignalStackAllocate(&nap->signal_stack));
+
+  nacl_user->sysret = nap->break_addr; /* can be set from NaClThreadContextCtor() */
+  nacl_user->prog_ctr = NaClUserToSys(nap, nap->initial_entry_pt); /* which one do i need, both? */
+  nacl_user->new_prog_ctr = NaClUserToSys(nap, nap->initial_entry_pt); /* ? */
+
+  /* initialize "nacl_sys" global */
+  if(!nacl_sys) nacl_sys = malloc(sizeof(*nacl_sys));
+  assert(nacl_sys != NULL);
+
+  nacl_sys->rbp = NaClGetStackPtr(); // ### do i need it?
+  nacl_sys->rsp = NaClGetStackPtr();
+//  nacl_sys->prog_ctr = (uintptr_t)NaClSyscallCSegHook; // ### do i need it?
+
+  gnap = nap; /* global nap now point to NaClApp object from main() */
+  NaClSwitchSSE(nacl_user); // ### put here switch to chose proper function: avx or sse
+  /* unreachable */
+}
+/* d'b end */
 
 #if !defined(SIZE_T_MAX)
 # define SIZE_T_MAX     (~(size_t) 0)
 #endif
-
 
 /*
  * Fill from static_text_end to end of that page with halt
@@ -516,7 +558,6 @@ int NaClCreateMainThread(struct NaClApp     *nap,
   char                  *strp;
   size_t                *argv_len;
   size_t                *envv_len;
-  struct NaClAppThread  *natp;
   uintptr_t             stack_ptr;
 
   retval = 0;  /* fail */
@@ -658,18 +699,6 @@ int NaClCreateMainThread(struct NaClApp     *nap,
 
   CHECK((char *) p == (char *) stack_ptr + ptr_tbl_size);
 
-  /* now actually spawn the thread */
-  natp = malloc(sizeof *natp);
-  if (!natp) {
-    goto cleanup;
-  }
-
-  NaClXMutexLock(&nap->mu);
-  nap->running = 1;
-  NaClXMutexUnlock(&nap->mu);
-
-  NaClVmHoleWaitToStartThread(nap);
-
   /*
    * For x86, we adjust the stack pointer down to push a dummy return
    * address.  This happens after the stack pointer alignment.
@@ -681,16 +710,9 @@ int NaClCreateMainThread(struct NaClApp     *nap,
   NaClLog(2, "  user stack ptr : %016"NACL_PRIxPTR"\n",
           NaClSysToUserStackAddr(nap, stack_ptr));
 
-  /* e_entry is user addr */
-  if (!NaClAppThreadAllocSegCtor(natp,
-                                 nap,
-                                 nap->initial_entry_pt,
-                                 NaClSysToUserStackAddr(nap, stack_ptr),
-                                 NaClUserToSys(nap, nap->break_addr),
-                                 0)) {
-    retval = 0;
-    goto cleanup;
-  }
+  /* d'b: jump directly to user code instead of using thread launching */
+  SwitchToApp(nap, stack_ptr);
+  /* d'b end */
 
   retval = 1;
 cleanup:
@@ -699,7 +721,6 @@ cleanup:
 
   return retval;
 }
-
 
 int NaClWaitForMainThreadToExit(struct NaClApp  *nap) {
   NaClLog(3, "NaClWaitForMainThreadToExit: taking NaClApp lock\n");

@@ -206,7 +206,7 @@ static void SignalCatch(int sig, siginfo_t *info, void *uc) {
      * may be nessesary with other POSIX implementions or may become
      * necessary in the future.
      */
-    nacl_thread = nacl_sys[sigCtx.gs >> 3];
+    nacl_thread = nacl_sys; /* d'b */
     NaClSetGs(nacl_thread->gs);
     NaClSetEs(nacl_thread->es);
     NaClSetFs(nacl_thread->fs);

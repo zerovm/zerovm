@@ -27,8 +27,7 @@ struct NaClDesc;
 struct NaClImcMsgHdr;
 struct nacl_abi_stat;
 
-int32_t NaClSetBreak(struct NaClAppThread *natp,
-                     uintptr_t            new_break);
+int32_t NaClSetBreak(struct NaClApp *nap, uintptr_t new_break);
 
 /*
  * Entering kernel mode from user mde.  Makes thread unkillable
@@ -42,7 +41,7 @@ int32_t NaClSetBreak(struct NaClAppThread *natp,
  * know definitely does not grab any locks (even implicitly, in libc
  * routines such as malloc).
  */
-void NaClSysCommonThreadSyscallEnter(struct NaClAppThread *natp);
+void NaClSysCommonThreadSyscallEnter(struct NaClApp *nap);
 
 /*
  * Thread is leaving kernel mode and returning to user mode.  Checks
@@ -50,7 +49,7 @@ void NaClSysCommonThreadSyscallEnter(struct NaClAppThread *natp);
  * invoked if there was a corresponding Enter; not harmful if called
  * without a corresponding Enter.
  */
-void NaClSysCommonThreadSyscallLeave(struct NaClAppThread *natp);
+void NaClSysCommonThreadSyscallLeave(struct NaClApp *nap);
 
 int NaClHighResolutionTimerEnabled(void);
 
@@ -62,8 +61,7 @@ int32_t NaClOpenAclCheck(struct NaClApp *nap,
 int32_t NaClStatAclCheck(struct NaClApp *nap,
                          char const     *path);
 
-int32_t NaClCommonSysExit(struct NaClAppThread  *natp,
-                          int                   status);
+int32_t NaClCommonSysExit(struct NaClApp *nap, int status);
 
 int32_t NaClCommonSysThreadExit(struct NaClAppThread  *natp,
                                 int32_t               *stack_flag);
@@ -107,7 +105,7 @@ int32_t NaClCommonSysRead(struct NaClAppThread  *natp,
                           void                  *buf,
                           size_t                count);
 
-int32_t NaClCommonSysWrite(struct NaClAppThread *natp,
+int32_t NaClCommonSysWrite(struct NaClApp *nap,
                            int                  d,
                            void                 *buf,
                            size_t               count);
@@ -122,8 +120,7 @@ int32_t NaClCommonSysIoctl(struct NaClAppThread *natp,
                            int                  request,
                            void                 *arg);
 
-int32_t NaClCommonSysFstat(struct NaClAppThread *natp,
-                           int                  d,
+int32_t NaClCommonSysFstat(struct NaClApp *nap, int d,
                            struct nacl_abi_stat *nasp);
 
 int32_t NaClCommonSysStat(struct NaClAppThread *natp,
@@ -144,7 +141,7 @@ int NaClSysCommonAddrRangeContainsExecutablePages_mu(struct NaClApp *nap,
                                                      uintptr_t      usraddr,
                                                      size_t         length);
 
-int32_t NaClCommonSysMmap(struct NaClAppThread  *natp,
+int32_t NaClCommonSysMmap(struct NaClApp  *nap,
                           void                  *start,
                           size_t                length,
                           int                   prot,
@@ -160,7 +157,7 @@ int32_t NaClCommonSysMmapIntern(struct NaClApp        *nap,
                                 int                   d,
                                 nacl_abi_off_t        offset);
 
-int32_t NaClSysMmap(struct NaClAppThread  *natp,
+int32_t NaClSysMmap(struct NaClApp  *nap,
                     void                  *start,
                     size_t                length,
                     int                   prot,
@@ -199,8 +196,7 @@ int32_t NaClCommonSysImc_Recvmsg(struct NaClAppThread         *natp,
 int32_t NaClCommonSysImc_Mem_Obj_Create(struct NaClAppThread  *natp,
                                         size_t                size);
 
-int32_t NaClCommonSysTls_Init(struct NaClAppThread  *natp,
-                              void                  *thread_ptr);
+int32_t NaClCommonSysTls_Init(struct NaClApp *nap, void *thread_ptr);
 
 int32_t NaClCommonSysThread_Create(struct NaClAppThread *natp,
                                    void                 *eip,
@@ -208,14 +204,14 @@ int32_t NaClCommonSysThread_Create(struct NaClAppThread *natp,
                                    void                 *thread_ptr,
                                    void                 *second_thread_ptr);
 
-int32_t NaClCommonSysTlsGet(struct NaClAppThread *natp);
+int32_t NaClCommonSysTlsGet(struct NaClApp *nap);
 
 int32_t NaClCommonSysThread_Nice(struct NaClAppThread *natp,
                                  const int nice);
 
 /* mutex */
 
-int32_t NaClCommonSysMutex_Create(struct NaClAppThread *natp);
+int32_t NaClCommonSysMutex_Create(struct NaClApp *nap);
 
 int32_t NaClCommonSysMutex_Lock(struct NaClAppThread *natp,
                                 int32_t              mutex_handle);

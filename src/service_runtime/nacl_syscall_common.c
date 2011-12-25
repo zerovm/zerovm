@@ -67,31 +67,30 @@ static INLINE size_t  size_min(size_t a, size_t b) {
 
 static int const kKnownInvalidDescNumber = -1;
 
-void NaClSysCommonThreadSyscallEnter(struct NaClAppThread *natp) {
-  UNREFERENCED_PARAMETER(natp);
+void NaClSysCommonThreadSyscallEnter(struct NaClApp *nap) {
+  UNREFERENCED_PARAMETER(nap);
 }
 
-void NaClSysCommonThreadSyscallLeave(struct NaClAppThread *natp) {
-  NaClXMutexLock(&natp->mu);
-  switch (natp->state) {
-    case NACL_APP_THREAD_ALIVE:
-      break;
-    case NACL_APP_THREAD_SUICIDE_PENDING:
-      NaClXMutexUnlock(&natp->mu);
-      NaClAppThreadTeardown(natp);
-      /* NOTREACHED */
-      break;
-    case NACL_APP_THREAD_DEAD:
-      NaClLog(LOG_FATAL, "Dead thread at NaClSysCommonThreadSyscallLeave\n");
-      /* NOTREACHED */
-      break;
-  }
-  NaClXMutexUnlock(&natp->mu);
+void NaClSysCommonThreadSyscallLeave(struct NaClApp *nap) {
+//  NaClXMutexLock(&natp->mu);
+//  switch (natp->state) {
+//    case NACL_APP_THREAD_ALIVE:
+//      break;
+//    case NACL_APP_THREAD_SUICIDE_PENDING:
+//      NaClXMutexUnlock(&natp->mu);
+//      NaClAppThreadTeardown(natp);
+//      /* NOTREACHED */
+//      break;
+//    case NACL_APP_THREAD_DEAD:
+//      NaClLog(LOG_FATAL, "Dead thread at NaClSysCommonThreadSyscallLeave\n");
+//      /* NOTREACHED */
+//      break;
+//  }
+//  NaClXMutexUnlock(&natp->mu);
 }
 
-int32_t NaClSetBreak(struct NaClAppThread *natp,
-                     uintptr_t            new_break) {
-  struct NaClApp        *nap;
+int32_t NaClSetBreak(struct NaClApp *nap, uintptr_t new_break)
+{
   uintptr_t             break_addr;
   int32_t               rv = -NACL_ABI_EINVAL;
   struct NaClVmmapIter  iter;
@@ -106,15 +105,14 @@ int32_t NaClSetBreak(struct NaClAppThread *natp,
   uintptr_t             start_new_region;
   uintptr_t             region_size;
 
-  nap = natp->nap;
   break_addr = nap->break_addr;
 
   NaClLog(3, "Entered NaClSetBreak(new_break 0x%08"NACL_PRIxPTR")\n",
           new_break);
 
-  NaClSysCommonThreadSyscallEnter(natp);
+  NaClSysCommonThreadSyscallEnter(nap);
 
-  sys_new_break = NaClUserToSysAddr(natp->nap, new_break);
+  sys_new_break = NaClUserToSysAddr(nap, new_break);
   NaClLog(3, "sys_new_break 0x%08"NACL_PRIxPTR"\n", sys_new_break);
 
   if (kNaClBadAddress == sys_new_break) {
@@ -224,7 +222,7 @@ int32_t NaClSetBreak(struct NaClAppThread *natp,
 cleanup:
   NaClXMutexUnlock(&nap->mu);
 cleanup_no_lock:
-  NaClSysCommonThreadSyscallLeave(natp);
+  NaClSysCommonThreadSyscallLeave(nap);
 
   /*
    * This cast is safe because the incoming value (new_break) cannot
@@ -332,18 +330,21 @@ int32_t NaClIoctlAclCheck(struct NaClApp  *nap,
   return -NACL_ABI_EINVAL;
 }
 
-int32_t NaClCommonSysExit(struct NaClAppThread  *natp,
-                          int                   status) {
-  struct NaClApp            *nap;
-
+/* d'b: is temporary. duplicate of trap() exit. remove it when trap() replace syscalls */
+int32_t NaClCommonSysExit(struct NaClApp *nap, int status)
+{
   NaClLog(1, "Exit syscall handler: %d\n", status);
-  NaClSysCommonThreadSyscallEnter(natp);
+  NaClSysCommonThreadSyscallEnter(nap);
+  nap->exit_status = status;
+  nap->running = 0;
+  longjmp(user_exit, status);
 
-  nap = natp->nap;
+//  NaClLog(1, "Exit syscall handler: %d\n", status);
+//  NaClSysCommonThreadSyscallEnter(natp);
 
-  (void) NaClReportExitStatus(nap, status);
+//  (void) NaClReportExitStatus(nap, status);
 
-  NaClAppThreadTeardown(natp);
+//  NaClAppThreadTeardown(natp);
   /* NOTREACHED */
   return -NACL_ABI_EINVAL;
 }
@@ -728,7 +729,7 @@ cleanup:
   return retval;
 }
 
-int32_t NaClCommonSysWrite(struct NaClAppThread *natp,
+int32_t NaClCommonSysWrite(struct NaClApp *nap,
                            int                  d,
                            void                 *buf,
                            size_t               count) {
@@ -740,17 +741,17 @@ int32_t NaClCommonSysWrite(struct NaClAppThread *natp,
   NaClLog(3, "Entered NaClCommonSysWrite(0x%08"NACL_PRIxPTR", "
           "%d, 0x%08"NACL_PRIxPTR", "
           "%"NACL_PRIdS"[0x%"NACL_PRIxS"])\n",
-          (uintptr_t) natp, d, (uintptr_t) buf, count, count);
+          (uintptr_t) nap, d, (uintptr_t) buf, count, count);
 
-  NaClSysCommonThreadSyscallEnter(natp);
+  NaClSysCommonThreadSyscallEnter(nap);
 
-  ndp = NaClGetDesc(natp->nap, d);
+  ndp = NaClGetDesc(nap, d);
   if (NULL == ndp) {
     retval = -NACL_ABI_EBADF;
     goto cleanup;
   }
 
-  sysaddr = NaClUserToSysAddrRange(natp->nap, (uintptr_t) buf, count);
+  sysaddr = NaClUserToSysAddrRange(nap, (uintptr_t) buf, count);
   if (kNaClBadAddress == sysaddr) {
     NaClDescUnref(ndp);
     retval = -NACL_ABI_EFAULT;
@@ -778,7 +779,7 @@ int32_t NaClCommonSysWrite(struct NaClAppThread *natp,
   retval = (int32_t) write_result;
 
 cleanup:
-  NaClSysCommonThreadSyscallLeave(natp);
+  NaClSysCommonThreadSyscallLeave(nap);
 
   return retval;
 }
@@ -886,8 +887,7 @@ cleanup:
 }
 
 
-int32_t NaClCommonSysFstat(struct NaClAppThread *natp,
-                           int                  d,
+int32_t NaClCommonSysFstat(struct NaClApp *nap, int d,
                            struct nacl_abi_stat *nasp) {
   int32_t               retval = -NACL_ABI_EINVAL;
   uintptr_t             sysaddr;
@@ -896,23 +896,23 @@ int32_t NaClCommonSysFstat(struct NaClAppThread *natp,
   NaClLog(3,
           ("Entered NaClSysFstat(0x%08"NACL_PRIxPTR
            ", %d, 0x%08"NACL_PRIxPTR")\n"),
-          (uintptr_t) natp,
+          (uintptr_t) nap,
           d, (uintptr_t) nasp);
 
-  NaClSysCommonThreadSyscallEnter(natp);
+  NaClSysCommonThreadSyscallEnter(nap);
 
   NaClLog(4,
           " sizeof(struct nacl_abi_stat) = %"NACL_PRIdS" (0x%"NACL_PRIxS")\n",
           sizeof *nasp, sizeof *nasp);
 
-  ndp = NaClGetDesc(natp->nap, d);
+  ndp = NaClGetDesc(nap, d);
   if (NULL == ndp) {
     NaClLog(4, "bad desc\n");
     retval = -NACL_ABI_EBADF;
     goto cleanup;
   }
 
-  sysaddr = NaClUserToSysAddrRange(natp->nap, (uintptr_t) nasp, sizeof *nasp);
+  sysaddr = NaClUserToSysAddrRange(nap, (uintptr_t) nasp, sizeof *nasp);
   if (kNaClBadAddress == sysaddr) {
     NaClLog(4, "bad addr\n");
     retval = -NACL_ABI_EFAULT;
@@ -923,7 +923,7 @@ int32_t NaClCommonSysFstat(struct NaClAppThread *natp,
 
   NaClDescUnref(ndp);
 cleanup:
-  NaClSysCommonThreadSyscallLeave(natp);
+  NaClSysCommonThreadSyscallLeave(nap);
 
   return retval;
 }
@@ -1078,14 +1078,13 @@ int32_t NaClCommonSysMmapIntern(struct NaClApp        *nap,
                                 int                   d,
                                 nacl_abi_off_t        offset) {
   int                         allowed_flags;
-  struct NaClDesc             *ndp;
+  struct NaClDesc             *ndp = NULL;
   uintptr_t                   usraddr;
   uintptr_t                   usrpage;
   uintptr_t                   sysaddr;
   uintptr_t                   endaddr;
   uintptr_t                   map_result;
-  int                         holding_app_lock;
-  struct NaClMemObj           *nmop;
+  struct NaClMemObj           *nmop = NULL;
   struct nacl_abi_stat        stbuf;
   size_t                      alloc_rounded_length;
   nacl_off64_t                file_size;
@@ -1093,10 +1092,6 @@ int32_t NaClCommonSysMmapIntern(struct NaClApp        *nap,
   nacl_off64_t                host_rounded_file_bytes;
   size_t                      alloc_rounded_file_bytes;
   size_t                      start_of_inaccessible;
-
-  holding_app_lock = 0;
-  nmop = NULL;
-  ndp = NULL;
 
   allowed_flags = (NACL_ABI_MAP_FIXED | NACL_ABI_MAP_SHARED
                    | NACL_ABI_MAP_PRIVATE | NACL_ABI_MAP_ANONYMOUS);
@@ -1201,8 +1196,6 @@ int32_t NaClCommonSysMmapIntern(struct NaClApp        *nap,
      * the same value before the 2nd fstat takes place.
      */
     file_size = stbuf.nacl_abi_st_size;
-
-    //###
     NaClLog(4, "NaClCommonSysMmapIntern: file_size = %ld, offset = %ld\n", file_size, offset);
 
     if (file_size < offset) {
@@ -1260,18 +1253,6 @@ int32_t NaClCommonSysMmapIntern(struct NaClApp        *nap,
    * [length, start_of_inaccessible), and inaccessible pages for the
    * memory region [start_of_inaccessible, alloc_rounded_length).
    */
-
-  /*
-   * Lock the addr space.
-   */
-  NaClXMutexLock(&nap->mu);
-
-  while (0 != nap->threads_launching) {
-    NaClXCondVarWait(&nap->cv, &nap->mu);
-  }
-  nap->vm_hole_may_exist = 1;
-
-  holding_app_lock = 1;
 
   if (0 == (flags & NACL_ABI_MAP_FIXED)) {
     /*
@@ -1516,11 +1497,6 @@ int32_t NaClCommonSysMmapIntern(struct NaClApp        *nap,
   map_result = usraddr;
 
 cleanup:
-  if (holding_app_lock) {
-    nap->vm_hole_may_exist = 0;
-    NaClXCondVarBroadcast(&nap->cv);
-    NaClXMutexUnlock(&nap->mu);
-  }
   if (NULL != ndp) {
     NaClDescUnref(ndp);
   }
@@ -1545,7 +1521,7 @@ cleanup:
   return (int32_t) map_result;
 }
 
-int32_t NaClCommonSysMmap(struct NaClAppThread  *natp,
+int32_t NaClCommonSysMmap(struct NaClApp  *nap,
                           void                  *start,
                           size_t                length,
                           int                   prot,
@@ -1574,9 +1550,9 @@ int32_t NaClCommonSysMmap(struct NaClAppThread  *natp,
     return -NACL_ABI_EINVAL;
   }
 
-  NaClSysCommonThreadSyscallEnter(natp);
+  NaClSysCommonThreadSyscallEnter(nap);
 
-  sysaddr = NaClUserToSysAddrRange(natp->nap, (uintptr_t) offp, sizeof offset);
+  sysaddr = NaClUserToSysAddrRange(nap, (uintptr_t) offp, sizeof offset);
   if (kNaClBadAddress == sysaddr) {
     NaClLog(3,
             "NaClCommonSysMmap: offset in a bad untrusted memory location\n");
@@ -1586,13 +1562,13 @@ int32_t NaClCommonSysMmap(struct NaClAppThread  *natp,
   offset = *(nacl_abi_off_t volatile *) sysaddr;
 
   NaClLog(4, " offset = 0x%08"NACL_PRIxNACL_OFF"\n", offset);
-  retval = NaClCommonSysMmapIntern(natp->nap,
+  retval = NaClCommonSysMmapIntern(nap,
                                    start, length,
                                    prot,
                                    flags,
                                    d, offset);
 cleanup:
-  NaClSysCommonThreadSyscallLeave(natp);
+  NaClSysCommonThreadSyscallLeave(nap);
 
   return retval;
 }
@@ -2159,40 +2135,36 @@ cleanup:
   return retval;
 }
 
-int32_t NaClCommonSysTls_Init(struct NaClAppThread  *natp,
-                              void                  *thread_ptr) {
+/* d'b: need for nexe prolog */
+// ### in a future rewrite it to reduce size. logs also could be reduced
+#define CLEANUP(cond, code) if(cond) {retval = code; goto cleanup;}
+int32_t NaClCommonSysTls_Init(struct NaClApp *nap, void *thread_ptr)
+{
   int32_t   retval = -NACL_ABI_EINVAL;
   uintptr_t sys_tls;
 
-  NaClLog(3,
-          ("Entered NaClCommonSysTls_Init(0x%08"NACL_PRIxPTR
-           ", 0x%08"NACL_PRIxPTR")\n"),
-          (uintptr_t) natp, (uintptr_t) thread_ptr);
+  NaClLog(3, ("Entered NaClCommonSysTls_Init(0x%08"NACL_PRIxPTR
+      ", 0x%08"NACL_PRIxPTR")\n"), (uintptr_t) nap, (uintptr_t) thread_ptr);
 
-  NaClSysCommonThreadSyscallEnter(natp);
+  NaClSysCommonThreadSyscallEnter(nap);
 
   /* Verify that the address in the app's range and translated from
    * nacl module address to service runtime address - a nop on ARM
    */
-  sys_tls = NaClUserToSysAddrRange(natp->nap, (uintptr_t) thread_ptr, 4);
-  NaClLog(4,
-          "NaClCommonSysTls_Init: thread_ptr 0x%p, sys_tls 0x%"NACL_PRIxPTR"\n",
+  sys_tls = NaClUserToSysAddrRange(nap, (uintptr_t) thread_ptr, 4);
+  NaClLog(4, "NaClCommonSysTls_Init: thread_ptr 0x%p, sys_tls 0x%"NACL_PRIxPTR"\n",
           thread_ptr, sys_tls);
-  if (kNaClBadAddress == sys_tls) {
-    retval = -NACL_ABI_EFAULT;
-    goto cleanup;
-  }
 
-  if (0 == NaClTlsChange(natp, (void *) sys_tls)) {
-    retval = -NACL_ABI_EINVAL;
-    goto cleanup;
-  }
-  natp->sys_tls = sys_tls;
+  CLEANUP(kNaClBadAddress == sys_tls, -NACL_ABI_EFAULT);
+//  CLEANUP(0 == nap->tls_idx, -NACL_ABI_EINVAL);
+  nap->sys_tls = sys_tls;
   retval = 0;
+
 cleanup:
-  NaClSysCommonThreadSyscallLeave(natp);
+  NaClSysCommonThreadSyscallLeave(nap);
   return retval;
 }
+#undef CLEANUP
 
 int32_t NaClCommonSysThread_Create(struct NaClAppThread *natp,
                                    void                 *prog_ctr,
@@ -2255,11 +2227,12 @@ cleanup:
   return retval;
 }
 
-int32_t NaClCommonSysTlsGet(struct NaClAppThread *natp) {
+/* d'b: only need for nexe prolog */
+int32_t NaClCommonSysTlsGet(struct NaClApp *nap) {
   uint32_t user_tls;
 
   /* too frequently used, and syscall-number level logging suffices */
-  user_tls = (int32_t) NaClSysToUser(natp->nap, natp->sys_tls);
+  user_tls = (int32_t) NaClSysToUser(nap, nap->sys_tls);
   return user_tls;
 }
 
@@ -2270,15 +2243,17 @@ int NaClCommonSysThread_Nice(struct NaClAppThread *natp,
   return nacl_thread_nice(nice);
 }
 
-int32_t NaClCommonSysMutex_Create(struct NaClAppThread *natp) {
+/* d'b: need for nexe prolog */
+int32_t NaClCommonSysMutex_Create(struct NaClApp *nap)
+{
   int32_t              retval = -NACL_ABI_EINVAL;
   struct NaClDescMutex *desc;
 
   NaClLog(3,
           ("Entered NaClCommonSysMutex_Create(0x%08"NACL_PRIxPTR")\n"),
-          (uintptr_t) natp);
+          (uintptr_t) nap);
 
-  NaClSysCommonThreadSyscallEnter(natp);
+  NaClSysCommonThreadSyscallEnter(nap);
 
   desc = malloc(sizeof(*desc));
 
@@ -2287,14 +2262,14 @@ int32_t NaClCommonSysMutex_Create(struct NaClAppThread *natp) {
     goto cleanup;
   }
 
-  retval = NaClSetAvail(natp->nap, (struct NaClDesc *)desc);
+  retval = NaClSetAvail(nap, (struct NaClDesc *)desc);
   desc = NULL;
 cleanup:
   free(desc);
-  NaClSysCommonThreadSyscallLeave(natp);
+  NaClSysCommonThreadSyscallLeave(nap);
   NaClLog(3,
           ("NaClCommonSysMutex_Create(0x%08"NACL_PRIxPTR") = %d\n"),
-          (uintptr_t) natp, retval);
+          (uintptr_t) nap, retval);
   return retval;
 }
 

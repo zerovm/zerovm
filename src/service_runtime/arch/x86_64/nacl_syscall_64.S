@@ -32,6 +32,11 @@
 IDENTIFIER(NaClSyscallSeg):
         cld
 
+				/*
+				 * d'b: important part here is do not touch user registers/stack
+				 * since the control can be immediatelly transfered to the user code
+				 * the only thing allowed to change is flags
+				 */
         /* d'b: do we have syscallback? */
         cmpq		$0, IDENTIFIER(syscallback)(%rip)
         je			trap
@@ -40,10 +45,6 @@ IDENTIFIER(NaClSyscallSeg):
         cmpl 		$0x1000c, (%rsp)
         je      trap /* get syscall number and check if it is trap() */
         jmpq    *IDENTIFIER(syscallback)(%rip) /* return control to the untrusted handler */
-
-				/***********************************/
-        /* unborn code. jumps(calls) to NaClSyscallCSegHook() */
-        call    IDENTIFIER(NaClSyscallCSegHook)
 trap:
         /* d'b end */
 
@@ -75,59 +76,14 @@ trap:
          *
          * WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
          */
-#if NACL_LINUX
         /*
          * Linux uses TLS.
          * The spelling is slightly different when we need to be PIC-friendly.
          */
-# ifdef __PIC__
-        movq    nacl_thread_index@GOTTPOFF(%rip), %rax
-        movl    %fs:(%rax), %eax
-# else
-        movl    %fs:nacl_thread_index@TPOFF, %eax
-# endif
-#elif NACL_OSX
-        /*
-         * This assumes a particular implementation of OS X's
-         * pthread_getspecific(), which we check for in NaClTlsInit().
-         */
-        movl    _nacl_thread_index_tls_offset(%rip), %eax
-        movl    %gs:(%rax), %eax
-#elif NACL_WINDOWS
-        /*
-         * NOTE: This code should match the code in platform/win/test_tls.S!
-         * If you change this code, please update that file as well.
-         *
-         * The following two lines generate this instruction:
-         *   ba XX XX XX XX    movl $nacl_thread_index@SECREL, %edx
-         *
-         * SECREL is a relocation type which gives the offset of
-         * nacl_thread_index within the TLS template section.  GNU
-         * binutils' assembler does not have a syntax for generating
-         * this relocation as part of an instruction.  It only has the
-         * .secrel32 syntax for generating the relocated value as a
-         * 32-bit literal.  We use this here for generating the
-         * instruction by hand.
-         *
-         * For background, see:
-         * http://code.google.com/p/nativeclient/issues/detail?id=2155
-         */
-        .byte 0xba
-        .secrel32 nacl_thread_index
 
-        mov _tls_index(%rip), %ecx
-        movq %gs:0x58, %rax
-        /* Get the address of this module (executable/DLL)'s TLS area. */
-        movq (%rax,%rcx,8), %rax
-        /* Get the value of nacl_thread_index from the TLS area. */
-        movl (%rdx,%rax), %eax
-#else
-# error "What OS/compiler is the service runtime being compiled with?"
-#endif
         /* check NaClThreadContext in sel_rt_64.h for the offsets */
         leaq    IDENTIFIER(nacl_user)(%rip), %rdx
-        leaq    (%rdx,%rax,8), %rdx
-        movq    0x0(%rdx), %rdx
+        movq    (%rdx), %rdx
 
         /* only save the callee saved registers */
         movq    %rbx, 0x8(%rdx)
@@ -142,8 +98,7 @@ trap:
 
         /* restore system registers needed to call into C code */
         leaq    IDENTIFIER(nacl_sys)(%rip), %rdx
-        leaq    0x0(%rdx,%rax,8), %rdx
-        movq    0x0(%rdx), %rdx
+        movq    (%rdx), %rdx
 
         movq    0x38(%rdx), %rsp
         /*
@@ -159,13 +114,7 @@ trap:
          * These properties are not enforced here; rather, the code in
          * nacl_switch_to_app_64.c handles this.
          */
-#if NACL_LINUX || NACL_OSX
         movq    %rax, %rdi
-#elif NACL_WINDOWS
-        movq    %rax, %rcx
-#else
-# error "What OS/compiler is the service runtime being compiled with?"
-#endif
         call    IDENTIFIER(NaClSyscallCSegHook)
         hlt
 
@@ -187,11 +136,3 @@ trap:
          */
 
         /* noret */
-
-#if NACL_WINDOWS && defined(_WIN64)
-/* On Windows64 this has to be done via out-of-line assembly code */
-        HIDDEN(NaClGetStackPtr)
-IDENTIFIER(NaClGetStackPtr):
-        movq %rsp, %rax
-        ret
-#endif

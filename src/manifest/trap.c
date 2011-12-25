@@ -44,16 +44,18 @@ void ResumeCpuClock(struct NaClApp *nap)
 }
 
 /*
- * user exit. must not return
+ * user exit. invokes long jump to main(). uses global var.
  */
-static int32_t TrapExitHandle(struct NaClAppThread *natp, int32_t code)
+static int32_t TrapExitHandle(struct NaClApp *nap, int32_t code)
 {
   NaClLog(1, "Exit syscall handler: %d\n", code);
-  NaClSysCommonThreadSyscallEnter(natp);
-  (void) NaClReportExitStatus(natp->nap, code);
+  NaClSysCommonThreadSyscallEnter(nap);
+  nap->exit_status = code;
+  nap->running = 0;
+  longjmp(user_exit, code);
 
-  NaClAppThreadTeardown(natp);
-  return ERR_CODE; /* NOTREACHED */
+  /* not reached. added to avoid compiler warning */
+  return code;
 }
 
 /*
@@ -281,30 +283,30 @@ static int32_t TrapUserSetupHandle(struct NaClApp *nap, struct SetupList *h)
  * FunctionName(arg1,arg2,..) where arg1/2/3 are values/pointers
  * note: since nacl spoils 1st two arguments if they are pointers, arg[1] are not used
  */
-int32_t TrapHandler(struct NaClAppThread *natp, uint32_t args)
+int32_t TrapHandler(struct NaClApp *nap, uint32_t args)
 {
   uint64_t *sys_args;
   int retcode = 0;
 
   /* translate address from user space to system. note: cannot set "trap error" */
-  if(!natp->nap->manifest) return -1; /* return error if not manifest found */
-  sys_args = (uint64_t*)NaClUserToSys(natp->nap, (uintptr_t) args);
+  if(!nap->manifest) return -1; /* return error if not manifest found */
+  sys_args = (uint64_t*)NaClUserToSys(nap, (uintptr_t) args);
   NaClLog(4, "NaClSysNanosleep received in = 0x%lx\n", (intptr_t)sys_args);
 
   switch(*sys_args)
   {
     case TrapExit:
-      retcode = TrapExitHandle(natp, (int32_t) sys_args[2]);
+      retcode = TrapExitHandle(nap, (int32_t) sys_args[2]);
       break;
     case TrapUserSetup:
-      retcode = TrapUserSetupHandle(natp->nap, (struct SetupList*) sys_args[2]);
+      retcode = TrapUserSetupHandle(nap, (struct SetupList*) sys_args[2]);
       break;
     case TrapRead:
-      retcode = TrapReadHandle(natp->nap,
+      retcode = TrapReadHandle(nap,
           (enum ChannelType)sys_args[2], (char*)sys_args[3], (int32_t)sys_args[4], sys_args[5]);
       break;
     case TrapWrite:
-      retcode = TrapWriteHandle(natp->nap,
+      retcode = TrapWriteHandle(nap,
           (enum ChannelType)sys_args[2], (char*)sys_args[3], (int32_t)sys_args[4], sys_args[5]);
       break;
     default:

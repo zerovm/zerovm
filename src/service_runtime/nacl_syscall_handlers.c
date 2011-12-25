@@ -116,11 +116,11 @@ int32_t NaClSysRead(struct NaClAppThread  *natp,
   return NaClCommonSysRead(natp, d, buf, count);
 }
 
-int32_t NaClSysWrite(struct NaClAppThread *natp,
+int32_t NaClSysWrite(struct NaClApp *nap,
                      int                  d,
                      void                 *buf,
                      size_t               count) {
-  return NaClCommonSysWrite(natp, d, buf, count);
+  return NaClCommonSysWrite(nap, d, buf, count);
 }
 
 /* Warning: sizeof(nacl_abi_off_t)!=sizeof(off_t) on OSX */
@@ -138,10 +138,9 @@ int32_t NaClSysIoctl(struct NaClAppThread *natp,
   return NaClCommonSysIoctl(natp, d, request, arg);
 }
 
-int32_t NaClSysFstat(struct NaClAppThread *natp,
-                     int                  d,
+int32_t NaClSysFstat(struct NaClApp *nap, int d,
                      struct nacl_abi_stat *nasp) {
-  return NaClCommonSysFstat(natp, d, nasp);
+  return NaClCommonSysFstat(nap, d, nasp);
 }
 
 int32_t NaClSysStat(struct NaClAppThread *natp,
@@ -157,19 +156,19 @@ int32_t NaClSysGetdents(struct NaClAppThread  *natp,
   return NaClCommonSysGetdents(natp, d, buf, count);
 }
 
-int32_t NaClSysSysbrk(struct NaClAppThread  *natp,
-                      void                  *new_break) {
-  return NaClSetBreak(natp, (uintptr_t) new_break);
+int32_t NaClSysSysbrk(struct NaClApp  *nap,
+                      void            *new_break) {
+  return NaClSetBreak(nap, (uintptr_t) new_break);
 }
 
-int32_t NaClSysMmap(struct NaClAppThread  *natp,
+int32_t NaClSysMmap(struct NaClApp  *nap,
                     void                  *start,
                     size_t                length,
                     int                   prot,
                     int                   flags,
                     int                   d,
                     nacl_abi_off_t        *offp) {
-  return NaClCommonSysMmap(natp, start, length, prot, flags, d, offp);
+  return NaClCommonSysMmap(nap, start, length, prot, flags, d, offp);
 }
 
 int32_t NaClSysMunmap(struct NaClAppThread  *natp,
@@ -280,9 +279,9 @@ cleanup:
   return retval;
 }
 
-int32_t NaClSysExit(struct NaClAppThread *natp,
-                    int                  status) {
-  return NaClCommonSysExit(natp, status);
+int32_t NaClSysExit(struct NaClApp *nap, int status)
+{
+  return NaClCommonSysExit(nap, status);
 }
 
 int32_t NaClSysGetpid(struct NaClAppThread *natp) {
@@ -471,9 +470,9 @@ int32_t NaClSysImc_Mem_Obj_Create(struct NaClAppThread  *natp,
   return NaClCommonSysImc_Mem_Obj_Create(natp, size);
 }
 
-int32_t NaClSysTls_Init(struct NaClAppThread  *natp,
-                        void                  *thread_ptr) {
-  return NaClCommonSysTls_Init(natp, thread_ptr);
+int32_t NaClSysTls_Init(struct NaClApp *nap, void *thread_ptr)
+{
+  return NaClCommonSysTls_Init(nap, thread_ptr);
 }
 
 int32_t NaClSysThread_Create(struct NaClAppThread *natp,
@@ -485,8 +484,8 @@ int32_t NaClSysThread_Create(struct NaClAppThread *natp,
                                     second_thread_ptr);
 }
 
-int32_t NaClSysTls_Get(struct NaClAppThread *natp) {
-  return NaClCommonSysTlsGet(natp);
+int32_t NaClSysTls_Get(struct NaClApp *nap) {
+  return NaClCommonSysTlsGet(nap);
 }
 
 int32_t NaClSysThread_Nice(struct NaClAppThread *natp, const int nice) {
@@ -495,8 +494,8 @@ int32_t NaClSysThread_Nice(struct NaClAppThread *natp, const int nice) {
 
 /* mutex */
 
-int32_t NaClSysMutex_Create(struct NaClAppThread *natp) {
-  return NaClCommonSysMutex_Create(natp);
+int32_t NaClSysMutex_Create(struct NaClApp *nap) {
+  return NaClCommonSysMutex_Create(nap);
 }
 
 int32_t NaClSysMutex_Lock(struct NaClAppThread *natp,
@@ -743,14 +742,14 @@ static int32_t NaClSysReadDecoder(struct NaClAppThread *natp) {
 }
 
 /* this function was automagically generated */
-static int32_t NaClSysWriteDecoder(struct NaClAppThread *natp) {
+static int32_t NaClSysWriteDecoder(struct NaClApp *nap) {
   struct NaClSysWriteArgs {
     uint32_t d;
     uint32_t buf;
     uint32_t count;
-  } p = *(struct NaClSysWriteArgs *) natp->syscall_args;
+  } p = *(struct NaClSysWriteArgs *) nap->syscall_args;
 
-  return NaClSysWrite(natp, (int)  p.d, (void *) (uintptr_t) p.buf, (size_t)  p.count);
+  return NaClSysWrite(nap, (int)  p.d, (void *) (uintptr_t) p.buf, (size_t)  p.count);
 }
 
 /* this function was automagically generated */
@@ -776,13 +775,13 @@ static int32_t NaClSysIoctlDecoder(struct NaClAppThread *natp) {
 }
 
 /* this function was automagically generated */
-static int32_t NaClSysFstatDecoder(struct NaClAppThread *natp) {
+static int32_t NaClSysFstatDecoder(struct NaClApp *nap) {
   struct NaClSysFstatArgs {
     uint32_t d;
     uint32_t nasp;
-  } p = *(struct NaClSysFstatArgs *) natp->syscall_args;
+  } p = *(struct NaClSysFstatArgs *) nap->syscall_args;
 
-  return NaClSysFstat(natp, (int)  p.d, (struct nacl_abi_stat *) (uintptr_t) p.nasp);
+  return NaClSysFstat(nap, (int)  p.d, (struct nacl_abi_stat *) (uintptr_t) p.nasp);
 }
 
 /* this function was automagically generated */
@@ -807,16 +806,16 @@ static int32_t NaClSysGetdentsDecoder(struct NaClAppThread *natp) {
 }
 
 /* this function was automagically generated */
-static int32_t NaClSysSysbrkDecoder(struct NaClAppThread *natp) {
+static int32_t NaClSysSysbrkDecoder(struct NaClApp *nap) {
   struct NaClSysSysbrkArgs {
     uint32_t new_break;
-  } p = *(struct NaClSysSysbrkArgs *) natp->syscall_args;
+  } p = *(struct NaClSysSysbrkArgs *) nap->syscall_args;
 
-  return NaClSysSysbrk(natp, (void *) (uintptr_t) p.new_break);
+  return NaClSysSysbrk(nap, (void *) (uintptr_t) p.new_break);
 }
 
 /* this function was automagically generated */
-static int32_t NaClSysMmapDecoder(struct NaClAppThread *natp) {
+static int32_t NaClSysMmapDecoder(struct NaClApp *nap) {
   struct NaClSysMmapArgs {
     uint32_t start;
     uint32_t length;
@@ -824,7 +823,7 @@ static int32_t NaClSysMmapDecoder(struct NaClAppThread *natp) {
     uint32_t flags;
     uint32_t d;
     uint32_t offp;
-  } p = *(struct NaClSysMmapArgs *) natp->syscall_args;
+  } p = *(struct NaClSysMmapArgs *) nap->syscall_args;
 
   // ### temporary disabled
   /* d'b: disable user malloc() */
@@ -832,7 +831,7 @@ static int32_t NaClSysMmapDecoder(struct NaClAppThread *natp) {
 //  return natp->nap->manifest->user_setup->heap_ptr;
   /* d'b end */
 
-  return NaClSysMmap(natp, (void *) (uintptr_t) p.start, (size_t)  p.length, (int)  p.prot, (int)  p.flags, (int)  p.d, (nacl_abi_off_t *) (uintptr_t) p.offp);
+  return NaClSysMmap(nap, (void *) (uintptr_t) p.start, (size_t)  p.length, (int)  p.prot, (int)  p.flags, (int)  p.d, (nacl_abi_off_t *) (uintptr_t) p.offp);
 }
 
 /* this function was automagically generated */
@@ -851,12 +850,12 @@ static int32_t NaClSysMunmapDecoder(struct NaClAppThread *natp) {
 }
 
 /* this function was automagically generated */
-static int32_t NaClSysExitDecoder(struct NaClAppThread *natp) {
+static int32_t NaClSysExitDecoder(struct NaClApp *nap) {
   struct NaClSysExitArgs {
     uint32_t status;
-  } p = *(struct NaClSysExitArgs *) natp->syscall_args;
+  } p = *(struct NaClSysExitArgs *) nap->syscall_args;
 
-  return NaClSysExit(natp, (int)  p.status);
+  return NaClSysExit(nap, (int)  p.status);
 }
 
 /* this function was automagically generated */
@@ -957,12 +956,13 @@ static int32_t NaClSysImc_Mem_Obj_CreateDecoder(struct NaClAppThread *natp) {
 }
 
 /* this function was automagically generated */
-static int32_t NaClSysTls_InitDecoder(struct NaClAppThread *natp) {
-  struct NaClSysTls_InitArgs {
+static int32_t NaClSysTls_InitDecoder(struct NaClApp *nap)
+{
+    struct NaClSysTls_InitArgs {
     uint32_t thread_ptr;
-  } p = *(struct NaClSysTls_InitArgs *) natp->syscall_args;
+  } p = *(struct NaClSysTls_InitArgs *) nap->syscall_args;
 
-  return NaClSysTls_Init(natp, (void *) (uintptr_t) p.thread_ptr);
+  return NaClSysTls_Init(nap, (void *) (uintptr_t) p.thread_ptr);
 }
 
 /* this function was automagically generated */
@@ -978,8 +978,9 @@ static int32_t NaClSysThread_CreateDecoder(struct NaClAppThread *natp) {
 }
 
 /* this function was automagically generated */
-static int32_t NaClSysTls_GetDecoder(struct NaClAppThread *natp) {
-  return NaClSysTls_Get(natp);
+static int32_t NaClSysTls_GetDecoder(struct NaClApp *nap)
+{
+  return NaClSysTls_Get(nap);
 }
 
 /* this function was automagically generated */
@@ -992,8 +993,9 @@ static int32_t NaClSysThread_NiceDecoder(struct NaClAppThread *natp) {
 }
 
 /* this function was automagically generated */
-static int32_t NaClSysMutex_CreateDecoder(struct NaClAppThread *natp) {
-  return NaClSysMutex_Create(natp);
+static int32_t NaClSysMutex_CreateDecoder(struct NaClApp *nap)
+{
+  return NaClSysMutex_Create(nap);
 }
 
 /* this function was automagically generated */
@@ -1187,14 +1189,14 @@ static int32_t NaClSysTest_InfoLeakDecoder(struct NaClAppThread *natp) {
  * returns int32_t
  * note: [0] element from input is always syscall id; [1].. are syscalls parameters
  */
-static int32_t OneRingDecoder(struct NaClAppThread *natp)
+static int32_t OneRingDecoder(struct NaClApp *nap)
 {
   struct OneRingDecoderArgs
   {
     uint32_t args;
-  } p = *(struct OneRingDecoderArgs*) natp->syscall_args;
+  } p = *(struct OneRingDecoderArgs*) nap->syscall_args;
 
-  return TrapHandler(natp, p.args);
+  return TrapHandler(nap, p.args);
 }
 
 /* d'b: put to the log restricted syscall detection */
@@ -1275,11 +1277,11 @@ void NaClSyscallTableInit() {
   (other syscalls set to "NaClSysRestricted")
 
   syscalls for an empty nexe: "main(){}"
-  20 -- NACL_sys_sysbrk (NaClSysSysbrkDecoder)
-  30 -- NACL_sys_exit (NaClSysExitDecoder)
-  70 -- NACL_sys_mutex_create (NaClSysTls_InitDecoder)
-  82 -- NACL_sys_tls_init (NaClSysTls_GetDecoder)
-  84 -- NACL_sys_tls_get (NaClSysMutex_CreateDecoder)
+  +  20 -- NACL_sys_sysbrk (NaClSysSysbrkDecoder) -- still need to serve user malloc()
+  ++ 30 -- NACL_sys_exit (NaClSysExitDecoder) -- no need. i gonna exit through long/short jump
+  +  70 -- NACL_sys_mutex_create (NaClSysMutex_CreateDecoder) -- dummy
+  +  82 -- NACL_sys_tls_init (NaClSysTls_InitDecoder) -- dummy
+  +  84 -- NACL_sys_tls_get (NaClSysTls_GetDecoder) -- dummy
 
   special case, tonneling call:
   0 -- artificially added "One Ring" single syscall

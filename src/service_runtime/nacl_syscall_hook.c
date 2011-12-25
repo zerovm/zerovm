@@ -28,6 +28,7 @@
 #include "src/service_runtime/include/bits/nacl_syscalls.h"
 #include "src/service_runtime/nacl_app_thread.h"
 #include "src/service_runtime/nacl_stack_safety.h"
+#include "src/service_runtime/nacl_globals.h" /* d'b */
 #include "src/manifest/trap.h" /* d'b: ResumeCpuClock(), PauseCpuClock() */
 #include "src/manifest/manifest_setup.h" /* d'b: ResumeCpuClock(), PauseCpuClock() */
 
@@ -64,8 +65,13 @@ void NaClMicroSleep(int microseconds) {
     ;
 }
 
-NORETURN void NaClSyscallCSegHook(int32_t tls_idx) {
-  struct NaClAppThread      *natp;
+/*
+ * ###
+ * d'b:
+ * all changes are temporary. just to test a new design w/o threads
+ */
+NORETURN void NaClSyscallCSegHook()
+{
   struct NaClApp            *nap;
   struct NaClThreadContext  *user;
   uintptr_t                 tramp_ret;
@@ -75,25 +81,15 @@ NORETURN void NaClSyscallCSegHook(int32_t tls_idx) {
   uintptr_t                 sp_sys;
 
   /*
-   * Mark the thread as running on a trusted stack as soon as possible
-   * so that we can report any crashes that occur after this point.
-   */
-  NaClStackSafetyNowOnTrustedStack();
-
-  natp = nacl_thread[tls_idx];
-  nap = natp->nap;
-
-  /*
    * d'b: nexe just invoked some syscall. stop cpu time counting
    * increase syscalls counter (correction for setup call will be
    * corrected later). small mallocs and other calls which are
    * not really "system" will be accounted anyway!
    */
+  nap = gnap; /* restore NaClApp object */
   PauseCpuClock(nap);
   AccountingSyscallsInc(nap);
-  /* d'b end */
-
-  user = &natp->user;
+  user = nacl_user; /* restore from global */
   sp_user = NaClGetThreadCtxSp(user);
 
   /* sp must be okay for control to have gotten here */
@@ -116,7 +112,6 @@ NORETURN void NaClSyscallCSegHook(int32_t tls_idx) {
    *   sp+c:  arg1 to system call
    *   sp+10: ....
    */
-
   sp_sys = NaClUserToSysStackAddr(nap, sp_user);
   /*
    * sp_sys points to the top of user stack where there is a retaddr to
@@ -148,7 +143,7 @@ NORETURN void NaClSyscallCSegHook(int32_t tls_idx) {
 
   if (sysnum >= NACL_MAX_SYSCALLS) {
     NaClLog(2, "INVALID system call %"NACL_PRIdS"\n", sysnum);
-    natp->sysret = -NACL_ABI_EINVAL;
+    nap->sysret = -NACL_ABI_EINVAL;
   } else {
 #if !BENCHMARK
     NaClLog(4, "making system call %"NACL_PRIdS", "
@@ -164,14 +159,14 @@ NORETURN void NaClSyscallCSegHook(int32_t tls_idx) {
      * system call. System call arguments are placed on the untrusted
      * user stack.
      */
-    natp->syscall_args = (uintptr_t *) sp_sys;
-    natp->sysret = (*(nap->syscall_table[sysnum].handler))(natp);
+    nap->syscall_args = (uintptr_t *) sp_sys;
+    nap->sysret = (*(nap->syscall_table[sysnum].handler))(nap); //###
   }
 #if !BENCHMARK
   NaClLog(4,
           ("returning from system call %"NACL_PRIdS", return value %"NACL_PRId32
            " (0x%"NACL_PRIx32")\n"),
-          sysnum, natp->sysret, natp->sysret);
+          sysnum, nap->sysret, nap->sysret);
 
   NaClLog(4, "return target 0x%08"NACL_PRIxNACL_REG"\n", user_ret);
   NaClLog(4, "user sp %"NACL_PRIxPTR"\n", sp_user);
@@ -198,7 +193,7 @@ NORETURN void NaClSyscallCSegHook(int32_t tls_idx) {
 
   /* d'b: give control to the nexe. start cpu time counting */
   ResumeCpuClock(nap);
-  NaClSwitchToApp(natp, user_ret);
+  NaClSwitchToApp(nap, user_ret);
   /* NOTREACHED */
 
   fprintf(stderr, "NORETURN NaClSwitchToApp returned!?!\n");
