@@ -175,7 +175,6 @@ int main(int argc, char **argv)
   struct GioMemoryFileSnapshot  blob_file;
 
   int                           ret_code;
-//  struct DynArray               env_vars;
 
   char                          *log_file = NULL;
   struct GioFile                *log_gio;
@@ -212,14 +211,10 @@ int main(int argc, char **argv)
   /* d'b end */
 
   struct NaClPerfCounter time_all_main;
-//  const char **envp;
-//  struct NaClEnvCleanser env_cleanser;
   const char *sandbox_fd_string;
   /* Mac dynamic libraries cannot access the environ variable directly. */
   /* Overzealous code style check is overzealous. */
   /* @IGNORE_LINES_FOR_CODE_HYGIENE[1] */
-//  extern char **environ;
-//  envp = (const char**)environ;
   /*
    * Set malloc not to use mmap even for large allocations.  This is currently
    * necessary when we must use a specific area of RAM for the sandbox.
@@ -252,10 +247,7 @@ int main(int argc, char **argv)
     fprintf(stderr, "Could not create general standard output channel\n");
     exit(1);
   }
-//    if (!DynArrayCtor(&env_vars, 0)) {
-//    NaClLog(LOG_FATAL, "Failed to allocate env var array\n");
-//  }
-    /*
+  /*
    * On platforms with glibc getopt, require POSIXLY_CORRECT behavior,
    * viz, no reordering of the arglist -- stop argument processing as
    * soon as an unrecognized argument is encountered, so that, for
@@ -366,24 +358,6 @@ int main(int argc, char **argv)
       case 's':
         stub_out_mode = 1;
         break;
-//      case 'E':
-//        /*
-//         * For simplicity, we treat the environment variables as a
-//         * list of strings rather than a key/value mapping.  We do not
-//         * try to prevent duplicate keys or require the strings to be
-//         * of the form "KEY=VALUE".  This is in line with how execve()
-//         * works in Unix.
-//         *
-//         * We expect that most callers passing "-E" will either pass
-//         * in a fixed list or will construct the list using a
-//         * high-level language, in which case de-duplicating keys
-//         * outside of sel_ldr is easier.  However, we could do
-//         * de-duplication here if it proves to be worthwhile.
-//         */
-//        if (!DynArraySet(&env_vars, env_vars.num_entries, optarg)) {
-//          NaClLog(LOG_FATAL, "Adding item to env_vars failed\n");
-//        }
-//        break;
       default:
         fprintf(stderr, "ERROR: unknown option: [%c]\n\n", opt);
         PrintUsage();
@@ -741,7 +715,6 @@ int main(int argc, char **argv)
      * allocating segment selectors.  On x86-64 and ARM, this is
      * (currently) a no-op.
      */
-//    errcode = NaClAppPrepareToLaunch(nap);
     if (LOAD_OK != errcode)
     {
       nap->module_load_status = errcode;
@@ -856,16 +829,6 @@ int main(int argc, char **argv)
     goto done;
   }
 
-//  if (!DynArraySet(&env_vars, env_vars.num_entries, NULL)) {
-//    NaClLog(LOG_FATAL, "Adding env_vars NULL terminator failed\n");
-//  }
-
-//  NaClEnvCleanserCtor(&env_cleanser, 0);
-//  if (!NaClEnvCleanserInit(&env_cleanser, envp,
-//          (char const *const *)env_vars.ptr_array)) {
-//    NaClLog(LOG_FATAL, "Failed to initialise env cleanser\n");
-//  }
-
   /*
    * d'b: provide nexe with given in manifest command line
    */
@@ -880,7 +843,6 @@ int main(int argc, char **argv)
 
   NaClPerfCounterMark(&time_all_main, "CreateMainThread");
   NaClPerfCounterIntervalLast(&time_all_main);
-//  DynArrayDtor(&env_vars);
 
   /* set user code trap() exit location */
   if((ret_code = setjmp(user_exit)) == 0)
@@ -893,8 +855,6 @@ int main(int argc, char **argv)
     }
   }
   /* d'b end */
-
-//  NaClEnvCleanserDtor(&env_cleanser);
 
   NaClPerfCounterMark(&time_all_main, "WaitForMainThread");
   NaClPerfCounterIntervalLast(&time_all_main);
@@ -920,7 +880,7 @@ int main(int argc, char **argv)
     /* generate report, "manifest" reused for report, fix it ### */
     SetupReportSettings(nap);
     nap->manifest->report->ret_code = 0;
-    nap->manifest->report->user_ret_code = ret_code;
+    nap->manifest->report->user_ret_code = nap->exit_status;
     AnswerManifestPut(nap, manifest);
 
     /* write it and free resources */

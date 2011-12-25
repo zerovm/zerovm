@@ -25,7 +25,7 @@ int Callback(int32_t arg)
   zvm_setup(&setup);
 
   fprintf(stderr, "goodbye cruel world..\n");
-  exit(1);
+  exit(0);
 
   return arg;
 }
