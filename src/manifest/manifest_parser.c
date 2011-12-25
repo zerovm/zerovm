@@ -19,20 +19,18 @@
 #include <string.h>
 #include <ctype.h>
 
-#include "src/service_runtime/include/bits/mman.h"
 #include "src/service_runtime/sel_ldr.h"
-#include "src/manifest/manifest_parser.h"
-#include "src/manifest/manifest_setup.h"
 #include "src/service_runtime/nacl_config.h"
-#include "src/service_runtime/sel_mem.h"
-#include "src/service_runtime/nacl_memory_object.h"
 #include "src/platform/nacl_log.h"
-/**/
+#include "src/manifest/manifest_parser.h"
 
+/* todo: remove it when manifest structs will be moved to one place */
+#include "src/manifest/manifest_setup.h"
+/* todo: replace it when i/o functions will be moved to one place */
 #include "src/manifest/mount_channel.h"
 
 /* public function. return value from manifest by given key */
-char* GetValueByKey(struct NaClApp *nap, char *key)
+char* get_value_by_key(struct NaClApp *nap, char *key)
 {
 	int i;
 	for(i = 0; i < nap->manifest->master_records; ++i)
@@ -43,45 +41,8 @@ char* GetValueByKey(struct NaClApp *nap, char *key)
 	return NULL;
 }
 
-/*
- * return number of found values from manifest by given key
- * values will be stored into provided array
- * note: this is temporary function. needed to solve the problem of
- * duplicate keys in manifest
- */
-int GetValuesByKey(struct NaClApp *nap, char *key, char *values[], int capacity)
-{
-  int count = 0;
-  int i;
-
-  /* populate array with found "value" strings */
-  for(i = 0; i < nap->manifest->master_records; ++i)
-    if(strcmp(key, nap->manifest->master[i].key) == 0 && count < capacity)
-      values[count++] = nap->manifest->master[i].value;
-
-  return count;
-}
-
-/*
- * public function. set value in manifest by given key
- * return 1 if success, otherwise - 0
- */
-int SetValueByKey(struct NaClApp *nap, char *key, char *value)
-{
-  int i;
-  for(i = 0; i < nap->manifest->master_records; ++i)
-  {
-    if(strcmp(key, nap->manifest->master[i].key) == 0)
-    {
-      nap->manifest->master[i].value = value;
-      return 1;
-    }
-  }
-  return 0;
-}
-
 /* remove leading and ending spaces from the given string */
-char* CutSpaces(char *a)
+char* cut_spaces(char *a)
 {
   char *end;
   if (a == NULL) return a;
@@ -97,7 +58,7 @@ char* CutSpaces(char *a)
 }
 
 /* return string until '=' */
-char* GetKey(char *a)
+char* get_key(char *a)
 {
   char *end;
   if(a == NULL) return a;
@@ -107,11 +68,11 @@ char* GetKey(char *a)
   if(a == end) return NULL;			/* empty key is not allowed. invalid key. */
   *end	= '\0';									/* cut the string in position of the last '=' */
 
-	return CutSpaces(a);
+	return cut_spaces(a);
 }
 
 /* return string after '=' */
-char* GetValue(char *a)
+char* get_value(char *a)
 {
   char *begin;
   if(a == NULL) return a;
@@ -121,7 +82,7 @@ char* GetValue(char *a)
 	if(strchr(++begin, '=')) return NULL;	/* string contain more the one '='. invalid line. */
 	if(*begin == '\0') return NULL;				/* empty value is not allowed. invalid line. */
 
-	return CutSpaces(begin);
+	return cut_spaces(begin);
 }
 
 /* show error, deallocate resources and return error code */
@@ -143,7 +104,7 @@ char* GetValue(char *a)
  * return count of records found, otherwise - 0
  * note: malloc()
  */
-int ParseManifest(const char *name, struct NaClApp *nap)
+int parse_manifest(const char *name, struct NaClApp *nap)
 {
 	char *str = NULL;
 	char *p;
@@ -171,8 +132,8 @@ int ParseManifest(const char *name, struct NaClApp *nap)
   p = strtok(str, EOL);
   while(p)
   {
-    nap->manifest->master[count].value = GetValue(p);
-    nap->manifest->master[count].key = GetKey(p);
+    nap->manifest->master[count].value = get_value(p);
+    nap->manifest->master[count].key = get_key(p);
   	if (nap->manifest->master[count].key && nap->manifest->master[count].value) ++count;
 
 		p = strtok(NULL, EOL);

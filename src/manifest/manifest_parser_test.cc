@@ -55,41 +55,41 @@ class ManifestTests : public ::testing::Test {
 // test cutting spaces
 TEST_F(ManifestTests, CutSpacesTest)
 {
-  EXPECT_EQ(NIL, CutSpaces(NULL));
-  CHECK(NIL, "", CutSpaces);
-  CHECK("1-way_test", "1-way_test   ", CutSpaces);
-  CHECK("2-way test", "2-way test   ", CutSpaces);
-  CHECK("3-way test", "\t 3-way test\t \t", CutSpaces);
-  CHECK("2-way test", "\t 2-way test", CutSpaces);
-  CHECK("1-way_test", "   1-way_test", CutSpaces);
-  CHECK("1-way test", "1-way test", CutSpaces);
-  CHECK("0-way_test", "0-way_test", CutSpaces);
+  EXPECT_EQ(NIL, cut_spaces(NULL));
+  CHECK(NIL, "", cut_spaces);
+  CHECK("1-way_test", "1-way_test   ", cut_spaces);
+  CHECK("2-way test", "2-way test   ", cut_spaces);
+  CHECK("3-way test", "\t 3-way test\t \t", cut_spaces);
+  CHECK("2-way test", "\t 2-way test", cut_spaces);
+  CHECK("1-way_test", "   1-way_test", cut_spaces);
+  CHECK("1-way test", "1-way test", cut_spaces);
+  CHECK("0-way_test", "0-way_test", cut_spaces);
 }
 
 // test key extraction
 TEST_F(ManifestTests, GetKeyTest)
 {
-  EXPECT_EQ(NULL, GetKey(NULL));
-  CHECK(NIL, "", GetKey);
-  CHECK(NIL, "invalid key  value", GetKey);
-  CHECK("key", "key=value", GetKey);
-  CHECK("key", "\tkey = \tvalue", GetKey);
-  CHECK("complex key", " \tcomplex key = \tvalue", GetKey);
-  CHECK("very \tcomplex key", " \tvery \tcomplex key=value", GetKey);
-  CHECK("complex key", "complex key=value", GetKey);
+  EXPECT_EQ(NULL, get_key(NULL));
+  CHECK(NIL, "", get_key);
+  CHECK(NIL, "invalid key  value", get_key);
+  CHECK("key", "key=value", get_key);
+  CHECK("key", "\tkey = \tvalue", get_key);
+  CHECK("complex key", " \tcomplex key = \tvalue", get_key);
+  CHECK("very \tcomplex key", " \tvery \tcomplex key=value", get_key);
+  CHECK("complex key", "complex key=value", get_key);
 }
 
 // test value extraction
 TEST_F(ManifestTests, GetValueTest)
 {
-  EXPECT_EQ(NULL, GetValue(NULL));
-  CHECK(NIL, "", GetValue);
-  CHECK(NIL, "== invalid value", GetValue);
-  CHECK("value", "key=value", GetValue);
-  CHECK("value", "\tkey = \tvalue", GetValue);
-  CHECK("complex value", " \tcomplex key = \tcomplex value ", GetValue);
-  CHECK("very\tcomplex\tvalue", " \tvery \tcomplex key= very\tcomplex\tvalue\t", GetValue);
-  CHECK("complex value", "complex key=complex value", GetValue);
+  EXPECT_EQ(NULL, get_value(NULL));
+  CHECK(NIL, "", get_value);
+  CHECK(NIL, "== invalid value", get_value);
+  CHECK("value", "key=value", get_value);
+  CHECK("value", "\tkey = \tvalue", get_value);
+  CHECK("complex value", " \tcomplex key = \tcomplex value ", get_value);
+  CHECK("very\tcomplex\tvalue", " \tvery \tcomplex key= very\tcomplex\tvalue\t", get_value);
+  CHECK("complex value", "complex key=complex value", get_value);
 }
 
 // test whole manifest processing and get value by key
@@ -118,15 +118,15 @@ TEST_F(ManifestTests, ParseManifestTest)
       "\t \t key07\t\t\t\t= \t\t\tvalue07   \n");
   fclose(f);
 
-  EXPECT_EQ(7, ParseManifest(MANIFEST_FILE, &stat)); // get rid of warning
-  CHECK2("value 014", "key 014", GetValueByKey);
-  CHECK2("value01", "key01", GetValueByKey);
-  CHECK2("value07", "key07", GetValueByKey);
-  CHECK2("value05", "key05", GetValueByKey);
-  CHECK2("value02", "key02", GetValueByKey);
-  CHECK2("value03", "key03", GetValueByKey);
-  CHECK2("value06", "key06", GetValueByKey);
-  CHECK2(NIL, "not existing key", GetValueByKey);
+  EXPECT_EQ(7, parse_manifest(MANIFEST_FILE, &stat)); // get rid of warning
+  CHECK2("value 014", "key 014", get_value_by_key);
+  CHECK2("value01", "key01", get_value_by_key);
+  CHECK2("value07", "key07", get_value_by_key);
+  CHECK2("value05", "key05", get_value_by_key);
+  CHECK2("value02", "key02", get_value_by_key);
+  CHECK2("value03", "key03", get_value_by_key);
+  CHECK2("value06", "key06", get_value_by_key);
+  CHECK2(NIL, "not existing key", get_value_by_key);
   remove(MANIFEST_FILE); /* remove test file */
 }
 

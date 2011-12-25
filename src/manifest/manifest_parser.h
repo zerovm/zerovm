@@ -25,12 +25,12 @@ EXTERN_C_BEGIN
  * open manifest file, parse it and initialize in the given
  * NaClApp structure two fields: "manifest" and "manifest_size"
  */
-int ParseManifest(const char *name, struct NaClApp *nap);
+int parse_manifest(const char *name, struct NaClApp *nap);
 
 /*
  * get value by key from the manifest. if not found - NULL
  */
-char* GetValueByKey(struct NaClApp *nap, char *key);
+char* get_value_by_key(struct NaClApp *nap, char *key);
 
 /*
  * return number of found values from manifest by given key
@@ -38,20 +38,20 @@ char* GetValueByKey(struct NaClApp *nap, char *key);
  * note: this is temporary function. needed to solve the problem of
  * duplicate keys in manifest
  */
-int GetValuesByKey(struct NaClApp *nap, char *key, char *values[], int capacity);
+int get_values_by_key(struct NaClApp *nap, char *key, char *values[], int capacity);
 
 /*
  * public function. set value in manifest by given key
  * return 1 if success, otherwise - 0
  */
-int SetValueByKey(struct NaClApp *nap, char *key, char *value);
+int set_value_by_key(struct NaClApp *nap, char *key, char *value);
 
 /*
  * helper procedures. were put here for unit test
  */
-char* CutSpaces(char *a);
-char* GetKey(char *a);
-char* GetValue(char *a);
+char* cut_spaces(char *a);
+char* get_key(char *a);
+char* get_value(char *a);
 
 EXTERN_C_END
 

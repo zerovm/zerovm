@@ -413,7 +413,7 @@ int main(int argc, char **argv)
 	/* manifest is provided */
 	else {
 	  int32_t size;
-		if (!ParseManifest(ma_name, &state))
+		if (!parse_manifest(ma_name, &state))
 		{
 			fprintf(stderr, "Invalid manifest file \"%s\".\n", ma_name);
 			exit(1);
@@ -430,7 +430,7 @@ int main(int argc, char **argv)
 #define ARGC_MAX 128*sizeof(char*)
 #define SET_KEY_FROM_MANIFEST(key, var)\
 	  do {\
-	    char *buf = GetValueByKey(&state, key);\
+	    char *buf = get_value_by_key(&state, key);\
 	    if(var != NULL && buf != NULL)\
 	    {\
 	      fprintf(stderr, "command line switch tried to override a manifest key\n"\
@@ -452,7 +452,7 @@ int main(int argc, char **argv)
     nexe_argc = 1;
     nexe_argv = (char**) malloc(ARGC_MAX);
     nexe_argv[0] = "_"; /* not available for nexe (see minor manifest) */
-    nexe_argv[nexe_argc] = strtok(GetValueByKey(&state, "CommandLine"), SPACE);
+    nexe_argv[nexe_argc] = strtok(get_value_by_key(&state, "CommandLine"), SPACE);
 
     while(nexe_argv[nexe_argc])
       nexe_argv[++nexe_argc] = strtok(NULL, SPACE);
@@ -894,7 +894,7 @@ int main(int argc, char **argv)
       char *p = (char*) NaClUserToSys(nap, (uint32_t)nap->manifest->user_setup->channels[LogChannel].buffer);
       off_t size = strlen(p);
       munmap(p, nap->manifest->user_setup->channels[LogChannel].bsize);
-      truncate(GetValueByKey(nap, "UserLog"), size);
+      truncate(get_value_by_key(nap, "UserLog"), size);
     }
   }
   /* d'b end */

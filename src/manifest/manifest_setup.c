@@ -51,12 +51,12 @@ int32_t ConstructChannel(struct NaClApp *nap, enum ChannelType ch)
     char *p;\
     if(!limit) break;\
     sprintf(str, "%s%s", prefix, limit);\
-    p = GetValueByKey(nap, str);\
+    p = get_value_by_key(nap, str);\
     a = p ? atoll(p) : 0;\
   } while (0);
 
   /* check if channel is set in manifest and set main attributes */
-  channel->name = (uint64_t)GetValueByKey(nap, prefix);
+  channel->name = (uint64_t)get_value_by_key(nap, prefix);
   if(!channel->name) return 1;
   SET_LIMIT(channel->mounted, "Mode");
   channel->type = ch;
@@ -137,7 +137,7 @@ void AnswerManifestPut(struct NaClApp *nap, char *report)
 
 #define TRANSET(var, str)\
   do {\
-    char *p = GetValueByKey(nap, str);\
+    char *p = get_value_by_key(nap, str);\
     var = p == NULL ? 0 : atoll(p);\
   } while(0)
 
@@ -171,10 +171,10 @@ void SetupUserPolicy(struct NaClApp *nap)
 
   /* setup custom attributes */
 #define STRNCPY_NULL(a, b, n) if ((a) && (b)) strncpy(a, b, n);
-  STRNCPY_NULL(policy->content_type, GetValueByKey(nap, "ContentType"), CONTENT_TYPE_LEN);
-  STRNCPY_NULL(policy->timestamp, GetValueByKey(nap, "TimeStamp"), TIMESTAMP_LEN);
-  STRNCPY_NULL(policy->x_object_meta_tag, GetValueByKey(nap, "XObjectMetaTag"), X_OBJECT_META_TAG_LEN);
-  STRNCPY_NULL(policy->user_etag, GetValueByKey(nap, "UserETag"), USER_TAG_LEN);
+  STRNCPY_NULL(policy->content_type, get_value_by_key(nap, "ContentType"), CONTENT_TYPE_LEN);
+  STRNCPY_NULL(policy->timestamp, get_value_by_key(nap, "TimeStamp"), TIMESTAMP_LEN);
+  STRNCPY_NULL(policy->x_object_meta_tag, get_value_by_key(nap, "XObjectMetaTag"), X_OBJECT_META_TAG_LEN);
+  STRNCPY_NULL(policy->user_etag, get_value_by_key(nap, "UserETag"), USER_TAG_LEN);
 #undef STRNCPY_NULL
   nap->manifest->user_setup = policy;
 }
@@ -190,14 +190,14 @@ void SetupSystemPolicy(struct NaClApp *nap)
   COND_ABORT(!policy, "cannot allocate memory for system policy\n");
 
   /* get zerovm settings */
-  policy->version = GetValueByKey(nap, "Version");
-  policy->zerovm = GetValueByKey(nap, "ZeroVM");
-  policy->log = GetValueByKey(nap, "Log");
-  policy->report = GetValueByKey(nap, "Report");
-  policy->nexe = GetValueByKey(nap, "Nexe");
-  policy->cmd_line = GetValueByKey(nap, "CommandLine");
-  policy->blob = GetValueByKey(nap, "Blob");
-  policy->nexe_etag = GetValueByKey(nap, "NexeEtag");
+  policy->version = get_value_by_key(nap, "Version");
+  policy->zerovm = get_value_by_key(nap, "ZeroVM");
+  policy->log = get_value_by_key(nap, "Log");
+  policy->report = get_value_by_key(nap, "Report");
+  policy->nexe = get_value_by_key(nap, "Nexe");
+  policy->cmd_line = get_value_by_key(nap, "CommandLine");
+  policy->blob = get_value_by_key(nap, "Blob");
+  policy->nexe_etag = get_value_by_key(nap, "NexeEtag");
 
   TRANSET(policy->nexe_max, "NexeMax");
   TRANSET(policy->timeout, "Timeout");
