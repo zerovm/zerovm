@@ -7,17 +7,12 @@
 /*
  * NaCl Simple/secure ELF loader (NaCl SEL).
  */
-
 #include <errno.h>
 
 #include "include/nacl_platform.h"
-#include "include/portability.h"
-#include "src/platform/nacl_log.h"
 #include "src/service_runtime/sel_addrspace.h"
 #include "src/service_runtime/sel_ldr.h"
 #include "src/service_runtime/sel_memory.h"
-#include "src/service_runtime/sel_util.h"
-
 
 NaClErrorCode NaClAllocAddrSpace(struct NaClApp *nap) {
   void        *mem;
@@ -86,7 +81,6 @@ NaClErrorCode NaClAllocAddrSpace(struct NaClApp *nap) {
 
   return LOAD_OK;
 }
-
 
 /*
  * Apply memory protection to memory regions.

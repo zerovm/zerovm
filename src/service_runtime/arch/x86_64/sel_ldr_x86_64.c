@@ -5,15 +5,14 @@
  */
 
 #include "include/portability_string.h"
-#include "include/nacl_macros.h"
 #include "include/nacl_platform.h"
 #include "src/platform/nacl_check.h"
-#include "src/service_runtime/nacl_syscall_asm_symbols.h"
 #include "src/service_runtime/sel_ldr.h"
 #include "src/service_runtime/sel_memory.h"
-#include "src/service_runtime/springboard.h"
 #include "src/service_runtime/arch/x86/sel_ldr_x86.h"
 #include "src/service_runtime/arch/x86_64/tramp_64.h"
+
+extern int NaClSyscallSeg(); /* d'b: moved from tiny header file to remove it */
 
 int NaClMakeDispatchThunk(struct NaClApp *nap) {
   int                   retval = 0;  /* fail */
@@ -127,11 +126,4 @@ void NaClFillTrampolineRegion(struct NaClApp *nap) {
   NaClFillMemoryRegionWithHalt(
       (void *) (nap->mem_start + NACL_TRAMPOLINE_START),
       NACL_TRAMPOLINE_SIZE);
-}
-
-void NaClLoadSpringboard(struct NaClApp  *nap) {
-  /*
-   * There is no springboard for x86-64.
-   */
-  UNREFERENCED_PARAMETER(nap);
 }

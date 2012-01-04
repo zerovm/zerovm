@@ -8,26 +8,11 @@
 #define SERVICE_RUNTIME_ARCH_X86_SEL_LDR_H__ 1
 
 /* to make LDT_ENTRIES available */
-#if NACL_WINDOWS
-# define LDT_ENTRIES 8192
-#elif NACL_OSX
-# define LDT_ENTRIES 8192
-#elif NACL_LINUX
-# include <asm/ldt.h>
-#endif
-
+#include <asm/ldt.h>
 #include "src/service_runtime/arch/x86/nacl_ldt_x86.h"
 
-
-#if NACL_BUILD_SUBARCH == 32
-# define NACL_MAX_ADDR_BITS  (30)
-# define NACL_THREAD_MAX     LDT_ENTRIES  /* cannot be larger */
-#elif NACL_BUILD_SUBARCH == 64
-# define NACL_MAX_ADDR_BITS  (32)
-# define NACL_THREAD_MAX     LDT_ENTRIES  /* can be larger */
-#else
-# error "Did Intel or AMD introduce the 128-bit x86?"
-#endif
+#define NACL_MAX_ADDR_BITS  (32)
+#define NACL_THREAD_MAX     LDT_ENTRIES  /* can be larger */
 
 #define NACL_NOOP_OPCODE    0x90
 #define NACL_HALT_OPCODE    0xf4

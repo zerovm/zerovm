@@ -7,11 +7,8 @@
 /*
  * NaCl Simple/secure ELF loader (NaCl SEL) memory protection abstractions.
  */
-
 #ifndef NATIVE_CLIENT_SRC_TRUSTED_SERVICE_RUNTIME_SEL_MEMORY_H_
 #define NATIVE_CLIENT_SRC_TRUSTED_SERVICE_RUNTIME_SEL_MEMORY_H_ 1
-
-#include "include/nacl_compiler_annotations.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,9 +35,6 @@ int   NaCl_page_alloc(void    **p,
 int   NaCl_page_alloc_randomized(void   **p,
                                  size_t num_bytes) NACL_WUR;
 
-int   NaCl_page_alloc_at_addr(void **p,
-                              size_t  size) NACL_WUR;
-
 void  NaCl_page_free(void     *p,
                      size_t   num_bytes);
 
@@ -53,10 +47,7 @@ int   NaCl_madvise(void           *start,
                    int            advice) NACL_WUR;
 
 
-#if NACL_LINUX
 extern void *g_nacl_prereserved_sandbox_addr;
-#endif
-
 
 #ifdef __cplusplus
 }

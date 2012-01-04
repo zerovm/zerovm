@@ -20,7 +20,7 @@
  * NACL_WINDOWS, and TSD on NACL_OSX since OSX does not implement
  * __thread).
  */
-#include "include/portability.h"
+#include "src/service_runtime/sel_ldr.h"
 
 struct NaClAppThread;
 
@@ -79,16 +79,5 @@ uint32_t NaClTlsChange(struct NaClApp *nap, void *thread_ptr) NACL_WUR;
  * number of internal structures, e.g.nacl_thread[], nacl_user[], nacl_sys[]
  */
 uint32_t NaClGetThreadIdx(struct NaClAppThread *natp);
-
-
-#if NACL_OSX
-/*
- * OSX does not have TLS and we emulate it on the trusted side using TSD.
- */
-extern pthread_key_t nacl_thread_info_key;
-extern uint32_t nacl_thread_index_tls_offset;
-
-#endif
-
 
 #endif /* SERVICE_RUNTIME_NACL_THREAD_H__ */

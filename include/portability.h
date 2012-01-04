@@ -22,7 +22,8 @@
 #ifdef __native_client__
 #include <bits/wordsize.h>
 #else
-#include "src/service_runtime/include/bits/wordsize.h"
+//#include "src/service_runtime/include/bits/wordsize.h"
+#define __WORDSIZE 64
 #endif
 
 #include "include/nacl_compiler_annotations.h"

@@ -15,22 +15,7 @@
  * to and from architecture dependent CPU state structures.
  */
 
-#include "include/nacl_base.h"
-
-#if NACL_ARCH(NACL_BUILD_ARCH) == NACL_x86
-  #if NACL_BUILD_SUBARCH == 32
-    #include "src/service_runtime/arch/x86_32/nacl_signal_32.h"
-  #elif NACL_BUILD_SUBARCH == 64
-    #include "src/service_runtime/arch/x86_64/nacl_signal_64.h"
-  #else
-    #error "Woe to the service runtime.  Is it running on a 128-bit machine?!?"
-  #endif
-#elif NACL_ARCH(NACL_BUILD_ARCH) == NACL_arm
-  #include "src/service_runtime/arch/arm/nacl_signal_arm.h"
-#else
-  #error Unknown platform!
-#endif
-
+#include "src/service_runtime/arch/x86_64/nacl_signal_64.h"
 
 EXTERN_C_BEGIN
 
@@ -57,13 +42,11 @@ enum PosixSignals {
 };
 #endif
 
-
 /*
  * Prototype for a signal handler.  The handler will receive the POSIX
  * signal number and an opaque platform dependent signal object.
  */
 typedef enum NaClSignalResult (*NaClSignalHandler)(int sig_num, void *ctx);
-
 
 /*
  * Allocates a stack suitable for passing to
@@ -72,22 +55,6 @@ typedef enum NaClSignalResult (*NaClSignalHandler)(int sig_num, void *ctx);
  * Stores the result in *result; returns 1 on success, 0 on failure.
  */
 int NaClSignalStackAllocate(void **result);
-
-/*
- * Deallocates a stack allocated by NaClSignalStackAllocate().
- * This can be called in any thread.
- */
-void NaClSignalStackFree(void *stack);
-
-/*
- * Registers a signal stack for use in the current thread.
- */
-void NaClSignalStackRegister(void *stack);
-
-/*
- * Undoes the effect of NaClSignalStackRegister().
- */
-void NaClSignalStackUnregister(void);
 
 /*
  * Register process-wide signal handlers.
@@ -132,14 +99,6 @@ void NaClSignalContextFromHandler(struct NaClSignalContext *sigCtx,
                                   const void *rawCtx);
 
 /*
- * Update the raw platform dependent signal information from the
- * signal context structure.
- */
-void NaClSignalContextToHandler(void *rawCtx,
-                                const struct NaClSignalContext *sigCtx);
-
-
-/*
  * Return non-zero if the signal context is currently executing in an
  * untrusted environment.
  */
@@ -164,7 +123,6 @@ enum NaClSignalResult NaClSignalHandleAll(int signal_number, void *ctx);
  */
 enum NaClSignalResult NaClSignalHandleUntrusted(int signal_number, void *ctx);
 
-
 /*
  * Traverse handler list, until a handler returns
  * NACL_SIGNAL_RETURN, or the list is exhausted, in which case
@@ -177,7 +135,6 @@ enum NaClSignalResult NaClSignalHandlerFind(int signal_number, void *ctx);
  */
 void NaClSignalHandlerInitPlatform(void);
 void NaClSignalHandlerFiniPlatform(void);
-
 
 EXTERN_C_END
 

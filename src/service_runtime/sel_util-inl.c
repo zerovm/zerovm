@@ -10,16 +10,9 @@
  * generate undefined external references (at least as of gcc 4.3.3
  * used in Jaunty), in the debug build.
  */
-
 #include "include/portability.h"
-#include "include/nacl_base.h"
-
-#include <sys/types.h>
-
 #include "src/service_runtime/nacl_config.h"
 
 #define static
 #undef INLINE
 #define INLINE
-
-#include "src/service_runtime/sel_util-inl.h"

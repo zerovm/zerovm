@@ -11,7 +11,6 @@
 #ifndef __SEL_ADDRSPACE_H__
 #define __SEL_ADDRSPACE_H__ 1
 
-#include "include/portability.h"
 #include "src/service_runtime/nacl_error_code.h"
 
 struct NaClApp; /* fwd */

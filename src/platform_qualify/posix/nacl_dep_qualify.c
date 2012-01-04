@@ -14,7 +14,6 @@
 #include <signal.h>
 
 #include "src/platform_qualify/nacl_dep_qualify.h"
-#include "src/platform_qualify/linux/sysv_shm_and_mmap.h"
 
 #if NACL_OSX && NACL_BUILD_ARCH == NACL_x86 && NACL_BUILD_SUBARCH == 64
 # define EXPECTED_SIGNAL SIGBUS

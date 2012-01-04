@@ -13,14 +13,7 @@
 
 #include "src/platform/nacl_host_dir.h"
 #include "src/service_runtime/include/sys/errno.h"
-#include "src/service_runtime/nacl_app_thread.h"
 #include "src/service_runtime/sel_ldr.h"
-
-static INLINE uintptr_t NaClAppArg(struct NaClAppThread *natp,
-                                   int                  wordnum) {
-  return natp->syscall_args[wordnum];
-}
-
 
 /*
  * Syscall return value mapper.  The linux raw syscall convention is
@@ -38,21 +31,6 @@ static INLINE uintptr_t NaClAppArg(struct NaClAppThread *natp,
  */
 static INLINE intptr_t NaClXlateSysRet(intptr_t rv) {
   return (rv != -1) ? rv : -NaClXlateErrno(errno);
-}
-
-
-/*
- * TODO(bsy): NaClXlateSysRetDesc to register returned descriptor in the
- * app's open descriptor table, wrapping it in a native descriptor
- * object.
- */
-
-static INLINE intptr_t NaClXlateSysRetAddr(struct NaClApp *nap,
-                                           intptr_t       rv) {
-  /* if rv is a bad address, we abort */
-  return ((rv != -1)
-          ? (int32_t) NaClSysToUser(nap, rv)
-          : -NaClXlateErrno(errno));
 }
 
 #endif

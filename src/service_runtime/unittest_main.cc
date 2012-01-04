@@ -4,16 +4,10 @@
  * be found in the LICENSE file.
  */
 
-
 // Testing NativeClient's service_runtime functionality
-
-
-#include "include/portability.h"
-
 #include "gtest/gtest.h"
 
 // TODO(gregoryd) - more tests
-
 int main(int argc, char **argv) {
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

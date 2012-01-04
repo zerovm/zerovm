@@ -7,13 +7,8 @@
 /*
  * NaCl Simple/secure ELF loader (NaCl SEL) memory object.
  */
-
-#include <stdlib.h>
-
 #include "src/platform/nacl_log.h"
-#include "src/platform/nacl_sync_checked.h"
 #include "src/service_runtime/nacl_memory_object.h"
-
 
 /*
  * Takes ownership of NaClDesc object, so no manipulation of ref count.
@@ -32,7 +27,6 @@ int NaClMemObjCtor(struct NaClMemObj  *nmop,
   return 1;
 }
 
-
 /*
  * Placement new copy ctor.
  */
@@ -45,7 +39,6 @@ int NaClMemObjCopyCtorOff(struct NaClMemObj *nmop,
   nmop->offset = src->offset + additional;
   return 1;
 }
-
 
 void NaClMemObjDtor(struct NaClMemObj *nmop) {
   NaClDescUnref(nmop->ndp);
@@ -60,7 +53,6 @@ void NaClMemObjSafeDtor(struct NaClMemObj *nmop) {
   }
   NaClMemObjDtor(nmop);
 }
-
 
 struct NaClMemObj *NaClMemObjMake(struct NaClDesc *ndp,
                                   nacl_off64_t    nbytes,
@@ -83,7 +75,6 @@ struct NaClMemObj *NaClMemObjMake(struct NaClDesc *ndp,
   return nmop;
 }
 
-
 struct NaClMemObj *NaClMemObjSplit(struct NaClMemObj *orig,
                                    nacl_off64_t      additional) {
   struct NaClMemObj *nmop;
@@ -102,7 +93,6 @@ struct NaClMemObj *NaClMemObjSplit(struct NaClMemObj *orig,
   }
   return nmop;
 }
-
 
 void NaClMemObjIncOffset(struct NaClMemObj *nmop,
                          nacl_off64_t      additional) {

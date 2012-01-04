@@ -5,26 +5,13 @@
  */
 
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
-#include "include/nacl_base.h"
 #include "include/portability_io.h"
 #include "src/platform/nacl_check.h"
 #include "src/platform/nacl_exit.h"
-#include "src/platform/nacl_log.h"
-#include "src/service_runtime/nacl_app_thread.h"
-#include "src/service_runtime/nacl_globals.h"
 #include "src/service_runtime/nacl_signal.h"
-#include "src/service_runtime/nacl_tls.h"
 #include "src/service_runtime/sel_ldr.h"
-
-#ifdef WIN32
-#include <io.h>
-#define write _write
-#else
-#include <unistd.h>
-#endif
 
 #define MAX_NACL_HANDLERS 16
 
@@ -33,7 +20,6 @@ struct NaClSignalNode {
   NaClSignalHandler func;
   int id;
 };
-
 
 static struct NaClSignalNode *s_FirstHandler = NULL;
 static struct NaClSignalNode *s_FreeList = NULL;
@@ -58,54 +44,16 @@ ssize_t NaClSignalErrorMessage(const char *msg) {
   return 0;
 }
 
-/*
+/* ### requires changes in other places
  * Return non-zero if the signal context is currently executing in an
  * untrusted environment.
- *
- * Note that this should only be called from the thread in which the
- * signal occurred, because on x86-64 it reads a thread-local variable
- * (nacl_thread_index).
  */
-int NaClSignalContextIsUntrusted(const struct NaClSignalContext *sigCtx) {
-#if NACL_ARCH(NACL_BUILD_ARCH) == NACL_x86 && NACL_BUILD_SUBARCH == 32
-  /* For x86-32, if %cs does not match, it is untrusted code. */
-  return NaClGetGlobalCs() != sigCtx->cs;
-#elif (NACL_ARCH(NACL_BUILD_ARCH) == NACL_x86 && NACL_BUILD_SUBARCH == 64) || \
-      NACL_ARCH(NACL_BUILD_ARCH) == NACL_arm
-  uint32_t current_thread_index = NaClTlsGetIdx();
-  if (NACL_TLS_INDEX_INVALID == current_thread_index) {
-    return 0;
-  } else {
-    struct NaClAppThread *thread = nacl_thread[current_thread_index];
-    /*
-     * Get the address of an arbitrary local, stack-allocated variable,
-     * just for the purpose of doing a sanity check.
-     */
-    void *pointer_into_stack = &thread;
-    /*
-     * Sanity check: Make sure the stack we are running on is not
-     * allocated in untrusted memory.  This checks that the alternate
-     * signal stack is correctly set up, because otherwise, if it is
-     * not set up, the test case would not detect that.
-     *
-     * There is little point in doing a CHECK instead of a DCHECK,
-     * because if we are running off an untrusted stack, we have already
-     * lost.
-     *
-     * We do not do the check on Windows because Windows does not have
-     * an equivalent of sigaltstack() and this signal handler is
-     * insecure there.
-     */
-#if !NACL_WINDOWS
-    DCHECK(!NaClIsUserAddr(thread->nap, (uintptr_t) pointer_into_stack));
-#endif
-    return NaClIsUserAddr(thread->nap, sigCtx->prog_ctr);
-  }
-#else
-# error Unsupported architecture
-#endif
+int NaClSignalContextIsUntrusted(const struct NaClSignalContext *sigCtx)
+{
+  /* d'b: set sigCtx->rax to 1 before pass control to nexe and clear it
+     each time when control returned to trusted code */
+  return sigCtx->rax;
 }
-
 
 enum NaClSignalResult NaClSignalHandleNone(int signal, void *ctx) {
   UNREFERENCED_PARAMETER(signal);
@@ -162,7 +110,6 @@ enum NaClSignalResult NaClSignalHandleUntrusted(int signal, void *ctx) {
   return NACL_SIGNAL_SEARCH;
 }
 
-
 int NaClSignalHandlerAdd(NaClSignalHandler func) {
   int id = 0;
 
@@ -185,7 +132,6 @@ int NaClSignalHandlerAdd(NaClSignalHandler func) {
 
   return id;
 }
-
 
 int NaClSignalHandlerRemove(int id) {
   /* The first node pointer is the first "next" pointer. */

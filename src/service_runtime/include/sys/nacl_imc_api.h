@@ -17,7 +17,6 @@
  */
 
 #include "src/service_runtime/include/bits/nacl_imc_api.h"
-#include "src/service_runtime/include/machine/_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,11 +26,7 @@ extern "C" {
  */
 #ifndef __nacl_handle_defined
 #define __nacl_handle_defined
-#if NACL_WINDOWS
-typedef HANDLE NaClHandle;
-#else
 typedef int NaClHandle;
-#endif
 #endif
 
 struct NaClAbiNaClImcMsgIoVec {

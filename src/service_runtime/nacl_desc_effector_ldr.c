@@ -9,14 +9,8 @@
  * Implementation of service runtime effector subclass used for all
  * application threads.
  */
-#include "src/platform/nacl_host_desc.h"
-
 #include "src/service_runtime/nacl_desc_effector_ldr.h"
-
 #include "src/service_runtime/include/bits/mman.h"
-#include "src/service_runtime/nacl_memory_object.h"
-#include "src/service_runtime/nacl_syscall_common.h"
-
 
 static struct NaClDescEffectorVtbl const NaClDescEffectorLdrVtbl;  /* fwd */
 
@@ -35,64 +29,6 @@ static void NaClDescEffLdrDtor(struct NaClDescEffector *vself) {
   vself->vtbl = (struct NaClDescEffectorVtbl const *) NULL;
 }
 
-#if NACL_WINDOWS
-static int NaClDescEffLdrUnmapMemory(struct NaClDescEffector  *vself,
-                                     uintptr_t                sysaddr,
-                                     size_t                   nbytes) {
-  struct NaClDescEffectorLdr  *self = (struct NaClDescEffectorLdr *) vself;
-  uintptr_t                   addr;
-  uintptr_t                   endaddr;
-  uintptr_t                   usraddr;
-  struct NaClVmmapEntry const *map_region;
-
-  for (addr = sysaddr, endaddr = sysaddr + nbytes;
-       addr < endaddr;
-       addr += NACL_MAP_PAGESIZE) {
-    usraddr = NaClSysToUser(self->nap, addr);
-
-    map_region = NaClVmmapFindPage(&self->nap->mem_map,
-                                   usraddr >> NACL_PAGESHIFT);
-    if (NULL == map_region || NULL == map_region->nmop) {
-      /*
-       * No memory in address space, and we have only MEM_RESERVE'd
-       * the address space; or memory is in address space, but not
-       * backed by a file.
-       */
-      if (0 == VirtualFree((void *) addr, 0, MEM_RELEASE)) {
-        NaClLog(LOG_FATAL,
-                ("NaClMMap: VirtualFree at user addr 0x%08"NACL_PRIxPTR
-                 " (sys 0x%08"NACL_PRIxPTR") failed: windows error %d\n"),
-                usraddr,
-                addr,
-                GetLastError());
-      }
-    } else {
-      struct NaClDesc *backing_ndp;
-      int             retval;
-
-      backing_ndp = map_region->nmop->ndp;
-
-      retval = (*((struct NaClDescVtbl const *) backing_ndp->base.vtbl)->
-                UnmapUnsafe)(backing_ndp,
-                             vself,
-                             (void *) addr,
-                             NACL_MAP_PAGESIZE);
-      if (0 != retval) {
-        NaClLog(LOG_FATAL,
-                ("NaClMMap: UnmapUnsafe failed at user addr 0x%08"NACL_PRIxPTR
-                 " (sys 0x%08"NACL_PRIxPTR") failed: syscall return %d\n"),
-                addr,
-                NaClUserToSys(self->nap, addr),
-                retval);
-      }
-    }
-  }
-
-  return 0;
-}
-
-#else  /* NACL_WINDOWS */
-
 static int NaClDescEffLdrUnmapMemory(struct NaClDescEffector  *vself,
                                      uintptr_t                sysaddr,
                                      size_t                   nbytes) {
@@ -101,7 +37,6 @@ static int NaClDescEffLdrUnmapMemory(struct NaClDescEffector  *vself,
   UNREFERENCED_PARAMETER(nbytes);
   return 0;
 }
-#endif  /* NACL_WINDOWS */
 
 static uintptr_t NaClDescEffLdrMapAnonMem(struct NaClDescEffector *vself,
                                           uintptr_t               sysaddr,

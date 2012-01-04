@@ -16,10 +16,11 @@
 #include "src/service_runtime/sel_mem.h"
 #include "src/service_runtime/nacl_memory_object.h"
 #include "src/platform/nacl_log.h"
+#include "src/service_runtime/nacl_syscall_handlers.h"
 
 #include <src/manifest/manifest_parser.h>
 #include <src/manifest/manifest_setup.h>
-#include "src/service_runtime/nacl_syscall_common.h"
+
 /*
  * set "prefix" (channel name) by "ch" (channel id)
  * note: prefix must have enough space to hold it
@@ -194,8 +195,8 @@ void SetupSystemPolicy(struct NaClApp *nap)
   policy->zerovm = get_value_by_key(nap, "ZeroVM");
   policy->log = get_value_by_key(nap, "Log");
   policy->report = get_value_by_key(nap, "Report");
+  COND_ABORT(policy->nexe, "nexe file name is already specified in the command line\n");
   policy->nexe = get_value_by_key(nap, "Nexe");
-  policy->cmd_line = get_value_by_key(nap, "CommandLine");
   policy->blob = get_value_by_key(nap, "Blob");
   policy->nexe_etag = get_value_by_key(nap, "NexeEtag");
 
@@ -206,18 +207,16 @@ void SetupSystemPolicy(struct NaClApp *nap)
   nap->manifest->system_setup = policy;
 }
 
-/* ### temporary disabled
+/*
  * preallocate memory area of given size. abort if fail
  */
 void PreallocateUserMemory(struct NaClApp *nap)
 {
-  return; // ###
+  struct SetupList *policy = nap->manifest->user_setup;
+  policy->heap_ptr = NaClCommonSysMmapIntern(nap, 0, policy->max_mem, 3, 0x22, -1, 0);
 
-//  struct SetupList *policy = nap->manifest->user_setup;
-//  policy->heap_ptr = NaClCommonSysMmapIntern(nap, 0, policy->max_mem, 3, 0x22, -1, 0);
-//
-//  /* why 0xfffff000? 1. 0x1000 reserved for error codes 2. it is still larger then 4gb - stack */
-//  COND_ABORT(policy->heap_ptr > 0xfffff000, "cannot preallocate memory for user\n");
+  /* why 0xfffff000? 1. 0x1000 reserved for error codes 2. it is still larger then 4gb - stack */
+  COND_ABORT(policy->heap_ptr > 0xfffff000, "cannot preallocate memory for user\n");
 }
 
 /*

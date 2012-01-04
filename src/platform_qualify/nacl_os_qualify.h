@@ -17,25 +17,6 @@ EXTERN_C_BEGIN
  */
 int NaClOsIsSupported();
 
-/*
- * Returns 1 if the operating system is a 64-bit version of Windows.
- *
- * TODO(adonovan): This is currently the only platform on which we
- * deploy a 64-bit sel_ldr, and this function is currently used to
- * check that.  This is not ideal; we should have a higher-level
- * feature test interface that answers questions such as "what
- * sel_ldr(s) are available on this system" directly, instead of
- * strewing such assumptions throughout the code.
- */
-int NaClOsIs64BitWindows();
-
-/*
- * Returns 1 if the operating system is a version that restores the
- * local descriptor table of processes.  This determines which 64-bit
- * solution is required to execute Native Client modules.
- */
-int NaClOsRestoresLdt();
-
 EXTERN_C_END
 
 #endif  /* NATIVE_CLIENT_SRC_TRUSTED_PLATFORM_QUALIFY_NACL_OS_QUALIFY_H_ */

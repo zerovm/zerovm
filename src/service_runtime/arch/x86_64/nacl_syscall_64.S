@@ -66,21 +66,6 @@ trap:
 
         /* rax, rdi, rsi, rdx, rcx, r8, r9 are usable for scratch */
 
-        /*
-         * WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
-         *
-         * Open coded TLS (or TSD) access, for all of our target host
-         * OS/toolchains.  If the compiler / runtime conventions for
-         * how to access TLS or TSD changes, this code will break
-         * mysteriously.
-         *
-         * WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
-         */
-        /*
-         * Linux uses TLS.
-         * The spelling is slightly different when we need to be PIC-friendly.
-         */
-
         /* check NaClThreadContext in sel_rt_64.h for the offsets */
         leaq    IDENTIFIER(nacl_user)(%rip), %rdx
         movq    (%rdx), %rdx

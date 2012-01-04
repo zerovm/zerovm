@@ -7,15 +7,12 @@
 /*
  * NaCl local descriptor table (LDT) management - common for all platforms
  */
-
-#include "src/service_runtime/arch/x86/nacl_ldt_x86.h"
 /* for LDT_ENTRIES */
 #include "src/service_runtime/arch/x86/sel_ldr_x86.h"
 
 /* TODO(gregoryd): These need to come from a header file. */
 extern int NaClLdtInitPlatformSpecific();
 extern int NaClLdtFiniPlatformSpecific();
-
 
 int NaClLdtInit() {
   if (!NaClLdtInitPlatformSpecific()) {
@@ -28,7 +25,6 @@ int NaClLdtInit() {
   }
   return 1;
 }
-
 
 void NaClLdtFini() {
   NaClLdtFiniPlatformSpecific();

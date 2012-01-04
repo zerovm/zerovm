@@ -7,24 +7,14 @@
 /*
  * NaCl Simple/secure ELF loader (NaCl SEL) memory map.
  */
-
-#include "include/portability.h"
-
 #include <assert.h>
-#include <stdlib.h>
 #include <stdio.h>
-
 #include "src/platform/nacl_check.h"
-#include "src/platform/nacl_log.h"
-#include "src/platform/nacl_host_desc.h"
 #include "src/service_runtime/sel_mem.h"
 #include "src/service_runtime/sel_util.h"
-#include "src/service_runtime/nacl_config.h"
-#include "src/service_runtime/nacl_memory_object.h"
 
 #define START_ENTRIES   5   /* tramp+text, rodata, data, bss, stack */
 #define REMOVE_MARKED_DEBUG 0
-
 
 /*
  * The memory map structure is a simple array of memory regions which
@@ -60,7 +50,6 @@ struct NaClVmmapEntry *NaClVmmapEntryMake(uintptr_t             page_num,
   return entry;
 }
 
-
 void  NaClVmmapEntryFree(struct NaClVmmapEntry *entry) {
   NaClLog(4,
           ("NaClVmmapEntryFree(0x%08"NACL_PRIxPTR
@@ -75,7 +64,6 @@ void  NaClVmmapEntryFree(struct NaClVmmapEntry *entry) {
   free(entry);
 }
 
-
 /*
  * Print debug.
  */
@@ -89,14 +77,12 @@ void NaClVmentryPrint(void                  *state,
   fflush(stdout);
 }
 
-
 void NaClVmmapDebug(struct NaClVmmap *self,
                     char             *msg) {
   puts(msg);
   NaClVmmapVisit(self, NaClVmentryPrint, (void *) 0);
   fflush(stdout);
 }
-
 
 int NaClVmmapCtor(struct NaClVmmap *self) {
   self->size = START_ENTRIES;
@@ -111,7 +97,6 @@ int NaClVmmapCtor(struct NaClVmmap *self) {
   self->is_sorted = 1;
   return 1;
 }
-
 
 void NaClVmmapDtor(struct NaClVmmap *self) {
   size_t i;
@@ -137,7 +122,6 @@ static int NaClVmmapCmpEntries(void const  *vleft,
 
   return (int) ((*left)->page_num - (*right)->page_num);
 }
-
 
 static void NaClVmmapRemoveMarked(struct NaClVmmap *self) {
   size_t  i;
@@ -230,7 +214,6 @@ static void NaClVmmapRemoveMarked(struct NaClVmmap *self) {
 #endif
 }
 
-
 void NaClVmmapMakeSorted(struct NaClVmmap  *self) {
   if (self->is_sorted)
     return;
@@ -246,7 +229,6 @@ void NaClVmmapMakeSorted(struct NaClVmmap  *self) {
   NaClVmmapDebug(self, "After Sort");
 #endif
 }
-
 
 /*
  * Adds an entry.  Does not sort.
@@ -283,7 +265,6 @@ int NaClVmmapAdd(struct NaClVmmap   *self,
 
   return 1;
 }
-
 
 /*
  * Update the virtual memory map.  Deletion is handled by a remove
@@ -361,7 +342,6 @@ void NaClVmmapUpdate(struct NaClVmmap   *self,
   NaClVmmapRemoveMarked(self);
 }
 
-
 static int NaClVmmapContainCmpEntries(void const *vkey,
                                       void const *vent) {
   struct NaClVmmapEntry const *const *key =
@@ -397,7 +377,6 @@ struct NaClVmmapEntry const *NaClVmmapFindPage(struct NaClVmmap *self,
   return result_ptr ? *result_ptr : NULL;
 }
 
-
 struct NaClVmmapIter *NaClVmmapFindPageIter(struct NaClVmmap      *self,
                                             uintptr_t             pnum,
                                             struct NaClVmmapIter  *space) {
@@ -428,7 +407,6 @@ int NaClVmmapIterAtEnd(struct NaClVmmapIter *nvip) {
   return nvip->entry_ix >= nvip->vmmap->nvalid;
 }
 
-
 /*
  * IterStar only permissible if not AtEnd
  */
@@ -436,11 +414,9 @@ struct NaClVmmapEntry *NaClVmmapIterStar(struct NaClVmmapIter *nvip) {
   return nvip->vmmap->vmentry[nvip->entry_ix];
 }
 
-
 void NaClVmmapIterIncr(struct NaClVmmapIter *nvip) {
   ++nvip->entry_ix;
 }
-
 
 /*
  * Iterator becomes invalid after Erase.  We could have a version that
@@ -469,7 +445,6 @@ void  NaClVmmapVisit(struct NaClVmmap *self,
     (*fn)(state, self->vmentry[i]);
   }
 }
-
 
 /*
  * Linear search, from high addresses down.
@@ -500,7 +475,6 @@ uintptr_t NaClVmmapFindSpace(struct NaClVmmap *self,
    * worst the trampoline page, and likely to be below it.
    */
 }
-
 
 /*
  * Linear search, from high addresses down.  For mmap, so the starting
@@ -548,7 +522,6 @@ uintptr_t NaClVmmapFindMapSpace(struct NaClVmmap *self,
    * worst the trampoline page, and likely to be below it.
    */
 }
-
 
 /*
  * Linear search, from uaddr up.

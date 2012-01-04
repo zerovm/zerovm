@@ -3,30 +3,20 @@
  * Use of this source code is governed by a BSD-style license that can be
  * found in the LICENSE file.
  */
-
 #include <string.h>
 
 #include "include/concurrency_ops.h"
 #include "include/nacl_platform.h"
-#include "include/portability.h"
 #include "src/platform/nacl_check.h"
-#include "src/platform/nacl_log.h"
-#include "src/platform/nacl_sync.h"
 #include "src/platform/nacl_sync_checked.h"
-#include "src/desc/nacl_desc_base.h"
-#include "src/desc/nacl_desc_effector.h"
 #include "src/desc/nacl_desc_effector.h"
 #include "src/desc/nacl_desc_imc_shm.h"
 #include "src/perf_counter/nacl_perf_counter.h"
-#include "src/service_runtime/arch/sel_ldr_arch.h"
 #include "src/service_runtime/include/sys/errno.h"
 #include "src/service_runtime/include/sys/mman.h"
-#include "src/service_runtime/nacl_app_thread.h"
-#include "src/service_runtime/nacl_error_code.h"
 #include "src/service_runtime/nacl_text.h"
 #include "src/service_runtime/sel_ldr.h"
 #include "src/service_runtime/sel_memory.h"
-
 
 /* initial size of the malloced buffer for dynamic regions */
 static const int kMinDynamicRegionsAllocated = 32;
@@ -397,35 +387,6 @@ void NaClDynamicRegionDelete(struct NaClApp *nap, struct NaClDynamicRegion* r) {
   }
 }
 
-
-void NaClSetThreadGeneration(struct NaClAppThread *natp, int generation) {
-  /*
-   * outer check handles fast case (no change)
-   * since threads only set their own generation it is safe
-   */
-  if (natp->dynamic_delete_generation != generation)  {
-    NaClXMutexLock(&natp->mu);
-    CHECK(natp->dynamic_delete_generation <= generation);
-    natp->dynamic_delete_generation = generation;
-    NaClXMutexUnlock(&natp->mu);
-  }
-}
-
-int NaClMinimumThreadGeneration(struct NaClApp *nap) {
-  int i, rv = 0;
-  NaClXMutexLock(&nap->threads_mu);
-  for (i = 0; i < nap->num_threads; ++i) {
-    struct NaClAppThread *thread = NaClGetThreadMu(nap, i);
-    NaClXMutexLock(&thread->mu);
-    if (i == 0 || rv > thread->dynamic_delete_generation) {
-      rv = thread->dynamic_delete_generation;
-    }
-    NaClXMutexUnlock(&thread->mu);
-  }
-  NaClXMutexUnlock(&nap->threads_mu);
-  return rv;
-}
-
 static void CopyBundleTails(uint8_t *dest,
                             uint8_t *src,
                             int32_t size,
@@ -479,19 +440,6 @@ static void CopyBundleHeads(uint8_t  *dest,
     dest_ptr += bundle_size;
     src_ptr += bundle_size;
   }
-}
-
-static void ReplaceBundleHeadsWithHalts(uint8_t  *dest,
-                                        uint32_t size,
-                                        int      bundle_size) {
-  uint32_t *dest_ptr = (uint32_t*) dest;
-  uint32_t *end_ptr = (uint32_t*) (dest + size);
-  while (dest_ptr < end_ptr) {
-    /* dont assume 1-byte halt, write entire NACL_HALT_WORD */
-    *dest_ptr = NACL_HALT_WORD;
-    dest_ptr += bundle_size / sizeof(uint32_t);
-  }
-  NaClWriteMemoryBarrier();
 }
 
 static INLINE void CopyCodeSafelyInitial(uint8_t  *dest,
@@ -772,255 +720,6 @@ int32_t NaClTextDyncodeCreate(struct NaClApp *nap,
   retval = 0;
 
   NaclTextMapClearCacheIfNeeded(nap, dest, size);
-
- cleanup_unlock:
-  NaClXMutexUnlock(&nap->dynamic_load_mutex);
-  return retval;
-}
-
-int32_t NaClTextSysDyncode_Create(struct NaClAppThread *natp,
-                                  uint32_t             dest,
-                                  uint32_t             src,
-                                  uint32_t             size) {
-  struct NaClApp              *nap = natp->nap;
-  uintptr_t                   src_addr;
-  uint8_t                     *code_copy;
-  int32_t                     retval = -NACL_ABI_EINVAL;
-
-  src_addr = NaClUserToSysAddrRange(nap, src, size);
-  if (kNaClBadAddress == src_addr) {
-    NaClLog(1, "NaClTextSysDyncode_Copy: Source address out of range\n");
-    return -NACL_ABI_EFAULT;
-  }
-
-  /*
-   * Make a private copy of the code, so that we can validate it
-   * without a TOCTTOU race condition.
-   */
-  code_copy = malloc(size);
-  if (NULL == code_copy) {
-    return -NACL_ABI_ENOMEM;
-  }
-  memcpy(code_copy, (uint8_t*) src_addr, size);
-
-  retval = NaClTextDyncodeCreate(nap, dest, code_copy, size);
-
-  free(code_copy);
-  return retval;
-}
-
-int32_t NaClTextSysDyncode_Modify(struct NaClAppThread *natp,
-                                  uint32_t             dest,
-                                  uint32_t             src,
-                                  uint32_t             size) {
-  struct NaClApp              *nap = natp->nap;
-  uintptr_t                   dest_addr;
-  uintptr_t                   src_addr;
-  uintptr_t                   beginbundle;
-  uintptr_t                   endbundle;
-  uintptr_t                   offset;
-  uint8_t                     *mapped_addr;
-  uint8_t                     *code_copy = NULL;
-  uint8_t                     code_copy_buf[NACL_INSTR_BLOCK_SIZE];
-  int                         validator_result;
-  int32_t                     retval = -NACL_ABI_EINVAL;
-  struct NaClDynamicRegion    *region;
-
-  if (NULL == nap->text_shm) {
-    NaClLog(1, "NaClTextSysDyncode_Modify: Dynamic loading not enabled\n");
-    return -NACL_ABI_EINVAL;
-  }
-
-  if (0 == size) {
-    /* Nothing to modify.  Succeed trivially. */
-    return 0;
-  }
-
-  dest_addr = NaClUserToSysAddrRange(nap, dest, size);
-  src_addr = NaClUserToSysAddrRange(nap, src, size);
-  if (kNaClBadAddress == src_addr || kNaClBadAddress == dest_addr) {
-    NaClLog(1, "NaClTextSysDyncode_Modify: Address out of range\n");
-    return -NACL_ABI_EFAULT;
-  }
-
-  NaClXMutexLock(&nap->dynamic_load_mutex);
-
-  region = NaClDynamicRegionFind(nap, dest_addr, size);
-  if (NULL == region || region->start > dest_addr
-        || region->start + region->size < dest_addr + size) {
-    /* target not a subregion of region or region is null */
-    NaClLog(1, "NaClTextSysDyncode_Modify: Can't find region to modify\n");
-    retval = -NACL_ABI_EFAULT;
-    goto cleanup_unlock;
-  }
-
-  beginbundle = dest_addr & ~(nap->bundle_size - 1);
-  endbundle   = (dest_addr + size - 1 + nap->bundle_size)
-                  & ~(nap->bundle_size - 1);
-  offset      = dest_addr &  (nap->bundle_size - 1);
-  if (endbundle-beginbundle <= sizeof code_copy_buf) {
-    /* usually patches are a single bundle, so stack allocate */
-    code_copy = code_copy_buf;
-  } else {
-    /* in general case heap allocate */
-    code_copy = malloc(endbundle-beginbundle);
-    if (NULL == code_copy) {
-      retval = -NACL_ABI_ENOMEM;
-      goto cleanup_unlock;
-    }
-  }
-
-  /* copy the bundles from already-inserted code */
-  memcpy(code_copy, (uint8_t*) beginbundle, endbundle - beginbundle);
-
-  /*
-   * make the requested change in temporary location
-   * this avoids TOTTOU race
-   */
-  memcpy(code_copy + offset, (uint8_t*) src_addr, size);
-
-  /* update dest/size to refer to entire bundles */
-  dest      &= ~(nap->bundle_size - 1);
-  dest_addr &= ~((uintptr_t)nap->bundle_size - 1);
-  /* since both are in sandbox memory this check should succeed */
-  CHECK(endbundle-beginbundle < UINT32_MAX);
-  size = (uint32_t)(endbundle - beginbundle);
-
-  /* validate this code as a replacement */
-  validator_result = NaClValidateCodeReplacement(nap,
-                                                 dest,
-                                                 (uint8_t*) dest_addr,
-                                                 code_copy,
-                                                 size);
-
-  if (validator_result != LOAD_OK
-      && nap->ignore_validator_result) {
-    NaClLog(LOG_ERROR, "VALIDATION FAILED for dynamically-loaded code: "
-                       "continuing anyway...\n");
-    validator_result = LOAD_OK;
-  }
-
-  if (validator_result != LOAD_OK) {
-    NaClLog(1, "NaClTextSysDyncode_Modify: "
-               "Validation of dynamic code failed\n");
-    retval = -NACL_ABI_EINVAL;
-    goto cleanup_unlock;
-  }
-
-  if (!NaclTextMapWrapper(nap, dest, size, &mapped_addr)) {
-    retval = -NACL_ABI_ENOMEM;
-    goto cleanup_unlock;
-  }
-
-  if (LOAD_OK != NaClCopyCode(nap, dest, mapped_addr, code_copy, size)) {
-    NaClLog(1, "NaClTextSysDyncode_Modify "
-               "Copying of replacement code failed\n");
-    retval = -NACL_ABI_EINVAL;
-    goto cleanup_unlock;
-  }
-  retval = 0;
-
-  NaclTextMapClearCacheIfNeeded(nap, dest, size);
-
- cleanup_unlock:
-  NaClXMutexUnlock(&nap->dynamic_load_mutex);
-
-  if (code_copy != code_copy_buf) {
-    free(code_copy);
-  }
-
-  return retval;
-}
-
-int32_t NaClTextSysDyncode_Delete(struct NaClAppThread *natp,
-                                  uint32_t             dest,
-                                  uint32_t             size) {
-  struct NaClApp              *nap = natp->nap;
-  uintptr_t                    dest_addr;
-  uint8_t                     *mapped_addr;
-  int32_t                     retval = -NACL_ABI_EINVAL;
-  struct NaClDynamicRegion    *region;
-
-  if (NULL == nap->text_shm) {
-    NaClLog(1, "NaClTextSysDyncode_Delete: Dynamic loading not enabled\n");
-    return -NACL_ABI_EINVAL;
-  }
-
-  dest_addr = NaClUserToSysAddrRange(nap, dest, size);
-  if (kNaClBadAddress == dest_addr) {
-    NaClLog(1, "NaClTextSysDyncode_Delete: Address out of range\n");
-    return -NACL_ABI_EFAULT;
-  }
-
-  if (0 == size) {
-    /* Nothing to delete.  Just update our generation. */
-    int gen;
-    /* fetch current generation */
-    NaClXMutexLock(&nap->dynamic_load_mutex);
-    gen = nap->dynamic_delete_generation;
-    NaClXMutexUnlock(&nap->dynamic_load_mutex);
-    /* set our generation */
-    NaClSetThreadGeneration(natp, gen);
-    return 0;
-  }
-
-  NaClXMutexLock(&nap->dynamic_load_mutex);
-
-  /*
-   * this check ensures the to-be-deleted region is identical to a
-   * previously inserted region, so no need to check for alignment/bounds/etc
-   */
-  region = NaClDynamicRegionFind(nap, dest_addr, size);
-  if (NULL == region || region->start != dest_addr || region->size != size) {
-    NaClLog(1, "NaClTextSysDyncode_Delete: Can't find region to delete\n");
-    retval = -NACL_ABI_EFAULT;
-    goto cleanup_unlock;
-  }
-
-
-  if (region->delete_generation < 0) {
-    /* first deletion request */
-
-    if (nap->dynamic_delete_generation == INT32_MAX) {
-      NaClLog(1, "NaClTextSysDyncode_Delete:"
-                 "Overflow, can only delete INT32_MAX regions\n");
-      retval = -NACL_ABI_EFAULT;
-      goto cleanup_unlock;
-    }
-
-    if (!NaclTextMapWrapper(nap, dest, size, &mapped_addr)) {
-      retval = -NACL_ABI_ENOMEM;
-      goto cleanup_unlock;
-    }
-
-    /* make it so no new threads can enter target region */
-    ReplaceBundleHeadsWithHalts(mapped_addr, size, nap->bundle_size);
-
-    NaclTextMapClearCacheIfNeeded(nap, dest, size);
-
-    /* increment and record the generation deletion was requested */
-    region->delete_generation = ++nap->dynamic_delete_generation;
-  }
-
-  /* update our own generation */
-  NaClSetThreadGeneration(natp, nap->dynamic_delete_generation);
-
-  if (region->delete_generation <= NaClMinimumThreadGeneration(nap)) {
-    /*
-     * All threads have checked in since we marked region for deletion.
-     * It is safe to remove the region.
-     *
-     * No need to memset the region to hlt since bundle heads are hlt
-     * and thus the bodies are unreachable.
-     */
-    NaClDynamicRegionDelete(nap, region);
-    retval = 0;
-  } else {
-    /*
-     * Still waiting for some threads to report in...
-     */
-    retval = -NACL_ABI_EAGAIN;
-  }
 
  cleanup_unlock:
   NaClXMutexUnlock(&nap->dynamic_load_mutex);

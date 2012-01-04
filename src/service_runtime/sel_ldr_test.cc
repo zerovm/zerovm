@@ -4,14 +4,9 @@
  * found in the LICENSE file.
  */
 
-#include "src/platform/nacl_host_desc.h"
-#include "src/platform/nacl_log.h"
-#include "src/service_runtime/nacl_app_thread.h"
 #include "src/service_runtime/sel_ldr.h"
-#include "src/desc/nacl_desc_base.h"
 #include "src/desc/nacl_desc_io.h"
 #include "src/desc/nrd_all_modules.h"
-
 #include "gtest/gtest.h"
 
 //
@@ -100,46 +95,7 @@ TEST_F(SelLdrTest, DescTable) {
   ret_desc = NaClGetDesc(&app, 1);
   ASSERT_TRUE(NULL != ret_desc);
 
-  // set no desc at pos 3
-  NaClSetDesc(&app, 3, NULL);
-
-  // valid desc at pos 4
-  NaClSetDesc(&app, 4, io_desc);
-  ret_desc = NaClGetDesc(&app, 4);
-  ASSERT_TRUE(NULL != ret_desc);
-
   // never set a desc at pos 10
   ret_desc = NaClGetDesc(&app, 10);
   ASSERT_TRUE(NULL == ret_desc);
-}
-
-// add and remove operations on the threads table
-// Remove thread from an empty table is tested in a death test.
-// TODO(tuduce): specify the death test name when checking in.
-TEST_F(SelLdrTest, ThreadTableTest) {
-  struct NaClApp app;
-  struct NaClAppThread nat, *appt=&nat;
-  int ret_code;
-
-  ret_code = NaClAppCtor(&app);
-  ASSERT_EQ(1, ret_code);
-
-  // 1st pos available is 0
-  ASSERT_EQ(0, app.num_threads);
-  ret_code = NaClAddThread(&app, appt);
-  ASSERT_EQ(0, ret_code);
-  ASSERT_EQ(1, app.num_threads);
-
-  // next pos available is 1
-  ret_code = NaClAddThread(&app, NULL);
-  ASSERT_EQ(1, ret_code);
-  ASSERT_EQ(2, app.num_threads);
-
-  // no thread at pos 1 -> pos 1 is available
-  ret_code = NaClAddThread(&app, appt);
-  ASSERT_EQ(1, ret_code);
-  ASSERT_EQ(3, app.num_threads);
-
-  NaClRemoveThread(&app, 0);
-  ASSERT_EQ(2, app.num_threads);
 }

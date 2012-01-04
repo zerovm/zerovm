@@ -55,11 +55,7 @@ static INLINE int /* bool */ NaClIsAllocPageMultiple(uintptr_t addr_or_size) {
  * True host-OS allocation unit.
  */
 static INLINE size_t NaClRoundHostAllocPage(size_t  nbytes) {
-#if NACL_WINDOWS
-  return NaClRoundAllocPage(nbytes);
-#else   /* NACL_WINDOWS */
   return NaClRoundPage(nbytes);
-#endif  /* !NACL_WINDOWS */
 }
 
 static INLINE size_t NaClRoundPageNumUpToMapMultiple(size_t npages) {

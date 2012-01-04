@@ -12,7 +12,6 @@
 #define NATIVE_CLIENT_SRC_TRUSTED_SERVICE_RUNTIME_NACL_GLOBALS_H__
 
 #include <setjmp.h> /* d'b: need for trap() exit */
-#include "include/portability.h"
 
 EXTERN_C_BEGIN
 struct NaClThreadContext;
@@ -21,23 +20,12 @@ struct NaClMutex;
 struct NaClApp;
 
 extern int64_t syscallback; /* d'b */
-//extern struct NaClThreadContext *nacl_user[];
-//extern struct NaClThreadContext *nacl_sys[];
-/*
- * nacl_user and nacl_sys are accessed w/o holding any locks.  once a
- * thread is live, only that thread itself may read/write the register
- * context contents (based on its %gs), and this allows a thread to
- * context switch from the application to the runtime, since we must
- * have a secure stack before calling any code, including lock
- * acquisition code.
- */
 struct NaClThreadContext    *nacl_user; /* d'b */
 struct NaClThreadContext    *nacl_sys; /* d'b */
 struct NaClApp              *gnap; /* d'b */
 jmp_buf                     user_exit; /* d'b */
 
 extern struct NaClMutex         nacl_thread_mu;
-extern struct NaClAppThread     *nacl_thread[];
 /*
  * nacl_thread_mu protects access to nacl_thread, which are
  * dynamically allocated (kernel stacks are too large to keep around
@@ -47,10 +35,6 @@ extern struct NaClAppThread     *nacl_thread[];
 
 void  NaClGlobalModuleInit(void);
 void  NaClGlobalModuleFini(void);
-
-/* this is defined in src/src/service_runtime/arch/<arch>/ sel_rt.h */
-void NaClInitGlobals(void);
-
 
 /* hack for gdb */
 extern uintptr_t nacl_global_xlate_base;

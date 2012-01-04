@@ -11,8 +11,6 @@
 #ifndef NATIVE_CLIENT_SERVICE_RUNTIME_SEL_MEM_H_
 #define NATIVE_CLIENT_SERVICE_RUNTIME_SEL_MEM_H_
 
-#include "include/portability.h"
-#include "include/nacl_base.h"
 #include "src/service_runtime/nacl_memory_object.h"
 
 EXTERN_C_BEGIN

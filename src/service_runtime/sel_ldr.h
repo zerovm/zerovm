@@ -28,16 +28,9 @@
 #ifndef NATIVE_CLIENT_SRC_TRUSTED_SERVICE_RUNTIME_SEL_LDR_H_
 #define NATIVE_CLIENT_SRC_TRUSTED_SERVICE_RUNTIME_SEL_LDR_H_ 1
 
-#include "include/nacl_base.h"
-#include "include/portability.h"
 #include "include/elf.h"
-
-#include "src/platform/nacl_host_desc.h"
 #include "src/platform/nacl_log.h"
-#include "src/platform/nacl_threads.h"
-
 #include "src/service_runtime/dyn_array.h"
-#include "src/service_runtime/nacl_config_dangerous.h"
 #include "src/service_runtime/nacl_error_code.h"
 
 #include "src/service_runtime/sel_mem.h"
@@ -269,8 +262,11 @@ struct NaClApp {
   struct NaClDebugCallbacks *debug_stub_callbacks;
 
 	/* d'b added fields */
-  int                       enable_syscalls;
   struct Manifest           *manifest;
+  int                       skip_qualification; /* startup time variable */
+  int                       fuzzing_quit_after_load; /* startup time variable */
+  int                       verbosity; /* startup time variable */
+  int                       handle_signals; /* startup time variable */
 
   /* fileds taken from the natp */
   void                      *signal_stack; /* Stack for signal handling, registered with sigaltstack(). */
@@ -327,9 +323,6 @@ NaClErrorCode NaClAppLoadFile(struct Gio      *gp,
 NaClErrorCode NaClAppLoadFileDynamically(struct NaClApp *nap,
                                          struct Gio     *gio_file) NACL_WUR;
 
-size_t  NaClAlignPad(size_t val,
-                     size_t align);
-
 void  NaClAppPrintDetails(struct NaClApp  *nap,
                           struct Gio      *gp);
 
@@ -359,35 +352,6 @@ NaClErrorCode NaClValidateImage(struct NaClApp  *nap) NACL_WUR;
 
 int NaClAddrIsValidEntryPt(struct NaClApp *nap,
                            uintptr_t      addr);
-
-/*
- * Takes ownership of descriptor, i.e., when NaCl app closes, it's gone.
- */
-void NaClAddHostDescriptor(struct NaClApp *nap,
-                           int            host_os_desc,
-                           int            mode,
-                           int            nacl_desc);
-
-
-/*
- * Takes ownership of handle.
- */
-void NaClAddImcHandle(struct NaClApp  *nap,
-                      NaClHandle      h,
-                      int             nacl_desc);
-
-/*
- * Report the low eight bits of |exit_status| via the reverse channel
- * in |nap|, if one exists, to whomever is interested.  This usually
- * involves an RPC.  Returns true if successfully reported.
- *
- * Also mark nap's exit_status and running member variables, announce
- * via condvar that the nexe should be considered no longer running.
- *
- * Returns true (non-zero) if exit status was reported via the reverse
- * channel, and false (0) otherwise.
- */
-int NaClReportExitStatus(struct NaClApp *nap, int exit_status);
 
 /*
  * Used to launch the main thread.  NB: calling thread may in the
@@ -431,14 +395,6 @@ static const uintptr_t kNaClBadAddress = (uintptr_t) -1;
 struct NaClDesc *NaClGetDesc(struct NaClApp *nap,
                              int            d);
 
-/*
- * Takes ownership of ndp.
- */
-void NaClSetDesc(struct NaClApp   *nap,
-                 int              d,
-                 struct NaClDesc  *ndp);
-
-
 int32_t NaClSetAvail(struct NaClApp   *nap,
                      struct NaClDesc  *ndp);
 
@@ -454,22 +410,6 @@ void NaClSetDescMu(struct NaClApp   *nap,
 
 int32_t NaClSetAvailMu(struct NaClApp   *nap,
                        struct NaClDesc  *ndp);
-
-
-int NaClAddThread(struct NaClApp        *nap,
-                  struct NaClAppThread  *natp);
-
-int NaClAddThreadMu(struct NaClApp        *nap,
-                    struct NaClAppThread  *natp);
-
-void NaClRemoveThread(struct NaClApp  *nap,
-                      int             thread_num);
-
-void NaClRemoveThreadMu(struct NaClApp  *nap,
-                        int             thread_num);
-
-struct NaClAppThread *NaClGetThreadMu(struct NaClApp  *nap,
-                                      int             thread_num);
 
 void NaClAppInitialDescriptorHookup(struct NaClApp  *nap);
 
@@ -539,10 +479,6 @@ int NaClThreadContextCtor(struct NaClThreadContext  *ntcp,
                           nacl_reg_t                prog_ctr,
                           nacl_reg_t                stack_ptr,
                           uint32_t                  tls_info);
-
-void NaClVmHoleWaitToStartThread(struct NaClApp *nap);
-
-void NaClVmHoleThreadStackIsSafe(struct NaClApp *nap);
 
 EXTERN_C_END
 

@@ -17,14 +17,10 @@ EXTERN_C_BEGIN
  */
 
 /* Define an implementation for boolean values. */
-#if NACL_WINDOWS
-typedef BOOL Bool;
-#else
 typedef enum {
   FALSE,
   TRUE
 } Bool;
-#endif
 
 /*
  * It doesn't really make much sense to have all the diouxX formats, but

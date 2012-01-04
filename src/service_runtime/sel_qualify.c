@@ -5,13 +5,8 @@
  */
 
 #include "src/service_runtime/sel_qualify.h"
-
 #include "src/platform_qualify/nacl_dep_qualify.h"
 #include "src/platform_qualify/nacl_os_qualify.h"
-#if NACL_ARCH(NACL_BUILD_ARCH) == NACL_arm
-#include "src/platform_qualify/arch/arm/nacl_arm_qualify.h"
-#endif
-
 
 NaClErrorCode NaClRunSelQualificationTests() {
   if (!NaClOsIsSupported()) {
@@ -21,12 +16,6 @@ NaClErrorCode NaClRunSelQualificationTests() {
   if (!NaClCheckDEP()) {
     return LOAD_DEP_UNSUPPORTED;
   }
-
-#if NACL_ARCH(NACL_BUILD_ARCH) == NACL_arm
-  if (!NaClQualifyReadTp()) {
-    return LOAD_UNSUPPORTED_OS_PLATFORM;
-  }
-#endif
 
   return LOAD_OK;
 }

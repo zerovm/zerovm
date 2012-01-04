@@ -15,12 +15,12 @@
 #include "src/service_runtime/nacl_config.h"
 #include "src/service_runtime/sel_mem.h"
 #include "src/service_runtime/nacl_memory_object.h"
+#include "src/service_runtime/nacl_syscall_handlers.h"
 #include "src/platform/nacl_log.h"
 #include "src/manifest/premap.h"
 #include "src/manifest/manifest_setup.h"
 
 #include "src/desc/nacl_desc_io.h"
-#include "src/service_runtime/nacl_syscall_common.h"
 #include "src/manifest/mount_channel.h"
 
 /* ### remove code doubling

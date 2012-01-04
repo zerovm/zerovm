@@ -11,29 +11,18 @@
 #include "src/fault_injection/fault_injection.h"
 #include "src/service_runtime/nacl_globals.h"
 #include "src/service_runtime/nacl_syscall_handlers.h"
-#include "src/service_runtime/nacl_thread_nice.h"
 #include "src/service_runtime/nacl_tls.h"
-#include "src/service_runtime/nacl_stack_safety.h"
 
-void  NaClAllModulesInit(void) {
+void NaClAllModulesInit(void)
+{
   NaClNrdAllModulesInit();
   NaClFaultInjectionModuleInit();
-  NaClGlobalModuleInit();  /* various global variables */
-  NaClStackSafetyInit();
-  NaClTlsInit();
-  /* d'b: disable most of syscalls. decision of initialization
-   * will be done after command line parsing in "sel_main.c"
-   */
-  NaClSyscallTableInitDisable();
-  /* d'b end */
-
-  NaClThreadNiceInit();
+  NaClGlobalModuleInit(); /* various global variables */
+  NaClSyscallTableInit();
 }
 
-
-void NaClAllModulesFini(void) {
+void NaClAllModulesFini(void)
+{
   NaClNrdAllModulesFini();
-  NaClTlsFini();
-  NaClStackSafetyFini();
   NaClGlobalModuleFini();
 }

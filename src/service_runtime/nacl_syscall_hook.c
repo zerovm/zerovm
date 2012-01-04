@@ -7,35 +7,20 @@
 /*
  * NaCl service run-time.
  */
-
-#include "include/portability.h"
-
-#include <errno.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
 
 #include "src/platform/nacl_exit.h"
 #include "src/platform/nacl_log.h"
-#include "src/service_runtime/nacl_globals.h"
-#include "src/service_runtime/nacl_config.h"
 #include "src/service_runtime/nacl_switch_to_app.h"
 #include "src/service_runtime/nacl_syscall_handlers.h"
-#include "src/service_runtime/sel_ldr.h"
-#include "src/service_runtime/sel_rt.h"
-
 #include "src/service_runtime/include/sys/errno.h"
 #include "src/service_runtime/include/bits/nacl_syscalls.h"
-#include "src/service_runtime/nacl_app_thread.h"
-#include "src/service_runtime/nacl_stack_safety.h"
 #include "src/service_runtime/nacl_globals.h" /* d'b */
 #include "src/manifest/trap.h" /* d'b: ResumeCpuClock(), PauseCpuClock() */
 #include "src/manifest/manifest_setup.h" /* d'b: ResumeCpuClock(), PauseCpuClock() */
 
 /*
- * ###
- * d'b:
- * all changes are temporary. just to test a new design w/o threads
+ * d'b: make syscall invoked from the untrusted code
  */
 NORETURN void NaClSyscallCSegHook()
 {
@@ -59,20 +44,6 @@ NORETURN void NaClSyscallCSegHook()
   user = nacl_user; /* restore from global */
   sp_user = NaClGetThreadCtxSp(user);
 
-  /*
-   * on x86_32 user stack:
-   *  esp+0:  retaddr from lcall
-   *  esp+4:  code seg from lcall
-   *  esp+8:  retaddr to user module
-   *  esp+c:  ...
-   *
-   * on ARM user stack
-   *   sp+0:  retaddr from trampoline slot
-   *   sp+4:  retaddr to user module
-   *   sp+8:  arg0 to system call
-   *   sp+c:  arg1 to system call
-   *   sp+10: ....
-   */
   sp_sys = NaClUserToSysStackAddr(nap, sp_user);
 
   /*
@@ -122,13 +93,12 @@ NORETURN void NaClSyscallCSegHook()
    * user_ret is properly sandboxed.
    */
   user_ret = (nacl_reg_t) NaClSandboxCodeAddr(nap, (uintptr_t)user_ret);
-  NaClStackSafetyNowOnUntrustedStack();
 
   /* d'b: give control to the nexe. start cpu time counting */
   ResumeCpuClock(nap);
   NaClSwitchToApp(nap, user_ret);
-  /* NOTREACHED */
 
+  /* NOTREACHED */
   fprintf(stderr, "NORETURN NaClSwitchToApp returned!?!\n");
   NaClAbort();
 }

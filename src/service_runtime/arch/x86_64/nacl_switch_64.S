@@ -18,29 +18,14 @@
          */
 
         .text
-/*
- * The MacOS assembler has a macro facility that is pretty close
- * to GNU as macros, but not quite the same.
- */
-#if NACL_OSX || defined(__clang__)
-# define MACRO(name)    .macro name
-# define ENDMACRO       .endmacro
-# define MACROENTRY     \
-        .globl IDENTIFIER($0)   ; \
-        HIDDEN($0)              ; \
-        IDENTIFIER($0):
-# define MACROARG1      $0
-# define MACROARG2      $1
-#else
-# define MACRO(name)    .macro name arg1, arg2=0
-# define ENDMACRO       .endm
-# define MACROENTRY     \
+#define MACRO(name)    .macro name arg1, arg2=0
+#define ENDMACRO       .endm
+#define MACROENTRY     \
         .globl IDENTIFIER(\arg1); \
         HIDDEN(\arg1)           ; \
         IDENTIFIER(\arg1):
-# define MACROARG1      \arg1
-# define MACROARG2      \arg2
-#endif
+#define MACROARG1      \arg1
+#define MACROARG2      \arg2
 
 /*
  * This is "vxorps %ymm\N, %ymm\N, %ymm\N".
@@ -60,18 +45,9 @@ MACRO(clear_ymm)
 .endif
 ENDMACRO
 
-
 MACRO(switcher)
 MACROENTRY
-#if NACL_WINDOWS
-        /* if Windows, 1st param is already in %rcx, not %rdi */
-#elif NACL_LINUX || NACL_OSX
-        /* elif Linux/OSX, 1st param is already in %rdi. */
         mov     %rdi, %rcx
-#else
-# error "What OS/compiler is the service runtime being compiled with?"
-#endif
-
         movq    0x8(%rcx), %rbx
         movq    0x20(%rcx), %rbp
         movq    0x60(%rcx), %r12
@@ -105,14 +81,10 @@ MACROENTRY
         movq    %rdx, %r10
         movq    %rdx, %r11
 
-        /*
-         * Clear the x87 state.
-         */
+        /* Clear the x87 state. */
         fninit
 
-        /*
-         * Clear the vector registers.
-         */
+        /* Clear the vector registers. */
 .if MACROARG2
         clear_ymm 0
         clear_ymm 1

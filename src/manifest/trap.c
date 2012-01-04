@@ -20,7 +20,6 @@
 #include "api/zvm.h"
 #include "src/service_runtime/sel_ldr.h"
 #include "src/service_runtime/nacl_globals.h"
-#include "src/service_runtime/nacl_syscall_common.h"
 
 /* pause cpu time counting. update cnt_cpu */
 void PauseCpuClock(struct NaClApp *nap)
@@ -49,7 +48,6 @@ void ResumeCpuClock(struct NaClApp *nap)
 static int32_t TrapExitHandle(struct NaClApp *nap, int32_t code)
 {
   NaClLog(1, "Exit syscall handler: %d\n", code);
-  NaClSysCommonThreadSyscallEnter(nap);
   nap->exit_status = code;
   nap->running = 0;
   longjmp(user_exit, code);

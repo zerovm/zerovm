@@ -3,21 +3,14 @@
  * Use of this source code is governed by a BSD-style license that can be
  * found in the LICENSE file.
  */
-
 #include <errno.h>
 #include <signal.h>
 #include <string.h>
 #include <sys/mman.h>
-#include <unistd.h>
 
-#include "src/platform/nacl_check.h"
 #include "src/platform/nacl_exit.h"
-#include "src/platform/nacl_log.h"
-#include "src/service_runtime/nacl_config.h"
-#include "src/service_runtime/nacl_globals.h"
 #include "src/service_runtime/nacl_signal.h"
 #include "src/service_runtime/sel_ldr.h"
-#include "src/service_runtime/sel_rt.h"
 
 /*
  * This module is based on the Posix signal model.  See:
@@ -79,60 +72,6 @@ int NaClSignalStackAllocate(void **result) {
   return 1;
 }
 
-void NaClSignalStackFree(void *stack) {
-  CHECK(stack != NULL);
-  if (munmap(stack, SIGNAL_STACK_SIZE + STACK_GUARD_SIZE) != 0) {
-    NaClLog(LOG_FATAL, "Failed to munmap() signal stack:\n\t%s\n",
-      strerror(errno));
-  }
-}
-
-void NaClSignalStackRegister(void *stack) {
-  /*
-   * If we set up signal handlers, we must ensure that any thread that
-   * runs untrusted code has an alternate signal stack set up.  The
-   * default for a new thread is to use the stack pointer from the
-   * point at which the fault occurs, but it would not be safe to use
-   * untrusted code's %esp/%rsp value.
-   */
-  stack_t st;
-  st.ss_size = SIGNAL_STACK_SIZE;
-  st.ss_sp = ((uint8_t *) stack) + STACK_GUARD_SIZE;
-  st.ss_flags = 0;
-  if (sigaltstack(&st, NULL) != 0) {
-    NaClLog(LOG_FATAL, "Failed to register signal stack:\n\t%s\n",
-      strerror(errno));
-  }
-}
-
-void NaClSignalStackUnregister(void) {
-  /*
-   * Unregister the signal stack in case a fault occurs between the
-   * thread deallocating the signal stack and exiting.  Such a fault
-   * could be unsafe if the address space were reallocated before the
-   * fault, although that is unlikely.
-   */
-  stack_t st;
-#if NACL_OSX
-  /*
-   * This is a workaround for a bug in Mac OS X's libc, in which new
-   * versions of the sigaltstack() wrapper return ENOMEM if ss_size is
-   * less than MINSIGSTKSZ, even when ss_size should be ignored
-   * because we are unregistering the signal stack.
-   * See http://code.google.com/p/nativeclient/issues/detail?id=1053
-   */
-  st.ss_size = MINSIGSTKSZ;
-#else
-  st.ss_size = 0;
-#endif
-  st.ss_sp = NULL;
-  st.ss_flags = SS_DISABLE;
-  if (sigaltstack(&st, NULL) != 0) {
-    NaClLog(LOG_FATAL, "Failed to unregister signal stack:\n\t%s\n",
-      strerror(errno));
-  }
-}
-
 static void FindAndRunHandler(int sig, siginfo_t *info, void *uc) {
   if (NaClSignalHandlerFind(sig, uc) == NACL_SIGNAL_SEARCH) {
     int a;
@@ -166,68 +105,9 @@ static void FindAndRunHandler(int sig, siginfo_t *info, void *uc) {
   }
 }
 
-/* For x86 32b, we need to restore segment registers */
-#if NACL_ARCH(NACL_BUILD_ARCH) == NACL_x86 && NACL_BUILD_SUBARCH == 32
-static void SignalCatch(int sig, siginfo_t *info, void *uc) {
-  struct NaClSignalContext sigCtx;
-
-  /* Preserve the handler's segment registers just in case. */
-  uint16_t gs = NaClGetGs();
-  uint16_t es = NaClGetEs();
-  uint16_t fs = NaClGetFs();
-
-  NaClSignalContextFromHandler(&sigCtx, uc);
-  if (NaClSignalContextIsUntrusted(&sigCtx)) {
-    struct NaClThreadContext *nacl_thread;
-
-    /*
-     * On Linux, the kernel does not restore %gs when entering the
-     * signal handler, so we must do that here.  We need to do this
-     * for glibc's TLS to work.  Some builds of glibc fetch a syscall
-     * function pointer from glibc's static TLS area.  If we failed to
-     * restore %gs, this function pointer would be under the control
-     * of untrusted code, and we would have a vulnerability.
-     *
-     * Note that, in comparison, Breakpad tries to avoid using libc
-     * calls at all when a crash occurs.
-     *
-     * On Mac OS X, the kernel *does* restore the original %gs when
-     * entering the signal handler.  Our assignment to %gs here is
-     * therefore not strictly necessary, but not harmful.  However,
-     * this does mean we need to check the original %gs value (from
-     * the signal frame) rather than the current %gs value (from
-     * NaClGetGs()).
-     *
-     * Both systems necessarily restore %cs, %ds, and %ss otherwise
-     * we would have a hard time handling signals in untrusted code
-     * at all.
-     *
-     * As a precaution we restore %es and %fs as well, since this
-     * may be nessesary with other POSIX implementions or may become
-     * necessary in the future.
-     */
-    nacl_thread = nacl_sys; /* d'b */
-    NaClSetGs(nacl_thread->gs);
-    NaClSetEs(nacl_thread->es);
-    NaClSetFs(nacl_thread->fs);
-  }
-
-  FindAndRunHandler(sig, info, uc);
-
-  /*
-   * Restore the handler's segment registers prior to returning from the
-   * signal handler, just in case we are in untrusted code and changed them.
-   */
-  NaClSetGs(gs);
-  NaClSetEs(es);
-  NaClSetFs(fs);
-}
-#else
 static void SignalCatch(int sig, siginfo_t *info, void *uc) {
   FindAndRunHandler(sig, info, uc);
 }
-#endif
-
 
 void NaClSignalHandlerInitPlatform() {
   struct sigaction sa;

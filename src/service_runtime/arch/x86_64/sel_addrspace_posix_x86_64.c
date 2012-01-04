@@ -6,18 +6,15 @@
 
 #include <stdio.h>
 #include <errno.h>
-#include <sys/mman.h>
 
 #include "include/nacl_platform.h"
 #include "src/platform/nacl_check.h"
 #include "src/service_runtime/sel_ldr.h"
 
-
 #define FOURGIG     (((size_t) 1) << 32)
 #define GUARDSIZE   (10 * FOURGIG)
 #define ALIGN_BITS  32
 #define MSGWIDTH    "25"
-
 
 /*
  * NaClAllocatePow2AlignedMemory is for allocating a large amount of

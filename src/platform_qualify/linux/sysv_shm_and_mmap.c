@@ -11,12 +11,7 @@
 
 #include <stdio.h>
 #include <stdint.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <fcntl.h>
-#include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/mman.h>
 
@@ -65,7 +60,6 @@ static int VerifyPattern(void   *memory,
   }
   return 1;
 }
-
 
 /*
  * Verify the allocated shared memory ID.
@@ -210,7 +204,6 @@ int NaClPlatformQualifySysVShmId(int shm_id) {
  * shmid" for the corresponding shmid number to garbage collect the
  * shared memory segment.
  */
-
 
 /*
  * To build as a standalone, build with -DSysVShmAndMmapHasProblems=main.

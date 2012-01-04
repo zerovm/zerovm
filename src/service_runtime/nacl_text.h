@@ -7,7 +7,6 @@
 #ifndef NATIVE_CLIENT_SRC_TRUSTED_SERVICE_RUNTIME_NACL_TEXT_H_
 #define NATIVE_CLIENT_SRC_TRUSTED_SERVICE_RUNTIME_NACL_TEXT_H_
 
-#include "include/portability.h"
 #include "src/service_runtime/nacl_error_code.h"
 
 EXTERN_C_BEGIN

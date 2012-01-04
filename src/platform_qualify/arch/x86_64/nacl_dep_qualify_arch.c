@@ -3,13 +3,7 @@
  * Use of this source code is governed by a BSD-style license that can
  * be found in the LICENSE file.
  */
-
-#include <stddef.h>
-
-#if !NACL_WINDOWS /* stdint is neither available nor needed on Windows */
 #include <stdint.h>
-#endif
-
 #include "src/platform_qualify/nacl_dep_qualify.h"
 #include "include/nacl_macros.h"
 

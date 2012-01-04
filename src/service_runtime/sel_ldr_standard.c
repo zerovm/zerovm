@@ -7,53 +7,27 @@
 /*
  * NaCl Simple/secure ELF loader (NaCl SEL).
  */
-
-#include "include/portability.h"
-
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 
-#include "include/elf_constants.h"
-#include "include/elf.h"
-#include "include/nacl_macros.h"
 #include "src/platform/nacl_check.h"
-#include "src/platform/nacl_log.h"
 #include "src/platform/nacl_sync_checked.h"
-#include "src/platform/nacl_time.h"
-
 #include "src/perf_counter/nacl_perf_counter.h"
-
-#include "src/service_runtime/include/sys/errno.h"
-#include "src/service_runtime/include/sys/fcntl.h"
 #include "src/service_runtime/include/bits/mman.h"
-
-#include "src/service_runtime/arch/sel_ldr_arch.h"
+#include "src/service_runtime/arch/x86/sel_ldr_x86.h"
 #include "src/service_runtime/elf_util.h"
-#include "src/service_runtime/nacl_app_thread.h"
 #include "src/service_runtime/nacl_switch_to_app.h"
-#include "src/service_runtime/nacl_syscall_common.h"
 #include "src/service_runtime/nacl_text.h"
-#include "src/service_runtime/outer_sandbox.h"
 #include "src/service_runtime/sel_memory.h"
-#include "src/service_runtime/sel_ldr.h"
-#include "src/service_runtime/sel_ldr_thread_interface.h"
-#include "src/service_runtime/sel_util.h"
 #include "src/service_runtime/sel_addrspace.h"
-#include "src/manifest/manifest_setup.h"
 #include "src/manifest/trap.h" /* d'b: PauseCpuClock(), ResumeCpuClock() */
 #include "src/service_runtime/nacl_globals.h" /* d'b: nacl_user */
-
-/* d'b */
-#include "src/service_runtime/arch/x86/sel_rt.h"
-#include "src/validator/x86/nacl_cpuid.h"
+#include "src/service_runtime/nacl_signal.h"
 
 #define NORETURN_PTR NORETURN
 extern NORETURN void NaClSwitchSSE(struct NaClThreadContext *context);
-extern NORETURN void NaClSyscallCSegHook(void); /* d'b: we use tls no more */
 
-/* ###
+/*
  * d'b: alternative mechanism to pass control to user side
  * note: initializes "nacl_user" global
  */
@@ -78,7 +52,6 @@ NORETURN void SwitchToApp(struct NaClApp  *nap, uintptr_t stack_ptr)
 
   nacl_sys->rbp = NaClGetStackPtr(); // ### do i need it?
   nacl_sys->rsp = NaClGetStackPtr();
-//  nacl_sys->prog_ctr = (uintptr_t)NaClSyscallCSegHook; // ### do i need it?
 
   gnap = nap; /* global nap now point to NaClApp object from main() */
   NaClSwitchSSE(nacl_user); // ### put here switch to chose proper function: avx or sse
@@ -385,40 +358,6 @@ NaClErrorCode NaClAppLoadFile(struct Gio       *gp,
     ret = subret;
     goto done;
   }
-#if NACL_OSX && defined(NACL_STANDALONE)
-  /*
-   * Enable the outer sandbox on Mac.  Do this as soon as possible.
-   *
-   * This is needed only when built for "Standalone" mode (which
-   * currently means firefox plugin, as opposed to as an built-in
-   * plugin in Chrome), since in the Chrome built-in/integrated build
-   * the sandbox is enabled earlier, in chrome's zygote process
-   * initialization / specialization when the zygote forks a copy of
-   * itself to become sel_ldr (via sel_main_chrome.c's
-   * NaClMainForChromium).
-   *
-   * It would be good to do this as soon as we have opened the
-   * executable file and log file, but nacl_text.c currently does not
-   * work in the sandbox.  See
-   * http://code.google.com/p/nativeclient/issues/detail?id=583
-   *
-   * This is needed for the test version of the ppapi plugin and post
-   * saucer separation; the integrated plugin/sel_ldr implementation
-   * that spawns from a chrome zygote image would have already enabled
-   * the sandbox.
-   *
-   * We cannot enable the sandbox if file access is enabled.
-   *
-   * OSX's sandbox has a race condition where mprotect in the address
-   * space set up code would sometimes fail, even before nacl_text.c.
-   * Ideally we would enable the OSX sandbox before examining any
-   * untrusted data (the nexe), but we have to wait until we address
-   * space setup is done, which requires reading the ELF headers.
-   */
-  if (!NaClAclBypassChecks) {
-    NaClEnableOuterSandbox();
-  }
-#endif
 
   /*
    * NaClFillEndOfTextRegion will fill with halt instructions the
@@ -449,9 +388,6 @@ NaClErrorCode NaClAppLoadFile(struct Gio       *gp,
 
   NaClLog(2, "Installing trampoline\n");
   NaClLoadTrampoline(nap);
-
-  NaClLog(2, "Installing springboard\n");
-  NaClLoadSpringboard(nap);
 
   /*
    * NaClMemoryProtect also initializes the mem_map w/ information
@@ -521,18 +457,6 @@ int NaClAddrIsValidEntryPt(struct NaClApp *nap,
 #endif
 
   return addr < nap->static_text_end;
-}
-
-int NaClReportExitStatus(struct NaClApp *nap, int exit_status) {
-  NaClXMutexLock(&nap->mu);
-
-  nap->exit_status = exit_status;
-  nap->running = 0;
-  NaClXCondVarSignal(&nap->cv);
-
-  NaClXMutexUnlock(&nap->mu);
-
-  return 1;
 }
 
 /*
@@ -711,6 +635,7 @@ int NaClCreateMainThread(struct NaClApp     *nap,
           NaClSysToUserStackAddr(nap, stack_ptr));
 
   /* d'b: jump directly to user code instead of using thread launching */
+  ResumeCpuClock(nap);
   SwitchToApp(nap, stack_ptr);
   /* d'b end */
 
@@ -720,72 +645,4 @@ cleanup:
   free(envv_len);
 
   return retval;
-}
-
-int NaClWaitForMainThreadToExit(struct NaClApp  *nap) {
-  NaClLog(3, "NaClWaitForMainThreadToExit: taking NaClApp lock\n");
-  NaClXMutexLock(&nap->mu);
-  NaClLog(3, " waiting for exit status\n");
-  while (nap->running) {
-    /* d'b: cpu time accounting */
-    ResumeCpuClock(nap);
-    NaClXCondVarWait(&nap->cv, &nap->mu);
-    PauseCpuClock(nap);
-    /* d'b end */
-    NaClLog(3, " wakeup, nap->running %d, nap->exit_status %d\n",
-            nap->running, nap->exit_status);
-  }
-  NaClXMutexUnlock(&nap->mu);
-  /*
-   * Some thread invoked the exit (exit_group) syscall.
-   */
-
-  if (NULL != nap->debug_stub_callbacks) {
-    nap->debug_stub_callbacks->process_exit_hook(nap->exit_status);
-  }
-
-  return (nap->exit_status);
-}
-
-/*
- * stack_ptr is from syscall, so a 32-bit address.
- */
-int32_t NaClCreateAdditionalThread(struct NaClApp *nap,
-                                   uintptr_t      prog_ctr,
-                                   uintptr_t      sys_stack_ptr,
-                                   uintptr_t      sys_tls,
-                                   uint32_t       user_tls2) {
-  struct NaClAppThread  *natp;
-  uintptr_t             stack_ptr;
-
-  natp = malloc(sizeof *natp);
-  if (NULL == natp) {
-    NaClLog(LOG_WARNING,
-            ("NaClCreateAdditionalThread: no memory for new thread context."
-             "  Returning EAGAIN per POSIX specs.\n"));
-    return -NACL_ABI_EAGAIN;
-  }
-
-  stack_ptr = NaClSysToUserStackAddr(nap, sys_stack_ptr);
-
-  if (0 != ((stack_ptr + sizeof(nacl_reg_t)) & NACL_STACK_ALIGN_MASK)) {
-    NaClLog(3,
-            ("NaClCreateAdditionalThread:  user thread library provided "
-             "an unaligned user stack pointer: 0x%"NACL_PRIxPTR"\n"),
-            stack_ptr);
-  }
-
-  if (!NaClAppThreadAllocSegCtor(natp,
-                                 nap,
-                                 prog_ctr,
-                                 stack_ptr,
-                                 sys_tls,
-                                 user_tls2)) {
-    NaClLog(LOG_WARNING,
-            ("NaClCreateAdditionalThread: could not allocate thread index."
-             "  Returning EAGAIN per POSIX specs.\n"));
-    free(natp);
-    return -NACL_ABI_EAGAIN;
-  }
-  return 0;
 }

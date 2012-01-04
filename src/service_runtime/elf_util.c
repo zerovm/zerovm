@@ -7,30 +7,18 @@
 /*
  * NaCl helper functions to deal with elf images
  */
-
-#include "include/portability.h"
-
-#include <stdio.h>
-
-#include <stdlib.h>
 #include <string.h>
 
 #define NACL_LOG_MODULE_NAME  "elf_util"
 
-#include "include/elf_constants.h"
-#include "include/elf.h"
 #include "include/nacl_macros.h"
 #include "include/nacl_platform.h"
-
 #include "src/gio/gio.h"
-#include "src/platform/nacl_log.h"
-
 #include "src/service_runtime/elf_util.h"
 #include "src/service_runtime/include/bits/mman.h"
-#include "src/service_runtime/nacl_config.h"
-#include "src/service_runtime/nacl_syscall_common.h"
 #include "src/service_runtime/nacl_text.h"
 #include "src/service_runtime/sel_memory.h"
+#include "src/service_runtime/nacl_syscall_handlers.h"
 
 /* private */
 struct NaClElfImage {
@@ -39,7 +27,6 @@ struct NaClElfImage {
   int       loadable[NACL_MAX_PROGRAM_HEADERS];
 };
 
-
 enum NaClPhdrCheckAction {
   PCA_NONE,
   PCA_TEXT_CHECK,
@@ -47,7 +34,6 @@ enum NaClPhdrCheckAction {
   PCA_DATA,
   PCA_IGNORE  /* ignore this segment. */
 };
-
 
 struct NaClPhdrChecks {
   Elf_Word                  p_type;
@@ -92,8 +78,6 @@ static const struct NaClPhdrChecks nacl_phdr_check_data[] = {
   { PT_NULL, PF_R, PCA_IGNORE, 0, 0},
 };
 
-
-
 static void NaClDumpElfHeader(int loglevel, Elf_Ehdr *elf_hdr) {
 
 #define DUMP(m,f)    do { NaClLog(loglevel,                     \
@@ -122,7 +106,6 @@ static void NaClDumpElfHeader(int loglevel, Elf_Ehdr *elf_hdr) {
  NaClLog(loglevel, "sizeof(Elf32_Ehdr) = 0x%x\n", (int) sizeof *elf_hdr);
 }
 
-
 static void NaClDumpElfProgramHeader(int     loglevel,
                                     Elf_Phdr *phdr) {
 #define DUMP(mem, f) do {                                \
@@ -144,7 +127,6 @@ static void NaClDumpElfProgramHeader(int     loglevel,
 #undef  DUMP
   NaClLog(loglevel, "\n");
 }
-
 
 NaClErrorCode NaClElfImageValidateElfHeader(struct NaClElfImage *image) {
   const Elf_Ehdr *hdr = &image->ehdr;
@@ -357,7 +339,6 @@ NaClErrorCode NaClElfImageValidateProgramHeaders(
   return LOAD_OK;
 }
 
-
 struct NaClElfImage *NaClElfImageNew(struct Gio     *gp,
                                      NaClErrorCode  *err_code) {
   struct NaClElfImage *result;
@@ -451,7 +432,6 @@ struct NaClElfImage *NaClElfImageNew(struct Gio     *gp,
   return result;
 }
 
-
 NaClErrorCode NaClElfImageLoad(struct NaClElfImage *image,
                                struct Gio          *gp,
                                uint8_t             addr_bits,
@@ -528,7 +508,6 @@ NaClErrorCode NaClElfImageLoad(struct NaClElfImage *image,
 
   return LOAD_OK;
 }
-
 
 NaClErrorCode NaClElfImageLoadDynamically(struct NaClElfImage *image,
                                           struct NaClApp      *nap,
@@ -646,11 +625,9 @@ NaClErrorCode NaClElfImageLoadDynamically(struct NaClElfImage *image,
   return LOAD_OK;
 }
 
-
 void NaClElfImageDelete(struct NaClElfImage *image) {
   free(image);
 }
-
 
 uintptr_t NaClElfImageGetEntryPoint(struct NaClElfImage *image) {
   return image->ehdr.e_entry;

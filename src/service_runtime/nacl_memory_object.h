@@ -11,11 +11,6 @@
 #ifndef NATIVE_CLIENT_SERVICE_RUNTIME_MEMORY_OBJECT_H_
 #define NATIVE_CLIENT_SERVICE_RUNTIME_MEMORY_OBJECT_H_
 
-#include "include/portability.h"
-
-#include "src/imc/nacl_imc_c.h"
-#include "src/platform/nacl_host_desc.h"
-#include "src/platform/nacl_sync.h"
 #include "src/desc/nacl_desc_base.h"
 
 EXTERN_C_BEGIN

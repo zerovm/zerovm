@@ -32,7 +32,8 @@ struct SystemList
   char *log; /* zerovm log file name */
   char *report;  /* report to proxy file name */
   char *nexe; /* nexe file name */
-  char *cmd_line; /* command line for nexe */
+  int cmd_line_size; /* command line size for nexe */
+  char **cmd_line; /* command line for nexe */
   char *blob; /* blob library name */
   int32_t nexe_max; /* max allowed nexe length */
   char *nexe_etag; /* digital signature. reserved for a future "short" nexe validation */

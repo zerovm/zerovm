@@ -14,14 +14,8 @@
 
 EXTERN_C_BEGIN
 
-/* TODO(petr): this should go to linux/x86 */
-#if NACL_LINUX
-/*
- * The modify_ldt system call is used to get and set the local descriptor
- * table.
- */
+/* The modify_ldt system call is used to get and set the local descriptor table */
 extern int modify_ldt(int func, void* ptr, unsigned long bytecount);
-#endif
 
 /*
  * Module initialization and finalization.
@@ -39,45 +33,12 @@ typedef enum {
   NACL_LDT_DESCRIPTOR_CODE
 } NaClLdtDescriptorType;
 
-uint16_t NaClLdtAllocatePageSelector(NaClLdtDescriptorType type,
-                                     int read_exec_only,
-                                     void* base_addr,
-                                     uint32_t size_in_pages);
-
-uint16_t NaClLdtAllocateByteSelector(NaClLdtDescriptorType type,
-                                     int read_exec_only,
-                                     void* base_addr,
-                                     uint32_t size_in_bytes);
-
-uint16_t NaClLdtChangePageSelector(int32_t entry_number,
-                                   NaClLdtDescriptorType type,
-                                   int read_exec_only,
-                                   void* base_addr,
-                                   uint32_t size_in_pages);
-
-uint16_t NaClLdtChangeByteSelector(int32_t entry_number,
-                                   NaClLdtDescriptorType type,
-                                   int read_exec_only,
-                                   void* base_addr,
-                                   uint32_t size_in_bytes);
-
 uint16_t NaClLdtAllocateSelector(int entry_number,
                                  int size_is_in_pages,
                                  NaClLdtDescriptorType type,
                                  int read_exec_only,
                                  void* base_addr,
                                  uint32_t size_minus_one);
-
-/*
- * NaClLdtDeleteSelector frees the LDT entry associated with a given selector.
- */
-void NaClLdtDeleteSelector(uint16_t selector);
-
-/*
- * NaClLdtPrintSelector prints the local descriptor table for the specified
- * selector.
- */
-void NaClLdtPrintSelector(uint16_t selector);
 
 EXTERN_C_END
 

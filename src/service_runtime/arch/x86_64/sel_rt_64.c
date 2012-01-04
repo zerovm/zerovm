@@ -3,26 +3,15 @@
  * Use of this source code is governed by a BSD-style license that can
  * be found in the LICENSE file.
  */
-
-#include "src/platform/nacl_log.h"
-#include "src/service_runtime/nacl_app_thread.h"
 #include "src/service_runtime/sel_ldr.h"
-#include "src/service_runtime/sel_rt.h"
 #include "src/service_runtime/include/sys/errno.h"
-
 
 uintptr_t NaClGetThreadCtxSp(struct NaClThreadContext  *th_ctx) {
   return (uintptr_t) th_ctx->rsp;
 }
 
-
 void NaClSetThreadCtxSp(struct NaClThreadContext  *th_ctx, uintptr_t sp) {
   th_ctx->rsp = (nacl_reg_t) sp;
-}
-
-void NaClInitGlobals() {
-  /* no need to save segment registers */
-  ;
 }
 
 int NaClThreadContextCtor(struct NaClThreadContext  *ntcp,

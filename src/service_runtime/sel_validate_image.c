@@ -3,8 +3,6 @@
  * Use of this source code is governed by a BSD-style license that can be
  * found in the LICENSE file.
  */
-
-#include "src/platform/nacl_log.h"
 #include "src/service_runtime/sel_ldr.h"
 #include "src/validator/ncvalidate.h"
 

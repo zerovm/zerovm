@@ -3,177 +3,731 @@
  * Use of this source code is governed by a BSD-style license that can be
  * found in the LICENSE file.
  */
-
-
-#include <time.h>
-#include <stdlib.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <sys/ioctl.h>
-#include <errno.h>
-#include <sched.h>
-#include <sys/mman.h>
-#include <string.h>
-#include <unistd.h>
-
-#include "include/portability.h"
 #include "include/nacl_platform.h"
 #include "include/nacl_macros.h"
-
-#include "src/platform/nacl_check.h"
-#include "src/platform/nacl_log.h"
 #include "src/platform/nacl_sync_checked.h"
-#include "src/platform/nacl_time.h"
-
-#include "src/desc/nacl_desc_base.h"
-#include "src/desc/nacl_desc_conn_cap.h"
-#include "src/desc/nacl_desc_imc.h"
-#include "src/desc/nacl_desc_imc_bound_desc.h"
-#include "src/desc/nacl_desc_imc_shm.h"
 #include "src/desc/nacl_desc_io.h"
-
-#include "src/service_runtime/nacl_app_thread.h"
-#include "src/service_runtime/nacl_config.h"
+#include "src/desc/nacl_desc_mutex.h"
 #include "src/service_runtime/nacl_globals.h"
-#include "src/service_runtime/nacl_memory_object.h"
 #include "src/service_runtime/nacl_syscall_handlers.h"
-#include "src/service_runtime/nacl_syscall_common.h"
-#include "src/service_runtime/nacl_text.h"
-#include "src/service_runtime/sel_util.h"
-#include "src/service_runtime/sel_ldr.h"
 #include "src/service_runtime/sel_memory.h"
-
 #include "src/service_runtime/include/bits/mman.h"
 #include "src/service_runtime/include/bits/nacl_syscalls.h"
-#include "src/service_runtime/include/machine/_types.h"
-#include "src/service_runtime/include/sys/errno.h"
-#include "src/service_runtime/include/sys/fcntl.h"
-#include "src/service_runtime/include/sys/nacl_imc_api.h"
 #include "src/service_runtime/include/sys/stat.h"
-#include "src/service_runtime/include/sys/time.h"
-#include "src/service_runtime/include/sys/unistd.h"
-
 #include "src/service_runtime/linux/nacl_syscall_inl.h"
 #include "src/manifest/trap.h"
-#include "src/manifest/manifest_setup.h"
-#include "api/zvm.h"
+#include "include/nacl_assert.h"
 
 struct NaClSyscallTableEntry nacl_syscall[NACL_MAX_SYSCALLS] = {{0}};
+static const size_t kMaxUsableFileSize = (SIZE_T_MAX >> 1);
+static INLINE size_t  size_min(size_t a, size_t b) {
+  return (a < b) ? a : b;
+}
 
+static int AddrRangeContainsExecutablePages(struct NaClApp *nap, uintptr_t usraddr)
+{
+  /*
+   * NOTE: currently only trampoline and text region are executable,
+   * and they are at the beginning of the address space, so this code
+   * is fine.  We will probably never allow users to mark other pages
+   * as executable; but if so, we will have to revisit how this check
+   * is implemented.
+   *
+   * nap->static_text_end is a multiple of 4K, the memory protection
+   * granularity.  Since this routine is used for checking whether
+   * memory map adjustments / allocations -- which has 64K granularity
+   * -- is okay, usraddr must be an allocation granularity value.  Our
+   * callers (as of this writing) does this, but we truncate it down
+   * to an allocation boundary to be sure.
+   */
+  usraddr = NaClTruncAllocPage(usraddr);
+  return usraddr < nap->dynamic_text_end;
+}
 
-static int32_t NotImplementedDecoder(struct NaClAppThread *natp) {
-  UNREFERENCED_PARAMETER(natp);
+static void NaClCommonUtilUpdateAddrMap(struct NaClApp *nap, uintptr_t sysaddr, size_t nbytes,
+    int sysprot, struct NaClDesc *backing_desc, nacl_off64_t backing_bytes,
+    nacl_off64_t offset_bytes, int delete_mem)
+{
+  uintptr_t usraddr;
+  struct NaClMemObj *nmop;
+
+  usraddr = NaClSysToUser(nap, sysaddr);
+  nmop = NULL;
+  /* delete_mem -> NULL == backing_desc */
+  if(NULL != backing_desc)
+  {
+    if(delete_mem)
+    {
+      NaClLog(LOG_FATAL, ("invariant of delete_mem implies backing_desc NULL"
+              " violated.\n"));
+    }
+    nmop = NaClMemObjMake(backing_desc, backing_bytes, offset_bytes);
+  }
+
+  NaClVmmapUpdate(&nap->mem_map, usraddr >> NACL_PAGESHIFT,
+                  nbytes >> NACL_PAGESHIFT, sysprot, nmop, delete_mem);
+}
+
+static int32_t NotImplementedDecoder(struct NaClApp *nap)
+{
+  UNREFERENCED_PARAMETER(nap);
   return -NACL_ABI_ENOSYS;
 }
 
-static void NaClAddSyscall(int num, int32_t (*fn)(struct NaClAppThread *)) {
-  if (nacl_syscall[num].handler != &NotImplementedDecoder) {
+static void NaClAddSyscall(int num, int32_t(*fn)(struct NaClApp *))
+{
+  if(nacl_syscall[num].handler != &NotImplementedDecoder)
+  {
     NaClLog(LOG_FATAL, "Duplicate syscall number %d\n", num);
   }
   nacl_syscall[num].handler = fn;
 }
 
-/* ====================================================================== */
 
-int32_t NaClSysNull(struct NaClAppThread *natp) {
-  UNREFERENCED_PARAMETER(natp);
-  return 0;
+/*
+ * syscalls main routines.
+ * note that we only need 1 syscall trap() other syscalls are only used
+ * for nexe prolog in a future all syscalls except trap can be removed.
+ */
+
+int32_t NaClSysSysbrk(struct NaClApp *nap, uintptr_t new_break)
+{
+  uintptr_t             break_addr;
+  int32_t               rv = -NACL_ABI_EINVAL;
+  struct NaClVmmapIter  iter;
+  struct NaClVmmapEntry *ent;
+  struct NaClVmmapEntry *next_ent;
+  uintptr_t             sys_break;
+  uintptr_t             sys_new_break;
+  uintptr_t             usr_last_data_page;
+  uintptr_t             usr_new_last_data_page;
+  uintptr_t             last_internal_data_addr;
+  uintptr_t             last_internal_page;
+  uintptr_t             start_new_region;
+  uintptr_t             region_size;
+
+  break_addr = nap->break_addr;
+
+  NaClLog(3, "Entered NaClSetBreak(new_break 0x%08"NACL_PRIxPTR")\n", new_break);
+
+  sys_new_break = NaClUserToSysAddr(nap, new_break);
+  NaClLog(3, "sys_new_break 0x%08"NACL_PRIxPTR"\n", sys_new_break);
+
+  if (kNaClBadAddress == sys_new_break) {
+    goto cleanup_no_lock;
+  }
+  if (NACL_SYNC_OK != NaClMutexLock(&nap->mu)) {
+    NaClLog(LOG_ERROR, "Could not get app lock for 0x%08"NACL_PRIxPTR"\n",
+            (uintptr_t) nap);
+    goto cleanup_no_lock;
+  }
+  if (new_break < nap->data_end) {
+    NaClLog(4, "new_break before data_end (0x%"NACL_PRIxPTR")\n",
+            nap->data_end);
+    goto cleanup;
+  }
+  if (new_break <= nap->break_addr) {
+    /* freeing memory */
+    NaClLog(4, "new_break before break (0x%"NACL_PRIxPTR"); freeing\n",
+            nap->break_addr);
+    nap->break_addr = new_break;
+    break_addr = new_break;
+  } else {
+
+    /*
+     * See if page containing new_break is in mem_map; if so, we are
+     * essentially done -- just update break_addr.  Otherwise, we
+     * extend the VM map entry from the page containing the current
+     * break to the page containing new_break.
+     */
+
+    sys_break = NaClUserToSys(nap, nap->break_addr);
+
+    usr_last_data_page = (nap->break_addr - 1) >> NACL_PAGESHIFT;
+
+    usr_new_last_data_page = (new_break - 1) >> NACL_PAGESHIFT;
+
+    last_internal_data_addr = NaClRoundAllocPage(new_break) - 1;
+    last_internal_page = last_internal_data_addr >> NACL_PAGESHIFT;
+
+    NaClLog(4, ("current break sys addr 0x%08"NACL_PRIxPTR", "
+                "usr last data page 0x%"NACL_PRIxPTR"\n"),
+            sys_break, usr_last_data_page);
+    NaClLog(4, "new break usr last data page 0x%"NACL_PRIxPTR"\n",
+            usr_new_last_data_page);
+    NaClLog(4, "last internal data addr 0x%08"NACL_PRIxPTR"\n",
+            last_internal_data_addr);
+
+    if (NULL == NaClVmmapFindPageIter(&nap->mem_map,
+                                      usr_last_data_page,
+                                      &iter)
+        || NaClVmmapIterAtEnd(&iter)) {
+      NaClLog(LOG_FATAL, ("current break (0x%08"NACL_PRIxPTR", "
+                          "sys 0x%08"NACL_PRIxPTR") "
+                          "not in address map\n"),
+              nap->break_addr, sys_break);
+    }
+    ent = NaClVmmapIterStar(&iter);
+    NaClLog(4, ("segment containing current break"
+                ": page_num 0x%08"NACL_PRIxPTR", npages 0x%"NACL_PRIxS"\n"),
+            ent->page_num, ent->npages);
+    if (usr_new_last_data_page < ent->page_num + ent->npages) {
+      NaClLog(4, "new break within break segment, just bumping addr\n");
+      nap->break_addr = new_break;
+      break_addr = new_break;
+    } else {
+      NaClVmmapIterIncr(&iter);
+      if (!NaClVmmapIterAtEnd(&iter)
+          && ((next_ent = NaClVmmapIterStar(&iter))->page_num
+              <= last_internal_page)) {
+        /* ran into next segment! */
+        NaClLog(4,
+                ("new break request of usr address "
+                 "0x%08"NACL_PRIxPTR" / usr page 0x%"NACL_PRIxPTR
+                 " runs into next region, page_num 0x%"NACL_PRIxPTR", "
+                 "npages 0x%"NACL_PRIxS"\n"),
+                new_break, usr_new_last_data_page,
+                next_ent->page_num, next_ent->npages);
+        goto cleanup;
+      }
+      NaClLog(4,
+              "extending segment: page_num 0x%08"NACL_PRIxPTR", "
+              "npages 0x%"NACL_PRIxS"\n",
+              ent->page_num, ent->npages);
+      /* go ahead and extend ent to cover, and make pages accessible */
+      start_new_region = (ent->page_num + ent->npages) << NACL_PAGESHIFT;
+      ent->npages = (last_internal_page - ent->page_num + 1);
+      region_size = (((last_internal_page + 1) << NACL_PAGESHIFT)
+                     - start_new_region);
+      if (0 != NaCl_mprotect((void *) NaClUserToSys(nap, start_new_region),
+                             region_size,
+                             PROT_READ | PROT_WRITE)) {
+        NaClLog(LOG_FATAL,
+                ("Could not mprotect(0x%08"NACL_PRIxPTR", "
+                 "0x%08"NACL_PRIxPTR", "
+                 "PROT_READ|PROT_WRITE)\n"),
+                start_new_region,
+                region_size);
+      }
+      NaClLog(4, "segment now: page_num 0x%08"NACL_PRIxPTR", "
+              "npages 0x%"NACL_PRIxS"\n",
+              ent->page_num, ent->npages);
+      nap->break_addr = new_break;
+      break_addr = new_break;
+    }
+  }
+
+cleanup:
+  NaClXMutexUnlock(&nap->mu);
+cleanup_no_lock:
+
+  /*
+   * This cast is safe because the incoming value (new_break) cannot
+   * exceed the user address space--even though its type (uintptr_t)
+   * theoretically allows larger values.
+   */
+  rv = (int32_t) break_addr;
+
+  NaClLog(3, "NaClSetBreak: returning 0x%08"NACL_PRIx32"\n", rv);
+  return rv;
 }
 
-int32_t NaClSysNameService(struct NaClAppThread *natp,
-                           int                  *desc_in_out) {
-  return NaClCommonSysNameService(natp, desc_in_out);
+int32_t NaClCommonSysMmapIntern(struct NaClApp        *nap,
+                                void                  *start,
+                                size_t                length,
+                                int                   prot,
+                                int                   flags,
+                                int                   d,
+                                nacl_abi_off_t        offset) {
+  int                         allowed_flags;
+  struct NaClDesc             *ndp = NULL;
+  uintptr_t                   usraddr;
+  uintptr_t                   usrpage;
+  uintptr_t                   sysaddr;
+  uintptr_t                   endaddr;
+  uintptr_t                   map_result;
+  struct NaClMemObj           *nmop = NULL;
+  struct nacl_abi_stat        stbuf;
+  size_t                      alloc_rounded_length;
+  nacl_off64_t                file_size;
+  nacl_off64_t                file_bytes;
+  nacl_off64_t                host_rounded_file_bytes;
+  size_t                      alloc_rounded_file_bytes;
+  size_t                      start_of_inaccessible;
+
+  allowed_flags = (NACL_ABI_MAP_FIXED | NACL_ABI_MAP_SHARED
+                   | NACL_ABI_MAP_PRIVATE | NACL_ABI_MAP_ANONYMOUS);
+
+  usraddr = (uintptr_t) start;
+
+  if (0 != (flags & ~allowed_flags)) {
+    NaClLog(LOG_WARNING, "invalid mmap flags 0%o, ignoring extraneous bits\n",
+            flags);
+    flags &= allowed_flags;
+  }
+
+  if (0 != (flags & NACL_ABI_MAP_ANONYMOUS)) {
+    /*
+     * anonymous mmap, so backing store is just swap: no descriptor is
+     * involved, and no memory object will be created to represent the
+     * descriptor.
+     */
+    ndp = NULL;
+  } else {
+    ndp = NaClGetDesc(nap, d);
+    if (NULL == ndp) {
+      map_result = -NACL_ABI_EBADF;
+      goto cleanup;
+    }
+  }
+
+  /*
+   * Starting address must be aligned to worst-case allocation
+   * granularity.  (Windows.)
+   */
+  if (!NaClIsAllocPageMultiple(usraddr)) {
+    NaClLog(2, "NaClSysMmap: address not allocation granularity aligned\n");
+    map_result = -NACL_ABI_EINVAL;
+    goto cleanup;
+  }
+  /*
+   * Offset should be non-negative (nacl_abi_off_t is signed).  This
+   * condition is caught when the file is stat'd and checked, and
+   * offset is ignored for anonymous mappings.
+   */
+  if (offset < 0) {
+    NaClLog(1,  /* application bug */
+            "NaClSysMmap: negative file offset: %"NACL_PRIdNACL_OFF"\n",
+            offset);
+    map_result = -NACL_ABI_EINVAL;
+    goto cleanup;
+  }
+  /*
+   * And offset must be a multiple of the allocation unit.
+   */
+  if (!NaClIsAllocPageMultiple((uintptr_t) offset)) {
+    NaClLog(1, ("NaClSysMmap: file offset 0x%08"NACL_PRIxPTR" not multiple"
+             " of allocation size\n"),
+            (uintptr_t) offset);
+    map_result = -NACL_ABI_EINVAL;
+    goto cleanup;
+  }
+
+  if (0 == length) {
+    map_result = -NACL_ABI_EINVAL;
+    goto cleanup;
+  }
+  alloc_rounded_length = NaClRoundAllocPage(length);
+  if (alloc_rounded_length != length) {
+    NaClLog(1, "mmap: rounded length to 0x%"NACL_PRIxS"\n",
+            alloc_rounded_length);
+  }
+
+  if (NULL == ndp) {
+    /*
+     * Note: sentinel values are bigger than the NaCl module addr space.
+     */
+    file_size                = kMaxUsableFileSize;
+    file_bytes               = kMaxUsableFileSize;
+    host_rounded_file_bytes  = kMaxUsableFileSize;
+    alloc_rounded_file_bytes = kMaxUsableFileSize;
+  } else {
+    /*
+     * We stat the file to figure out its actual size.
+     *
+     * This is needed since we allow an app to mmap in a odd-sized
+     * file and will zero fill the allocation page containing the last
+     * byte(s) of the file, but if the app asked for a length that
+     * goes beyond the last allocation page, that memory is actually
+     * inaccessible.  Of course, the underlying OS deals with real
+     * pages, and we may need to simulate this behavior (i.e., OSX and
+     * Linux, we will need to put zero-filled pages between the last
+     * 4K system page containing file data and the rest of the
+     * simulated windows allocation 64K page.
+     */
+    map_result = (*((struct NaClDescVtbl const *) ndp->base.vtbl)->
+                  Fstat)(ndp, &stbuf);
+    if (0 != map_result) {
+      goto cleanup;
+    }
+    /*
+     * BUG(bsy): there's a race between this fstat and the actual mmap
+     * below.  It's probably insoluble.  Even if we fstat again after
+     * mmap and compared, the mmap could have "seen" the file with a
+     * different size, after which the racing thread restored back to
+     * the same value before the 2nd fstat takes place.
+     */
+    file_size = stbuf.nacl_abi_st_size;
+    NaClLog(4, "NaClCommonSysMmapIntern: file_size = %ld, offset = %ld\n", file_size, offset);
+
+    if (file_size < offset) {
+      map_result = -NACL_ABI_EINVAL;
+      goto cleanup;
+    }
+
+    file_bytes = file_size - offset;
+    NaClLog(4, "NaClCommonSysMmapIntern: file_bytes 0x%016"NACL_PRIxNACL_OFF"\n",
+            file_bytes);
+    if ((nacl_off64_t) kMaxUsableFileSize < file_bytes) {
+      host_rounded_file_bytes = kMaxUsableFileSize;
+    } else {
+      host_rounded_file_bytes = NaClRoundHostAllocPage((size_t) file_bytes);
+    }
+
+    ASSERT(host_rounded_file_bytes <= (nacl_off64_t) kMaxUsableFileSize);
+    /*
+     * We need to deal with NaClRoundHostAllocPage rounding up to zero
+     * from ~0u - n, where n < 4096 or 65536 (== 1 alloc page).
+     *
+     * Luckily, file_bytes is at most kMaxUsableFileSize which is
+     * smaller than SIZE_T_MAX, so it should never happen, but we
+     * leave the explicit check below as defensive programming.
+     */
+    alloc_rounded_file_bytes =
+      NaClRoundAllocPage((size_t) host_rounded_file_bytes);
+
+    if (0 == alloc_rounded_file_bytes && 0 != host_rounded_file_bytes) {
+      map_result = -NACL_ABI_ENOMEM;
+      goto cleanup;
+    }
+
+    /*
+     * NB: host_rounded_file_bytes and alloc_rounded_file_bytes can be
+     * zero.  Such an mmap just makes memory (offset relative to
+     * usraddr) in the range [0, alloc_rounded_length) inaccessible.
+     */
+  }
+
+  /*
+   * host_rounded_file_bytes is how many bytes we can map from the
+   * file, given the user-supplied starting offset.  It is at least
+   * one page.  If it came from a real file, it is a multiple of
+   * host-OS allocation size.  it cannot be larger than
+   * kMaxUsableFileSize.
+   */
+  length = size_min(alloc_rounded_length, (size_t) host_rounded_file_bytes);
+  start_of_inaccessible = size_min(alloc_rounded_length,
+                                   alloc_rounded_file_bytes);
+
+  /*
+   * Now, we map, relative to usraddr, bytes [0, length) from the file
+   * starting at offset, zero-filled pages for the memory region
+   * [length, start_of_inaccessible), and inaccessible pages for the
+   * memory region [start_of_inaccessible, alloc_rounded_length).
+   */
+
+  if (0 == (flags & NACL_ABI_MAP_FIXED)) {
+    /*
+     * The user wants us to pick an address range.
+     */
+    if (0 == usraddr) {
+      /*
+       * Pick a hole in addr space of appropriate size, anywhere.
+       * We pick one that's best for the system.
+       */
+      usrpage = NaClVmmapFindMapSpace(&nap->mem_map,
+                                      alloc_rounded_length >> NACL_PAGESHIFT);
+      NaClLog(4, "NaClSysMmap: FindMapSpace: page 0x%05"NACL_PRIxPTR"\n",
+              usrpage);
+      if (0 == usrpage) {
+        map_result = -NACL_ABI_ENOMEM;
+        goto cleanup;
+      }
+      usraddr = usrpage << NACL_PAGESHIFT;
+      NaClLog(4, "NaClSysMmap: new starting addr: 0x%08"NACL_PRIxPTR
+              "\n", usraddr);
+    } else {
+      /*
+       * user supplied an addr, but it's to be treated as a hint; we
+       * find a hole of the right size in the app's address space,
+       * according to the usual mmap semantics.
+       */
+      usrpage = NaClVmmapFindMapSpaceAboveHint(&nap->mem_map,
+                                               usraddr,
+                                               (alloc_rounded_length
+                                                >> NACL_PAGESHIFT));
+      NaClLog(4, "NaClSysMmap: FindSpaceAboveHint: page 0x%05"NACL_PRIxPTR"\n",
+              usrpage);
+      if (0 == usrpage) {
+        NaClLog(4, "NaClSysMmap: hint failed, doing generic allocation\n");
+        usrpage = NaClVmmapFindMapSpace(&nap->mem_map,
+                                        alloc_rounded_length >> NACL_PAGESHIFT);
+      }
+      if (0 == usrpage) {
+        map_result = -NACL_ABI_ENOMEM;
+        goto cleanup;
+      }
+      usraddr = usrpage << NACL_PAGESHIFT;
+      NaClLog(4, "NaClSysMmap: new starting addr: 0x%08"NACL_PRIxPTR"\n",
+              usraddr);
+    }
+  }
+
+  /*
+   * Validate [usraddr, endaddr) is okay.
+   */
+  if (usraddr >= ((uintptr_t) 1 << nap->addr_bits)) {
+    NaClLog(2,
+            ("NaClSysMmap: start address (0x%08"NACL_PRIxPTR") outside address"
+             " space\n"),
+            usraddr);
+    map_result = -NACL_ABI_EINVAL;
+    goto cleanup;
+  }
+  endaddr = usraddr + alloc_rounded_length;
+  if (endaddr < usraddr) {
+    NaClLog(0,
+            ("NaClSysMmap: integer overflow -- "
+             "NaClSysMmap(0x%08"NACL_PRIxPTR",0x%"NACL_PRIxS",0x%x,0x%x,%d,"
+             "0x%08"NACL_PRIxPTR"\n"),
+            usraddr, length, prot, flags, d, (uintptr_t) offset);
+    map_result = -NACL_ABI_EINVAL;
+    goto cleanup;
+  }
+  /*
+   * NB: we use > instead of >= here.
+   *
+   * endaddr is the address of the first byte beyond the target region
+   * and it can equal the address space limit.  (of course, normally
+   * the main thread's stack is there.)
+   */
+  if (endaddr > ((uintptr_t) 1 << nap->addr_bits)) {
+    NaClLog(2,
+            ("NaClSysMmap: end address (0x%08"NACL_PRIxPTR") is beyond"
+             " the end of the address space\n"),
+            endaddr);
+    map_result = -NACL_ABI_EINVAL;
+    goto cleanup;
+  }
+
+  if(AddrRangeContainsExecutablePages(nap, usraddr))
+  {
+    NaClLog(2, "NaClSysMmap: region contains executable pages\n");
+    map_result = -NACL_ABI_EINVAL;
+    goto cleanup;
+  }
+
+  /*
+   * Force NACL_ABI_MAP_FIXED, since we are specifying address in NaCl
+   * app address space.
+   */
+  flags |= NACL_ABI_MAP_FIXED;
+
+  /*
+   * Never allow users to say that mmapped pages are executable.  This
+   * is primarily for the service runtime's own bookkeeping -- prot is
+   * used in NaClCommonUtilUpdateAddrMap -- since %cs restriction
+   * makes page protection irrelevant, it doesn't matter that on many
+   * systems (w/o NX) PROT_READ implies PROT_EXEC.
+   */
+  prot &= ~NACL_ABI_PROT_EXEC;
+
+  /*
+   * Exactly one of NACL_ABI_MAP_SHARED and NACL_ABI_MAP_PRIVATE is set.
+   */
+  if ((0 == (flags & NACL_ABI_MAP_SHARED))
+      == (0 == (flags & NACL_ABI_MAP_PRIVATE))) {
+    map_result = -NACL_ABI_EINVAL;
+    goto cleanup;
+  }
+
+  sysaddr = NaClUserToSys(nap, usraddr);
+
+  /* [0, length) */
+  if (length > 0) {
+    if (NULL == ndp) {
+      NaClLog(4,
+              ("NaClSysMmap: NaClDescIoDescMap(,,0x%08"NACL_PRIxPTR","
+               "0x%08"NACL_PRIxS",0x%x,0x%x,0x%08"NACL_PRIxPTR")\n"),
+              sysaddr, length, prot, flags, (uintptr_t) offset);
+      map_result = NaClDescIoDescMapAnon(nap->effp,
+                                         (void *) sysaddr,
+                                         length,
+                                         prot,
+                                         flags,
+                                         (off_t) offset);
+    } else {
+      /*
+       * This is a fix for Windows, where we cannot pass a size that
+       * goes beyond the non-page-rounded end of the file.
+       */
+      size_t length_to_map = size_min(length, (size_t) file_bytes);
+
+      NaClLog(4, ("NaClSysMmap: (*ndp->Map)(,,0x%08"NACL_PRIxPTR","
+               "0x%08"NACL_PRIxS",0x%x,0x%x,0x%08"NACL_PRIxPTR")\n"),
+              sysaddr, length, prot, flags, (uintptr_t) offset);
+
+      map_result = (*((struct NaClDescVtbl const *) ndp->base.vtbl)->
+                    Map)(ndp,
+                         nap->effp,
+                         (void *) sysaddr,
+                         length_to_map,
+                         prot,
+                         flags,
+                         (off_t) offset);
+    }
+    /*
+     * "Small" negative integers are errno values.  Larger ones are
+     * virtual addresses.
+     */
+    if (NaClPtrIsNegErrno(&map_result)) {
+      NaClLog(LOG_FATAL,
+              ("NaClSysMmap: Map failed, but we"
+               " cannot handle address space move, error %"NACL_PRIuS"\n"),
+              (size_t) map_result);
+    }
+    if (map_result != sysaddr) {
+      NaClLog(LOG_FATAL, "system mmap did not honor NACL_ABI_MAP_FIXED\n");
+    }
+    if (prot == NACL_ABI_PROT_NONE) {
+      /*
+       * windows nacl_host_desc implementation requires that PROT_NONE
+       * memory be freed using VirtualFree rather than
+       * UnmapViewOfFile.  TODO(bsy): remove this ugliness.
+       */
+      NaClCommonUtilUpdateAddrMap(nap, sysaddr, length, PROT_NONE,
+                                  NULL, file_size, offset, 0);
+    } else {
+      /* record change for file-backed memory */
+      NaClCommonUtilUpdateAddrMap(nap, sysaddr, length, NaClProtMap(prot),
+                                  ndp, file_size, offset, 0);
+    }
+  } else {
+    map_result = sysaddr;
+  }
+  /* zero fill [length, start_of_inaccessible) */
+  if (length < start_of_inaccessible) {
+    size_t  map_len = start_of_inaccessible - length;
+
+    NaClLog(2,
+            ("zero-filling pages for memory range"
+             " [0x%08"NACL_PRIxPTR", 0x%08"NACL_PRIxPTR
+             "), length 0x%"NACL_PRIxS"\n"),
+            sysaddr + length, sysaddr + start_of_inaccessible, map_len);
+    map_result = NaClHostDescMap((struct NaClHostDesc *) NULL,
+                                 (void *) (sysaddr + length),
+                                 map_len,
+                                 prot,
+                                 NACL_ABI_MAP_ANONYMOUS | NACL_ABI_MAP_PRIVATE,
+                                 (off_t) 0);
+    if (NaClPtrIsNegErrno(&map_result)) {
+      NaClLog(LOG_ERROR,
+              ("Could not create zero-filled pages for memory range"
+               " [0x%08"NACL_PRIxPTR", 0x%08"NACL_PRIxPTR")\n"),
+              sysaddr + length, sysaddr + start_of_inaccessible);
+      goto cleanup;
+    }
+    NaClCommonUtilUpdateAddrMap(nap, sysaddr + length, map_len,
+                                NaClProtMap(prot),
+                                (struct NaClDesc *) NULL, 0, (off_t) 0, 0);
+  }
+  /* inaccessible: [start_of_inaccessible, alloc_rounded_length) */
+  if (start_of_inaccessible < alloc_rounded_length) {
+    size_t  map_len = alloc_rounded_length - start_of_inaccessible;
+
+    NaClLog(2,
+            ("inaccessible pages for memory range"
+             " [0x%08"NACL_PRIxPTR", 0x%08"NACL_PRIxPTR"),"
+             " length 0x%"NACL_PRIxS"\n"),
+            sysaddr + start_of_inaccessible,
+            sysaddr + alloc_rounded_length,
+            map_len);
+    map_result = NaClHostDescMap((struct NaClHostDesc *) NULL,
+                             (void *) (sysaddr + start_of_inaccessible),
+                             map_len,
+                             NACL_ABI_PROT_NONE,
+                             NACL_ABI_MAP_ANONYMOUS | NACL_ABI_MAP_PRIVATE,
+                             (off_t) 0);
+    if (NaClPtrIsNegErrno(&map_result)) {
+      NaClLog(LOG_ERROR,
+            ("Could not create inaccessible pages for memory range"
+             " [0x%08"NACL_PRIxPTR", 0x%08"NACL_PRIxPTR
+             "), length 0x%"NACL_PRIxS"\n"),
+            sysaddr + start_of_inaccessible,
+            sysaddr + alloc_rounded_length,
+            map_len);
+    }
+    NaClCommonUtilUpdateAddrMap(nap, sysaddr + start_of_inaccessible,
+                                map_len, PROT_NONE,
+                                (struct NaClDesc *) NULL, 0,
+                                (off_t) 0, 0);
+  }
+  NaClLog(3, "NaClSysMmap: got address 0x%08"NACL_PRIxPTR"\n",
+          (uintptr_t) map_result);
+
+  map_result = usraddr;
+
+cleanup:
+  if (NULL != ndp) {
+    NaClDescUnref(ndp);
+  }
+  if (NaClPtrIsNegErrno(&map_result)) {
+    free(nmop);
+  }
+
+  /*
+   * Check to ensure that map_result will fit into a 32-bit value. This is
+   * a bit tricky because there are two valid ranges: one is the range from
+   * 0 to (almost) 2^32, the other is from -1 to -4096 (our error range).
+   * For a 32-bit value these ranges would overlap, but if the value is 64-bit
+   * they will be disjoint.
+   */
+  if (map_result > UINT32_MAX
+      && !NaClPtrIsNegErrno(&map_result)) {
+    NaClLog(LOG_FATAL, "Overflow in NaClSysMmap: return address is "
+                       "0x%"NACL_PRIxPTR"\n", map_result);
+  }
+  NaClLog(3, "NaClSysMmap: returning 0x%08"NACL_PRIxPTR"\n", map_result);
+
+  return (int32_t) map_result;
 }
 
-int32_t NaClSysDup(struct NaClAppThread *natp,
-                   int                  oldfd) {
-  return NaClCommonSysDup(natp, oldfd);
-}
-
-int32_t NaClSysDup2(struct NaClAppThread  *natp,
-                    int                   oldfd,
-                    int                   newfd) {
-  return NaClCommonSysDup2(natp, oldfd, newfd);
-}
-
-int32_t NaClSysOpen(struct NaClAppThread  *natp,
-                    char                  *pathname,
-                    int                   flags,
-                    int                   mode) {
-  return NaClCommonSysOpen(natp, pathname, flags, mode);
-}
-
-int32_t NaClSysClose(struct NaClAppThread *natp,
-                     int                  d) {
-  return NaClCommonSysClose(natp, d);
-}
-
-int32_t NaClSysRead(struct NaClAppThread  *natp,
-                    int                   d,
-                    void                  *buf,
-                    size_t                count) {
-  return NaClCommonSysRead(natp, d, buf, count);
-}
-
-int32_t NaClSysWrite(struct NaClApp *nap,
-                     int                  d,
-                     void                 *buf,
-                     size_t               count) {
-  return NaClCommonSysWrite(nap, d, buf, count);
-}
-
-/* Warning: sizeof(nacl_abi_off_t)!=sizeof(off_t) on OSX */
-int32_t NaClSysLseek(struct NaClAppThread *natp,
-                     int                  d,
-                     nacl_abi_off_t       *offp,
-                     int                  whence) {
-  return NaClCommonSysLseek(natp, d, offp, whence);
-}
-
-int32_t NaClSysIoctl(struct NaClAppThread *natp,
-                     int                  d,
-                     int                  request,
-                     void                 *arg) {
-  return NaClCommonSysIoctl(natp, d, request, arg);
-}
-
-int32_t NaClSysFstat(struct NaClApp *nap, int d,
-                     struct nacl_abi_stat *nasp) {
-  return NaClCommonSysFstat(nap, d, nasp);
-}
-
-int32_t NaClSysStat(struct NaClAppThread *natp,
-                    const char           *path,
-                    struct nacl_abi_stat *nasp) {
-  return NaClCommonSysStat(natp, path, nasp);
-}
-
-int32_t NaClSysGetdents(struct NaClAppThread  *natp,
-                        int                   d,
-                        void                  *buf,
-                        size_t                count) {
-  return NaClCommonSysGetdents(natp, d, buf, count);
-}
-
-int32_t NaClSysSysbrk(struct NaClApp  *nap,
-                      void            *new_break) {
-  return NaClSetBreak(nap, (uintptr_t) new_break);
-}
-
-int32_t NaClSysMmap(struct NaClApp  *nap,
+int32_t NaClSysMmap(struct NaClApp        *nap,
                     void                  *start,
                     size_t                length,
                     int                   prot,
                     int                   flags,
                     int                   d,
                     nacl_abi_off_t        *offp) {
-  return NaClCommonSysMmap(nap, start, length, prot, flags, d, offp);
+  int32_t         retval;
+  uintptr_t       sysaddr;
+  nacl_abi_off_t  offset;
+
+  NaClLog(3, "Entered NaClSysMmap(0x%08"NACL_PRIxPTR",0x%"NACL_PRIxS","
+          "0x%x,0x%x,%d,0x%08"NACL_PRIxPTR")\n",
+          (uintptr_t) start, length, prot, flags, d, (uintptr_t) offp);
+
+  if ((nacl_abi_off_t *) 0 == offp) {
+    /*
+     * This warning is really targetted towards trusted code,
+     * especially tests that didn't notice the argument type change.
+     * Unfortunatey, zero is a common and legitimate offset value, and
+     * the compiler will not complain since an automatic type
+     * conversion works.
+     */
+    NaClLog(LOG_WARNING,
+            "NaClCommonSysMmap: NULL pointer used"
+            " for offset in/out argument\n");
+    return -NACL_ABI_EINVAL;
+  }
+
+  sysaddr = NaClUserToSysAddrRange(nap, (uintptr_t) offp, sizeof offset);
+  if (kNaClBadAddress == sysaddr) {
+    NaClLog(3,
+            "NaClCommonSysMmap: offset in a bad untrusted memory location\n");
+    retval = -NACL_ABI_EFAULT;
+    goto cleanup;
+  }
+  offset = *(nacl_abi_off_t volatile *) sysaddr;
+
+  NaClLog(4, " offset = 0x%08"NACL_PRIxNACL_OFF"\n", offset);
+  retval = NaClCommonSysMmapIntern(nap, start, length, prot, flags, d, offset);
+
+cleanup:
+  return retval;
 }
 
-int32_t NaClSysMunmap(struct NaClAppThread  *natp,
-                      void                  *start,
-                      size_t                length) {
+int32_t NaClSysMunmap(struct NaClApp *nap, void *start, size_t length) {
   int32_t   retval = -NACL_ABI_EINVAL;
   uintptr_t sysaddr;
   int       holding_app_lock = 0;
@@ -181,9 +735,7 @@ int32_t NaClSysMunmap(struct NaClAppThread  *natp,
 
   NaClLog(3, "Entered NaClSysMunmap(0x%08"NACL_PRIxPTR", "
           "0x%08"NACL_PRIxPTR", 0x%"NACL_PRIxS")\n",
-          (uintptr_t) natp, (uintptr_t) start, length);
-
-  NaClSysCommonThreadSyscallEnter(natp);
+          (uintptr_t) nap, (uintptr_t) start, length);
 
   if (!NaClIsAllocPageMultiple((uintptr_t) start)) {
     NaClLog(4, "start addr not allocation multiple\n");
@@ -204,19 +756,19 @@ int32_t NaClSysMunmap(struct NaClAppThread  *natp,
     NaClLog(LOG_WARNING,
             "munmap: rounded length to 0x%"NACL_PRIxS"\n", length);
   }
-  sysaddr = NaClUserToSysAddrRange(natp->nap, (uintptr_t) start, length);
+  sysaddr = NaClUserToSysAddrRange(nap, (uintptr_t) start, length);
   if (kNaClBadAddress == sysaddr) {
     NaClLog(4, "region not user addresses\n");
     retval = -NACL_ABI_EFAULT;
     goto cleanup;
   }
 
-  NaClXMutexLock(&natp->nap->mu);
+  NaClXMutexLock(&nap->mu);
 
-  while (0 != natp->nap->threads_launching) {
-    NaClXCondVarWait(&natp->nap->cv, &natp->nap->mu);
+  while (0 != nap->threads_launching) {
+    NaClXCondVarWait(&nap->cv, &nap->mu);
   }
-  natp->nap->vm_hole_may_exist = 1;
+  nap->vm_hole_may_exist = 1;
 
   holding_app_lock = 1;
   /*
@@ -233,9 +785,7 @@ int32_t NaClSysMunmap(struct NaClAppThread  *natp,
   /*
    * User should be unable to unmap any executable pages.  We check here.
    */
-  if (NaClSysCommonAddrRangeContainsExecutablePages_mu(natp->nap,
-                                                       (uintptr_t) start,
-                                                       length)) {
+  if (AddrRangeContainsExecutablePages(nap, (uintptr_t) start)) {
     NaClLog(2, "NaClSysMunmap: region contains executable pages\n");
     retval = -NACL_ABI_EINVAL;
     goto cleanup;
@@ -246,10 +796,8 @@ int32_t NaClSysMunmap(struct NaClAppThread  *natp,
    * zero-filled pages, which should be copy-on-write and thus
    * relatively cheap.  Do not open up an address space hole.
    */
-  NaClLog(4,
-          ("NaClSysMunmap: mmap(0x%08"NACL_PRIxPTR", 0x%"NACL_PRIxS","
-           " 0x%x, 0x%x, -1, 0)\n"),
-          sysaddr, length, PROT_NONE,
+  NaClLog(4, ("NaClSysMunmap: mmap(0x%08"NACL_PRIxPTR", 0x%"NACL_PRIxS","
+           " 0x%x, 0x%x, -1, 0)\n"), sysaddr, length, PROT_NONE,
           MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED);
   if (MAP_FAILED == mmap((void *) sysaddr,
                          length,
@@ -261,8 +809,8 @@ int32_t NaClSysMunmap(struct NaClAppThread  *natp,
     retval = -NaClXlateErrno(errno);
     goto cleanup;
   }
-  NaClVmmapUpdate(&natp->nap->mem_map,
-                  (NaClSysToUser(natp->nap, (uintptr_t) sysaddr)
+  NaClVmmapUpdate(&nap->mem_map,
+                  (NaClSysToUser(nap, (uintptr_t) sysaddr)
                    >> NACL_PAGESHIFT),
                   length >> NACL_PAGESHIFT,
                   0,  /* prot */
@@ -271,539 +819,89 @@ int32_t NaClSysMunmap(struct NaClAppThread  *natp,
   retval = 0;
 cleanup:
   if (holding_app_lock) {
-    natp->nap->vm_hole_may_exist = 0;
-    NaClXCondVarBroadcast(&natp->nap->cv);
-    NaClXMutexUnlock(&natp->nap->mu);
+    nap->vm_hole_may_exist = 0;
+    NaClXCondVarBroadcast(&nap->cv);
+    NaClXMutexUnlock(&nap->mu);
   }
-  NaClSysCommonThreadSyscallLeave(natp);
   return retval;
 }
 
+/* d'b: duplicate of trap() exit. remove it when trap() replace syscalls */
 int32_t NaClSysExit(struct NaClApp *nap, int status)
 {
-  return NaClCommonSysExit(nap, status);
+  NaClLog(1, "Exit syscall handler: %d\n", status);
+  nap->exit_status = status;
+  nap->running = 0;
+  longjmp(user_exit, status);
+
+  /* NOTREACHED */
+  return -NACL_ABI_EINVAL;
 }
 
-int32_t NaClSysGetpid(struct NaClAppThread *natp) {
-  int32_t pid;
-
-  NaClSysCommonThreadSyscallEnter(natp);
-
-  pid = getpid();  /* TODO(bsy): obfuscate? */
-  NaClLog(4, "NaClSysGetpid: returning %d\n", pid);
-
-  NaClSysCommonThreadSyscallLeave(natp);
-  return pid;
-}
-
-int32_t NaClSysThread_Exit(struct NaClAppThread  *natp,
-                           int32_t               *stack_flag) {
-  return NaClCommonSysThreadExit(natp, stack_flag);
-}
-
-int32_t NaClSysGetTimeOfDay(struct NaClAppThread      *natp,
-                            struct nacl_abi_timeval   *tv,
-                            struct nacl_abi_timezone  *tz) {
-  uintptr_t               sysaddr;
-  int                     retval;
-  struct nacl_abi_timeval now;
-
-  UNREFERENCED_PARAMETER(tz);
-
-  NaClLog(3,
-          ("Entered NaClSysGetTimeOfDay(%08"NACL_PRIxPTR
-           ", 0x%08"NACL_PRIxPTR", 0x%08"NACL_PRIxPTR")\n"),
-          (uintptr_t) natp, (uintptr_t) tv, (uintptr_t) tz);
-  NaClSysCommonThreadSyscallEnter(natp);
-
-  sysaddr = NaClUserToSysAddrRange(natp->nap, (uintptr_t) tv, sizeof tv);
-
-  /*
-   * tz is not supported in linux, nor is it supported by glibc, since
-   * tzset(3) and the zoneinfo file should be used instead.
-   *
-   * TODO(bsy) Do we make the zoneinfo directory available to
-   * applications?
-   */
-
-  if (kNaClBadAddress == sysaddr) {
-    retval = -NACL_ABI_EFAULT;
-    goto cleanup;
-  }
-
-  retval = NaClGetTimeOfDay(&now);
-  if (0 == retval) {
-    /*
-     * To make it harder to distinguish Linux platforms from Windows,
-     * coarsen the time to the same level we get on Windows -
-     * milliseconds, unless in "debug" mode.
-     */
-    if (!NaClHighResolutionTimerEnabled()) {
-      now.nacl_abi_tv_usec = (now.nacl_abi_tv_usec / 1000) * 1000;
-    }
-    CHECK(now.nacl_abi_tv_usec >= 0);
-    CHECK(now.nacl_abi_tv_usec < NACL_MICROS_PER_UNIT);
-    *(struct nacl_abi_timeval *) sysaddr = now;
-  }
-cleanup:
-  NaClSysCommonThreadSyscallLeave(natp);
-  return retval;
-}
-
-/*
- * TODO(bsy): REMOVE THIS AND PROVIDE GETRUSAGE.  This is normally
- * not a syscall; instead, it is a library routine on top of
- * getrusage, with appropriate clock tick translation.
- */
-int32_t NaClSysClock(struct NaClAppThread *natp) {
-  int32_t retval;
-
-  NaClLog(3,
-          ("Entered NaClSysClock(%08"NACL_PRIxPTR")\n"),
-          (uintptr_t) natp);
-
-  NaClSysCommonThreadSyscallEnter(natp);
-  retval = clock();
-  NaClSysCommonThreadSyscallLeave(natp);
-  return retval;
-}
-
-int32_t NaClSysNanosleep(struct NaClAppThread     *natp,
-                         struct nacl_abi_timespec *req,
-                         struct nacl_abi_timespec *rem) {
-  uintptr_t                 sys_req;
-  uintptr_t                 sys_rem;
-  struct nacl_abi_timespec  t_sleep;
-  struct nacl_abi_timespec  t_rem;
-  struct nacl_abi_timespec  *remptr;
-  int                       retval = -NACL_ABI_EINVAL;
-
-  NaClLog(3,
-          ("Entered NaClSysNanosleep(0x%08"NACL_PRIxPTR
-           ", 0x%08"NACL_PRIxPTR", 0x%08"NACL_PRIxPTR"x)\n"),
-          (uintptr_t) natp, (uintptr_t) req, (uintptr_t) rem);
-
-  NaClSysCommonThreadSyscallEnter(natp);
-
-  sys_req = NaClUserToSysAddrRange(natp->nap, (uintptr_t) req, sizeof *req);
-  if (kNaClBadAddress == sys_req) {
-    retval = -NACL_ABI_EFAULT;
-    goto cleanup;
-  }
-  if (NULL == rem) {
-    sys_rem = 0;
-  } else {
-    sys_rem = NaClUserToSysAddrRange(natp->nap, (uintptr_t) rem, sizeof *rem);
-    if (kNaClBadAddress == sys_rem) {
-      retval = -NACL_ABI_EFAULT;
-      goto cleanup;
-    }
-  }
-  /*
-   * post-condition: if sys_rem is non-NULL, it's safe to write to
-   * (modulo thread races) and the user code wants the remaining time
-   * written there.
-   */
-
-  NaClLog(4, " copying timespec from %08"NACL_PRIxPTR"x\n", sys_req);
-  /* copy once */
-  t_sleep = *(struct nacl_abi_timespec *) sys_req;
-
-  remptr = (0 == sys_rem) ? NULL : &t_rem;
-  /* NULL != remptr \equiv NULL != rem */
-
-  /*
-   * We assume that we do not need to normalize the time request values.
-   *
-   * If bogus values can cause the underlying OS to get into trouble,
-   * then we need more checking here.
-   */
-  NaClLog(4, "NaClSysNanosleep(time = %"NACL_PRId64".%09"NACL_PRId64" S)\n",
-          (int64_t) t_sleep.tv_sec, (int64_t) t_sleep.tv_nsec);
-  retval = NaClNanosleep(&t_sleep, remptr);
-  NaClLog(4, "NaClNanosleep returned %d\n", retval);
-
-  if (-EINTR == retval && NULL != rem) {
-    /* definitely different types, and shape may actually differ too. */
-    rem = (struct nacl_abi_timespec *) sys_rem;
-    rem->tv_sec = remptr->tv_sec;
-    rem->tv_nsec = remptr->tv_nsec;
-  }
-
-cleanup:
-  NaClLog(4, "nanosleep done.\n");
-  NaClSysCommonThreadSyscallLeave(natp);
-  return retval;
-}
-
-int32_t NaClSysImc_MakeBoundSock(struct NaClAppThread *natp,
-                                 int32_t              *sap) {
-  return NaClCommonSysImc_MakeBoundSock(natp, sap);
-}
-
-int32_t NaClSysImc_Accept(struct NaClAppThread  *natp,
-                          int                   d) {
-  return NaClCommonSysImc_Accept(natp, d);
-}
-
-int32_t NaClSysImc_Connect(struct NaClAppThread *natp,
-                           int                  d) {
-  return NaClCommonSysImc_Connect(natp, d);
-}
-
-int32_t NaClSysImc_Sendmsg(struct NaClAppThread         *natp,
-                           int                          d,
-                           struct NaClAbiNaClImcMsgHdr  *nanimhp,
-                           int                          flags) {
-  return NaClCommonSysImc_Sendmsg(natp, d, nanimhp, flags);
-}
-
-int32_t NaClSysImc_Recvmsg(struct NaClAppThread         *natp,
-                           int                          d,
-                           struct NaClAbiNaClImcMsgHdr  *nimhp,
-                           int                          flags) {
-  return NaClCommonSysImc_Recvmsg(natp, d, nimhp, flags);
-}
-
-int32_t NaClSysImc_Mem_Obj_Create(struct NaClAppThread  *natp,
-                                  nacl_abi_size_t       size) {
-  return NaClCommonSysImc_Mem_Obj_Create(natp, size);
-}
-
+/* tls create */
+#define CLEANUP(cond, code) if(cond) {retval = code; goto cleanup;}
 int32_t NaClSysTls_Init(struct NaClApp *nap, void *thread_ptr)
 {
-  return NaClCommonSysTls_Init(nap, thread_ptr);
-}
+  int32_t   retval = -NACL_ABI_EINVAL;
+  uintptr_t sys_tls;
 
-int32_t NaClSysThread_Create(struct NaClAppThread *natp,
-                             void                 *prog_ctr,
-                             void                 *stack_ptr,
-                             void                 *thread_ptr,
-                             void                 *second_thread_ptr) {
-  return NaClCommonSysThread_Create(natp, prog_ctr, stack_ptr, thread_ptr,
-                                    second_thread_ptr);
-}
+  NaClLog(3, ("Entered NaClCommonSysTls_Init(0x%08"NACL_PRIxPTR
+      ", 0x%08"NACL_PRIxPTR")\n"), (uintptr_t) nap, (uintptr_t) thread_ptr);
 
+  /* Verify that the address in the app's range and translated from
+   * nacl module address to service runtime address - a nop on ARM
+   */
+  sys_tls = NaClUserToSysAddrRange(nap, (uintptr_t) thread_ptr, 4);
+  NaClLog(4, "NaClCommonSysTls_Init: thread_ptr 0x%p, sys_tls 0x%"NACL_PRIxPTR"\n",
+          thread_ptr, sys_tls);
+
+  CLEANUP(kNaClBadAddress == sys_tls, -NACL_ABI_EFAULT);
+  nap->sys_tls = sys_tls;
+  retval = 0;
+
+cleanup:
+  return retval;
+}
+#undef CLEANUP
+
+/* tls get */
 int32_t NaClSysTls_Get(struct NaClApp *nap) {
-  return NaClCommonSysTlsGet(nap);
-}
+  uint32_t user_tls;
 
-int32_t NaClSysThread_Nice(struct NaClAppThread *natp, const int nice) {
-  return NaClCommonSysThread_Nice(natp, nice);
+  /* too frequently used, and syscall-number level logging suffices */
+  user_tls = (int32_t) NaClSysToUser(nap, nap->sys_tls);
+  return user_tls;
 }
 
 /* mutex */
-
-int32_t NaClSysMutex_Create(struct NaClApp *nap) {
-  return NaClCommonSysMutex_Create(nap);
-}
-
-int32_t NaClSysMutex_Lock(struct NaClAppThread *natp,
-                          int32_t              mutex_handle) {
-  return NaClCommonSysMutex_Lock(natp, mutex_handle);
-}
-
-int32_t NaClSysMutex_Unlock(struct NaClAppThread *natp,
-                            int32_t              mutex_handle) {
-  return NaClCommonSysMutex_Unlock(natp, mutex_handle);
-}
-
-int32_t NaClSysMutex_Trylock(struct NaClAppThread *natp,
-                             int32_t              mutex_handle) {
-  return NaClCommonSysMutex_Trylock(natp, mutex_handle);
-}
-
-
-/* condition variable */
-
-int32_t NaClSysCond_Create(struct NaClAppThread *natp) {
-  return NaClCommonSysCond_Create(natp);
-}
-
-int32_t NaClSysCond_Wait(struct NaClAppThread *natp,
-                         int32_t              cond_handle,
-                         int32_t              mutex_handle) {
-  return NaClCommonSysCond_Wait(natp, cond_handle, mutex_handle);
-}
-
-int32_t NaClSysCond_Signal(struct NaClAppThread *natp,
-                           int32_t              cond_handle) {
-  return NaClCommonSysCond_Signal(natp, cond_handle);
-}
-
-int32_t NaClSysCond_Broadcast(struct NaClAppThread *natp,
-                              int32_t              cond_handle) {
-  return NaClCommonSysCond_Broadcast(natp, cond_handle);
-}
-
-int32_t NaClSysCond_Timed_Wait_Abs(struct NaClAppThread     *natp,
-                                   int32_t                  cond_handle,
-                                   int32_t                  mutex_handle,
-                                   struct nacl_abi_timespec *ts) {
-  return NaClCommonSysCond_Timed_Wait_Abs(natp,
-                                          cond_handle,
-                                          mutex_handle,
-                                          ts);
-}
-
-int32_t NaClSysImc_SocketPair(struct NaClAppThread  *natp,
-                              int32_t               *d_out) {
-  return NaClCommonSysImc_SocketPair(natp, d_out);
-}
-int32_t NaClSysSem_Create(struct NaClAppThread *natp,
-                          int32_t              init_value) {
-  return NaClCommonSysSem_Create(natp, init_value);
-}
-
-int32_t NaClSysSem_Wait(struct NaClAppThread *natp,
-                        int32_t              sem_handle) {
-  return NaClCommonSysSem_Wait(natp, sem_handle);
-}
-
-int32_t NaClSysSem_Post(struct NaClAppThread *natp,
-                        int32_t              sem_handle) {
-  return NaClCommonSysSem_Post(natp, sem_handle);
-}
-
-int32_t NaClSysSem_Get_Value(struct NaClAppThread *natp,
-                             int32_t              sem_handle) {
-  return NaClCommonSysSem_Get_Value(natp, sem_handle);
-}
-
-int32_t NaClSysSched_Yield(struct NaClAppThread *natp) {
-  UNREFERENCED_PARAMETER(natp);
-  sched_yield();
-  return 0;
-}
-
-int32_t NaClSysSysconf(struct NaClAppThread *natp,
-                       int32_t name,
-                       int32_t *result) {
-  int32_t         retval = -NACL_ABI_EINVAL;
-  static int32_t  number_of_workers = -1;
-  uintptr_t       sysaddr;
+int32_t NaClSysMutex_Create(struct NaClApp *nap)
+{
+  int32_t              retval = -NACL_ABI_EINVAL;
+  struct NaClDescMutex *desc;
 
   NaClLog(3,
-          ("Entered NaClSysSysconf(%08"NACL_PRIxPTR
-           "x, %d, 0x%08"NACL_PRIxPTR")\n"),
-          (uintptr_t) natp, name, (uintptr_t) result);
+          ("Entered NaClCommonSysMutex_Create(0x%08"NACL_PRIxPTR")\n"),
+          (uintptr_t) nap);
 
-  NaClSysCommonThreadSyscallEnter(natp);
+  desc = malloc(sizeof(*desc));
 
-  sysaddr = NaClUserToSysAddrRange(natp->nap,
-                                   (uintptr_t) result,
-                                   sizeof(*result));
-  if (kNaClBadAddress == sysaddr) {
-    retval = -NACL_ABI_EINVAL;
+  if (!desc || !NaClDescMutexCtor(desc)) {
+    retval = -NACL_ABI_ENOMEM;
     goto cleanup;
   }
 
-  switch (name) {
-#ifdef _SC_NPROCESSORS_ONLN
-    case NACL_ABI__SC_NPROCESSORS_ONLN: {
-      if (-1 == number_of_workers) {
-        number_of_workers = sysconf(_SC_NPROCESSORS_ONLN);
-      }
-      if (-1 == number_of_workers) {
-        /* failed to get the number of processors */
-        retval = -NACL_ABI_EINVAL;
-        goto cleanup;
-      }
-      *(int32_t*)sysaddr = number_of_workers;
-      break;
-    }
-#endif
-    case NACL_ABI__SC_SENDMSG_MAX_SIZE: {
-      /* TODO(sehr,bsy): this value needs to be determined at run time. */
-      const int32_t kImcSendMsgMaxSize = 1 << 16;
-      *(int32_t*)sysaddr = kImcSendMsgMaxSize;
-      break;
-    }
-    default:
-      retval = -NACL_ABI_EINVAL;
-      goto cleanup;
-  }
-  retval = 0;
+  retval = NaClSetAvail(nap, (struct NaClDesc *)desc);
+  desc = NULL;
 cleanup:
-  NaClSysCommonThreadSyscallLeave(natp);
+  free(desc);
+  NaClLog(3, ("NaClCommonSysMutex_Create(0x%08"NACL_PRIxPTR") = %d\n"),
+          (uintptr_t) nap, retval);
   return retval;
 }
 
-int32_t NaClSysDyncode_Create(struct NaClAppThread *natp,
-                            uint32_t             dest,
-                            uint32_t             src,
-                            uint32_t             size) {
-  return NaClTextSysDyncode_Create(natp, dest, src, size);
-}
-
-int32_t NaClSysDyncode_Modify(struct NaClAppThread *natp,
-                            uint32_t             dest,
-                            uint32_t             src,
-                            uint32_t             size) {
-  return NaClTextSysDyncode_Modify(natp, dest, src, size);
-}
-
-int32_t NaClSysDyncode_Delete(struct NaClAppThread *natp,
-                            uint32_t             dest,
-                            uint32_t             size) {
-  return NaClTextSysDyncode_Delete(natp, dest, size);
-}
-
 /*
- * Note that this is duplicated in win/nacl_syscall_impl.c but is
- * too trivial to share.
- * TODO(mseaborn): We could reduce the duplication if
- * nacl_syscall_handlers_gen2.py did not scrape the OS-specific files.
+ * decoders. get call parameters from the user stack and call the syscall
  */
-int32_t NaClSysSecond_Tls_Set(struct NaClAppThread *natp,
-                              uint32_t             new_value) {
-  natp->tls2 = new_value;
-  return 0;
-}
-
-int32_t NaClSysSecond_Tls_Get(struct NaClAppThread *natp) {
-  return natp->tls2;
-}
-
-int32_t NaClSysTest_InfoLeak(struct NaClAppThread *natp) {
-  return NaClCommonSysTest_InfoLeak(natp);
-}
-
-/*
- * WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
- *
- * Automatically generated code.  See nacl_syscall_handlers_gen.py
- *
- * NaCl Server Runtime Service Call abstractions
- */
-
-/* this function was automagically generated */
-static int32_t NaClSysNullDecoder(struct NaClAppThread *natp) {
-  return NaClSysNull(natp);
-}
-
-/* this function was automagically generated */
-static int32_t NaClSysNameServiceDecoder(struct NaClAppThread *natp) {
-  struct NaClSysNameServiceArgs {
-    uint32_t desc_in_out;
-  } p = *(struct NaClSysNameServiceArgs *) natp->syscall_args;
-
-  return NaClSysNameService(natp, (int *) (uintptr_t) p.desc_in_out);
-}
-
-/* this function was automagically generated */
-static int32_t NaClSysDupDecoder(struct NaClAppThread *natp) {
-  struct NaClSysDupArgs {
-    uint32_t oldfd;
-  } p = *(struct NaClSysDupArgs *) natp->syscall_args;
-
-  return NaClSysDup(natp, (int)  p.oldfd);
-}
-
-/* this function was automagically generated */
-static int32_t NaClSysDup2Decoder(struct NaClAppThread *natp) {
-  struct NaClSysDup2Args {
-    uint32_t oldfd;
-    uint32_t newfd;
-  } p = *(struct NaClSysDup2Args *) natp->syscall_args;
-
-  return NaClSysDup2(natp, (int)  p.oldfd, (int)  p.newfd);
-}
-
-/* this function was automagically generated */
-static int32_t NaClSysOpenDecoder(struct NaClAppThread *natp) {
-  struct NaClSysOpenArgs {
-    uint32_t pathname;
-    uint32_t flags;
-    uint32_t mode;
-  } p = *(struct NaClSysOpenArgs *) natp->syscall_args;
-
-  return NaClSysOpen(natp, (char *) (uintptr_t) p.pathname, (int)  p.flags, (int)  p.mode);
-}
-
-/* this function was automagically generated */
-static int32_t NaClSysCloseDecoder(struct NaClAppThread *natp) {
-  struct NaClSysCloseArgs {
-    uint32_t d;
-  } p = *(struct NaClSysCloseArgs *) natp->syscall_args;
-
-  return NaClSysClose(natp, (int)  p.d);
-}
-
-/* this function was automagically generated */
-static int32_t NaClSysReadDecoder(struct NaClAppThread *natp) {
-  struct NaClSysReadArgs {
-    uint32_t d;
-    uint32_t buf;
-    uint32_t count;
-  } p = *(struct NaClSysReadArgs *) natp->syscall_args;
-
-  return NaClSysRead(natp, (int)  p.d, (void *) (uintptr_t) p.buf, (size_t)  p.count);
-}
-
-/* this function was automagically generated */
-static int32_t NaClSysWriteDecoder(struct NaClApp *nap) {
-  struct NaClSysWriteArgs {
-    uint32_t d;
-    uint32_t buf;
-    uint32_t count;
-  } p = *(struct NaClSysWriteArgs *) nap->syscall_args;
-
-  return NaClSysWrite(nap, (int)  p.d, (void *) (uintptr_t) p.buf, (size_t)  p.count);
-}
-
-/* this function was automagically generated */
-static int32_t NaClSysLseekDecoder(struct NaClAppThread *natp) {
-  struct NaClSysLseekArgs {
-    uint32_t d;
-    uint32_t offp;
-    uint32_t whence;
-  } p = *(struct NaClSysLseekArgs *) natp->syscall_args;
-
-  return NaClSysLseek(natp, (int)  p.d, (nacl_abi_off_t *) (uintptr_t) p.offp, (int)  p.whence);
-}
-
-/* this function was automagically generated */
-static int32_t NaClSysIoctlDecoder(struct NaClAppThread *natp) {
-  struct NaClSysIoctlArgs {
-    uint32_t d;
-    uint32_t request;
-    uint32_t arg;
-  } p = *(struct NaClSysIoctlArgs *) natp->syscall_args;
-
-  return NaClSysIoctl(natp, (int)  p.d, (int)  p.request, (void *) (uintptr_t) p.arg);
-}
-
-/* this function was automagically generated */
-static int32_t NaClSysFstatDecoder(struct NaClApp *nap) {
-  struct NaClSysFstatArgs {
-    uint32_t d;
-    uint32_t nasp;
-  } p = *(struct NaClSysFstatArgs *) nap->syscall_args;
-
-  return NaClSysFstat(nap, (int)  p.d, (struct nacl_abi_stat *) (uintptr_t) p.nasp);
-}
-
-/* this function was automagically generated */
-static int32_t NaClSysStatDecoder(struct NaClAppThread *natp) {
-  struct NaClSysStatArgs {
-    uint32_t path;
-    uint32_t nasp;
-  } p = *(struct NaClSysStatArgs *) natp->syscall_args;
-
-  return NaClSysStat(natp, (const char *) (uintptr_t) p.path, (struct nacl_abi_stat *) (uintptr_t) p.nasp);
-}
-
-/* this function was automagically generated */
-static int32_t NaClSysGetdentsDecoder(struct NaClAppThread *natp) {
-  struct NaClSysGetdentsArgs {
-    uint32_t d;
-    uint32_t buf;
-    uint32_t count;
-  } p = *(struct NaClSysGetdentsArgs *) natp->syscall_args;
-
-  return NaClSysGetdents(natp, (int)  p.d, (void *) (uintptr_t) p.buf, (size_t)  p.count);
-}
 
 /* this function was automagically generated */
 static int32_t NaClSysSysbrkDecoder(struct NaClApp *nap) {
@@ -811,7 +909,7 @@ static int32_t NaClSysSysbrkDecoder(struct NaClApp *nap) {
     uint32_t new_break;
   } p = *(struct NaClSysSysbrkArgs *) nap->syscall_args;
 
-  return NaClSysSysbrk(nap, (void *) (uintptr_t) p.new_break);
+  return NaClSysSysbrk(nap, (uintptr_t) p.new_break);
 }
 
 /* this function was automagically generated */
@@ -835,18 +933,18 @@ static int32_t NaClSysMmapDecoder(struct NaClApp *nap) {
 }
 
 /* this function was automagically generated */
-static int32_t NaClSysMunmapDecoder(struct NaClAppThread *natp) {
+static int32_t NaClSysMunmapDecoder(struct NaClApp *nap) {
   struct NaClSysMunmapArgs {
     uint32_t start;
     uint32_t length;
-  } p = *(struct NaClSysMunmapArgs *) natp->syscall_args;
+  } p = *(struct NaClSysMunmapArgs *) nap->syscall_args;
 
   // ### temporary disabled
   /* d'b: disable user free() */
 //  return NACL_ABI_EFAULT;
   /* d'b end */
 
-  return NaClSysMunmap(natp, (void *) (uintptr_t) p.start, (size_t)  p.length);
+  return NaClSysMunmap(nap, (void *) (uintptr_t) p.start, (size_t)  p.length);
 }
 
 /* this function was automagically generated */
@@ -856,103 +954,6 @@ static int32_t NaClSysExitDecoder(struct NaClApp *nap) {
   } p = *(struct NaClSysExitArgs *) nap->syscall_args;
 
   return NaClSysExit(nap, (int)  p.status);
-}
-
-/* this function was automagically generated */
-static int32_t NaClSysGetpidDecoder(struct NaClAppThread *natp) {
-  return NaClSysGetpid(natp);
-}
-
-/* this function was automagically generated */
-static int32_t NaClSysThread_ExitDecoder(struct NaClAppThread *natp) {
-  struct NaClSysThread_ExitArgs {
-    uint32_t stack_flag;
-  } p = *(struct NaClSysThread_ExitArgs *) natp->syscall_args;
-
-  return NaClSysThread_Exit(natp, (int32_t *) (uintptr_t) p.stack_flag);
-}
-
-/* this function was automagically generated */
-static int32_t NaClSysGetTimeOfDayDecoder(struct NaClAppThread *natp) {
-  struct NaClSysGetTimeOfDayArgs {
-    uint32_t tv;
-    uint32_t tz;
-  } p = *(struct NaClSysGetTimeOfDayArgs *) natp->syscall_args;
-
-  return NaClSysGetTimeOfDay(natp, (struct nacl_abi_timeval *) (uintptr_t) p.tv, (struct nacl_abi_timezone *) (uintptr_t) p.tz);
-}
-
-/* this function was automagically generated */
-static int32_t NaClSysClockDecoder(struct NaClAppThread *natp) {
-  return NaClSysClock(natp);
-}
-
-/* this function was automagically generated */
-static int32_t NaClSysNanosleepDecoder(struct NaClAppThread *natp) {
-  struct NaClSysNanosleepArgs {
-    uint32_t req;
-    uint32_t rem;
-  } p = *(struct NaClSysNanosleepArgs *) natp->syscall_args;
-
-  return NaClSysNanosleep(natp, (struct nacl_abi_timespec *) (uintptr_t) p.req, (struct nacl_abi_timespec *) (uintptr_t) p.rem);
-}
-
-/* this function was automagically generated */
-static int32_t NaClSysImc_MakeBoundSockDecoder(struct NaClAppThread *natp) {
-  struct NaClSysImc_MakeBoundSockArgs {
-    uint32_t sap;
-  } p = *(struct NaClSysImc_MakeBoundSockArgs *) natp->syscall_args;
-
-  return NaClSysImc_MakeBoundSock(natp, (int32_t *) (uintptr_t) p.sap);
-}
-
-/* this function was automagically generated */
-static int32_t NaClSysImc_AcceptDecoder(struct NaClAppThread *natp) {
-  struct NaClSysImc_AcceptArgs {
-    uint32_t d;
-  } p = *(struct NaClSysImc_AcceptArgs *) natp->syscall_args;
-
-  return NaClSysImc_Accept(natp, (int)  p.d);
-}
-
-/* this function was automagically generated */
-static int32_t NaClSysImc_ConnectDecoder(struct NaClAppThread *natp) {
-  struct NaClSysImc_ConnectArgs {
-    uint32_t d;
-  } p = *(struct NaClSysImc_ConnectArgs *) natp->syscall_args;
-
-  return NaClSysImc_Connect(natp, (int)  p.d);
-}
-
-/* this function was automagically generated */
-static int32_t NaClSysImc_SendmsgDecoder(struct NaClAppThread *natp) {
-  struct NaClSysImc_SendmsgArgs {
-    uint32_t d;
-    uint32_t nanimhp;
-    uint32_t flags;
-  } p = *(struct NaClSysImc_SendmsgArgs *) natp->syscall_args;
-
-  return NaClSysImc_Sendmsg(natp, (int)  p.d, (struct NaClAbiNaClImcMsgHdr *) (uintptr_t) p.nanimhp, (int)  p.flags);
-}
-
-/* this function was automagically generated */
-static int32_t NaClSysImc_RecvmsgDecoder(struct NaClAppThread *natp) {
-  struct NaClSysImc_RecvmsgArgs {
-    uint32_t d;
-    uint32_t nimhp;
-    uint32_t flags;
-  } p = *(struct NaClSysImc_RecvmsgArgs *) natp->syscall_args;
-
-  return NaClSysImc_Recvmsg(natp, (int)  p.d, (struct NaClAbiNaClImcMsgHdr *) (uintptr_t) p.nimhp, (int)  p.flags);
-}
-
-/* this function was automagically generated */
-static int32_t NaClSysImc_Mem_Obj_CreateDecoder(struct NaClAppThread *natp) {
-  struct NaClSysImc_Mem_Obj_CreateArgs {
-    uint32_t size;
-  } p = *(struct NaClSysImc_Mem_Obj_CreateArgs *) natp->syscall_args;
-
-  return NaClSysImc_Mem_Obj_Create(natp, (nacl_abi_size_t)  p.size);
 }
 
 /* this function was automagically generated */
@@ -966,30 +967,9 @@ static int32_t NaClSysTls_InitDecoder(struct NaClApp *nap)
 }
 
 /* this function was automagically generated */
-static int32_t NaClSysThread_CreateDecoder(struct NaClAppThread *natp) {
-  struct NaClSysThread_CreateArgs {
-    uint32_t prog_ctr;
-    uint32_t stack_ptr;
-    uint32_t thread_ptr;
-    uint32_t second_thread_ptr;
-  } p = *(struct NaClSysThread_CreateArgs *) natp->syscall_args;
-
-  return NaClSysThread_Create(natp, (void *) (uintptr_t) p.prog_ctr, (void *) (uintptr_t) p.stack_ptr, (void *) (uintptr_t) p.thread_ptr, (void *) (uintptr_t) p.second_thread_ptr);
-}
-
-/* this function was automagically generated */
 static int32_t NaClSysTls_GetDecoder(struct NaClApp *nap)
 {
   return NaClSysTls_Get(nap);
-}
-
-/* this function was automagically generated */
-static int32_t NaClSysThread_NiceDecoder(struct NaClAppThread *natp) {
-  struct NaClSysThread_NiceArgs {
-    uint32_t nice;
-  } p = *(struct NaClSysThread_NiceArgs *) natp->syscall_args;
-
-  return NaClSysThread_Nice(natp, (const int)  p.nice);
 }
 
 /* this function was automagically generated */
@@ -998,357 +978,34 @@ static int32_t NaClSysMutex_CreateDecoder(struct NaClApp *nap)
   return NaClSysMutex_Create(nap);
 }
 
-/* this function was automagically generated */
-static int32_t NaClSysMutex_LockDecoder(struct NaClAppThread *natp) {
-  struct NaClSysMutex_LockArgs {
-    uint32_t mutex_handle;
-  } p = *(struct NaClSysMutex_LockArgs *) natp->syscall_args;
-
-  return NaClSysMutex_Lock(natp, (int32_t)  p.mutex_handle);
-}
-
-/* this function was automagically generated */
-static int32_t NaClSysMutex_UnlockDecoder(struct NaClAppThread *natp) {
-  struct NaClSysMutex_UnlockArgs {
-    uint32_t mutex_handle;
-  } p = *(struct NaClSysMutex_UnlockArgs *) natp->syscall_args;
-
-  return NaClSysMutex_Unlock(natp, (int32_t)  p.mutex_handle);
-}
-
-/* this function was automagically generated */
-static int32_t NaClSysMutex_TrylockDecoder(struct NaClAppThread *natp) {
-  struct NaClSysMutex_TrylockArgs {
-    uint32_t mutex_handle;
-  } p = *(struct NaClSysMutex_TrylockArgs *) natp->syscall_args;
-
-  return NaClSysMutex_Trylock(natp, (int32_t)  p.mutex_handle);
-}
-
-/* this function was automagically generated */
-static int32_t NaClSysCond_CreateDecoder(struct NaClAppThread *natp) {
-  return NaClSysCond_Create(natp);
-}
-
-/* this function was automagically generated */
-static int32_t NaClSysCond_WaitDecoder(struct NaClAppThread *natp) {
-  struct NaClSysCond_WaitArgs {
-    uint32_t cond_handle;
-    uint32_t mutex_handle;
-  } p = *(struct NaClSysCond_WaitArgs *) natp->syscall_args;
-
-  return NaClSysCond_Wait(natp, (int32_t)  p.cond_handle, (int32_t)  p.mutex_handle);
-}
-
-/* this function was automagically generated */
-static int32_t NaClSysCond_SignalDecoder(struct NaClAppThread *natp) {
-  struct NaClSysCond_SignalArgs {
-    uint32_t cond_handle;
-  } p = *(struct NaClSysCond_SignalArgs *) natp->syscall_args;
-
-  return NaClSysCond_Signal(natp, (int32_t)  p.cond_handle);
-}
-
-/* this function was automagically generated */
-static int32_t NaClSysCond_BroadcastDecoder(struct NaClAppThread *natp) {
-  struct NaClSysCond_BroadcastArgs {
-    uint32_t cond_handle;
-  } p = *(struct NaClSysCond_BroadcastArgs *) natp->syscall_args;
-
-  return NaClSysCond_Broadcast(natp, (int32_t)  p.cond_handle);
-}
-
-/* this function was automagically generated */
-static int32_t NaClSysCond_Timed_Wait_AbsDecoder(struct NaClAppThread *natp) {
-  struct NaClSysCond_Timed_Wait_AbsArgs {
-    uint32_t cond_handle;
-    uint32_t mutex_handle;
-    uint32_t ts;
-  } p = *(struct NaClSysCond_Timed_Wait_AbsArgs *) natp->syscall_args;
-
-  return NaClSysCond_Timed_Wait_Abs(natp, (int32_t)  p.cond_handle, (int32_t)  p.mutex_handle, (struct nacl_abi_timespec *) (uintptr_t) p.ts);
-}
-
-/* this function was automagically generated */
-static int32_t NaClSysImc_SocketPairDecoder(struct NaClAppThread *natp) {
-  struct NaClSysImc_SocketPairArgs {
-    uint32_t d_out;
-  } p = *(struct NaClSysImc_SocketPairArgs *) natp->syscall_args;
-
-  return NaClSysImc_SocketPair(natp, (int32_t *) (uintptr_t) p.d_out);
-}
-
-/* this function was automagically generated */
-static int32_t NaClSysSem_CreateDecoder(struct NaClAppThread *natp) {
-  struct NaClSysSem_CreateArgs {
-    uint32_t init_value;
-  } p = *(struct NaClSysSem_CreateArgs *) natp->syscall_args;
-
-  return NaClSysSem_Create(natp, (int32_t)  p.init_value);
-}
-
-/* this function was automagically generated */
-static int32_t NaClSysSem_WaitDecoder(struct NaClAppThread *natp) {
-  struct NaClSysSem_WaitArgs {
-    uint32_t sem_handle;
-  } p = *(struct NaClSysSem_WaitArgs *) natp->syscall_args;
-
-  return NaClSysSem_Wait(natp, (int32_t)  p.sem_handle);
-}
-
-/* this function was automagically generated */
-static int32_t NaClSysSem_PostDecoder(struct NaClAppThread *natp) {
-  struct NaClSysSem_PostArgs {
-    uint32_t sem_handle;
-  } p = *(struct NaClSysSem_PostArgs *) natp->syscall_args;
-
-  return NaClSysSem_Post(natp, (int32_t)  p.sem_handle);
-}
-
-/* this function was automagically generated */
-static int32_t NaClSysSem_Get_ValueDecoder(struct NaClAppThread *natp) {
-  struct NaClSysSem_Get_ValueArgs {
-    uint32_t sem_handle;
-  } p = *(struct NaClSysSem_Get_ValueArgs *) natp->syscall_args;
-
-  return NaClSysSem_Get_Value(natp, (int32_t)  p.sem_handle);
-}
-
-/* this function was automagically generated */
-static int32_t NaClSysSched_YieldDecoder(struct NaClAppThread *natp) {
-  return NaClSysSched_Yield(natp);
-}
-
-/* this function was automagically generated */
-static int32_t NaClSysSysconfDecoder(struct NaClAppThread *natp) {
-  struct NaClSysSysconfArgs {
-    uint32_t name;
-    uint32_t result;
-  } p = *(struct NaClSysSysconfArgs *) natp->syscall_args;
-
-  return NaClSysSysconf(natp, (int32_t)  p.name, (int32_t *) (uintptr_t) p.result);
-}
-
-/* this function was automagically generated */
-static int32_t NaClSysDyncode_CreateDecoder(struct NaClAppThread *natp) {
-  struct NaClSysDyncode_CreateArgs {
-    uint32_t dest;
-    uint32_t src;
-    uint32_t size;
-  } p = *(struct NaClSysDyncode_CreateArgs *) natp->syscall_args;
-
-  return NaClSysDyncode_Create(natp, (uint32_t)  p.dest, (uint32_t)  p.src, (uint32_t)  p.size);
-}
-
-/* this function was automagically generated */
-static int32_t NaClSysDyncode_ModifyDecoder(struct NaClAppThread *natp) {
-  struct NaClSysDyncode_ModifyArgs {
-    uint32_t dest;
-    uint32_t src;
-    uint32_t size;
-  } p = *(struct NaClSysDyncode_ModifyArgs *) natp->syscall_args;
-
-  return NaClSysDyncode_Modify(natp, (uint32_t)  p.dest, (uint32_t)  p.src, (uint32_t)  p.size);
-}
-
-/* this function was automagically generated */
-static int32_t NaClSysDyncode_DeleteDecoder(struct NaClAppThread *natp) {
-  struct NaClSysDyncode_DeleteArgs {
-    uint32_t dest;
-    uint32_t size;
-  } p = *(struct NaClSysDyncode_DeleteArgs *) natp->syscall_args;
-
-  return NaClSysDyncode_Delete(natp, (uint32_t)  p.dest, (uint32_t)  p.size);
-}
-
-/* this function was automagically generated */
-static int32_t NaClSysSecond_Tls_SetDecoder(struct NaClAppThread *natp) {
-  struct NaClSysSecond_Tls_SetArgs {
-    uint32_t new_value;
-  } p = *(struct NaClSysSecond_Tls_SetArgs *) natp->syscall_args;
-
-  return NaClSysSecond_Tls_Set(natp, (uint32_t)  p.new_value);
-}
-
-/* this function was automagically generated */
-static int32_t NaClSysSecond_Tls_GetDecoder(struct NaClAppThread *natp) {
-  return NaClSysSecond_Tls_Get(natp);
-}
-
-/* this function was automagically generated */
-static int32_t NaClSysTest_InfoLeakDecoder(struct NaClAppThread *natp) {
-  return NaClSysTest_InfoLeak(natp);
-}
-
-/*
- * d'b: "One Ring" syscall hook. tonneling syscall. all system calls go trough it
- * will be the only syscall in the future.
- * accepts 2 parameters:
- *   1st (input) - pointer to uint64_t (from user side it is array of uint64_t's)
- *   2nd (output)- pointer to uint64_t (from user side it is array of uint64_t's)
- * returns int32_t
- * note: [0] element from input is always syscall id; [1].. are syscalls parameters
- */
-static int32_t OneRingDecoder(struct NaClApp *nap)
+/* d'b: trap(). see documentation for the details */
+static int32_t TrapDecoder(struct NaClApp *nap)
 {
-  struct OneRingDecoderArgs
+  struct TrapDecoderArgs
   {
     uint32_t args;
-  } p = *(struct OneRingDecoderArgs*) nap->syscall_args;
+  } p = *(struct TrapDecoderArgs*) nap->syscall_args;
 
   return TrapHandler(nap, p.args);
 }
 
-/* d'b: put to the log restricted syscall detection */
-static int32_t NaClSysRestricted()
-{
-  if(!NaClSilentRestrictedSyscallsEnabled())
-    NaClLog(LOG_FATAL, "Restricted syscall. Abort.\n");
-  return -NACL_ABI_ENOSYS;
-}
-
-/* auto generated */
-void NaClSyscallTableInit() {
-  int i;
-  for (i = 0; i < NACL_MAX_SYSCALLS; ++i) {
-    nacl_syscall[i].handler = &NotImplementedDecoder;
-  }
-
-  NaClAddSyscall(One_ring, &OneRingDecoder); /* d'b: 0. added onering call */
-  NaClAddSyscall(NACL_sys_null, &NaClSysNullDecoder);
-  NaClAddSyscall(NACL_sys_nameservice, &NaClSysNameServiceDecoder);
-  NaClAddSyscall(NACL_sys_dup, &NaClSysDupDecoder);
-  NaClAddSyscall(NACL_sys_dup2, &NaClSysDup2Decoder);
-  NaClAddSyscall(NACL_sys_open, &NaClSysOpenDecoder);
-  NaClAddSyscall(NACL_sys_close, &NaClSysCloseDecoder);
-  NaClAddSyscall(NACL_sys_read, &NaClSysReadDecoder);
-  NaClAddSyscall(NACL_sys_write, &NaClSysWriteDecoder);
-  NaClAddSyscall(NACL_sys_lseek, &NaClSysLseekDecoder);
-  NaClAddSyscall(NACL_sys_ioctl, &NaClSysIoctlDecoder);
-  NaClAddSyscall(NACL_sys_fstat, &NaClSysFstatDecoder);
-  NaClAddSyscall(NACL_sys_stat, &NaClSysStatDecoder);
-  NaClAddSyscall(NACL_sys_getdents, &NaClSysGetdentsDecoder);
-  NaClAddSyscall(NACL_sys_sysbrk, &NaClSysSysbrkDecoder);
-  NaClAddSyscall(NACL_sys_mmap, &NaClSysMmapDecoder);
-  NaClAddSyscall(NACL_sys_munmap, &NaClSysMunmapDecoder);
-  NaClAddSyscall(NACL_sys_exit, &NaClSysExitDecoder);
-  NaClAddSyscall(NACL_sys_getpid, &NaClSysGetpidDecoder);
-  NaClAddSyscall(NACL_sys_thread_exit, &NaClSysThread_ExitDecoder);
-  NaClAddSyscall(NACL_sys_gettimeofday, &NaClSysGetTimeOfDayDecoder);
-  NaClAddSyscall(NACL_sys_clock, &NaClSysClockDecoder);
-  NaClAddSyscall(NACL_sys_nanosleep, &NaClSysNanosleepDecoder);
-  NaClAddSyscall(NACL_sys_imc_makeboundsock, &NaClSysImc_MakeBoundSockDecoder);
-  NaClAddSyscall(NACL_sys_imc_accept, &NaClSysImc_AcceptDecoder);
-  NaClAddSyscall(NACL_sys_imc_connect, &NaClSysImc_ConnectDecoder);
-  NaClAddSyscall(NACL_sys_imc_sendmsg, &NaClSysImc_SendmsgDecoder);
-  NaClAddSyscall(NACL_sys_imc_recvmsg, &NaClSysImc_RecvmsgDecoder);
-  NaClAddSyscall(NACL_sys_imc_mem_obj_create, &NaClSysImc_Mem_Obj_CreateDecoder);
-  NaClAddSyscall(NACL_sys_tls_init, &NaClSysTls_InitDecoder);
-  NaClAddSyscall(NACL_sys_thread_create, &NaClSysThread_CreateDecoder);
-  NaClAddSyscall(NACL_sys_tls_get, &NaClSysTls_GetDecoder);
-  NaClAddSyscall(NACL_sys_thread_nice, &NaClSysThread_NiceDecoder);
-  NaClAddSyscall(NACL_sys_mutex_create, &NaClSysMutex_CreateDecoder);
-  NaClAddSyscall(NACL_sys_mutex_lock, &NaClSysMutex_LockDecoder);
-  NaClAddSyscall(NACL_sys_mutex_unlock, &NaClSysMutex_UnlockDecoder);
-  NaClAddSyscall(NACL_sys_mutex_trylock, &NaClSysMutex_TrylockDecoder);
-  NaClAddSyscall(NACL_sys_cond_create, &NaClSysCond_CreateDecoder);
-  NaClAddSyscall(NACL_sys_cond_wait, &NaClSysCond_WaitDecoder);
-  NaClAddSyscall(NACL_sys_cond_signal, &NaClSysCond_SignalDecoder);
-  NaClAddSyscall(NACL_sys_cond_broadcast, &NaClSysCond_BroadcastDecoder);
-  NaClAddSyscall(NACL_sys_cond_timed_wait_abs, &NaClSysCond_Timed_Wait_AbsDecoder);
-  NaClAddSyscall(NACL_sys_imc_socketpair, &NaClSysImc_SocketPairDecoder);
-  NaClAddSyscall(NACL_sys_sem_create, &NaClSysSem_CreateDecoder);
-  NaClAddSyscall(NACL_sys_sem_wait, &NaClSysSem_WaitDecoder);
-  NaClAddSyscall(NACL_sys_sem_post, &NaClSysSem_PostDecoder);
-  NaClAddSyscall(NACL_sys_sem_get_value, &NaClSysSem_Get_ValueDecoder);
-  NaClAddSyscall(NACL_sys_sched_yield, &NaClSysSched_YieldDecoder);
-  NaClAddSyscall(NACL_sys_sysconf, &NaClSysSysconfDecoder);
-  NaClAddSyscall(NACL_sys_dyncode_create, &NaClSysDyncode_CreateDecoder);
-  NaClAddSyscall(NACL_sys_dyncode_modify, &NaClSysDyncode_ModifyDecoder);
-  NaClAddSyscall(NACL_sys_dyncode_delete, &NaClSysDyncode_DeleteDecoder);
-  NaClAddSyscall(NACL_sys_second_tls_set, &NaClSysSecond_Tls_SetDecoder);
-  NaClAddSyscall(NACL_sys_second_tls_get, &NaClSysSecond_Tls_GetDecoder);
-  NaClAddSyscall(NACL_sys_test_infoleak, &NaClSysTest_InfoLeakDecoder);
-}
-
 /*
-  d'b:
-  in this list of system calls 5 ones left untouched:
-  (other syscalls set to "NaClSysRestricted")
-
-  syscalls for an empty nexe: "main(){}"
-  +  20 -- NACL_sys_sysbrk (NaClSysSysbrkDecoder) -- still need to serve user malloc()
-  ++ 30 -- NACL_sys_exit (NaClSysExitDecoder) -- no need. i gonna exit through long/short jump
-  +  70 -- NACL_sys_mutex_create (NaClSysMutex_CreateDecoder) -- dummy
-  +  82 -- NACL_sys_tls_init (NaClSysTls_InitDecoder) -- dummy
-  +  84 -- NACL_sys_tls_get (NaClSysTls_GetDecoder) -- dummy
-
-  special case, tonneling call:
-  0 -- artificially added "One Ring" single syscall
-
-  note: to restore syscalls to the original version just delete everything
-  until "d'b end" and uncomment commented code
-*/
-void NaClSyscallTableInitDisable() {
+ * d'b: see documentation about "one ring" tonneling syscall
+ * note: all syscalls except trap() only need for nexe prolog
+ */
+void NaClSyscallTableInit() {
   int i;
   for (i = 0; i < NACL_MAX_SYSCALLS; ++i) {
      nacl_syscall[i].handler = &NotImplementedDecoder;
   }
 
-  NaClAddSyscall(One_ring, &OneRingDecoder); /* 0. added onering call */
-  NaClAddSyscall(NACL_sys_null, &NaClSysRestricted);
-  NaClAddSyscall(NACL_sys_nameservice, &NaClSysRestricted);
-  NaClAddSyscall(NACL_sys_dup, &NaClSysRestricted);
-  NaClAddSyscall(NACL_sys_dup2, &NaClSysRestricted);
-  NaClAddSyscall(NACL_sys_open, &NaClSysRestricted);
-  NaClAddSyscall(NACL_sys_close, &NaClSysRestricted);
-  NaClAddSyscall(NACL_sys_read, &NaClSysRestricted);
-  NaClAddSyscall(NACL_sys_write, &NaClSysRestricted);
-  NaClAddSyscall(NACL_sys_lseek, &NaClSysRestricted);
-  NaClAddSyscall(NACL_sys_ioctl, &NaClSysRestricted);
-  NaClAddSyscall(NACL_sys_fstat, &NaClSysRestricted);
-  NaClAddSyscall(NACL_sys_stat, &NaClSysRestricted);
-  NaClAddSyscall(NACL_sys_getdents, &NaClSysRestricted);
+  NaClAddSyscall(Trap, &TrapDecoder); /* 0. added onering call */
   NaClAddSyscall(NACL_sys_sysbrk, &NaClSysSysbrkDecoder); /* 20 */
-  NaClAddSyscall(NACL_sys_mmap, &NaClSysRestricted);
-  NaClAddSyscall(NACL_sys_munmap, &NaClSysRestricted);
   NaClAddSyscall(NACL_sys_exit, &NaClSysExitDecoder); /* 30 */
-  NaClAddSyscall(NACL_sys_getpid, &NaClSysRestricted);
-  NaClAddSyscall(NACL_sys_thread_exit, &NaClSysRestricted);
-  NaClAddSyscall(NACL_sys_gettimeofday, &NaClSysRestricted);
-  NaClAddSyscall(NACL_sys_clock, &NaClSysRestricted);
-  NaClAddSyscall(NACL_sys_nanosleep, &NaClSysRestricted);
-  NaClAddSyscall(NACL_sys_imc_makeboundsock, &NaClSysRestricted);
-  NaClAddSyscall(NACL_sys_imc_accept, &NaClSysRestricted);
-  NaClAddSyscall(NACL_sys_imc_connect, &NaClSysRestricted);
-  NaClAddSyscall(NACL_sys_imc_sendmsg, &NaClSysRestricted);
-  NaClAddSyscall(NACL_sys_imc_recvmsg, &NaClSysRestricted);
-  NaClAddSyscall(NACL_sys_imc_mem_obj_create, &NaClSysRestricted);
   NaClAddSyscall(NACL_sys_tls_init, &NaClSysTls_InitDecoder); /* 82 */
-  NaClAddSyscall(NACL_sys_thread_create, &NaClSysRestricted);
   NaClAddSyscall(NACL_sys_tls_get, &NaClSysTls_GetDecoder); /* 84 */
-  NaClAddSyscall(NACL_sys_thread_nice, &NaClSysRestricted);
   NaClAddSyscall(NACL_sys_mutex_create, &NaClSysMutex_CreateDecoder); /* 70 */
-  NaClAddSyscall(NACL_sys_mutex_lock, &NaClSysRestricted);
-  NaClAddSyscall(NACL_sys_mutex_unlock, &NaClSysRestricted);
-  NaClAddSyscall(NACL_sys_mutex_trylock, &NaClSysRestricted);
-  NaClAddSyscall(NACL_sys_cond_create, &NaClSysRestricted);
-  NaClAddSyscall(NACL_sys_cond_wait, &NaClSysRestricted);
-  NaClAddSyscall(NACL_sys_cond_signal, &NaClSysRestricted);
-  NaClAddSyscall(NACL_sys_cond_broadcast, &NaClSysRestricted);
-  NaClAddSyscall(NACL_sys_cond_timed_wait_abs, &NaClSysRestricted);
-  NaClAddSyscall(NACL_sys_imc_socketpair, &NaClSysRestricted);
-  NaClAddSyscall(NACL_sys_sem_create, &NaClSysRestricted);
-  NaClAddSyscall(NACL_sys_sem_wait, &NaClSysRestricted);
-  NaClAddSyscall(NACL_sys_sem_post, &NaClSysRestricted);
-  NaClAddSyscall(NACL_sys_sem_get_value, &NaClSysRestricted);
-  NaClAddSyscall(NACL_sys_sched_yield, &NaClSysRestricted);
-  NaClAddSyscall(NACL_sys_sysconf, &NaClSysRestricted);
-  NaClAddSyscall(NACL_sys_dyncode_create, &NaClSysRestricted);
-  NaClAddSyscall(NACL_sys_dyncode_modify, &NaClSysRestricted);
-  NaClAddSyscall(NACL_sys_dyncode_delete, &NaClSysRestricted);
-  NaClAddSyscall(NACL_sys_second_tls_set, &NaClSysRestricted);
-  NaClAddSyscall(NACL_sys_second_tls_get, &NaClSysRestricted);
-  NaClAddSyscall(NACL_sys_test_infoleak, &NaClSysRestricted);
+  /* 21. syscall is not used by current nexe prolog, but can be invoked by large mallocs */
+  NaClAddSyscall(NACL_sys_mmap, &NaClSysMmapDecoder);
+  NaClAddSyscall(NACL_sys_munmap, &NaClSysMunmapDecoder); /* same here */
 }
-/* d'b end */

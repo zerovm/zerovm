@@ -9,7 +9,7 @@
 #define TRAP_H_
 
 #include "api/zvm.h"
-#include "src/service_runtime/nacl_app_thread.h"
+#include "src/service_runtime/sel_ldr.h"
 
 EXTERN_C_BEGIN
 

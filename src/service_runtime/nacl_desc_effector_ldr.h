@@ -12,11 +12,7 @@
 #ifndef NATIVE_CLIENT_SRC_TRUSTED_SERVICE_RUNTIME_NACL_DESC_EFFECTOR_LDR_H_
 #define NATIVE_CLIENT_SRC_TRUSTED_SERVICE_RUNTIME_NACL_DESC_EFFECTOR_LDR_H_
 
-#include "include/nacl_base.h"
-
-#include "src/service_runtime/nacl_app_thread.h"
 #include "src/service_runtime/sel_ldr.h"
-
 #include "src/desc/nacl_desc_effector.h"
 
 EXTERN_C_BEGIN
