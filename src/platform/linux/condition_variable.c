@@ -3,13 +3,7 @@
  * Use of this source code is governed by a BSD-style license that can be
  * found in the LICENSE file.
  */
-
-#include <pthread.h>
-#include <sys/time.h>
 #include "src/platform/nacl_sync.h"
-#include "include/atomic_ops.h"
-#include "include/nacl_base.h"
-#include "include/nacl_macros.h"
 #include "src/service_runtime/include/sys/time.h"
 
 static const uint64_t kMicrosecondsPerSecond = 1000 * 1000;

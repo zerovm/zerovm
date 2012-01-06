@@ -8,30 +8,22 @@
  * NaCl Service Runtime.  Transferrable shared memory objects.
  */
 
-#include "include/portability.h"
 #include "include/nacl_platform.h"
 
 #include <errno.h>
-#include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
 #include <sys/shm.h>
 
-#include "src/desc/nacl_desc_base.h"
 #include "src/desc/nacl_desc_effector.h"
 #include "src/desc/linux/nacl_desc_sysv_shm.h"
-
 #include "src/platform/nacl_find_addrsp.h"
 #include "src/platform/nacl_log.h"
-#include "src/platform/nacl_sync_checked.h"
-
 #include "src/service_runtime/internal_errno.h"
-#include "src/service_runtime/nacl_config.h"
 #include "src/service_runtime/include/sys/errno.h"
 #include "src/service_runtime/include/sys/mman.h"
 #include "src/service_runtime/include/sys/stat.h"
 #include "src/service_runtime/sel_util.h"
-
 
 #if !defined(SIZE_T_MAX)
 # define SIZE_T_MAX (~((size_t) 0))
@@ -86,41 +78,6 @@ int NaClDescSysvShmImportCtor(struct NaClDescSysvShm  *self,
                               int                     id,
                               nacl_off64_t            size) {
   return NaClDescSysvShmCtorIntern(self, id, size, 0);
-}
-
-/*
- * Creates a NaClDesc containing a new shared memory region.
- */
-int NaClDescSysvShmCtor(struct NaClDescSysvShm  *self,
-                        nacl_off64_t            size) {
-  int id;
-  int retval;
-
-  /*
-   * We only allow multiples of 64K for NaCl-created region sizes.
-   * If size is negative or overflows a size_t, that's not good either.
-   */
-  if ((uintptr_t) size != NaClRoundAllocPage((uintptr_t) size)
-      || size < 0
-      || SIZE_T_MAX < (uint64_t) size) {
-    return 0;
-  }
-  /* Create the region. */
-  id = shmget(IPC_PRIVATE,
-              (int) size,
-              IPC_CREAT | IPC_EXCL | S_IRUSR | S_IWUSR);
-  if (-1 == id) {
-    return 0;
-  }
-  /* Construct the descriptor. */
-  retval = NaClDescSysvShmCtorIntern(self, id, size, 1);
-  /* If the constructor failed, mark the region for freeing. */
-  if (0 == retval) {
-    (void) shmctl(id, IPC_RMID, NULL);
-    return 0;
-  }
-  /* Return success. */
-  return 1;
 }
 
 static void NaClDescSysvShmDtor(struct NaClRefCount *vself) {

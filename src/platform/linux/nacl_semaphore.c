@@ -9,10 +9,7 @@
  */
 
 #include <errno.h>
-#include <unistd.h>
-
 #include "src/platform/linux/nacl_semaphore.h"
-#include "src/platform/nacl_log.h"
 #include "src/platform/nacl_sync.h"
 
 int NaClSemCtor(struct NaClSemaphore *sem, int32_t value) {
@@ -32,13 +29,6 @@ NaClSyncStatus NaClSemWait(struct NaClSemaphore *sem) {
   return NACL_SYNC_OK;
 }
 
-NaClSyncStatus NaClSemTryWait(struct NaClSemaphore *sem) {
-  if (0 == sem_trywait(&sem->sem_obj)) {
-    return NACL_SYNC_OK;
-  }
-  return NACL_SYNC_BUSY;
-}
-
 NaClSyncStatus NaClSemPost(struct NaClSemaphore *sem) {
   if (0 == sem_post(&sem->sem_obj)) {
     return NACL_SYNC_OK;
@@ -48,10 +38,4 @@ NaClSyncStatus NaClSemPost(struct NaClSemaphore *sem) {
     return NACL_SYNC_SEM_RANGE_ERROR;
   }
   return NACL_SYNC_INTERNAL_ERROR;
-}
-
-int32_t NaClSemGetValue(struct NaClSemaphore *sem) {
-  int32_t value;
-  sem_getvalue(&sem->sem_obj, &value);  /* always returns 0 */
-  return value;
 }

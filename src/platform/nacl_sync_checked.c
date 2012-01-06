@@ -29,18 +29,6 @@ void NaClXMutexLock(struct NaClMutex *mp) {
   NaClLog(LOG_FATAL, "NaClMutexLock returned %d\n", status);
 }
 
-NaClSyncStatus NaClXMutexTryLock(struct NaClMutex *mp) {
-  NaClSyncStatus  status;
-
-  if (NACL_SYNC_OK == (status = NaClMutexUnlock(mp)) ||
-      NACL_SYNC_BUSY == status) {
-    return status;
-  }
-  NaClLog(LOG_FATAL, "NaClMutexUnlock returned %d\n", status);
-  /* NOTREACHED */
-  return NACL_SYNC_INTERNAL_ERROR;
-}
-
 void NaClXMutexUnlock(struct NaClMutex *mp) {
   NaClSyncStatus  status;
 
@@ -48,12 +36,6 @@ void NaClXMutexUnlock(struct NaClMutex *mp) {
     return;
   }
   NaClLog(LOG_FATAL, "NaClMutexUnlock returned %d\n", status);
-}
-
-void NaClXCondVarCtor(struct NaClCondVar *cvp) {
-  if (!NaClCondVarCtor(cvp)) {
-    NaClLog(LOG_FATAL, "NaClCondVarCtor failed\n");
-  }
 }
 
 void NaClXCondVarSignal(struct NaClCondVar *cvp) {
@@ -82,32 +64,4 @@ void NaClXCondVarWait(struct NaClCondVar *cvp,
     return;
   }
   NaClLog(LOG_FATAL, "NaClCondVarWait returned %d\n", status);
-}
-
-NaClSyncStatus NaClXCondVarTimedWaitAbsolute(
-    struct NaClCondVar              *cvp,
-    struct NaClMutex                *mp,
-    NACL_TIMESPEC_T const           *abstime) {
-  NaClSyncStatus  status = NaClCondVarTimedWaitAbsolute(cvp, mp, abstime);
-
-  if (NACL_SYNC_OK == status || NACL_SYNC_CONDVAR_TIMEDOUT == status) {
-    return status;
-  }
-  NaClLog(LOG_FATAL, "NaClCondVarTimedWaitAbsolute returned %d\n", status);
-  /* NOTREACHED */
-  return NACL_SYNC_INTERNAL_ERROR;
-}
-
-NaClSyncStatus NaClXCondVarTimedWaitRelative(
-    struct NaClCondVar              *cvp,
-    struct NaClMutex                *mp,
-    NACL_TIMESPEC_T const           *reltime) {
-  NaClSyncStatus  status = NaClCondVarTimedWaitRelative(cvp, mp, reltime);
-
-  if (NACL_SYNC_OK == status || NACL_SYNC_CONDVAR_TIMEDOUT == status) {
-      return status;
-  }
-  NaClLog(LOG_FATAL, "NaClCondVarTimedWaitRelative returned %d\n", status);
-  /* NOTREACHED */
-  return NACL_SYNC_INTERNAL_ERROR;
 }

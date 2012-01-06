@@ -9,28 +9,10 @@
  * mapping using descriptors.
  */
 
-#include <limits.h>
-#include <stdint.h>
 #include <string.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-
-#include "include/portability.h"
 #include "src/platform/nacl_check.h"
-#include "src/platform/nacl_host_desc.h"
-#include "src/platform/nacl_log.h"
-#include "src/desc/nacl_desc_base.h"
 #include "src/desc/nacl_desc_sync_socket.h"
-#include "src/service_runtime/nacl_config.h"
-#include "src/service_runtime/include/sys/errno.h"
 #include "src/service_runtime/include/sys/stat.h"
-
-void NaClDeallocAddrRange(uintptr_t addr,
-                          size_t    len) {
-  UNREFERENCED_PARAMETER(addr);
-  UNREFERENCED_PARAMETER(len);
-  return;
-}
 
 /*
  * Not quite a copy ctor.  Call it a translating ctor, since the

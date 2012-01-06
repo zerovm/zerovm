@@ -47,7 +47,6 @@
 #ifndef NATIVE_CLIENT_SRC_INCLUDE_ELF64_H_
 #define NATIVE_CLIENT_SRC_INCLUDE_ELF64_H_
 
-#include "include/portability.h"
 #include "include/elf_constants.h"
 
 /* Define 64-bit specific types */

@@ -34,7 +34,6 @@
 #define NATIVE_CLIENT_SRC_INCLUDE_LINUX_ATOMIC_OPS_LINUX_H_ 1
 
 #include "include/portability.h"
-#include <stdint.h>
 
 typedef int32_t Atomic32;
 
@@ -48,7 +47,6 @@ static INLINE Atomic32 CompareAndSwap(volatile Atomic32* ptr,
                        : "memory");
   return prev;
 }
-
 
 static INLINE Atomic32 AtomicExchange(volatile Atomic32* ptr,
                                       Atomic32 new_value) {

@@ -12,18 +12,15 @@
 #define NATIVE_CLIENT_SRC_TRUSTED_DESC_NACL_DESC_BASE_H_
 
 #include <limits.h>
-#include <sys/types.h>
 #include <sys/stat.h>
 
 #include "include/nacl_base.h"
-#include "include/portability.h"
 
 /* For NaClHandle */
 #include "src/imc/nacl_imc_c.h"
 
 /* for nacl_off64_t */
 #include "src/platform/nacl_host_desc.h"
-#include "src/platform/nacl_sync.h"
 
 #include "src/nacl_base/nacl_refcount.h"
 
@@ -354,11 +351,6 @@ void NaClDescSafeUnref(struct NaClDesc *ndp);
 
 
 /* utility routines */
-
-/* in PLATFORM/nacl_desc.c */
-void NaClDeallocAddrRange(uintptr_t addr,
-                          size_t    len);
-
 
 int32_t NaClAbiStatHostDescStatXlateCtor(struct nacl_abi_stat    *dst,
                                          nacl_host_stat_t const  *src);

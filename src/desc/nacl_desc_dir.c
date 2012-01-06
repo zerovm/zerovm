@@ -8,28 +8,13 @@
  * NaCl Service Runtime.  Directory descriptor abstraction.
  */
 
-#include "include/portability.h"
-
-#include <stdlib.h>
 #include <string.h>
-
-#include "src/imc/nacl_imc_c.h"
-
-#include "src/desc/nacl_desc_base.h"
 #include "src/desc/nacl_desc_dir.h"
-
 #include "src/platform/nacl_host_dir.h"
 #include "src/platform/nacl_log.h"
-
-#include "src/service_runtime/internal_errno.h"
-#include "src/service_runtime/nacl_config.h"
-
 #include "src/service_runtime/include/sys/dirent.h"
 #include "src/service_runtime/include/sys/errno.h"
-#include "src/service_runtime/include/sys/fcntl.h"
-#include "src/service_runtime/include/sys/mman.h"
 #include "src/service_runtime/include/sys/stat.h"
-
 
 /*
  * This file contains the implementation for the NaClDirDesc subclass
@@ -39,22 +24,6 @@
  */
 
 static struct NaClDescVtbl const kNaClDescDirDescVtbl;  /* fwd */
-
-/*
- * Takes ownership of hd, will close in Dtor.
- */
-int NaClDescDirDescCtor(struct NaClDescDirDesc  *self,
-                        struct NaClHostDir      *hd) {
-  struct NaClDesc *basep = (struct NaClDesc *) self;
-
-  basep->base.vtbl = (struct NaClRefCountVtbl const *) NULL;
-  if (!NaClDescCtor(basep)) {
-    return 0;
-  }
-  self->hd = hd;
-  basep->base.vtbl = (struct NaClRefCountVtbl const *) &kNaClDescDirDescVtbl;
-  return 1;
-}
 
 static void NaClDescDirDescDtor(struct NaClRefCount *vself) {
   struct NaClDescDirDesc *self = (struct NaClDescDirDesc *) vself;
@@ -66,40 +35,6 @@ static void NaClDescDirDescDtor(struct NaClRefCount *vself) {
   self->hd = NULL;
   vself->vtbl = (struct NaClRefCountVtbl const *) &kNaClDescVtbl;
   (*vself->vtbl->Dtor)(vself);
-}
-
-struct NaClDescDirDesc *NaClDescDirDescMake(struct NaClHostDir *nhdp) {
-  struct NaClDescDirDesc *ndp;
-
-  ndp = malloc(sizeof *ndp);
-  if (NULL == ndp) {
-    NaClLog(LOG_FATAL,
-            "NaClDescDirDescMake: no memory for 0x%08"NACL_PRIxPTR"\n",
-            (uintptr_t) nhdp);
-  }
-  if (!NaClDescDirDescCtor(ndp, nhdp)) {
-    NaClLog(LOG_FATAL,
-            ("NaClDescDirDescMake:"
-             " NaClDescDirDescCtor(0x%08"NACL_PRIxPTR",0x%08"NACL_PRIxPTR
-             ") failed\n"),
-            (uintptr_t) ndp,
-            (uintptr_t) nhdp);
-  }
-  return ndp;
-}
-
-struct NaClDescDirDesc *NaClDescDirDescOpen(char  *path) {
-  struct NaClHostDir  *nhdp;
-
-  nhdp = malloc(sizeof *nhdp);
-  if (NULL == nhdp) {
-    NaClLog(LOG_FATAL, "NaClDescDirDescOpen: no memory for %s\n", path);
-  }
-  if (!NaClHostDirOpen(nhdp, path)) {
-    NaClLog(LOG_FATAL, "NaClDescDirDescOpen: NaClHostDirOpen failed for %s\n",
-            path);
-  }
-  return NaClDescDirDescMake(nhdp);
 }
 
 static ssize_t NaClDescDirDescGetdents(struct NaClDesc         *vself,

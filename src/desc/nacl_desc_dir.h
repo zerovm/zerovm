@@ -12,8 +12,6 @@
 #define NATIVE_CLIENT_SRC_TRUSTED_DESC_NACL_DESC_DIR_H_
 
 #include "include/nacl_base.h"
-#include "include/portability.h"
-
 #include "src/desc/nacl_desc_base.h"
 
 EXTERN_C_BEGIN
@@ -32,17 +30,6 @@ struct NaClDescDirDesc {
 
 int NaClDescDirInternalize(struct NaClDesc          **baseptr,
                            struct NaClDescXferState *xfer)
-    NACL_WUR;
-
-int NaClDescDirDescCtor(struct NaClDescDirDesc  *self,
-                        struct NaClHostDir      *hd)
-    NACL_WUR;
-
-struct NaClDescDirDesc *NaClDescDirDescMake(struct NaClHostDir *nhdp)
-    NACL_WUR;
-
-/* simple factory */
-struct NaClDescDirDesc *NaClDescDirDescOpen(char  *path)
     NACL_WUR;
 
 EXTERN_C_END

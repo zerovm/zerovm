@@ -9,16 +9,12 @@
  * interface.
  */
 
-#include "include/portability.h"
 #include "src/platform/nacl_interruptible_condvar.h"
-#include "src/platform/nacl_log.h"
 #include "src/platform/nacl_sync_checked.h"
-
 
 int NaClIntrCondVarCtor(struct NaClIntrCondVar  *cp) {
   return NaClCondVarCtor(&cp->cv);
 }
-
 
 void NaClIntrCondVarDtor(struct NaClIntrCondVar *cp) {
   NaClCondVarDtor(&cp->cv);
@@ -78,19 +74,4 @@ NaClSyncStatus NaClIntrCondVarSignal(struct NaClIntrCondVar *cp) {
 
 NaClSyncStatus NaClIntrCondVarBroadcast(struct NaClIntrCondVar *cp) {
   return NaClCondVarBroadcast(&cp->cv);
-}
-
-void NaClIntrCondVarIntr(struct NaClIntrCondVar *cp) {
-  /*
-   * NOTE: we assume that mutexes are interrupted first, so we will
-   * fail to regain ownership of the mutex once the wait for cp->cv is
-   * completed (see NaClIntrCondVarWait above)
-   */
-  NaClXCondVarBroadcast(&cp->cv);
-}
-
-void NaClIntrCondVarReset(struct NaClIntrCondVar *cp) {
-  UNREFERENCED_PARAMETER(cp);
-  /* nothing to do here - we don't keep status */
-  return;
 }

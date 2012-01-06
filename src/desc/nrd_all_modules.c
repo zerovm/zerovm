@@ -9,7 +9,7 @@
  * the NRD transfer protocol code here.
  */
 
-#include "src/desc/nrd_all_modules.h"
+//#include "src/desc/nrd_all_modules.h"
 #include "src/desc/nacl_desc_invalid.h"
 #include "src/platform/platform_init.h"
 

@@ -9,11 +9,9 @@
  * interface.
  */
 
-#include "include/portability.h"
 #include "src/platform/nacl_interruptible_mutex.h"
 #include "src/platform/nacl_log.h"
 #include "src/platform/nacl_sync_checked.h"
-
 
 int NaClIntrMutexCtor(struct NaClIntrMutex *mp) {
   if (!NaClMutexCtor(&mp->mu)) {
@@ -87,38 +85,4 @@ NaClSyncStatus NaClIntrMutexUnlock(struct NaClIntrMutex *mp) {
   NaClXCondVarSignal(&mp->cv);
   NaClXMutexUnlock(&mp->mu);
   return rv;
-}
-
-void NaClIntrMutexIntr(struct NaClIntrMutex *mp) {
-  NaClXMutexLock(&mp->mu);
-  if (NACL_INTR_LOCK_HELD == mp->lock_state) {
-    /* potentially there are threads waiting for this thread */
-    mp->lock_state = NACL_INTR_LOCK_INTERRUPTED;
-    NaClXCondVarBroadcast(&mp->cv);
-  } else {
-    mp->lock_state = NACL_INTR_LOCK_INTERRUPTED;
-  }
-  NaClXMutexUnlock(&mp->mu);
-}
-
-/*
- * Reset the interruptible mutex, presumably after the condition
- * causing the interrupt has been cleared.  In our case, this would be
- * an E_MOVE_ADDRESS_SPACE induced address space move.
- *
- * This is safe to invoke only after all threads are known to be in a
- * quiescent state -- i.e., will no longer call
- * NaClIntrMutex{Try,}Lock on the interruptible mutex -- since there
- * is no guarntee that all the threads awaken by NaClIntrMutexIntr
- * have actually been run yet.
- */
-void NaClIntrMutexReset(struct NaClIntrMutex *mp) {
-  NaClXMutexLock(&mp->mu);
-  if (NACL_INTR_LOCK_INTERRUPTED != mp->lock_state) {
-    NaClLog(LOG_FATAL,
-            "NaClIntrMutexReset: lock at 0x%08"NACL_PRIxPTR" not interrupted\n",
-            (uintptr_t) mp);
-  }
-  mp->lock_state = NACL_INTR_LOCK_FREE;
-  NaClXMutexUnlock(&mp->mu);
 }

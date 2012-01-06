@@ -14,8 +14,7 @@
 #if defined(__native_client__) || NACL_LINUX || NACL_OSX
 #include <pthread.h>
 #endif
-#include "include/atomic_ops.h"
-#include "include/nacl_compiler_annotations.h"
+
 #include "include/nacl_base.h"
 #include "src/service_runtime/include/machine/_types.h"
 
@@ -86,8 +85,6 @@ void NaClMutexDtor(struct NaClMutex *mp);
 
 NaClSyncStatus NaClMutexLock(struct NaClMutex *mp) NACL_WUR;
 
-NaClSyncStatus NaClMutexTryLock(struct NaClMutex *mp) NACL_WUR;
-
 NaClSyncStatus NaClMutexUnlock(struct NaClMutex *mp) NACL_WUR;
 
 
@@ -112,9 +109,6 @@ NaClSyncStatus NaClCondVarTimedWaitAbsolute(
     struct NaClMutex                *mp,
     NACL_TIMESPEC_T const           *abstime) NACL_WUR;
 
-
-
 EXTERN_C_END
-
 
 #endif  /* NATIVE_CLIENT_SRC_SHARED_PLATFORM_NACL_SYNC_H_ */

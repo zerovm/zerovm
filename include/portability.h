@@ -17,21 +17,11 @@
 #define NATIVE_CLIENT_SRC_INCLUDE_PORTABILITY_H_ 1
 
 #include <stdlib.h>
-
-#include "include/nacl_base.h"
-#ifdef __native_client__
-#include <bits/wordsize.h>
-#else
-//#include "src/service_runtime/include/bits/wordsize.h"
-#define __WORDSIZE 64
-#endif
-
-#include "include/nacl_compiler_annotations.h"
-
-#include <sys/types.h>
-#include <stdint.h>
 #include <unistd.h>
 #include <sys/time.h>
+
+#include "include/nacl_base.h"
+#include "include/nacl_compiler_annotations.h"
 
 /*
  * Per C99 7.8.14, define __STDC_CONSTANT_MACROS before including <stdint.h>
@@ -40,6 +30,7 @@
  * guarantee that the INTn_C macros can be defined by including <stdint.h> at
  * any specific point.  Provide GG_INTn_C macros instead.
  */
+#define __WORDSIZE 64
 
 #define GG_INT8_C(x)    (x)
 #define GG_INT16_C(x)   (x)
@@ -51,30 +42,10 @@
 #define GG_UINT32_C(x)  (x ## U)
 #define GG_UINT64_C(x)  GG_ULONGLONG(x)
 
-#if NACL_WINDOWS
-#define GG_LONGLONG(x) x##I64
-#define GG_ULONGLONG(x) x##UI64
-#else
 #define GG_LONGLONG(x) x##LL
 #define GG_ULONGLONG(x) x##ULL
-#endif
-
-#if NACL_WINDOWS
-# define LOCALTIME_R(in_time_t_ptr, out_struct_tm_ptr) \
-  (0 == localtime_s(out_struct_tm_ptr, in_time_t_ptr) ? \
-      out_struct_tm_ptr : (struct tm *) 0)  /* NULL requires stdio.h */
-
-struct timezone {
-  int tz_minuteswest;
-  int tz_dsttime;
-};
-
-#else
-
 # define LOCALTIME_R(in_time_t_ptr, out_struct_tm_ptr) \
   localtime_r(in_time_t_ptr, out_struct_tm_ptr)
-#endif
-
 
 /**
  * Processor architecture detection. This code was derived from
@@ -125,21 +96,7 @@ struct timezone {
  * etc. 64-bit windows uses 32-bit long and does not include long
  * long
  */
-#if NACL_WINDOWS
-# if defined(_WIN64)
-#  define  NACL___PRIS_PREFIX "I64"
-# else
-#  define  NACL___PRIS_PREFIX
-# endif
-#elif NACL_OSX
-# define  NACL___PRIS_PREFIX "l" /* -pedantic C++ programs w/ xcode */
-#elif defined(__native_client__)
-# define NACL___PRIS_PREFIX "z"
-#elif __WORDSIZE == 64
-# define NACL___PRIS_PREFIX "l"
-#else
-# define NACL___PRIS_PREFIX
-#endif
+#define NACL___PRIS_PREFIX "l"
 
 #if !defined(NACL_PRIdS)
 #define NACL_PRIdS NACL___PRIS_PREFIX "d"
@@ -163,86 +120,18 @@ struct timezone {
 /*
  * printf macros for intptr_t and uintptr_t, int{8,16,32,64}
  */
-#if NACL_WINDOWS
-# if defined(_WIN64)
-#  define NACL___PRIPTR_PREFIX "I64"
-# else
-#  define NACL___PRIPTR_PREFIX "l"
-# endif
-# define NACL_PRIdPTR NACL___PRIPTR_PREFIX "d"
-# define NACL_PRIiPTR NACL___PRIPTR_PREFIX "i"
-# define NACL_PRIoPTR NACL___PRIPTR_PREFIX "o"
-# define NACL_PRIuPTR NACL___PRIPTR_PREFIX "u"
-# define NACL_PRIxPTR NACL___PRIPTR_PREFIX "x"
-# define NACL_PRIXPTR NACL___PRIPTR_PREFIX "X"
-
-# define NACL_PRId8  "d"
-# define NACL_PRIi8  "i"
-# define NACL_PRIo8  "o"
-# define NACL_PRIu8  "u"
-# define NACL_PRIx8  "x"
-# define NACL_PRIX8  "X"
-
-# define NACL_PRId16 "d"
-# define NACL_PRIi16 "i"
-# define NACL_PRIo16 "o"
-# define NACL_PRIu16 "u"
-# define NACL_PRIx16 "x"
-# define NACL_PRIX16 "X"
-
-# define NACL___PRI32_PREFIX "I32"
-
-# define NACL_PRId32 NACL___PRI32_PREFIX "d"
-# define NACL_PRIi32 NACL___PRI32_PREFIX "i"
-# define NACL_PRIo32 NACL___PRI32_PREFIX "o"
-# define NACL_PRIu32 NACL___PRI32_PREFIX "u"
-# define NACL_PRIx32 NACL___PRI32_PREFIX "x"
-# define NACL_PRIX32 NACL___PRI32_PREFIX "X"
-
-# define NACL___PRI64_PREFIX "I64"
-
-#if !defined(NACL_PRId64)
-# define NACL_PRId64 NACL___PRI64_PREFIX "d"
-#endif
-#if !defined(NACL_PRIi64)
-# define NACL_PRIi64 NACL___PRI64_PREFIX "i"
-#endif
-#if !defined(NACL_PRIo64)
-# define NACL_PRIo64 NACL___PRI64_PREFIX "o"
-#endif
-#if !defined(NACL_PRIu64)
-# define NACL_PRIu64 NACL___PRI64_PREFIX "u"
-#endif
-#if !defined(NACL_PRIx64)
-# define NACL_PRIx64 NACL___PRI64_PREFIX "x"
-#endif
-#if !defined(NACL_PRIX64)
-# define NACL_PRIX64 NACL___PRI64_PREFIX "X"
+#ifndef __STDC_FORMAT_MACROS
+#define __STDC_FORMAT_MACROS  /* C++ */
 #endif
 
-#else  /* NACL_LINUX, NACL_OSX, __native_client__ */
+#include <inttypes.h>
 
-# ifndef __STDC_FORMAT_MACROS
-#  define __STDC_FORMAT_MACROS  /* C++ */
-# endif
-
-# include <inttypes.h>
-
-# if __native_client__
-#  define NACL_PRIdPTR PRId32
-#  define NACL_PRIiPTR PRIi32
-#  define NACL_PRIoPTR PRIo32
-#  define NACL_PRIuPTR PRIu32
-#  define NACL_PRIxPTR PRIx32
-#  define NACL_PRIXPTR PRIX32
-# else
 #  define NACL_PRIdPTR PRIdPTR
 #  define NACL_PRIiPTR PRIiPTR
 #  define NACL_PRIoPTR PRIoPTR
 #  define NACL_PRIuPTR PRIuPTR
 #  define NACL_PRIxPTR PRIxPTR
 #  define NACL_PRIXPTR PRIXPTR
-# endif
 
 # define NACL_PRId64 PRId64
 # define NACL_PRIi64 PRIi64
@@ -271,27 +160,6 @@ struct timezone {
 # define NACL_PRIu8 PRIu8
 # define NACL_PRIx8 PRIx8
 # define NACL_PRIX8 PRIX8
-
-# if NACL_OSX
-/*
- * OSX defines "hh" prefix for int8_t etc, but that's not standards
- * compliant -- --std=c++98 -Wall -Werror rejects it.
- */
-#  undef NACL_PRId8
-#  undef NACL_PRIi8
-#  undef NACL_PRIo8
-#  undef NACL_PRIu8
-#  undef NACL_PRIx8
-#  undef NACL_PRIX8
-#  define NACL_PRId8  "d"
-#  define NACL_PRIi8  "i"
-#  define NACL_PRIo8  "o"
-#  define NACL_PRIu8  "u"
-#  define NACL_PRIx8  "x"
-#  define NACL_PRIX8  "X"
-# endif  /* NACL_OSX */
-
-#endif  /* NACL_LINUX, NACL_OSX, __native_client__ */
 
 /*
  * macros for run-time error detectors (such as Valgrind/Memcheck).

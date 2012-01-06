@@ -4,14 +4,9 @@
  * be found in the LICENSE file.
  */
 
-#include <stdio.h>
 #include <stdint.h>
 #include <sys/mman.h>
 #include <sys/types.h>
-
-#include "src/platform/nacl_find_addrsp.h"
-
-#include "include/portability.h"
 #include "include/nacl_platform.h"
 #include "src/platform/nacl_log.h"
 

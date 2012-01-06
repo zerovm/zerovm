@@ -8,23 +8,14 @@
  * NaCl Service Runtime.  Transferrable shared memory objects.
  */
 
-#include "include/portability.h"
-#include "include/nacl_platform.h"
-
-#include <stdlib.h>
 #include <string.h>
 
-#include "src/imc/nacl_imc_c.h"
-#include "src/desc/nacl_desc_base.h"
+#include "include/nacl_platform.h"
 #include "src/desc/nacl_desc_effector.h"
-#include "src/desc/nacl_desc_io.h"
 #include "src/desc/nacl_desc_imc_shm.h"
-
 #include "src/platform/nacl_find_addrsp.h"
 #include "src/platform/nacl_host_desc.h"
 #include "src/platform/nacl_log.h"
-#include "src/platform/nacl_sync_checked.h"
-
 #include "src/service_runtime/include/sys/errno.h"
 #include "src/service_runtime/include/sys/mman.h"
 #include "src/service_runtime/include/sys/stat.h"
@@ -271,12 +262,6 @@ static int NaClDescImcShmUnmapCommon(struct NaClDesc         *vself,
        addr += NACL_MAP_PAGESIZE) {
     int       status;
 
-#if NACL_WINDOWS
-    /*
-     * On windows, we must unmap "properly", since overmapping will
-     * not tear down existing page mappings.
-     */
-#elif NACL_LINUX || NACL_OSX
     if (!safe_mode) {
       /*
        * unsafe unmap always unmaps, w/o overmapping with anonymous
@@ -286,9 +271,6 @@ static int NaClDescImcShmUnmapCommon(struct NaClDesc         *vself,
        * window open where the untrusted address space has unoccupied
        * page table entries.
        */
-#else
-# error "what platform?"
-#endif
       /*
        * Do the unmap "properly" through NaClUnmap.
        */
@@ -297,9 +279,7 @@ static int NaClDescImcShmUnmapCommon(struct NaClDesc         *vself,
         NaClLog(LOG_FATAL, "NaClDescImcShmUnmapCommon: NaClUnmap failed\n");
         goto done;
       }
-#if NACL_LINUX || NACL_OSX
     }
-#endif
     /* there's still a race condition */
     if (safe_mode) {
       uintptr_t result = (*effp->vtbl->MapAnonymousMemory)(effp,

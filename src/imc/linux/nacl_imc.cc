@@ -8,16 +8,8 @@
 // NaCl inter-module communication primitives.
 
 #include "src/imc/nacl_imc.h"
-#include <assert.h>
-#include <ctype.h>
 #include <errno.h>
-#include <fcntl.h>
-#include <stdio.h>
-#include <string.h>
-#include <unistd.h>
-#include <sys/mman.h>
 #include <sys/socket.h>
-#include <sys/types.h>
 #include <sys/un.h>
 
 #include "src/platform/nacl_log.h"

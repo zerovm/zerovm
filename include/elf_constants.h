@@ -75,19 +75,7 @@ EXTERN_C_BEGIN
 #define EM_ARM          40  /* arm */
 #define EM_X86_64       62  /* x86-64 */
 
-#if NACL_ARCH(NACL_BUILD_ARCH) == NACL_x86
-# if NACL_BUILD_SUBARCH == 32
-#  define EM_EXPECTED_BY_NACL EM_386
-# elif NACL_BUILD_SUBARCH == 64
-#  define EM_EXPECTED_BY_NACL EM_X86_64
-# else
-#  error "No NACL_BUILD_SUBARCH for x86 -- are we on x86-128?"
-# endif
-#elif NACL_ARCH(NACL_BUILD_ARCH) == NACL_arm
-# define EM_EXPECTED_BY_NACL EM_ARM
-#else
-# error "Unknown platform!"
-#endif
+#define EM_EXPECTED_BY_NACL EM_X86_64
 
 #define EV_NONE         0   /* invalid version */
 #define EV_CURRENT      1   /* current version */
@@ -137,9 +125,6 @@ EXTERN_C_BEGIN
 #define PT_LOOS       0x60000000  /* Environment-specific low */
 #define PT_HIOS       0x6fffffff  /* Environment-specific high */
 #define PT_LOPROC     0x70000000  /* Processor-specific low */
-#if NACL_ARCH(NACL_BUILD_ARCH) == NACL_arm
-#define PT_ARM_EXIDX  0x70000001  /* Exception unwind tables */
-#endif
 #define PT_HIPROC     0x7fffffff  /* Processor-specific high */
 /*
  * These are from linux elf.h, for code usage

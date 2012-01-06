@@ -13,33 +13,15 @@
  */
 
 #include <dirent.h>
-#include <errno.h>
 #include <fcntl.h>
-#include <limits.h>
-#include <linux/types.h>
-#include <linux/unistd.h>
 #include <stddef.h>
-#include <stdint.h>
 #include <string.h>
-#include <sys/mman.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <unistd.h>
 
 #include "src/platform/nacl_check.h"
-#include "src/platform/nacl_host_desc.h"
 #include "src/platform/nacl_host_dir.h"
-#include "src/platform/nacl_log.h"
-#include "src/platform/nacl_sync.h"
 #include "src/platform/nacl_sync_checked.h"
-
-#include "src/service_runtime/nacl_config.h"
-
 #include "src/service_runtime/include/sys/dirent.h"
 #include "src/service_runtime/include/sys/errno.h"
-#include "src/service_runtime/include/sys/fcntl.h"
-#include "src/service_runtime/include/sys/mman.h"
-#include "src/service_runtime/include/sys/stat.h"
 
 #ifdef _syscall3
 _syscall3(int, getdents, uint, fd, struct dirent *, dirp, uint, count)

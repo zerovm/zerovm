@@ -10,11 +10,7 @@
 #ifndef NATIVE_CLIENT_SRC_TRUSTED_DESC_NACL_DESC_CONN_CAP_H_
 #define NATIVE_CLIENT_SRC_TRUSTED_DESC_NACL_DESC_CONN_CAP_H_
 
-#include "include/portability.h"
-
 #include "src/desc/nacl_desc_base.h"
-
-#include "src/imc/nacl_imc_c.h"
 
 EXTERN_C_BEGIN
 

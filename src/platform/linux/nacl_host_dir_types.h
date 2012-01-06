@@ -11,10 +11,6 @@
 #ifndef NATIVE_CLIENT_SRC_TRUSTED_PLATFORM_LINUX_NACL_HOST_DIR_TYPES_H_
 #define NATIVE_CLIENT_SRC_TRUSTED_PLATFORM_LINUX_NACL_HOST_DIR_TYPES_H_
 
-#include <sys/types.h>
-#include <dirent.h>
-
-#include "include/nacl_base.h"
 #include "src/platform/nacl_sync.h"
 
 #define NACL_DIRENT_BUF_BYTES 4096

@@ -15,21 +15,13 @@
 // goes in the linux directory and is referenced by the mac build but that's a
 // little sloppy.
 
-#include <assert.h>
-#include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
 #include <stdio.h>
-#include <string.h>
-#include <unistd.h>
 #include <sys/mman.h>
-#include <sys/types.h>
-
-#include <algorithm>
 
 #include "include/atomic_ops.h"
-
 #include "src/imc/nacl_imc.h"
 #include "src/platform/nacl_check.h"
 
@@ -48,26 +40,6 @@ const char kShmOpenPrefix[] = "/google-nacl-shm-";
 
 bool WouldBlock() {
   return (errno == EAGAIN) ? true : false;
-}
-
-int GetLastErrorString(char* buffer, size_t length) {
-#if NACL_LINUX
-  // Note some Linux distributions provide only GNU version of strerror_r().
-  if (buffer == NULL || length == 0) {
-    errno = ERANGE;
-    return -1;
-  }
-  char* message = strerror_r(errno, buffer, length);
-  if (message != buffer) {
-    size_t message_bytes = strlen(message) + 1;
-    length = std::min(message_bytes, length);
-    memmove(buffer, message, length);
-    buffer[length - 1] = '\0';
-  }
-  return 0;
-#else
-  return strerror_r(errno, buffer, length);
-#endif
 }
 
 static Atomic32 memory_object_count = 0;
@@ -111,10 +83,6 @@ static int TryShmOrTempOpen(size_t length, const char* prefix, bool use_temp) {
 
 static CreateMemoryObjectFunc g_create_memory_object_func = NULL;
 
-void SetCreateMemoryObjectFunc(CreateMemoryObjectFunc func) {
-  g_create_memory_object_func = func;
-}
-
 Handle CreateMemoryObject(size_t length, bool executable) {
   if (0 == length) {
     return -1;
@@ -153,15 +121,6 @@ Handle CreateMemoryObject(size_t length, bool executable) {
   //
   // TODO(mseaborn): We will probably need to do IPC to acquire SHM FDs
   // inside the Chromium Mac sandbox, as on Linux.
-
-#if NACL_OSX
-  // Try /tmp first.  It would be OK to enable this for Linux, but
-  // there's no need because shm_open() (which uses /dev/shm rather
-  // than /tmp) is fine on Linux.
-  fd = TryShmOrTempOpen(length, kShmTempPrefix, true);
-  if (fd >= 0)
-    return fd;
-#endif
 
   // Try shm_open().
   return TryShmOrTempOpen(length, kShmOpenPrefix, false);

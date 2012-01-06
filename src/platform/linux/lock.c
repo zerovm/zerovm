@@ -3,10 +3,6 @@
  * Use of this source code is governed by a BSD-style license that can be
  * found in the LICENSE file.
  */
-
-
-#include <pthread.h>
-#include "include/nacl_macros.h"
 #include "src/platform/nacl_sync.h"
 
 int NaClMutexCtor(struct NaClMutex *mp) {
@@ -23,10 +19,6 @@ void NaClMutexDtor(struct NaClMutex *mp) {
 NaClSyncStatus NaClMutexLock(struct NaClMutex *mp) {
   pthread_mutex_lock(&mp->mu);
   return NACL_SYNC_OK;
-}
-
-NaClSyncStatus NaClMutexTryLock(struct NaClMutex *mp) {
-  return (0 == pthread_mutex_trylock(&mp->mu)) ?  NACL_SYNC_OK : NACL_SYNC_BUSY;
 }
 
 NaClSyncStatus NaClMutexUnlock(struct NaClMutex *mp) {

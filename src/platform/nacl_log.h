@@ -103,29 +103,8 @@
 
 #else
 # include "include/portability.h"
-# if NACL_WINDOWS
-#  if NACL_ARCH(NACL_BUILD_ARCH) == NACL_x86
-#   if NACL_BUILD_SUBARCH == 32
-/*
- * lie about availability of TLS, since TLS usage in dso is verboten
- * in chrome
- */
-#    define NACL_PLATFORM_HAS_TLS 0
-#    define NACL_PLATFORM_HAS_TSD 0
-#   elif NACL_BUILD_SUBARCH == 64
-#    define NACL_PLATFORM_HAS_TLS 1
-#    define NACL_PLATFORM_HAS_TSD 0
-#   else
-#    error "windows is running on x86-128?"
-#   endif
-#  else
-#   error "windows is running on non-x86?"
-#  endif
-# elif NACL_LINUX
+# if NACL_LINUX
 #  define NACL_PLATFORM_HAS_TLS 1
-#  define NACL_PLATFORM_HAS_TSD 1
-# elif NACL_OSX
-#  define NACL_PLATFORM_HAS_TLS 0
 #  define NACL_PLATFORM_HAS_TSD 1
 # else
 #  error "what platform are we on?"
@@ -137,19 +116,16 @@ struct Gio;
 EXTERN_C_BEGIN
 
 /*
- * PreInit functions may be used to set default module parameter
- * values before the module initializer is called.  This is needed in
- * some cases, such as by users of NaClNrdModuleInit or
- * NaClAllModuleInit, where a list of module initializer is invoked,
- * and the caller wants to crank up logging to get logging output from
- * functions invoked in the module initializers that occur after
- * NaClLogModuleInit (and prior to NaClNrdModuleInit returning).
- * After either the NaClLogModuleInit or NaClLogModuleInitExtended
- * functions are called, then these functions are no longer safe to
- * use; use NaClLogSetVerbosity and NaClLogSetGio instead.
+ * "Internal" functions.  NaClLogSetModule and
+ * NaClLogDoLogAndUnsetModule should only be used by the syntactic
+ * macro below.
+ *
+ * NaClLogSetModule always return 0.  This means in the macro, its
+ * continuation is the else clause.  NaClLogDoLogAndUnsetModule is a
+ * "naked" identifier in the macro definition, and so will take on the
+ * argument list from the apparent argument list of NaClLog.
  */
-void NaClLogPreInitSetVerbosity(int verb);
-void NaClLogPreInitSetGio(struct Gio *out_stream);
+int NaClLogSetModule(char const *module_name);
 
 /*
  * TODO: per-module logging, adding a module-name parameter, probably
@@ -227,22 +203,8 @@ void NaClLogSetGio(struct Gio *out_stream);
 
 struct Gio *NaClLogGetGio(void);
 
-/*
- * Timestamps on log entries may be disabled, e.g., to make it easier to
- * write test that compare logging output.
- */
-
-void NaClLogEnableTimestamp(void);
-
-void NaClLogDisableTimestamp(void);
-
-void NaClLogSetModuleVerbosity_mu(char const  *module_name,
-                                  int         verbosity);
-
 void NaClLogSetModuleVerbosity(char const *module_name,
                                int        verbosity);
-
-int NaClLogGetModuleVerbosity_mu(char const *module_name);
 
 int NaClLogGetModuleVerbosity(char const *module_name);
 
@@ -261,18 +223,6 @@ void NaClLog(int         detail_level,
              ...) ATTRIBUTE_FORMAT_PRINTF(2, 3);
 
 /*
- * A version of NaClLog with an explicit module name parameter.  This
- * is used, for example, by C++ template code that is defined in a
- * header file which logically belongs to the module in which the
- * header file appears, rather than where the template expansion
- * occurs.
- */
-void NaClLog2(char const *module_name,
-              int        detail_level,
-              char const *fmt,
-              ...) ATTRIBUTE_FORMAT_PRINTF(3, 4);
-
-/*
  * "Internal" functions.  NaClLogSetModule and
  * NaClLogDoLogAndUnsetModule should only be used by the syntactic
  * macro below.
@@ -282,7 +232,6 @@ void NaClLog2(char const *module_name,
  * "naked" identifier in the macro definition, and so will take on the
  * argument list from the apparent argument list of NaClLog.
  */
-int NaClLogSetModule(char const *module_name);
 void NaClLogDoLogAndUnsetModule(int        detail_level,
                                 char const *fmt,
                                 ...) ATTRIBUTE_FORMAT_PRINTF(2, 3);
@@ -327,6 +276,8 @@ void NaClLogDoLogAndUnsetModule(int        detail_level,
  */
 #endif
 
+#define GETPID getpid /* from removed header */
+
 #define LOG_INFO    (-1)
 #define LOG_WARNING (-2)
 #define LOG_ERROR   (-3)
@@ -338,33 +289,6 @@ void NaClLogDoLogAndUnsetModule(int        detail_level,
  */
 void NaClLogLock(void);
 void NaClLogUnlock(void);
-
-/*
- * Caller is responsible for grabbing the NaClLog mutex lock (via
- * NaClLogLock) before calling NaClLogV_mu or NaClLog_mu and for
- * releasing it (via NaClLogUnlock) afterward.
- *
- * Users of NaClLogV_mu should also use ATTRIBUTE_FORMAT_PRINTF as
- * above.
- *
- * Only the first call to NaClLog_mu or NaClLogV_mu after the
- * NaClLogLock will get a timestamp tag prepended.  No newline
- * detection is done, so a multi-line output must be (1) split into
- * multiple calls to NaClLog_mu or NaClLogV_mu so that newlines are
- * the last character in the format string to the NaClLog_mu or
- * NaClLogV_mu calls, and (2) are followed by NaClLogTagNext_mu() so
- * that the next output will know to generate a tag.
- */
-void NaClLogV_mu(int         detail_level,
-                 char const  *fmt,
-                 va_list     ap);
-
-void NaClLog_mu(int         detail_level,
-                char const  *fmt,
-                ...) ATTRIBUTE_FORMAT_PRINTF(2, 3);
-
-void NaClLogTagNext_mu(void);
-
 
 EXTERN_C_END
 

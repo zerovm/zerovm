@@ -13,9 +13,6 @@
 #define NATIVE_CLIENT_SRC_TRUSTED_GIO_WRAPPED_DESC_GIO_SHM_UNBOUNDED_H_
 
 #include "include/nacl_base.h"
-
-#include "src/gio/gio.h"
-
 #include "src/gio/gio_shm.h"
 
 EXTERN_C_BEGIN
@@ -32,24 +29,6 @@ struct NaClGioShmUnbounded {
   size_t            shm_written;
   size_t            io_offset;  /* deal with seeks */
 };
-
-
-/*
- * When the NaClGioShmUnbounded buffer writes are all done,
- * NaClGioShmUnboundedGetNaClDesc is used to obtain the NaClDesc
- * pointer -- caller is responsible for taking another reference with
- * NaClDescRef, if the lifetime must extend beyond that of the
- * NaClGioShmUnbounded object -- and the actual size.  Actual size is
- * the largest offset written, not number of bytes written, due to
- * Seek and the potential of overlapping Writes (or gaps).
- */
-struct NaClDesc *NaClGioShmUnboundedGetNaClDesc(
-    struct NaClGioShmUnbounded  *self,
-    size_t                      *written);
-
-
-int NaClGioShmUnboundedCtor(struct NaClGioShmUnbounded *self);
-
 
 EXTERN_C_END
 

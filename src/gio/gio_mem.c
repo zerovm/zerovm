@@ -7,8 +7,6 @@
 /*
  * NaCl Generic I/O interface implementation: memory buffer-based I/O.
  */
-#include "include/portability.h"
-
 #include <string.h>
 #include <errno.h>
 
@@ -32,7 +30,6 @@ struct GioVtbl const    kGioMemoryFileVtbl = {
   GioMemoryFileDtor,
 };
 
-
 int GioMemoryFileCtor(struct GioMemoryFile  *self,
                       char                  *buffer,
                       size_t                len) {
@@ -43,7 +40,6 @@ int GioMemoryFileCtor(struct GioMemoryFile  *self,
   self->base.vtbl = &kGioMemoryFileVtbl;
   return 1;
 }
-
 
 ssize_t GioMemoryFileRead(struct Gio  *vself,
                           void        *buf,
@@ -70,7 +66,6 @@ ssize_t GioMemoryFileRead(struct Gio  *vself,
   return count;
 }
 
-
 ssize_t GioMemoryFileWrite(struct Gio *vself,
                            const void *buf,
                            size_t     count) {
@@ -96,7 +91,6 @@ ssize_t GioMemoryFileWrite(struct Gio *vself,
   /* we never extend a memory file */
   return count;
 }
-
 
 off_t GioMemoryFileSeek(struct Gio  *vself,
                         off_t       offset,
@@ -131,18 +125,15 @@ off_t GioMemoryFileSeek(struct Gio  *vself,
   return (off_t) new_pos;
 }
 
-
 int GioMemoryFileClose(struct Gio *vself) {
   UNREFERENCED_PARAMETER(vself);
   return 0;
 }
 
-
 int GioMemoryFileFlush(struct Gio   *vself) {
   UNREFERENCED_PARAMETER(vself);
   return 0;
 }
-
 
 void  GioMemoryFileDtor(struct Gio    *vself) {
   UNREFERENCED_PARAMETER(vself);

@@ -43,7 +43,6 @@
 #include <assert.h>
 // TODO(sehr,noelallen): replace the C standard asserts with asserts that
 // use the same output as the logging interface when we have that.
-#include <stdlib.h>
 #include <cstddef>
 
 namespace nacl {

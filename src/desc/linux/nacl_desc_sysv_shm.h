@@ -10,9 +10,7 @@
 #ifndef NATIVE_CLIENT_SRC_TRUSTED_DESC_NACL_DESC_LINUX_SYSV_SHM_H_
 #define NATIVE_CLIENT_SRC_TRUSTED_DESC_NACL_DESC_LINUX_SYSV_SHM_H_
 
-#include "include/portability.h"
 #include "include/nacl_base.h"
-
 #include "src/desc/nacl_desc_base.h"
 
 EXTERN_C_BEGIN
@@ -63,9 +61,6 @@ int NaClDescSysvShmInternalize(struct NaClDesc          **baseptr,
 int NaClDescSysvShmImportCtor(struct NaClDescSysvShm  *self,
                               int                     id,
                               nacl_off64_t            size) NACL_WUR;
-
-int NaClDescSysvShmCtor(struct NaClDescSysvShm  *self,
-                        nacl_off64_t            size) NACL_WUR;
 
 EXTERN_C_END
 

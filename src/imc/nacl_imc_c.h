@@ -26,10 +26,6 @@
 extern "C" {
 #endif  /* __cplusplus */
 
-/* Get the last error message string. */
-int NaClGetLastErrorString(char* buffer, size_t length);
-
-
 /*
  * NaCl resource descriptor type NaCl resource descriptors can be
  * directly used with epoll on Linux, or with WaitForMultipleObject on
@@ -38,11 +34,7 @@ int NaClGetLastErrorString(char* buffer, size_t length);
 
 #ifndef __nacl_handle_defined
 #define __nacl_handle_defined
-#if NACL_WINDOWS
-typedef HANDLE NaClHandle;
-#else
 typedef int NaClHandle;
-#endif
 #endif
 
 #define NACL_INVALID_HANDLE ((NaClHandle) -1)
@@ -90,14 +82,6 @@ typedef struct NaClMessageHeader {
   size_t      handle_count;   /* number of handles in handles */
   int         flags;
 } NaClMessageHeader;
-
-/*
- * Creates a NaCl socket associated with the local address.
- *
- * NaClBoundSocket() returns a handle of the newly created
- * bound socket on success, and NACL_INVALID_HANDLE on failure.
- */
-NaClHandle NaClBoundSocket(const NaClSocketAddress* address);
 
 /*
  * Creates an unnamed pair of connected sockets.  NaClSocketPair()
@@ -151,8 +135,6 @@ int NaClWouldBlock();
  */
 int NaClSendDatagram(NaClHandle socket, const NaClMessageHeader* message,
                      int flags);
-int NaClSendDatagramTo(const NaClMessageHeader* message,
-                       int flags, const NaClSocketAddress* name);
 
 /*
  * Receives a message from a socket.

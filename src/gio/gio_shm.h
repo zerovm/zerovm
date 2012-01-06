@@ -13,9 +13,7 @@
 #define NATIVE_CLIENT_SRC_TRUSTED_GIO_WRAPPED_DESC_GIO_SHM_H_
 
 #include "include/nacl_base.h"
-
 #include "src/gio/gio.h"
-
 #include "src/desc/nacl_desc_effector_trusted_mem.h"
 
 EXTERN_C_BEGIN
@@ -40,22 +38,6 @@ struct NaClGioShm {
   size_t                            window_offset;
   size_t                            window_size;
 };
-
-/*
- * Create a Gio object backed by a NaClDesc -- any NaClDesc objects
- * for which the Map virtual function is usable.  The shm_size is the
- * size of the file data in the shm object -- so the requirement is
- * that *shmp object's size is at least shm_size (and it would
- * normally be, since the object size is rounded to
- * NACL_MAP_PAGESIZE).  The shm_size value is used to limit Seek and
- * to know when to report EOF on Read.
- *
- * The NaClGioShm object is read-only.  It takes a reference to the
- * shmp when constructed, and releases a reference on destruction.
- */
-int NaClGioShmCtor(struct NaClGioShm  *self,
-                   struct NaClDesc    *shmp,
-                   size_t             shm_size);
 
 int NaClGioShmAllocCtor(struct NaClGioShm *self,
                         size_t            shm_size);

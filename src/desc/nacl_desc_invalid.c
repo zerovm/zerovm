@@ -8,19 +8,9 @@
  * NaCl Service Runtime.  Directory descriptor abstraction.
  */
 
-#include "include/portability.h"
-
-#include <stdlib.h>
-#include <string.h>
-
-#include "src/desc/nacl_desc_base.h"
 #include "src/desc/nacl_desc_invalid.h"
-
 #include "src/platform/nacl_log.h"
 #include "src/platform/nacl_sync_checked.h"
-
-#include "src/service_runtime/internal_errno.h"
-#include "src/service_runtime/nacl_config.h"
 
 static int NaClDescInvalidExternalizeSize(struct NaClDesc      *vself,
                                           size_t               *nbytes,

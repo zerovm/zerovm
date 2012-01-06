@@ -11,12 +11,7 @@
 #define NATIVE_CLIENT_SRC_TRUSTED_DESC_NACL_DESC_COND_H_
 
 #include "include/nacl_base.h"
-#include "include/portability.h"
-
-#include "src/desc/nacl_desc_base.h"
 #include "src/desc/nacl_desc_mutex.h"
-#include "src/desc/nacl_desc_cond.h"
-
 #include "src/platform/nacl_interruptible_condvar.h"
 
 EXTERN_C_BEGIN
@@ -33,9 +28,6 @@ struct NaClDescCondVar {
 
 int NaClDescCondVarInternalize(struct NaClDesc          **baseptr,
                                struct NaClDescXferState *xfer)
-    NACL_WUR;
-
-int NaClDescCondVarCtor(struct NaClDescCondVar  *self)
     NACL_WUR;
 
 EXTERN_C_END

@@ -5,9 +5,7 @@
  */
 
 #include "src/nacl_base/nacl_refcount.h"
-
 #include "src/platform/nacl_log.h"
-#include "src/platform/nacl_sync_checked.h"
 
 int NaClRefCountCtor(struct NaClRefCount *self) {
   NaClLog(4, "NaClRefCountCtor(0x%08"NACL_PRIxPTR").\n", (uintptr_t) self);
@@ -66,11 +64,9 @@ struct NaClRefCountVtbl const kNaClRefCountVtbl = {
 struct NaClRefCount *NaClRefCountRef(struct NaClRefCount *nrcp) {
   NaClLog(4, "NaClRefCountRef(0x%08"NACL_PRIxPTR").\n",
           (uintptr_t) nrcp);
-  NaClXMutexLock(&nrcp->mu);
   if (0 == ++nrcp->ref_count) {
     NaClLog(LOG_FATAL, "NaClRefCountRef integer overflow\n");
   }
-  NaClXMutexUnlock(&nrcp->mu);
   return nrcp;
 }
 
@@ -79,7 +75,6 @@ void NaClRefCountUnref(struct NaClRefCount *nrcp) {
 
   NaClLog(4, "NaClRefCountUnref(0x%08"NACL_PRIxPTR").\n",
           (uintptr_t) nrcp);
-  NaClXMutexLock(&nrcp->mu);
   if (0 == nrcp->ref_count) {
     NaClLog(LOG_FATAL,
             ("NaClRefCountUnref on 0x%08"NACL_PRIxPTR
@@ -87,18 +82,8 @@ void NaClRefCountUnref(struct NaClRefCount *nrcp) {
             (uintptr_t) nrcp);
   }
   destroy = (0 == --nrcp->ref_count);
-  NaClXMutexUnlock(&nrcp->mu);
   if (destroy) {
     (*nrcp->vtbl->Dtor)(nrcp);
     free(nrcp);
   }
-}
-
-void NaClRefCountSafeUnref(struct NaClRefCount *nrcp) {
-  NaClLog(4, "NaClRefCountSafeUnref(0x%08"NACL_PRIxPTR").\n",
-          (uintptr_t) nrcp);
-  if (NULL == nrcp) {
-    return;
-  }
-  NaClRefCountUnref(nrcp);
 }

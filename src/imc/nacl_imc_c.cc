@@ -14,15 +14,6 @@
 // "C" bindings
 //
 
-int NaClGetLastErrorString(char* buffer, size_t length) {
-  return nacl::GetLastErrorString(buffer, length);
-}
-
-NaClHandle NaClBoundSocket(const NaClSocketAddress* address) {
-  return nacl::BoundSocket(
-      reinterpret_cast<const nacl::SocketAddress*>(address));
-}
-
 int NaClSocketPair(NaClHandle pair[2]) {
   return nacl::SocketPair(pair);
 }
@@ -41,14 +32,6 @@ int NaClSendDatagram(NaClHandle socket, const NaClMessageHeader* message,
       socket,
       reinterpret_cast<const nacl::MessageHeader*>(message),
       flags);
-}
-
-int NaClSendDatagramTo(const NaClMessageHeader* message,
-                       int flags, const NaClSocketAddress* name) {
-  return nacl::SendDatagramTo(
-      reinterpret_cast<const nacl::MessageHeader*>(message),
-      flags,
-      reinterpret_cast<const nacl::SocketAddress*>(name));
 }
 
 int NaClReceiveDatagram(NaClHandle socket, NaClMessageHeader* message,

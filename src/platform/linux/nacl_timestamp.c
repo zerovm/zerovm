@@ -11,9 +11,6 @@
 #include <stdio.h>
 #include <sys/time.h>
 #include <time.h>
-#include <stdint.h>
-
-#include "src/platform/nacl_timestamp.h"
 
 char  *NaClTimeStampString(char   *buffer,
                            size_t buffer_size) {

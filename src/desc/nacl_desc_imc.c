@@ -8,23 +8,13 @@
  * NaCl Service Runtime.  I/O Descriptor / Handle abstraction.
  */
 
-#include <stdlib.h>
+//#include <stdlib.h>
 #include <string.h>
 #include <errno.h>
 
-#include "include/portability.h"
-
-#include "src/desc/nacl_desc_base.h"
 #include "src/desc/nacl_desc_imc.h"
-
 #include "src/platform/nacl_log.h"
-#include "src/platform/nacl_sync.h"
 #include "src/platform/nacl_sync_checked.h"
-
-#if NACL_WINDOWS
-# include "src/platform/win/xlate_system_error.h"
-#endif
-
 #include "src/service_runtime/include/sys/errno.h"
 #include "src/service_runtime/include/sys/stat.h"
 
@@ -192,13 +182,7 @@ static ssize_t NaClDescImcDescSendMsg(struct NaClDesc                *vself,
   NaClXMutexUnlock(&self->sendmsg_mu);
 
   if (-1 == result) {
-#if NACL_WINDOWS
-    return -NaClXlateSystemError(GetLastError());
-#elif NACL_LINUX || NACL_OSX
     return -NaClXlateErrno(errno);
-#else
-# error "Unknown target platform: cannot translate error code(s) from SendMsg"
-#endif
   }
   return result;
 }
@@ -245,13 +229,7 @@ NaClDescXferableDataDescSendMsg(struct NaClDesc                *vself,
   result = NaClSendDatagram(self->base.h, dgram, flags);
 
   if (-1 == result) {
-#if NACL_WINDOWS
-    return -NaClXlateSystemError(GetLastError());
-#elif NACL_LINUX || NACL_OSX
     return -NaClXlateErrno(errno);
-#else
-# error "Unknown target platform: cannot translate error code(s) from SendMsg"
-#endif
   }
   return result;
 }
@@ -275,13 +253,7 @@ static ssize_t NaClDescImcDescRecvMsg(struct NaClDesc          *vself,
   NaClXMutexUnlock(&self->recvmsg_mu);
 
   if (-1 == result) {
-#if NACL_WINDOWS
-    return -NaClXlateSystemError(GetLastError());
-#elif NACL_LINUX || NACL_OSX
     return -errno;
-#else
-# error "Unknown target platform: cannot translate error code(s) from RecvMsg"
-#endif
   }
   return result;
 }
@@ -314,13 +286,7 @@ static ssize_t NaClDescXferableDataDescRecvMsg(struct NaClDesc          *vself,
   result = NaClReceiveDatagram(self->base.h, dgram, flags);
 
   if (-1 == result) {
-#if NACL_WINDOWS
-    return -NaClXlateSystemError(GetLastError());
-#elif NACL_LINUX || NACL_OSX
     return -errno;
-#else
-# error "Unknown target platform: cannot translate error code(s) from RecvMsg"
-#endif
   }
   return result;
 }

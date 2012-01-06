@@ -4,16 +4,13 @@
  * found in the LICENSE file.
  */
 
-
 /*
  * Simple Perf Counter Layer to be used by the rest of the service run time
  */
 
 #include "src/platform/nacl_log.h"
 #include "src/platform/nacl_time.h"
-#include "include/portability.h"
 #include "include/portability_string.h"
-#include "include/nacl_assert.h"
 #include "include/nacl_macros.h"
 #include "src/perf_counter/nacl_perf_counter.h"
 
@@ -48,7 +45,6 @@ void NaClPerfCounterCtor(struct NaClPerfCounter *sv,
   sv->samples++;
 }
 
-
 /*
  * Records the time in sv and  returns its index in sv
  * Note that the first time this routine is called on a sv that was just
@@ -82,7 +78,6 @@ int NaClPerfCounterMark(struct NaClPerfCounter *sv, const char *ev_name) {
 
   return (sv->samples)++;
 }
-
 
 int64_t NaClPerfCounterInterval(struct NaClPerfCounter *sv,
                                 uint32_t a, uint32_t b) {

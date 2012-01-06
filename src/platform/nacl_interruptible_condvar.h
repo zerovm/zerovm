@@ -14,12 +14,8 @@
 
 #include "include/nacl_base.h"
 #include "src/platform/nacl_interruptible_mutex.h"
-#include "src/platform/nacl_sync.h"
-#include "src/service_runtime/include/sys/time.h"
-
 
 EXTERN_C_BEGIN
-
 
 struct NaClIntrCondVar {
   struct NaClCondVar  cv;
@@ -36,10 +32,6 @@ NaClSyncStatus NaClIntrCondVarWait(struct NaClIntrCondVar         *cp,
 NaClSyncStatus NaClIntrCondVarSignal(struct NaClIntrCondVar *cp);
 
 NaClSyncStatus NaClIntrCondVarBroadcast(struct NaClIntrCondVar *cp);
-
-void NaClIntrCondVarIntr(struct NaClIntrCondVar  *cp);
-
-void NaClIntrCondVarReset(struct NaClIntrCondVar *cp);
 
 EXTERN_C_END
 

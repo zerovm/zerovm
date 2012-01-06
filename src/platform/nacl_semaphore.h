@@ -11,20 +11,7 @@
 #define NATIVE_CLIENT_SRC_TRUSTED_PLATFORM_NACL_SEMAPHORE_H_
 
 #include "include/nacl_base.h"
-
-#include "src/platform/nacl_sync.h"
-
-#if NACL_WINDOWS
-#include "src/platform/win/nacl_semaphore.h"
-#elif NACL_LINUX
 #include "src/platform/linux/nacl_semaphore.h"
-#elif NACL_OSX
-#include "src/platform/osx/nacl_semaphore.h"
-#else
-#error "Unknown platform!!!"
-#endif
-
-#include "src/platform/nacl_sync.h"
 
 EXTERN_C_BEGIN
 
@@ -36,11 +23,7 @@ void NaClSemDtor(struct NaClSemaphore *sem);
 
 NaClSyncStatus NaClSemWait(struct NaClSemaphore *sem);
 
-NaClSyncStatus NaClSemTryWait(struct NaClSemaphore *sem);
-
 NaClSyncStatus NaClSemPost(struct NaClSemaphore *sem);
-
-int NaClSemGetValue(struct NaClSemaphore *sem);
 
 EXTERN_C_END
 

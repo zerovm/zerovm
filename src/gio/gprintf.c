@@ -7,10 +7,6 @@
 /*
  * NaCl Generic I/O interface.
  */
-#include "include/portability.h"
-
-#include <stdlib.h>
-
 #include "src/gio/gio.h"
 
 size_t gvprintf(struct Gio *gp,

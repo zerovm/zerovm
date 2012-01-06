@@ -5,8 +5,6 @@
  */
 
 #include <stdlib.h>
-#include <stdio.h>
-#include <signal.h>
 #include <unistd.h>
 
 #include "src/platform/nacl_exit.h"

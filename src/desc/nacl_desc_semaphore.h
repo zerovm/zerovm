@@ -11,10 +11,7 @@
 #define NATIVE_CLIENT_SRC_TRUSTED_DESC_NACL_DESC_SEMAPHORE_H_
 
 #include "include/nacl_base.h"
-#include "include/portability.h"
-
 #include "src/desc/nacl_desc_base.h"
-
 #include "src/platform/nacl_semaphore.h"
 
 EXTERN_C_BEGIN
@@ -29,9 +26,6 @@ struct NaClDescSemaphore {
 
 int NaClDescSemaphoreInternalize(struct NaClDesc          **baseptr,
                                  struct NaClDescXferState *xfer)
-    NACL_WUR;
-
-int NaClDescSemaphoreCtor(struct NaClDescSemaphore  *self, int value)
     NACL_WUR;
 
 EXTERN_C_END

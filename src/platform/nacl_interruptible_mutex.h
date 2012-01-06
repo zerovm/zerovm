@@ -42,10 +42,6 @@ NaClSyncStatus NaClIntrMutexTryLock(struct NaClIntrMutex *mp);
 
 NaClSyncStatus NaClIntrMutexUnlock(struct NaClIntrMutex *mp);
 
-void NaClIntrMutexIntr(struct NaClIntrMutex  *mp);
-
-void NaClIntrMutexReset(struct NaClIntrMutex *mp);
-
 EXTERN_C_END
 
 

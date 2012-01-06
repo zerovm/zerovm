@@ -12,8 +12,6 @@
 #define NATIVE_CLIENT_SRC_TRUSTED_DESC_NACL_DESC_INVALID_H_
 
 #include "include/nacl_base.h"
-#include "include/portability.h"
-
 #include "src/desc/nacl_desc_base.h"
 
 EXTERN_C_BEGIN

@@ -73,7 +73,6 @@ int ImportModeMap(char opt) {
                    " import mode\n"),
           opt);
   exit(1);
-  /* NOTREACHED */
 }
 
 static void PrintUsage() {

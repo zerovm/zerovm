@@ -18,11 +18,7 @@
  * placement-new style initialization.
  * TODO(bsy): is there another way to do this?
  */
-#if NACL_LINUX || NACL_OSX
-# include "src/platform/linux/nacl_secure_random_types.h"
-#elif NACL_WINDOWS
-# include "src/platform/win/nacl_secure_random_types.h"
-#endif
+#include "src/platform/linux/nacl_secure_random_types.h"
 
 EXTERN_C_BEGIN
 

@@ -15,7 +15,6 @@
 #define NATIVE_CLIENT_SRC_TRUSTED_PLATFORM_NACL_SYNC_CHECKED_H_
 
 #include "include/nacl_base.h"
-
 #include "src/platform/nacl_sync.h"
 
 EXTERN_C_BEGIN
@@ -27,24 +26,12 @@ EXTERN_C_BEGIN
 
 void NaClXMutexCtor(struct NaClMutex *mp);
 void NaClXMutexLock(struct NaClMutex *mp);
-NaClSyncStatus NaClXMutexTryLock(struct NaClMutex *mp);
 void NaClXMutexUnlock(struct NaClMutex *mp);
 
-void NaClXCondVarCtor(struct NaClCondVar *cvp);
 void NaClXCondVarSignal(struct NaClCondVar *cvp);
 void NaClXCondVarBroadcast(struct NaClCondVar *cvp);
 void NaClXCondVarWait(struct NaClCondVar *cvp,
                       struct NaClMutex   *mp);
-
-NaClSyncStatus NaClXCondVarTimedWaitAbsolute(
-    struct NaClCondVar              *cvp,
-    struct NaClMutex                *mp,
-    NACL_TIMESPEC_T const           *abstime);
-
-NaClSyncStatus NaClXCondVarTimedWaitRelative(
-    struct NaClCondVar              *cvp,
-    struct NaClMutex                *mp,
-    NACL_TIMESPEC_T const           *reltime);
 
 EXTERN_C_END
 

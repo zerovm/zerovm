@@ -8,27 +8,13 @@
  * NaCl Service Runtime.  Semaphore Descriptor / Handle abstraction.
  */
 
-#include "include/portability.h"
-
-#include <stdlib.h>
 #include <string.h>
-
-#include "src/imc/nacl_imc_c.h"
 
 #include "src/platform/nacl_host_desc.h"
 #include "src/platform/nacl_log.h"
-#include "src/platform/nacl_semaphore.h"
-
-#include "src/desc/nacl_desc_base.h"
 #include "src/desc/nacl_desc_semaphore.h"
-
-#include "src/service_runtime/internal_errno.h"
-#include "src/service_runtime/nacl_config.h"
 #include "src/service_runtime/include/sys/errno.h"
-#include "src/service_runtime/include/sys/fcntl.h"
-#include "src/service_runtime/include/sys/mman.h"
 #include "src/service_runtime/include/sys/stat.h"
-
 
 /*
  * This file contains the implementation for the NaClDescSemaphore subclass
@@ -38,22 +24,6 @@
  */
 
 static struct NaClDescVtbl const kNaClDescSemaphoreVtbl;  /* fwd */
-
-int NaClDescSemaphoreCtor(struct NaClDescSemaphore  *self, int value) {
-  struct NaClDesc *basep = (struct NaClDesc *) self;
-
-  basep->base.vtbl = (struct NaClRefCountVtbl const *) NULL;
-  if (!NaClDescCtor(basep)) {
-    return 0;
-  }
-  if (!NaClSemCtor(&self->sem, value)) {
-    (*basep->base.vtbl->Dtor)(&basep->base);
-    return 0;
-  }
-
-  basep->base.vtbl = (struct NaClRefCountVtbl const *) &kNaClDescSemaphoreVtbl;
-  return 1;
-}
 
 void NaClDescSemaphoreDtor(struct NaClRefCount *vself) {
   struct NaClDescSemaphore *self = (struct NaClDescSemaphore *) vself;
@@ -97,11 +67,6 @@ int NaClDescSemaphoreGetValue(struct NaClDesc         *vself) {
    * TODO(gregoryd): sem_getvalue is not implemented on OSX.
    * Remove this syscall or implement it using semctl
    */
-#if 0
-  struct NaClDescSemaphore *self = (struct NaClDescSemaphore *) vself;
-  NaClSyncStatus status = NaClSemGetValue(&self->sem);
-  return NaClXlateNaClSyncStatus(status);
-#endif
 }
 
 

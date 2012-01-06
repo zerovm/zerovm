@@ -1,1 +1,0 @@
-1. content of user log if exist maps to memory.

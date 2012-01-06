@@ -60,15 +60,6 @@ struct NaClRefCount *NaClRefCountRef(struct NaClRefCount *nrcp);
 /* when ref_count reaches zero, will call dtor and free */
 void NaClRefCountUnref(struct NaClRefCount *nrcp);
 
-/*
- * NaClRefCountSafeUnref is just like NaCRefCountUnref, except that
- * nrcp may be NULL (in which case this is a noop).
- *
- * Used in failure cleanup of initialization code, esp in Ctors that
- * can fail.
- */
-void NaClRefCountSafeUnref(struct NaClRefCount *nrcp);
-
 extern struct NaClRefCountVtbl const kNaClRefCountVtbl;
 
 EXTERN_C_END

@@ -12,7 +12,6 @@
 #define NATIVE_CLIENT_SRC_TRUSTED_PLATFORM_NACL_TIME_H_
 
 #include "include/nacl_base.h"
-
 #include "src/service_runtime/include/sys/time.h"
 
 EXTERN_C_BEGIN
@@ -21,26 +20,13 @@ void NaClTimeInit(void);
 
 void NaClTimeFini(void);
 
-/* Allow use of low resolution timer to update time of day. This
-must be called before NaCLTimeInit. */
-void NaClAllowLowResolutionTimeOfDay(void);
-
-uint64_t NaClTimerResolutionNanoseconds(void);
-
 int NaClGetTimeOfDay(struct nacl_abi_timeval *tv);
-
-/* Convenience function */
-int64_t NaClGetTimeOfDayMicroseconds();
-
-int NaClNanosleep(struct nacl_abi_timespec const  *req,
-                  struct nacl_abi_timespec        *rem);
 
 /* internal / testing APIs */
 struct NaClTimeState;  /* defined in platform-specific directory */
 
 void NaClTimeInternalInit(struct NaClTimeState *);
 void NaClTimeInternalFini(struct NaClTimeState *);
-uint64_t NaClTimerResolutionNsInternal(struct NaClTimeState *);
 
 EXTERN_C_END
 

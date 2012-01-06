@@ -11,10 +11,7 @@
 #define NATIVE_CLIENT_SRC_TRUSTED_DESC_NACL_DESC_MUTEX_H_
 
 #include "include/nacl_base.h"
-#include "include/portability.h"
-
 #include "src/desc/nacl_desc_base.h"
-
 #include "src/platform/nacl_interruptible_mutex.h"
 
 EXTERN_C_BEGIN

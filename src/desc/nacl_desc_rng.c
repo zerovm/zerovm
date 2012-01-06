@@ -12,11 +12,6 @@
 #include <string.h>
 
 #include "src/desc/nacl_desc_rng.h"
-
-#include "src/platform/nacl_secure_random.h"
-#include "src/platform/nacl_secure_random_base.h"
-#include "src/desc/nacl_desc_base.h"
-
 #include "src/service_runtime/include/sys/stat.h"
 #include "src/service_runtime/include/sys/errno.h"
 

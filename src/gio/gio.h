@@ -99,10 +99,6 @@ struct GioFile {
   FILE        *iop;
 };
 
-int GioFileCtor(struct GioFile  *self,
-                char const      *fname,
-                char const      *mode);
-
 ssize_t GioFileRead(struct Gio  *vself,
                     void        *buf,
                     size_t      count);
@@ -165,8 +161,6 @@ int GioMemoryFileSnapshotCtor(struct GioMemoryFileSnapshot  *self,
 void  GioMemoryFileSnapshotDtor(struct Gio                    *vself);
 
 #define ggetc(gp) ({ char ch; (*gp->vtbl->Read)(gp, &ch, 1) == 1 ? ch : EOF;})
-
-int fggetc(struct Gio   *gp);
 
 size_t gprintf(struct Gio  *gp,
                char const  *fmt,

@@ -4,31 +4,13 @@
  * found in the LICENSE file.
  */
 
-#include <stdlib.h>
-#include <string.h>
-
-#include "src/fault_injection/fault_injection.h"
-
-#include "include/portability.h"
 #include "include/portability_string.h"
 #include "src/platform/nacl_check.h"
-#include "src/platform/nacl_log.h"
-#include "src/platform/nacl_sync.h"
 #include "src/platform/nacl_sync_checked.h"
 
-#if NACL_LINUX
-# define NACL_HAS_TLS     1  /* 1 normally, 0 to test OSX case on linux */
-# define NACL_HAS_TSD     1
-# define NACL_HAS_STRNDUP 1
-#elif NACL_OSX
-# define NACL_HAS_TLS     0
-# define NACL_HAS_TSD     1
-# define NACL_HAS_STRNDUP 0
-#elif NACL_WINDOWS
-# define NACL_HAS_TLS     1
-# define NACL_HAS_TSD     0
-# define NACL_HAS_STRNDUP 0
-#endif
+#define NACL_HAS_TLS     1  /* 1 normally, 0 to test OSX case on linux */
+#define NACL_HAS_TSD     1
+#define NACL_HAS_STRNDUP 1
 
 #define NACL_FAULT_INJECT_ASSUME_HINT_CORRECT 1
 
@@ -153,17 +135,6 @@ static void NaClFaultInjectAllocGlobalCounters(void) {
   }
 }
 
-static void NaClFaultInjectFreeGlobalCounters(void) {
-  size_t ix;
-
-  free(gNaClFaultInjectCallSites);
-  gNaClFaultInjectCallSites = NULL;
-  for (ix = 0; ix < gNaClNumFaultInjectInfo; ++ix) {
-    NaClMutexDtor(&gNaClFaultInjectMu[ix]);
-  }
-  free(gNaClFaultInjectMu);
-}
-
 #if NACL_HAS_TLS
 static struct NaClFaultInjectCallSiteCount *NaClFaultInjectFindThreadCounter(
     size_t counter_ix) {
@@ -193,11 +164,6 @@ static void NaClFaultInjectionSetValue(uintptr_t location) {
 
 static size_t NaClFaultInjectionGetValue(void) {
   return gTls_FaultInjectValue;
-}
-
-void NaClFaultInjectPreThreadExitCleanup(void) {
-  free(gTls_FaultInjectionCount);
-  gTls_FaultInjectionCount = NULL;
 }
 
 #elif NACL_HAS_TSD
@@ -451,20 +417,6 @@ void NaClFaultInjectionModuleInternalInit(void) {
   }
   free((void *) config);
   NaClFaultInjectAllocGlobalCounters();
-}
-
-void NaClFaultInjectionModuleInternalFini(void) {
-  size_t  ix;
-
-  NaClFaultInjectFreeGlobalCounters();
-  for (ix = 0; ix < gNaClNumFaultInjectInfo; ++ix) {
-    free((void *) gNaClFaultInjectInfo[ix].call_site_name);  /* strndup'd */
-    free((void *) gNaClFaultInjectInfo[ix].expr);
-  }
-  free((void *) gNaClFaultInjectInfo);
-  gNaClFaultInjectInfo = NULL;
-  gNaClNumFaultInjectInfo = 0;
-  gNaClSizeFaultInjectInfo = 0;
 }
 
 void NaClFaultInjectionModuleInit(void) {

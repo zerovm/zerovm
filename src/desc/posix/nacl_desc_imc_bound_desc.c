@@ -10,23 +10,14 @@
  */
 
 #include <errno.h>
-#include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
 
-#include "include/portability.h"
-#include "src/imc/nacl_imc_c.h"
-#include "src/platform/nacl_check.h"
 #include "src/platform/nacl_log.h"
-
-#include "src/desc/nacl_desc_base.h"
 #include "src/desc/nacl_desc_imc.h"
 #include "src/desc/nacl_desc_imc_bound_desc.h"
-
-#include "src/service_runtime/nacl_config.h"
 #include "src/service_runtime/include/sys/errno.h"
 #include "src/service_runtime/include/sys/stat.h"
-
 
 static struct NaClDescVtbl const kNaClDescImcBoundDescVtbl;  /* fwd */
 
@@ -160,22 +151,6 @@ int NaClDescImcBoundDescAcceptConn(struct NaClDesc *vself,
     retval = -NACL_ABI_EIO;
     goto cleanup;
   }
-
-#if NACL_OSX
-/*  if (NACL_OSX) {*/
-    /*
-     * Send a message to acknowledge that we received the socket FD
-     * successfully.  This is part of a workaround for a Mac OS X
-     * kernel bug.
-     * See http://code.google.com/p/nativeclient/issues/detail?id=1796
-     */
-    ssize_t sent = send(received_fd, "a", 1, 0);
-    if (sent != 1) {
-      retval = -NACL_ABI_EIO;
-      goto cleanup;
-    }
-/*  }*/
-#endif
 
   if (!NaClDescImcDescCtor(peer, received_fd)) {
     retval = -NACL_ABI_EMFILE;

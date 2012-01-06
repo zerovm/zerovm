@@ -4,13 +4,11 @@
  * be found in the LICENSE file.
  */
 
-#include <errno.h>
 
 /*
  * NaCl Generic I/O interface.
  */
-#include "include/portability.h"
-
+#include <errno.h>
 #include "src/gio/gio.h"
 
 struct GioVtbl const    kGioFileVtbl = {
@@ -22,20 +20,6 @@ struct GioVtbl const    kGioFileVtbl = {
   GioFileDtor,
 };
 
-
-int GioFileCtor(struct GioFile  *self,
-                char const      *fname,
-                char const      *mode) {
-  self->base.vtbl = (struct GioVtbl *) NULL;
-  self->iop = fopen(fname, mode);
-  if (NULL == self->iop) {
-    return 0;
-  }
-  self->base.vtbl = &kGioFileVtbl;
-  return 1;
-}
-
-
 int GioFileRefCtor(struct GioFile   *self,
                    FILE             *iop) {
   self->iop = iop;
@@ -43,7 +27,6 @@ int GioFileRefCtor(struct GioFile   *self,
   self->base.vtbl = &kGioFileVtbl;
   return 1;
 }
-
 
 ssize_t GioFileRead(struct Gio  *vself,
                     void        *buf,
@@ -59,7 +42,6 @@ ssize_t GioFileRead(struct Gio  *vself,
   return (ssize_t) ret;
 }
 
-
 ssize_t GioFileWrite(struct Gio *vself,
                      const void *buf,
                      size_t     count) {
@@ -74,7 +56,6 @@ ssize_t GioFileWrite(struct Gio *vself,
   return (ssize_t) ret;
 }
 
-
 off_t GioFileSeek(struct Gio  *vself,
                   off_t       offset,
                   int         whence) {
@@ -87,13 +68,11 @@ off_t GioFileSeek(struct Gio  *vself,
   return (off_t) ftell(self->iop);
 }
 
-
 int GioFileFlush(struct Gio *vself) {
   struct GioFile  *self = (struct GioFile *) vself;
 
   return fflush(self->iop);
 }
-
 
 int GioFileClose(struct Gio *vself){
   struct GioFile  *self = (struct GioFile *) vself;
@@ -105,17 +84,9 @@ int GioFileClose(struct Gio *vself){
   return rv;
 }
 
-
 void  GioFileDtor(struct Gio  *vself) {
   struct GioFile  *self = (struct GioFile *) vself;
   if (0 != self->iop) {
     (void) fclose(self->iop);
   }
-}
-
-
-int fggetc(struct Gio   *gp) {
-  char    ch;
-
-  return (*gp->vtbl->Read)(gp, &ch, 1) == 1 ? ch : EOF;
 }

@@ -4,23 +4,10 @@
  * be found in the LICENSE file.
  */
 
-#include "include/portability.h"
-
-#include "src/platform/nacl_check.h"
-#include "src/platform/nacl_log.h"
-
 #include "src/gio/gio_nacl_desc.h"
-
 #include "src/desc/nacl_desc_base.h"
 
 const struct GioVtbl kNaClGioNaClDescVtbl;
-
-int NaClGioNaClDescCtor(struct NaClGioNaClDesc  *self,
-                        struct NaClDesc         *wrapped) {
-  self->wrapped = NaClDescRef(wrapped);
-  NACL_VTBL(Gio, self) = &kNaClGioNaClDescVtbl;
-  return 1;
-}
 
 static ssize_t NaClGioNaClDescRead(struct Gio *vself,
                                    void       *buf,

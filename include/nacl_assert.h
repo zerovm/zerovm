@@ -12,7 +12,6 @@
 #ifndef NATIVE_CLIENT_SRC_INCLUDE_NACL_ASSERT_H_
 #define NATIVE_CLIENT_SRC_INCLUDE_NACL_ASSERT_H_
 
-#include "include/portability.h"
 /* get NACL_PRIxPTR */
 
 /*

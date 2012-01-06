@@ -10,19 +10,8 @@
 #ifndef NATIVE_CLIENT_SRC_TRUSTED_DESC_NACL_DESC_IMC_SHM_H_
 #define NATIVE_CLIENT_SRC_TRUSTED_DESC_NACL_DESC_IMC_SHM_H_
 
-#include "include/portability.h"
 #include "include/nacl_base.h"
-
 #include "src/desc/nacl_desc_base.h"
-
-/*
- * get NaClHandle, which is a typedef and not a struct pointer, so
- * impossible to just forward declare.
- */
-#include "src/imc/nacl_imc_c.h"
-
-/* get nacl_off64_t */
-#include "src/platform/nacl_host_desc.h"
 
 EXTERN_C_BEGIN
 

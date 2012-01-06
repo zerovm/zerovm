@@ -7,19 +7,11 @@
 #include <errno.h>
 #include <string.h>
 
-#include "include/portability.h"
-
 #include "src/platform/nacl_check.h"
-#include "src/platform/nacl_log.h"
-
 #include "src/gio/gio_shm.h"
 #include "src/service_runtime/include/sys/mman.h"
 #include "src/service_runtime/include/sys/stat.h"
-#include "src/service_runtime/nacl_config.h"
 #include "src/service_runtime/sel_util.h"
-
-#include "src/desc/nacl_desc_base.h"
-#include "src/desc/nacl_desc_effector_trusted_mem.h"
 #include "src/desc/nacl_desc_imc_shm.h"
 
 /*
@@ -431,26 +423,6 @@ static int NaClGioShmCtorIntern(struct NaClGioShm  *self,
     (*self->eff.base.vtbl->Dtor)(&self->eff.base);
   }
   return rval;
-}
-
-int NaClGioShmCtor(struct NaClGioShm  *self,
-                   struct NaClDesc    *shmp,
-                   size_t             shm_size) {
-
-  int rv;
-
-  CHECK(shm_size == NaClRoundAllocPage(shm_size));
-
-  if (!NaClDescEffectorTrustedMemCtor(&self->eff)) {
-    return 0;
-  }
-
-  rv = NaClGioShmCtorIntern(self, shmp, shm_size);
-
-  if (!rv) {
-    (*self->eff.base.vtbl->Dtor)(&self->eff.base);
-  }
-  return rv;
 }
 
 int NaClGioShmAllocCtor(struct NaClGioShm *self,

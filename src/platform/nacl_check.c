@@ -16,10 +16,6 @@ int nacl_check_debug_mode = 1;
 int nacl_check_debug_mode = 0;
 #endif
 
-void NaClCheckSetDebugMode(int mode) {
-  nacl_check_debug_mode = mode;
-}
-
 void NaClCheckIntern(const char *fmt, ...) {
   va_list ap;
 

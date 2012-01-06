@@ -7,8 +7,6 @@
 /*
  * NaCl Service Runtime.  Secure RNG implementation.
  */
-
-#include "src/platform/nacl_log.h"
 #include "src/platform/nacl_secure_random.h"
 
 uint32_t NaClSecureRngDefaultGenUint32(struct NaClSecureRngIf *self) {

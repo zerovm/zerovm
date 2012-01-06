@@ -8,24 +8,9 @@
  * NaCl Service Runtime.  I/O Descriptor / Handle abstraction.
  */
 
-#include <stdlib.h>
 #include <string.h>
-#include <errno.h>
-
-#include "include/portability.h"
-
-#include "src/desc/nacl_desc_base.h"
 #include "src/desc/nacl_desc_sync_socket.h"
-#include "src/desc/nacl_desc_imc.h"
-
 #include "src/platform/nacl_log.h"
-#include "src/platform/nacl_sync.h"
-#include "src/platform/nacl_sync_checked.h"
-
-#if NACL_WINDOWS
-# include "src/platform/win/xlate_system_error.h"
-#endif
-
 #include "src/service_runtime/include/sys/errno.h"
 #include "src/service_runtime/include/sys/stat.h"
 

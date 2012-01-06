@@ -9,24 +9,14 @@
  * Connection capabilities.
  */
 
-#include <errno.h>
-#include <poll.h>
-#include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
 
-#include "include/nacl_macros.h"
-#include "include/portability.h"
-
-#include "src/imc/nacl_imc_c.h"
-#include "src/platform/nacl_check.h"
 #include "src/platform/nacl_log.h"
-#include "src/desc/nacl_desc_base.h"
 #include "src/desc/nacl_desc_conn_cap.h"
 #include "src/desc/nacl_desc_imc.h"
 #include "src/service_runtime/include/sys/errno.h"
 #include "src/service_runtime/include/sys/stat.h"
-#include "src/service_runtime/nacl_config.h"
 
 static struct NaClDescVtbl const kNaClDescConnCapFdVtbl;  /* fwd */
 
@@ -135,74 +125,8 @@ static int NaClDescConnCapFdConnectAddr(struct NaClDesc *vself,
     goto cleanup;
   }
 
-#if NACL_OSX
-/*  if (NACL_OSX) {*/
-    /*
-     * Mac OS X has a kernel bug in which a socket descriptor that is
-     * referenced only from the message queue of another socket can
-     * get garbage collected.  This causes the socket descriptor not
-     * to work properly.  To work around this, we don't close our
-     * reference to the socket until we receive an acknowledgement
-     * that it has been successfully received.
-     *
-     * We cannot receive the acknowledgement through self->connect_fd
-     * because this FD could be shared between multiple processes.  So
-     * we receive the acknowledgement through the socket pair that we
-     * have just created.
-     *
-     * However, this creates a risk that we are left hanging if the
-     * other process dies after our sendmsg() call, because we are
-     * holding on to the socket that it would use to send the ack.  To
-     * avoid this problem, we use poll() so that we will be notified
-     * if self->connect_fd becomes unwritable.
-     * TODO(mseaborn): Add a test case to simulate that scenario.
-     *
-     * See http://code.google.com/p/nativeclient/issues/detail?id=1796
-     *
-     * Note that we are relying on a corner case of poll() here.
-     * Using POLLHUP in "events" is not meaningful on Linux, which is
-     * documented as ignoring POLLHUP as an input argument and will
-     * return POLLHUP in "revents" even if it not present in "events".
-     * On Mac OS X, however, passing events == 0 does not work if we
-     * want to get POLLHUP.  We are in the unusual situation of
-     * waiting for a socket to become *un*writable.
-     */
-    struct pollfd poll_fds[2];
-    poll_fds[0].fd = self->connect_fd;
-    poll_fds[0].events = POLLHUP;
-    poll_fds[1].fd = sock_pair[1];
-    poll_fds[1].events = POLLIN;
-    if (poll(poll_fds, 2, -1) < 0) {
-      NaClLog(LOG_ERROR,
-              "NaClDescConnCapFdConnectAddr: poll() failed, errno %d\n", errno);
-      retval = -NACL_ABI_EIO;
-      goto cleanup;
-    }
-    /*
-     * It is not necessarily an error if POLLHUP fires on
-     * self->connect_fd: The other process could have done
-     * imc_accept(S) and then closed S.  This means it will have
-     * received sock_pair[0] successfully, so we can close our
-     * reference to sock_pair[0] and then receive the ack.
-     * TODO(mseaborn): Add a test case to cover this scenario.
-     */
-/*  }*/
-#endif
-
   (void) NaClClose(sock_pair[0]);
   sock_pair[0] = NACL_INVALID_HANDLE;
-
-#if NACL_OSX
-/*  if (NACL_OSX) {*/
-    /* Receive the acknowledgement.  We do not expect this to block. */
-    char ack_buffer[1];
-    ssize_t received = recv(sock_pair[1], ack_buffer, sizeof(ack_buffer), 0);
-    if (received != 1 || ack_buffer[0] != 'a') {
-      retval = -NACL_ABI_EIO;
-      goto cleanup;
-    }
-/*  }*/
-#endif
 
   connected_socket = malloc(sizeof(*connected_socket));
   if (NULL == connected_socket ||

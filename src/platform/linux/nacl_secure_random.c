@@ -9,14 +9,9 @@
  */
 
 #include <string.h>
-
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <fcntl.h>
 
 #include "src/platform/nacl_check.h"
-#include "src/platform/nacl_log.h"
 #include "src/platform/nacl_secure_random.h"
 
 #ifndef NACL_SECURE_RANDOM_SYSTEM_RANDOM_SOURCE
@@ -31,8 +26,6 @@ static int  urandom_d = -1;
 #define SANDBOXED_INITIALIZATION (!defined(NACL_STANDALONE))
 
 #if SANDBOXED_INITIALIZATION
-
-# include "include/base/rand_util_c.h"
 
 void NaClSecureRngModuleInit(void) {
   urandom_d = dup(GetUrandomFD());

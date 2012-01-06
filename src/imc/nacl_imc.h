@@ -21,13 +21,7 @@
  * @{
  */
 
-#if NACL_WINDOWS
-#include <windows.h>
-#include "include/portability.h"
-#else
 #include <stdint.h>
-#endif
-
 #include <sys/types.h>
 
 /**
@@ -37,25 +31,10 @@ namespace nacl {
 
 /**
  *  @nacl
- *  Gets the last error message string.
- *  @param buffer Pointer to the buffer in which the error message is written.
- *  @param length The size of buffer.
- *  @return 0 on success and -1 on failure.
- */
-int GetLastErrorString(char* buffer, size_t length);
-
-
-/**
- *  @nacl
  *  NaCl resource descriptor type
  */
-#if NACL_WINDOWS
-typedef HANDLE Handle;
-const Handle kInvalidHandle(INVALID_HANDLE_VALUE);
-#else
 typedef int Handle; /** < PENDING: doc */
 const Handle kInvalidHandle(-1); /** < PENDING: doc */
-#endif
 
 /**
  *  @nacl
@@ -189,22 +168,6 @@ int SendDatagramTo(const MessageHeader* message, int flags,
 
 /**
  *  @nacl
- *  Sends the message to the remote peer of the connection created by
- *  SocketPair().
- *  The total number of bytes sent must be less than 2**32.
- *  Note it is not safe to send messages from the same socket handle by
- *  multiple threads simultaneously.
- *  @param socket The socket descriptor.
- *  @param buffer Pointer to the data to send.
- *  @param length The length of the data to send.
- *  @param flags Either 0 or kDontWait.
- *  @return The number of bytes sent, or -1 upon failure
- *  @see SendDatagram()
- */
-int Send(Handle socket, const void* buffer, size_t length, int flags);
-
-/**
- *  @nacl
  *  Receives a message from a socket.
  *
  *  If kDontWait flag is specified with the call and no messages are available
@@ -220,22 +183,6 @@ int Send(Handle socket, const void* buffer, size_t length, int flags);
  *  @return The number of bytes received, or -1 upon failure.
  */
 int ReceiveDatagram(Handle socket, MessageHeader* message, int flags);
-
-/**
- *  @nacl
- *  Receives a message from a socket.
- *
- *  Note it is not safe to receive messages from the same socket handle
- *  by multiple threads simultaneously unless the socket handle is created
- *  by BoundSocket().
- *  @param socket The socket descriptor.
- *  @param buffer Pointer to the buffer to receive data.
- *  @param length The length of the buffer to receive data.
- *  @param flags Either 0 or kDontWait.
- *  @return The number of bytes received, or -1 upon failure.
- *  @see ReceiveDatagram()
- */
-int Receive(Handle socket, void* buffer, size_t length, int flags);
 
 /**
  *  @nacl
@@ -265,13 +212,6 @@ const size_t kMapPageSize = 64 * 1024;
  *          kInvalidHandle on failure.
  */
 typedef Handle (*CreateMemoryObjectFunc)(size_t length, bool executable);
-
-/**
- *  @nacl
- *  This allows an alternative implementation of CreateMemoryObject()
- *  to be provided that works in an outer sandbox.
- */
-void SetCreateMemoryObjectFunc(CreateMemoryObjectFunc func);
 
 /**
  *  @nacl

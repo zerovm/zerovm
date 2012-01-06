@@ -12,16 +12,8 @@
 #ifndef NATIVE_CLIENT_SRC_TRUSTED_PLATFORM_NACL_HOST_DESC_H__
 #define NATIVE_CLIENT_SRC_TRUSTED_PLATFORM_NACL_HOST_DESC_H__
 
-#include "include/portability.h"
 #include "src/platform/nacl_sync.h"
-
-#if NACL_LINUX || NACL_OSX
-# include "src/platform/linux/nacl_host_desc_types.h"
-#elif NACL_WINDOWS
-# include "src/platform/win/nacl_host_desc_types.h"
-#endif
-
-
+#include "src/platform/linux/nacl_host_desc_types.h"
 
 /*
  * see NACL_MAP_PAGESIZE from nacl_config.h; map operations must be aligned
@@ -45,17 +37,7 @@ typedef int64_t nacl_off64_t;
  * platforms, and to know that the st_size field is a 64-bit value
  * compatible w/ nacl_off64_t above.
  */
-#if NACL_LINUX
 typedef struct stat64 nacl_host_stat_t;
-#elif NACL_OSX
-typedef struct stat nacl_host_stat_t;
-#elif NACL_WINDOWS
-typedef struct _stati64 nacl_host_stat_t;
-#elif defined __native_client__
-/* nacl_host_stat_t not exposed to NaCl module code */
-#else
-# error "what OS?"
-#endif
 
 /* TODO(ilewis, bsy): it seems like these error functions are useful in more
  * places than just the NaClDesc library. Move them to a more central header.
@@ -194,27 +176,6 @@ extern int NaClHostDescOpen(struct NaClHostDesc *d,
                             int                 perms);
 
 /*
- * Constructor for a NaClHostDesc object.
- *
- * Uses raw syscall return convention, so returns 0 for success and
- * non-zero (usually -NACL_ABI_EINVAL) for failure.
- *
- * d is a POSIX-interface descriptor
- *
- * flags may only contain one of NACL_ABI_O_RDONLY, NACL_ABI_O_WRONLY,
- * or NACL_ABI_O_RDWR, and must be the NACL_ABI_* versions of the
- * actual mode that d was opened with.  NACL_ABI_O_CREAT/APPEND are
- * permitted, but ignored, so it is safe to pass the same flags value
- * used in NaClHostDescOpen and pass it to NaClHostDescPosixDup.
- *
- * Underlying host-OS functions: dup / _dup; mode is what posix_d was
- * opened with
- */
-extern int NaClHostDescPosixDup(struct NaClHostDesc *d,
-                                int                 posix_d,
-                                int                 flags);
-
-/*
  * Essentially the same as NaClHostDescPosixDup, but without the dup
  * -- takes ownership of the descriptor rather than making a dup.
  */
@@ -277,9 +238,6 @@ extern int NaClHostDescFstat(struct NaClHostDesc  *d,
  * Underlying host-OS functions:  close(2) / _close
  */
 extern int NaClHostDescClose(struct NaClHostDesc  *d);
-
-extern int NaClHostDescStat(char const        *host_os_pathname,
-                            nacl_host_stat_t  *nasp);
 
 /*
  * Maps NACI_ABI_ versions of the mmap prot argument to host ABI versions

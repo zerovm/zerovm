@@ -12,18 +12,8 @@
 #define NATIVE_CLIENT_SRC_TRUSTED_PLATFORM_NACL_HOST_DIR_H__
 
 #include <errno.h>
-
-#include "include/portability.h"
-
 #include "include/nacl_base.h"
-
-#if NACL_LINUX
-# include "src/platform/linux/nacl_host_dir_types.h"
-#elif NACL_OSX
-# include "src/platform/osx/nacl_host_dir_types.h"
-#elif NACL_WINDOWS
-# include "src/platform/win/nacl_host_dir_types.h"
-#endif
+#include "src/platform/linux/nacl_host_dir_types.h"
 
 EXTERN_C_BEGIN
 

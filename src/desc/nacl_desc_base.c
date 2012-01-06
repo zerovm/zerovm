@@ -9,41 +9,17 @@
  * mapping using descriptors.
  */
 
-#include <stdlib.h>
-#include <string.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-
-#include "include/portability.h"
-#include "include/nacl_platform.h"
-
-#include "src/platform/nacl_host_desc.h"
 #include "src/platform/nacl_log.h"
-#include "src/platform/nacl_sync_checked.h"
-
-#if NACL_LINUX
 #include "src/desc/linux/nacl_desc_sysv_shm.h"
-#endif  /* NACL_LINUX */
-#include "src/desc/nacl_desc_base.h"
-#include "src/desc/nacl_desc_cond.h"
 #include "src/desc/nacl_desc_conn_cap.h"
 #include "src/desc/nacl_desc_dir.h"
 #include "src/desc/nacl_desc_imc.h"
-#include "src/desc/nacl_desc_imc_bound_desc.h"
 #include "src/desc/nacl_desc_imc_shm.h"
 #include "src/desc/nacl_desc_invalid.h"
 #include "src/desc/nacl_desc_io.h"
-#include "src/desc/nacl_desc_mutex.h"
 #include "src/desc/nacl_desc_rng.h"
 #include "src/desc/nacl_desc_sync_socket.h"
-
-#include "src/nacl_base/nacl_refcount.h"
-
 #include "src/service_runtime/include/sys/errno.h"
-#include "src/service_runtime/include/sys/mman.h"
-#include "src/service_runtime/include/sys/stat.h"
-#include "src/service_runtime/nacl_config.h"
-#include "src/service_runtime/sel_util.h"
 
 /*
  * This file contains base class code for NaClDesc.
@@ -107,21 +83,12 @@ int (*NaClDescInternalize[NACL_DESC_TYPE_MAX])(struct NaClDesc **,
   NaClDescInvalidInternalize,
   NaClDescDirInternalize,
   NaClDescIoInternalize,
-#if NACL_WINDOWS
-  NaClDescConnCapInternalize,
-  NaClDescInternalizeNotImplemented,
-#else
   NaClDescInternalizeNotImplemented,
   NaClDescConnCapFdInternalize,
-#endif
   NaClDescInternalizeNotImplemented,  /* bound sockets cannot be transferred */
   NaClDescInternalizeNotImplemented,  /* connected abstract base class */
   NaClDescImcShmInternalize,
-#if NACL_LINUX
   NaClDescSysvShmInternalize,
-#else
-  NULL,
-#endif  /* NACL_LINUX */
   NaClDescInternalizeNotImplemented,  /* mutex */
   NaClDescInternalizeNotImplemented,  /* condvar */
   NaClDescInternalizeNotImplemented,  /* semaphore */
@@ -462,122 +429,12 @@ int NaClDescInternalizeNotImplemented(struct NaClDesc           **out_desc,
   return -NACL_ABI_EIO;
 }
 
-int NaClDescMapDescriptor(struct NaClDesc         *desc,
-                          struct NaClDescEffector *effector,
-                          void                    **addr,
-                          size_t                  *size) {
-  struct nacl_abi_stat  st;
-  size_t                rounded_size = 0;
-  const int             kMaxTries = 10;
-  int                   tries = 0;
-  void                  *map_addr = NULL;
-  int                   rval;
-  uintptr_t             rval_ptr;
-
-  *addr = NULL;
-  *size = 0;
-
-  rval = (*((struct NaClDescVtbl const *) desc->base.vtbl)->Fstat)(desc, &st);
-  if (0 != rval) {
-    /* Failed to get the size - return failure. */
-    return rval;
-  }
-
-  /*
-   * on sane systems, sizef(size_t) <= sizeof(nacl_abi_off_t) must hold.
-   */
-  if (st.nacl_abi_st_size < 0) {
-    return -NACL_ABI_ENOMEM;
-  }
-  if (sizeof(size_t) < sizeof(nacl_abi_off_t)) {
-    if ((nacl_abi_off_t) SIZE_T_MAX < st.nacl_abi_st_size) {
-      return -NACL_ABI_ENOMEM;
-    }
-  }
-  /*
-   * size_t and uintptr_t and void * should have the same number of
-   * bits (well, void * could be smaller than uintptr_t, and on weird
-   * architectures one could imagine the maximum size is smaller than
-   * all addr bits, but we're talking sane architectures...).
-   */
-
-  /*
-   * When probing by VirtualAlloc/mmap, use the same granularity
-   * as the Map virtual function (64KB).
-   */
-  rounded_size = NaClRoundAllocPage((size_t) st.nacl_abi_st_size);
-
-  /* Find an address range to map the object into. */
-  do {
-    ++tries;
-#if NACL_WINDOWS
-    map_addr = VirtualAlloc(NULL, rounded_size, MEM_RESERVE, PAGE_READWRITE);
-    if (NULL == map_addr ||!VirtualFree(map_addr, 0, MEM_RELEASE)) {
-      continue;
-    }
-#else
-    map_addr = mmap(NULL,
-                    rounded_size,
-                    PROT_READ | PROT_WRITE,
-                    MAP_SHARED | MAP_ANONYMOUS,
-                    0,
-                    0);
-    if (MAP_FAILED == map_addr || munmap(map_addr, rounded_size)) {
-      map_addr = NULL;
-      continue;
-    }
-#endif
-    NaClLog(4,
-            "NaClDescMapDescriptor: mapping to address %"NACL_PRIxPTR"\n",
-            (uintptr_t) map_addr);
-    rval_ptr = (*((struct NaClDescVtbl const *)
-                  desc->base.vtbl)->Map)
-        (desc,
-         effector,
-         map_addr,
-         rounded_size,
-         NACL_ABI_PROT_READ | NACL_ABI_PROT_WRITE,
-         NACL_ABI_MAP_SHARED | NACL_ABI_MAP_FIXED,
-         0);
-    NaClLog(4,
-            "NaClDescMapDescriptor: result is %"NACL_PRIxPTR"\n",
-            rval_ptr);
-    if (NaClPtrIsNegErrno(&rval_ptr)) {
-      /*
-       * A nonzero return from NaClIsNegErrno
-       * indicates that the value is within the range
-       * reserved for errors, which is representable
-       * with 32 bits.
-       */
-      rval = (int) rval_ptr;
-    } else {
-      /*
-       * Map() did not return an error, so set our
-       * return code to 0 (success)
-       */
-      rval = 0;
-      map_addr = (void*) rval_ptr;
-      break;
-    }
-
-  } while (NULL == map_addr && tries < kMaxTries);
-
-  if (NULL == map_addr) {
-    return rval;
-  }
-
-  *addr = map_addr;
-  *size = rounded_size;
-  return 0;
-}
-
 int NaClSafeCloseNaClHandle(NaClHandle h) {
   if (NACL_INVALID_HANDLE != h) {
     return NaClClose(h);
   }
   return 0;
 }
-
 
 struct NaClDescVtbl const kNaClDescVtbl = {
   {

@@ -8,24 +8,11 @@
  * NaCl Service Runtime.  Condition Variable Descriptor / Handle abstraction.
  */
 
-#include "include/portability.h"
-
-#include <stdlib.h>
 #include <string.h>
 
-#include "src/imc/nacl_imc_c.h"
-#include "src/desc/nacl_desc_base.h"
-#include "src/desc/nacl_desc_mutex.h"
 #include "src/desc/nacl_desc_cond.h"
-
-#include "src/platform/nacl_host_desc.h"
 #include "src/platform/nacl_log.h"
-
-#include "src/service_runtime/nacl_config.h"
-
 #include "src/service_runtime/include/sys/errno.h"
-#include "src/service_runtime/include/sys/fcntl.h"
-#include "src/service_runtime/include/sys/mman.h"
 #include "src/service_runtime/include/sys/stat.h"
 
 /*
@@ -37,22 +24,6 @@
  */
 
 static struct NaClDescVtbl const kNaClDescCondVarVtbl;  /* fwd */
-
-int NaClDescCondVarCtor(struct NaClDescCondVar  *self) {
-  struct NaClDesc *basep = (struct NaClDesc *) self;
-
-  basep->base.vtbl = (struct NaClRefCountVtbl const *) NULL;
-  if (!NaClDescCtor(basep)) {
-    return 0;
-  }
-  if (!NaClIntrCondVarCtor(&self->cv)) {
-    (*basep->base.vtbl->Dtor)(&basep->base);
-    return 0;
-  }
-
-  basep->base.vtbl = (struct NaClRefCountVtbl const *) &kNaClDescCondVarVtbl;
-  return 1;
-}
 
 static void NaClDescCondVarDtor(struct NaClRefCount *vself) {
   struct NaClDescCondVar *self = (struct NaClDescCondVar *) vself;

@@ -13,7 +13,6 @@
 #define NATIVE_CLIENT_SRC_TRUSTED_GIO_WRAPPED_DESC_GIO_NACL_DESC_H_
 
 #include "include/nacl_base.h"
-
 #include "src/gio/gio.h"
 
 EXTERN_C_BEGIN
@@ -24,11 +23,5 @@ struct NaClGioNaClDesc {
   struct Gio      base;
   struct NaClDesc *wrapped;
 };
-
-/*
- * The Ctor takes a new reference to wrapped.
- */
-int NaClGioNaClDescCtor(struct NaClGioNaClDesc  *self,
-                        struct NaClDesc         *wrapped);
 
 #endif  /* NATIVE_CLIENT_SRC_TRUSTED_GIO_WRAPPED_DESC_GIO_NACL_DESC_H_ */

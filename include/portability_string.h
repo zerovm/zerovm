@@ -41,28 +41,8 @@
 
 typedef char utf8char_t;
 
-#if NACL_OSX
-/* NOTE:: Mac doesn't define strnlen in the headers. */
-#if defined( __cplusplus)
-extern "C"
-#endif
-size_t strnlen(const char* str, size_t max);
-#endif
-
-#if NACL_WINDOWS
-/* disable warnings for deprecated strncpy */
-#pragma warning(disable : 4996)
-
-#define STRDUP _strdup
-#define STRTOLL _strtoi64
-#define STRTOULL _strtoui64
-
-#else
-
 #define STRDUP strdup
 #define STRTOLL strtoll
 #define STRTOULL strtoull
-
-#endif
 
 #endif  /* NATIVE_CLIENT_SRC_INCLUDE_PORTABILITY_STRING_H_ */

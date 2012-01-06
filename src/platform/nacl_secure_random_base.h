@@ -11,8 +11,6 @@
 #ifndef NATIVE_CLIENT_SRC_TRUSTED_PLATFORM_NACL_SECURE_RANDOM_BASE_H_
 #define NATIVE_CLIENT_SRC_TRUSTED_PLATFORM_NACL_SECURE_RANDOM_BASE_H_
 
-#include "include/portability.h"
-
 #include "include/nacl_base.h"
 
 EXTERN_C_BEGIN

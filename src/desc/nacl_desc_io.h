@@ -11,8 +11,6 @@
 #define NATIVE_CLIENT_SRC_TRUSTED_DESC_NACL_DESC_IO_H_
 
 #include "include/nacl_base.h"
-#include "include/portability.h"
-
 #include "src/desc/nacl_desc_base.h"
 
 EXTERN_C_BEGIN
@@ -44,11 +42,6 @@ int NaClDescIoDescCtor(struct NaClDescIoDesc  *self,
                        struct NaClHostDesc    *hd) NACL_WUR;
 
 struct NaClDescIoDesc *NaClDescIoDescMake(struct NaClHostDesc *nhdp);
-
-/* a simple factory */
-struct NaClDescIoDesc *NaClDescIoDescOpen(char  *path,
-                                          int   mode,
-                                          int   perms);
 
 uintptr_t NaClDescIoDescMapAnon(struct NaClDescEffector *effp,
                                 void                    *start_addr,

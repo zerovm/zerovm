@@ -11,10 +11,7 @@
 #ifndef NATIVE_CLIENT_SRC_TRUSTED_DESC_NRD_XFER_INTERN_H_
 #define NATIVE_CLIENT_SRC_TRUSTED_DESC_NRD_XFER_INTERN_H_
 
-#include "include/portability.h"
-#include "include/nacl_macros.h"
-
-#include "src/desc/nacl_desc_base.h"
+#include "include/nacl_base.h"
 
 EXTERN_C_BEGIN
 
@@ -28,10 +25,6 @@ void NaClNrdXferWriteTypeTag(struct NaClDescXferState *xferp,
 
 int NaClDescInternalizeFromXferBuffer(struct NaClDesc          **out_desc,
                                       struct NaClDescXferState *xferp)
-    NACL_WUR;
-
-int NaClDescExternalizeToXferBuffer(struct NaClDescXferState  *xferp,
-                                    struct NaClDesc           *out)
     NACL_WUR;
 
 EXTERN_C_END

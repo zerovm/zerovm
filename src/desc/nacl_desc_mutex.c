@@ -8,25 +8,10 @@
  * NaCl Service Runtime.  Mutex Descriptor / Handle abstraction.
  */
 
-#include "include/portability.h"
-
-#include <stdlib.h>
 #include <string.h>
 
-#include "src/imc/nacl_imc_c.h"
-#include "src/desc/nacl_desc_base.h"
 #include "src/desc/nacl_desc_mutex.h"
-
-#include "src/platform/nacl_host_desc.h"
 #include "src/platform/nacl_log.h"
-#include "src/platform/nacl_interruptible_mutex.h"
-
-#include "src/service_runtime/nacl_config.h"
-#include "src/service_runtime/internal_errno.h"
-
-#include "src/service_runtime/include/sys/errno.h"
-#include "src/service_runtime/include/sys/fcntl.h"
-#include "src/service_runtime/include/sys/mman.h"
 #include "src/service_runtime/include/sys/stat.h"
 
 /*

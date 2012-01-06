@@ -51,21 +51,15 @@
 #ifndef NATIVE_CLIENT_SRC_INCLUDE_ELF_H_
 #define NATIVE_CLIENT_SRC_INCLUDE_ELF_H_ 1
 
-
-#include "include/elf_auxv.h"
 #include "include/portability.h"
-
-#if !defined(NACL_TARGET_SUBARCH)
-# error "NACL_TARGET_SUBARCH must be defined to be 32 or 64"
-#endif
-#if NACL_TARGET_SUBARCH == 64
-# include "include/elf64.h"
-#else
-# include "include/elf32.h"
-#endif
+#include "include/elf64.h"
 
 EXTERN_C_BEGIN
 
+/* Keys for auxiliary vector (auxv). */
+#define AT_NULL         0   /* Terminating item in auxv array */
+#define AT_ENTRY        9   /* Entry point of the executable */
+#define AT_SYSINFO      32  /* System call entry point */
 
 /* Note: We really should include elf64.h unconditionally. However,
  * The current include file is dependent on <stdint.h> which is
@@ -73,15 +67,8 @@ EXTERN_C_BEGIN
  * is fixed, we conditionally include elf64 only if needed.
  */
 
-#if NACL_TARGET_SUBARCH == 64
-# define NACL_PRI_ADDR_ALL_WIDTH "016"
-# define NACL_ELF_CLASS ELFCLASS64
-#elif NACL_TARGET_SUBARCH == 32
-# define NACL_PRI_ADDR_ALL_WIDTH "08"
-# define NACL_ELF_CLASS ELFCLASS32
-#else
-# error "NACL_TARGET_SUBARCH must be defined to be 32 or 64"
-#endif
+#define NACL_PRI_ADDR_ALL_WIDTH "016"
+#define NACL_ELF_CLASS ELFCLASS64
 
 #define NACL_PRI_ELF_DO_GLUE2(a, b) a##b
 #define NACL_PRI_ELF_GLUE2(a, b) NACL_PRI_ELF_DO_GLUE2(a, b)
@@ -139,10 +126,7 @@ EXTERN_C_BEGIN
 #define NACL_PRIxElf_Sxword NACL_PRI_ELF(NACL_PRIx)
 #define NACL_PRIXElf_Sxword NACL_PRI_ELF(NACL_PRIX)
 
-#if NACL_TARGET_SUBARCH == 64
-
 /* __WORDSIZE == 64 */
-
 /* Define sub architecture neutral types */
 typedef Elf64_Addr   Elf_Addr;
 typedef Elf64_Off    Elf_Off;
@@ -164,32 +148,6 @@ typedef Elf64_Phdr Elf_Phdr;
 
 /* Define neutral section headers. */
 typedef Elf64_Shdr Elf_Shdr;
-
-#else
-
-/* Define sub architecture neutral types */
-typedef Elf32_Addr  Elf_Addr;
-typedef Elf32_Off   Elf_Off;
-typedef Elf32_Half  Elf_Half;
-typedef Elf32_Word  Elf_Word;
-typedef Elf32_Sword Elf_Sword;
-typedef Elf32_Word  Elf_Xword;
-typedef Elf32_Sword Elf_Xsword;
-
-/* Define ranges for elf types. */
-#define MIN_ELF_ADDR 0x0
-#define MAX_ELF_ADDR 0xffffffff
-
-/* Define a neutral form of the file header. */
-typedef Elf32_Ehdr Elf_Ehdr;
-
-/* Define a neutral form of a program header. */
-typedef Elf32_Phdr Elf_Phdr;
-
-/* Define neutral section headers. */
-typedef Elf32_Shdr Elf_Shdr;
-
-#endif
 
 EXTERN_C_END
 

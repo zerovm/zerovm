@@ -19,9 +19,7 @@
 #include <errno.h>
 
 #include "src/gio/gio_shm_unbounded.h"
-
 #include "src/platform/nacl_log.h"
-#include "src/desc/nacl_desc_base.h"
 #include "src/service_runtime/nacl_config.h"
 
 
@@ -308,26 +306,3 @@ const struct GioVtbl kNaClGioShmUnboundedVtbl = {
   NaClGioShmUnboundedDtor,
 };
 
-int NaClGioShmUnboundedCtor(struct NaClGioShmUnbounded *self) {
-  self->base.vtbl = NULL;
-  self->ngsp = malloc(sizeof *self->ngsp);
-  if (NULL == self->ngsp) {
-    return 0;
-  }
-  if (!NaClGioShmAllocCtor(self->ngsp, NACL_MAP_PAGESIZE)) {
-    free(self->ngsp);
-    return 0;
-  }
-  self->shm_avail_sz = NACL_MAP_PAGESIZE;
-  self->shm_written = 0;
-  self->io_offset = 0;
-  self->base.vtbl = &kNaClGioShmUnboundedVtbl;
-  return 1;
-}
-
-struct NaClDesc *NaClGioShmUnboundedGetNaClDesc(
-    struct NaClGioShmUnbounded  *self,
-    size_t                      *written) {
-  *written = self->shm_written;
-  return self->ngsp->shmp;
-}

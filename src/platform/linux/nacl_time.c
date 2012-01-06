@@ -9,23 +9,14 @@
  * This is the host-OS-dependent implementation.
  */
 
-#include <sys/time.h>
-#include <time.h>
-
 #include "include/nacl_macros.h"
-#include "src/platform/nacl_log.h"
 #include "src/platform/nacl_time.h"
 #include "src/platform/linux/nacl_time_types.h"
-
 #include "src/service_runtime/linux/nacl_syscall_inl.h"
 
 #define NANOS_PER_UNIT  (1000*1000*1000)
 
 static struct NaClTimeState gNaClTimeState;
-
-void NaClAllowLowResolutionTimeOfDay() {
-/* Always use high resolution timer. */
-}
 
 void NaClTimeInternalInit(struct NaClTimeState *ntsp) {
   ntsp->time_resolution_ns = NACL_NANOS_PER_MICRO;
@@ -35,20 +26,12 @@ void NaClTimeInternalFini(struct NaClTimeState *ntsp) {
   UNREFERENCED_PARAMETER(ntsp);
 }
 
-uint64_t NaClTimerResolutionNsInternal(struct NaClTimeState *ntsp) {
-  return ntsp->time_resolution_ns;
-}
-
 void NaClTimeInit(void) {
   NaClTimeInternalInit(&gNaClTimeState);
 }
 
 void NaClTimeFini(void) {
   NaClTimeInternalFini(&gNaClTimeState);
-}
-
-uint64_t NaClTimerResolutionNanoseconds(void) {
-  return NaClTimerResolutionNsInternal(&gNaClTimeState);
 }
 
 int NaClGetTimeOfDay(struct nacl_abi_timeval *tv) {
@@ -65,37 +48,3 @@ int NaClGetTimeOfDay(struct nacl_abi_timeval *tv) {
   return retval;
 }
 
-int NaClNanosleep(struct nacl_abi_timespec const  *req,
-                  struct nacl_abi_timespec        *rem) {
-  struct timespec host_req;
-  struct timespec host_rem;
-  struct timespec *host_remptr;
-  int             retval;
-
-  host_req.tv_sec = req->tv_sec;
-  host_req.tv_nsec = req->tv_nsec;
-  if (NULL == rem) {
-    host_remptr = NULL;
-  } else {
-    host_remptr = &host_rem;
-  }
-  NaClLog(4,
-          "nanosleep(%"NACL_PRIxPTR", %"NACL_PRIxPTR")\n",
-          (uintptr_t) &host_req,
-          (uintptr_t) host_remptr);
-  NaClLog(4, "nanosleep(time = %"NACL_PRId64".%09"NACL_PRId64" S)\n",
-          (int64_t) host_req.tv_sec, (int64_t) host_req.tv_nsec);
-  if (host_req.tv_nsec > NANOS_PER_UNIT) {
-    NaClLog(0, "tv_nsec too large %"NACL_PRId64"\n",
-            (int64_t) host_req.tv_nsec);
-  }
-  retval = nanosleep(&host_req, host_remptr);
-  NaClLog(4, " returned %d\n", retval);
-
-  if (0 != retval && EINTR == errno && NULL != rem) {
-    rem->tv_sec = host_rem.tv_sec;
-    rem->tv_nsec = host_rem.tv_nsec;
-  }
-  retval = NaClXlateSysRet(retval);
-  return retval;
-}

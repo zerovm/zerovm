@@ -8,11 +8,7 @@
  * NaCl Generic I/O interface implementation: in-memory snapshot of a file.
  */
 
-#include "include/portability.h"
-#include <stdio.h>
 #include <sys/stat.h>
-#include <stdlib.h>
-
 #include "src/gio/gio.h"
 
 struct GioVtbl const  kGioMemoryFileSnapshotVtbl = {
@@ -23,7 +19,6 @@ struct GioVtbl const  kGioMemoryFileSnapshotVtbl = {
   GioMemoryFileClose,
   GioMemoryFileSnapshotDtor,
 };
-
 
 int   GioMemoryFileSnapshotCtor(struct GioMemoryFileSnapshot  *self,
                                 char                          *fn) {
@@ -56,7 +51,6 @@ int   GioMemoryFileSnapshotCtor(struct GioMemoryFileSnapshot  *self,
   ((struct Gio *) self)->vtbl = &kGioMemoryFileSnapshotVtbl;
   return 1;
 }
-
 
 void GioMemoryFileSnapshotDtor(struct Gio                     *vself) {
   struct GioMemoryFileSnapshot  *self = (struct GioMemoryFileSnapshot *)

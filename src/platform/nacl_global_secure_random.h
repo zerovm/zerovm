@@ -11,23 +11,12 @@
 #ifndef NATIVE_CLIENT_SRC_TRUSTED_PLATFORM_NACL_GLOBAL_SECURE_RANDOM_H_
 #define NATIVE_CLIENT_SRC_TRUSTED_PLATFORM_NACL_GLOBAL_SECURE_RANDOM_H_
 
-#include "src/platform/nacl_secure_random.h"
 #include "src/platform/nacl_sync.h"
 
 void NaClGlobalSecureRngInit(void);
 
-void NaClGlobalSecureRngSwitchRngForTesting(struct NaClSecureRng *);
-
 void NaClGlobalSecureRngFini(void);
 
-int32_t NaClGlobalSecureRngUniform(int32_t range_max);
-
 uint32_t NaClGlobalSecureRngUint32(void);
-
-/*
- * Generate a random alpha-numeric name for a socket, a semaphore or some
- * other device.
- */
-void NaClGenerateRandomPath(char *path, int length);
 
 #endif  /* NATIVE_CLIENT_SRC_TRUSTED_PLATFORM_NACL_GLOBAL_SECURE_RANDOM_H_ */

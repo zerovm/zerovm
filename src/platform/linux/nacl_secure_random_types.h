@@ -11,8 +11,6 @@
 #ifndef NATIVE_CLIENT_SRC_TRUSTED_PLATFORM_LINUX_NACL_SECURE_RANDOM_TYPES_H__
 #define NATIVE_CLIENT_SRC_TRUSTED_PLATFORM_LINUX_NACL_SECURE_RANDOM_TYPES_H__
 
-#include "include/nacl_base.h"
-
 #include "src/platform/nacl_secure_random_base.h"
 
 /*

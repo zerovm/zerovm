@@ -40,24 +40,7 @@
  */
 
 #include "include/nacl_base.h"
-
-#ifdef __native_client__
-#include "include/nacl/atomic_ops.h"
-#elif NACL_OSX
-#include "include/osx/atomic_ops_osx.h"
-#elif NACL_LINUX
-
-#if NACL_ARCH(NACL_BUILD_ARCH) == NACL_x86
 #include "include/linux/x86/atomic_ops.h"
-#elif NACL_ARCH(NACL_BUILD_ARCH) == NACL_arm
-#include "include/linux/arm/atomic_ops.h"
-#else
-#error Unknown platform!
-#endif
-
-#else
-#error You need to implement atomic operations for this architecture
-#endif
 
 /* ------------------------------------------------------------------------
  * Interface provided by this module

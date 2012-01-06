@@ -13,26 +13,17 @@
  * system call return interface of small negative numbers as errors.
  */
 
-#include <stdint.h>
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <sys/mman.h>
 #include <unistd.h>
-#include <string.h>
-
-#include "include/nacl_platform.h"
-#include "include/portability.h"
 
 #include "src/platform/nacl_host_desc.h"
 #include "src/platform/nacl_log.h"
-
 #include "src/service_runtime/include/sys/errno.h"
 #include "src/service_runtime/include/sys/fcntl.h"
 #include "src/service_runtime/include/bits/mman.h"
 #include "src/service_runtime/include/sys/stat.h"
-
 
 /*
  * Map our ABI to the host OS's ABI.  On linux, this should be a big no-op.
@@ -128,12 +119,7 @@ uintptr_t NaClHostDescMap(struct NaClHostDesc *d,
   prot &= (NACL_ABI_PROT_READ | NACL_ABI_PROT_WRITE);
   /* may be PROT_NONE too, just not PROT_EXEC */
 
-
-  if (flags & NACL_ABI_MAP_ANONYMOUS) {
-    desc = -1;
-  } else {
-    desc = d->d;
-  }
+  desc = flags & NACL_ABI_MAP_ANONYMOUS ? -1 : d->d;
   /*
    * Translate flags, prot to host_flags, host_prot.
    */
@@ -188,31 +174,16 @@ int NaClHostDescUnmap(void    *start_addr,
 
   addr = (uintptr_t) start_addr;
 
-  return ((-1 == (retval = (uintptr_t) mmap(start_addr,
-                                            len,
+  return ((-1 == (retval = (uintptr_t) mmap(start_addr, len,
                                             PROT_NONE,
-                                            (MAP_PRIVATE
-                                             | MAP_ANONYMOUS | MAP_FIXED),
-                                            -1,
-                                            (nacl_off64_t) 0)))
+                                            (MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED),
+                                            -1, (nacl_off64_t) 0)))
           ? -NaClXlateErrno(errno) : retval);
 }
 
-/* d'b ###
- * a new field initialization added (char *channel)
- * constructor signature is changed
- */
 int NaClHostDescCtor(struct NaClHostDesc  *d,
                      int                  fd) {
-//  int NaClHostDescCtor(struct NaClHostDesc  *d,
-//                       int                  fd,
-//                       char           *channel) {
   d->d = fd;
-//  if (NULL != channel)
-//  {
-//	  strncpy(d->channel, channel, sizeof d->channel);
-//	  d->channel[sizeof(d->channel) - 1] = '\0';
-//  }
   NaClLog(3, "NaClHostDescCtor: success.\n");
   return 0;
 }
@@ -273,43 +244,7 @@ int NaClHostDescOpen(struct NaClHostDesc  *d,
     /* cannot access anything other than a real file */
     return -NACL_ABI_EPERM;
   }
-//  return NaClHostDescCtor(d, host_desc, NULL); /* d'b ### */
   return NaClHostDescCtor(d, host_desc);
-}
-
-int NaClHostDescPosixDup(struct NaClHostDesc  *d,
-                         int                  posix_d,
-                         int                  flags) {
-  int host_desc;
-
-  if (NULL == d) {
-    NaClLog(LOG_FATAL, "NaClHostDescPosixDup: 'this' is NULL\n");
-  }
-  /*
-   * Sanitize access flags.
-   */
-  if (0 != (flags & ~NACL_ALLOWED_OPEN_FLAGS)) {
-    return -NACL_ABI_EINVAL;
-  }
-
-  switch (flags & NACL_ABI_O_ACCMODE) {
-    case NACL_ABI_O_RDONLY:
-    case NACL_ABI_O_WRONLY:
-    case NACL_ABI_O_RDWR:
-      break;
-    default:
-      NaClLog(LOG_ERROR,
-              "NaClHostDescPosixDup: bad access flags 0x%x.\n",
-              flags);
-      return -NACL_ABI_EINVAL;
-  }
-
-  host_desc = dup(posix_d);
-  if (-1 == host_desc) {
-    return -NACL_ABI_EINVAL;
-  }
-  d->d = host_desc;
-  return 0;
 }
 
 int NaClHostDescPosixTake(struct NaClHostDesc *d,
@@ -367,38 +302,21 @@ ssize_t NaClHostDescWrite(struct NaClHostDesc *d,
 
 nacl_off64_t NaClHostDescSeek(struct NaClHostDesc  *d,
                               nacl_off64_t         offset,
-                              int                  whence) {
+                              int                  whence)
+{
   nacl_off64_t retval;
 
   if (NULL == d) {
     NaClLog(LOG_FATAL, "NaClHostDescSeek: 'this' is NULL\n");
   }
-#if NACL_LINUX
   return ((-1 == (retval = lseek64(d->d, offset, whence)))
           ? -NaClXlateErrno(errno) : retval);
-#elif NACL_OSX
-  return ((-1 == (retval = lseek(d->d, offset, whence)))
-          ? -NaClXlateErrno(errno) : retval);
-#else
-# error "What Unix-like OS is this?"
-#endif
 }
 
 int NaClHostDescIoctl(struct NaClHostDesc *d,
                       int                 request,
-                      void                *arg) {
-#if 0
-  int retval;
-
-  if (NULL == d) {
-    NaClLog(LOG_FATAL, "NaClHostDescIoctl: 'this' is NULL\n");
-  }
-  /*
-   * Validate arg according to request.  Arrgh indeed.
-   */
-  return ((-1 == (retval = ioctl(d->d, request, arg)))
-          ? -NaClXlateErrno(errno) : retval);
-#else
+                      void                *arg)
+{
   UNREFERENCED_PARAMETER(request);
   UNREFERENCED_PARAMETER(arg);
 
@@ -406,26 +324,12 @@ int NaClHostDescIoctl(struct NaClHostDesc *d,
     NaClLog(LOG_FATAL, "NaClHostDescIoctl: 'this' is NULL\n");
   }
   return -NACL_ABI_ENOSYS;
-#endif
 }
 
-/*
- * See NaClHostDescStat below.
- */
 int NaClHostDescFstat(struct NaClHostDesc  *d,
-                      nacl_host_stat_t     *nhsp) {
-#if NACL_LINUX
-  if (fstat64(d->d, nhsp) == -1) {
-    return -errno;
-  }
-#elif NACL_OSX
-  if (fstat(d->d, nhsp) == -1) {
-    return -errno;
-  }
-#else
-# error "What OS?"
-#endif
-
+                      nacl_host_stat_t     *nhsp)
+{
+  if(fstat64(d->d, nhsp) == -1) return -errno;
   return 0;
 }
 
@@ -440,26 +344,4 @@ int NaClHostDescClose(struct NaClHostDesc *d) {
     d->d = -1;
   }
   return (-1 == retval) ? -NaClXlateErrno(errno) : retval;
-}
-
-/*
- * This is not a host descriptor function, but is closely related to
- * fstat and should behave similarly.
- */
-int NaClHostDescStat(char const       *host_os_pathname,
-                     nacl_host_stat_t *nhsp) {
-
-#if NACL_LINUX
-  if (stat64(host_os_pathname, nhsp) == -1) {
-    return -errno;
-  }
-#elif NACL_OSX
-  if (stat(host_os_pathname, nhsp) == -1) {
-    return -errno;
-  }
-#else
-# error "What OS?"
-#endif
-
-  return 0;
 }

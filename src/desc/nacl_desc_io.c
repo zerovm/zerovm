@@ -9,28 +9,15 @@
  * mapping using descriptors.
  */
 
-#include "include/portability.h"
-
-#if NACL_WINDOWS
-# include "io.h"
-# include "fcntl.h"
-#endif
-
-#include "src/imc/nacl_imc_c.h"
-#include "src/desc/nacl_desc_base.h"
 #include "src/desc/nacl_desc_effector.h"
 #include "src/desc/nacl_desc_io.h"
-
 #include "src/platform/nacl_find_addrsp.h"
-#include "src/platform/nacl_host_desc.h"
 #include "src/platform/nacl_log.h"
-
 #include "src/service_runtime/include/sys/errno.h"
 #include "src/service_runtime/include/sys/fcntl.h"
 #include "src/service_runtime/include/sys/mman.h"
 #include "src/service_runtime/internal_errno.h"
 #include "src/service_runtime/nacl_config.h"
-
 
 /*
  * This file contains the implementation for the NaClIoDesc subclass
@@ -88,22 +75,6 @@ struct NaClDescIoDesc *NaClDescIoDescMake(struct NaClHostDesc *nhdp) {
             (uintptr_t) nhdp);
   }
   return ndp;
-}
-
-struct NaClDescIoDesc *NaClDescIoDescOpen(char  *path,
-                                          int   mode,
-                                          int   perms) {
-  struct NaClHostDesc *nhdp;
-
-  nhdp = malloc(sizeof *nhdp);
-  if (NULL == nhdp) {
-    NaClLog(LOG_FATAL, "NaClDescIoDescOpen: no memory for %s\n", path);
-  }
-  if (0 != NaClHostDescOpen(nhdp, path, mode, perms)) {
-    NaClLog(LOG_FATAL, "NaClDescIoDescOpen: NaClHostDescOpen failed for %s\n",
-            path);
-  }
-  return NaClDescIoDescMake(nhdp);
 }
 
 static uintptr_t NaClDescIoDescMap(struct NaClDesc         *vself,
@@ -287,16 +258,7 @@ static int NaClDescIoDescExternalize(struct NaClDesc           *vself,
                                      struct NaClDescXferState  *xfer) {
   struct NaClDescIoDesc *self = (struct NaClDescIoDesc *) vself;
 
-#if NACL_WINDOWS
-  HANDLE  h = (HANDLE) _get_osfhandle(self->hd->d);
-
-  NaClLog(LOG_WARNING, "NaClDescIoDescExternalize is EXPERIMENTAL\n");
-  NaClLog(LOG_WARNING, "handle 0x%x\n", (uintptr_t) h);
-
-  *xfer->next_handle++ = (NaClHandle) h;
-#else
   *xfer->next_handle++ = self->hd->d;
-#endif
   return 0;
 }
 
@@ -362,14 +324,7 @@ int NaClDescIoInternalize(struct NaClDesc           **out_desc,
   }
   h = *xfer->next_handle;
   *xfer->next_handle++ = NACL_INVALID_HANDLE;
-#if NACL_WINDOWS
-  if (-1 == (d = _open_osfhandle((intptr_t) h, _O_RDWR | _O_BINARY))) {
-    rv = -NACL_ABI_EIO;
-    goto cleanup;
-  }
-#else
   d = h;
-#endif
   /*
    * We mark it as read/write, but don't really know for sure until we
    * try to make those syscalls (in which case we'd get EBADF).

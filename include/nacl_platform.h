@@ -12,15 +12,7 @@
 
 #include "include/elf.h"
 
-#if NACL_LINUX || NACL_OSX
-#include <sys/types.h>
-#include <stdint.h>
-#include <unistd.h>
-#endif
-
 /* mmap enums, e.g.  PROT_READ, PROT_WRITE*/
-#if NACL_LINUX
-# include <sys/mman.h>
-#endif
+#include <sys/mman.h>
 
 #endif  /* NATIVE_CLIENT_SRC_INCLUDE_NACL_PLATFORM_H_ */

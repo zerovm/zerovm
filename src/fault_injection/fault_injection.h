@@ -100,8 +100,6 @@ uintptr_t NaClFaultInjectionValue(void);
  * Private test functions.
  */
 void NaClFaultInjectionModuleInternalInit(void);
-void NaClFaultInjectionModuleInternalFini(void);
-
 
 /*
  * NB: macros below may evaluate the site_name (call site name)
