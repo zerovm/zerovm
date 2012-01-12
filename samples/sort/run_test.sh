@@ -1,7 +1,11 @@
 cd ../..
 echo ---------------------------------------------------- generating
-./zerovm -Y2 -Msamples/sort/generator_manifest.txt
+./zerovm -Msamples/sort/generator.manifest
+cat samples/sort/generator.stderr.log
 echo ---------------------------------------------------- sorting
-./zerovm -Y2 -Msamples/sort/sort_manifest.txt
+./zerovm -Msamples/sort/sort.manifest
+cat samples/sort/sort.stderr.log
 echo ---------------------------------------------------- testing
-./zerovm -Y2 -Msamples/sort/test_manifest.txt
+./zerovm -Msamples/sort/test.manifest
+cat samples/sort/tester.stderr.log
+

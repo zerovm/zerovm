@@ -9,10 +9,21 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
-#include "zvm.h"
+#include "api/zvm.h"
 
 #define CHUNK_SIZE 0x10000000 /* 256mb */
 #define LEAVE(a, c) {free(a); return (c);}
+
+#define LOGFIX /* temporary fix until zrt library will be finished */
+
+#ifdef LOGFIX
+#define fprintf(ch, ...)\
+do {\
+  char msg[4096];\
+  sprintf(msg, __VA_ARGS__);\
+  log_msg(msg);\
+} while (0)
+#endif
 
 int main(int argc, char **argv)
 {
@@ -20,6 +31,15 @@ int main(int argc, char **argv)
   int64_t insize;
   int64_t outsize;
   char *buffer = NULL;
+
+#ifdef LOGFIX
+  /* set up the log */
+  int retcode = ERR_CODE;
+  struct SetupList setup;
+  retcode = zvm_setup(&setup);
+  retcode = log_set(&setup);
+  if(retcode) return retcode;
+#endif
 
   /* allocate buffer */
   if((buffer = (char*) malloc(CHUNK_SIZE)) == NULL) LEAVE(buffer, -1);
@@ -35,4 +55,5 @@ int main(int argc, char **argv)
   }
 
   LEAVE(buffer, 0)
+  return 0; /* not reachable */
 }

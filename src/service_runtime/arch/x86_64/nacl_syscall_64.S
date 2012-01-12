@@ -37,13 +37,14 @@ IDENTIFIER(NaClSyscallSeg):
 				 * since the control can be immediatelly transfered to the user code
 				 * the only thing allowed to change is flags
 				 */
-        /* d'b: do we have syscallback? */
+
+        /* is it trap? nb: trap cannot be intercepted by syscallback */
+        cmpl 		$0x1000c, (%rsp)
+        je      trap
+
+        /* do we have installed syscallback? */
         cmpq		$0, IDENTIFIER(syscallback)(%rip)
         je			trap
-
-        /* check callstack and return control or pass it to hook handler */
-        cmpl 		$0x1000c, (%rsp)
-        je      trap /* get syscall number and check if it is trap() */
         jmpq    *IDENTIFIER(syscallback)(%rip) /* return control to the untrusted handler */
 trap:
         /* d'b end */

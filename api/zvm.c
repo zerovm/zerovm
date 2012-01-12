@@ -10,18 +10,27 @@
 
 #define USER_SIDE
 #include "zvm.h"
-#undef USER_SIDE
 
-static char *log; /* pointer to log buffer available space */
-static int32_t log_size; /* available space in log */
+static char *_log; /* pointer to log buffer available space */
+static int32_t _log_size; /* available space in log */
 
+/* setup log */
+int log_set(struct SetupList *setup)
+{
+  if(!setup) return PARAM_CODE;
+  _log = (char*) setup->channels[LogChannel].buffer;
+  _log_size = setup->channels[LogChannel].bsize;
+  if(!_log) return PTR_CODE; /* user log is not set in manifest */
+
+  return OK_CODE;
+}
+
+/* log message */
 /*
- * log message. 0 - if success. 1 - if log is full or has no space to
- * store the whole message (part of the message will be stored anyway)
- *
- * how to avoid static log counter and pointer?
+ * known issue: the message will be append if log is already exist
+ * make it feature or fix?
  */
-int LogMessage(char *msg)
+int log_msg(char *msg)
 {
   int ret_code = 0;
   int32_t msg_len;
@@ -30,16 +39,16 @@ int LogMessage(char *msg)
    * check if log is not set, or full, or doesn't have enough space to
    * store whole message. check if message is not empty
    */
-  if(!msg || *msg) return ERR_CODE;
-  if(!log) return ERR_CODE;
-  if(log_size < 1) return ERR_CODE;
+  if(!_log) return PTR_CODE;
+  if(_log_size < 1) return SIZE_CODE;
+  if(!msg || !*msg) return PARAM_CODE;
   msg_len =  strlen(msg);
-  if(log_size < msg_len) ret_code = ERR_CODE;
+  if(_log_size < msg_len) ret_code = LARGE_CODE;
 
   /* append message to log buffer */
-  strncat(log, msg, log_size);
-  log += msg_len;
-  log_size -= msg_len;
+  strncat(_log, msg, _log_size);
+  _log += msg_len;
+  _log_size -= msg_len;
 
   return ret_code;
 }
@@ -76,3 +85,4 @@ int32_t zvm_pwrite(int desc, char *buffer, int32_t size, int64_t offset)
   uint64_t request[] = {TrapWrite, 0, desc, (uint32_t)buffer, size, offset};
   return _trap(request);
 }
+#undef USER_SIDE

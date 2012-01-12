@@ -3,6 +3,8 @@
  * to the specified output file. no checks will perform
  * usage: sorter <input file name> <output file name>
  *
+ * update: usage has been changed. all parameters must be passed via manifest
+ *
  * note: input must contain (power of 2) 32-bit unsigned integers
  */
 #include <stdio.h>
@@ -12,7 +14,19 @@
 #include <time.h>
 #include <emmintrin.h>
 #include <smmintrin.h>
-#include "zerovm_manifest.h"
+#include "api/zvm.h"
+
+#define LOGFIX /* temporary fix until zrt library will be finished */
+
+#ifdef LOGFIX
+#define printf(...)\
+do {\
+  char msg[4096];\
+  sprintf(msg, __VA_ARGS__);\
+  log_msg(msg);\
+} while (0)
+#define fprintf(ch, ...) printf(__VA_ARGS__)
+#endif
 
 #if 0
 #				define DEBUG
@@ -410,39 +424,28 @@ int main(int argc, char **argv)
 	uint32_t  cnt;
 	uint32_t  *d; /* data to sort */
 	uint32_t  *buf; /* extra space to sort */
-	struct MinorManifest *m;	
+  struct SetupList setup;
+  int retcode = ERR_CODE;
 
-	/* check if in argv[0] we got manifest structure */
-  m = (struct MinorManifest *)argv[0];
-  if(m->mask)
-  {
-    printf("manifest structure wasn't passed; argv[0] = %s\n", argv[0]);
-    return 1;
-  }  
-  
-  /* check if output is valid */
-  if(m->input_map_file.p == 0 || m->input_map_file.size == 0)
-  {
-    printf("invalid input map\n");
-    return 3;
-  }
-  
-  /* check if output is valid */
-  if(m->output_map_file.p == 0 || m->output_map_file.size == 0)
-  {
-    printf("invalid output map\n");
-    return 4;
-  }
-  
+  /* setup */
+  retcode = zvm_setup(&setup);
+  if(retcode) return retcode;
+
+#ifdef LOGFIX
+  /* set up the log */
+  retcode = log_set(&setup);
+  if(retcode) return retcode;
+#endif
+
   /* check if input map size equal to output map size */
-  if(m->input_map_file.size != m->output_map_file.size)
+  if(setup.channels[InputChannel].fsize != setup.channels[OutputChannel].fsize)
 	{
-		printf("size of input and output maps are not equal %u != %u\n", 
-		  m->input_map_file.size, m->output_map_file.size);
+		printf("size of input and output maps are not equal %llu != %llu\n",
+		    setup.channels[InputChannel].fsize, setup.channels[OutputChannel].fsize);
 		return 5;
 	}  
 
-	cnt = m->input_map_file.size / sizeof(*d);
+	cnt = setup.channels[InputChannel].fsize / sizeof(*d);
 	if(cnt & (cnt - 1))
 	{
 		printf("\rwrong number of elements in the input file - [%d]\n", cnt);
@@ -463,9 +466,10 @@ int main(int argc, char **argv)
 	 * by proxy should be untouched. so we copy everything
 	 * from input to output
 	 */	
-	memcpy((void*)m->output_map_file.p, (void*)m->input_map_file.p, m->input_map_file.size);
-	d = (uint32_t *) m->output_map_file.p;
-	buf = (uint32_t *) aligned_malloc(sizeof(uint32_t) * cnt, 16);	
+	memcpy((void*)setup.channels[OutputChannel].buffer,
+	    (void*)setup.channels[InputChannel].buffer, setup.channels[InputChannel].bsize);
+	d = (uint32_t*) setup.channels[OutputChannel].buffer;
+  buf = (uint32_t*) aligned_malloc(sizeof(uint32_t) * cnt, 16);
 	if (buf == NULL) _eoutput("Can't allocate memory\n");
 
 	/* Bitonic sort */

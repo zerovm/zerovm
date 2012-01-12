@@ -63,7 +63,15 @@ enum TrapCalls {
 };
 
 /* nanosleep ret codes, only 2 because of nanosleep limitations */
-enum NANO_CODES { OK_CODE, ERR_CODE = -1 };
+enum NANO_CODES {
+  OK_CODE,
+  PARAM_CODE, /* invalid parameter */
+  SIZE_CODE, /* invalid size */
+  PTR_CODE, /* invalid pointer */
+  SMALL_CODE, /* too small */
+  LARGE_CODE, /* too large */
+  ERR_CODE = -1 /* common error */
+};
 
 /* trap error codes (addition to errno) */
 enum TRAP_CODES {
@@ -165,7 +173,7 @@ struct SetupList
   struct PreOpenedFileDesc channels[CHANNELS_COUNT];
 };
 
-#ifdef USER_SIDE
+#ifdef USER_SIDE /* disabled for trusted code */
 /* "One Ring" wrappers and logger */
 
 /*
@@ -184,10 +192,15 @@ int32_t zvm_pread(int desc, char *buffer, int32_t size, int64_t offset);
 int32_t zvm_pwrite(int desc, char *buffer, int32_t size, int64_t offset);
 
 /*
+ * set log (if allowed). valid SetupList object must be provided.
+ */
+int log_set(struct SetupList *setup);
+
+/*
  * log message. 0 - if success. 1 - if log is full or has no space to
  * store the whole message (part of the message will be stored anyway)
  */
-int LogMessage(char *msg);
+int log_msg(char *msg);
 #endif /* USER_SIDE */
 
 #endif /* API_ZVM_MANIFEST_H__ */

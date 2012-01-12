@@ -2,6 +2,8 @@
  * userlog test
  * this test require manifest with "UserLog" keyword
  *
+ * update: obsolette. must be modified or removed (see "hello_world.c" instead)
+ *
  *  Created on: Dec 12, 2011
  *      Author: d'b
  */

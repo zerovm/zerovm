@@ -504,6 +504,7 @@ int main(int argc, char **argv)
   {
     FILE *f = NULL;
     char *name = nap->manifest->system_setup->report;
+    struct PreOpenedFileDesc *log_ch = &nap->manifest->user_setup->channels[LogChannel];
 
     /* open report file */
     if ((f = fopen(name, "w")) == NULL)
@@ -522,14 +523,15 @@ int main(int argc, char **argv)
     fwrite(manifest, 1, strlen(manifest), f);
     fclose(f);
 
+    // make it function: UnmountChannel(nap, channel) to avoid truncate()
     /* trim user_log */
-    // refactor it to premap with name: UnmountChannel(nap, channel) to avoid truncate()
-    if (nap->manifest->user_setup->channels[LogChannel].buffer)
+    if (log_ch->buffer)
     {
-      char *p = (char*) NaClUserToSys(nap, (uint32_t)nap->manifest->user_setup->channels[LogChannel].buffer);
-      off_t size = strlen(p);
-      munmap(p, nap->manifest->user_setup->channels[LogChannel].bsize);
-      truncate(get_value_by_key(nap, "UserLog"), size);
+      char *p = (char*) NaClUserToSys(nap, (uint32_t)log_ch->buffer);
+      log_ch->fsize = strlen(p);
+      munmap(p, log_ch->bsize);
+      if(log_ch->fsize) truncate((char*)log_ch->name, log_ch->fsize);
+      else remove((char*)log_ch->name);
     }
   }
 

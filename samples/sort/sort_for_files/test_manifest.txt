@@ -1,5 +1,0 @@
-= test given file if it contain sorted 32-bit unsigned integers
-
-nexe = tester.uint32_t.c_x86_64.nexe
-log = test.log
-cmdline = sorted.dat

@@ -1,3 +1,19 @@
+ver7 2012-01-06
+linux, x86, 64
+working_sandbox_ver_7.7z
+a lot of junk was ripped off the code. removed syscalls and threads
+--------------------------------------------------------------------------------
+  #includes were revised. unnecessery includes removed
+  useless headers removed
+  useless code removed (i looked through 1mb of code and ripped off everything that can be ripped)
+  most of conditional compilation macros were unclosed/removed
+  makefile revised
+  3 headers removed from validator (no code was changed)
+  
+todo: 
+  put here details of this release 
+  
+
 ver6 2011-11-23
 linux, x86, 64
 working_sandbox_ver_6.7z

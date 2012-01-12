@@ -9,11 +9,12 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include "api/zvm.h"
 
-#include "zvm.h"
+#define LOGFIX /* temporary fix until zrt library will be finished */
 
 /*
- * this function uninstall itself and show "hi" message
+ * this function uninstall itself and show "bye" message
  * note: it takes argument from the main() via zvm interceptor
  */
 int Callback(int32_t arg)
@@ -24,22 +25,33 @@ int Callback(int32_t arg)
   setup.syscallback = 0;
   zvm_setup(&setup);
 
-  fprintf(stderr, "goodbye cruel world..\n");
+  log_msg("goodbye cruel world..\n");
   exit(0);
 
+  /* not reachable */
   return arg;
 }
 
 int main()
 {
   struct SetupList setup;
+  int retcode = ERR_CODE;
 
   /* install callback function */
   setup.syscallback = (int32_t)Callback;
   zvm_setup(&setup);
 
+#ifdef LOGFIX
+  /* set up the log */
+  retcode = log_set(&setup);
+  if(retcode) return retcode;
+#endif
+
+  /* say hello */
+  log_msg("hello, syscallback program started\n");
+
   /* invoke puts with pointer to setup instead of string */
   puts((char*)&setup);
 
-  return 0;
+  return retcode;
 }

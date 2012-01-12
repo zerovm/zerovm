@@ -1,0 +1,26 @@
+=====================================================================
+== i/o switches. full list. optional. some switches now meaningless,
+== placed here for completeness and future changes
+=====================================================================
+Input = samples/sort/sorted.data
+InputMax = 67108864
+InputMaxGet = 67108864
+InputMaxGetCnt = 1024
+InputMaxPut = 67108864
+InputMaxPutCnt = 1024
+InputMode = 0
+UserLog = samples/sort/tester.stderr.log
+UserLogMax = 65536
+
+=====================================================================
+== switches for zerovm. some of them used to control nexe, some
+== for the internal zerovm needs
+=====================================================================
+Version = 11nov2011
+Log = samples/sort/tester.log
+Report = samples/sort/tester.report.log
+Nexe = samples/sort/tester.uint32_t.c_x86_64.nexe
+NexeMax = 2000000
+SyscallsMax = 2048
+SetupCallsMax = 2
+

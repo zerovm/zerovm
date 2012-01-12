@@ -11,8 +11,18 @@
 #include <stdint.h>
 #include <string.h>
 #include <malloc.h>
+#include "api/zvm.h"
 
-#include "zvm.h"
+#define LOGFIX /* temporary fix until zrt library will be finished */
+
+#ifdef LOGFIX
+#define fprintf(ch, ...)\
+do {\
+  char msg[4096];\
+  sprintf(msg, __VA_ARGS__);\
+  log_msg(msg);\
+} while (0)
+#endif
 
 /* printf some policy fields */
 void ShowPolicy (struct SetupList *policy)
@@ -73,12 +83,18 @@ int main(int argc, char **argv)
   fprintf(stderr, "retcode = %d\n", retcode);
   ShowPolicy(hint);
 
+#ifdef LOGFIX
+  /* set up the log */
+  retcode = log_set(hint);
+  if(retcode) return retcode;
+#endif
+
   /* request policy 2nd time with hint */
   hint->max_mem += 1; /* try to increase amount of available memory */
   retcode = zvm_setup(hint);
   fprintf(stderr, "retcode = %d\n", retcode);
   ShowPolicy(hint);
 
-  /* exit with non zero to control report engine */
+  /* exit with non zero to check report engine */
   return 13;
 }

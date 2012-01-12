@@ -1,7 +1,0 @@
-= generate random data and put it to file
-
-nexe = samples/sort/generator.uint32_t.c_x86_64.nexe
-log = samples/sort/generator.log
-cmdline = samples/sort/random.dat 128
-
-#etag = 1234567890
