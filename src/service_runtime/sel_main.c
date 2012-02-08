@@ -80,17 +80,14 @@ static void PrintUsage() {
            the constant string size limit */
   fprintf(stderr,
           "Usage: sel_ldr [-h d:D] [-r d:D] [-w d:D] [-i d:D]\n"
-          "               [-f nacl_file] [-l log_file] [-X d]\n"
-          "               [-M manifest_file] [-cFgIsQ] [-v d]\n"
-          "               -- [nacl_file] [args]\n\n"
+          "               [-l log_file] [-v d] [-X d]\n"
+          "               [-M manifest_file] [-cFgIsQ]\n\n"
           " -h\n"
           " -r\n"
           " -w associate a host POSIX descriptor D with app desc d\n"
           "    that was opened in O_RDWR, O_RDONLY, and O_WRONLY modes\n"
           "    respectively\n"
           " -i associates an IMC handle D with app desc d\n"
-          " -f file to load; if omitted, 1st arg after \"--\" is loaded\n"
-          " -B additional ELF file to load as a blob library\n"
           " -v <level> verbosity\n"
           " -X create a bound socket and export the address via an\n"
           "    IMC message to a corresponding NaCl app descriptor\n"
@@ -122,7 +119,6 @@ int ParseCommandLine(int argc, char **argv, struct NaClApp *nap)
   int nexe_argc = 1;
   char **nexe_argv;
   char *manifest_name = NULL;
-  char *blob_library_file = NULL;
   int debug_mode_ignore_validator = 0;
   int enable_debug_stub = 0;
   struct redir *redir_queue = NULL;
@@ -137,7 +133,7 @@ int ParseCommandLine(int argc, char **argv, struct NaClApp *nap)
   nap->fuzzing_quit_after_load = 0;
 
   /* note: in a future zerovm command line will be reduced */
-  while((opt = getopt(argc, argv, "+B:cf:Fgh:i:Il:Qr:sSv:w:X:M:")) != -1)
+  while((opt = getopt(argc, argv, "+cFgh:i:Il:Qr:sSv:w:X:M:")) != -1)
   {
     switch(opt)
     {
@@ -146,12 +142,6 @@ int ParseCommandLine(int argc, char **argv, struct NaClApp *nap)
         break;
       case 'c':
         ++debug_mode_ignore_validator;
-        break;
-      case 'f':
-        nap->manifest->system_setup->nexe = optarg;
-        break;
-      case 'B':
-        blob_library_file = optarg;
         break;
       case 'F':
         nap->fuzzing_quit_after_load = 1;
@@ -171,7 +161,7 @@ int ParseCommandLine(int argc, char **argv, struct NaClApp *nap)
         if(NULL == entry)
         {
           fprintf(stderr, "No memory for redirection queue\n");
-          exit(1);
+          return ERR_CODE;
         }
         entry->next = NULL;
         entry->nacl_desc = strtol(optarg, &rest, 0);
@@ -187,7 +177,7 @@ int ParseCommandLine(int argc, char **argv, struct NaClApp *nap)
         if(NULL == entry)
         {
           fprintf(stderr, "No memory for redirection queue\n");
-          exit(1);
+          return ERR_CODE;
         }
         entry->next = NULL;
         entry->nacl_desc = strtol(optarg, &rest, 0);
@@ -241,8 +231,7 @@ int ParseCommandLine(int argc, char **argv, struct NaClApp *nap)
   }
 
   /* process manifest file specified in cmdline */
-  if (manifest_name == NULL) nap->manifest = NULL;
-  else /* manifest is provided */
+  if (manifest_name != NULL)
   {
     int32_t size;
     if(!parse_manifest(manifest_name, nap))
@@ -254,18 +243,6 @@ int ParseCommandLine(int argc, char **argv, struct NaClApp *nap)
     /* initialize user policy, zerovm settings */
     SetupUserPolicy(nap);
     SetupSystemPolicy(nap);
-
-    /* check if command line switches has duplicates in manifest */
-    //### fix bugs!
-//    COND_ABORT(!nap->manifest->system_setup->log && !log_file,
-//        "duplicate log switch in command line and manifest\n");
-//    COND_ABORT(!nap->manifest->system_setup->blob && !blob_library_file,
-//        "duplicate blob switch in command line and manifest\n");
-//    /* nacl_file special case when name provided without -f */
-//    COND_ABORT(nap->manifest->system_setup->nexe && optind < argc,
-//        "nexe file name specified more then once");
-//    if(NULL == nap->manifest->system_setup->nexe && optind < argc)
-//      nap->manifest->system_setup->nexe = argv[optind++];
 
     /* construct nexe command line from manifest (add nexe name as argv[0]) */
     COND_ABORT(!(nexe_argv = malloc(128 * sizeof(char*))),
@@ -288,11 +265,23 @@ int ParseCommandLine(int argc, char **argv, struct NaClApp *nap)
     if(nap->manifest->system_setup->nexe_max)
       COND_ABORT(nap->manifest->system_setup->nexe_max < size, "nexe file is greater then alowed\n");
   }
+  else /* manifest file is not provided */
+  {
+    PrintUsage();
+    return ERR_CODE;
+  }
 
   nap->ignore_validator_result = (debug_mode_ignore_validator > 0);
   nap->skip_validator = (debug_mode_ignore_validator > 1);
   nap->validator_stub_out_mode = stub_out_mode;
   nap->enable_debug_stub = enable_debug_stub;
+
+  /* check if nexe is given */
+  if(NULL == nap->manifest->system_setup->nexe)
+  {
+    PrintUsage();
+    return ERR_CODE;
+  }
   return OK_CODE;
 }
 
@@ -341,7 +330,7 @@ int main(int argc, char **argv)
 	 * result from getopt processing -- usually out-of-memory, which
 	 * shouldn't happen -- won't show up.
 	 */
-	if (NULL != nap->manifest->system_setup->log)
+	if (NULL != nap->manifest && NULL != nap->manifest->system_setup->log)
 	  NaClLogSetFile(nap->manifest->system_setup->log);
 
   /*
