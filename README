@@ -7,11 +7,10 @@ ZeroVM work under OS Linux on x86-64.
 Installation:
 0. get ZeroVM from github: https://github.com/Dazo-org/zerovm
    for example as archive: https://github.com/Dazo-org/zerovm/zipball/master
-1. install gcc if not installed
-2. install libraries:
-   sudo apt-get install gcc-multilib g++-multilib libsdl1.2-dev texinfo libcrypto++-dev libssl-dev m4
-3. go to ZeroVM folder and run make
-4. if everything is ok you will see output of unit tests. in ZeroVM folder you can find "zerovm" executable
+1. install prerequisites:
+   sudo apt-get install build-essential gcc-multilib g++-multilib libsdl1.2-dev texinfo libcrypto++-dev libssl-dev m4
+2. go to ZeroVM folder and run make
+3. if everything is ok you will see output of unit tests. in ZeroVM folder you can find "zerovm" executable
 
 
 Troubleshooting:
