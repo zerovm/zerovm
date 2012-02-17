@@ -1,0 +1,5 @@
+Version = 11nov2011
+Nexe = longjmp.nexe
+Report = report.log
+ReportUserRetCode = 0
+

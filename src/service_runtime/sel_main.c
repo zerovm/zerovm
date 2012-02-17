@@ -97,8 +97,8 @@ static void PrintUsage() {
           " -c ignore validator! dangerous! Repeating this option twice skips\n"
           "    validation completely.\n"
           " -F fuzz testing; quit after loading NaCl app\n"
-          " -S enable signal handling. Not secure on x86-64 Windows.\n"
-          " -g enable gdb debug stub. Not secure on x86-64 Windows.\n"
+          " -S enable signal handling.\n"
+          " -g enable gdb debug stub.\n"
           " -l <file>  write log output to the given file\n"
           " -s safely stub out non-validating instructions\n"
           " -Q disable platform qualification (dangerous!)\n"
@@ -255,6 +255,8 @@ int ParseCommandLine(int argc, char **argv, struct NaClApp *nap)
     nap->manifest->system_setup->cmd_line_size = nexe_argc;
 
     /* check for limits given in manifest */
+    COND_ABORT(nap->manifest->system_setup->version == NULL,
+        "manifest version is not provided\n");
     COND_ABORT(strcmp(nap->manifest->system_setup->version, MANIFEST_VERSION),
         "wrong manifest version\n");
     if((size = GetFileSize(nap->manifest->system_setup->nexe)) < 0)
@@ -495,22 +497,24 @@ int main(int argc, char **argv)
     char *name = nap->manifest->system_setup->report;
     struct PreOpenedFileDesc *log_ch = &nap->manifest->user_setup->channels[LogChannel];
 
-    /* open report file */
-    if ((f = fopen(name, "w")) == NULL)
+    /* make report if specified in manifest */
+    if(nap->manifest->system_setup->report != NULL)
     {
-      NaClLog(LOG_ERROR, "cannot open report manifest = %s\n", name);
-      goto done;
+      if((f = fopen(name, "w")) == NULL)
+      {
+        NaClLog(LOG_ERROR, "cannot open report manifest = %s\n", name);
+        goto done;
+      }
+      /* generate report, "manifest" reused for report, fix it ### */
+      SetupReportSettings(nap);
+      nap->manifest->report->ret_code = 0;
+      nap->manifest->report->user_ret_code = nap->exit_status;
+      AnswerManifestPut(nap, manifest);
+
+      /* write it and free resources */
+      fwrite(manifest, 1, strlen(manifest), f);
+      fclose(f);
     }
-
-    /* generate report, "manifest" reused for report, fix it ### */
-    SetupReportSettings(nap);
-    nap->manifest->report->ret_code = 0;
-    nap->manifest->report->user_ret_code = nap->exit_status;
-    AnswerManifestPut(nap, manifest);
-
-    /* write it and free resources */
-    fwrite(manifest, 1, strlen(manifest), f);
-    fclose(f);
 
     // make it function: UnmountChannel(nap, channel) to avoid truncate()
     /* trim user_log */

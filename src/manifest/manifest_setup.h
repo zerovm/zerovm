@@ -98,6 +98,9 @@ void SetupSystemPolicy(struct NaClApp *nap);
 /* declaration: md5 digest calculation */
 char* MD5(unsigned char *buf, unsigned size);
 
+/* return md5 hash of mapped _output_ file (or NULL) */
+char* MakeEtag(struct NaClApp *nap);
+
 /*
  * construct i/o channel. the function contain "hardcoded" manifest keywords
  * if successful return initialized, but not mounted object, otherwise - NULL

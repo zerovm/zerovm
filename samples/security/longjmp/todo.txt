@@ -1,0 +1,1 @@
+replace asserts with return non-zero program code

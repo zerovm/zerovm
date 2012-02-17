@@ -1,0 +1,36 @@
+# -*- python -*-
+# Copyright (c) 2011 The Native Client Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+Import('env')
+
+prog_env = env.Clone()
+
+if prog_env.Bit('bitcode'):
+  prog_env.AddBiasForPNaCl()
+
+nexe = prog_env.ComponentProgram('execute_data', ['execute_data.c'],
+                                 EXTRA_LIBS=['${NONIRT_LIBS}'])
+
+# We check the output to ensure that the process doesn't die for an
+# unexpected reason.
+node = prog_env.CommandSelLdrTestNacl(
+    'execute_data.out',
+    nexe,
+    exit_status='untrusted_sigsegv_or_equivalent',
+    stdout_golden=prog_env.File('execute_data.stdout'))
+
+# This test does not work under qemu-arm because qemu-arm does not
+# support the NX page protection bit.
+is_broken = prog_env.Bit('target_arm') and prog_env.UsingEmulator()
+
+# This test also fails on ARM machines running Linux versions before
+# 2.6.32.9, which don't handle the fault properly.  The fault causes
+# the process to hang rather than receive a signal.
+# TODO(mseaborn): Re-enable when the ARM Buildbot slave has been
+# upgraded to a newer kernel.
+is_broken = prog_env.Bit('target_arm')
+
+prog_env.AddNodeToTestSuite(node, ['small_tests'], 'run_execute_data_test',
+                            is_broken=is_broken)

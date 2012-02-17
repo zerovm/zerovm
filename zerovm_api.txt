@@ -1,0 +1,48 @@
+this documents describes API for zerovm nacl applications
+---------------------------------------------------------
+
+
+description:
+valid zerovm nacl applications must be both
+- compiled with Google nacl SDK
+- compiled for x86 64-bit model for linux platform 
+
+
+features:
+- zerovm nacl applications are deterministic
+- to the moment zerovm nacl applications cannot use system calls. 
+  nevertheless, user can exploit zerovm i/o channels (see "channels").
+- user can work with RAM using standard c functions
+- user can get input channel from the manifest to read data.
+- user can get output channel from the manifest to read/write data.
+- user can get logger channel from the manifest to log events.
+- user application may redefine trap() function (see "syscallback").
+  using this mechanism application can intercept and handle any syscalls.
+- using special call (see "setup") application can get/set variables 
+  from manifest (see "manifest.txt" for details)
+- application can be limited (and "by default" is limited) by time, calls, memory
+  and some other system resources (see "limits")
+
+
+channels:
+detailed information can be get from api/zvm.h (struct PreOpenedFileDesc)
+
+
+setup:
+detailed information can be get from api/zvm.h (struct SetupList)
+note that some counters are not available for user application.
+also note that amount of the setup calls may be limited by zerovm.
+user applicatin can get size of setup structure.
+
+
+syscallback:
+this is a special mechanism which allows to intercept and handle any system call.
+for instance, with it user can define own memory manager or organize file system (with channels data)
+
+limits:
+- user application is limited by cpu time. the limit can be obtained from the manifest via setup().
+  the counter (currently used cpu time) is not available for user side.
+- application is limited by RAM size. limit can be read as above. counter is available.
+- syscalls are limited. limit and counter are available by setup()
+- calls of setup() are limited. both limit and counter are available for user. application allowed to call
+  setup() at least once.

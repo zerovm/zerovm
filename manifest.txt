@@ -1,0 +1,87 @@
+this document describes manifest for ZeroVM NaCl application.
+-------------------------------------------------------------
+
+
+description:
+manifest is a text file which must be provided in order to run NaCl application
+under ZeroVM control. manifests samples can be found in "samples" directory.
+
+
+structure:
+- each valid line must contain only one key and one key value delimited with one '=' sign
+- both key and value may contain spaces
+- key/value case does matter: "key" and "KeY" treated as different keywords
+- spaces around key/value will be ignored
+- lines are delimited with EOL (unix or windows style)
+- invalid lines will be ignored
+- lines with keywords not mentioned bellow will be ignored
+
+
+keywords:
+input/output
+  Input -- name of the input channel/file
+  InputMax -- channel/file length limit
+  InputMaxGet -- bytes count allowed to get
+  InputMaxGetCnt -- how many times allowed to invoke "get" syscall. n/a for mounted resiources
+  InputMaxPut -- n/a
+  InputMaxPutCnt -- n/a
+  InputMode -- 0 - premounted channel, 1 - preloaded, 2 - preallocated from network
+  Output -- name of the output channel/file
+  OutputMax -- channel/file length limit
+  OutputMaxGet -- bytes count allowed to get
+  OutputMaxGetCnt -- how many times allowed to invoke "get" syscall. n/a for mounted resiources
+  OutputMaxPut -- bytes count allowed to put
+  OutputMaxPutCnt -- how many times allowed to invoke "put" syscall. n/a for mounted resiources
+  OutputMode -- 0 - premounted channel, 1 - preloaded, 2 - preallocated from network
+  UserLog -- user log file name. gets/puts/e.t.c. are unlimited
+  UserLogMax -- file length limit
+  UserMaxLogGet -- n/a
+  UserMaxLogGetCnt -- n/a
+  UserMaxLogPut -- n/a
+  UserMaxLogPutCnt -- n/a
+  UserLogMode -- n/a
+  NetInput -- reserved
+  NetInputMax -- limit for receive
+  NetInputMaxGet -- reserved
+  NetInputMaxGetCnt -- reserved
+  NetInputMaxPut -- reserved
+  NetInputMaxPutCnt -- reserved
+  NetInputMode -- reserved
+  NetOutput -- reserved
+  NetOutputMax -- limit for send
+  NetOutputMaxGet -- reserved
+  NetOutputMaxGetCnt -- reserved
+  NetOutputMaxPut -- reserved
+  NetOutputMaxPutCnt -- reserved
+  NetOutputMode -- reserved
+
+user side
+  ContentType -- reserved
+  TimeStamp -- time/seed
+  XObjectMetaTag -- custom attributes
+  UserETag -- checksum of the user output
+
+report request
+  ReportRetCode -- exit code of ZeroVM
+  ReportEtag -- checksum of the user output
+  ReportUserRetCode -- exit code of the user program
+  ReportContentType -- reserved
+  ReportXObjectMetaTag -- custom attributes set by user
+
+ZeroVM control
+  Version -- ZeroVM version
+  ZeroVM -- reserved
+  Log -- ZeroVM log file name
+  Report -- report file name
+  Nexe -- nexe file name
+  NexeMax -- maximum allowed nexe size
+  NexeEtag -- reserved for "fast validation"
+  Timeout -- maximum ZeroVM time to run
+  KillTimeout -- ZeroVM time to live
+  MemMax -- size of memory available for nexe
+  CPUMax -- cpu time allotted to nexe
+  SyscallsMax -- syscalls allowed nexe to invoke
+  SetupCallsMax -- setup calls allowed nexe to invoke
+  Blob -- blob library if it will retain
+  CommandLine -- command line for nexe
+

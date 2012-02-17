@@ -1,0 +1,46 @@
+this document describes ZeroVM command line switches
+----------------------------------------------------
+
+ZeroVM command line switches:
+
+        Usage: sel_ldr [-h d:D] [-r d:D] [-w d:D] [-i d:D]
+                         [-l log_file] [-v d] [-X d]
+                         [-M manifest_file] [-cFgIsQ]
+*       -h
+*       -r
+*       -w associate a host POSIX descriptor D with app desc d
+           that was opened in O_RDWR, O_RDONLY, and O_WRONLY modes
+           respectively
+*       -i associates an IMC handle D with app desc d
+        -v <level> verbosity
+*       -X create a bound socket and export the address via an
+           IMC message to a corresponding NaCl app descriptor
+           (use -1 to create the bound socket / address descriptor
+           pair, but that no export via IMC should occur)
+           (testing flags)
+        -c ignore validator! dangerous! Repeating this option twice skips
+           validation completely.
+        -F fuzz testing; quit after loading NaCl app
+        -S enable signal handling.
+**      -g enable gdb debug stub.
+        -l <file>  write log output to the given file
+        -s safely stub out non-validating instructions
+        -Q disable platform qualification (dangerous!)
+	      -M <file> load settings from manifest
+
+* these switches will be removed in the nearest future
+** under construction
+
+
+switches explanation:
+
+-v -- controls amount of information in the ZeroVM log
+-c -- if specified once - report valiation status and ignore it
+      if specified twice - skip validation
+-s -- enable 2nd pass of validator (by default ZeroVM makes only one pass)
+-F -- specified NaCl application will not run, only loaded (usefull for validation)
+-Q -- will skip data execution test. with this switch it is possible to run ZeroVM on platform without
+      "data execution" protection.
+-M -- specifies manifest file. manifest contain set of control data for user application
+      more details about manifest can be read in the appropriate document at github.com/Dazo-org/ZeroVM
+      

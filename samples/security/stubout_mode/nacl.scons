@@ -1,0 +1,64 @@
+# -*- python -*-
+# Copyright (c) 2011 The Native Client Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+Import('env')
+
+# TODO(robertm): explore if/why this overly restrictive guard is necessary
+if env.Bit('bitcode'):
+  Return()
+
+# TODO(mseaborn): Extend the ARM validator to support this.
+if env.Bit('build_arm'):
+  Return()
+
+if 'TRUSTED_ENV' not in env:
+  Return()
+
+stubout_tool = env['TRUSTED_ENV'].File(
+    '${STAGING_DIR}/${PROGPREFIX}ncval_stubout${PROGSUFFIX}')
+
+partly_invalid_nexe = env.ComponentProgram('partly_invalid', 'partly_invalid.c',
+                                           EXTRA_LIBS=['${NONIRT_LIBS}'])
+partly_invalid_stubout_nexe = env.File('partly_invalid_stubout${PROGSUFFIX}')
+
+node = env.Command(
+    target=partly_invalid_stubout_nexe,
+    source=[stubout_tool, partly_invalid_nexe],
+    action=[Action('${SOURCES[0]} ${SOURCES[1]} -o $TARGET')])
+# This alias is to ensure this test works with built_elsewhere=1,
+# because with that option CommandSelLdrTestNacl() assumes all its
+# inputs have already been built (which is not necessarily a good
+# idea, but apparently true for all other cases so far).
+env.Alias('all_test_programs', node)
+
+nodes = []
+
+# Without any debug flags, the executable fails validation.
+nodes.append(env.CommandSelLdrTestNacl(
+        'partly_invalid_1.out', partly_invalid_nexe,
+        exit_status='1'))
+
+# With "-c", the executable runs to completion but is not safe.
+nodes.append(env.CommandSelLdrTestNacl(
+        'partly_invalid_2.out', partly_invalid_nexe,
+        stdout_golden=env.File('without_stubout.stdout'),
+        sel_ldr_flags=['-c']))
+
+# With "-s", the executable runs part way but then faults.
+nodes.append(env.CommandSelLdrTestNacl(
+        'partly_invalid_3.out', partly_invalid_nexe,
+        stdout_golden=env.File('with_stubout.stdout'),
+        sel_ldr_flags=['-s'],
+        exit_status='untrusted_sigill'))
+
+# Using the standalone ncval_stubout tool to rewrite the executable
+# offline should be equivalent to using sel_ldr's "-s" option.
+nodes.append(env.CommandSelLdrTestNacl(
+        'partly_invalid_stubout.out',
+        partly_invalid_stubout_nexe,
+        stdout_golden=env.File('with_stubout.stdout'),
+        exit_status='untrusted_sigill'))
+
+env.AddNodeToTestSuite(nodes, ['small_tests'], 'run_stubout_mode_test')

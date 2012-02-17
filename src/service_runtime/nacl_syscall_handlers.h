@@ -26,6 +26,4 @@ int32_t NaClCommonSysMmapIntern(struct NaClApp        *nap,
                                 int                   d,
                                 nacl_abi_off_t        offset);
 
-EXTERN_C_END
-
 #endif
