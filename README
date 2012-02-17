@@ -13,6 +13,55 @@ Installation:
 3. if everything is ok you will see output of unit tests. in ZeroVM folder you can find "zerovm" executable
 
 
+QUICKSTART
+
+==================PRELIMINARY===================================================
+Quickstart for installing ZeroVM on Ubuntu (daemon)
+
+==> cd ~
+==> mkdir zerovm_getting_started <enter>
+==> cd zerovm_getting_started <enter>
+==> wget https://github.com/Dazo-org/zerovm/zipball/master <enter>
+==> unzip master <enter>
+==> rm -rf master <enter> 
+==> cd <hit tab> <enter>
+==> sudo apt-get install build-essential gcc-multilib g++-multilib libsdl1.2-dev texinfo libcrypto++-dev libssl-dev m4 <enter>
+==> mkdir obj <enter>
+==> mkdir test <enter>
+==> make <enter>
+
+Ok if you see green RUN OK PASSED messages that everything is fine and you have ZeroVM compiled for your platform! 
+
+Let's try to run ZeroVM
+
+==> ./zerovm <enter>
+
+If you see a greeting message that means your ZeroVM was most probably correctly built and functioning.
+
+==================PRELIMINARY===================================================
+Quickstart for installing ZeroVM SDK (which is NaCl SDK for now)
+
+You need to obtain an SDK in order to be able to build samples and your own programs for ZeroVM. To download and install the SDK you need to consult following page (we recommend installing SDK in separate terminal window): 
+https://developers.google.com/native-client/sdk/download. 
+
+For me it was (in a new terminal window):
+==> cd ~/zerovm_getting_started <enter>
+==> mkdir sdk <enter>
+==> cd sdk <enter>
+==> wget http://commondatastorage.googleapis.com/nativeclient-mirror/nacl/nacl_sdk/nacl_sdk.zip <enter>
+==> unzip nacl_sdk.zip <enter>
+==> cd nacl_sdk <enter>
+==> ./naclsdk list
+==> ./naclsdk update
+
+Now you can use newly installed custom versions of GNU toolchain to build attached samples or your own programs
+==================PRELIMINARY===================================================
+
+
+
+
+
+
 Troubleshooting:
 1.
 - ... Fatal error: can't create obj/sel_main.o: No such file or directory
