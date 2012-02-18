@@ -71,6 +71,9 @@ NORETURN void NaClSyscallCSegHook()
   sp_user += NACL_SYSCALLRET_FIX;
   NaClSetThreadCtxSp(user, sp_user);
 
+  /* debug print to log */
+  NaClLog(4, "system call number %"NACL_PRIdS"\n", sysnum);
+
   if (sysnum >= NACL_MAX_SYSCALLS) {
     NaClLog(2, "INVALID system call %"NACL_PRIdS"\n", sysnum);
     nap->sysret = -NACL_ABI_EINVAL;
