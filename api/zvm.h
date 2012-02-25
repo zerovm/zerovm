@@ -197,6 +197,11 @@ int32_t zvm_pwrite(int desc, char *buffer, int32_t size, int64_t offset);
 int log_set(struct SetupList *setup);
 
 /*
+ * wrapper for zerovm "TrapExit"
+ */
+int32_t zvm_exit(int32_t code);
+
+/*
  * log message. 0 - if success. 1 - if log is full or has no space to
  * store the whole message (part of the message will be stored anyway)
  */

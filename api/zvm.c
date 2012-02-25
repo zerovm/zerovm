@@ -85,4 +85,13 @@ int32_t zvm_pwrite(int desc, char *buffer, int32_t size, int64_t offset)
   uint64_t request[] = {TrapWrite, 0, desc, (uint32_t)buffer, size, offset};
   return _trap(request);
 }
+
+/*
+ * wrapper for zerovm "TrapExit"
+ */
+int32_t zvm_exit(int32_t code)
+{
+  uint64_t request[] = {TrapExit, 0, code};
+  return _trap(request);
+}
 #undef USER_SIDE

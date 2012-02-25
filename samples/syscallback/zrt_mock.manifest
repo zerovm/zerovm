@@ -1,0 +1,19 @@
+=====================================================================
+== i/o switches
+=====================================================================
+UserLog = samples/syscallback/zrt_mock.user.log
+UserLogMax = 65536
+UserLogMaxGet = 65536
+
+=====================================================================
+== switches for zerovm. some of them used to control nexe, some
+== for the internal zerovm needs
+=====================================================================
+Version = 11nov2011
+Log = samples/syscallback/zrt_mock.zerovm.log
+Report = samples/syscallback/zrt_mock.report.log
+Nexe = samples/syscallback/zrt_mock.c_x86_64.nexe
+NexeMax = 10000000
+SyscallsMax = 3333
+SetupCallsMax = 99999
+

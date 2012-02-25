@@ -42,6 +42,8 @@ int main()
   sprintf(SETPTR(log_ptr), "hello, log\n");
   sprintf(SETPTR(log_ptr), "log buffer start found at 0x%X\n", (int32_t)log_start);
   sprintf(SETPTR(log_ptr), "log buffer size is %d\n", log_size);
+  sprintf(SETPTR(log_ptr), "main() address = %lX\n", main);
+  sprintf(SETPTR(log_ptr), "setup address = %lX\n", setup);
 
   return 0;
 }

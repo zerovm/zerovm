@@ -1,0 +1,19 @@
+=====================================================================
+== i/o switches. full list. optional. some switches now meaningless, 
+== placed here for completeness and future changes
+=====================================================================
+UserLog = samples/direct_syscalls/user.log
+UserLogMax = 65536
+UserLogMaxGet = 65536
+
+=====================================================================
+== switches for zerovm. some of them used to control nexe, some
+== for the internal zerovm needs
+=====================================================================
+Version = 11nov2011
+Log = samples/direct_syscalls/zerovm.log
+Report = samples/direct_syscalls/report.log
+Nexe = samples/direct_syscalls/direct_syscall_test.c_x86_64.nexe
+SyscallsMax = 1024
+SetupCallsMax = 2
+
