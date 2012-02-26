@@ -1,5 +1,22 @@
 /*
  * zrt_mock.c
+ * this source file demonstrates "syscallback" mechanism. user can
+ * install it's own handler for all syscalls (except syscall #0).
+ * when installed, "syscallback" will pass control to user code whenever
+ * syscalls invoked. to return control to zerovm user can use trap (syscall #0)
+ * or uninstall "syscallback" (samples how to do it can be found in this code
+ * as well).
+ *
+ * this example can (and hopefully will) be extended to zrt library. information
+ * about that library will be placed to zerovm website
+ *
+ * to extend this example just write code of all zrt_* functions. these functions
+ * can use any of zerovm appliances for user code (like input stream, output stream, log,
+ * extended attributes e.t.c). any of this can be obtained from the user manifest.
+ *
+ * note: direct syscalls defined here not only for test purposes. direct nacl syscalls
+ *       can be used for "selective syscallback" - this is allow to intercept particular
+ *       syscalls while leaving other syscalls to zerovm care (see zrt_mmap()).
  *
  *  Created on: Feb 18, 2012
  *      Author: d'b
@@ -11,30 +28,22 @@
 #include <string.h>
 #include "api/zvm.h"
 
-/* assembler source code */
+#include <unistd.h> /* only for tests */
+
+/* entry point for zrt library sample (see "syscall_manager.S" file) */
 void syscall_director(void);
 
-/* need to be here for selective syscallback (so far, we cannot intercept *tls, mmap and some other syscalls) */
+/* need to be here for selective syscallback */
 struct SetupList setup;
 
+/* debug purposes only */
+#define DEBUG 1
+#define LOGFIX /* temporary fix until zrt library will be finished */
+#if DEBUG
 #define SHOWID do {log_msg("\n"); log_msg((char*)__func__); log_msg("() is called\n");} while(0)
-
-/*
- * GLOBAL PLAN
- *
- * 0. define syscalls as trampoline absolute addresses
- * 1. intercept "zvm interrupts" (install syscallback)
- * 2. emulate syscalls:
- * 2.1 syscall invocation
- * 2.2 interception (in this code)
- * 2.3 check given arguments
- * 2.4 log syscall info to user log
- * 2.5 return to source (actually jump to source point)
- *     to avoid code growth and keep it simple, that can be done
- *     via pass control to zvm trap() with special empty function.
- *     another way to return to source point replace return address
- *     in the stack and issue "return;" (probably with argument)
- */
+#else
+#define SHOWID
+#endif
 
 /*
  * FULL NACL SYSCALL LIST
@@ -99,7 +108,6 @@ struct SetupList setup;
 /*
  * DIRECT NACL SYSCALLS FUNCTIONS (VIA TRAMPOLINE)
  * should be fulfilled with all syscalls and moved to the header.
- * note: it is possible to use (...) instead of meaningfull arguments names
  */
 /* write() -- nacl syscall via trampoline */
 #define NaCl_write(d, buf, count) ((int32_t (*)(uint32_t, uint32_t, uint32_t)) \
@@ -109,10 +117,13 @@ struct SetupList setup;
 #define NaCl_mmap(start, length, prot, flags, d, offp) ((int32_t (*)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t)) \
     (NACL_sys_mmap * 0x20 + 0x10000))(start, length, prot, flags, d, offp)
 
-
 /* tls_get() -- nacl syscall via trampoline */
 #define NaCl_tls_get() ((int32_t (*)()) \
     (NACL_sys_second_tls_get * 0x20 + 0x10000))()
+
+/* invalid syscall */
+#define NaCl_invalid() ((int32_t (*)()) \
+    (999 * 0x20 + 0x10000))()
 
 /*
  * ZRT IMPLEMENTATION OF NACL SYSCALLS
@@ -123,7 +134,7 @@ struct SetupList setup;
 int32_t zrt_nan(uint32_t *args)
 {
   /* log/return "not implemented syscall" error */
-  SHOWID; return 0; /* use "not implemented" error code from zerovm */
+  SHOWID; return 0; /* ### use "not implemented" error code from zerovm */
 }
 
 /* empty syscall. does nothing */
@@ -168,7 +179,7 @@ int32_t zrt_read(uint32_t *args)
   SHOWID; return 0;
 }
 
-/* mock. should be implemented */
+/* example how to implement zrt syscall */
 int32_t zrt_write(uint32_t *args)
 {
   SHOWID;
@@ -176,8 +187,11 @@ int32_t zrt_write(uint32_t *args)
   log_msg((char*)args[1]);
   log_msg("]\n");
 
-  /* to prevent deadloop the return code must be or negative (if fail) or positive (amount of written bytes) */
-  return 99;
+  /*
+   * to prevent deadloop the return code must be or negative
+   * (if fail) or positive (amount of written bytes)
+   */
+  return args[2];
 }
 
 /* mock. should be implemented */
@@ -217,7 +231,7 @@ int32_t zrt_sysbrk(uint32_t *args)
   SHOWID; return 0;
 }
 
-/* mock. should be implemented */
+/* example of "selective syscallback". this syscall handed back to zerovm */
 int32_t zrt_mmap(uint32_t *args)
 {
   int32_t retcode;
@@ -226,17 +240,17 @@ int32_t zrt_mmap(uint32_t *args)
   /* uninstall syscallback */
   setup.syscallback = 0;
   zvm_setup(&setup);
-  log_msg("syscallback uninstalled from zrt_mmap()\n");
+  log_msg("syscallback uninstalled\n");
 
   /* invoke syscall directly */
   retcode = NaCl_mmap(args[0], args[1], args[2], args[3], args[4], args[5]);
-  log_msg("syscallback retranslated from zrt_mmap() to zerovm\n");
+  log_msg("syscallback retranslated to zerovm\n");
 
   /* reinstall syscallback */
   log_msg("...returned to zrt_mmap()\n");
   setup.syscallback = (int32_t) syscall_director;
   zvm_setup(&setup);
-  log_msg("syscallback reinstalled from zrt_mmap()\n");
+  log_msg("syscallback reinstalled\n");
 
   return retcode;
 }
@@ -253,12 +267,14 @@ int32_t zrt_getdents(uint32_t *args)
   SHOWID; return 0;
 }
 
-/* mock. should be implemented */
+/*
+ * exit. most important syscall. without it the user program
+ * cannot terminate correctly.
+ */
 int32_t zrt_exit(uint32_t *args)
 {
-  SHOWID;
-  /* no need to check args for NULL. it is always set in stack */
-  zvm_exit(args[0]);
+  /* no need to check args for NULL. it is always set by syscall_manager */
+  SHOWID; zvm_exit(args[0]);
 
   /* not reached */
   return 0;
@@ -420,7 +436,7 @@ int32_t zrt_thread_nice(uint32_t *args)
   SHOWID; return 0;
 }
 
-/* mock. should be implemented */
+/* example of "selective syscallback". this syscall handed back to zerovm */
 int32_t zrt_tls_get(uint32_t *args)
 {
   int32_t retcode;
@@ -504,6 +520,13 @@ int32_t zrt_test_infoleak(uint32_t *args)
   SHOWID; return 0;
 }
 
+/*
+ * array of the pointers to zrt syscalls
+ *
+ * each zrt function (syscall) has uniform prototype: int32_t syscall(uint32_t *args)
+ * where "args" pointer to syscalls' arguments. number and types of arguments
+ * can be found in the nacl "nacl_syscall_handlers.c" file.
+ */
 int32_t (*zrt_syscalls[])(uint32_t*) = {
     zrt_nan,                   /* 0 -- not implemented syscall */
     zrt_null,                  /* 1 -- empty syscall. does nothing */
@@ -617,9 +640,6 @@ int32_t (*zrt_syscalls[])(uint32_t*) = {
     zrt_test_infoleak          /* 109 */
 };
 
-#define NACL_MAX_SYSCALLS         110
-#define LOGFIX /* temporary fix until zrt library will be finished */
-
 int main()
 {
   int retcode = ERR_CODE;
@@ -631,8 +651,7 @@ int main()
    */
   setup.syscallback = (int32_t) syscall_director;
   retcode = zvm_setup(&setup);
-
-  /* ### test syscall_manager() return code here. just for completeness */
+  if(retcode) return retcode;
 
 #ifdef LOGFIX
   /* set up the log */
@@ -644,14 +663,19 @@ int main()
   log_msg("hello, syscallback program started\n");
   log_msg("syscallback installed\n");
 
-  /* invoke all nacl syscalls directly */
+  /* example how to invoke nacl syscall directly */
   NaCl_write(1, (int32_t)hello, 6);
 
   /* call some c functions */
   printf("Where have all the flowers gone?\n");
+  fflush(NULL);
   printf("Long time passing\n");
   printf("var1 = %d, var2 = %d, var3 = %d\n", 1, 2, 3);
   fopen("something", "r");
+  close(1);
+
+  /* try to call invalid syscall */
+  NaCl_invalid();
 
   return retcode;
 }

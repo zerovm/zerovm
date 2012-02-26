@@ -32,7 +32,13 @@ syscall_director:
         sub $0x10000, %eax
         shr $5, %eax
 
+        /* check if syscall number is within acceptable range */
+        cmp $110, %eax
+        jb sane_syscall
+        xor %eax, %eax
+
 				/* calculate the syscall address (low part): eax */
+sane_syscall:
         shl $2, %eax
         add $zrt_syscalls, %eax
         mov (%r15,%rax), %eax
