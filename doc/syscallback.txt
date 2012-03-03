@@ -1,0 +1,32 @@
+this document describes syscallback
+-----------------------------------
+
+essencially, syscallback provide ability to intercept all syscalls from the
+user code. the only syscall that cannot be intercepted - trap (which allows
+user to exploit zerovm special services with syscallback installed). 
+
+to intercept syscalls user code must contain handler (example of such code
+can be found in "samples/syscallback/syscall_manager.S" and "samples/syscallback/zrt_mock.c").
+when intercepting syscall user must take care about stack and registers.
+
+more details about syscalls insides can be found in google nacl documentation.
+in a few words syscall has special format of call:
+stack (contain 64-bit values).
+stack[0] == syscall address in trampoline (syscall number can be calculated from this 64-bit value)
+stack[1] == return address to the user code invoked the syscall
+arguments for syscalls are in 32-bit registers:
+argument 1 == edi
+argument 2 == esi
+argument 3 == edx
+argument 4 == ecx
+argument 5 == r8d
+argument 6 == r9d
+
+to set syscallback user should call zvm_setup from zerovm api (or use trap()
+with TrapUserSetup function) with "syscallback" field of SetupList object set
+to new handler address (defined by user code). to remove syscallback user can
+use same procedure, but "syscallback" field must be set to 0.
+
+note: user program cannot exit as usual if user set syscallback. to exit user
+should invoke zvm_exit from zerovm api (or use trap() with TrapExit function).
+another way, of course, remove syscallback.

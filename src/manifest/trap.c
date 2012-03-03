@@ -59,6 +59,11 @@ static int32_t TrapExitHandle(struct NaClApp *nap, int32_t code)
 /*
  * validate and set syscallback (both local and global)
  * return 0 if syscallback installed, otherwise -1
+ *
+ * update: please note, syscallback is same far jump. so it
+ * must be tested the same way. we cannot use validator and to
+ * prevent potential danger the code below must be *very* safe
+ * and must check all possibilities.
  */
 static int32_t UpdateSyscallback(struct NaClApp *nap, struct SetupList *hint)
 {

@@ -1,0 +1,24 @@
+this document contain short description of nacl syscalls
+--------------------------------------------------------
+
+nacl application does not allowed to use real system calls, instead of that
+user can use nacl syscalls. there is however, difference between original
+nacl sel_ldr and zerovm: zerovm does not support syscalls except 
+NACL_sys_sysbrk (20), NACL_sys_mmap (21), NACL_sys_munmap (22), NACL_sys_exit (30),
+NACL_sys_mutex_create (70), NACL_sys_tls_init (82), NACL_sys_tls_get (84). also,
+zerovm support special syscall trap (0) (see "trap.txt")
+
+when zerovm encounter not supporting syscall it ignores such syscall.
+
+for input/output syscall zerovm offer replacement: pagination engine (see 
+"pagination.txt"). for syscalls getting time/date there is special attribute
+in manifest: TimeStamp. user application can get it using zvm_setup() from
+zerovm api.
+
+more detailed information about syscalls can be obtained from google nacl paper.
+
+user program allowed to intercept all syscalls except trap() (for further information
+see "syscallback.txt"). this is the way to emulate some (or all) nacl syscalls.
+
+syscalls can be used by user directly (via trampoline) or indirectly by using nacl sdk.
+sample of how to invoke nacl syscall directly can be found in "samples/direct_syscalls".
