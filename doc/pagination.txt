@@ -1,4 +1,41 @@
 this document describes pagination engine
 -----------------------------------------
 
-under construction
+pagination engine (PE) is a replacement for input/output syscalls (which exist 
+no more in zerovm). in a few words with PE user can read/write data specified in
+the manifest.
+
+for now there are two ways to make the data available for user: mapping data into
+the memory and reading/writing portions of data from disk. user have no access
+to things like file names/attributes/e.t.c. but user can get data and size of data
+from the manifest. here the list of the PE fields from manifest user can access:
+
+max_syscalls -- any invocation of PE treated as syscalls. user can be limited in it.
+max_setup_calls -- how many time user allowed to use manifest due one session
+channels[] -- channels/streams available for usage
+
+  0 -- read-only stream (like stdin)
+  1 -- read-write stream
+  2 -- user log (like stderr)
+  3 -- reserved
+  4 -- reserved
+  
+  for each channel defined following attributes (fields) available for user:
+  type -- type of channel (see 5 channels above)
+  fsize -- size of data (if applicable)
+  buffer -- contain mapped data. if channel is not mapped the field is NULL
+  bsize -- size of mapped data (if applicable), otherwise - 0
+  
+  max_size -- amount of data available for user
+  max_gets -- amount of reads allowed for user (not applicable for mapped data)
+  max_puts -- amount of writes allowed for user (not applicable for mapped data)
+  max_get_size -- amount of bytes allowed to read (not applicable for mapped data)
+  max_put_size -- amount of bytes allowed to write (not applicable for mapped data)
+  
+  also user have access to PE counters (see "zvm.h" from the zerovm api)
+
+there is one more field: "mounted". this field is not allowed for user because
+in a future for stream abstraction sake zerovm will hide origin of data. but
+now user can infere value of the field from other fields: "buffer" and "bsize".
+perhaps, in the next versions of manifest this problem will be solved.
+
