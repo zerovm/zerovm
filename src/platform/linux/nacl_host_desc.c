@@ -24,6 +24,8 @@
 #include "src/service_runtime/include/sys/fcntl.h"
 #include "src/service_runtime/include/bits/mman.h"
 #include "src/service_runtime/include/sys/stat.h"
+//YaroslavLitvinov fixed error: undefined reference to S_ISREG,S_ISDIR
+#include <sys/stat.h>
 
 /*
  * Map our ABI to the host OS's ABI.  On linux, this should be a big no-op.

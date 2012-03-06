@@ -131,6 +131,8 @@ int ParseCommandLine(int argc, char **argv, struct NaClApp *nap)
   nap->verbosity = NaClLogGetVerbosity();
   nap->skip_qualification = 0;
   nap->fuzzing_quit_after_load = 0;
+  //YaroslavLitvinov: Fixed segmentation fault, if manifest file not found
+  nap->manifest = 0;
 
   /* note: in a future zerovm command line will be reduced */
   while((opt = getopt(argc, argv, "+cFgh:i:Il:Qr:sSv:w:X:M:")) != -1)
