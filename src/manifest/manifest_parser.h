@@ -33,20 +33,6 @@ int parse_manifest(const char *name, struct NaClApp *nap);
 char* get_value_by_key(struct NaClApp *nap, char *key);
 
 /*
- * return number of found values from manifest by given key
- * values will be stored into provided array
- * note: this is temporary function. needed to solve the problem of
- * duplicate keys in manifest
- */
-int get_values_by_key(struct NaClApp *nap, char *key, char *values[], int capacity);
-
-/*
- * public function. set value in manifest by given key
- * return 1 if success, otherwise - 0
- */
-int set_value_by_key(struct NaClApp *nap, char *key, char *value);
-
-/*
  * helper procedures. were put here for unit test
  */
 char* cut_spaces(char *a);
