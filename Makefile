@@ -31,8 +31,9 @@ tests: test_compile
 	test/x86_validator_tests_nc_inst_bytes
 	test/manifest_parser_test
 	test/manifest_setup_test
+	test/nacl_log_test
 
-test_compile: test/x86_validator_tests_halt_trim test/service_runtime_tests test/x86_decoder_tests_nc_inst_state test/x86_validator_tests_nc_inst_bytes test/x86_validator_tests_nc_remaining_memory test/manifest_parser_test test/manifest_setup_test
+test_compile: test/x86_validator_tests_halt_trim test/service_runtime_tests test/x86_decoder_tests_nc_inst_state test/x86_validator_tests_nc_inst_bytes test/x86_validator_tests_nc_remaining_memory test/manifest_parser_test test/manifest_setup_test test/nacl_log_test
 
 obj/halt_trim_tests.o: src/validator/x86/halt_trim_tests.cc
 	@g++ ${CXXFLAGS} -o obj/halt_trim_tests.o ${CXXFLAGS1} -Igtest/include src/validator/x86/halt_trim_tests.cc
@@ -49,6 +50,12 @@ obj/manifest_setup_test.o: src/manifest/manifest_setup_test.cc
 	@g++ ${CXXFLAGS} -o obj/manifest_setup_test.o ${CXXFLAGS1} src/manifest/manifest_setup_test.cc
 test/manifest_setup_test: obj/manifest_setup_test.o obj/libsel.a obj/libgio_wrapped_desc.a obj/libnrd_xfer.a obj/libnacl_perf_counter.a obj/libnacl_base.a obj/libimc.a obj/libnacl_fault_inject.a obj/libplatform.a obj/libncvalidate_x86_64.a obj/libncval_reg_sfi_x86_64.a obj/libnccopy_x86_64.a obj/libnc_decoder_x86_64.a obj/libnc_opcode_modeling_x86_64.a obj/libncval_base_x86_64.a obj/libplatform.a obj/libgio.a
 	@g++ ${CXXFLAGS} -o test/manifest_setup_test ${CXXFLAGS2} obj/manifest_setup_test.o -L/usr/lib -Lobj -Lgtest -lgtest -lsel -lgio_wrapped_desc -lnrd_xfer -lnacl_perf_counter -lnacl_base -limc -lnacl_fault_inject -lplatform -lncvalidate_x86_64 -lncval_reg_sfi_x86_64 -lnccopy_x86_64 -lnc_decoder_x86_64 -lnc_opcode_modeling_x86_64 -lncval_base_x86_64 -lplatform -lgio -lrt -lpthread -lcrypto -ldl
+
+obj/nacl_log_test.o: src/platform/nacl_log_test.cc
+	@g++ ${CXXFLAGS} -o obj/nacl_log_test.o ${CXXFLAGS1} src/platform/nacl_log_test.cc
+test/nacl_log_test: obj/nacl_log_test.o obj/libsel.a obj/libgio_wrapped_desc.a obj/libnrd_xfer.a obj/libnacl_perf_counter.a obj/libnacl_base.a obj/libimc.a obj/libnacl_fault_inject.a obj/libplatform.a obj/libncvalidate_x86_64.a obj/libncval_reg_sfi_x86_64.a obj/libnccopy_x86_64.a obj/libnc_decoder_x86_64.a obj/libnc_opcode_modeling_x86_64.a obj/libncval_base_x86_64.a obj/libplatform.a obj/libgio.a
+	@g++ ${CXXFLAGS} -o test/nacl_log_test ${CXXFLAGS2} obj/nacl_log_test.o -L/usr/lib -Lobj -Lgtest -lgtest -lsel -lgio_wrapped_desc -lnrd_xfer -lnacl_perf_counter -lnacl_base -limc -lnacl_fault_inject -lplatform -lncvalidate_x86_64 -lncval_reg_sfi_x86_64 -lnccopy_x86_64 -lnc_decoder_x86_64 -lnc_opcode_modeling_x86_64 -lncval_base_x86_64 -lplatform -lgio -lrt -lpthread -lcrypto -ldl
+
 
 obj/sel_ldr_test.o: src/service_runtime/sel_ldr_test.cc
 	@g++ ${CXXFLAGS} -o obj/sel_ldr_test.o ${CXXFLAGS1} ${CCFLAGS2} ${CCFLAGS4} -Igtest/include src/service_runtime/sel_ldr_test.cc

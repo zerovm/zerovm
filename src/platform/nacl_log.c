@@ -149,30 +149,11 @@ void NaClLogSetFile(char const *log_file) {
 }
 
 int NaClLogDefaultLogVerbosity() {
-  char *env_verbosity;
-
-  if (NULL != (env_verbosity = getenv("NACLVERBOSITY"))) {
-    int v = strtol(env_verbosity, (char **) 0, 0);
-
-    if (v >= 0) {
-      return v;
-    }
-  }
   return 0;
 }
 
 struct Gio *NaClLogDefaultLogGio() {
-  char            *log_file;
-  FILE            *log_iob;
-
-  log_file = getenv("NACLLOG");
-
-  if (NULL == log_file) {
-    log_iob = NaClLogDupFileIo(stderr);
-  } else {
-    log_iob = NaClLogFileIoBufferFromFile(log_file);
-  }
-  return NaClLogGioFromFileIoBuffer(log_iob);
+  return NaClLogGioFromFileIoBuffer( NaClLogDupFileIo(stderr) );
 }
 
 void NaClLogParseAndSetModuleVerbosityMap(char const *module_verbosity_map) {
@@ -483,6 +464,7 @@ void NaClLogDoLogAndUnsetModule(int        detail_level,
   NaClLogDoLogAndUnsetModuleV(detail_level, fmt, ap);
   va_end(ap);
 }
+
 
 void NaClLog(int         detail_level,
              char const  *fmt,
