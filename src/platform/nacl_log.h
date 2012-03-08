@@ -193,6 +193,7 @@ void NaClLogSetFile(char const *log_file);
 
 void NaClLogModuleFini(void);
 
+/**@param verb Verbosity max allowed value is INT_MAX-1*/
 void NaClLogSetVerbosity(int verb);
 
 int NaClLogGetVerbosity(void);
