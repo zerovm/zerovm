@@ -11,7 +11,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "zvm.h"
+#include "api/zvm.h"
 
 int main()
 {

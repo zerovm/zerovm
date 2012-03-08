@@ -1,1 +1,0 @@
-replace printfs with user log

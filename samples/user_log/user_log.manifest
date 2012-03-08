@@ -14,7 +14,7 @@ Version = 11nov2011
 ZeroVM = don't know what is this for
 Log = samples/user_log/zerovm.log
 Report = samples/user_log/report.log
-Nexe = samples/user_log/userlog_test.c_x86_64.nexe
+Nexe = samples/user_log/userlog_test.nexe
 SyscallsMax = 1024
 SetupCallsMax = 2
 

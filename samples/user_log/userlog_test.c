@@ -13,7 +13,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "zvm.h"
+#include "api/zvm.h"
 
 int main()
 {
@@ -42,8 +42,8 @@ int main()
   sprintf(SETPTR(log_ptr), "hello, log\n");
   sprintf(SETPTR(log_ptr), "log buffer start found at 0x%X\n", (int32_t)log_start);
   sprintf(SETPTR(log_ptr), "log buffer size is %d\n", log_size);
-  sprintf(SETPTR(log_ptr), "main() address = %lX\n", main);
-  sprintf(SETPTR(log_ptr), "setup address = %lX\n", setup);
+  sprintf(SETPTR(log_ptr), "main() address = 0x%X\n", (uintptr_t)main);
+  sprintf(SETPTR(log_ptr), "struct SetupList setup address = 0x%X\n", (uintptr_t)&setup);
 
   return 0;
 }

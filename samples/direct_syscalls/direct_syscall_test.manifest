@@ -13,7 +13,7 @@ UserLogMaxGet = 65536
 Version = 11nov2011
 Log = samples/direct_syscalls/zerovm.log
 Report = samples/direct_syscalls/report.log
-Nexe = samples/direct_syscalls/direct_syscall_test.c_x86_64.nexe
+Nexe = samples/direct_syscalls/direct_syscall_test.nexe
 SyscallsMax = 1024
 SetupCallsMax = 2
 

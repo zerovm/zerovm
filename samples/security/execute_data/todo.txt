@@ -6,7 +6,3 @@ this issue must be fixed asap
 update: it only can be fixed with appropriate handler which will intercept system handler for
 "segmentation fault". the error caused by r/w data segment tryed to be executed
 
-todo:
-other thing to do is a makefile. i must create it
-
-

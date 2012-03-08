@@ -9,7 +9,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "native_client/src/untrusted/nacl/syscall_bindings_trampoline.h"
+#include "syscall_bindings_trampoline.h"
 
 #if !defined(__pnacl__) && (defined(__x86_64__) || defined(__i386__))
 
