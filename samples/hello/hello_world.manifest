@@ -8,7 +8,7 @@ UserLogMax = 65536
 Version = 11nov2011
 Log = samples/hello/hello.zerovm.log
 Report = samples/hello/hello.report.log
-Nexe = samples/hello/hello_world.c_x86_64.nexe
+Nexe = samples/hello/hello_world.nexe
 SyscallsMax = 1024
 SetupCallsMax = 2
 
