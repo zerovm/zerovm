@@ -4,9 +4,9 @@ this document contain demonstration of zerovm api
 
 to compile and run most of examples from the "samples" directory 1st you need
 to have compiled zerovm and installed NaCl SDK (currently all examples use version 16, 
-if you want to use other version of SDK make appropriate changes in samples' makefiles).
+if you want to use other version of SDK, make appropriate changes in samples' makefiles).
 also it is assumed that folder where "samples" resides is "~/git/zerovm". check the path
-or make changes in makefiles
+and make changes in makefiles in case of need.
 
 "DIRECT SYSCALLS" EXAMPLE
 -------------------------
