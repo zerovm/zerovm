@@ -179,22 +179,7 @@ NaClErrorCode NaClMakeDynamicTextShared(struct NaClApp *nap) {
   /* Existing memory is anonymous paging file backed. */
   NaCl_page_free((void *) text_sysaddr, dynamic_text_size);
 
-  /*
-   * Unix allows us to map pages with PROT_NONE initially and later
-   * increase the mapping permissions with mprotect().
-   *
-   * Windows does not allow this, however: the initial permissions are
-   * an upper bound on what the permissions may later be changed to
-   * with VirtualProtect().  Given this, using PROT_NONE at this point
-   * does not even make sense.  So we map with read+exec and
-   * immediately turn down the permissions, so that we can later
-   * re-enable read+exec page by page.
-   */
-#if NACL_WINDOWS
-  mmap_protections = NACL_ABI_PROT_READ | NACL_ABI_PROT_EXEC;
-#else
   mmap_protections = NACL_ABI_PROT_NONE;
-#endif
   NaClLog(4,
           "NaClMakeDynamicTextShared: Map(,,0x%"NACL_PRIxPTR",size = 0x%x,"
           " prot=0x%x, flags=0x%x, offset=0)\n",
@@ -213,27 +198,6 @@ NaClErrorCode NaClMakeDynamicTextShared(struct NaClApp *nap) {
   if (text_sysaddr != mmap_ret) {
     NaClLog(LOG_FATAL, "Could not map in shm for dynamic text region\n");
   }
-
-#if NACL_WINDOWS
-  {
-    /*
-     * We need a loop here because the Map() call above creates one
-     * mapping per page.  However, there is no need for it to do that
-     * for the dynamic code area.
-     * TODO(mseaborn): Create a single mapping here.
-     */
-    uintptr_t offset;
-    for (offset = 0; offset < dynamic_text_size; offset += NACL_MAP_PAGESIZE) {
-      DWORD old_prot;
-      if (!VirtualProtect((void *) (text_sysaddr + offset), NACL_MAP_PAGESIZE,
-                          PAGE_NOACCESS, &old_prot)) {
-        NaClLog(LOG_FATAL,
-                "NaClMakeDynamicTextShared: VirtualProtect() failed to "
-                "set page permissions to PAGE_NOACCESS\n");
-      }
-    }
-  }
-#endif
 
   nap->dynamic_page_bitmap =
     BitmapAllocate((uint32_t) (dynamic_text_size / NACL_MAP_PAGESIZE));

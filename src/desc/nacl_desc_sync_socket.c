@@ -130,12 +130,10 @@ static struct NaClDescVtbl const kNaClDescSyncSocketVtbl = {
 int NaClDescSyncSocketInternalize(struct NaClDesc          **out_desc,
                                   struct NaClDescXferState *xfer) {
   int                       rv;
-  NaClHandle                h;
   struct NaClDescSyncSocket *ndssp;
 
   NaClLog(4, "Entered NaClDescSyncSocketInternalize\n");
   rv = -NACL_ABI_EIO;
-  h = NACL_INVALID_HANDLE;
   ndssp = NULL;
 
   if (xfer->next_handle == xfer->handle_buffer_end) {

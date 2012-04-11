@@ -14,11 +14,8 @@
 NaClErrorCode NaClMprotectGuards(struct NaClApp *nap) {
   uintptr_t start_addr;
   int       err;
-  void      *guard[2];
 
   start_addr = nap->mem_start;
-  guard[0] = (void *)(start_addr - GUARDSIZE);
-  guard[1] = (void *)(start_addr + FOURGIG);
 
   NaClLog(3,
           ("NULL detection region start 0x%08"NACL_PRIxPTR", "
@@ -51,13 +48,6 @@ NaClErrorCode NaClMprotectGuards(struct NaClApp *nap) {
    * of address space on either side of the main 4G address space that
    * we have to make inaccessible....
    */
-#if !NACL_WINDOWS
-  /*
-   * On Windows we do not alter the page protection of the guard regions,
-   * as this would require them to be committed. Instead we keep them
-   * reserved but uncommitted, which means that access attempts will fault.
-   * On other systems, we mprotect the guards.
-   */
   if ((err = NaCl_mprotect((void *) (start_addr - GUARDSIZE),
                            GUARDSIZE,
                            PROT_NONE)) != 0) {
@@ -86,6 +76,5 @@ NaClErrorCode NaClMprotectGuards(struct NaClApp *nap) {
             err);
     return LOAD_MPROTECT_FAIL;
   }
-#endif
   return LOAD_OK;
 }

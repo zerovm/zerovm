@@ -394,12 +394,10 @@ static struct NaClDescVtbl const kNaClDescXferableDataDescVtbl = {
 int NaClDescXferableDataDescInternalize(struct NaClDesc          **baseptr,
                                         struct NaClDescXferState *xfer) {
   int                             rv;
-  NaClHandle                      h;
   struct NaClDescXferableDataDesc *ndxdp;
 
   NaClLog(4, "Entered NaClDescXferableDataDescInternalize\n");
   rv = -NACL_ABI_EIO;
-  h = NACL_INVALID_HANDLE;
   ndxdp = NULL;
 
   if (xfer->next_handle == xfer->handle_buffer_end) {

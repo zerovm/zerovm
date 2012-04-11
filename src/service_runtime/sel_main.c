@@ -79,20 +79,15 @@ static void PrintUsage() {
   /* NOTE: this is broken up into multiple statements to work around
            the constant string size limit */
   fprintf(stderr,
-          "Usage: sel_ldr [-h d:D] [-r d:D] [-w d:D] [-i d:D]\n"
-          "               [-l log_file] [-v d] [-X d]\n"
-          "               [-M manifest_file] [-cFgIsQ]\n\n"
+          "Usage: sel_ldr [-M manifest_file] [-h d:D] [-r d:D]\n"
+          "               [-w d:D] [-i d:D] [-v d] [-cFgIsQ]\n\n"
           " -h\n"
           " -r\n"
           " -w associate a host POSIX descriptor D with app desc d\n"
           "    that was opened in O_RDWR, O_RDONLY, and O_WRONLY modes\n"
           "    respectively\n"
           " -i associates an IMC handle D with app desc d\n"
-          " -v <level> verbosity\n"
-          " -X create a bound socket and export the address via an\n"
-          "    IMC message to a corresponding NaCl app descriptor\n"
-          "    (use -1 to create the bound socket / address descriptor\n"
-          "    pair, but that no export via IMC should occur)\n\n"
+          " -v <level> verbosity\n\n"
           " (testing flags)\n"
           " -c ignore validator! dangerous! Repeating this option twice skips\n"
           "    validation completely.\n"
@@ -102,7 +97,7 @@ static void PrintUsage() {
           " -l <file>  write log output to the given file\n"
           " -s safely stub out non-validating instructions\n"
           " -Q disable platform qualification (dangerous!)\n"
-		      " -M <file> load settings from manifest\n" /* d'b */
+		      " -M <file> load settings from manifest\n"
           );  /* easier to add new flags/lines */
 }
 
@@ -123,8 +118,6 @@ int ParseCommandLine(int argc, char **argv, struct NaClApp *nap)
   int enable_debug_stub = 0;
   struct redir *redir_queue = NULL;
   struct redir **redir_qend = &redir_queue;
-  char *log_file = NULL;
-  int export_addr_to = -2;
   int stub_out_mode = 0;
 
   nap->handle_signals = 0;
@@ -188,9 +181,6 @@ int ParseCommandLine(int argc, char **argv, struct NaClApp *nap)
         *redir_qend = entry;
         redir_qend = &entry->next;
         break;
-      case 'l':
-        log_file = optarg;
-        break;
         /* case 'r':  with 'h' and 'w' above */
       case 'v':
         i = atoi(optarg);
@@ -199,9 +189,6 @@ int ParseCommandLine(int argc, char **argv, struct NaClApp *nap)
           NaClLogIncrVerbosity();
         break;
         /* case 'w':  with 'h' and 'r' above */
-      case 'X':
-        export_addr_to = strtol(optarg, (char **) 0, 0);
-        break;
       case 'Q':
         fprintf(stderr, "PLATFORM QUALIFICATION DISABLED BY -Q - "
                 "Native Client's sandbox will be unreliable!\n");
@@ -299,7 +286,6 @@ int main(int argc, char **argv)
   struct GioMemoryFileSnapshot  main_file;
   struct NaClPerfCounter        time_all_main;
   int                           ret_code = 1;
-  int                           log_desc;
   char                          manifest[MAX_MANIFEST_LEN];
 
   /* @IGNORE_LINES_FOR_CODE_HYGIENE[1] */
@@ -345,12 +331,6 @@ int main(int argc, char **argv)
    */
   log_gio = (struct GioFile*) NaClLogGetGio();
 
-  /*
-   * By default, the logging module logs to stderr, or descriptor 2.
-   * If NaClLogSetFile was performed above, then log_desc will have
-   * the non-default value.
-   */
-  log_desc = fileno(log_gio->iop);
   COND_ABORT(!NaClAppCtor(nap), "Error while constructing app state\n");
 	errcode = LOAD_OK;
 
