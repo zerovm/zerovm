@@ -1,11 +1,10 @@
 /*
- * Copyright (c) 2011 The Native Client Authors. All rights reserved.
+ * Copyright (c) 2012 The Native Client Authors. All rights reserved.
  * Use of this source code is governed by a BSD-style license that can be
  * found in the LICENSE file.
  */
 
 /*
- * cpuid.c
  * This module provides a simple abstraction for using the CPUID
  * instruction to determine instruction set extensions supported by
  * the current processor.
@@ -14,50 +13,58 @@
 #define NATIVE_CLIENT_SRC_TRUSTED_VALIDATOR_X86_NACL_CPUID_H_
 
 #include "include/portability.h"
-#include "src/utils/types.h"
+
+EXTERN_C_BEGIN
+
+/* The list of features we can get from the CPUID instruction.
+ * Do not modify this enum without making similar modifications to
+ * CPUFeatureDescriptions in nacl_cpuid.c.
+ */
+typedef enum {
+  NaClCPUFeature_x87 = 0,
+  NaClCPUFeature_MMX,
+  NaClCPUFeature_SSE,
+  NaClCPUFeature_SSE2,
+  NaClCPUFeature_SSE3,
+  NaClCPUFeature_SSSE3,
+  NaClCPUFeature_SSE41,
+  NaClCPUFeature_SSE42,
+  NaClCPUFeature_MOVBE,
+  NaClCPUFeature_POPCNT,
+  NaClCPUFeature_CX8,
+  NaClCPUFeature_CX16,
+  NaClCPUFeature_CMOV,
+  NaClCPUFeature_MON,
+  NaClCPUFeature_FXSR,
+  NaClCPUFeature_CLFLUSH,
+  NaClCPUFeature_MSR,
+  NaClCPUFeature_TSC,
+  NaClCPUFeature_VME,
+  NaClCPUFeature_PSN,
+  NaClCPUFeature_VMX,
+  NaClCPUFeature_OSXSAVE,
+  NaClCPUFeature_AVX,
+  NaClCPUFeature_3DNOW, /* AMD-specific */
+  NaClCPUFeature_EMMX, /* AMD-specific */
+  NaClCPUFeature_E3DNOW, /* AMD-specific */
+  NaClCPUFeature_LZCNT, /* AMD-specific */
+  NaClCPUFeature_SSE4A, /* AMD-specific */
+  NaClCPUFeature_LM,
+  NaClCPUFeature_SVM, /* AMD-specific */
+  NaClCPUFeature_Max
+} NaClCPUFeatureID;
 
 /* Features needed to show that the architecture is supported. */
 typedef struct nacl_arch_features {
-  Bool f_cpuid_supported;  /* CPUID is defined for the hardward. */
-  Bool f_cpu_supported;    /* CPU is one we support. */
+  char f_cpuid_supported;  /* CPUID is defined for the hardward. */
+  char f_cpu_supported;    /* CPU is one we support. */
 } nacl_arch_features;
 
 /* Features we can get about the x86 hardware. */
 typedef struct cpu_feature_struct {
   nacl_arch_features arch_features;
-  Bool f_x87;
-  Bool f_MMX;
-  Bool f_SSE;
-  Bool f_SSE2;
-  Bool f_SSE3;
-  Bool f_SSSE3;
-  Bool f_SSE41;
-  Bool f_SSE42;
-  Bool f_MOVBE;
-  Bool f_POPCNT;
-  Bool f_CX8;
-  Bool f_CX16;
-  Bool f_CMOV;
-  Bool f_MON;
-  Bool f_FXSR;
-  Bool f_CLFLUSH;
-  Bool f_TSC;
-  Bool f_OSXSAVE;
-  /* These instructions are illegal but included for completeness */
-  Bool f_MSR;
-  Bool f_VME;
-  Bool f_PSN;
-  Bool f_VMX;
-  Bool f_AVX;
-  /* AMD-specific features */
-  Bool f_3DNOW;
-  Bool f_EMMX;
-  Bool f_E3DNOW;
-  Bool f_LZCNT;
-  Bool f_SSE4A;
-  Bool f_LM;
-  Bool f_SVM;
-} CPUFeatures;
+  char data[NaClCPUFeature_Max];
+} NaClCPUFeaturesX86;
 
 /* Define the maximum length of a CPUID string.
  *
@@ -104,24 +111,46 @@ typedef struct NaClCPUData {
  */
 void NaClCPUDataGet(NaClCPUData* data);
 
-/* Set cpu check state fields to all true. */
-void NaClSetAllCPUFeatures(CPUFeatures *features);
-
-/* Clear cpu check state fields (i.e. set all fields to false). */
-void NaClClearCPUFeatures(CPUFeatures *features);
-
-/* Copy a set of cpu features. */
-void NaClCopyCPUFeatures(CPUFeatures* target, const CPUFeatures* source);
-
-/* Fills in cpuf with feature vector for this CPU. */
-extern void GetCPUFeatures(NaClCPUData* data, CPUFeatures *cpuf);
-
-/* GetCPUIDString creates an ASCII string that identfies this CPU's
+/* GetCPUIDString creates an ASCII string that identifies this CPU's
  * vendor ID, family, model, and stepping, as per the CPUID instruction
  */
-extern char *GetCPUIDString(NaClCPUData* data);
+char *GetCPUIDString(NaClCPUData* data);
+
+/* Set cpu check state fields to all true. */
+void NaClSetAllCPUFeatures(NaClCPUFeaturesX86 *features);
+
+/* Clear cpu check state fields (i.e. set all fields to false). */
+void NaClClearCPUFeatures(NaClCPUFeaturesX86 *features);
+
+/* Set a feature. */
+void NaClSetCPUFeature(NaClCPUFeaturesX86 *features, NaClCPUFeatureID id,
+                       int state);
+
+/* Query whether a feature is supported. */
+static INLINE int NaClGetCPUFeature(const NaClCPUFeaturesX86 *features,
+                                    NaClCPUFeatureID id) {
+  return features->data[id];
+}
+
+/* Get a short, printable name for the feature. */
+const char* NaClGetCPUFeatureName(NaClCPUFeatureID id);
+
+/* Copy a set of cpu features. */
+void NaClCopyCPUFeatures(NaClCPUFeaturesX86* target,
+                         const NaClCPUFeaturesX86* source);
+
+/* Get the features for the CPU this code is running on. */
+void NaClGetCurrentCPUFeatures(NaClCPUFeaturesX86 *cpu_features);
 
 /* Returns true if CPUID is defined, and the CPU is supported. */
-extern Bool NaClArchSupported(NaClCPUData* data);
+int NaClArchSupported(const NaClCPUFeaturesX86 *features);
+
+/* Update cpu_features to only include features in the fixed x86 model.
+ * Returns 1 if cpu_features includes all features required by the model.
+ * Otherwise returns 0.
+ */
+int NaClFixCPUFeatures(NaClCPUFeaturesX86 *cpu_features);
+
+EXTERN_C_END
 
 #endif /* NATIVE_CLIENT_SRC_TRUSTED_VALIDATOR_X86_NACL_CPUID_H_ */

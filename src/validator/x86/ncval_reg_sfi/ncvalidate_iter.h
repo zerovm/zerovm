@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011 The Native Client Authors. All rights reserved.
+ * Copyright (c) 2012 The Native Client Authors. All rights reserved.
  * Use of this source code is governed by a BSD-style license that can be
  * found in the LICENSE file.
  */
@@ -24,7 +24,7 @@
  *
  *   if (!NaClArchSupported()) fail;
  *   NaClValidatorState* state =
- *     NaClValidatorStateCreate(base, limit - base, 32, RegR15);
+ *     NaClValidatorStateCreate(base, limit - base, 32, readonly, RegR15);
  *   if (state == NULL) fail;
  *   for each section:
  *     NaClValidateSegment(maddr, vaddr, size, state);
@@ -33,6 +33,7 @@
  */
 
 #include "include/portability.h"
+#include "src/utils/types.h"
 #include "src/validator/types_memory_model.h"
 #include "src/validator/x86/decoder/gen/ncopcode_operand_kind.h"
 #include "src/validator/x86/error_reporter.h"
@@ -73,8 +74,16 @@ extern Bool NACL_FLAGS_validator_trace_inst_interals;
  */
 extern Bool NACL_FLAGS_ncval_annotate;
 
-/* Define the stop instruction. */
-extern const uint8_t kNaClFullStop;
+#ifdef NCVAL_TESTING
+/* Command line flag for printing out prefix/postfix conditions. */
+extern Bool NACL_FLAGS_print_validator_conditions;
+
+/* Command line flag controlling whether pre/post conditions are printed
+ * on all instructions. By default, only those instructions that validate
+ * have pre/post conditions printed.
+ */
+extern Bool NACL_FLAGS_report_conditions_on_all;
+#endif
 
 /* Changes all validator trace flags to true. */
 void NaClValidatorFlagsSetTraceVerbose();
@@ -82,37 +91,49 @@ void NaClValidatorFlagsSetTraceVerbose();
 /* The model of a validator state. */
 typedef struct NaClValidatorState NaClValidatorState;
 
-/* NaClValidateSetCPUFeatures: Define the set of CPU features to use.
- * Parameters:
- *    features: A pointer to a CPUFeatures to use, or NULL
- *       if the features set should be calculated using GetCPUFeatures.
- * Note: Assumes that given struct persists till the next call to
- *    this function. The main purpose of this function is to allow the
- *    injection of a command-line override of CPU features, from that of the
- *    local CPU id, for the tool ncval. As such, it uses a global variable to
- *    hold the command line specification in ncval. Also, we assume that this
- *    function is not called during validation (i.e. between
- *    NaClValidatorStateCreate and NaClValidatorStateDestroy).
- */
-void NaClValidateSetCPUFeatures(CPUFeatures *features);
-
 /* Create a validator state to validate the code segment.
  * Note: Messages (if any) produced by the validator are sent to the stream
  * defined by src/platform/nacl_log.h.
  * Parameters.
  *   vbase - The virtual address for the contents of the code segment.
  *   sz - The number of bytes in the code segment.
- *   alignment: 16 or 32, specifying alignment.
  *   base_register - OperandKind defining value for base register (or
  *     RegUnknown if not defined).
+ *   readonly - Whether the text should be treated as read-only.
+ *   features - The CPU features to use. Uses local features of machine if NULL.
  * Returns:
  *   A pointer to an initialized validator state if everything is ok, NULL
  *  otherwise.
  */
-NaClValidatorState* NaClValidatorStateCreate(const NaClPcAddress vbase,
-                                             const NaClMemorySize sz,
-                                             const uint8_t alignment,
-                                             const NaClOpKind base_register);
+NaClValidatorState* NaClValidatorStateCreate(
+    const NaClPcAddress vbase,
+    const NaClMemorySize codesize,
+    const NaClOpKind base_register,
+    const int readonly, /* Bool */
+    const NaClCPUFeaturesX86 *features);
+
+/* Returns true if the instruction iterator of the validator has any more
+ * instructions. Also does any necessary internal caching if there are
+ * more instructions, based on the instruction iterator.
+ */
+Bool NaClValidatorStateIterHasNext(NaClValidatorState *vstate);
+
+/* Advances the instruction iterator of the validator to the next instruction.
+ * Also does necessary internal caching expected by the validator for the
+ * next instruction.
+ */
+void NaClValidatorStateIterAdvance(NaClValidatorState *vstate);
+
+/* Assumes that we have finished iterating through the instruction iterator
+ * of the validator and cleans up appropriate cached information that is
+ * only defined while iterating over instructions.
+ */
+void NaClValidatorStateIterFinish(NaClValidatorState *vstate);
+
+/* Resets the instruction iterator back to the beginning of the segment.
+ * Returns true on success.
+ */
+Bool NaClValidatorStateIterReset(NaClValidatorState *vstate);
 
 /* Returns the current maximum number of errors that can be reported.
  * Note: When > 0, the validator will only print that many errors before
@@ -127,13 +148,11 @@ int NaClValidatorStateGetMaxReportedErrors(NaClValidatorState* state);
  * NaClValidatorStateGetMaxReportedErrors.
  * Note: Should only be called between calls to NaClValidatorStateCreate
  * and NaClValidateSegment.
+ * Note: This function will have no effect unless
+ * NaClValidatorStateSetErrorReporter is called to define error reporting.
  */
 void NaClValidatorStateSetMaxReportedErrors(NaClValidatorState* state,
                                             int max_reported_errors);
-
-/* Changes the set of cpu features to use to the given featers. */
-void NaClValidatorStateSetCPUFeatures(NaClValidatorState* state,
-                                     const CPUFeatures* features);
 
 /* Changes the report error reported for the validator. By default, no
  * error messages are printed. To print error messages, use an appropriate
@@ -141,6 +160,11 @@ void NaClValidatorStateSetCPUFeatures(NaClValidatorState* state,
  * Note: Should only be called between calls to NaClValidatorStateCreate
  * and NaClValidateSegment. If not set, the validator will not print
  * error messages.
+ * Note: Even if the error reporter is set to kNaClVerboseErrorReporter,
+ * errors will not be reported unless you also change the maximum number
+ * of errors reported via a call to NaClValidatorStateSetMaxReportedErrors.
+ * The reason for this is that the default number of reported errors is zero
+ * (based on the default use of the validator in sel_ldr).
  */
 void NaClValidatorStateSetErrorReporter(NaClValidatorState* state,
                                         struct NaClErrorReporter* reporter);
@@ -152,19 +176,6 @@ extern NaClErrorReporter kNaClNullErrorReporter;
  * NaClLogGetGio().
  */
 extern NaClErrorReporter kNaClVerboseErrorReporter;
-
-/* Returns true if an opcode histogram should be printed by the validator.
- * Note: Defaults to NACL_FLAGS_opcode_histogram.
- */
-Bool NaClValidatorStateGetPrintOpcodeHistogram(NaClValidatorState* state);
-
-/* Changes the value on whether the opcode histogram should be printed by
- * the validator.
- * Note: Should only be called between calls to NaClValidatorStateCreate
- * and NaClValidateSegment.
- */
-void NaClValidatorStateSetPrintOpcodeHistogram(NaClValidatorState* state,
-                                               Bool new_value);
 
 /* Returns true if each instruction should be printed as the validator
  * processes the instruction.
@@ -209,13 +220,13 @@ Bool NaClValidatorStateTrace(NaClValidatorState* state);
 void NaClValidatorStateSetTraceVerbose(NaClValidatorState* state);
 
 /* Returns the log verbosity for printed validator messages. Legal
- * values are defined by src/src/platform/nacl_log.h.
+ * values are defined by src/shared/platform/nacl_log.h.
  * Note: Defaults to LOG_INFO.
  */
 int NaClValidatorStateGetLogVerbosity(NaClValidatorState* state);
 
 /* Changes the log verbosity for printed validator messages to the
- * new value. Legal values are defined by src/src/platform/nacl_log.h.
+ * new value. Legal values are defined by src/shared/platform/nacl_log.h.
  * Note: Should only be called between calls to NaClValidatorStateCreate
  * and NaClValidateSegment.
  * Note: NaClLogGetVerbosity() can override this value if more severe
@@ -235,6 +246,9 @@ Bool NaClValidatorStateGetDoStubOut(NaClValidatorState* state);
  */
 void NaClValidatorStateSetDoStubOut(NaClValidatorState* state,
                                     Bool new_value);
+
+/* Stub out "num" bytes starting at "ptr". */
+void NCStubOutMem(NaClValidatorState *state, void *ptr, size_t num);
 
 /* Validate a code segment.
  * Parameters:
@@ -292,90 +306,6 @@ Bool NaClValidatesOk(NaClValidatorState* state);
  * call to NaClValidatorStateCreate.
  */
 void NaClValidatorStateDestroy(NaClValidatorState* state);
-
-/* Defines a function to create local memory to be used by a validator
- * function, should it need it.
- * Parameters:
- *   state - The state of the validator.
- * Returns:
- *   Allocated space for local data associated with a validator function.
- */
-typedef void* (*NaClValidatorMemoryCreate)(NaClValidatorState* state);
-
-/* Defines a validator function to be called on each instruction.
- * Parameters:
- *   state - The state of the validator.
- *   iter - The instruction iterator's current position in the segment.
- *   local_memory - Pointer to local memory generated by the corresponding
- *          NaClValidatorMemoryCreate (or NULL if not specified).
- */
-typedef void (*NaClValidator)(NaClValidatorState* state,
-                              struct NaClInstIter* iter,
-                              void* local_memory);
-
-/* Defines a post validator function that is called after iterating through
- * a segment, but before the iterator is destroyed.
- * Parameters:
- *   state - The state of the validator,
- *   iter - The instruction iterator's current position in the segment.
- *   local_memory - Pointer to local memory generated by the corresponding
- *          NaClValidatorMemoryCreate (or NULL if not specified).
- */
-typedef void (*NaClValidatorPostValidate)(NaClValidatorState* state,
-                                          struct NaClInstIter* iter,
-                                          void* local_memory);
-
-/* Defines a statistics print routine for a validator function.
- * Note: statistics will be printed to (nacl) log file.
- * Parameters:
- *   state - The state of the validator,
- *   local_memory - Pointer to local memory generated by the corresponding
- *          NaClValidatorMemoryCreate (or NULL if not specified).
- */
-typedef void (*NaClValidatorPrintStats)(NaClValidatorState* state,
-                                        void* local_memory);
-
-/* Defines a function to destroy local memory used by a validator function,
- * should it need to do so.
- * Parameters:
- *   state - The state of the validator.
- *   local_memory - Pointer to local memory generated by the corresponding
- *         NaClValidatorMemoryCreate (or NULL if not specified).
- */
-typedef void (*NaClValidatorMemoryDestroy)(NaClValidatorState* state,
-                                           void* local_memory);
-
-/* Registers a validator function to be called during validation.
- * Parameters are:
- *   state - The state to register the validator functions in.
- *   validator - The validator function to register.
- *   post_validate - Validate global context after iterator run.
- *   print_stats - The print function to print statistics about the applied
- *     validator.
- *   memory_create - The function to call to generate local memory for
- *     the validator function (or NULL if no local memory is needed).
- *   memory_destroy - The function to call to reclaim local memory when
- *     the validator state is destroyed (or NULL if reclamation is not needed).
- */
-void NaClRegisterValidator(NaClValidatorState* state,
-                           NaClValidator validator,
-                           NaClValidatorPostValidate post_validate,
-                           NaClValidatorPrintStats print_stats,
-                           NaClValidatorMemoryCreate memory_create,
-                           NaClValidatorMemoryDestroy memory_destroy);
-
-/* Returns the local memory associated with the given validator function,
- * or NULL if no such memory exists. Allows validators to communicate
- * shared collected information.
- * Parameters:
- *   validator - The validator function's memory you want access to.
- *   state - The current state of the validator.
- * Returns:
- *   The local memory associated with the validator (or NULL  if no such
- *   validator is known).
- */
-void* NaClGetValidatorLocalMemory(NaClValidator validator,
-                                  const NaClValidatorState* state);
 
 /* Prints out a validator message for the given level.
  * Parameters:
@@ -448,6 +378,23 @@ void NaClValidatorTwoInstMessage(int level,
 
 /* Returns true if the validator should quit due to previous errors. */
 Bool NaClValidatorQuit(NaClValidatorState* state);
+
+/* Returns true if any code has been overwritten with halts. */
+Bool NaClValidatorDidStubOut(NaClValidatorState *vstate);
+
+#ifdef NCVAL_TESTING
+/* Defines the buffer and the corresponding buffer size to use for SNPRINTF,
+ * given the current contents of the pre/post condition.
+ */
+void NaClConditionAppend(char* condition,
+                         char** buffer,
+                         size_t* buffer_size);
+
+/* Prints out the address of the current instruction, and the pre/post
+ * conditions associated with the current instruction.
+ */
+void NaClPrintConditions(NaClValidatorState *state);
+#endif
 
 EXTERN_C_END
 

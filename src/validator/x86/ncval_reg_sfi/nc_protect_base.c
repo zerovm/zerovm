@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011 The Native Client Authors. All rights reserved.
+ * Copyright (c) 2012 The Native Client Authors. All rights reserved.
  * Use of this source code is governed by a BSD-style license that can be
  * found in the LICENSE file.
  */
@@ -9,10 +9,13 @@
  * RSP and RBP is maintained, and that segment registers are not set.
  */
 #include <assert.h>
+#include <string.h>
 
 #include "src/validator/x86/ncval_reg_sfi/nc_protect_base.h"
 
+#include "include/portability_io.h"
 #include "src/platform/nacl_log.h"
+#include "src/validator/x86/decoder/ncop_exps.h"
 #include "src/validator/x86/decoder/nc_inst_state_internal.h"
 #include "src/validator/x86/decoder/nc_inst_trans.h"
 #include "src/validator/x86/ncval_reg_sfi/ncvalidate_iter.h"
@@ -31,39 +34,8 @@
 #include "src/validator/x86/decoder/ncop_exps_inl.c"
 #include "src/validator/x86/decoder/nc_inst_iter_inl.c"
 
-/* Defines locals used by the NaClBaseRegisterValidator to
- * record registers set in the current instruction, that are
- * a problem if not used correctly in the next instruction.
- */
-typedef struct NaClRegisterLocals {
-  /* Points to an instruction that contains an assignment to register ESP,
-   * or NULL if the instruction doesn't set ESP. This is done so that we
-   * can check if the next instruction uses the value of ESP to update RSP
-   * (if not, we need to report that ESP is incorrectly assigned).
-   */
-  NaClInstState* esp_set_inst;
-  /* Points to the instruction that contains an assignment to register EBP,
-   * or NULL if the instruction doesn't set EBP. This is done so that we
-   * can check if the next instruciton uses the value of EBP to update RBP
-   * (if not, we need to report that EBP is incorrectly assigned).
-   */
-  NaClInstState* ebp_set_inst;
-} NaClRegisterLocals;
-
-/* Ths size of the circular buffer, used to keep track of registers
- * assigned in the previous instruction, that must be correctly used
- * in the current instruction, or reported as an error.
- */
-#define NACL_REGISTER_LOCALS_BUFFER_SIZE 2
-
-/* A circular buffer of two elements, used to  keep track of the
- * current/previous instruction.
- */
-typedef struct NaClBaseRegisterLocals {
-  NaClRegisterLocals buffer[NACL_REGISTER_LOCALS_BUFFER_SIZE];
-  int previous_index;
-  int current_index;
-} NaClBaseRegisterLocals;
+/* Maximum character buffer size to use for generating messages. */
+static const size_t kMaxBufferSize = 1024;
 
 static void NaClReportIllegalChangeToRsp(NaClValidatorState* state,
                                          NaClInstState* inst) {
@@ -71,20 +43,19 @@ static void NaClReportIllegalChangeToRsp(NaClValidatorState* state,
                            "Illegal assignment to RSP\n");
 }
 
-/* Checks flags in the given locals, and reports any
+/* Checks flags in the possible set base registers, and reports any
  * previous instructions that were marked as bad.
  *
  * Parameters:
  *   state - The state of the validator.
- *   iter - The instruction iterator being used by the validator.
- *   locals - The locals used by validator NaClBaseRegisterValidator.
  */
-static void NaClMaybeReportPreviousBad(NaClValidatorState* state,
-                                       NaClBaseRegisterLocals* locals) {
+static INLINE void NaClMaybeReportPreviousBad(NaClValidatorState* state) {
   NaClInstState* prev_esp_set_inst =
-      locals->buffer[locals->previous_index].esp_set_inst;
+      state->set_base_registers.buffer[
+          state->set_base_registers.previous_index].esp_set_inst;
   NaClInstState* prev_ebp_set_inst =
-      locals->buffer[locals->previous_index].ebp_set_inst;
+      state->set_base_registers.buffer[
+          state->set_base_registers.previous_index].ebp_set_inst;
 
   /* First check if previous register references are not followed
    * by acceptable instructions.
@@ -94,69 +65,34 @@ static void NaClMaybeReportPreviousBad(NaClValidatorState* state,
                              state,
                              prev_esp_set_inst,
                              "Illegal assignment to ESP\n");
-    locals->buffer[locals->previous_index].esp_set_inst = NULL;
+    state->set_base_registers.buffer[
+        state->set_base_registers.previous_index].esp_set_inst = NULL;
   }
   if (NULL != prev_ebp_set_inst) {
     NaClValidatorInstMessage(LOG_ERROR,
                              state,
                              prev_ebp_set_inst,
                              "Illegal assignment to EBP\n");
-    locals->buffer[locals->previous_index].ebp_set_inst = NULL;
+    state->set_base_registers.buffer[
+        state->set_base_registers.previous_index].ebp_set_inst = NULL;
   }
 
   /* Now advance the register recording by one instruction. */
-  locals->previous_index = locals->current_index;
-  locals->current_index = ((locals->current_index + 1)
-                           % NACL_REGISTER_LOCALS_BUFFER_SIZE);
+  state->set_base_registers.previous_index =
+      state->set_base_registers.current_index;
+  state->set_base_registers.current_index =
+      ((state->set_base_registers.current_index + 1)
+       % NACL_REGISTER_LOCALS_BUFFER_SIZE);
 }
 
-NaClBaseRegisterLocals* NaClBaseRegisterMemoryCreate(
-    NaClValidatorState* state) {
+void NaClBaseRegisterMemoryInitialize(NaClValidatorState* state) {
   int i;
-  NaClBaseRegisterLocals* locals = (NaClBaseRegisterLocals*)
-      malloc(sizeof(NaClBaseRegisterLocals));
-  if (NULL == locals) {
-    NaClValidatorMessage(
-        LOG_ERROR, state,
-        "Out of memory, can't allocate NaClBaseRegisterLocals\n");
-  } else {
-    for (i = 0; i < NACL_REGISTER_LOCALS_BUFFER_SIZE; ++i) {
-      locals->buffer[i].esp_set_inst = NULL;
-      locals->buffer[i].ebp_set_inst = NULL;
-    }
-    locals->previous_index = 0;
-    locals->current_index = 1;
+  for (i = 0; i < NACL_REGISTER_LOCALS_BUFFER_SIZE; ++i) {
+    state->set_base_registers.buffer[i].esp_set_inst = NULL;
+    state->set_base_registers.buffer[i].ebp_set_inst = NULL;
   }
-  return locals;
-}
-
-void NaClBaseRegisterMemoryDestroy(NaClValidatorState* state,
-                                   NaClBaseRegisterLocals* locals) {
-  free(locals);
-}
-
-/* Returns true if the instruction is of the form
- *   OP %esp, C
- * where OP in { add , sub } and C is a 32 bit constant.
- */
-static Bool NaClIsAddOrSubBoundedConstFromEsp(NaClInstState* state) {
-  const NaClInst* inst = NaClInstStateInst(state);
-  NaClExpVector* vector = NaClInstStateExpVector(state);
-  return (InstAdd == inst->name || InstSub == inst->name) &&
-      2 == NaClGetInstNumberOperandsInline(inst) &&
-      /* Note: Since the vector contains a list of operand expressions, the
-       * first operand reference is always at index zero, and its first child
-       * (where the register would be defined) is at index 1.
-       */
-      ExprRegister == vector->node[1].kind &&
-      RegESP == NaClGetExpRegisterInline(&vector->node[1]) &&
-      /* Note: Since the first subtree is a register operand, it uses
-       * nodes 0 and 1 in the vector (node 0 is the operand reference, and
-       * node 1 is its child defining a register value). The second operand
-       * reference therefore lies at node 2, and if the operand is defined by
-       * a 32 bit constant, it is the first kid of node 2, which is node 3.
-       */
-      ExprConstant == vector->node[3].kind;
+  state->set_base_registers.previous_index = 0;
+  state->set_base_registers.current_index = 1;
 }
 
 /* Returns true iff the instruction of form "lea _, [%reg+%rbase*1]" */
@@ -164,7 +100,9 @@ static Bool NaClIsLeaAddressRegPlusRbase(NaClValidatorState* state,
                                          NaClInstState* inst_state,
                                          NaClOpKind reg) {
   const NaClInst* inst = NaClInstStateInst(inst_state);
-  assert((RegRSP == reg) || (RegRBP == reg));
+  Bool result = FALSE;
+  DEBUG(NaClLog(LOG_INFO, "-> LeaAddressRegPlusRbase(%s)\n",
+                NaClOpKindName(reg)));
   if (InstLea == inst->name &&
       2 == NaClGetInstNumberOperandsInline(inst)) {
     NaClExpVector* vector = NaClInstStateExpVector(inst_state);
@@ -178,20 +116,33 @@ static Bool NaClIsLeaAddressRegPlusRbase(NaClValidatorState* state,
         NACL_EMPTY_EFLAGS != (op2->flags & NACL_EFLAG(ExprSize64))) {
       int base_reg_index = op2_index + 1;
       NaClOpKind base_reg = NaClGetExpVectorRegister(vector, base_reg_index);
+      DEBUG(NaClLog(LOG_INFO, "  base_reg = %s\n", NaClOpKindName(base_reg)));
       if (base_reg == reg) {
         int index_reg_index =
             base_reg_index + NaClExpWidth(vector, base_reg_index);
         NaClOpKind index_reg =
             NaClGetExpVectorRegister(vector, index_reg_index);
+        DEBUG(NaClLog(LOG_INFO,
+                      "  index_reg = %s\n", NaClOpKindName(index_reg)));
         if (index_reg == state->base_register) {
           int scale_index =
               index_reg_index + NaClExpWidth(vector, index_reg_index);
-          if (ExprConstant == vector->node[scale_index].kind &&
-              (uint64_t)1 == NaClGetExpConstant(vector, scale_index)) {
-            int disp_index = scale_index + NaClExpWidth(vector, scale_index);
-            if (ExprConstant == vector->node[disp_index].kind &&
-                (uint64_t)0 == NaClGetExpConstant(vector, disp_index)) {
-              return TRUE;
+          DEBUG(NaClLog(LOG_INFO, "  scale_index = %d\n", scale_index));
+          if (ExprConstant == vector->node[scale_index].kind) {
+            if ((uint64_t)1 ==
+                NaClGetExprUnsignedValue(&vector->node[scale_index])) {
+              int disp_index = scale_index + NaClExpWidth(vector, scale_index);
+              DEBUG(NaClLog(LOG_INFO, " disp_index = %d\n", disp_index));
+              if (ExprConstant == vector->node[disp_index].kind) {
+                if ((uint64_t)0 ==
+                    NaClGetExprSignedValue(&vector->node[disp_index])) {
+                  result = TRUE;
+                } else {
+                  DEBUG(NaClLog(LOG_INFO, "  disp not zero!\n"));
+                }
+              }
+            } else {
+              DEBUG(NaClLog(LOG_INFO, "  scale not 1!\n"));
             }
           }
         }
@@ -199,51 +150,35 @@ static Bool NaClIsLeaAddressRegPlusRbase(NaClValidatorState* state,
     }
   }
   /* If reached, did not match. */
-  return FALSE;
+  DEBUG(NaClLog(LOG_INFO, "<-LeaAddressRegPlusRbase = %d\n", result));
+  return result;
 }
 
-/* Checks for:
- *     mov %REG(32), ...
- *     lea %REG, [%REG+%rbase*1]
- *
- * where REG is the passed 64-bit register, and REG(32) is
- * the corresponding 32-bit retister.
- */
-
-static Bool NaClAcceptRegMoveLea32To64(struct NaClValidatorState* state,
-                                       struct NaClInstIter* iter,
-                                       const NaClInst* inst,
-                                       NaClOpKind reg) {
+Bool NaClAcceptLeaWithMoveLea32To64(struct NaClValidatorState* state,
+                                    NaClOpKind reg) {
   NaClInstState* inst_state = state->cur_inst_state;
-  assert((RegRSP == reg) || (RegRBP == reg));
-  if (NaClOperandOneIsRegisterSet(inst_state, reg) &&
-      NaClInstIterHasLookbackStateInline(iter, 1)) {
-    NaClInstState* prev_inst = NaClInstIterGetLookbackStateInline(iter, 1);
-    if (NaClAssignsRegisterWithZeroExtends(
-            prev_inst, NaClGet32For64BitReg(reg)) &&
-        NaClIsLeaAddressRegPlusRbase(state, inst_state, reg)) {
-      DEBUG(const char* reg_name = NaClOpKindName(reg);
-            printf("nc protect base for 'lea %s. [%s, rbase]'\n",
-                   reg_name, reg_name));
-      NaClMarkInstructionJumpIllegal(state, inst_state);
-      return TRUE;
-    }
+  Bool result = NaClOperandOneIsRegisterSet(inst_state, reg) &&
+      NaClIsLeaAddressRegPlusRbase(state, inst_state, reg) &&
+      NaClAssignsRegisterWithZeroExtends64(state, 1, reg);
+  if (result) {
+    DEBUG({
+        const char* reg_name = NaClOpKindName(reg);
+        printf("nc protect base for 'lea %s. [%s, rbase]'\n",
+               reg_name, reg_name);
+      });
+    result = TRUE;
   }
-  return FALSE;
+  return result;
 }
 
 /* Check if assignments to stack register RSP is legal.
  *
  * Parameters are:
  *   state - The state of the validator.
- *   iter  - The instruction iterator (defining the current instruction).
- *   locals- Pointer to the instructions defining propagated registers.
  *   i     - The index of the node (in the expression tree) that
  *           assigns the RSP register.
  */
 static void NaClCheckRspAssignments(struct NaClValidatorState* state,
-                                    NaClInstIter* iter,
-                                    NaClBaseRegisterLocals* locals,
                                     uint32_t i) {
   /*
    * Only allow one of:
@@ -266,6 +201,8 @@ static void NaClCheckRspAssignments(struct NaClValidatorState* state,
    *        add %rsp, %rbase
    *     where OP is a operator in { add , sub },
    *     and C is a 32-bit constant.
+   *     Note: Since add/sub are zero-extending operations for operand
+   *     size 32, this doesn't have to be treated as a special case!
    * (5) Allow "and $rsp, 0xXX" where 0xXX is an immediate 8 bit
    *     value that is negative. Used to realign the stack pointer.
    * (6) %esp = zero extend 32-bit value.
@@ -296,6 +233,11 @@ static void NaClCheckRspAssignments(struct NaClValidatorState* state,
   const NaClInst* inst = state->cur_inst;
   NaClMnemonic inst_name = inst->name;
   NaClExpVector* vector = state->cur_inst_vector;
+#ifdef NCVAL_TESTING
+  char* buffer;
+  size_t buffer_size;
+#endif
+
   switch (inst_name) {
     case InstPush:
     case InstPop:
@@ -319,39 +261,37 @@ static void NaClCheckRspAssignments(struct NaClValidatorState* state,
       break;
     case InstOr:
     case InstAdd:
-      {
-        /* case 2/4 (depending on instruction name). */
-        if (NaClIsBinarySetUsingRegisters(
-                state->decoder_tables,
-                inst, inst_name, vector, RegRSP,
-                state->base_register) &&
-            NaClInstIterHasLookbackStateInline(iter, 1)) {
-          NaClInstState* prev_inst =
-              NaClInstIterGetLookbackStateInline(iter, 1);
-          if (NaClAssignsRegisterWithZeroExtends(prev_inst, RegESP)
-              || (inst_name == InstAdd &&
-                  NaClIsAddOrSubBoundedConstFromEsp(prev_inst))) {
-            /* Found that the assignment to ESP in previous instruction
-             * is legal, so long as the two instructions are atomic.
-             */
-            DEBUG(printf("nc protect esp for zero extend, or or/add "
-                         "constant\n"));
-            NaClMarkInstructionJumpIllegal(state, inst_state);
-            locals->buffer[locals->previous_index].esp_set_inst = NULL;
-            return;
-          }
-        }
+      /* case 2/4 (depending on instruction name) */
+      if (NaClIsBinarySetUsingRegisters(
+              state->decoder_tables,
+              inst, inst_name, vector, RegRSP,
+              state->base_register) &&
+          NaClAssignsRegisterWithZeroExtends32(state, 1, RegESP)) {
+#ifdef NCVAL_TESTING
+        /* Report precondition of test. */
+        NaClConditionAppend(state->precond, &buffer, &buffer_size);
+        SNPRINTF(buffer, buffer_size, "ZeroExtends(esp)");
+#endif
+        NaClMarkInstructionJumpIllegal(state, state->cur_inst_state);
+        state->set_base_registers.buffer[
+            state->set_base_registers.previous_index].esp_set_inst = NULL;
+        return;
       }
       break;
     case InstLea:
-      if (NaClAcceptRegMoveLea32To64(state, iter, inst, RegRSP)) {
+      if (NaClAcceptLeaWithMoveLea32To64(state, RegRSP)) {
         /* case 6. Found that the assignment to ESP in the previous
-         * instruction is legal, so long as the two instrucitons
+         * instruction is legal, so long as the two instructions
          * are atomic.
          */
-        DEBUG(printf("nc protect esp for lea\n"));
-        NaClMarkInstructionJumpIllegal(state, inst_state);
-        locals->buffer[locals->previous_index].esp_set_inst = NULL;
+#ifdef NCVAL_TESTING
+        /* Report precondition of test. */
+        NaClConditionAppend(state->precond, &buffer, &buffer_size);
+        SNPRINTF(buffer, buffer_size, "ZeroExtends(esp)");
+#endif
+        NaClMarkInstructionJumpIllegal(state, state->cur_inst_state);
+        state->set_base_registers.buffer[
+            state->set_base_registers.previous_index].esp_set_inst = NULL;
         return;
       }
       break;
@@ -384,14 +324,10 @@ static void NaClCheckRspAssignments(struct NaClValidatorState* state,
  *
  * Parameters are:
  *   state - The state of the validator.
- *   iter  - The instruction iterator (defining the current instruction).
- *   locals- Pointer to the instructions defining propagated registers.
  *   i     - The index of the node (in the expression tree) that
  *           assigns the RSP register.
  */
 static void NaClCheckRbpAssignments(struct NaClValidatorState* state,
-                                    NaClInstIter* iter,
-                                    NaClBaseRegisterLocals* locals,
                                     uint32_t i) {
   /* (1) mov %rbp, %rsp
    *
@@ -401,7 +337,7 @@ static void NaClCheckRbpAssignments(struct NaClValidatorState* state,
    * (2) %ebp = zero extend 32-bit value.
    *     add %rbp, %rbase
    *
-   *     Typical use in the exit from a fucntion, restoring RBP.
+   *     Typical use in the exit from a function, restoring RBP.
    *     The ... in the MOV is gotten from a stack pop in such
    *     cases. However, for long jumps etc., the value may
    *     be gotten from memory, or even a register.
@@ -421,28 +357,41 @@ static void NaClCheckRbpAssignments(struct NaClValidatorState* state,
   const NaClInst* inst = state->cur_inst;
   NaClMnemonic inst_name = inst->name;
   NaClExpVector* vector = state->cur_inst_vector;
+#ifdef NCVAL_TESTING
+  char* buffer;
+  size_t buffer_size;
+#endif
+
   switch (inst_name) {
     case InstAdd:
-      if (NaClInstIterHasLookbackStateInline(iter, 1)) {
-        NaClInstState* prev_state =
-            NaClInstIterGetLookbackStateInline(iter, 1);
-        if (NaClIsBinarySetUsingRegisters(
-                state->decoder_tables,
-                inst, InstAdd, vector,
-                RegRBP, state->base_register) &&
-            NaClAssignsRegisterWithZeroExtends(
-                prev_state, RegEBP)) {
-          /* case 2. */
-          NaClMarkInstructionJumpIllegal(state, inst_state);
-          locals->buffer[locals->previous_index].ebp_set_inst = NULL;
-          return;
-        }
+      /* case 2. */
+      if (NaClIsBinarySetUsingRegisters(
+              state->decoder_tables,
+              inst, InstAdd, vector,
+              RegRBP, state->base_register) &&
+          NaClAssignsRegisterWithZeroExtends32(state, 1, RegEBP)) {
+#ifdef NCVAL_TESTING
+        /* Report precondition of test. */
+        NaClConditionAppend(state->precond, &buffer, &buffer_size);
+        SNPRINTF(buffer, buffer_size, "ZeroExtends(ebp)");
+#endif
+        NaClMarkInstructionJumpIllegal(state, state->cur_inst_state);
+        state->set_base_registers.buffer[
+            state->set_base_registers.previous_index].ebp_set_inst = NULL;
+        return;
       }
       break;
     case InstLea:
-      if (NaClAcceptRegMoveLea32To64(state, iter, inst, RegRBP)) {
-        /* case 3 */
-        locals->buffer[locals->previous_index].ebp_set_inst = NULL;
+      /* case 3 */
+      if (NaClAcceptLeaWithMoveLea32To64(state, RegRBP)) {
+#ifdef NCVAL_TESTING
+        /* Report precondition of test. */
+        NaClConditionAppend(state->precond, &buffer, &buffer_size);
+        SNPRINTF(buffer, buffer_size, "ZeroExtends(ebp)");
+#endif
+        NaClMarkInstructionJumpIllegal(state, state->cur_inst_state);
+        state->set_base_registers.buffer[
+            state->set_base_registers.previous_index].ebp_set_inst = NULL;
         return;
       }
       break;
@@ -487,9 +436,7 @@ static void NaClCheckSubregChangeOfRspRbpOrBase(
   }
 }
 
-void NaClBaseRegisterValidator(struct NaClValidatorState* state,
-                               struct NaClInstIter* iter,
-                               NaClBaseRegisterLocals* locals) {
+void NaClBaseRegisterValidator(struct NaClValidatorState* state) {
   uint32_t i;
   NaClInstState* inst_state = state->cur_inst_state;
   NaClExpVector* vector = state->cur_inst_vector;
@@ -516,22 +463,26 @@ void NaClBaseRegisterValidator(struct NaClValidatorState* state,
         } else {
           switch (reg_name) {
             case RegRSP:
-              NaClCheckRspAssignments(state, iter, locals, i);
+              NaClCheckRspAssignments(state, i);
               break;
             case RegRBP:
-              NaClCheckRbpAssignments(state, iter, locals, i);
+              NaClCheckRbpAssignments(state, i);
               break;
             case RegESP:
               /* Record that we must recheck this after we have
                * moved to the next instruction.
                */
-              locals->buffer[locals->current_index].esp_set_inst = inst_state;
+              state->set_base_registers.buffer[
+                  state->set_base_registers.current_index
+                                               ].esp_set_inst = inst_state;
               break;
             case RegEBP:
               /* Record that we must recheck this after we have
                * moved to the next instruction.
                */
-              locals->buffer[locals->current_index].ebp_set_inst = inst_state;
+              state->set_base_registers.buffer[
+                  state->set_base_registers.current_index
+                                               ].ebp_set_inst = inst_state;
               break;
             case RegCS:
             case RegDS:
@@ -555,12 +506,10 @@ void NaClBaseRegisterValidator(struct NaClValidatorState* state,
   /* Before moving to the next instruction, see if we need to report
    * problems with the previous instruction.
    */
-  NaClMaybeReportPreviousBad(state, locals);
+  NaClMaybeReportPreviousBad(state);
 }
 
-void NaClBaseRegisterSummarize(struct NaClValidatorState* state,
-                             struct NaClInstIter* iter,
-                             struct NaClBaseRegisterLocals* locals) {
+void NaClBaseRegisterSummarize(struct NaClValidatorState* state) {
   /* Check if problems in last instruction of segment. */
-  NaClMaybeReportPreviousBad(state, locals);
+  NaClMaybeReportPreviousBad(state);
 }

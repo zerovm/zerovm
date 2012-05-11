@@ -1,0 +1,36 @@
+=====================================================================
+== "hello world" example with zrt library usage
+== i/o switches
+=====================================================================
+Output = samples/zrt/hello.output.data
+OutputMax = 1024000
+OutputMaxGet = 1024000
+OutputMaxGetCnt = 1024
+OutputMaxPut = 1024000
+OutputMaxPutCnt = 1024
+
+== this options specifies output file loading method: 0 - loaded, 1 - mapped
+OutputMode = 1
+
+UserLog = samples/zrt/hello.user.log
+UserLogMax = 65536
+UserLogMaxGet = 65536
+
+=====================================================================
+== switches for zerovm. some of them used to control nexe, some
+== for the internal zerovm needs
+=====================================================================
+Version = 11nov2011
+Log = samples/zrt/hello.zerovm.log
+Report = samples/zrt/hello.report.log
+Nexe = samples/zrt/hello.nexe
+NexeMax = 10000000
+SyscallsMax = 3333
+SetupCallsMax = 99999
+
+== this option can be disabled if user code does not use date/time functions
+TimeStamp = 12345
+
+== this option forces zerovm cut available for user memory to specified amount
+MemMax = 10240000
+

@@ -40,6 +40,17 @@ int NaClAppWithSyscallTableCtor(struct NaClApp               *nap,
   nap->dispatch_thunk = 0;
 #endif
 
+  /* Get the set of features that the CPU we're running on supports. */
+  /* These may be adjusted later in sel_main.c for fixed-feature CPU mode. */
+  NaClGetCurrentCPUFeatures(&nap->cpu_features);
+
+  /* The validation cache will be injected later, if it exists. */
+  /* will be used in a future. */
+//  nap->validation_cache = NULL;
+
+  nap->enable_dfa_validator = 0;
+  nap->fixed_feature_cpu_mode = 0;
+
   nap->static_text_end = 0;
   nap->dynamic_text_start = 0;
   nap->dynamic_text_end = 0;

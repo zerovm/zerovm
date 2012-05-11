@@ -1,7 +1,7 @@
 /*
- * Copyright 2009 The Native Client Authors. All rights reserved.
- * Use of this source code is governed by a BSD-style license that can
- * be found in the LICENSE file.
+ * Copyright (c) 2011 The Native Client Authors. All rights reserved.
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE file.
  */
 
 /*
@@ -16,6 +16,9 @@
 #ifndef NATIVE_CLIENT_SRC_TRUSTED_VALIDATOR_X86_NCVAL_REG_SFI_NC_OPCODE_HISTOGRAPH_H__
 #define NATIVE_CLIENT_SRC_TRUSTED_VALIDATOR_X86_NCVAL_REG_SFI_NC_OPCODE_HISTOGRAPH_H__
 
+#include "include/portability.h"
+#include "src/utils/types.h"
+
 /* Defines a validator state. */
 struct NaClValidatorState;
 
@@ -23,27 +26,25 @@ struct NaClValidatorState;
 struct NaClInstIter;
 
 /* Defines a data structure that holds data defining the opcode histogram
- * being collected.
+ * being collected. Holds a histogram of the (first) byte of the found
+ * opcodes for each instruction.
  */
-struct NaClOpcodeHistogram;
+typedef struct NaClOpcodeHistogram {
+  uint32_t opcode_histogram[256];
+} NaClOpcodeHistogram;
 
-/* Creates memory to hold an opcode histogram. */
-struct NaClOpcodeHistogram* NaClOpcodeHistogramMemoryCreate(
-    struct NaClValidatorState* state);
-
-/* Destroys memory holding an opcode histogram. */
-void NaClOpcodeHistogramMemoryDestroy(struct NaClValidatorState* state,
-                                      struct NaClOpcodeHistogram* histogram);
-
-/* Validator function to record histgram value for current instruction
- * in instruction iterator.
+/* Command line flag controlling whether an opcode histogram is
+ * collected while validating.
  */
-void NaClOpcodeHistogramRecord(struct NaClValidatorState* state,
-                               struct NaClInstIter* iter,
-                               struct NaClOpcodeHistogram* histogram);
+extern Bool NACL_FLAGS_opcode_histogram;
+
+/* Initializes opcode histogram data in the validator state. */
+void NaClOpcodeHistogramInitialize(struct NaClValidatorState* state);
+
+/* Validator function to record histgram value for current instruction. */
+void NaClOpcodeHistogramRecord(struct NaClValidatorState* state);
 
 /* Validator print function to print out collected histogram. */
-void NaClOpcodeHistogramPrintStats(struct NaClValidatorState* state,
-                                   struct NaClOpcodeHistogram* histogram);
+void NaClOpcodeHistogramPrintStats(struct NaClValidatorState* state);
 
 #endif  /* NATIVE_CLIENT_SRC_TRUSTED_VALIDATOR_X86_NCVAL_REG_SFI_NC_OPCODE_HISTOGRAPH_H__ */

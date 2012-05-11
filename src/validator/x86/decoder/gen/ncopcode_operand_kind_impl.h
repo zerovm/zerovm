@@ -9,9 +9,6 @@
 static const char* const g_NaClOpKindName[NaClOpKindEnumSize + 1] = {
   "Unknown_Operand",
   "A_Operand",
-  "Aw_Operand",
-  "Av_Operand",
-  "Ao_Operand",
   "E_Operand",
   "Eb_Operand",
   "Ew_Operand",
@@ -183,6 +180,7 @@ static const char* const g_NaClOpKindName[NaClOpKindEnumSize + 1] = {
   "RegRESI",
   "RegREDI",
   "RegREAXa",
+  "RegDS_ESI",
   "RegDS_EDI",
   "RegES_EDI",
   "RegDS_EBX",

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011 The Native Client Authors. All rights reserved.
+ * Copyright (c) 2012 The Native Client Authors. All rights reserved.
  * Use of this source code is governed by a BSD-style license that can be
  * found in the LICENSE file.
  */
@@ -216,8 +216,15 @@ void NCInstBytesPtrInitInc(NCInstBytesPtr* ptr, const NCInstBytesPtr* base,
  */
 uint8_t NCInstBytesPos(const NCInstBytesPtr* ptr);
 
-/* Returns the 32-bit value pointed to by the ptr. */
-int32_t NCInstBytesInt32(const NCInstBytesPtr* ptr);
+/* Sign extends the given number of bytes, generating a corresponding 32-bit
+ * integer. Valid values for num_bytes is 1, 2, and 4.
+ */
+int32_t NCInstBytesInt32(const NCInstBytesPtr* ptr, int num_bytes);
+
+/* Sign extends the given number of bytes, generating a corresponding 64-bit
+ * integer. Valid values for num_bytes is 1, 2, 4, and 8.
+ */
+int64_t NCInstBytesInt64(const NCInstBytesPtr* ptr, int num_bytes);
 
 /* Returns the indexed byte pointed to by the instruction buffer pointer. */
 uint8_t NCInstBytesByte(const NCInstBytesPtr* ptr, int n);

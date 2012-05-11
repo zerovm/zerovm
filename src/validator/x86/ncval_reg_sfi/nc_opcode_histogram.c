@@ -20,60 +20,39 @@
 #include "src/validator/x86/ncval_reg_sfi/ncvalidate_iter.h"
 #include "src/validator/x86/ncval_reg_sfi/ncvalidate_iter_internal.h"
 
-/* Holds a histogram of the (first) byte of the found opcodes for each
- * instruction.
- */
-typedef struct NaClOpcodeHistogram {
-  uint32_t opcode_histogram[256];
-} NaClOpcodeHistogram;
+Bool NACL_FLAGS_opcode_histogram = FALSE;
 
-NaClOpcodeHistogram* NaClOpcodeHistogramMemoryCreate(
-    NaClValidatorState* state) {
+void NaClOpcodeHistogramInitialize(NaClValidatorState* state) {
   int i;
-  NaClOpcodeHistogram* histogram =
-      (NaClOpcodeHistogram*) malloc(sizeof(NaClOpcodeHistogram));
-  if (histogram == NULL) {
-    NaClValidatorMessage(LOG_ERROR, state,
-                         "Out of memory, can't build histogram\n");
-  } else {
-    for (i = 0; i < 256; ++i) {
-      histogram->opcode_histogram[i] = 0;
-    }
+  if (!state->print_opcode_histogram) return;
+  for (i = 0; i < 256; ++i) {
+    state->opcode_histogram.opcode_histogram[i] = 0;
   }
-  return histogram;
 }
 
-void NaClOpcodeHistogramMemoryDestroy(NaClValidatorState* state,
-                                      NaClOpcodeHistogram* histogram) {
-  free(histogram);
-}
-
-void NaClOpcodeHistogramRecord(NaClValidatorState* state,
-                               NaClInstIter* iter,
-                               NaClOpcodeHistogram* histogram) {
+void NaClOpcodeHistogramRecord(NaClValidatorState* state) {
   NaClInstState* inst_state = state->cur_inst_state;
   const NaClInst* inst = state->cur_inst;
   if ((inst->name != InstInvalid) &&
       (inst_state->num_opcode_bytes > 0)) {
-    histogram->opcode_histogram[
+    state->opcode_histogram.opcode_histogram[
         inst_state->bytes.byte[inst_state->num_prefix_bytes]]++;
   }
 }
 
 #define LINE_SIZE 1024
 
-void NaClOpcodeHistogramPrintStats(NaClValidatorState* state,
-                                   NaClOpcodeHistogram* histogram) {
+void NaClOpcodeHistogramPrintStats(NaClValidatorState* state) {
   int i;
   char line[LINE_SIZE];
   int line_size = LINE_SIZE;
   int printed_in_this_row = 0;
   NaClValidatorMessage(LOG_INFO, state, "Opcode Histogram:\n");
   for (i = 0; i < 256; ++i) {
-    if (0 != histogram->opcode_histogram[i]) {
+    if (0 != state->opcode_histogram.opcode_histogram[i]) {
       if (line_size < LINE_SIZE) {
         line_size -= SNPRINTF(line, line_size, "%"NACL_PRId32"\t0x%02x\t",
-                              histogram->opcode_histogram[i], i);
+                              state->opcode_histogram.opcode_histogram[i], i);
       }
       ++printed_in_this_row;
       if (printed_in_this_row > 3) {

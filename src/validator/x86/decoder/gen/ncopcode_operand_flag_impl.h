@@ -9,7 +9,6 @@
 static const char* const g_NaClOpFlagName[NaClOpFlagEnumSize + 1] = {
   "OpUse",
   "OpSet",
-  "OpDest",
   "OpAddress",
   "OpImplicit",
   "OperandNear",

@@ -213,6 +213,10 @@ void SetupSystemPolicy(struct NaClApp *nap)
 void PreallocateUserMemory(struct NaClApp *nap)
 {
   struct SetupList *policy = nap->manifest->user_setup;
+
+  /* check if max_mem is specified in manifest and proceed if so */
+  if(!policy->max_mem) return;
+
   policy->heap_ptr = NaClCommonSysMmapIntern(nap, 0, policy->max_mem, 3, 0x22, -1, 0);
 
   /* why 0xfffff000? 1. 0x1000 reserved for error codes 2. it is still larger then 4gb - stack */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011 The Native Client Authors. All rights reserved.
+ * Copyright (c) 2012 The Native Client Authors. All rights reserved.
  * Use of this source code is governed by a BSD-style license that can be
  * found in the LICENSE file.
  */
@@ -103,6 +103,7 @@ typedef enum {
   NACLi_SYSCALL, /* AMD only; equivalent to SYSENTER */               /* Both */
   NACLi_SYSENTER,                                                     /* Both */
   NACLi_X87,                                                          /* Both */
+  NACLi_X87_FSINCOS,                                                  /* Both */
   NACLi_MMX,                                                          /* Both */
   NACLi_MMXSSE2, /* MMX with no prefix, SSE2 with 0x66 prefix */      /* Both */
   NACLi_3DNOW,   /* AMD only */                                       /* Both */
@@ -132,7 +133,7 @@ typedef enum {
   /* kNaClInstTypeString in x86_insts.c. */
 } NaClInstType;
 
-#define kNaClInstTypeRange 47
+#define kNaClInstTypeRange 48
 
 /* Returns the print name for the enumerated type.*/
 const char* NaClInstTypeString(NaClInstType typ);

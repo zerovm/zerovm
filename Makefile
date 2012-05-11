@@ -136,8 +136,8 @@ obj/libplatform_qual_lib.a: obj/nacl_os_qualify.o obj/sysv_shm_and_mmap.o obj/na
 obj/libncvalidate_x86_64.a: obj/ncvalidate.o
 	@ar rc obj/libncvalidate_x86_64.a obj/ncvalidate.o
 
-obj/libncval_reg_sfi_x86_64.a: obj/ncvalidate_iter.o obj/ncvalidate_iter_detailed.o obj/ncvalidator_registry.o obj/ncvalidator_registry_detailed.o obj/nc_cpu_checks.o obj/nc_illegal.o obj/nc_jumps.o obj/address_sets.o obj/nc_jumps_detailed.o obj/nc_opcode_histogram.o obj/nc_protect_base.o obj/nc_memory_protect.o obj/ncvalidate_utils.o obj/ncval_decode_tables.o
-	@ar rc obj/libncval_reg_sfi_x86_64.a obj/ncvalidate_iter.o obj/ncvalidate_iter_detailed.o obj/ncvalidator_registry.o obj/ncvalidator_registry_detailed.o obj/nc_cpu_checks.o obj/nc_illegal.o obj/nc_jumps.o obj/address_sets.o obj/nc_jumps_detailed.o obj/nc_opcode_histogram.o obj/nc_protect_base.o obj/nc_memory_protect.o obj/ncvalidate_utils.o obj/ncval_decode_tables.o
+obj/libncval_reg_sfi_x86_64.a: obj/ncvalidate_iter.o obj/ncvalidate_iter_detailed.o obj/nc_cpu_checks.o obj/nc_illegal.o obj/nc_jumps.o obj/address_sets.o obj/nc_jumps_detailed.o obj/nc_opcode_histogram.o obj/nc_protect_base.o obj/nc_memory_protect.o obj/ncvalidate_utils.o obj/ncval_decode_tables.o
+	@ar rc obj/libncval_reg_sfi_x86_64.a obj/ncvalidate_iter.o obj/ncvalidate_iter_detailed.o obj/nc_cpu_checks.o obj/nc_illegal.o obj/nc_jumps.o obj/address_sets.o obj/nc_jumps_detailed.o obj/nc_opcode_histogram.o obj/nc_protect_base.o obj/nc_memory_protect.o obj/ncvalidate_utils.o obj/ncval_decode_tables.o
 
 obj/libnccopy_x86_64.a: obj/nccopycode.o obj/nccopycode_stores.o
 	@ar rc obj/libnccopy_x86_64.a obj/nccopycode.o obj/nccopycode_stores.o
@@ -373,12 +373,6 @@ obj/ncvalidate_iter.o: src/validator/x86/ncval_reg_sfi/ncvalidate_iter.c
 
 obj/ncvalidate_iter_detailed.o: src/validator/x86/ncval_reg_sfi/ncvalidate_iter_detailed.c
 	@gcc ${CCFLAGS} -o obj/ncvalidate_iter_detailed.o ${CCFLAGS0} ${CCFLAGS1} src/validator/x86/ncval_reg_sfi/ncvalidate_iter_detailed.c
-
-obj/ncvalidator_registry.o: src/validator/x86/ncval_reg_sfi/ncvalidator_registry.c
-	@gcc ${CCFLAGS} -o obj/ncvalidator_registry.o ${CCFLAGS0} ${CCFLAGS1} src/validator/x86/ncval_reg_sfi/ncvalidator_registry.c
-
-obj/ncvalidator_registry_detailed.o: src/validator/x86/ncval_reg_sfi/ncvalidator_registry_detailed.c
-	@gcc ${CCFLAGS} -o obj/ncvalidator_registry_detailed.o ${CCFLAGS0} ${CCFLAGS1} src/validator/x86/ncval_reg_sfi/ncvalidator_registry_detailed.c
 
 obj/nc_cpu_checks.o: src/validator/x86/ncval_reg_sfi/nc_cpu_checks.c
 	@gcc ${CCFLAGS} -o obj/nc_cpu_checks.o ${CCFLAGS0} ${CCFLAGS1} src/validator/x86/ncval_reg_sfi/nc_cpu_checks.c

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011 The Native Client Authors. All rights reserved.
+ * Copyright (c) 2012 The Native Client Authors. All rights reserved.
  * Use of this source code is governed by a BSD-style license that can be
  * found in the LICENSE file.
  */
@@ -36,7 +36,7 @@
 static Bool NaClMaybeHardCodedNop(NaClInstState* state) {
   /* Note: This code is based on the hard-coded instructions
    * defined in function NaClDefNops in
-   * src/src/validator_x86/ncdecode_tablegen.c.
+   * src/trusted/validator_x86/ncdecode_tablegen.c.
    * If you change the hard-coded instructions defined in this
    * function, be sure that this predicate is updated accordingly to
    * return true for all such hard-coded instructions (it can
@@ -194,8 +194,8 @@ const NaClInst* NaClInstStateInst(NaClInstState* state) {
   return state->inst;
 }
 
-NaClPcAddress NaClInstStateVpc(NaClInstState* state) {
-  return state->vpc;
+NaClPcAddress NaClInstStatePrintableAddress(NaClInstState* state) {
+  return state->iter->segment->vbase + state->inst_addr;
 }
 
 NaClExpVector* NaClInstStateExpVector(NaClInstState* state) {

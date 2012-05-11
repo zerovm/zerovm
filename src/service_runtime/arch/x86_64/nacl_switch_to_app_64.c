@@ -17,8 +17,7 @@
 static NORETURN_PTR void (*NaClSwitch)(struct NaClThreadContext *context);
 
 void NaClInitSwitchToApp(struct NaClApp *nap) {
-  NaClCPUData cpu_data;
-  CPUFeatures cpu_features;
+  NaClCPUFeaturesX86 cpu_features;
 
   UNREFERENCED_PARAMETER(nap);
 
@@ -27,10 +26,8 @@ void NaClInitSwitchToApp(struct NaClApp *nap) {
    * in every application of the validator.  It would be more efficient
    * to do it once and then reuse the same data.
    */
-  NaClCPUDataGet(&cpu_data);
-  GetCPUFeatures(&cpu_data, &cpu_features);
-
-  if (cpu_features.f_AVX) {
+  NaClGetCurrentCPUFeatures(&cpu_features);
+  if (NaClGetCPUFeature(&cpu_features, NaClCPUFeature_AVX)) {
     NaClSwitch = NaClSwitchAVX;
   } else {
     NaClSwitch = NaClSwitchSSE;

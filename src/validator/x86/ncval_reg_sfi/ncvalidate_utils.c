@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011 The Native Client Authors. All rights reserved.
+ * Copyright (c) 2012 The Native Client Authors. All rights reserved.
  * Use of this source code is governed by a BSD-style license that can be
  * found in the LICENSE file.
  */
@@ -8,9 +8,14 @@
 
 #include "src/validator/x86/ncval_reg_sfi/ncvalidate_utils.h"
 
+#include "include/portability_io.h"
 #include "src/platform/nacl_log.h"
 #include "src/validator/x86/decoder/nc_decode_tables.h"
+#include "src/validator/x86/decoder/nc_inst_iter.h"
 #include "src/validator/x86/decoder/nc_inst_state_internal.h"
+#include "src/validator/x86/decoder/nc_inst_trans.h"
+#include "src/validator/x86/ncval_reg_sfi/ncvalidate_iter.h"
+#include "src/validator/x86/ncval_reg_sfi/ncvalidate_iter_internal.h"
 
 /* To turn on debugging of instruction decoding, change value of
  * DEBUGGING to 1.
@@ -21,6 +26,7 @@
 
 #include "src/validator/x86/decoder/ncopcode_desc_inl.c"
 #include "src/validator/x86/decoder/ncop_exps_inl.c"
+#include "src/validator/x86/decoder/nc_inst_iter_inl.c"
 
 const NaClOpFlags NaClOpSetOrUse = NACL_OPFLAG(OpSet) | NACL_OPFLAG(OpUse);
 
@@ -83,7 +89,7 @@ Bool NaClOperandOneIsRegisterSet(NaClInstState* inst,
   DEBUG(NaClLog(LOG_INFO,
                 "->NaClOperandOneIsRegisterSet %s\n",
                 NaClOpKindName(reg_name)));
-  DEBUG(NaClExpVectorPrint(NaClLogGetGio(), vector));
+  DEBUG(NaClExpVectorPrint(NaClLogGetGio(), inst));
   if (vector->number_expr_nodes >= 2) {
     NaClExp* op_reg = &vector->node[1];
     result = (ExprRegister == op_reg->kind &&
@@ -109,8 +115,45 @@ Bool NaClOperandOneZeroExtends(NaClInstState* state) {
   return result;
 }
 
-Bool NaClAssignsRegisterWithZeroExtends(NaClInstState* state,
+static INLINE Bool NaClAssignsRegisterWithZeroExtends(NaClInstState* state,
                                         NaClOpKind reg_name) {
   return NaClOperandOneIsRegisterSet(state, reg_name) &&
       NaClOperandOneZeroExtends(state);
+}
+
+/* Maximum character buffer size to use for generating messages. */
+static const size_t kMaxBufferSize = 1024;
+
+Bool NaClAssignsRegisterWithZeroExtends32(
+    struct NaClValidatorState* state,
+    size_t distance,
+    NaClOpKind reg32) {
+  Bool result = FALSE;
+  DEBUG(NaClLog(LOG_INFO, "zero extend precond? %s %u\n",
+                NaClOpKindName(reg32), (unsigned) distance));
+#ifdef NCVAL_TESTING
+  /* Assume we match previous instructions when generating pre/post
+   * conditions.
+   */
+  if (distance > 0) return TRUE;
+#endif
+
+  if (NaClInstIterHasLookbackStateInline(state->cur_iter, distance)) {
+    result = NaClAssignsRegisterWithZeroExtends(
+        NaClInstIterGetLookbackStateInline(state->cur_iter, distance), reg32);
+  }
+
+  DEBUG(if (result)
+          NaClValidatorMessage(
+              LOG_INFO, state, "zero extends = %d\n", result));
+  return result;
+}
+
+Bool NaClAssignsRegisterWithZeroExtends64(
+    struct NaClValidatorState* state,
+    size_t distance,
+    NaClOpKind reg64) {
+  NaClOpKind reg32 = NaClGet32For64BitReg(reg64);
+  return (RegUnknown != reg32) &&
+      NaClAssignsRegisterWithZeroExtends32(state, distance, reg32);
 }

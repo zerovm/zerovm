@@ -1,7 +1,7 @@
 /*
- * Copyright 2009 The Native Client Authors. All rights reserved.
- * Use of this source code is governed by a BSD-style license that can
- * be found in the LICENSE file.
+ * Copyright (c) 2011 The Native Client Authors. All rights reserved.
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE file.
  */
 
 /* Validator to check that instructions are in the legal subset.
@@ -22,8 +22,6 @@ struct NaClValidatorState;
 struct NaClInstIter;
 
 /* Validates that the instruction is nacl legal. */
-void NaClValidateInstructionLegal(struct NaClValidatorState* state,
-                                  struct NaClInstIter* iter,
-                                  void* ignore);
+void NaClValidateInstructionLegal(struct NaClValidatorState* state);
 
 #endif  /* NATIVE_CLIENT_SRC_TRUSTED_VALIDATOR_X86_NCVAL_REG_SFI_NC_ILLEGAL_H__ */

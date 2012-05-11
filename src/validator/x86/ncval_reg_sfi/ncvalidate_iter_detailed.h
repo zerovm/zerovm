@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011 The Native Client Authors. All rights reserved.
+ * Copyright (c) 2012 The Native Client Authors. All rights reserved.
  * Use of this source code is governed by a BSD-style license that can be
  * found in the LICENSE file.
  */
@@ -40,7 +40,7 @@
  *
  *   if (!NaClArchSupported()) fail;
  *   NaClValidatorState* state =
- *     NaClValidatorStateCreateDetailed(base, limit - base, 32, RegR15);
+ *     NaClValidatorStateCreateDetailed(base, limit - base, RegR15, features);
  *   if (state == NULL) fail;
  *   for each section:
  *     NaClValidateSegment(maddr, vaddr, size, state);
@@ -63,9 +63,9 @@
  * Parameters.
  *   vbase - The virtual address for the contents of the code segment.
  *   sz - The number of bytes in the code segment
- *   alignment: 16 or 32, specifying alignment.
  *   base_register - OperandKind defining value for base register (or
  *     RegUnknown if not defined).
+ *   features - The CPU features to use. Uses local features of machine if NULL.
  * Returns:
  *   A pointer to an initialized validator state if everything is ok, NULL
  *   otherwise.
@@ -73,18 +73,7 @@
 NaClValidatorState* NaClValidatorStateCreateDetailed(
     const NaClPcAddress vbase,
     const NaClMemorySize sz,
-    const uint8_t alignment,
-    const NaClOpKind base_register);
-
-/* Registers a detailed post validator to be used in place of the primary
- * (summary) post validator. Assumes the detailed post validator generates
- * error messages associated with instructions that violate validator
- * rules when the corresponding summary post validator only printed summary
- * information.
- */
-void NaClRegisterDetailedPostValidator(
-    NaClValidatorState *state,
-    NaClValidatorPostValidate summary_post_validate,
-    NaClValidatorPostValidate detailed_post_validate);
+    const NaClOpKind base_register,
+    const NaClCPUFeaturesX86* features);
 
 #endif  /* NATIVE_CLIENT_SRC_TRUSTED_VALIDATOR_X86_NCVAL_REG_SFI_NCVALIDATE_ITER_DETAILED_H__ */

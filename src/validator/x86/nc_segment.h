@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011 The Native Client Authors. All rights reserved.
+ * Copyright (c) 2012 The Native Client Authors. All rights reserved.
  * Use of this source code is governed by a BSD-style license that can be
  * found in the LICENSE file.
  */
@@ -23,11 +23,6 @@ typedef struct NaClSegment {
    * of the code segment.
    */
   NaClPcAddress vbase;
-  /* Defines the maximum+1 (virtual) pc value. Used to define
-   * when the end of the segment is reached. Corresponds to
-   * vbase + size;
-   */
-  NaClPcAddress vlimit;
   /* The number of bytes in the code segment. */
   NaClMemorySize size;
 } NaClSegment;

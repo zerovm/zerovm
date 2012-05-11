@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011 The Native Client Authors. All rights reserved.
+ * Copyright (c) 2012 The Native Client Authors. All rights reserved.
  * Use of this source code is governed by a BSD-style license that can be
  * found in the LICENSE file.
  */
@@ -43,10 +43,10 @@ void NaClPrintExpFlags(struct Gio* file, NaClExpFlags flags);
  * (preorder) tree.
  */
 typedef struct NaClExp {
+  /* A value associated with the kind. */
+  uint64_t value;
   /* The type of node. */
   NaClExpKind kind;
-  /* A value associated with the kind. */
-  int32_t value;
   /* The set of flags associated with the node. */
   NaClExpFlags flags;
 } NaClExp;
@@ -78,15 +78,6 @@ int NaClGetExpKidIndex(NaClExpVector* vector, int node, int kid);
  */
 int NaClGetExpParentIndex(NaClExpVector* vector, int node);
 
-/* Given the index of a constant, returns the corresponding constant. */
-uint64_t NaClGetExpConstant(NaClExpVector* vector, int index);
-
-/* Given a 64-bit constant, return the corresponding two 32-bit constants to
- * Use. Note: The lower 32 bits are put in val1, and the upper 32 bits are
- * put in val2.
- */
-void NaClSplitExpConstant(uint64_t val, uint32_t* val1, uint32_t* val2);
-
 /* Returns true if the index points to a constant that is negative. */
 Bool NaClIsExpNegativeConstant(NaClExpVector* vector, int index);
 
@@ -102,7 +93,7 @@ NaClOpKind NaClGetExpRegister(NaClExp* node);
 NaClOpKind NaClGetExpVectorRegister(NaClExpVector* vector, int node);
 
 /* Print out the contents of the given vector of nodes to the given file. */
-void NaClExpVectorPrint(struct Gio* file, NaClExpVector* vector);
+void NaClExpVectorPrint(struct Gio* file, struct NaClInstState* state);
 
 /* Print out the disassembled instruction in the given instruction state. */
 void NaClInstStateInstPrint(struct Gio* file, struct NaClInstState* state);
@@ -113,6 +104,13 @@ void NaClInstStateInstPrint(struct Gio* file, struct NaClInstState* state);
  * for testing purposes.
  */
 char* NaClInstStateInstructionToString(struct NaClInstState* state);
+
+/* Generates the lower case name of the corresponding register into the
+ * given character buffer. Returns the number of characters added to the buffer.
+ * Returns zero if there is no corresponding (valid) register name for the reg
+ * argument.
+ */
+size_t NaClOpRegName(NaClOpKind reg, char* buffer, size_t buffer_size);
 
 EXTERN_C_END
 

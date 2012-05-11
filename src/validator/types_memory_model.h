@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011 The Native Client Authors. All rights reserved.
+ * Copyright (c) 2012 The Native Client Authors. All rights reserved.
  * Use of this source code is governed by a BSD-style license that can be
  * found in the LICENSE file.
  */
@@ -28,6 +28,7 @@ typedef int64_t NaClPcNumber;
 
 typedef uint64_t NaClMemorySize;
 #define NACL_PRIxNaClMemorySize NACL_PRIx64
+#define NACL_PRIxNaClMemorySizeAll "016"NACL_PRIx64
 #else
 typedef uint32_t NaClPcAddress;
 #define NACL_PRIxNaClPcAddress     NACL_PRIx32
@@ -38,6 +39,7 @@ typedef int32_t NaClPcNumber;
 
 typedef uint32_t NaClMemorySize;
 #define NACL_PRIxNaClMemorySize NACL_PRIx32
+#define NACL_PRIxNaClMemorySizeAll "08"NACL_PRIx32
 #endif
 
 #endif  /* NATIVE_CLIENT_SRC_TRUSTED_VALIDATOR_x86_TYPES_MEMORY_MODEL_H_ */

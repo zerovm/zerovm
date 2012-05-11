@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011 The Native Client Authors. All rights reserved.
+ * Copyright (c) 2012 The Native Client Authors. All rights reserved.
  * Use of this source code is governed by a BSD-style license that can be
  * found in the LICENSE file.
  */
@@ -45,14 +45,9 @@ static INLINE NaClPcOffset NaClPcAddressToOffset(NaClPcAddress address) {
  */
 static INLINE Bool NaClCheckAddressRange(NaClPcAddress address,
                                          NaClValidatorState* state) {
-  if (address < state->vbase) {
+  if (address >= state->codesize) {
     NaClValidatorPcAddressMessage(LOG_ERROR, state, address,
-                                  "Jump to address before code block.\n");
-    return FALSE;
-  }
-  if (address >= state->vlimit) {
-    NaClValidatorPcAddressMessage(LOG_ERROR, state, address,
-                                  "Jump to address beyond code block limit.\n");
+                                  "Jump to address outside code segment.\n");
     return FALSE;
   }
   return TRUE;
@@ -62,10 +57,10 @@ static INLINE void NaClAddressSetAddInline(NaClAddressSet set,
                                            NaClPcAddress address,
                                            NaClValidatorState* state) {
   if (NaClCheckAddressRange(address, state)) {
-    NaClPcAddress offset = address - state->vbase;
     DEBUG(NaClLog(LOG_INFO,
-                  "Address set add: %"NACL_PRIxNaClPcAddress"\n", address));
-    set[NaClPcAddressToOffset(offset)] |= NaClPcAddressToMask(offset);
+                  "Address set add: %"NACL_PRIxNaClPcAddress"\n",
+                  address));
+    set[NaClPcAddressToOffset(address)] |= NaClPcAddressToMask(address);
   }
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011 The Native Client Authors. All rights reserved.
+ * Copyright (c) 2012 The Native Client Authors. All rights reserved.
  * Use of this source code is governed by a BSD-style license that can be
  * found in the LICENSE file.
  */
@@ -23,22 +23,18 @@
  * Hence, for example, NACL_SUBARCH_NAME(ApplyValidator, x86, 64)
  * would generate the function name NaCL_ApplyValidator_x86_64.
  */
+/* TODO(bradchen): Cleanup the interface to the validator. There
+ * are too many combinations of different calls and input parameters,
+ * making this interface hard to understand and hard to modify.
+ */
 
 #include "include/nacl_base.h"
 #include "src/utils/types.h"
+#include "src/validator/cpufeatures.h"
 
 EXTERN_C_BEGIN
 
-/* Defines the API to select the validator kind.
- * So far only the ARM architecture has a non-default validator kind
- *
- * NaClSBKind can be architecture specific, but requries more
- * scaffolding. So it is probably not worth while to split up the flag.
- */
-enum NaClSBKind {
-  NACL_SB_DEFAULT         = 0,
-  NACL_SB_ARM_THUMB2      = 1
-};
+struct NaClValidationCache;
 
 /* Defines possible validation status values. */
 typedef enum NaClValidationStatus {
@@ -56,40 +52,9 @@ typedef enum NaClValidationStatus {
   NaClValidationFailedSegmentationIssue
 } NaClValidationStatus;
 
-/* Defines possible ways that validation can be applied. */
-typedef enum NaClApplyValidationKind {
-  /* This applies the validator. Returns the resulting status
-   * of the validation of a code segment.
-   * Typically used for sel_ldr.
-   */
-  NaClApplyCodeValidation,
-  /* This applies the validator silently, stubbing out instructions
-   * that may not validate with a suitable halt instruction.
-   * Note: The return status of NaClValidationSucceeded in this case
-   * does not necessarily imply that all illegal instructions have
-   * been stubbed out. It is the responsability of the caller to
-   * call the validator a second time to see if the stubbed code
-   * is valid. Typically used as the first step of a stubout tool
-   * (either in sel_ldr or command-line tool).
-   */
-  NaClApplyValidationDoStubout,
-  /* This applies the validator, reporting errors as needed by
-   * ncval_annotate. That is, messages of the form:
-   *    VALIDATOR: XXXXXX: Message
-   * where XXXXXX is an instruction address, and Message is
-   * an error message. ncval_annotate will then use this
-   * information to print out the corresponding instruction
-   * using objdump, with the corresponding error message. Returns
-   * the resulting status of the validation of a code segment.
-   * Typically used to generate input for ncval_annotate.
-   */
-  NaClApplyValidationAnnotator
-} NaClApplyValidationKind;
-
 /* Applies the validator, as defined by sel_ldr. That is, run the
  * validator where performance is critical.
  * Parameters are:
- *    kind - The way the validator should be applied.
  *    local_cpu: True if local cpu rules should be applied.
  *           Otherwise, assume no cpu specific rules.
  *    guest_addr - The virtual pc to assume with the beginning address of the
@@ -97,24 +62,50 @@ typedef enum NaClApplyValidationKind {
  *           will be used by objdump.
  *    data - The contents of the code segment to be validated.
  *    size - The size of the code segment to be validated.
- *    bundle_size - The number of bytes in a code bundle.
+ *    stubout_mode - Whether the validator should stub out disallowed
+ *           instructions. This applies the validator silently, stubbing out
+ *           instructions that may not validate with a suitable halt
+ *           instruction. Note: The return status of NaClValidationSucceeded in
+ *           this case does not necessarily imply that all illegal instructions
+ *           have been stubbed out. It is the responsibility of the caller to
+ *           call the validator a second time to see if the stubbed code is
+ *           valid. Typically used as the first step of a stubout tool (either
+ *           in sel_ldr or command-line tool).
+ *    readonly_text - If code should be considered read-only.
+ *    cpu_features - The CPU features to support while validating.
+ *    cache - Pointer to NaCl validation cache.
  */
 extern NaClValidationStatus NACL_SUBARCH_NAME(ApplyValidator,
                                               NACL_TARGET_ARCH,
                                               NACL_TARGET_SUBARCH)(
-    enum NaClSBKind         sb_kind,
-    NaClApplyValidationKind kind,
     uintptr_t               guest_addr,
     uint8_t                 *data,
     size_t                  size,
-    int                     bundle_size,
-    Bool                    local_cpu);
+    int                     stubout_mode,
+    int                     readonly_text,
+    const NaClCPUFeatures   *cpu_features,
+    struct NaClValidationCache *cache);
+
+/* Applies the DFA-based validator as in the ApplyValidator case described
+ * above.  The interface of this new validator must remain the same as of the
+ * ApplyValidator.  Less arguments will be ignored as the new validator
+ * implements features, such as stubout mode.
+ */
+extern NaClValidationStatus NACL_SUBARCH_NAME(ApplyDfaValidator,
+                                              NACL_TARGET_ARCH,
+                                              NACL_TARGET_SUBARCH)(
+    uintptr_t               guest_addr,
+    uint8_t                 *data,
+    size_t                  size,
+    int                     stubout_mode,
+    int                     readonly_text,
+    const NaClCPUFeatures   *cpu_features,
+    struct NaClValidationCache *cache);
 
 /* Applies the validator, as used in a command-line tool to report issues.
  * Note: This is intentionally separated from ApplyValidator, since it need
  * not be performance critical.
  * Parameters are:
- *    kind - The way the validator should be applied.
  *    local_cpu: True if local cpu rules should be applied.
  *           Otherwise, assume no cpu specific rules.
  *    guest_addr - The virtual pc to assume with the beginning address of the
@@ -122,18 +113,15 @@ extern NaClValidationStatus NACL_SUBARCH_NAME(ApplyValidator,
  *           will be used by objdump.
  *    data - The contents of the code segment to be validated.
  *    size - The size of the code segment to be validated.
- *    bundle_size - The number of bytes in a code bundle.
+ *    cpu_features - The CPU features to support while validating.
  */
 extern NaClValidationStatus NACL_SUBARCH_NAME(ApplyValidatorVerbosely,
                                               NACL_TARGET_ARCH,
                                               NACL_TARGET_SUBARCH)(
-    enum NaClSBKind         sb_kind,
-    NaClApplyValidationKind kind,
     uintptr_t               guest_addr,
     uint8_t                 *data,
     size_t                  size,
-    int                     bundle_size,
-    Bool                    local_cpu);
+    const NaClCPUFeatures   *cpu_features);
 
 /* Applies validator to new code segment, assuming that it was updated
  * from the previously validated old code segment. Assumes that instruction
@@ -146,17 +134,16 @@ extern NaClValidationStatus NACL_SUBARCH_NAME(ApplyValidatorVerbosely,
  *    data_old - The contents of the original code segment.
  *    data_new - The contents of the new code segment that should be validated.
  *    size - The size of the passed code segments.
- *    bundle_size - The number of bytes in a code bundle.
+ *    cpu_features - The CPU features to support while validating.
  */
 extern NaClValidationStatus NACL_SUBARCH_NAME(ApplyValidatorCodeReplacement,
                                               NACL_TARGET_ARCH,
                                               NACL_TARGET_SUBARCH)(
-      enum NaClSBKind sb_kind,
-      uintptr_t       guest_addr,
-      uint8_t         *data_old,
-      uint8_t         *data_new,
-      size_t          size,
-      int             bundle_size);
+      uintptr_t             guest_addr,
+      uint8_t               *data_old,
+      uint8_t               *data_new,
+      size_t                size,
+      const NaClCPUFeatures *cpu_features);
 
 /* Runs the validator to copy code from an existing code segment to a new
  * code segment.
@@ -172,17 +159,16 @@ extern NaClValidationStatus NACL_SUBARCH_NAME(ApplyValidatorCodeReplacement,
  *    data_new - The addres of the new code segment for which the original
  *           code segment should be copied into.
  *    size - The size of the passed code segments.
- *    bundle_size - The number of bytes in a code bundle.
+ *    cpu_features - The CPU features to support while validating.
  */
 extern NaClValidationStatus NACL_SUBARCH_NAME(ApplyValidatorCopy,
                                               NACL_TARGET_ARCH,
                                               NACL_TARGET_SUBARCH)(
-    enum NaClSBKind sb_kind,
-    uintptr_t       guest_addr,
-    uint8_t         *data_old,
-    uint8_t         *data_new,
-    size_t          size,
-    int             bundle_size);
+    uintptr_t             guest_addr,
+    uint8_t               *data_old,
+    uint8_t               *data_new,
+    size_t                size,
+    const NaClCPUFeatures *cpu_features);
 
 EXTERN_C_END
 

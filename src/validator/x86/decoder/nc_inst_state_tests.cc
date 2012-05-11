@@ -18,17 +18,31 @@
 #include "include/nacl_macros.h"
 #include "src/validator/x86/decoder/nc_inst_state.h"
 #include "src/validator_x86/ncdis_decode_tables.h"
-/* d'b: included to replace kNaClDecoderTables with kNaClValDecoderTables
-   which will avoid of using some extra sources needless for sandbox
-   also the compilation script for this test was changed (3 libs were
-   removed from the linker options) */
-#include "src/validator/x86/ncval_reg_sfi/ncval_decode_tables.h"
-/* d'b end */
 
 // Include static functions, so that we can test.
 extern "C" {
 #include "src/validator/x86/decoder/nc_inst_state_statics.c"
+
+/*
+ * d'b: the header below can be removed from the project when will
+ * be no need for this test.
+ */
+#include "src/validator/x86/decoder/gen/nc_opcode_table_64.h"
 }
+
+// ###
+static const NaClDecodeTables kDecoderTables = {
+  g_Operands,
+  g_Opcodes + 0,
+  g_LookupTable + 0,
+  g_PrefixOpcode + 0,
+  g_Opcodes + 0,
+  kNaClPrefixTable,
+  g_OpcodeSeq
+};
+
+const struct NaClDecodeTables* kNaClDecoderTables = &kDecoderTables;
+/* d'b: end */
 
 namespace {
 
@@ -133,8 +147,7 @@ NcInstStateTests::NcInstStateTests() {
 }
 
 void NcInstStateTests::SetUp() {
-  /* d'b: kNaClDecoderTables replaced by kNaClValDecoderTables */
-  _iter = NaClInstIterCreate(kNaClValDecoderTables, &_segment);
+  _iter = NaClInstIterCreate(kNaClDecoderTables, &_segment);
   _state = NaClInstIterGetUndecodedState(_iter);
   ResetInput();
   ResetState();

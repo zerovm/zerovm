@@ -241,11 +241,14 @@ static int32_t TrapUserSetupHandle(struct NaClApp *nap, struct SetupList *h)
     TRY_UPDATE(hint_channel->max_put_size, policy_channel->max_put_size);
     TRY_UPDATE(hint_channel->max_puts, policy_channel->max_puts);
 
-    /* set i/o fields n/a to change */
+    /* set readonly i/o fields */
     hint_channel->bsize = policy_channel->bsize;
     hint_channel->buffer = policy_channel->buffer;
     hint_channel->fsize = policy_channel->fsize;
     hint_channel->type = policy_channel->type;
+    hint_channel->mounted = policy_channel->mounted; /* assumed safe to share with user */
+    /* not real handle but just a stream number coinciding with stdin/stdout/stderr */
+    hint_channel->handle = ch;
   }
 
   /* check/update system limits. 1st time - set fields in hint */

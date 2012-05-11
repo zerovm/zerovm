@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011 The Native Client Authors. All rights reserved.
+ * Copyright (c) 2012 The Native Client Authors. All rights reserved.
  * Use of this source code is governed by a BSD-style license that can be
  * found in the LICENSE file.
  */
@@ -37,8 +37,9 @@ EXTERN_C_BEGIN
 static void NaClInstStateInit(NaClInstIter* iter, NaClInstState* state) {
   NaClMemorySize limit;
   NCInstBytesInitInline(&state->bytes);
+  state->iter = iter;
   state->decoder_tables = iter->decoder_tables;
-  state->vpc = iter->segment->vbase + iter->index;
+  state->inst_addr = iter->index;
   limit = iter->segment->size - iter->index;
   if (limit > NACL_MAX_BYTES_PER_X86_INSTRUCTION) {
     limit = NACL_MAX_BYTES_PER_X86_INSTRUCTION;
@@ -65,6 +66,7 @@ static void NaClInstStateInit(NaClInstIter* iter, NaClInstState* state) {
   state->inst = NULL;
   state->nodes.is_defined = FALSE;
   state->nodes.number_expr_nodes = 0;
+  state->unchanged = FALSE;
 }
 
 /* Computes the number of bytes defined for operands of the matched
@@ -612,6 +614,18 @@ static Bool NaClConsumeDispBytes(NaClInstState* state) {
 
 /* Returns the number of immediate bytes to parse. */
 static int NaClGetNumImmedBytes(NaClInstState* state) {
+  /* First see if immediate bytes is specified. */
+  if (0 == NaClHasBit(state->inst->flags,
+                      (NACL_IFLAG(OpcodeHasImmed) |
+                       NACL_IFLAG(OpcodeHasImmed_v) |
+                       NACL_IFLAG(OpcodeHasImmed_b) |
+                       NACL_IFLAG(OpcodeHasImmed_w) |
+                       NACL_IFLAG(OpcodeHasImmed_o) |
+                       NACL_IFLAG(OpcodeHasImmed_Addr) |
+                       NACL_IFLAG(OpcodeHasImmed_z) |
+                       NACL_IFLAG(OpcodeHasImmed_p)))) return 0;
+
+  /* Now handle specific requests. */
   if (state->inst->flags & NACL_IFLAG(OpcodeHasImmed)) {
     return state->operand_size;
   }
@@ -621,6 +635,8 @@ static int NaClGetNumImmedBytes(NaClInstState* state) {
     return 1;
   } else if (state->inst->flags & NACL_IFLAG(OpcodeHasImmed_w)) {
     return 2;
+  } else if (state->inst->flags & NACL_IFLAG(OpcodeHasImmed_p)) {
+    return 6;
   } else if (state->inst->flags & NACL_IFLAG(OpcodeHasImmed_o)) {
     return 8;
   } else if (state->inst->flags & NACL_IFLAG(OpcodeHasImmed_Addr)) {
@@ -706,11 +722,11 @@ static Bool NaClValidatePrefixFlags(NaClInstState* state) {
       Bool has_lockable_dest = FALSE;
       NaClExpVector* vector = NaClInstStateExpVector(state);
       DEBUG(NaClLog(LOG_INFO, "checking if lock valid on:\n");
-            NaClExpVectorPrint(NaClLogGetGio(), vector));
+            NaClExpVectorPrint(NaClLogGetGio(), state));
       for (i = 0; i < vector->number_expr_nodes; ++i) {
         NaClExp* node = &vector->node[i];
         DEBUG(NaClLog(LOG_INFO, "  checking node %d\n", i));
-        if ((NACL_EMPTY_EFLAGS != (node->flags & NACL_EFLAG(ExprDest))) &&
+        if ((NACL_EMPTY_EFLAGS != (node->flags & NACL_EFLAG(ExprSet))) &&
             (node->kind == ExprMemOffset)) {
           has_lockable_dest = TRUE;
           break;

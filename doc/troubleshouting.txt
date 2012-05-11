@@ -1,0 +1,18 @@
+this documents describes possible zerovm problems
+-------------------------------------------------
+
+
+zerovm troubleshouting
+--------------------------
+1. on ubuntu 11.10 desktop 64-bit make invokes error:
+/usr/bin/ld: cannot find -lcrypto
+collect2: ld returned 1 exit status
+make: *** [zerovm] Error 1
+solution: not found
+
+zerovm api troubleshouting
+--------------------------
+1.
+"error while loading shared libraries: libz.so.1:" when compiling "api/zvm.c"
+solution: sudo apt-get install ia32-libs
+

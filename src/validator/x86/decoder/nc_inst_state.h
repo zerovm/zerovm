@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011 The Native Client Authors. All rights reserved.
+ * Copyright (c) 2012 The Native Client Authors. All rights reserved.
  * Use of this source code is governed by a BSD-style license that can be
  * found in the LICENSE file.
  */
@@ -30,10 +30,12 @@ typedef struct NaClInstState NaClInstState;
 
 struct NaClInst;
 
-/* Returns the address (i.e. program counter) associated with the
- * currently matched instruction.
+/* Returns the address (i.e. program counter) associated with the currently
+ * matched instruction, assuming the code segment has been mapped to vbase.
+ * This value should not be used to influence validation because it would make
+ * the validation algorithm position dependent.
  */
-NaClPcAddress NaClInstStateVpc(NaClInstState* state);
+NaClPcAddress NaClInstStatePrintableAddress(NaClInstState* state);
 
 /* Given an iterator state, return the corresponding opcode (instruction)
  * that matches the currently matched instruction of the corresponding

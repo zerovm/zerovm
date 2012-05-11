@@ -14,16 +14,15 @@ EXTERN_C_BEGIN
 typedef enum NaClOpFlag {
   OpUse = 0,
   OpSet = 1,
-  OpDest = 2,
-  OpAddress = 3,
-  OpImplicit = 4,
-  OperandNear = 5,
-  OperandFar = 6,
-  OperandRelative = 7,
-  OperandZeroExtends_v = 8,
-  OperandSignExtends_v = 9,
-  AllowGOperandWithOpcodeInModRm = 10,
-  NaClOpFlagEnumSize = 11 /* special size marker */
+  OpAddress = 2,
+  OpImplicit = 3,
+  OperandNear = 4,
+  OperandFar = 5,
+  OperandRelative = 6,
+  OperandZeroExtends_v = 7,
+  OperandSignExtends_v = 8,
+  AllowGOperandWithOpcodeInModRm = 9,
+  NaClOpFlagEnumSize = 10 /* special size marker */
 } NaClOpFlag;
 
 /* Returns the name of an NaClOpFlag constant. */

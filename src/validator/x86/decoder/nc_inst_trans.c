@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011 The Native Client Authors. All rights reserved.
+ * Copyright (c) 2012 The Native Client Authors. All rights reserved.
  * Use of this source code is governed by a BSD-style license that can be
  * found in the LICENSE file.
  */
@@ -14,12 +14,14 @@
 #include <stdio.h>
 #include <assert.h>
 
+#include "src/platform/nacl_check.h"
 #include "src/platform/nacl_log.h"
 #include "src/validator/x86/decoder/nc_inst_state.h"
 #include "src/validator/x86/decoder/nc_inst_state_internal.h"
 #include "src/validator/x86/decoder/ncop_exps.h"
 #include "src/validator/x86/nacl_regs.h"
 
+#include "src/validator/x86/decoder/ncop_exps_inl.c"
 #include "src/validator/x86/decoder/ncopcode_desc_inl.c"
 #include "src/validator/x86/x86_insts_inl.c"
 
@@ -101,11 +103,17 @@ static INLINE NaClOpKind NaClGetEsSegmentReg(NaClInstState* state) {
  * nodes. Returns the appended expression node.
  */
 static INLINE NaClExp* NaClAppendExp(NaClExpKind kind,
-                                     int32_t value,
+                                     uint64_t value,
                                      NaClExpFlags flags,
                                      NaClExpVector* vector) {
   NaClExp* node;
   assert(vector->number_expr_nodes < NACL_MAX_EXPS);
+  /* If this is not a register expression, we should have specified a size. */
+  CHECK(ExprRegister == kind || (0 != (flags & (NACL_EFLAG(ExprSize8) |
+                                                NACL_EFLAG(ExprSize16) |
+                                                NACL_EFLAG(ExprSize32) |
+                                                NACL_EFLAG(ExprSize48) |
+                                                NACL_EFLAG(ExprSize64)))));
   node = &vector->node[vector->number_expr_nodes++];
   node->kind = kind;
   node->value = value;
@@ -132,7 +140,7 @@ static NaClExp* NaClFatal(const char* message,
                           NaClInstState* state) {
   NaClLog(LOG_ERROR,
           "FATAL: At %"NACL_PRIxNaClPcAddress", unable to translate: %s\n",
-          NaClInstStateVpc(state), message);
+          NaClInstStatePrintableAddress(state), message);
   exit(1);
   /* NOT REACHED */
   return NULL;
@@ -163,26 +171,25 @@ static NaClOpKind NaClGetMnemonicSegmentRegister(NaClInstState* state) {
   return RegUnknown;
 }
 
+/* Append that we don't bother to translate the instruction argument,
+ * since it is NaCl illegal. Used to handle cases where we don't implement
+ * 16-bit modrm effective addresses.
+ */
+static INLINE NaClExp* NaClAppendNaClIllegal(NaClInstState* state) {
+  return NaClAppendExp(ExprNaClIllegal, 0,
+                       NACL_EFLAG(ExprSize16), &state->nodes);
+}
+
 /* Append the given constant onto the given vector of expression
  * nodes. Returns the appended expression node.
  */
 static INLINE NaClExp* NaClAppendConst(uint64_t value, NaClExpFlags flags,
                                        NaClExpVector* vector) {
-  uint32_t val1;
-  uint32_t val2;
   DEBUG(
       NaClLog(LOG_INFO, "Append constant %"NACL_PRIx64" : ", value);
       NaClPrintExpFlags(NaClLogGetGio(), flags);
       gprintf(NaClLogGetGio(), "\n"));
-  NaClSplitExpConstant(value, &val1, &val2);
-  if (val2 == 0) {
-    return NaClAppendExp(ExprConstant, val1, flags, vector);
-  } else {
-    NaClExp* root = NaClAppendExp(ExprConstant64, 0, flags, vector);
-    NaClAppendExp(ExprConstant, val1, NACL_EFLAG(ExprUnsignedHex), vector);
-    NaClAppendExp(ExprConstant, val2, NACL_EFLAG(ExprUnsignedHex), vector);
-    return root;
-  }
+  return NaClAppendExp(ExprConstant, value, flags, vector);
 }
 
 /* Define a type corresponding to the arrays NaClRegTable8,
@@ -316,7 +323,6 @@ static NaClRegKind NaClGetOpKindRegKind(NaClOpKind kind) {
     case Mb_Operand:
     case Ob_Operand:
       return RegSize8;
-    case Aw_Operand:
     case Ew_Operand:
     case Gw_Operand:
     case Iw_Operand:
@@ -325,7 +331,6 @@ static NaClRegKind NaClGetOpKindRegKind(NaClOpKind kind) {
     case Mpw_Operand:
     case Ow_Operand:
       return RegSize16;
-    case Av_Operand:
     case Ev_Operand:
     case Gv_Operand:
     case Iv_Operand:
@@ -335,7 +340,6 @@ static NaClRegKind NaClGetOpKindRegKind(NaClOpKind kind) {
     case Ov_Operand:
     case Mmx_Gd_Operand:
       return RegSize32;
-    case Ao_Operand:
     case Eo_Operand:
     case Go_Operand:
     case Io_Operand:
@@ -474,7 +478,6 @@ static INLINE NaClExp* NaClAppendReg(NaClOpKind r, NaClExpVector* vector) {
   NaClExp* node;
   DEBUG(NaClLog(LOG_INFO, "append register %s\n", NaClOpKindName(r)));
   node = NaClAppendExp(ExprRegister, r, NaClGetRegSize(r), vector);
-  DEBUG(NaClExpVectorPrint(NaClLogGetGio(), vector));
   return node;
 }
 
@@ -703,8 +706,8 @@ static INLINE void NaClInitializeDisplacement(
 }
 
 /* Extract the binary value from the specified bytes of the instruction. */
-uint64_t NaClExtractUnsignedBinaryValue(NaClInstState* state,
-                                        int start_byte, int num_bytes) {
+static uint64_t NaClExtractUnsignedBinaryValue(NaClInstState* state,
+                                               int start_byte, int num_bytes) {
   int i;
   uint64_t value = 0;
   for (i = 0; i < num_bytes; ++i) {
@@ -714,15 +717,21 @@ uint64_t NaClExtractUnsignedBinaryValue(NaClInstState* state,
   return value;
 }
 
-int64_t NaClExtractSignedBinaryValue(NaClInstState* state,
-                                     int start_byte, int num_bytes) {
-  int i;
-  int64_t value = 0;
-  for (i = 0; i < num_bytes; ++i) {
-    uint8_t byte = state->bytes.byte[start_byte + i];
-    value |= (((uint64_t) byte) << (i * 8));
+static int64_t NaClExtractSignedBinaryValue(NaClInstState* state,
+                                            int start_byte, int num_bytes) {
+  /* Assumes little endian. */
+  uint8_t* address = &state->bytes.byte[start_byte];
+  switch (num_bytes) {
+    case 1:
+      return *(int8_t*) address;
+    case 2:
+      return *(int16_t*) address;
+    case 4:
+      return *(int32_t*) address;
+    default:
+      CHECK(0);
+      return -1;
   }
-  return value;
 }
 
 /* Given the number of bytes for a literal constant, return the corresponding
@@ -730,17 +739,23 @@ int64_t NaClExtractSignedBinaryValue(NaClInstState* state,
  */
 static NaClExpFlags NaClGetExprSizeFlagForBytes(uint8_t num_bytes) {
   switch (num_bytes) {
+    /* HACK a zero size immediate is generated for some addr16 instructions.
+     * We don't allow these instructions, but we do test decompiling them.
+     * TODO(ncbray) eliminate the bug or the test case.
+     */
+    case 0:
     case 1:
       return NACL_EFLAG(ExprSize8);
-      break;
     case 2:
       return NACL_EFLAG(ExprSize16);
-      break;
     case 4:
       return NACL_EFLAG(ExprSize32);
+    case 6:
+      return NACL_EFLAG(ExprSize48);
     case 8:
       return NACL_EFLAG(ExprSize64);
     default:
+      CHECK(0);
       return 0;
   }
 }
@@ -826,7 +841,7 @@ static NaClExp* NaClAppendImmed(NaClInstState* state) {
       NaClGetExprSizeFlagForBytes(state->num_imm_bytes);
 
   /* Append the generated immediate value onto the vector. */
-  return NaClAppendConst(value, flags,  &state->nodes);
+  return NaClAppendConst(value, flags, &state->nodes);
 }
 
 /* Append the second immediate value of the given instruction state onto
@@ -849,7 +864,7 @@ static NaClExp* NaClAppendImmed2(NaClInstState* state) {
       NaClGetExprSizeFlagForBytes(state->num_imm2_bytes);
 
   /* Append the generated immediate value onto the vector. */
-  return NaClAppendConst(value, flags,  &state->nodes);
+  return NaClAppendConst(value, flags, &state->nodes);
 }
 
 /* Append an ExprMemOffset node for the given state, and return
@@ -905,33 +920,12 @@ static NaClExp* NaClAppendMemoryOffsetImmed(NaClInstState* state) {
   return root;
 }
 
-/* Compute the (relative) immediate value defined by the difference
- * between the PC and the immedaite value of the instruction.
- */
 static NaClExp* NaClAppendRelativeImmed(NaClInstState* state) {
-  NaClPcNumber next_pc = (NaClPcNumber) state->vpc + state->bytes.length;
-  NaClPcNumber val = (NaClPcNumber) NaClExtractSignedImmediate(state);
-
+  NaClPcNumber jump_offset = (NaClPcNumber) NaClExtractSignedImmediate(state);
   DEBUG(NaClLog(LOG_INFO, "append relative immediate\n"));
-
-  /* Sign extend value */
-  switch (state->num_imm_bytes) {
-    case 1:
-      val = next_pc + (int8_t) val;
-      break;
-    case 2:
-      val = next_pc + (int16_t) val;
-      break;
-    case 4:
-      val = next_pc + (int32_t) val;
-      break;
-    default:
-      assert(0);
-      break;
-  }
-
-  return NaClAppendConst(val,
-                         NACL_EFLAG(ExprUnsignedHex) |
+  return NaClAppendConst(jump_offset,
+                         NACL_EFLAG(ExprSignedHex) |
+                         NaClGetExprSizeFlagForBytes(state->num_imm_bytes) |
                          NACL_EFLAG(ExprJumpTarget),
                          &state->nodes);
 }
@@ -986,7 +980,7 @@ static NaClExp* NaClAppendMemoryOffset(NaClInstState* state,
   NaClAppendConst(scale, NACL_EFLAG(ExprSize8), &state->nodes);
   NaClAppendConst(displacement->value, displacement->flags, &state->nodes);
   DEBUG(NaClLog(LOG_INFO, "finished appending memory offset:\n"));
-  DEBUG(NaClExpVectorPrint(NaClLogGetGio(), &state->nodes));
+  DEBUG(NaClExpVectorPrint(NaClLogGetGio(), state));
   return root;
 }
 
@@ -1066,11 +1060,28 @@ static void NaClAppendEDI(NaClInstState* state) {
       NaClAppendReg(RegRDI, &state->nodes);
       break;
     default:
-      NaClFatal("Address size for ES:EDI not correctly defined", state);
+      NaClFatal("Address size for %EDI not correctly defined",
+                state);
       break;
   }
 }
 
+static void NaClAppendESI(NaClInstState* state) {
+  switch (state->address_size) {
+    case 16:
+      NaClAppendReg(RegSI, &state->nodes);
+      break;
+    case 32:
+      NaClAppendReg(RegESI, &state->nodes);
+      break;
+    case 64:
+      NaClAppendReg(RegRSI, &state->nodes);
+      break;
+    default:
+      NaClFatal("Address size for %ESI not correctly defined", state);
+      break;
+  }
+}
 static void NaClAppendEBX(NaClInstState* state) {
   switch (state->address_size) {
     case 16:
@@ -1080,25 +1091,33 @@ static void NaClAppendEBX(NaClInstState* state) {
       NaClAppendReg(RegEBX, &state->nodes);
       break;
     case 64:
-      NaClAppendReg(RegRDX, &state->nodes);
+      NaClAppendReg(RegRBX, &state->nodes);
       break;
     default:
-      NaClFatal("Address size for DS:EDX not correctly defined", state);
+      NaClFatal("Address size for %EBX not correctly defined", state);
       break;
   }
 }
 
 static NaClExp* NaClAppendDS_EDI(NaClInstState* state) {
   NaClExp* results = NaClAppendSegmentAddress(state);
-  results->flags |= NACL_EFLAG(ExprDSrDICase);
+  results->flags |= NACL_EFLAG(ExprDSrCase);
   NaClAppendReg(NaClGetDsSegmentReg(state),  &state->nodes);
   NaClAppendEDI(state);
   return results;
 }
 
+static NaClExp* NaClAppendDS_ESI(NaClInstState* state) {
+  NaClExp* results = NaClAppendSegmentAddress(state);
+  results->flags |= NACL_EFLAG(ExprDSrCase);
+  NaClAppendReg(NaClGetDsSegmentReg(state),  &state->nodes);
+  NaClAppendESI(state);
+  return results;
+}
+
 static NaClExp* NaClAppendDS_EBX(NaClInstState* state) {
   NaClExp* results = NaClAppendSegmentAddress(state);
-  results->flags |= NACL_EFLAG(ExprDSrDICase);
+  results->flags |= NACL_EFLAG(ExprDSrCase);
   NaClAppendReg(NaClGetDsSegmentReg(state),  &state->nodes);
   NaClAppendEBX(state);
   return results;
@@ -1106,7 +1125,7 @@ static NaClExp* NaClAppendDS_EBX(NaClInstState* state) {
 
 static NaClExp* NaClAppendES_EDI(NaClInstState* state) {
   NaClExp* results = NaClAppendSegmentAddress(state);
-  results->flags |= NACL_EFLAG(ExprESrDICase);
+  results->flags |= NACL_EFLAG(ExprESrCase);
   NaClAppendReg(NaClGetEsSegmentReg(state),  &state->nodes);
   NaClAppendEDI(state);
   return results;
@@ -1121,6 +1140,13 @@ static NaClExp* NaClAppendES_EDI(NaClInstState* state) {
 static NaClExp* NaClAppendMod00EffectiveAddress(
     NaClInstState* state, const NaClOp* operand) {
   DEBUG(NaClLog(LOG_INFO, "Translate modrm(%02x).mod == 00\n", state->modrm));
+  if ((32 == NACL_TARGET_SUBARCH) &&
+      NaClHasBit(state->prefix_mask, kPrefixADDR16)) {
+    /* This code doesn't know how to translate 16-bit modrm effective addresses.
+     * However, such arguments are not nacl legal. Communicate this explicitly.
+     */
+    return NaClAppendNaClIllegal(state);
+  }
   switch (modrm_rmInline(state->modrm)) {
     case 4:
       return NaClAppendSib(state);
@@ -1163,6 +1189,13 @@ static NaClExp* NaClAppendMod00EffectiveAddress(
 static NaClExp* NaClAppendMod01EffectiveAddress(
     NaClInstState* state, const NaClOp* operand) {
   DEBUG(NaClLog(LOG_INFO, "Translate modrm(%02x).mod == 01\n", state->modrm));
+  if ((32 == NACL_TARGET_SUBARCH) &&
+      NaClHasBit(state->prefix_mask, kPrefixADDR16)) {
+    /* This code doesn't know how to translate 16-bit modrm effective addresses.
+     * However, such arguments are not nacl legal. Communicate this explicitly.
+     */
+    return NaClAppendNaClIllegal(state);
+  }
   if (4 == modrm_rmInline(state->modrm)) {
     return NaClAppendSib(state);
   } else {
@@ -1188,6 +1221,13 @@ static NaClExp* NaClAppendMod01EffectiveAddress(
 static NaClExp* NaClAppendMod10EffectiveAddress(
     NaClInstState* state, const NaClOp* operand) {
   DEBUG(NaClLog(LOG_INFO, "Translate modrm(%02x).mod == 10\n", state->modrm));
+  if ((32 == NACL_TARGET_SUBARCH) &&
+      NaClHasBit(state->prefix_mask, kPrefixADDR16)) {
+    /* This code doesn't know how to translate 16-bit modrm effective addresses.
+     * However, such arguments are not nacl legal. Communicate this explicitly.
+     */
+    return NaClAppendNaClIllegal(state);
+  }
   if (4 == modrm_rmInline(state->modrm)) {
     return NaClAppendSib(state);
   } else {
@@ -1280,6 +1320,8 @@ static NaClExp* NaClAppendOperand(NaClInstState* state,
   DEBUG(NaClLog(LOG_INFO,
                 "append operand %s\n", NaClOpKindName(operand->kind)));
   switch (operand->kind) {
+    case A_Operand:
+      return NaClAppendImmed(state);
     case E_Operand:
     case Eb_Operand:
     case Ew_Operand:
@@ -1525,6 +1567,8 @@ static NaClExp* NaClAppendOperand(NaClInstState* state,
     case RegREAXa:
       return NaClAppendBasedOnAddressSize(RegAX, RegEAX, RegRAX, state);
 
+    case RegDS_ESI:
+      return NaClAppendDS_ESI(state);
     case RegDS_EDI:
       return NaClAppendDS_EDI(state);
     case RegDS_EBX:
@@ -1554,9 +1598,6 @@ static NaClExp* NaClAddOpSetUse(NaClExp* node, const NaClOp* operand) {
   if (operand->flags & NACL_OPFLAG(OpSet)) {
     node->flags |= NACL_EFLAG(ExprSet);
   }
-  if (operand->flags & NACL_OPFLAG(OpDest)) {
-    node->flags |= NACL_EFLAG(ExprDest);
-  }
   if (operand->flags & NACL_OPFLAG(OpUse)) {
     node->flags |= NACL_EFLAG(ExprUsed);
   }
@@ -1571,19 +1612,20 @@ void NaClBuildExpVector(struct NaClInstState* state) {
   uint8_t num_ops;
   DEBUG(NaClLog(LOG_INFO,
                 "building expression vector for pc = %"NACL_PRIxNaClPcAddress
-                ":\n",
-                NaClInstStateVpc(state)));
+                ":\n", state->inst_addr));
   num_ops = NaClGetInstNumberOperandsInline(state->inst);
   for (i = 0; i < num_ops; i++) {
     NaClExp* n;
     const NaClOp* op = NaClGetInstOperandInline(state->decoder_tables,
                                                 state->inst, i);
     DEBUG(NaClLog(LOG_INFO, "translating operand %d:\n", i));
-    n = NaClAppendExp(OperandReference, i, 0, &state->nodes);
+    n = NaClAppendExp(OperandReference, i,
+                      NACL_EFLAG(ExprSize8) | NACL_EFLAG(ExprUnsignedInt),
+                      &state->nodes);
     if (op->flags & NACL_OPFLAG(OpImplicit)) {
       n->flags |= NACL_EFLAG(ExprImplicit);
     }
     NaClAddOpSetUse(NaClAppendOperand(state, op), op);
-    DEBUG(NaClExpVectorPrint(NaClLogGetGio(), &state->nodes));
+    DEBUG(NaClExpVectorPrint(NaClLogGetGio(), state));
   }
 }

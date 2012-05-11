@@ -37,6 +37,8 @@
 #include "src/service_runtime/sel_util.h"
 #include "src/service_runtime/sel_rt.h"
 
+#include "src/validator/cpufeatures.h"
+
 EXTERN_C_BEGIN
 
 #define NACL_SERVICE_PORT_DESCRIPTOR    3
@@ -267,6 +269,11 @@ struct NaClApp {
   int                       fuzzing_quit_after_load; /* startup time variable */
   int                       verbosity; /* startup time variable */
   int                       handle_signals; /* startup time variable */
+
+  /* added for a new validator */
+  int                       enable_dfa_validator;
+  int                       fixed_feature_cpu_mode;
+  NaClCPUFeatures           cpu_features;
 
   /* fileds taken from the natp */
   void                      *signal_stack; /* Stack for signal handling, registered with sigaltstack(). */

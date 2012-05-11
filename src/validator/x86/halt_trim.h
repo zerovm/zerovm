@@ -18,22 +18,18 @@ EXTERN_C_BEGIN
 /* Takes a code memory segment, and returns the (safe) size to
  * use for validation. It does this by checking for trailing halt
  * instructions, and removes excess halts from the code segment memory.
+ * This function assumes the code segment will be mapped to an aligned base
+ * address.
  *
  * Parameters are:
  *   mbase - The beging of the memory segment to decode.
- *   vbase - The (virtual) base address of the memory segment.
+ *   sz - The number of bytes in the memory segment.
  *   alignment - The blocksize alignment used for the code segment.
- *   sz - The number of bytes in the memory segment. Updated to new
- *        appropriate new value if trimming occurs.
- *   limit - The address one byte past the last byte in the memory to
- *        be validdated. Updated to appropriate new value if trimming
- *        occurs.
+ * Returns:
+ *   The number of bytes in the trimmed memory segment.
  */
-extern void NCHaltTrimSegment(uint8_t* mbase,
-                              NaClPcAddress vbase,
-                              uint8_t alignment,
-                              NaClMemorySize *sz,
-                              NaClPcAddress *vlimit);
+NaClMemorySize NCHaltTrimSize(uint8_t* mbase, NaClMemorySize sz,
+                              uint8_t alignment);
 
 EXTERN_C_END
 

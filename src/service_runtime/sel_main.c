@@ -80,7 +80,7 @@ static void PrintUsage() {
            the constant string size limit */
   fprintf(stderr,
           "Usage: sel_ldr [-M manifest_file] [-h d:D] [-r d:D]\n"
-          "               [-w d:D] [-i d:D] [-v d] [-cFgIsQ]\n\n"
+          "               [-w d:D] [-i d:D] [-v d] [-cFgIsQZD]\n\n"
           " -h\n"
           " -r\n"
           " -w associate a host POSIX descriptor D with app desc d\n"
@@ -98,6 +98,8 @@ static void PrintUsage() {
           " -s safely stub out non-validating instructions\n"
           " -Q disable platform qualification (dangerous!)\n"
 		      " -M <file> load settings from manifest\n"
+          " -Z use fixed feature x86 CPU mode\n"
+          " -D enable the UNSTABLE dfa validator\n"
           );  /* easier to add new flags/lines */
 }
 
@@ -128,7 +130,7 @@ int ParseCommandLine(int argc, char **argv, struct NaClApp *nap)
   nap->manifest = 0;
 
   /* note: in a future zerovm command line will be reduced */
-  while((opt = getopt(argc, argv, "+cFgh:i:Il:Qr:sSv:w:X:M:")) != -1)
+  while((opt = getopt(argc, argv, "+cFgh:i:Il:QDZr:sSv:w:X:M:")) != -1)
   {
     switch(opt)
     {
@@ -196,6 +198,13 @@ int ParseCommandLine(int argc, char **argv, struct NaClApp *nap)
         break;
       case 's':
         stub_out_mode = 1;
+        break;
+      case 'Z':
+        nap->fixed_feature_cpu_mode = 1;
+        break;
+      case 'D':
+        nap->enable_dfa_validator = 1;
+        fprintf(stderr, "DANGER! USING THE UNSTABLE DFA VALIDATOR!\n");
         break;
       default:
         fprintf(stderr, "ERROR: unknown option: [%c]\n\n", opt);
@@ -450,8 +459,9 @@ int main(int argc, char **argv)
     goto done;
   }
 
-  /* set user space to max_mem */
-//  PreallocateUserMemory(nap); // disabled until malloc moved to zrt
+  /* set user space to max_mem if specified in the manifest */
+  PreallocateUserMemory(nap);
+
   PERF_CNT("CreateMainThread");
 
   /* Make sure all the file buffers are flushed before entering the nexe */

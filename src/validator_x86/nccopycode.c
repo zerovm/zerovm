@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011 The Native Client Authors. All rights reserved.
+ * Copyright (c) 2012 The Native Client Authors. All rights reserved.
  * Use of this source code is governed by a BSD-style license that can be
  * found in the LICENSE file.
  */
@@ -30,18 +30,11 @@
 #include "src/validator/ncvalidate.h"
 
 #if NACL_ARCH(NACL_TARGET_ARCH) == NACL_x86
-# if NACL_TARGET_SUBARCH == 32
-#  include "src/validator/x86/ncval_seg_sfi/ncdecode.h"
-#  include "src/validator/x86/ncval_seg_sfi/ncvalidate.h"
-# elif NACL_TARGET_SUBARCH == 64
 #  include "src/validator/x86/decoder/nc_inst_iter.h"
 #  include "src/validator/x86/decoder/nc_inst_state_internal.h"
 #  include "src/validator/x86/nacl_cpuid.h"
 #  include "src/validator/x86/ncval_reg_sfi/ncval_decode_tables.h"
 #  include "src/validator/x86/nc_segment.h"
-# else
-#  error "Unknown Platform"
-# endif
 #else
 # error "Unknown Platform"
 #endif
@@ -261,7 +254,7 @@ static Bool CopyInstruction(NCDecoderStatePair* tthis,
 }
 
 int NCCopyCode(uint8_t *dst, uint8_t *src, NaClPcAddress vbase,
-               size_t sz, int bundle_size) {
+               size_t sz) {
   NCDecoderState dst_dstate;
   NCDecoderInst  dst_inst;
   NCDecoderState src_dstate;
@@ -284,26 +277,17 @@ int NCCopyCode(uint8_t *dst, uint8_t *src, NaClPcAddress vbase,
 NaClValidationStatus NACL_SUBARCH_NAME(ApplyValidatorCopy,
                                        NACL_TARGET_ARCH,
                                        NACL_TARGET_SUBARCH)
-    (enum NaClSBKind sb_kind,
-     uintptr_t guest_addr,
+    (uintptr_t guest_addr,
      uint8_t *data_old,
      uint8_t *data_new,
      size_t size,
-     int bundle_size) {
-  NaClValidationStatus status = NaClValidationFailedNotImplemented;
-  assert(NACL_SB_DEFAULT == sb_kind);
-  if (bundle_size == 16 || bundle_size == 32) {
-    NaClCPUData cpu_data;
-    NaClCPUDataGet(&cpu_data);
-    if (!NaClArchSupported(&cpu_data)) {
-      status = NaClValidationFailedCpuNotSupported;
-    } else {
-      status = ((0 == NCCopyCode(data_old, data_new, guest_addr,
-                                size, bundle_size))
-                ? NaClValidationFailed : NaClValidationSucceeded);
-    }
-  }
-  return status;
+     const NaClCPUFeaturesX86 *cpu_features) {
+  if (!NaClArchSupported(cpu_features))
+    return NaClValidationFailedCpuNotSupported;
+
+  return ((0 == NCCopyCode(data_old, data_new, guest_addr,
+                           size))
+            ? NaClValidationFailed : NaClValidationSucceeded);
 }
 
 #elif NACL_TARGET_SUBARCH == 64
@@ -344,7 +328,7 @@ int NaClCopyCodeIter(uint8_t *dst, uint8_t *src,
     istate_new = NaClInstIterGetState(iter_new);
     if (istate_old->bytes.length != istate_new->bytes.length ||
         iter_old->memory.read_length != iter_new->memory.read_length ||
-        istate_new->vpc != istate_old->vpc) {
+        istate_new->inst_addr != istate_old->inst_addr) {
       /* Sanity check: this should never happen based on checks in
        * NaClValidateInstReplacement.
        */
@@ -377,25 +361,16 @@ int NaClCopyCodeIter(uint8_t *dst, uint8_t *src,
 NaClValidationStatus NACL_SUBARCH_NAME(ApplyValidatorCopy,
                                        NACL_TARGET_ARCH,
                                        NACL_TARGET_SUBARCH)
-    (enum NaClSBKind sb_kind,
-     uintptr_t guest_addr,
+    (uintptr_t guest_addr,
      uint8_t *data_old,
      uint8_t *data_new,
      size_t size,
-     int bundle_size) {
-  NaClValidationStatus status = NaClValidationFailedNotImplemented;
-  assert(NACL_SB_DEFAULT == sb_kind);
-  if (bundle_size == 16 || bundle_size == 32) {
-    NaClCPUData cpu_data;
-    NaClCPUDataGet(&cpu_data);
-    if (!NaClArchSupported(&cpu_data)) {
-      status = NaClValidationFailedCpuNotSupported;
-    } else {
-      status = ((0 == NaClCopyCodeIter(data_old, data_new, guest_addr, size))
-                ? NaClValidationFailed : NaClValidationSucceeded);
-    }
-  }
-  return status;
+     const NaClCPUFeaturesX86 *cpu_features) {
+  if (!NaClArchSupported(cpu_features))
+    return NaClValidationFailedCpuNotSupported;
+
+  return (0 == NaClCopyCodeIter(data_old, data_new, guest_addr, size))
+      ? NaClValidationFailed : NaClValidationSucceeded;
 }
 
 #endif

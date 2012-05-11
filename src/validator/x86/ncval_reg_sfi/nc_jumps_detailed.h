@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011 The Native Client Authors. All rights reserved.
+ * Copyright (c) 2012 The Native Client Authors. All rights reserved.
  * Use of this source code is governed by a BSD-style license that can be
  * found in the LICENSE file.
  */
@@ -23,8 +23,6 @@ struct NaClJumpSets;
  * rules.
  * Note: Replaces the post validator NaClJumpValidatorSummarize in nc_jumps.h,
  */
-void NaClJumpValidatorSummarizeDetailed(struct NaClValidatorState* state,
-                                        struct NaClInstIter* iter,
-                                        struct NaClJumpSets* jump_sets);
+void NaClJumpValidatorSummarizeDetailed(struct NaClValidatorState* state);
 
 #endif  /* NATIVE_CLIENT_SRC_TRUSTED_VALIDATOR_X86_NCVAL_REG_SFI_NC_JUMPS_DETAILED_H__ */

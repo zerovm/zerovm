@@ -10,10 +10,10 @@ static const char* const g_NaClExpFlagName[NaClExpFlagEnumSize + 1] = {
   "ExprSet",
   "ExprUsed",
   "ExprAddress",
-  "ExprDest",
   "ExprSize8",
   "ExprSize16",
   "ExprSize32",
+  "ExprSize48",
   "ExprSize64",
   "ExprUnsignedHex",
   "ExprSignedHex",
@@ -21,8 +21,8 @@ static const char* const g_NaClExpFlagName[NaClExpFlagEnumSize + 1] = {
   "ExprSignedInt",
   "ExprImplicit",
   "ExprJumpTarget",
-  "ExprDSrDICase",
-  "ExprESrDICase",
+  "ExprDSrCase",
+  "ExprESrCase",
   "NaClExpFlagEnumSize"
 };
 

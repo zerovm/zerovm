@@ -15,10 +15,10 @@ typedef enum NaClExpFlag {
   ExprSet = 0,
   ExprUsed = 1,
   ExprAddress = 2,
-  ExprDest = 3,
-  ExprSize8 = 4,
-  ExprSize16 = 5,
-  ExprSize32 = 6,
+  ExprSize8 = 3,
+  ExprSize16 = 4,
+  ExprSize32 = 5,
+  ExprSize48 = 6,
   ExprSize64 = 7,
   ExprUnsignedHex = 8,
   ExprSignedHex = 9,
@@ -26,8 +26,8 @@ typedef enum NaClExpFlag {
   ExprSignedInt = 11,
   ExprImplicit = 12,
   ExprJumpTarget = 13,
-  ExprDSrDICase = 14,
-  ExprESrDICase = 15,
+  ExprDSrCase = 14,
+  ExprESrCase = 15,
   NaClExpFlagEnumSize = 16 /* special size marker */
 } NaClExpFlag;
 

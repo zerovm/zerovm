@@ -25,6 +25,10 @@
  * SystemList and Report structures removed. zvm onering wrappers updated.
  * SetupList structure updated with syscallback to support a new engine (see
  * "syscall overloading" in progress.txt
+ * 
+ * 2012-04-22
+ * user main() will be replaced with zrt main() to setup syscallback/manifest
+ * and other needful things
  *
  * 2011-11-20
  * d'b
@@ -142,7 +146,7 @@ struct SetupList
   uint32_t heap_ptr; /* pointer to the start of available for user ram */
 
   /* memory, cpu and other system resources limits */
-  int32_t max_mem; /* max memory space available for user program < 4gb */
+  uint32_t max_mem; /* max memory space available for user program < 4gb */
   int32_t max_cpu; /* max cpu time available for user program, 0 - no limit */
   int32_t max_syscalls; /* max allowed *real* system calls, 0 - no limit */
   int32_t max_setup_calls; /* allowed calls of _trap_setup */
@@ -206,6 +210,13 @@ int32_t zvm_exit(int32_t code);
  * store the whole message (part of the message will be stored anyway)
  */
 int log_msg(char *msg);
+
+/*
+ * temporary solution for zrt library. can be removed after
+ * "blob library" mechanism will be complete
+ */
+#define main slave_main
+
 #endif /* USER_SIDE */
 
 #endif /* API_ZVM_MANIFEST_H__ */

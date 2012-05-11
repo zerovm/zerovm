@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011 The Native Client Authors. All rights reserved.
+ * Copyright (c) 2012 The Native Client Authors. All rights reserved.
  * Use of this source code is governed by a BSD-style license that can be
  * found in the LICENSE file.
  */
@@ -35,14 +35,18 @@ struct NaClDecodeTables;
 
 /* Model data needed to decode an x86 instruction. */
 struct NaClInstState {
+  /* This pointer is used to access vbase, allowing instruction addresses to be
+   * printed in the address space that the code is being mapped to.
+   */
+  struct NaClInstIter* iter;
   /* The bytes used to parse the x86-32 instruction (may have added
    * zero filler if the instruction straddles the end of the memory segment).
    */
   NCInstBytes bytes;
-  /* Define the (virtual pc) address associated with the instruction being
-   * matched.
+  /* The address of the instruction, relative to the beginning of the code
+   * segment.
    */
-  NaClPcAddress vpc;
+  NaClPcAddress inst_addr;
   /* Define the upper limit on how many bytes can be in the instruction. */
   uint8_t length_limit;
   /* Define the number of prefix bytes processed. */
@@ -102,6 +106,11 @@ struct NaClInstState {
    * It defines the decoder tables to use to decode the instruction.
    */
   struct NaClDecodeTables* decoder_tables;
+  /* True if the instruction is unchanged while dynamically replacing code.
+   * False if the instruction has changed or if code replacement is not being
+   * performed (i.e. normal validation.)
+   */
+  Bool unchanged;
 };
 
 /* Model of an instruction iterator. */

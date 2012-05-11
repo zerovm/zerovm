@@ -1,11 +1,12 @@
 /*
- * Copyright (c) 2011 The Native Client Authors. All rights reserved.
+ * Copyright (c) 2012 The Native Client Authors. All rights reserved.
  * Use of this source code is governed by a BSD-style license that can be
  * found in the LICENSE file.
  */
 
 #include <stdio.h>
 
+#include "src/platform/nacl_check.h"
 #include "src/validator/x86/ncinstbuffer.h"
 
 /* To turn on debugging of instruction decoding, change value of
@@ -130,11 +131,53 @@ uint8_t NCInstBytesByte(const NCInstBytesPtr* ptr, int n) {
   return NCInstBytesByteInline(ptr, n);
 }
 
-int32_t NCInstBytesInt32(const NCInstBytesPtr* ptr) {
-  return (NCInstBytesByteInline(ptr, 0) +
-          (NCInstBytesByteInline(ptr, 1) << 8) +
-          (NCInstBytesByteInline(ptr, 2) << 16) +
-          (NCInstBytesByteInline(ptr, 3) << 24));
+int32_t NCInstBytesInt32(const NCInstBytesPtr* ptr, int num_bytes) {
+  switch (num_bytes) {
+    case 1:
+      return (int8_t) NCInstBytesByteInline(ptr, 0);
+    case 2:
+      return (int16_t) (NCInstBytesByteInline(ptr, 0) +
+                        (NCInstBytesByteInline(ptr, 1) << 8));
+    case 3:
+      /* Note: Handle special case of Iw, Ib in 32 bit validator. */
+      return (int32_t) (NCInstBytesByteInline(ptr, 0) +
+                        (NCInstBytesByteInline(ptr, 1) << 8) +
+                        (NCInstBytesByteInline(ptr, 2) << 16));
+    case 4:
+      return (int32_t) (NCInstBytesByteInline(ptr, 0) +
+                        (NCInstBytesByteInline(ptr, 1) << 8) +
+                        (NCInstBytesByteInline(ptr, 2) << 16) +
+                        (NCInstBytesByteInline(ptr, 3) << 24));
+    default:
+      CHECK(0); /* Fail -- should not happen. */
+      return -1;
+  }
+}
+
+int64_t NCInstBytesInt64(const NCInstBytesPtr* ptr, int num_bytes) {
+  switch (num_bytes) {
+    case 1:
+    case 2:
+    case 3: /* Handle special case of Iw, Ib in 32 bit validator. */
+    case 4:
+      return (int64_t) NCInstBytesInt32(ptr, num_bytes);
+    case 6: {
+      /* Handle special case of 48-bit pointers in 32 bit validator. */
+      NCInstBytesPtr ptr_plus_2;
+      NCInstBytesPtrInitInc(&ptr_plus_2, ptr, 2);
+      return ((int64_t) (NCInstBytesInt32(&ptr_plus_2, 2)) << 32) |
+          ((int64_t) (NCInstBytesInt32(ptr, 4)));
+    }
+    case 8: {
+      NCInstBytesPtr ptr_plus_4;
+      NCInstBytesPtrInitInc(&ptr_plus_4, ptr, 4);
+      return ((int64_t) (NCInstBytesInt32(&ptr_plus_4, 4)) << 32) |
+          ((int64_t) (NCInstBytesInt32(ptr, 4)));
+    }
+    default:
+      CHECK(0); /* Fail -- should not happen. */
+      return -1;
+  }
 }
 
 void NCInstBytesAdvance(NCInstBytesPtr* ptr, int n) {
