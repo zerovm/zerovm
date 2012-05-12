@@ -158,7 +158,7 @@ TEST(SetupUserPolicy_test, not_initialized_case)
   /* test setup limits */
   // nap->manifest->user_setup->self_size can be changed in a future. test disabled
   EXPECT_EQ(0, nap->manifest->user_setup->max_cpu);
-  EXPECT_EQ(0, nap->manifest->user_setup->max_mem);
+  EXPECT_EQ(0u, nap->manifest->user_setup->max_mem);
   EXPECT_EQ(0, nap->manifest->user_setup->max_setup_calls);
   EXPECT_EQ(0, nap->manifest->user_setup->max_syscalls);
 
