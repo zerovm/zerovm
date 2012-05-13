@@ -215,7 +215,9 @@ int log_msg(char *msg);
  * temporary solution for zrt library. can be removed after
  * "blob library" mechanism will be complete
  */
+#if ZRT_LIB
 #define main slave_main
+#endif
 
 #endif /* USER_SIDE */
 

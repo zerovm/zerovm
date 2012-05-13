@@ -306,7 +306,14 @@ int32_t zrt_read(uint32_t *args)
   SHOWID;
   int file = (int)args[0];
   void *buf = (void*)args[1];
-  size_t length = (size_t)args[2];
+  int64_t length = (int64_t)args[2];
+
+  //### debug. remove it
+  char str[256];
+  snprintf(str, 255, "read_args: arg[0] = %d, arg[1] = 0x%X, arg[2] = %d; curpos = %d\n",
+      args[0], args[1], args[2], pos_ptr[file]);
+  log_msg2(str);
+  //###end
 
   /* check given handle. check length */
   if(file < OutputChannel || file > LogChannel) return -EBADF;
@@ -316,24 +323,44 @@ int32_t zrt_read(uint32_t *args)
   switch(setup.channels[file].mounted)
   {
     case MAPPED:
-      /* check if lenght is not overrun available data */
+      /* check if length is not overrun available data */
       if(pos_ptr[file] + length > setup.channels[file].bsize)
         length = setup.channels[file].bsize - pos_ptr[file];
+
+      /* length must not be negative */
+      if(length < 0)
+      {
+        length = -EBADF;
+        break;
+      }
 
       memcpy(buf, (void*)setup.channels[file].buffer + pos_ptr[file], length);
       pos_ptr[file] += length;
       break;
+
     case LOADED:
       length = zvm_pread(file, buf, length, pos_ptr[file]);
       if(length > 0) pos_ptr[file] += length;
       break;
+
     default: /* the mounting method is not supported */
       length = -EBADF;
       break;
   }
 
-  return length;
+  //### debug. remove it
+  snprintf(str, 255, "read: curpos = %d, length[%d] = %lld, [%s]\n",
+      pos_ptr[file], file, length, (char*)buf);
+//  snprintf(str, 255, "position[0] = %d\n"
+//      "position[1] = %d\n"
+//      "position[2] = %d\n",
+//      pos_ptr[0],
+//      pos_ptr[1],
+//      pos_ptr[2]);
+  log_msg2(str);
+  //### end
 
+  return length;
 }
 
 /* example how to implement zrt syscall */
@@ -347,7 +374,14 @@ int32_t zrt_write(uint32_t *args)
   SHOWID;
   int file = (int)args[0];
   void *buf = (void*)args[1];
-  size_t length = (size_t)args[2];
+  int64_t length = (int64_t)args[2];
+
+  //### debug. remove it
+  char str[256];
+  snprintf(str, 255, "write_args: arg[0] = %d, arg[1] = 0x%X, arg[2] = %d\n",
+      args[0], args[1], args[2]);
+  log_msg2(str);
+  //###end
 
   /* check given handle. check length */
   if(file < OutputChannel || file > LogChannel) return -EBADF;
@@ -357,30 +391,40 @@ int32_t zrt_write(uint32_t *args)
   switch(setup.channels[file].mounted)
   {
     case MAPPED:
-      /* check if lenght is not overrun available data */
+      /* check if length is not overrun available data */
       if(pos_ptr[file] + length > setup.channels[file].bsize)
         length = setup.channels[file].bsize - pos_ptr[file];
+
+      /* length must not be negative */
+      if(length < 0)
+      {
+        length = -EBADF;
+        break;
+      }
 
       memcpy((void*)setup.channels[file].buffer + pos_ptr[file], buf, length);
       pos_ptr[file] += length;
       break;
+
     case LOADED:
       length = zvm_pwrite(file, buf, length, pos_ptr[file]);
       if(length > 0) pos_ptr[file] += length;
       break;
+
     default: /* the mounting method is not supported */
       length = -EBADF;
       break;
   }
 
   //### debug. remove it
-  char str[256];
-  snprintf(str, 255, "position[0] = %d\n"
-      "position[1] = %d\n"
-      "position[2] = %d\n",
-      pos_ptr[0],
-      pos_ptr[1],
-      pos_ptr[2]);
+  snprintf(str, 255, "write: curpos = %d, length[%d] = %lld, [%s]\n",
+      pos_ptr[file], file, length, (char*)buf);
+//  snprintf(str, 255, "position[0] = %d\n"
+//      "position[1] = %d\n"
+//      "position[2] = %d\n",
+//      pos_ptr[0],
+//      pos_ptr[1],
+//      pos_ptr[2]);
   log_msg2(str);
   //### end
 
@@ -833,7 +877,7 @@ int32_t zrt_thread_nice(uint32_t *args)
 int32_t zrt_tls_get(uint32_t *args)
 {
   int32_t retcode = 0;
-  SHOWID;
+//  SHOWID; //### temporary disabled to clear up log
 
 //  /* uninstall syscallback */
 //  setup.syscallback = 0;
