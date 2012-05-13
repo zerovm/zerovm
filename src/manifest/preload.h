@@ -21,7 +21,7 @@
 #include <src/manifest/manifest_setup.h>
 /**/
 
-#define CHANNEL_OPEN_FLAGS {O_RDONLY, O_WRONLY | O_CREAT, O_WRONLY | O_CREAT, -1, -1}
+#define CHANNEL_OPEN_FLAGS {O_RDONLY, O_RDWR | O_CREAT, O_RDWR | O_CREAT, -1, -1}
 /*
  * preload given file (channel). return 0 if success, otherwise negative errcode
  */
