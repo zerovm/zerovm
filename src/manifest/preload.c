@@ -47,7 +47,7 @@ static void PreallocateChannel(struct PreOpenedFileDesc* channel)
   if(channel->fsize < 1 &&
       (channel->type == OutputChannel || channel->type == LogChannel))
   {
-    int ret_code = ftruncate(channel->handle, 1);
+    int ret_code = ftruncate(channel->handle, 0);
     COND_ABORT(ret_code < 0, "cannot extend the channel\n");
     channel->fsize = channel->max_size;
   }

@@ -1,3 +1,6 @@
+/*
+ * demonstration of zrt_gettimeofday()
+ */
 #include <stdio.h>
 #include <time.h>
 #include "api/zvm.h"

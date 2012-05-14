@@ -1,6 +1,6 @@
-NAME=hello
+NAME=file_stat
 INCLUDE_FLAGS=-I ~/git/zerovm
-MACROS_FLAGS=-DUSER_SIDE -DZRT_LIB
+MACROS_FLAGS=-D USER_SIDE -DZRT_LIB
 NACL_TOOLCHAIN_PATH=~/nacl_sdk/pepper_16/toolchain/linux_x86
 
 
@@ -15,3 +15,4 @@ $(NAME).o:
 
 clean:
 	rm -f $(NAME).nexe $(NAME).o *.log *.data
+

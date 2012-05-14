@@ -611,6 +611,10 @@ int32_t zrt_sysbrk(uint32_t *args)
   SHOWID;
   void *new_break = (void *)args[0];
 
+  //### debug
+  fprintf(stderr, "cur_break = 0x%X, args[0] = 0x%X\n", (uint32_t)cur_break, args[0]);
+  fprintf(stderr, "heap_ptr = 0x%X\n", setup.heap_ptr);
+
   /*
    * in case zerovm didn't allocate whole chunk of memory
    * zrt memory manager should not be used and call must be
@@ -631,11 +635,9 @@ int32_t zrt_sysbrk(uint32_t *args)
     setup.syscallback = (int32_t) syscall_director;
     zvm_setup(&setup);
 
+    fprintf(stderr, "zerovm sysbrk() return code = 0x%X\n", retcode);
     return retcode;
   }
-
-  //### debug
-  fprintf(stderr, "cur_break = 0x%X, args[0] = 0x%X\n", (uint32_t)cur_break, args[0]);
 
   /* check if the new break is too low and underrun user memory start */
   if((uint32_t)new_break < setup.heap_ptr) return (int32_t)cur_break;
@@ -817,10 +819,12 @@ int32_t zrt_gettimeofday(uint32_t *args)
 /*
  * should never be implemented if we want deterministic behaviour
  * note: but we can allow to return each time synthetic value
+ * warning! after checking i found that nacl is not using it, so this
+ *          function is useless for current nacl sdk version.
  */
 int32_t zrt_clock(uint32_t *args)
 {
-  SHOWID; return 0;
+  SHOWID; return -EPERM;
 }
 
 /* mock. should be implemented */
