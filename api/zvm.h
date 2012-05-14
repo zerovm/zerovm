@@ -217,6 +217,7 @@ int log_msg(char *msg);
  */
 #if ZRT_LIB
 #define main slave_main
+extern struct SetupList setup;
 #endif
 
 #endif /* USER_SIDE */

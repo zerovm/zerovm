@@ -27,6 +27,11 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include <errno.h>
+#include "api/zvm.h"
+#undef main /* prevent misuse macro */
+
+#include <unistd.h> /* only for tests */
 
 //### temporary fix. stat != nacl_abi_stat
 //also i had weird error when tried to use "service_runtime/include/sys/stat.h"
@@ -100,14 +105,6 @@ static int atoi2(const char *s)
   return neg ? -val : val;
 }
 
-#include <errno.h>
-
-#include "api/zvm.h"
-//#include "zvm.h" // ### should be replaced by upper line after i complete whole thing
-#undef main /* prevent misuse macro */
-
-#include <unistd.h> /* only for tests */
-
 /* entry point for zrt library sample (see "syscall_manager.S" file) */
 void syscall_director(void);
 
@@ -120,10 +117,10 @@ static size_t pos_ptr[3] = {0};
 /* current end of memory (sysbreak). must be initialized from zrt_main() */
 static void *cur_break = NULL;
 
-/* debug purposes only */
-
-/* log message. needs valid initialized setup */
-/* replaces obsolete function from "zvm.c" */
+/* NOTE: debug purposes only!
+ * log message. needs valid initialized setup
+ * replaces obsolete function from "zvm.c"
+ */
 int log_msg2(char *msg)
 {
   int32_t length = msg == NULL ? 0 : strlen(msg);
@@ -219,6 +216,14 @@ int log_msg2(char *msg)
 /* mmap() -- nacl syscall via trampoline */
 #define NaCl_mmap(start, length, prot, flags, d, offp) ((int32_t (*)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t)) \
     (NACL_sys_mmap * 0x20 + 0x10000))(start, length, prot, flags, d, offp)
+
+/* munmap() -- nacl syscall via trampoline */
+#define NaCl_munmap(start, length) ((int32_t (*)(uint32_t, uint32_t)) \
+    (NACL_sys_munmap * 0x20 + 0x10000))(start, length)
+
+/* sysbrk() -- nacl syscall via trampoline */
+#define NaCl_sysbrk(new_break) ((int32_t (*)(uint32_t)) \
+    (NACL_sys_sysbrk * 0x20 + 0x10000))(new_break)
 
 /* tls_get() -- nacl syscall via trampoline */
 #define NaCl_tls_get() ((int32_t (*)()) \
@@ -606,6 +611,29 @@ int32_t zrt_sysbrk(uint32_t *args)
   SHOWID;
   void *new_break = (void *)args[0];
 
+  /*
+   * in case zerovm didn't allocate whole chunk of memory
+   * zrt memory manager should not be used and call must be
+   * translated to zerovm instead
+   */
+  if(!setup.heap_ptr)
+  {
+    int32_t retcode;
+
+    /* uninstall syscallback */
+    setup.syscallback = 0;
+    zvm_setup(&setup);
+
+    /* invoke syscall directly */
+    retcode = NaCl_sysbrk(args[0]);
+
+    /* reinstall syscallback */
+    setup.syscallback = (int32_t) syscall_director;
+    zvm_setup(&setup);
+
+    return retcode;
+  }
+
   //### debug
   fprintf(stderr, "cur_break = 0x%X, args[0] = 0x%X\n", (uint32_t)cur_break, args[0]);
 
@@ -631,6 +659,29 @@ int32_t zrt_mmap(uint32_t *args)
   size_t length = (size_t)args[1];
   uint32_t brk_args[1];
   SHOWID;
+
+  /*
+   * in case zerovm didn't allocate whole chunk of memory
+   * zrt memory manager should not be used and call must be
+   * translated to zerovm instead
+   */
+  if(!setup.heap_ptr)
+  {
+    int32_t retcode;
+
+    /* uninstall syscallback */
+    setup.syscallback = 0;
+    zvm_setup(&setup);
+
+    /* invoke syscall directly */
+    retcode = NaCl_mmap(args[0], args[1], args[2], args[3], args[4], args[5]);
+
+    /* reinstall syscallback */
+    setup.syscallback = (int32_t) syscall_director;
+    zvm_setup(&setup);
+
+    return retcode;
+  }
 
   //### debug
   fprintf(stderr, "cur_break = 0x%X, args[0] = %d, args[1] = %d\n",
@@ -671,7 +722,32 @@ int32_t zrt_mmap(uint32_t *args)
 /* mock. should be implemented */
 int32_t zrt_munmap(uint32_t *args)
 {
-  SHOWID; return 0;
+  SHOWID;
+
+  /*
+   * in case zerovm didn't allocate whole chunk of memory
+   * zrt memory manager should not be used and call must be
+   * translated to zerovm instead
+   */
+  if(!setup.heap_ptr)
+  {
+    int32_t retcode;
+
+    /* uninstall syscallback */
+    setup.syscallback = 0;
+    zvm_setup(&setup);
+
+    /* invoke syscall directly */
+    retcode = NaCl_munmap(args[0], args[1]);
+
+    /* reinstall syscallback */
+    setup.syscallback = (int32_t) syscall_director;
+    zvm_setup(&setup);
+
+    return retcode;
+  }
+
+  return 0;
 }
 
 /* mock. should be implemented */
