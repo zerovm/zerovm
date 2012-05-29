@@ -279,6 +279,7 @@ int32_t zrt_dup2(uint32_t *args)
 /* open the file with the given handle number */
 int32_t zrt_open(uint32_t *args)
 {
+  SHOWID;
   //###
   fprintf(stderr, "name = %s, flags = 0x%X\n", (char*)args[0], args[1]);
 
@@ -287,7 +288,7 @@ int32_t zrt_open(uint32_t *args)
    * (input, output, user_log) which are already opened or not available. so we
    * can just fail on this function
    */
-  SHOWID; return -ENOENT; /* No such file or directory */
+  return -ENOENT; /* No such file or directory */
 }
 
 /* close the file with the given handle number */
@@ -605,151 +606,69 @@ int32_t zrt_chmod(uint32_t *args)
  *
  * most important function here is sysbrk, both m(un)map use sysbrk.
  */
+
 /* change space allocation */
 int32_t zrt_sysbrk(uint32_t *args)
 {
   SHOWID;
-  void *new_break = (void *)args[0];
+  int32_t retcode;
 
-  //### debug
-  fprintf(stderr, "cur_break = 0x%X, args[0] = 0x%X\n", (uint32_t)cur_break, args[0]);
-  fprintf(stderr, "heap_ptr = 0x%X\n", setup.heap_ptr);
+  /* uninstall syscallback */
+  setup.syscallback = 0;
+  zvm_setup(&setup);
 
-  /*
-   * in case zerovm didn't allocate whole chunk of memory
-   * zrt memory manager should not be used and call must be
-   * translated to zerovm instead
-   */
-  if(!setup.heap_ptr)
-  {
-    int32_t retcode;
+  /* invoke syscall directly */
+  retcode = NaCl_sysbrk(args[0]);
 
-    /* uninstall syscallback */
-    setup.syscallback = 0;
-    zvm_setup(&setup);
-
-    /* invoke syscall directly */
-    retcode = NaCl_sysbrk(args[0]);
-
-    /* reinstall syscallback */
-    setup.syscallback = (int32_t) syscall_director;
-    zvm_setup(&setup);
-
-    fprintf(stderr, "zerovm sysbrk() return code = 0x%X\n", retcode);
-    return retcode;
-  }
-
-  /* check if the new break is too low and underrun user memory start */
-  if((uint32_t)new_break < setup.heap_ptr) return (int32_t)cur_break;
-
-  /* check if the new break is too high and overrun available user memory */
-  if((uint32_t)new_break > setup.heap_ptr + setup.max_mem) return (int32_t)cur_break;
-
-  cur_break = new_break;
-
-  //### debug
-  fprintf(stderr, "exiting sysbrk() with code = 0x%X\n", (int32_t)cur_break);
-
-  return (int32_t)cur_break;
-}
-
-/* example of "selective syscallback". this syscall handed back to zerovm */
-int32_t zrt_mmap(uint32_t *args)
-{
-  int32_t retcode = (int32_t)cur_break;
-  void *addr = (void*)args[0];
-  size_t length = (size_t)args[1];
-  uint32_t brk_args[1];
-  SHOWID;
-
-  /*
-   * in case zerovm didn't allocate whole chunk of memory
-   * zrt memory manager should not be used and call must be
-   * translated to zerovm instead
-   */
-  if(!setup.heap_ptr)
-  {
-    int32_t retcode;
-
-    /* uninstall syscallback */
-    setup.syscallback = 0;
-    zvm_setup(&setup);
-
-    /* invoke syscall directly */
-    retcode = NaCl_mmap(args[0], args[1], args[2], args[3], args[4], args[5]);
-
-    /* reinstall syscallback */
-    setup.syscallback = (int32_t) syscall_director;
-    zvm_setup(&setup);
-
-    return retcode;
-  }
-
-  //### debug
-  fprintf(stderr, "cur_break = 0x%X, args[0] = %d, args[1] = %d\n",
-      (uint32_t)cur_break, args[0], args[1]);
-
-  /*
-   * this is a simple version. moreover zrt does not allow file access,
-   * some memory flags and modes. therefore we ignore everything but given length
-   * another thing to mention: any non-zero value for addr means failure
-   * we don't want holes in memory and we want to keep it simple (no complex
-   * memory management in a simple zrt lib version)
-   */
-  if(addr) return -EPERM;
-
-  /* calculate and set a new break*/
-  if((uint32_t)cur_break + length > setup.heap_ptr + setup.max_mem) return -EPERM;
-  brk_args[0] = (uint32_t)(cur_break + length);
-  //### debug
-  fprintf(stderr, "brk_args[0] = 0x%X\n", brk_args[0]);
-
-  retcode = zrt_sysbrk(brk_args);
-
-  /* convert sysbrk retcode */
-  /*
-   * retcodes can be:
-   * positive value = we got memory
-   * negative value = we got error
-   * 0 = another error (we can't find available big enough memory)
-   */
-
-  //### debug
-  fprintf(stderr, "%s mmap() with code = 0x%X\n",
-      retcode == -EPERM ? "failing" : "exiting", retcode);
+  /* reinstall syscallback */
+  setup.syscallback = (int32_t) syscall_director;
+  zvm_setup(&setup);
 
   return retcode;
 }
 
-/* mock. should be implemented */
+/* map region of memory */
+int32_t zrt_mmap(uint32_t *args)
+{
+  SHOWID;
+  int32_t retcode;
+
+  /* uninstall syscallback */
+  setup.syscallback = 0;
+  zvm_setup(&setup);
+
+  /* invoke syscall directly */
+  retcode = NaCl_mmap(args[0], args[1], args[2], args[3], args[4], args[5]);
+
+  /* reinstall syscallback */
+  setup.syscallback = (int32_t) syscall_director;
+  zvm_setup(&setup);
+
+  return retcode;
+}
+
+/*
+ * unmap region of memory
+ * note: zerovm doesn't use it in memory management.
+ * instead of munmap it use mmap with protection 0
+ */
 int32_t zrt_munmap(uint32_t *args)
 {
   SHOWID;
+  int32_t retcode;
 
-  /*
-   * in case zerovm didn't allocate whole chunk of memory
-   * zrt memory manager should not be used and call must be
-   * translated to zerovm instead
-   */
-  if(!setup.heap_ptr)
-  {
-    int32_t retcode;
+  /* uninstall syscallback */
+  setup.syscallback = 0;
+  zvm_setup(&setup);
 
-    /* uninstall syscallback */
-    setup.syscallback = 0;
-    zvm_setup(&setup);
+  /* invoke syscall directly */
+  retcode = NaCl_munmap(args[0], args[1]);
 
-    /* invoke syscall directly */
-    retcode = NaCl_munmap(args[0], args[1]);
+  /* reinstall syscallback */
+  setup.syscallback = (int32_t) syscall_director;
+  zvm_setup(&setup);
 
-    /* reinstall syscallback */
-    setup.syscallback = (int32_t) syscall_director;
-    zvm_setup(&setup);
-
-    return retcode;
-  }
-
-  return 0;
+  return retcode;
 }
 
 /* mock. should be implemented */

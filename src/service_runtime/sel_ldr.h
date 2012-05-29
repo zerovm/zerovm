@@ -270,6 +270,9 @@ struct NaClApp {
   int                       verbosity; /* startup time variable */
   int                       handle_signals; /* startup time variable */
 
+  /* d'b: fields required by "whole chunk" user memory management */
+  int                       user_side_flag; /* 0 - trusted syscall, 1 - called from user side */
+
   /* added for a new validator */
   int                       enable_dfa_validator;
   int                       fixed_feature_cpu_mode;
@@ -280,7 +283,6 @@ struct NaClApp {
   uintptr_t                 *syscall_args;
   uint32_t                  sysret; /* syscall return code */
   uintptr_t                 sys_tls;  /* only need for nexe prolog */
-//  uint32_t                  tls_idx; /* only need for nexe prolog */
   /* d'b end */
 };
 

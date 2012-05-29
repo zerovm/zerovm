@@ -297,7 +297,7 @@ int32_t TrapHandler(struct NaClApp *nap, uint32_t args)
   /* translate address from user space to system. note: cannot set "trap error" */
   if(!nap->manifest) return -1; /* return error if not manifest found */
   sys_args = (uint64_t*)NaClUserToSys(nap, (uintptr_t) args);
-  NaClLog(4, "NaClSysNanosleep received in = 0x%lx\n", (intptr_t)sys_args);
+  NaClLog(4, "Trap arguments address = 0x%lx\n", (intptr_t)sys_args);
 
   switch(*sys_args)
   {
@@ -321,6 +321,7 @@ int32_t TrapHandler(struct NaClApp *nap, uint32_t args)
       break;
   }
 
+  NaClLog(4, "leaving Trap with code = 0x%x\n", retcode);
   return retcode;
 }
 

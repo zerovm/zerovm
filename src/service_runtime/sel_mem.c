@@ -477,6 +477,31 @@ uintptr_t NaClVmmapFindSpace(struct NaClVmmap *self,
 }
 
 /*
+ * return max available space bigger then "num_pages"
+ * note: will not work if memory map is sparsed
+ */
+uintptr_t NaClVmmapFindMaxFreeSpace(struct NaClVmmap *self,
+                             size_t           num_pages) {
+  size_t                i;
+  struct NaClVmmapEntry *vmep;
+  uintptr_t             end_page;
+  uintptr_t             start_page;
+
+  if (0 == self->nvalid)
+    return 0;
+  NaClVmmapMakeSorted(self);
+  for (i = self->nvalid; --i > 0; ) {
+    vmep = self->vmentry[i-1];
+    end_page = vmep->page_num + vmep->npages;  /* end page from previous */
+    start_page = self->vmentry[i]->page_num;  /* start page from current */
+    if (start_page - end_page >= num_pages) {
+      return start_page - end_page;
+    }
+  }
+  return 0; /* no space has been found */
+}
+
+/*
  * Linear search, from high addresses down.  For mmap, so the starting
  * address of the region found must be NACL_MAP_PAGESIZE aligned.
  *

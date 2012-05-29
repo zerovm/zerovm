@@ -317,6 +317,9 @@ int main(int argc, char **argv)
    *   http://code.google.com/p/nativeclient/issues/detail?id=232
    */
 
+  /* whole chunk" user memory management initialization */
+  nap->user_side_flag = 0; /* we are in the trusted code */
+
   NaClAllModulesInit();
   NaClPerfCounterCtor(&time_all_main, "SelMain");
   fflush((FILE *) NULL);

@@ -18,6 +18,8 @@
 #include "src/manifest/trap.h"
 #include "include/nacl_assert.h"
 
+#include "src/manifest/manifest_setup.h" //### to make manifest work
+
 struct NaClSyscallTableEntry nacl_syscall[NACL_MAX_SYSCALLS] = {{0}};
 static const size_t kMaxUsableFileSize = (SIZE_T_MAX >> 1);
 static INLINE size_t  size_min(size_t a, size_t b) {
@@ -82,7 +84,6 @@ static void NaClAddSyscall(int num, int32_t(*fn)(struct NaClApp *))
   }
   nacl_syscall[num].handler = fn;
 }
-
 
 /*
  * syscalls main routines.
@@ -199,16 +200,30 @@ int32_t NaClSysSysbrk(struct NaClApp *nap, uintptr_t new_break)
       ent->npages = (last_internal_page - ent->page_num + 1);
       region_size = (((last_internal_page + 1) << NACL_PAGESHIFT)
                      - start_new_region);
-      if (0 != NaCl_mprotect((void *) NaClUserToSys(nap, start_new_region),
-                             region_size,
-                             PROT_READ | PROT_WRITE)) {
-        NaClLog(LOG_FATAL,
-                ("Could not mprotect(0x%08"NACL_PRIxPTR", "
-                 "0x%08"NACL_PRIxPTR", "
-                 "PROT_READ|PROT_WRITE)\n"),
-                start_new_region,
-                region_size);
+
+      /*
+       * use "whole chunk" memory manager if set in manifest
+       * and this is "user side call"
+       */
+      if(nap->user_side_flag && nap->manifest != NULL &&
+          nap->manifest->user_setup->max_mem)
+      {
+        /* ### skip real mprotect() syscall. or shell we? */
       }
+      else /* proceed real syscall */
+      {
+        if (0 != NaCl_mprotect((void *) NaClUserToSys(nap, start_new_region),
+                               region_size,
+                               PROT_READ | PROT_WRITE)) {
+          NaClLog(LOG_FATAL,
+                  ("Could not mprotect(0x%08"NACL_PRIxPTR", "
+                   "0x%08"NACL_PRIxPTR", "
+                   "PROT_READ|PROT_WRITE)\n"),
+                  start_new_region,
+                  region_size);
+        }
+      }
+
       NaClLog(4, "segment now: page_num 0x%08"NACL_PRIxPTR", "
               "npages 0x%"NACL_PRIxS"\n",
               ent->page_num, ent->npages);
@@ -799,16 +814,30 @@ int32_t NaClSysMunmap(struct NaClApp *nap, void *start, size_t length) {
   NaClLog(4, ("NaClSysMunmap: mmap(0x%08"NACL_PRIxPTR", 0x%"NACL_PRIxS","
            " 0x%x, 0x%x, -1, 0)\n"), sysaddr, length, PROT_NONE,
           MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED);
-  if (MAP_FAILED == mmap((void *) sysaddr,
-                         length,
-                         PROT_NONE,
-                         MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED,
-                         -1,
-                         (off_t) 0)) {
-    NaClLog(4, "mmap to put in anonymous memory failed, errno = %d\n", errno);
-    retval = -NaClXlateErrno(errno);
-    goto cleanup;
+
+  /*
+   * use "whole chunk" memory manager if set in manifest
+   * and this is "user side call"
+   */
+  if(nap->user_side_flag && nap->manifest != NULL &&
+      nap->manifest->user_setup->max_mem)
+  {
+    /* ### skip real syscall. all allowed memory already allocated */
   }
+  else
+  {
+    if (MAP_FAILED == mmap((void *) sysaddr,
+                             length,
+                             PROT_NONE,
+                             MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED,
+                             -1,
+                             (off_t) 0)) {
+        NaClLog(4, "mmap to put in anonymous memory failed, errno = %d\n", errno);
+        retval = -NaClXlateErrno(errno);
+        goto cleanup;
+      }
+  }
+
   NaClVmmapUpdate(&nap->mem_map,
                   (NaClSysToUser(nap, (uintptr_t) sysaddr)
                    >> NACL_PAGESHIFT),
@@ -923,13 +952,11 @@ static int32_t NaClSysMmapDecoder(struct NaClApp *nap) {
     uint32_t offp;
   } p = *(struct NaClSysMmapArgs *) nap->syscall_args;
 
-  // ### temporary disabled
-  /* d'b: disable user malloc() */
-////  return NACL_ABI_ENOMEM;
-//  return natp->nap->manifest->user_setup->heap_ptr;
-  /* d'b end */
-
-  return NaClSysMmap(nap, (void *) (uintptr_t) p.start, (size_t)  p.length, (int)  p.prot, (int)  p.flags, (int)  p.d, (nacl_abi_off_t *) (uintptr_t) p.offp);
+  /*
+   * d'b: fixed bug when user can violate limits using opened file descriptor
+   * from the manifest. here we override descriptor with -1 to prevent it.
+   */
+  return NaClSysMmap(nap, (void *) (uintptr_t) p.start, (size_t)  p.length, (int)  p.prot, (int)  p.flags, -1, (nacl_abi_off_t *) (uintptr_t) p.offp);
 }
 
 /* this function was automagically generated */
@@ -938,11 +965,6 @@ static int32_t NaClSysMunmapDecoder(struct NaClApp *nap) {
     uint32_t start;
     uint32_t length;
   } p = *(struct NaClSysMunmapArgs *) nap->syscall_args;
-
-  // ### temporary disabled
-  /* d'b: disable user free() */
-//  return NACL_ABI_EFAULT;
-  /* d'b end */
 
   return NaClSysMunmap(nap, (void *) (uintptr_t) p.start, (size_t)  p.length);
 }

@@ -105,6 +105,13 @@ uintptr_t NaClVmmapFindSpace(struct NaClVmmap *self,
                              size_t           num_pages);
 
 /*
+ * return max available space bigger then "num_pages"
+ * note: will not work if memory map is sparsed
+ */
+uintptr_t NaClVmmapFindMaxFreeSpace(struct NaClVmmap *self,
+                             size_t           num_pages);
+
+/*
  * Just lke NaClVmmapFindSpace, except usage is intended for
  * NaClHostDescMap, so the starting address of the region found must
  * be NACL_MAP_PAGESIZE aligned.

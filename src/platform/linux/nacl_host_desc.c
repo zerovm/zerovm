@@ -27,6 +27,10 @@
 //YaroslavLitvinov fixed error: undefined reference to S_ISREG,S_ISDIR
 #include <sys/stat.h>
 
+#include "src/service_runtime/sel_ldr.h" // ### to make gnap work
+#include "src/service_runtime/nacl_globals.h" // ### to make gnap work
+#include "src/manifest/manifest_setup.h" //### to make manifest work
+
 /*
  * Map our ABI to the host OS's ABI.  On linux, this should be a big no-op.
  */
@@ -131,7 +135,20 @@ uintptr_t NaClHostDescMap(struct NaClHostDesc *d,
   NaClLog(4, "NaClHostDescMap: host_flags 0x%x, host_prot 0x%x\n",
           host_flags, host_prot);
 
-  map_addr = mmap(start_addr, len, host_prot, host_flags, desc, offset);
+  /*
+   * use "whole chunk" memory manager if set in manifest
+   * and this is "user side call"
+   * note: for safety we check (global) nap before use it
+   */
+  if(gnap != NULL && gnap->user_side_flag && gnap->manifest != NULL &&
+      gnap->manifest->user_setup->max_mem)
+  {
+    map_addr = start_addr;
+  }
+  else
+  {
+    map_addr = mmap(start_addr, len, host_prot, host_flags, desc, offset);
+  }
 
   if (MAP_FAILED == map_addr) {
     NaClLog(LOG_INFO,
