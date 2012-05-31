@@ -745,7 +745,6 @@ cleanup:
 int32_t NaClSysMunmap(struct NaClApp *nap, void *start, size_t length) {
   int32_t   retval = -NACL_ABI_EINVAL;
   uintptr_t sysaddr;
-  int       holding_app_lock = 0;
   size_t    alloc_rounded_length;
 
   NaClLog(3, "Entered NaClSysMunmap(0x%08"NACL_PRIxPTR", "
@@ -778,25 +777,6 @@ int32_t NaClSysMunmap(struct NaClApp *nap, void *start, size_t length) {
     goto cleanup;
   }
 
-  NaClXMutexLock(&nap->mu);
-
-  while (0 != nap->threads_launching) {
-    NaClXCondVarWait(&nap->cv, &nap->mu);
-  }
-  nap->vm_hole_may_exist = 1;
-
-  holding_app_lock = 1;
-  /*
-   * NB: windows (or generic) version would use Munmap virtual
-   * function from the backing NaClDesc object obtained by iterating
-   * through the address map for the region, and those Munmap virtual
-   * functions may return -NACL_ABI_E_MOVE_ADDRESS_SPACE.
-   *
-   * We should hold the application lock while doing this iteration
-   * and unmapping, so that the address space is consistent for other
-   * threads.
-   */
-
   /*
    * User should be unable to unmap any executable pages.  We check here.
    */
@@ -822,7 +802,7 @@ int32_t NaClSysMunmap(struct NaClApp *nap, void *start, size_t length) {
   if(nap->user_side_flag && nap->manifest != NULL &&
       nap->manifest->user_setup->max_mem)
   {
-    /* ### skip real syscall. all allowed memory already allocated */
+    /* skip real syscall. all allowed memory already allocated */
   }
   else
   {
@@ -847,11 +827,6 @@ int32_t NaClSysMunmap(struct NaClApp *nap, void *start, size_t length) {
                   1);  /* Delete mapping */
   retval = 0;
 cleanup:
-  if (holding_app_lock) {
-    nap->vm_hole_may_exist = 0;
-    NaClXCondVarBroadcast(&nap->cv);
-    NaClXMutexUnlock(&nap->mu);
-  }
   return retval;
 }
 
@@ -860,7 +835,6 @@ int32_t NaClSysExit(struct NaClApp *nap, int status)
 {
   NaClLog(1, "Exit syscall handler: %d\n", status);
   nap->exit_status = status;
-  nap->running = 0;
   longjmp(user_exit, status);
 
   /* NOTREACHED */

@@ -103,9 +103,6 @@ int NaClAppWithSyscallTableCtor(struct NaClApp               *nap,
     goto cleanup_mu;
   }
 
-  nap->vm_hole_may_exist = 0;
-  nap->threads_launching = 0;
-
   nap->syscall_table = table;
 
   nap->module_load_status = LOAD_STATUS_UNKNOWN;
@@ -121,12 +118,10 @@ int NaClAppWithSyscallTableCtor(struct NaClApp               *nap,
   if (!NaClCondVarCtor(&nap->threads_cv)) {
     goto cleanup_threads_mu;
   }
-  nap->num_threads = 0;
   if (!NaClMutexCtor(&nap->desc_mu)) {
     goto cleanup_threads_cv;
   }
 
-  nap->running = 0;
   nap->exit_status = -1;
 
   nap->enable_debug_stub = 0;

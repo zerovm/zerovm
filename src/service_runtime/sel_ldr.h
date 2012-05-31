@@ -140,29 +140,8 @@ struct NaClApp {
 
   /* common to both ELF executables and relocatable load images */
 
-  uintptr_t                 springboard_addr;  /* relative to mem_start */ // #1 to remove
-  /*
-   * springboard code addr for context switching into app sandbox, relative
-   * to code sandbox CS
-   */
-
   struct NaClMutex          mu; // #2 to remove
   struct NaClCondVar        cv; // #3 to remove
-
-  /*
-   * invariant: !(vm_hole_may_exist && threads_launching != 0).
-   * vm_hole_may_exist is set while mmap/munmap manipulates the memory
-   * map, and threads_launching is set while a thread is launching
-   * (and a trusted thread stack is being allocated).
-   *
-   * strictly speaking, vm_hole_may_exist need not be present, since
-   * the vm code ensures that 0 == threads_launching and then holds
-   * the lock for the duration of the VM operation.  it is safer this
-   * way, in case we later introduce code that might want to
-   * temporarily drop the process lock.
-   */
-  int                       vm_hole_may_exist; // #4 to remove
-  int                       threads_launching; // #5 to remove
 
   /*
    * An array of NaCl syscall handlers. The length of the array must be
@@ -232,12 +211,11 @@ struct NaClApp {
    */
   int                       dynamic_delete_generation;
 
-  int                       running; // #00 also can be removed. can't see how it may be useful
   int                       exit_status; // has duplicate: exit also return code with longjump()
 
-  int                       ignore_validator_result; // #8 to remove
+  int                       ignore_validator_result;
   int                       skip_validator;
-  int                       validator_stub_out_mode; // #9 to remove
+  int                       validator_stub_out_mode;
 
 #if NACL_ARCH(NACL_BUILD_ARCH) == NACL_x86 && NACL_BUILD_SUBARCH == 32
   uint16_t                  code_seg_sel;
@@ -255,7 +233,6 @@ struct NaClApp {
   struct NaClMutex          threads_mu; // #10 to remove
   struct NaClCondVar        threads_cv; // #11 to remove
   struct DynArray           threads;   /* NaClAppThread pointers */ // #12 to remove
-  int                       num_threads;  /* number actually running */ // #13 to remove
 
   struct NaClMutex          desc_mu; // #14 to remove
   struct DynArray           desc_tbl;  /* NaClDesc pointers */ // #15 to remove
