@@ -320,6 +320,12 @@ int32_t zrt_read(uint32_t *args)
   log_msg2(str);
   //###end
 
+  /* Support for MSQ files: zvm_pread, zvm_pwrite used for networking communication*/
+  if ( file > 2 ){
+	  /*MSQ files using streaming IO, and don't using offset, set offset as 0*/
+      return zvm_pread(file, buf, length, 0);
+  }
+
   /* check given handle. check length */
   if(file < OutputChannel || file > LogChannel) return -EBADF;
   if(length < 0 || length > 0x7fffffff) return -EPERM;
@@ -387,6 +393,12 @@ int32_t zrt_write(uint32_t *args)
       args[0], args[1], args[2]);
   log_msg2(str);
   //###end
+
+  /* Support for MSQ files: zvm_pread, zvm_pwrite used for networking communication*/
+  if ( file > 2 ){
+	  /*MSQ files using streaming IO, and don't using offset, set offset as 0*/
+      return zvm_pwrite(file, buf, length, 0);
+  }
 
   /* check given handle. check length */
   if(file < OutputChannel || file > LogChannel) return -EBADF;

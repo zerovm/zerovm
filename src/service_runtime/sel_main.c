@@ -26,6 +26,16 @@
 #include "src/manifest/trap.h" /* d'b */
 #include "src/manifest/mount_channel.h" /* d'b */
 #include "src/service_runtime/sel_qualify.h"
+#include "zmq.h"
+
+/*YaroslavLitvinov*/
+#ifdef NETWORKING
+//extern "C"{
+	#include "src/networking/sqluse_srv.h"
+	#include "src/networking/zmq_netw.h"
+//}
+	#define ZVM_DB_NAME "zvm_netw.db"
+#endif
 
 struct redir {
   struct redir  *next;
@@ -296,6 +306,7 @@ int main(int argc, char **argv)
   struct NaClPerfCounter        time_all_main;
   int                           ret_code = 1;
   char                          manifest[MAX_MANIFEST_LEN];
+  int                           err = 0;
 
   /* @IGNORE_LINES_FOR_CODE_HYGIENE[1] */
   /*
@@ -414,6 +425,42 @@ int main(int argc, char **argv)
   (*((struct Gio *) &main_file)->vtbl->Dtor)((struct Gio *) &main_file);
   if(nap->fuzzing_quit_after_load) exit(0);
 
+   /*YaroslavLitvinov*/
+#ifdef NETWORKING
+  nap->db_records = malloc(sizeof(struct db_records_t));
+  memset(nap->db_records, '\0', sizeof(struct db_records_t));
+  if ( nap->manifest && nap->manifest->system_setup->cmd_line && nap->manifest->system_setup->cmd_line_size >= 3 ){
+	  /*get client name*/
+	  char *netw_nodename = nap->manifest->system_setup->cmd_line[2];
+	  /*set client id whose configuration should load*/
+	  nap->db_records->cid = atoi(nap->manifest->system_setup->cmd_line[1]);
+	  if ( netw_nodename ){
+		  uint64_t db_size = GetFileSize(ZVM_DB_NAME);
+		  if ( -1 != db_size && 0 != db_size ){
+			  NaClLog(LOG_INFO, "reading database = %s, cid=%d, nodename=%s\n", ZVM_DB_NAME, nap->db_records->cid, netw_nodename);
+			  err = get_all_records_from_dbtable(ZVM_DB_NAME, netw_nodename, nap->db_records);
+			  if ( err ){
+				  NaClLog(LOG_ERROR, "database %s read error= %d\n", ZVM_DB_NAME, err);
+			  }else{
+				  nap->zmq_pool = malloc(sizeof(struct zeromq_pool));
+				  init_zeromq_pool(nap->zmq_pool);
+				  open_all_comm_files(nap->zmq_pool, nap->db_records);
+			  }
+		  }
+		  else{
+			  NaClLog(LOG_ERROR, "NETWORKING defined, db does not exist or empty\n");
+		  }
+	  }
+	  else{
+		  NaClLog(LOG_ERROR, "NETWORKING defined, but NULL nodename??\n");
+	  }
+  }
+  else{
+	  NaClLog(LOG_ERROR, "NETWORKING defined but command line parameters not valid\n");
+  }
+#endif
+
+
   /* construct each mentioned in manifest channel and mount it */
   if(nap->manifest)
   {
@@ -518,7 +565,17 @@ int main(int argc, char **argv)
       if(log_ch->fsize) truncate((char*)log_ch->name, log_ch->fsize);
       else remove((char*)log_ch->name);
     }
+
   }
+
+  /*YaroslavLitvinov*/
+#ifdef NETWORKING
+  if (nap->zmq_pool && nap->db_records){
+	  NaClLog(LOG_ERROR, "1");
+	  close_all_comm_files(nap->zmq_pool);
+	  NaClLog(LOG_ERROR, "2");
+  }
+#endif
 
   NaClExit(ret_code);
 

@@ -21,6 +21,19 @@
 #include "src/service_runtime/sel_ldr.h"
 #include "src/service_runtime/nacl_globals.h"
 
+#  ifdef __cplusplus
+#    define EXTERN_C_BEGIN extern "C" {
+#    define EXTERN_C_END   }
+#  else
+#    define EXTERN_C_BEGIN
+#    define EXTERN_C_END
+#  endif  /* __cplusplus */
+
+/*YaroslavLitvinov*/
+EXTERN_C_BEGIN
+#include "src/networking/zmq_netw.h"
+EXTERN_C_END
+
 /* pause cpu time counting. update cnt_cpu */
 void PauseCpuClock(struct NaClApp *nap)
 {
@@ -109,15 +122,27 @@ int32_t TrapReadHandle(struct NaClApp *nap,
   char *sys_buffer;
   int32_t retcode;
 
-  // ### make it function with editable list of available channels
-  /* only allow this call for InputChannel, OutputChannel */
-  if(desc != InputChannel && desc != OutputChannel) return -INVALID_DESC;
-
   /* convert address and check buffer */
   sys_buffer = (char*)NaClUserToSys(nap, (uintptr_t) buffer);
 
   NaClLog(4, "%s() invoked: desc=%d, buffer=0x%lx, size=%d, offset=%ld\n",
       __func__, desc, (intptr_t)buffer, size, offset);
+
+#ifdef NETWORKING
+  /*YaroslavLitvinov
+   * Added multiple fd support, to be used by networking with MSQ files*/
+  if ( nap && nap->zmq_pool ){
+	  struct sock_file_t* sockf = sockf_by_fd(nap->zmq_pool, desc);
+	  if ( sockf ){
+		  ssize_t read_bytes = read_sockf(sockf, buffer, size);
+		  (void)read_bytes;
+	  }
+  }
+#endif
+
+  // ### make it function with editable list of available channels
+  /* only allow this call for InputChannel, OutputChannel */
+  if(desc != InputChannel && desc != OutputChannel) return -INVALID_DESC;
 
   /* take fd from nap with given desc */
   if(nap == NULL) return -INTERNAL_ERR;
@@ -167,6 +192,18 @@ int32_t TrapWriteHandle(struct NaClApp *nap,
 
   NaClLog(4, "%s() invoked: desc=%d, buffer=0x%lx, size=%d, offset=%ld\n",
         __func__, desc, (intptr_t)buffer, size, offset);
+
+#ifdef NETWORKING
+  /*YaroslavLitvinov
+   * Added multiple fd support, to be used by networking with MSQ files*/
+  if ( nap && nap->zmq_pool ){
+	  struct sock_file_t* sockf = sockf_by_fd(nap->zmq_pool, desc);
+	  if ( sockf ){
+		  ssize_t wrote_bytes = write_sockf(sockf, buffer, size);
+		  (void)wrote_bytes;
+	  }
+  }
+#endif
 
   /* take fd from nap with given desc */
   if(nap == NULL) return -INTERNAL_ERR;

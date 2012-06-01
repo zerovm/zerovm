@@ -1,0 +1,29 @@
+=====================================================================
+== i/o switches. full list. optional. some switches now meaningless,
+== placed here for completeness and future changes
+=====================================================================
+Input = samples/disort/data/{NODEID}unsorted.data
+InputMax = 4000000
+InputMaxGet = 4000000
+InputMaxGetCnt = 10240
+InputMaxPut = 4000000
+InputMaxPutCnt = 10240
+InputMode = 0
+
+UserLog = samples/disort/log/{NODEID}sortsrc.stderr.log
+UserLogMax = 65536
+
+CommandLine = {NODEID} source
+
+=====================================================================
+== switches for zerovm. some of them used to control nexe, some
+== for the internal zerovm needs
+=====================================================================
+Version = 11nov2011
+Log = samples/disort/vmlog/{NODEID}zerovm.sortsrc.log
+Report = samples/disort/vmlog/{NODEID}sortsrc.report.log
+Nexe = samples/disort/nodesrc.nexe
+NexeMax = 10000000
+SyscallsMax = 2048
+SetupCallsMax = 2
+

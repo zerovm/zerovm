@@ -39,6 +39,10 @@
 
 #include "src/validator/cpufeatures.h"
 
+/*YarolavLitvinov*/
+struct zeromq_pool;
+struct db_records_t;
+
 EXTERN_C_BEGIN
 
 #define NACL_SERVICE_PORT_DESCRIPTOR    3
@@ -282,6 +286,10 @@ struct NaClApp {
   uintptr_t                 sys_tls;  /* only need for nexe prolog */
 //  uint32_t                  tls_idx; /* only need for nexe prolog */
   /* d'b end */
+
+	/*YarolavLitvinov*/
+	struct zeromq_pool      *zmq_pool;
+	struct db_records_t     *db_records;
 };
 
 /*
