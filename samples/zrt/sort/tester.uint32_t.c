@@ -20,31 +20,29 @@ int main(int argc, char **argv)
 	uint32_t seq_size;
 	uint32_t inc;
 
-	printf("hello\n");
-  
   /* check if input is valid */
   if(!setup.channels[InputChannel].buffer || !setup.channels[InputChannel].bsize)
   {
-    fprintf(stdout, "invalid input map\n");
+    fprintf(stderr, "invalid input map\n");
     return 2;
   }
 
   /* assign vars to given input */
 	seq_size = setup.channels[InputChannel].bsize / sizeof(*r);
 	r = (uint32_t*)setup.channels[InputChannel].buffer;
-	fprintf(stdout, "number of elements = %d\n", seq_size);
+	fprintf(stderr, "number of elements = %d\n", seq_size);
 
   /* test order of the numbers */
 	inc = 4294967295U / seq_size; /* increment */
-	fprintf(stdout, "test if array of %u %u-bit numbers is sorted:\n", seq_size, ELEMENT_SIZE*8);
+	fprintf(stderr, "test if array of %u %u-bit numbers is sorted:\n", seq_size, ELEMENT_SIZE*8);
   for (i = 0; i < seq_size; ++i)
   	if(r[i] != i * inc)
   	{
-  		fprintf(stdout, "given data is NOT SORTED\n");
-  		fprintf(stdout, "[%u] = %u\n", i, r[i]);
+  		fprintf(stderr, "given data is NOT SORTED\n");
+  		fprintf(stderr, "[%u] = %u\n", i, r[i]);
   		return 3;
   	}
 
-	fprintf(stdout, "given data is SORTED\n");
+	fprintf(stderr, "given data is SORTED\n");
 	return 0;
 }

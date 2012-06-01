@@ -451,6 +451,7 @@ int main(int argc, char **argv)
 	/* Bitonic sort */
   fprintf(stderr, "data sorting.. ");
 	CLOCK(bitonic_sort_chunked((float*)d, cnt, (float*)buf, 1u << chunk_size));
+	fprintf(stderr, "done\n");
   
 	return EXIT_SUCCESS;
 }

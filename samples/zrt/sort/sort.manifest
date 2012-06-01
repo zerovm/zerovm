@@ -20,6 +20,7 @@ OutputMode = 0
 
 UserLog = samples/zrt/sort/sort.stderr.log
 UserLogMax = 65536
+UserLogMaxGet = 65536
 
 =====================================================================
 == switches for zerovm. some of them used to control nexe, some
@@ -31,5 +32,5 @@ Report = samples/zrt/sort/sort.report.log
 Nexe = samples/zrt/sort/sort_uint_proper_with_args.nexe
 NexeMax = 2000000
 SyscallsMax = 2048
-SetupCallsMax = 2
+SetupCallsMax = 1000
 

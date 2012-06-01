@@ -7,93 +7,75 @@
  */
 
 #include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <string.h>
-#include <malloc.h>
+//#include <stdlib.h>
+//#include <stdint.h>
+//#include <string.h>
+//#include <malloc.h>
 #include "api/zvm.h"
-
-#define LOGFIX /* temporary fix until zrt library will be finished */
-
-#ifdef LOGFIX
-#define fprintf(ch, ...)\
-do {\
-  char msg[4096];\
-  sprintf(msg, __VA_ARGS__);\
-  log_msg(msg);\
-} while (0)
-#endif
 
 /* printf some policy fields */
 void ShowPolicy (struct SetupList *policy)
 {
   enum ChannelType ch;
-  fprintf(stderr, "------------------------------------ policy begin --\n");
+  fprintf(stdout, "------------------------------------ policy begin --\n");
 
   /* show input fields */
   for(ch = InputChannel; ch < CHANNELS_COUNT; ++ch)
   {
     /* guts. some of them are not allowed for user */
-    fprintf(stderr, "CHANNEL NUMBER: %u\n", ch);
-    fprintf(stderr, "self_size = %u\n", policy->channels[ch].self_size);
-    fprintf(stderr, "type = %u\n", policy->channels[ch].type);
-    fprintf(stderr, "fsize = %lld\n", policy->channels[ch].fsize);
-    fprintf(stderr, "buffer = %X\n", policy->channels[ch].buffer);
-    fprintf(stderr, "bsize = %d\n", policy->channels[ch].bsize);
+    fprintf(stdout, "CHANNEL NUMBER: %u\n", ch);
+    fprintf(stdout, "self_size = %u\n", policy->channels[ch].self_size);
+    fprintf(stdout, "type = %u\n", policy->channels[ch].type);
+    fprintf(stdout, "fsize = %lld\n", policy->channels[ch].fsize);
+    fprintf(stdout, "buffer = %X\n", policy->channels[ch].buffer);
+    fprintf(stdout, "bsize = %d\n", policy->channels[ch].bsize);
 
     /* limits */
-    fprintf(stderr, "max_size = %lld\n", policy->channels[ch].max_size);
-    fprintf(stderr, "max_gets = %d\n", policy->channels[ch].max_gets);
-    fprintf(stderr, "max_puts = %d\n", policy->channels[ch].max_puts);
-    fprintf(stderr, "max_get_size = %lld\n", policy->channels[ch].max_get_size);
-    fprintf(stderr, "max_put_size = %lld\n", policy->channels[ch].max_put_size);
+    fprintf(stdout, "max_size = %lld\n", policy->channels[ch].max_size);
+    fprintf(stdout, "max_gets = %d\n", policy->channels[ch].max_gets);
+    fprintf(stdout, "max_puts = %d\n", policy->channels[ch].max_puts);
+    fprintf(stdout, "max_get_size = %lld\n", policy->channels[ch].max_get_size);
+    fprintf(stdout, "max_put_size = %lld\n", policy->channels[ch].max_put_size);
 
     /* counters not allowed for user */
   }
 
-  fprintf(stderr, "------------------------------------ guts --\n");
-  fprintf(stderr, "self_size = %u\n", policy->self_size);
-  fprintf(stderr, "heap_ptr = 0x%X\n", policy->heap_ptr);
+  fprintf(stdout, "------------------------------------ guts --\n");
+  fprintf(stdout, "self_size = %u\n", policy->self_size);
+  fprintf(stdout, "heap_ptr = 0x%X\n", policy->heap_ptr);
 
   /* show system counters (not allowed for user) */
 
   /* show system limits */
-  fprintf(stderr, "max_cpu = %d\n", policy->max_cpu);
-  fprintf(stderr, "max_mem = %d\n", policy->max_mem);
-  fprintf(stderr, "max_setup_calls = %d\n", policy->max_setup_calls);
-  fprintf(stderr, "max_syscalls = %d\n", policy->max_syscalls);
+  fprintf(stdout, "max_cpu = %d\n", policy->max_cpu);
+  fprintf(stdout, "max_mem = %d\n", policy->max_mem);
+  fprintf(stdout, "max_setup_calls = %d\n", policy->max_setup_calls);
+  fprintf(stdout, "max_syscalls = %d\n", policy->max_syscalls);
 
   /* custom attributes */
-  fprintf(stderr, "content_type = %s\n", policy->content_type);
-  fprintf(stderr, "timestamp = %s\n", policy->timestamp);
-  fprintf(stderr, "user_etag = %s\n", policy->user_etag);
-  fprintf(stderr, "x_object_meta_tag = %s\n", policy->x_object_meta_tag);
+  fprintf(stdout, "content_type = %s\n", policy->content_type);
+  fprintf(stdout, "timestamp = %s\n", policy->timestamp);
+  fprintf(stdout, "user_etag = %s\n", policy->user_etag);
+  fprintf(stdout, "x_object_meta_tag = %s\n", policy->x_object_meta_tag);
 
-  fprintf(stderr, "------------------------------------ policy end --\n");
+  fprintf(stdout, "------------------------------------ policy end --\n");
+  fflush(NULL);
 }
 
-int main(int argc, char **argv)
+//int main(int argc, char **argv)
+int main()
 {
   int retcode;
-  struct SetupList setup;
-  struct SetupList *hint = &setup;
 
-  /* request policy 1st time. construct call parameters */
-  retcode = zvm_setup(hint);
-  fprintf(stderr, "retcode = %d\n", retcode);
-  ShowPolicy(hint);
-
-#ifdef LOGFIX
-  /* set up the log */
-  retcode = log_set(hint);
-  if(retcode) return retcode;
-#endif
+  /* print initial values of user policy */
+  ShowPolicy(&setup);
+  printf("\n\n\n");
 
   /* request policy 2nd time with hint */
-  hint->max_mem += 1; /* try to increase amount of available memory */
-  retcode = zvm_setup(hint);
-  fprintf(stderr, "retcode = %d\n", retcode);
-  ShowPolicy(hint);
+  ++setup.max_cpu; /* try to increase amount of available cpu time */
+  retcode = zvm_setup(&setup);
+  ShowPolicy(&setup);
+  fprintf(stdout, "retcode = %d\n", retcode);
 
   /* exit with non zero to check report engine */
   return 13;

@@ -9,12 +9,15 @@ InputMaxGetCnt = 1024
 InputMaxPut = 67108864
 InputMaxPutCnt = 1024
 InputMode = 0
+
 UserLog = samples/zrt/sort/tester.stderr.log
 UserLogMax = 65536
-Output = samples/zrt/sort/tester.stdout.log
-OutputMaxPut = 102400
-OutputMaxPutCnt = 1024
-OutputMode = 1
+UserLogMaxGet = 65536
+
+==Output = samples/zrt/sort/tester.stdout.log
+==OutputMaxPut = 102400
+==OutputMaxPutCnt = 1024
+==OutputMode = 1
 
 =====================================================================
 == switches for zerovm. some of them used to control nexe, some
@@ -26,5 +29,5 @@ Report = samples/zrt/sort/tester.report.log
 Nexe = samples/zrt/sort/tester.uint32_t.nexe
 NexeMax = 2000000
 SyscallsMax = 2048
-SetupCallsMax = 2
+SetupCallsMax = 1000
 
