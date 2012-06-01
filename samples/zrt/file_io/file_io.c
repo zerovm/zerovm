@@ -27,7 +27,7 @@ int main(int argc, char **argv)
   rewind(stdout);
   fprintf(stderr, ":: [after rewind] stdout position = %ld\n", ftell(stdout));
   i = read(fileno(stdout), buf, sizeof(buf));
-  fprintf(stderr, ":: [after rewind] retcode = %d\n", i);
+  fprintf(stderr, ":: [after read] retcode = %d\n", i);
 
   /* compare to written data (must be equal) */
   for(i = 0; i < sizeof(buf); ++i)

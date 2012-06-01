@@ -62,7 +62,6 @@ static int32_t TrapExitHandle(struct NaClApp *nap, int32_t code)
 {
   NaClLog(1, "Exit syscall handler: %d\n", code);
   nap->exit_status = code;
-  nap->running = 0;
   longjmp(user_exit, code);
 
   /* not reached. added to avoid compiler warning */
@@ -267,7 +266,7 @@ static int32_t TrapUserSetupHandle(struct NaClApp *nap, struct SetupList *h)
 #define TRY_UPDATE(pretender, current)\
     do {\
       if(policy->cnt_setup_calls == 1) { pretender = current; break; }\
-      if((pretender) < (current)) current = pretender;\
+      if((pretender) <= (current)) current = pretender;\
       else { pretender = current; retcode = ERR_CODE; }\
     } while(0)
 
@@ -334,7 +333,7 @@ int32_t TrapHandler(struct NaClApp *nap, uint32_t args)
   /* translate address from user space to system. note: cannot set "trap error" */
   if(!nap->manifest) return -1; /* return error if not manifest found */
   sys_args = (uint64_t*)NaClUserToSys(nap, (uintptr_t) args);
-  NaClLog(4, "NaClSysNanosleep received in = 0x%lx\n", (intptr_t)sys_args);
+  NaClLog(4, "Trap arguments address = 0x%lx\n", (intptr_t)sys_args);
 
   switch(*sys_args)
   {
@@ -358,6 +357,7 @@ int32_t TrapHandler(struct NaClApp *nap, uint32_t args)
       break;
   }
 
+  NaClLog(4, "leaving Trap with code = 0x%x\n", retcode);
   return retcode;
 }
 

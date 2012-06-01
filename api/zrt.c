@@ -61,50 +61,6 @@ struct nacl_abi_timeval {
   int32_t   nacl_abi_tv_usec;
 };
 
-// ### atoi() and strtol() causes crash. so we need local version of it
-/*
- * Standard C function: parse a string that represents a decimal integer.
- * Leading whitespace is allowed. Trailing gunk is allowed too. Doesn't
- * really report syntax errors in any useful way.
- */
-static int atoi2(const char *s)
-{
-  static const char digits[] = "0123456789"; /* legal digits in order */
-  unsigned val = 0; /* value we're accumulating */
-  int neg = 0; /* set to true if we see a minus sign */
-
-  /* skip whitespace */
-  while(*s == ' ' || *s == '\t') ++s;
-
-  /* check for sign */
-  switch(*s)
-  {
-    case '-': neg = 1; ++s; break;
-    case '+': ++s; break;
-  }
-
-  /* process each digit */
-  for(;*s; ++s)
-  {
-    const char *where;
-    unsigned digit;
-
-    /* look for the digit in the list of digits */
-    where = strchr(digits, *s);
-    if(where == NULL) break; /* not found; not a digit, so stop */
-
-    /* get the index into the digit list, which is the value */
-    digit = (where - digits);
-
-    /* could (should?) check for overflow here */
-    /* shift the number over and add in the new digit */
-    val = val * 10 + digit;
-  }
-
-  /* handle negative numbers */
-  return neg ? -val : val;
-}
-
 /* entry point for zrt library sample (see "syscall_manager.S" file) */
 void syscall_director(void);
 
@@ -140,7 +96,7 @@ int log_msg2(char *msg)
 #define DEBUG 1
 #define LOGFIX /* temporary fix until zrt library will be finished */
 #if DEBUG
-#define SHOWID do {log_msg2("\n"); log_msg2((char*)__func__); log_msg2("() is called\n");} while(0)
+#define SHOWID do {log_msg2((char*)__func__); log_msg2("() is called\n");} while(0)
 #else
 #define SHOWID
 #endif
@@ -227,7 +183,7 @@ int log_msg2(char *msg)
 
 /* tls_get() -- nacl syscall via trampoline */
 #define NaCl_tls_get() ((int32_t (*)()) \
-    (NACL_sys_second_tls_get * 0x20 + 0x10000))()
+    (NACL_sys_tls_get * 0x20 + 0x10000))()
 
 /* invalid syscall */
 #define NaCl_invalid() ((int32_t (*)()) \
@@ -279,15 +235,14 @@ int32_t zrt_dup2(uint32_t *args)
 /* open the file with the given handle number */
 int32_t zrt_open(uint32_t *args)
 {
-  //###
-  fprintf(stderr, "name = %s, flags = 0x%X\n", (char*)args[0], args[1]);
+  SHOWID;
 
   /*
    * in the simple version of zrt library we only can use stdin, stdout and stderr
    * (input, output, user_log) which are already opened or not available. so we
    * can just fail on this function
    */
-  SHOWID; return -ENOENT; /* No such file or directory */
+  return -ENOENT; /* No such file or directory */
 }
 
 /* close the file with the given handle number */
@@ -312,13 +267,6 @@ int32_t zrt_read(uint32_t *args)
   int file = (int)args[0];
   void *buf = (void*)args[1];
   int64_t length = (int64_t)args[2];
-
-  //### debug. remove it
-  char str[256];
-  snprintf(str, 255, "read_args: arg[0] = %d, arg[1] = 0x%X, arg[2] = %d; curpos = %d\n",
-      args[0], args[1], args[2], pos_ptr[file]);
-  log_msg2(str);
-  //###end
 
   /* Support for MSQ files: zvm_pread, zvm_pwrite used for networking communication*/
   if ( file > 2 ){
@@ -359,18 +307,6 @@ int32_t zrt_read(uint32_t *args)
       break;
   }
 
-  //### debug. remove it
-  snprintf(str, 255, "read: curpos = %d, length[%d] = %lld, [%s]\n",
-      pos_ptr[file], file, length, (char*)buf);
-//  snprintf(str, 255, "position[0] = %d\n"
-//      "position[1] = %d\n"
-//      "position[2] = %d\n",
-//      pos_ptr[0],
-//      pos_ptr[1],
-//      pos_ptr[2]);
-  log_msg2(str);
-  //### end
-
   return length;
 }
 
@@ -386,13 +322,6 @@ int32_t zrt_write(uint32_t *args)
   int file = (int)args[0];
   void *buf = (void*)args[1];
   int64_t length = (int64_t)args[2];
-
-  //### debug. remove it
-  char str[256];
-  snprintf(str, 255, "write_args: arg[0] = %d, arg[1] = 0x%X, arg[2] = %d\n",
-      args[0], args[1], args[2]);
-  log_msg2(str);
-  //###end
 
   /* Support for MSQ files: zvm_pread, zvm_pwrite used for networking communication*/
   if ( file > 2 ){
@@ -433,18 +362,6 @@ int32_t zrt_write(uint32_t *args)
       break;
   }
 
-  //### debug. remove it
-  snprintf(str, 255, "write: curpos = %d, length[%d] = %lld, [%s]\n",
-      pos_ptr[file], file, length, (char*)buf);
-//  snprintf(str, 255, "position[0] = %d\n"
-//      "position[1] = %d\n"
-//      "position[2] = %d\n",
-//      pos_ptr[0],
-//      pos_ptr[1],
-//      pos_ptr[2]);
-  log_msg2(str);
-  //### end
-
   return length;
 }
 
@@ -472,8 +389,6 @@ int32_t zrt_lseek(uint32_t *args)
   /* check if given handle is valid and seekable */
   if(handle < InputChannel || handle > LogChannel) return -EBADF;
 
-  off_t old_pos = pos_ptr[handle]; //### debug only. remove it
-
   switch(whence)
   {
     case SEEK_SET:
@@ -494,10 +409,6 @@ int32_t zrt_lseek(uint32_t *args)
       errno = EPERM; /* in advanced version should be set to conventional value */
       return -EPERM;
   }
-
-  //### debug only. remove it
-  fprintf(stderr, "handle = %d, whence = %d, offset = %d, old_pos = %d, new_pos = %d\n",
-      handle, whence, (int)offset, (int)old_pos, (int)pos_ptr[handle]);
 
   /* weird way to return current position. but that is how nacl work */
   *(off_t *)args[1] = pos_ptr[handle];
@@ -617,151 +528,69 @@ int32_t zrt_chmod(uint32_t *args)
  *
  * most important function here is sysbrk, both m(un)map use sysbrk.
  */
+
 /* change space allocation */
 int32_t zrt_sysbrk(uint32_t *args)
 {
   SHOWID;
-  void *new_break = (void *)args[0];
+  int32_t retcode;
 
-  //### debug
-  fprintf(stderr, "cur_break = 0x%X, args[0] = 0x%X\n", (uint32_t)cur_break, args[0]);
-  fprintf(stderr, "heap_ptr = 0x%X\n", setup.heap_ptr);
+  /* uninstall syscallback */
+  setup.syscallback = 0;
+  zvm_setup(&setup);
 
-  /*
-   * in case zerovm didn't allocate whole chunk of memory
-   * zrt memory manager should not be used and call must be
-   * translated to zerovm instead
-   */
-  if(!setup.heap_ptr)
-  {
-    int32_t retcode;
+  /* invoke syscall directly */
+  retcode = NaCl_sysbrk(args[0]);
 
-    /* uninstall syscallback */
-    setup.syscallback = 0;
-    zvm_setup(&setup);
-
-    /* invoke syscall directly */
-    retcode = NaCl_sysbrk(args[0]);
-
-    /* reinstall syscallback */
-    setup.syscallback = (int32_t) syscall_director;
-    zvm_setup(&setup);
-
-    fprintf(stderr, "zerovm sysbrk() return code = 0x%X\n", retcode);
-    return retcode;
-  }
-
-  /* check if the new break is too low and underrun user memory start */
-  if((uint32_t)new_break < setup.heap_ptr) return (int32_t)cur_break;
-
-  /* check if the new break is too high and overrun available user memory */
-  if((uint32_t)new_break > setup.heap_ptr + setup.max_mem) return (int32_t)cur_break;
-
-  cur_break = new_break;
-
-  //### debug
-  fprintf(stderr, "exiting sysbrk() with code = 0x%X\n", (int32_t)cur_break);
-
-  return (int32_t)cur_break;
-}
-
-/* example of "selective syscallback". this syscall handed back to zerovm */
-int32_t zrt_mmap(uint32_t *args)
-{
-  int32_t retcode = (int32_t)cur_break;
-  void *addr = (void*)args[0];
-  size_t length = (size_t)args[1];
-  uint32_t brk_args[1];
-  SHOWID;
-
-  /*
-   * in case zerovm didn't allocate whole chunk of memory
-   * zrt memory manager should not be used and call must be
-   * translated to zerovm instead
-   */
-  if(!setup.heap_ptr)
-  {
-    int32_t retcode;
-
-    /* uninstall syscallback */
-    setup.syscallback = 0;
-    zvm_setup(&setup);
-
-    /* invoke syscall directly */
-    retcode = NaCl_mmap(args[0], args[1], args[2], args[3], args[4], args[5]);
-
-    /* reinstall syscallback */
-    setup.syscallback = (int32_t) syscall_director;
-    zvm_setup(&setup);
-
-    return retcode;
-  }
-
-  //### debug
-  fprintf(stderr, "cur_break = 0x%X, args[0] = %d, args[1] = %d\n",
-      (uint32_t)cur_break, args[0], args[1]);
-
-  /*
-   * this is a simple version. moreover zrt does not allow file access,
-   * some memory flags and modes. therefore we ignore everything but given length
-   * another thing to mention: any non-zero value for addr means failure
-   * we don't want holes in memory and we want to keep it simple (no complex
-   * memory management in a simple zrt lib version)
-   */
-  if(addr) return -EPERM;
-
-  /* calculate and set a new break*/
-  if((uint32_t)cur_break + length > setup.heap_ptr + setup.max_mem) return -EPERM;
-  brk_args[0] = (uint32_t)(cur_break + length);
-  //### debug
-  fprintf(stderr, "brk_args[0] = 0x%X\n", brk_args[0]);
-
-  retcode = zrt_sysbrk(brk_args);
-
-  /* convert sysbrk retcode */
-  /*
-   * retcodes can be:
-   * positive value = we got memory
-   * negative value = we got error
-   * 0 = another error (we can't find available big enough memory)
-   */
-
-  //### debug
-  fprintf(stderr, "%s mmap() with code = 0x%X\n",
-      retcode == -EPERM ? "failing" : "exiting", retcode);
+  /* reinstall syscallback */
+  setup.syscallback = (int32_t) syscall_director;
+  zvm_setup(&setup);
 
   return retcode;
 }
 
-/* mock. should be implemented */
+/* map region of memory */
+int32_t zrt_mmap(uint32_t *args)
+{
+  SHOWID;
+  int32_t retcode;
+
+  /* uninstall syscallback */
+  setup.syscallback = 0;
+  zvm_setup(&setup);
+
+  /* invoke syscall directly */
+  retcode = NaCl_mmap(args[0], args[1], args[2], args[3], args[4], args[5]);
+
+  /* reinstall syscallback */
+  setup.syscallback = (int32_t) syscall_director;
+  zvm_setup(&setup);
+
+  return retcode;
+}
+
+/*
+ * unmap region of memory
+ * note: zerovm doesn't use it in memory management.
+ * instead of munmap it use mmap with protection 0
+ */
 int32_t zrt_munmap(uint32_t *args)
 {
   SHOWID;
+  int32_t retcode;
 
-  /*
-   * in case zerovm didn't allocate whole chunk of memory
-   * zrt memory manager should not be used and call must be
-   * translated to zerovm instead
-   */
-  if(!setup.heap_ptr)
-  {
-    int32_t retcode;
+  /* uninstall syscallback */
+  setup.syscallback = 0;
+  zvm_setup(&setup);
 
-    /* uninstall syscallback */
-    setup.syscallback = 0;
-    zvm_setup(&setup);
+  /* invoke syscall directly */
+  retcode = NaCl_munmap(args[0], args[1]);
 
-    /* invoke syscall directly */
-    retcode = NaCl_munmap(args[0], args[1]);
+  /* reinstall syscallback */
+  setup.syscallback = (int32_t) syscall_director;
+  zvm_setup(&setup);
 
-    /* reinstall syscallback */
-    setup.syscallback = (int32_t) syscall_director;
-    zvm_setup(&setup);
-
-    return retcode;
-  }
-
-  return 0;
+  return retcode;
 }
 
 /* mock. should be implemented */
@@ -805,12 +634,8 @@ int32_t zrt_sysconf(uint32_t *args)
 int32_t zrt_gettimeofday(uint32_t *args)
 {
   struct nacl_abi_timeval  *tv = (struct nacl_abi_timeval *)args[0];
-//  struct nacl_abi_timezone *tz; /* obsolette. not recommended to use */
   char *stamp = (char *)setup.timestamp;
   SHOWID;
-
-  //###
-  fprintf(stderr, "tv == 0x%X, stamp = [%s]\n", (int)tv, stamp);
 
   /* check if timestampr is set */
   if(!*stamp) return -EPERM;
@@ -819,11 +644,7 @@ int32_t zrt_gettimeofday(uint32_t *args)
   if(!tv) return -EFAULT;
 
   tv->nacl_abi_tv_usec = 0; /* to simplify code. yet we can't get msec from nacl code */
-//  tv->nacl_abi_tv_sec = strtol(stamp, NULL, 10); /* manifest always contain decimal values */
-  tv->nacl_abi_tv_sec = atoi2(stamp); /* manifest always contain decimal values */
-
-  //###
-  fprintf(stderr, "tv->nacl_abi_tv_sec == %lld\n", tv->nacl_abi_tv_sec);
+  tv->nacl_abi_tv_sec = atoi(stamp); /* manifest always contain decimal values */
 
   return 0;
 }
@@ -965,26 +786,22 @@ int32_t zrt_thread_nice(uint32_t *args)
   SHOWID; return 0;
 }
 
-/* example of "selective syscallback". this syscall handed back to zerovm */
+/* get tls. probably cause "printf" bug */
 int32_t zrt_tls_get(uint32_t *args)
 {
-  int32_t retcode = 0;
-//  SHOWID; //### temporary disabled to clear up log
+  SHOWID;
+  int32_t retcode;
 
-//  /* uninstall syscallback */
-//  setup.syscallback = 0;
-//  zvm_setup(&setup);
-//  log_msg2("syscallback uninstalled\n");
-//
-//  /* invoke syscall directly */
-//  retcode = NaCl_tls_get();
-//  log_msg2("syscallback retranslated to zerovm\n");
-//
-//  /* reinstall syscallback */
-//  log_msg2("...returned\n");
-//  setup.syscallback = (int32_t) syscall_director;
-//  zvm_setup(&setup);
-//  log_msg2("syscallback reinstalled\n");
+  /* uninstall syscallback */
+  setup.syscallback = 0;
+  zvm_setup(&setup);
+
+  /* invoke syscall directly */
+  retcode = NaCl_tls_get();
+
+  /* reinstall syscallback */
+  setup.syscallback = (int32_t) syscall_director;
+  zvm_setup(&setup);
 
   return retcode;
 }
@@ -995,10 +812,14 @@ int32_t zrt_second_tls_set(uint32_t *args)
   SHOWID; return 0;
 }
 
-/* mock. should be implemented */
+/*
+ * get second tls.
+ * since we only have single thread use instead of 2nd tls 1st one
+ */
 int32_t zrt_second_tls_get(uint32_t *args)
 {
-  SHOWID; return 0;
+  SHOWID;
+  return zrt_tls_get(NULL);
 }
 
 /* mock. should be implemented */

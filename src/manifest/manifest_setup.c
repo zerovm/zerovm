@@ -213,11 +213,38 @@ void SetupSystemPolicy(struct NaClApp *nap)
 void PreallocateUserMemory(struct NaClApp *nap)
 {
   struct SetupList *policy = nap->manifest->user_setup;
+  uintptr_t i = nap->data_end;
+  uint32_t stump = nap->manifest->user_setup->max_mem - nap->stack_size - nap->data_end;
+  uint32_t dead_space;
+  struct NaClVmmapEntry *user_space;
 
   /* check if max_mem is specified in manifest and proceed if so */
   if(!policy->max_mem) return;
 
-  policy->heap_ptr = NaClCommonSysMmapIntern(nap, 0, policy->max_mem, 3, 0x22, -1, 0);
+  /* user memory chunk must be allocated next to the data end */
+  i = (i + NACL_MAP_PAGESIZE - 1) & ~(NACL_MAP_PAGESIZE - 1);
+
+  policy->heap_ptr = NaClCommonSysMmapIntern(nap, (void*)i, stump, 3, 0x22, -1, 0);
+  assert(policy->heap_ptr == i);
+
+  /*
+   * free "whole chunk" block without real memory deallocation
+   * the map entry we need is the last in raw
+   */
+  user_space = nap->mem_map.vmentry[nap->mem_map.nvalid - 1];
+  assert(policy->heap_ptr / NACL_PAGESIZE == user_space->page_num);
+  assert(nap->mem_map.is_sorted != 1);
+
+  /* protect dead space */
+  dead_space = NaClVmmapFindMaxFreeSpace(&nap->mem_map, 1) * NACL_PAGESIZE;
+  i = (user_space->page_num + user_space->npages) * NACL_PAGESIZE;
+  dead_space = NaClCommonSysMmapIntern(nap, (void*)i, dead_space, 0, 0x22, -1, 0);
+  assert(dead_space == i);
+
+  /* sort and remove deleted blocks */
+  user_space->removed = 1;
+  nap->mem_map.is_sorted = 0; /* force sort because we need to get rid of removed blocks */
+  NaClVmmapMakeSorted(&nap->mem_map);
 
   /* why 0xfffff000? 1. 0x1000 reserved for error codes 2. it is still larger then 4gb - stack */
   COND_ABORT(policy->heap_ptr > 0xfffff000, "cannot preallocate memory for user\n");

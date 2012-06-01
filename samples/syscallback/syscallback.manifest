@@ -37,7 +37,7 @@ NexeMax = 10000000
 NexeEtag =
 Timeout = 60
 KillTimeout = 90
-MemMax = 1111
+==MemMax = 1111
 CPUMax = 2222
 SyscallsMax = 3333
 SetupCallsMax = 2

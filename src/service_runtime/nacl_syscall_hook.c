@@ -39,6 +39,7 @@ NORETURN void NaClSyscallCSegHook()
    * not really "system" will be accounted anyway!
    */
   nap = gnap; /* restore NaClApp object */
+  nap->user_side_flag = 1; /* set "user side call" mark */
   PauseCpuClock(nap);
   AccountingSyscallsInc(nap);
   user = nacl_user; /* restore from global */
@@ -99,6 +100,7 @@ NORETURN void NaClSyscallCSegHook()
 
   /* d'b: give control to the nexe. start cpu time counting */
   ResumeCpuClock(nap);
+  nap->user_side_flag = 0; /* remove "user side call" mark */
   NaClSwitchToApp(nap, user_ret);
 
   /* NOTREACHED */
