@@ -7,10 +7,10 @@ CCFLAGS=-DDEBUG -g ${NETWORKING}
 CXXFLAGS=-DDEBUG -g ${NETWORKING}
 
 #For networking support, uncomment variables below 
-NETWORKING=-DNETWORKING
-NETW_LIB=-lnetw -lzmq
-NETW_RULES=obj/libsqlite3.a obj/libnetw.a
-NETW_TEST_RULES=test/zmq_netw_test test/sqluse_srv_test test_config
+#NETWORKING=-DNETWORKING
+#NETW_LIB=-lnetw -lzmq
+#NETW_RULES=obj/libsqlite3.a obj/libnetw.a
+#NETW_TEST_RULES=test/zmq_netw_test test/sqluse_srv_test test_config
 
 CCFLAGS0=-c -m64 -fPIC -D_FORTIFY_SOURCE=2 -DNACL_WINDOWS=0 -DNACL_OSX=0 -DNACL_LINUX=1 -D_BSD_SOURCE=1 -D_POSIX_C_SOURCE=199506 -D_XOPEN_SOURCE=600 -D_GNU_SOURCE=1 -D_LARGEFILE64_SOURCE=1 -D__STDC_LIMIT_MACROS=1 -D__STDC_FORMAT_MACROS=1 -DNACL_BLOCK_SHIFT=5 -DNACL_BLOCK_SIZE=32 -DNACL_BUILD_ARCH=x86 -DNACL_BUILD_SUBARCH=64 -DNACL_TARGET_ARCH=x86 -DNACL_TARGET_SUBARCH=64 -DNACL_STANDALONE=1 -DNACL_ENABLE_TMPFS_REDIRECT_VAR=0 -I.
 CCFLAGS1=-std=gnu99 -Wdeclaration-after-statement -fPIE -Wall -pedantic -Wno-long-long -fvisibility=hidden -fstack-protector --param ssp-buffer-size=4
