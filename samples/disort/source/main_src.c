@@ -19,49 +19,62 @@
 #include "dsort.h"
 #include "comm_src.h"
 
+#define STDIN 0
+
+
 int main(int argc, char **argv){
 	int nodeid = -1;
+	WRITE_FMT_LOG(LOG_DEBUG, "Source node started: argc=%d argv=%p \n", argc, argv);
+
+	for ( int i=0; i < argc; i++ ){
+		WRITE_FMT_LOG(LOG_DEBUG, "argv[%d]=%s \n", i, argv[i]);
+	}
 	if ( argc < 2 ){
+		WRITE_LOG(LOG_ERR, "Required 1 arg unique node integer id\n");
 		return 1;
-		WRITE_LOG(LOG_ERR, "Argument integer node required. exiting" );
 	}
 	nodeid = atoi(argv[1]);
+	WRITE_FMT_LOG(LOG_DEBUG, "nodeid=%d \n", nodeid);
 
 	BigArrayPtr unsorted_array = NULL;
-	BigArrayPtr partially_sorted_array = NULL;
+	BigArrayPtr sorted_array = NULL;
 
-	/*get unsorted data, read from input*/
-	char inputfile[100];
-	memset(inputfile, '\0', 100);
-	sprintf(inputfile, SOURCE_FILE_FMT, nodeid );
-	int sourcefd = -1;
-	sourcefd = open(inputfile, O_RDONLY);
-	if ( sourcefd >= 0 ){
-		const size_t data_size = sizeof(BigArrayItem)*ARRAY_ITEMS_COUNT;
-		unsorted_array = malloc( data_size );
-		if ( unsorted_array ){
-			const ssize_t readed = read(sourcefd, unsorted_array, data_size);
-			assert(readed == data_size );
-		}
-		close(sourcefd);
-	}
-	else{
-		WRITE_FMT_LOG(LOG_ERR, "Can not open input file %s", inputfile);
-		return 1;
-	}
+	/*get unsorted data, read from stdin*/
+	const size_t data_size = sizeof(BigArrayItem)*ARRAY_ITEMS_COUNT;
+	unsorted_array = malloc( data_size );
+	if ( unsorted_array ){
+		/*c99 use of stdin read*/
+		const ssize_t readed = read( STDIN, (void*)unsorted_array, data_size);
+		WRITE_FMT_LOG(LOG_ERR, "readed input file, expected size=%d, read size=%d\n", data_size, readed);
+		assert(readed == data_size );
 
-	/*sort data locally*/
-	partially_sorted_array = alloc_merge_sort( unsorted_array, ARRAY_ITEMS_COUNT );
+//		/*zerovm use, non standard*/
+//		BigArrayPtr input_data = (BigArrayPtr)setup.channels[InputChannel].buffer;
+//		if ( input_data ){
+//			WRITE_FMT_LOG(LOG_ERR, "stdin size =%d, data size=%d\n",
+//					setup.channels[InputChannel].bsize, data_size);
+//			assert( data_size == setup.channels[InputChannel].bsize );
+//			memcpy(unsorted_array, input_data, data_size);
+//		}
+//		else{
+//			WRITE_LOG(LOG_ERR, "no stdin\n");
+//		}
+	}
+	WRITE_LOG(LOG_DETAILED_UI, "Source data read complete\n");
+
+	/*sort data locally */
+	sorted_array = alloc_sort( unsorted_array, ARRAY_ITEMS_COUNT );
+	WRITE_LOG(LOG_DETAILED_UI, "Sorted locally, verify sorting result\n");
 
 	//if first part of sorting in single thread are completed
-	if ( test_sort_result( unsorted_array, partially_sorted_array, ARRAY_ITEMS_COUNT ) ){
+	if ( test_sort_result( unsorted_array, sorted_array, ARRAY_ITEMS_COUNT ) ){
 		if ( ARRAY_ITEMS_COUNT ){
 			WRITE_FMT_LOG(LOG_UI, "Single process sorting complete min=%u, max=%u: TEST OK.\n",
-					partially_sorted_array[0], partially_sorted_array[ARRAY_ITEMS_COUNT-1] );
+					sorted_array[0], sorted_array[ARRAY_ITEMS_COUNT-1] );
 		}
 
 		/*send crc of sorted array to the manager node*/
-		uint32_t crc = array_crc( partially_sorted_array, ARRAY_ITEMS_COUNT );
+		uint32_t crc = array_crc( sorted_array, ARRAY_ITEMS_COUNT );
 		WRITE_FMT_LOG(LOG_DEBUG, "write crc into fd=%d", SOURCE_FD_WRITE_CRC);
 		write_crc( SOURCE_FD_WRITE_CRC, crc );
 		/*send of crc complete*/
@@ -69,7 +82,7 @@ int main(int argc, char **argv){
 		/*prepare histogram data, with step defined by BASE_HISTOGRAM_STEP*/
 		int histogram_len = 0;
 		HistogramArrayPtr histogram_array = alloc_histogram_array_get_len(
-				partially_sorted_array, 0, ARRAY_ITEMS_COUNT, BASE_HISTOGRAM_STEP, &histogram_len );
+				sorted_array, 0, ARRAY_ITEMS_COUNT, BASE_HISTOGRAM_STEP, &histogram_len );
 
 		struct Histogram single_histogram;
 		single_histogram.src_nodeid = nodeid;
@@ -80,7 +93,7 @@ int main(int argc, char **argv){
 		write_histogram( SOURCE_FD_WRITE_HISTOGRAM, &single_histogram );
 		/*read request for detailed histogram and send it to manager*/
 		read_requests_write_detailed_histograms( SOURCE_FD_READ_D_HISTOGRAM_REQ, SOURCE_FD_WRITE_D_HISTOGRAM_REQ,
-				nodeid, partially_sorted_array, ARRAY_ITEMS_COUNT );
+				nodeid, sorted_array, ARRAY_ITEMS_COUNT );
 		WRITE_LOG(LOG_UI, "\n!!!!!!!Histograms Sending complete!!!!!!.\n");
 
 		/*read range request (data start, end, dest node id) from manager node*/
@@ -96,12 +109,12 @@ int main(int argc, char **argv){
 			int dst_read_fd = dst_nodeid - FIRST_DEST_NODEID + SOURCE_FD_READ_SORTED_RANGES_REQ;
 			WRITE_FMT_LOG(LOG_DEBUG, "write_sorted_ranges write req fd=%d, read req fd=%d", dst_write_fd, dst_read_fd );
 			WRITE_FMT_LOG(LOG_DEBUG, "req_data_array[i].dst_nodeid=%d", req_data_array[i].dst_nodeid );
-			write_sorted_ranges( dst_write_fd, dst_read_fd, &req_data_array[i], partially_sorted_array );
+			write_sorted_ranges( dst_write_fd, dst_read_fd, &req_data_array[i], sorted_array );
 		}
 		WRITE_LOG(LOG_UI, "Sending Ranges Complete-OK");
 
 		free(unsorted_array);
-		free(partially_sorted_array);
+		free(sorted_array);
 	}
 	else{
 		WRITE_LOG(LOG_UI, "Single process sorting failed: TEST FAILED.\n");

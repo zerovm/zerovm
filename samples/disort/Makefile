@@ -7,33 +7,24 @@ MANNODE=nodeman
 SRCNODE=nodesrc
 DSTNODE=nodedst
 
-all: prepare $(MANNODE).nexe $(SRCNODE).nexe $(DSTNODE).nexe
+all: cleanlog prepare $(MANNODE).nexe $(SRCNODE).nexe $(DSTNODE).nexe
 	
-prepare: createdirs
-	@chmod u=rwx gendata.sh
-	@chmod u=rwx genmanifest.sh
-	@./gendata.sh
-	@./genmanifest.sh
- 	
-createdirs:
-	@mkdir -p obj log data vmlog
-
-$(MANNODE).nexe: obj/main_man.o obj/comm_man.o obj/histanlz.o obj/sort.o obj/dsort.o 
+$(MANNODE).nexe: obj/main_man.o obj/comm_man.o obj/histanlz.o obj/dsort.o   
 	@$(NACL_TOOLCHAIN_PATH)/bin/x86_64-nacl-gcc -o $(MANNODE).nexe  -s -static -T \
 	$(NACL_TOOLCHAIN_PATH)/x86_64-nacl/lib64/ldscripts/elf64_nacl.x.static -melf64_nacl -m64 \
-	obj/main_man.o obj/comm_man.o obj/histanlz.o obj/sort.o obj/dsort.o -Wall -std=c99 \
+	obj/main_man.o obj/comm_man.o obj/histanlz.o obj/dsort.o -Wall -std=c99 \
 	$(ZRT_OBJ) $(MANNODE_INCL) $(DEBUG)  
 	
-$(SRCNODE).nexe: obj/main_src.o obj/sort.o obj/dsort.o obj/comm_src.o 
+$(SRCNODE).nexe: obj/main_src.o obj/sort.o obj/dsort.o obj/comm_src.o obj/bitonic.o obj/cpuid.o
 	@$(NACL_TOOLCHAIN_PATH)/bin/x86_64-nacl-gcc -o $(SRCNODE).nexe  -s -static -T \
 	$(NACL_TOOLCHAIN_PATH)/x86_64-nacl/lib64/ldscripts/elf64_nacl.x.static -melf64_nacl -m64 \
-	obj/main_src.o obj/sort.o obj/dsort.o obj/comm_src.o -Wall -std=c99 \
+	obj/main_src.o obj/sort.o obj/dsort.o obj/comm_src.o obj/bitonic.o obj/cpuid.o -Wall -std=c99 \
 	$(ZRT_OBJ) $(SRCNODE_INCL) $(DEBUG)  
 	
-$(DSTNODE).nexe: obj/main_dst.o obj/sort.o obj/dsort.o obj/comm_dst.o 
+$(DSTNODE).nexe: obj/main_dst.o obj/sort.o obj/dsort.o obj/comm_dst.o obj/bitonic.o obj/cpuid.o
 	@$(NACL_TOOLCHAIN_PATH)/bin/x86_64-nacl-gcc -o $(DSTNODE).nexe  -s -static -T \
 	$(NACL_TOOLCHAIN_PATH)/x86_64-nacl/lib64/ldscripts/elf64_nacl.x.static -melf64_nacl -m64 \
-	obj/main_dst.o obj/sort.o obj/dsort.o obj/comm_dst.o -Wall -std=c99 \
+	obj/main_dst.o obj/sort.o obj/dsort.o obj/comm_dst.o obj/bitonic.o obj/cpuid.o -Wall -std=c99 \
 	$(ZRT_OBJ) $(DSTNODE_INCL) $(DEBUG)  
 
 #source node & dest node
@@ -81,7 +72,28 @@ obj/histanlz.o: manager/histanlz.c defines.h
 	@$(NACL_TOOLCHAIN_PATH)/bin/x86_64-nacl-gcc -c -o obj/histanlz.o -Wall -std=c99 \
 	$(INCLUDE_FLAGS) $(MACROS_FLAGS) $(DEBUG) -Wno-long-long -O2 -msse4.1 -m64 -Imanager manager/histanlz.c
 
-clean: 
+obj/bitonic.o: bitonic_sort.c bitonic_sort.h
+	@$(NACL_TOOLCHAIN_PATH)/bin/x86_64-nacl-gcc -c -o obj/bitonic.o -Wall -std=c99 \
+	$(INCLUDE_FLAGS) $(MACROS_FLAGS) $(DEBUG) -Wno-long-long -O2 -msse4.1 -m64 -Imanager bitonic_sort.c
+
+obj/cpuid.o : cpuid.c cpuid.h
+	@$(NACL_TOOLCHAIN_PATH)/bin/x86_64-nacl-gcc -c -o obj/cpuid.o -Wall -std=c99 \
+	$(INCLUDE_FLAGS) $(MACROS_FLAGS) $(DEBUG) -Wno-long-long -O2 -m64 -Imanager cpuid.c
+
+cleanlog:
+	@rm -f log/*.log
+	@rm -f vmlog/*.log
+	
+prepare: createdirs
+	@chmod u=rwx gendata.sh
+	@chmod u=rwx genmanifest.sh
+	@./gendata.sh
+	@./genmanifest.sh
+ 	
+createdirs:
+	@mkdir -p obj log data vmlog
+
+clean: cleanlog 
 	@rm -f *.nexe
 	@rm -f obj/*.o
 	@rm -f vmlog/*

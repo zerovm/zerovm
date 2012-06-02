@@ -11,7 +11,7 @@ InputMaxPutCnt = 10240
 InputMode = 0
 
 UserLog = samples/disort/log/{NODEID}sortsrc.stderr.log
-UserLogMax = 65536
+UserLogMax = 262144
 
 CommandLine = {NODEID} source
 
@@ -24,6 +24,5 @@ Log = samples/disort/vmlog/{NODEID}zerovm.sortsrc.log
 Report = samples/disort/vmlog/{NODEID}sortsrc.report.log
 Nexe = samples/disort/nodesrc.nexe
 NexeMax = 10000000
-SyscallsMax = 2048
-SetupCallsMax = 2
-
+SyscallsMax = 3333
+SetupCallsMax = 99999

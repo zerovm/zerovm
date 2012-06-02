@@ -19,6 +19,3 @@ Nexe = samples/disort/nodeman.nexe
 NexeMax = 10000000
 SyscallsMax = 3333
 SetupCallsMax = 99999
-
-== this option forces zerovm cut available for user memory to specified amount
-MemMax = 10240000

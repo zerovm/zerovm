@@ -47,7 +47,7 @@ write_histogram( int fdw, const struct Histogram *histogram ){
 	t.type = EPACKET_HISTOGRAM;
 	t.src_nodeid = histogram->src_nodeid;
 	t.size = array_size;
-	WRITE_FMT_LOG(LOG_DEBUG, "write histogram: size=%d, type=%d, src_nodeid=%d", (int)t.size, t.type, t.src_nodeid);
+	WRITE_FMT_LOG(LOG_DEBUG, "write histogram: size=%d, type=%d, src_nodeid=%d\n", (int)t.size, t.type, t.src_nodeid);
 
 	int bytes = 0;
 	size_t buf_size = sizeof(t)+array_size;
@@ -58,7 +58,7 @@ write_histogram( int fdw, const struct Histogram *histogram ){
 	bytes = sizeof(t);
 	memcpy(buffer+bytes, histogram->array, array_size);
 	bytes = write(fdw, buffer, buf_size);
-	WRITE_FMT_LOG(LOG_DEBUG, "w array bytes=%d", bytes);
+	WRITE_FMT_LOG(LOG_DEBUG, "w array bytes=%d\n", bytes);
 }
 
 /*i/o 2 files
@@ -76,18 +76,18 @@ read_requests_write_detailed_histograms( int fdr, int fdw, int nodeid, const Big
 	int is_complete = 0;
 	char reply;
 	do {
-		WRITE_FMT_LOG(LOG_DEBUG, "Reading from file %d detailed histograms request", fdr );fflush(0);
+		WRITE_FMT_LOG(LOG_DEBUG, "Reading from file %d detailed histograms request\n", fdr );fflush(0);
 		/*receive data needed to create histogram using step=1,
 		actually requested histogram should contains array items range*/
 		struct request_data_t received_histogram_request;
 		int bytes;
 		bytes = read(fdr, (char*) &received_histogram_request, sizeof(received_histogram_request) );
 		assert(bytes>0);
-		WRITE_FMT_LOG(LOG_DEBUG, "r request_data_t bytes=%d", bytes);
+		WRITE_FMT_LOG(LOG_DEBUG, "r request_data_t bytes=%d\n", bytes);
 		bytes = write(fdw, &reply, 1);
-		WRITE_FMT_LOG(LOG_DEBUG, "w reply bytes=%d", bytes);
+		WRITE_FMT_LOG(LOG_DEBUG, "w reply bytes=%d\n", bytes);
 		bytes = read(fdr, (char*) &is_complete, sizeof(is_complete) );
-		WRITE_FMT_LOG(LOG_DEBUG, "r is_complete bytes=%d", bytes);
+		WRITE_FMT_LOG(LOG_DEBUG, "r is_complete bytes=%d\n", bytes);
 
 		int histogram_len = 0;
 		//set to our offset, check it
@@ -100,17 +100,17 @@ read_requests_write_detailed_histograms( int fdr, int fdw, int nodeid, const Big
 		size_t sending_array_len = histogram_len;
 		/*Response to request, entire reply contains requested detailed histogram*/
 		bytes=write(fdw, &nodeid, sizeof(int) );
-		WRITE_FMT_LOG(LOG_DEBUG, "w node_id bytes=%d", bytes);
+		WRITE_FMT_LOG(LOG_DEBUG, "w node_id bytes=%d\n", bytes);
 		bytes=read(fdr, &reply, 1);
-		WRITE_FMT_LOG(LOG_DEBUG, "r reply bytes=%d", bytes);
+		WRITE_FMT_LOG(LOG_DEBUG, "r reply bytes=%d\n", bytes);
 		bytes=write(fdw, &sending_array_len, sizeof(size_t) );
-		WRITE_FMT_LOG(LOG_DEBUG, "w sending_array_len bytes=%d", bytes);
+		WRITE_FMT_LOG(LOG_DEBUG, "w sending_array_len bytes=%d\n", bytes);
 		bytes=read(fdr, &reply, 1);
 		WRITE_FMT_LOG(LOG_DEBUG, "r reply bytes=%d", bytes);
 		bytes=write(fdw, histogram, histogram_len*sizeof(HistogramArrayItem) );
-		WRITE_FMT_LOG(LOG_DEBUG, "r array histogram_len bytes=%d", bytes);
+		WRITE_FMT_LOG(LOG_DEBUG, "r array histogram_len bytes=%d\n", bytes);
 		free( histogram );
-		WRITE_FMT_LOG(LOG_DEBUG, "histograms wrote into file %d", fdw );
+		WRITE_FMT_LOG(LOG_DEBUG, "histograms wrote into file %d\n", fdw );
 	}while(!is_complete);
 	return is_complete;
 }
@@ -124,13 +124,13 @@ int
 read_range_request( int fdr, struct request_data_t* sequence ){
 	int len = 0;
 
-	WRITE_FMT_LOG(LOG_DEBUG, "reading range  request from %d (EPACKET_SEQUENCE_REQUEST)", fdr);
+	WRITE_FMT_LOG(LOG_DEBUG, "reading range  request from %d (EPACKET_SEQUENCE_REQUEST)\n", fdr);
 	int bytes;
 	struct packet_data_t t;
 	t.type = EPACKET_UNKNOWN;
 	bytes=read( fdr, (char*)&t, sizeof(t) );
-	WRITE_FMT_LOG(LOG_DEBUG, "r packet_data_t bytes=%d", bytes);
-	WRITE_FMT_LOG(LOG_DEBUG, "readed packet: type=%d, size=%d, src_node=%d", t.type, (int)t.size, t.src_nodeid );
+	WRITE_FMT_LOG(LOG_DEBUG, "r packet_data_t bytes=%d\n", bytes);
+	WRITE_FMT_LOG(LOG_DEBUG, "readed packet: type=%d, size=%d, src_node=%d\n", t.type, (int)t.size, t.src_nodeid );
 
 	if ( t.type == EPACKET_SEQUENCE_REQUEST )
 	{
@@ -138,12 +138,12 @@ read_range_request( int fdr, struct request_data_t* sequence ){
 		for ( int j=0; j < t.size; j++ ){
 			data = &sequence[j];
 			bytes=read(fdr, data, sizeof(struct request_data_t));
-			WRITE_FMT_LOG(LOG_DEBUG, "r packet_data_t bytes=%d", bytes);
-			WRITE_FMT_LOG(LOG_DEBUG, "recv range request %d %d %d", data->src_nodeid, data->first_item_index, data->last_item_index );
+			WRITE_FMT_LOG(LOG_DEBUG, "r packet_data_t bytes=%d\n", bytes);
+			WRITE_FMT_LOG(LOG_DEBUG, "recv range request %d %d %d\n", data->src_nodeid, data->first_item_index, data->last_item_index );
 		}
 	}
 	else{
-		WRITE_LOG(LOG_ERR,"channel_recv_sequences_request::packet Unknown");
+		WRITE_LOG(LOG_ERR,"channel_recv_sequences_request::packet Unknown\n");
 		assert(0);
 	}
 	return len;
@@ -159,7 +159,7 @@ write_sorted_ranges( int fdw, int fdr, const struct request_data_t* sequence, co
 
 	const int array_len = sequence->last_item_index - sequence->first_item_index + 1;
 	const BigArrayPtr array = src_array+sequence->first_item_index;
-	WRITE_FMT_LOG(LOG_DEBUG, "Sending array_len=%d; min=%d, max=%d", array_len, array[0], array[array_len-1]);
+	WRITE_FMT_LOG(LOG_DEBUG, "Sending array_len=%d; min=%u, max=%u\n", array_len, array[0], array[array_len-1]);
 	int bytes;
 	char unused_reply;
 
@@ -167,19 +167,19 @@ write_sorted_ranges( int fdw, int fdr, const struct request_data_t* sequence, co
 	struct packet_data_t t;
 	t.size = array_len*sizeof(BigArrayItem);
 	t.type = EPACKET_RANGE;
-	WRITE_FMT_LOG(LOG_DEBUG, "writing to %d: size=%d, type=%d (EPACKET_RANGE)", fdw, (int)t.size, t.type );
-	WRITE_FMT_LOG(LOG_DEBUG, "sizeof(struct packet_data_t)=%d", (int)sizeof(struct packet_data_t));
-	bytes=write(fdw, (char*) &t, sizeof(struct packet_data_t) );
-	WRITE_FMT_LOG(LOG_DEBUG, "w packet_data_t bytes=%d", bytes);
+	WRITE_FMT_LOG(LOG_DEBUG, "writing to %d: size=%d, type=%d (EPACKET_RANGE)\n", fdw, (int)t.size, t.type );
+	WRITE_FMT_LOG(LOG_DEBUG, "sizeof(struct packet_data_t)=%d\n", (int)sizeof(struct packet_data_t));
+
+	/*use buffer to send header+data by single package.
+	 *note: only for this case, receiver should read it as 2 messages, using 2 read call one by one*/
+	size_t buf_size = sizeof(struct packet_data_t) + t.size;
+	char *tempbuffer = malloc(buf_size);
+	memset(tempbuffer , '\0', buf_size);
+	memcpy(tempbuffer, (char*) &t, sizeof(struct packet_data_t));
+	memcpy(tempbuffer+sizeof(struct packet_data_t), array, t.size);
+	write(fdw, tempbuffer, buf_size);
 	bytes=read( fdr, &unused_reply, 1 );
-	WRITE_FMT_LOG(LOG_DEBUG, "r reply bytes=%d", bytes);
-	/*write array data*/
-	bytes=write(fdw, array, t.size);
-	WRITE_FMT_LOG(LOG_DEBUG, "w array bytes=%d", bytes);
-	WRITE_FMT_LOG(LOG_DEBUG, "Reading from %d receiver reply;", fdr);
-	bytes=read( fdr, &unused_reply, 1 );
-	WRITE_FMT_LOG(LOG_DEBUG, "r reply bytes=%d", bytes);
-	WRITE_LOG(LOG_DEBUG, "Reply from receiver OK;");
+	WRITE_LOG(LOG_DEBUG, "Reply from receiver OK;\n");
 }
 
 

@@ -7,43 +7,94 @@
  */
 
 
-#include "sort.h"
-#include "defines.h"
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
-#include <sys/types.h> //pid_t
-#include <unistd.h> //getpid()
+#include <assert.h>
+
+#include "sort.h"
+#include "defines.h"
+#include "cpuid.h"
+#include "bitonic_sort.h"
+
+static void
+copy_array( BigArrayPtr dst_array, const BigArrayPtr src_array, int array_len ){
+	for ( int i=0; i < array_len; i++ )
+		dst_array[i] = src_array[i];
+}
 
 
-void copy_array( BigArrayPtr dst_array, const BigArrayPtr src_array, int array_len );
-BigArrayPtr alloc_copy_array( const BigArrayPtr array, int array_len );
+static int
+quicksort_BigArrayItem_comparator( const void *m1, const void *m2 ){
+
+	const BigArrayItem *t1= (BigArrayItem* const)(m1);
+	const BigArrayItem *t2= (BigArrayItem* const)(m2);
+
+	if ( *t1 < *t2 )
+		return -1;
+	else if ( *t1 > *t2 )
+		return 1;
+	else return 0;
+	return 0;
+}
 
 
-BigArrayPtr
-alloc_merge_sort( const BigArrayPtr array, int array_len ){
-	if ( array_len <= 1 )
-		return alloc_copy_array( array, array_len );
+BigArrayPtr alloc_sort( BigArrayPtr array, int array_len ){
+	BigArrayPtr unsorted_array = alloc_copy_array( array, array_len );
 
-	int middle = array_len/2;
-	BigArrayPtr left = alloc_merge_sort( array, middle );
-	BigArrayPtr right = alloc_merge_sort( array+middle, array_len-middle );
+	/*for sse41 instruction use bitonic sort*/
+	if ( test_sse41_CPU() ){
+		bitonic_sort_chunked((float*)array, array_len, (float*)unsorted_array, DEFAULT_CHUNK_SIZE);
+	}
+	/*for another case use c quick sort*/
+	else{
+		qsort( array, array_len, sizeof(BigArrayItem), quicksort_BigArrayItem_comparator );
+	}
+	return array;
+}
 
-	BigArrayPtr result = merge( left, middle, right, array_len-middle );
-	free(left);
-	free(right);
-	return result;
+BigArrayPtr merge( BigArrayPtr dest_array, BigArrayPtr left_array, int left_array_len,
+		BigArrayPtr right_array, int right_array_len ){
+	if (!dest_array) return NULL;
+	BigArrayPtr larray = left_array;
+	BigArrayPtr rarray = right_array;
+	int current_result_index = 0;
+	while ( left_array_len > 0 && right_array_len > 0 ){
+		if ( larray[0] <= rarray[0]  ){
+			dest_array[current_result_index++] = larray[0];
+			++larray;
+			--left_array_len;
+		}
+		else{
+			dest_array[current_result_index++] = rarray[0];
+			++rarray;
+			--right_array_len;
+		}
+	}
+
+	//copy last item
+	if ( left_array_len > 0 ){
+		copy_array( dest_array+current_result_index, larray, left_array_len );
+	}
+	if ( right_array_len > 0 ){
+		copy_array( dest_array+current_result_index, rarray, right_array_len );
+	}
+
+	return dest_array;
 }
 
 /**@param global_array_index is used to save result to correct place*/
 BigArrayPtr
-merge(
+alloc_merge(
 		const BigArrayPtr left_array, int left_array_len,
 		const BigArrayPtr right_array, int right_array_len ){
 	BigArrayPtr larray = left_array;
 	BigArrayPtr rarray = right_array;
 	BigArrayPtr result = malloc( sizeof(BigArrayItem) *(left_array_len+right_array_len));
+	if ( !result ){
+		WRITE_FMT_LOG(LOG_DEBUG, "NULL pointer, for len=%d\n", left_array_len+right_array_len );
+		return NULL;
+	}
 	int current_result_index = 0;
 	while ( left_array_len > 0 && right_array_len > 0 ){
 		if ( larray[0] <= rarray[0]  ){
@@ -58,7 +109,7 @@ merge(
 		}
 	}
 
-	//if merge arrays not empty then it can hold last item
+	//copy last item
 	if ( left_array_len > 0 ){
 		copy_array( result+current_result_index, larray, left_array_len );
 	}
@@ -70,10 +121,7 @@ merge(
 }
 
 
-void copy_array( BigArrayPtr dst_array, const BigArrayPtr src_array, int array_len ){
-	for ( int i=0; i < array_len; i++ )
-		dst_array[i] = src_array[i];
-}
+
 
 
 BigArrayPtr alloc_copy_array( const BigArrayPtr array, int array_len ){

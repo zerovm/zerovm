@@ -4,15 +4,15 @@
 =====================================================================
 
 Output = samples/disort/data/{NODEID}sorted.data
-OutputMax = 67108864
-OutputMaxGet = 67108864
+OutputMax = 4000000
+OutputMaxGet = 4000000
 OutputMaxGetCnt = 1024
-OutputMaxPut = 67108864
+OutputMaxPut = 4000000
 OutputMaxPutCnt = 1024
 OutputMode = 0
 
-UserLog = samples/sort/log/{NODEID}sort.stderr.log
-UserLogMax = 65536
+UserLog = samples/disort/log/{NODEID}sortdst.stderr.log
+UserLogMax = 262144
 
 CommandLine = {NODEID} dest
 
@@ -25,6 +25,5 @@ Log = samples/disort/vmlog/{NODEID}zerovm.sortdst.log
 Report = samples/disort/vmlog/{NODEID}sortdst.report.log
 Nexe = samples/disort/nodedst.nexe
 NexeMax = 10000000
-SyscallsMax = 2048
-SetupCallsMax = 2
-
+SyscallsMax = 3333
+SetupCallsMax = 99999

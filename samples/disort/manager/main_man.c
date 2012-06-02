@@ -22,7 +22,8 @@
 
 int main(int argc, char **argv){
 	int nodeid = -1;
-	WRITE_FMT_LOG(LOG_DEBUG, "Manager node started: argc=%d argv=%p \n", argc, argv);
+	WRITE_FMT_LOG(LOG_DEBUG, "Manager node started: argc=%d argv=%p\n", argc, argv);
+
 	for ( int i=0; i < argc; i++ ){
 		WRITE_FMT_LOG(LOG_DEBUG, "argv[%d]=%s \n", i, argv[i]);
 	}
@@ -31,12 +32,11 @@ int main(int argc, char **argv){
 		return 1;
 	}
 	nodeid = atoi(argv[1]);
-	WRITE_FMT_LOG(LOG_DEBUG, "Manager node started: nodeid=%d \n", nodeid);
-	WRITE_LOG(LOG_DEBUG, "Manager node started");
-	exit(0);
+	WRITE_FMT_LOG(LOG_DEBUG, "nodeid=%d \n", nodeid);
 
 	/*crc reading from all source nodes*/
-	uint32_t crc_array[SRC_NODES_COUNT];
+	//uint32_t crc_array[SRC_NODES_COUNT];
+	uint32_t *crc_array = malloc(SRC_NODES_COUNT*sizeof(uint32_t));
 	memset(crc_array, '\0', SRC_NODES_COUNT*sizeof(uint32_t));
 	read_crcs(MANAGER_FD_READ_CRC, crc_array);
 	/*crc read ok*/
@@ -52,10 +52,10 @@ int main(int argc, char **argv){
 	 * but histogram analizer algorithm is required deterministic order*/
 	qsort( histograms, SRC_NODES_COUNT, sizeof(struct Histogram), histogram_srcid_comparator );
 
-	WRITE_LOG(LOG_DEBUG, "Analize histograms and request detailed histograms");
+	WRITE_LOG(LOG_DEBUG, "Analize histograms and request detailed histograms\n");
 	struct request_data_t** range = alloc_range_request_analize_histograms(
 			ARRAY_ITEMS_COUNT, nodeid, histograms, SRC_NODES_COUNT );
-	WRITE_LOG(LOG_DEBUG, "Analize histograms and request detailed histograms OK");
+	WRITE_LOG(LOG_DEBUG, "Analize histograms and request detailed histograms OK\n");
 
 	for (int i=0; i < SRC_NODES_COUNT; i++ )
 	{
@@ -67,7 +67,7 @@ int main(int argc, char **argv){
 	for (int i=0; i < SRC_NODES_COUNT; i++ ){
 		///
 		int src_write_fd = range[0][i].src_nodeid - FIRST_SOURCE_NODEID + MANAGER_FD_WRITE_RANGE_REQUEST;
-		WRITE_FMT_LOG(LOG_DEBUG, "write_sorted_ranges fdw=%d", src_write_fd );
+		WRITE_FMT_LOG(LOG_DEBUG, "write_sorted_ranges fdw=%d\n", src_write_fd );
 		write_range_request( src_write_fd, range, SRC_NODES_COUNT, i );
 	}
 
@@ -76,6 +76,8 @@ int main(int argc, char **argv){
 		free( range[i] );
 	}
 	free(range);
+
+	WRITE_LOG(LOG_DEBUG, "Read confirmation sort results, to test it\n");
 
 	struct sort_result *results = read_sort_result( MANAGER_FD_READ_SORT_RESULTS, SRC_NODES_COUNT );
 	/*sort results by nodeid, because receive order not deterministic*/
@@ -96,10 +98,10 @@ int main(int argc, char **argv){
 
 	WRITE_FMT_LOG(LOG_UI, "Distributed sort complete, Test %d, %d, %d\n", sort_ok, crc_test_unsorted, crc_test_sorted );
 	if ( crc_test_unsorted == crc_test_sorted ){
-		WRITE_LOG(LOG_UI, "crc OK");
+		WRITE_LOG(LOG_UI, "crc OK\n");
 	}
 	else{
-		WRITE_LOG(LOG_UI,"crc FAILED");
+		WRITE_LOG(LOG_UI,"crc FAILED\n");
 	}
 	return 0;
 }

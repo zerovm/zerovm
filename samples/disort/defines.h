@@ -13,7 +13,7 @@
 #define LOG_UI 1
 #define LOG_DETAILED_UI 2
 #define LOG_DEBUG 3
-#define LOG_LEVEL LOG_DEBUG
+#define LOG_LEVEL LOG_DETAILED_UI
 
 #define WRITE_FMT_LOG(level, fmt, args...) \
 		if (level<=LOG_LEVEL ){\
@@ -29,9 +29,12 @@
 #define SOURCE_FILE_FMT "data/%dunsorted.data"
 #define DEST_FILE_FMT "data/%dsorted.data"
 
-#define BASE_HISTOGRAM_STEP 1000
-#define ARRAY_ITEMS_COUNT 1000000
 #define SRC_NODES_COUNT 5
+#define ARRAY_ITEMS_COUNT 1000000
+#define CHUNK_COUNT 1000
+#define BASE_HISTOGRAM_STEP (ARRAY_ITEMS_COUNT/CHUNK_COUNT)
+/*If MERGE_ON_FLY defined then sorted chunks received by destination nodes will only merged when obtained*/
+//#define MERGE_ON_FLY
 
 /*Currently up to 50src and 50dst nodes supported,
  * FD values should be unchanged for less or equal nodes count*/
