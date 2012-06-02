@@ -33,8 +33,11 @@
 
 #include <unistd.h> /* only for tests */
 
-//### temporary fix. stat != nacl_abi_stat
-//also i had weird error when tried to use "service_runtime/include/sys/stat.h"
+/*
+ * temporary fix for nacl. stat != nacl_abi_stat
+ * also i had a weird error when tried to use "service_runtime/include/sys/stat.h"
+ *
+ */
 struct nacl_abi_stat
 {  /* must be renamed when ABI is exported */
   int64_t   nacl_abi_st_dev;       /* not implemented */
@@ -55,7 +58,7 @@ struct nacl_abi_stat
   int64_t   nacl_abi_st_ctimensec; /* possibly just pad */
 };
 
-// ### same here
+/* same here */
 struct nacl_abi_timeval {
   int64_t   nacl_abi_tv_sec;
   int32_t   nacl_abi_tv_usec;
@@ -257,7 +260,7 @@ char *itoa(int n, char *s, int b) {
 int32_t zrt_nan(uint32_t *args)
 {
   /* log/return "not implemented syscall" error */
-  SHOWID; return 0; /* ### use "not implemented" error code from zerovm */
+  SHOWID; return 0;
 }
 
 /* empty syscall. does nothing */

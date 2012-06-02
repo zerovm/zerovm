@@ -145,15 +145,23 @@ int32_t TrapReadHandle(struct NaClApp *nap,
   }
 #endif
 
-  // ### make it function with editable list of available channels
-  /* only allow this call for InputChannel, OutputChannel */
+  /*
+   * only allow this call for InputChannel, OutputChannel
+   * todo: make it function with editable list of available channels
+   *       after integration with 0mq this "todo" can be removed
+   */
+
   if(desc != InputChannel && desc != OutputChannel) return -INVALID_DESC;
 
   /* take fd from nap with given desc */
   if(nap == NULL) return -INTERNAL_ERR;
   fd = &nap->manifest->user_setup->channels[desc];
   if(fd == NULL) return -INVALID_DESC;
-  if(fd->mounted != LOADED) return -INVALID_MODE; // ### make it function with editable list of available channels
+
+  /*
+   * todo: make it function with editable list of available channels
+   */
+  if(fd->mounted != LOADED) return -INVALID_MODE;
 
   /* check arguments sanity */
   if(size < 1) return -INSANE_SIZE;
@@ -189,6 +197,12 @@ int32_t TrapWriteHandle(struct NaClApp *nap,
   char *sys_buffer;
   int32_t retcode;
 
+  /*
+   * only allow this call for OutputChannel
+   * todo: make it function with editable list of available channels
+   *       after integration with 0mq this "todo" can be removed
+   */
+
   /* convert address and check buffer */
   sys_buffer = (char*)NaClUserToSys(nap, (uintptr_t) buffer);
 
@@ -211,14 +225,17 @@ int32_t TrapWriteHandle(struct NaClApp *nap,
   }
 #endif
 
-  /* only allow this call for OutputChannel */
   if(desc != OutputChannel) return -INVALID_DESC;
 
   /* take fd from nap with given desc */
   if(nap == NULL) return -INTERNAL_ERR;
   fd = &nap->manifest->user_setup->channels[desc];
   if(fd == NULL) return -INVALID_DESC;
-  if(fd->mounted != LOADED) return -INVALID_MODE; // ### make it function with editable list of available channels
+
+  /*
+   * todo: make it function with editable list of available channels
+   */
+  if(fd->mounted != LOADED) return -INVALID_MODE;
 
   /* check arguments sanity */
   if(size < 1) return -INSANE_SIZE;
@@ -299,7 +316,7 @@ static int32_t TrapUserSetupHandle(struct NaClApp *nap, struct SetupList *h)
 
   /* check/update system limits. 1st time - set fields in hint */
   TRY_UPDATE(hint->max_cpu, policy->max_cpu);
-  TRY_UPDATE(hint->max_mem, policy->max_mem); /* ### call unmap here? */
+  TRY_UPDATE(hint->max_mem, policy->max_mem);
   TRY_UPDATE(hint->max_syscalls, policy->max_syscalls);
   TRY_UPDATE(hint->max_setup_calls, policy->max_setup_calls);
 
@@ -320,20 +337,9 @@ static int32_t TrapUserSetupHandle(struct NaClApp *nap, struct SetupList *h)
 }
 
 /*
- * "One Ring" syscall main routine
- *
- * 1st parameter is a pointer to the command (function, arg1, reserved, argv3,..)
- * return int32_t, value depends on invoked function
- */
-/* ### move to documentation or rewrite
- * supported three functions:
- * ZVMSetup(char *hint, char answer[])
- * TrapRead(int32_t buffer, int32_t size, int64_t offset)
- * TrapWrite(int32_t buffer, int32_t size, int64_t offset)
- *
- * "args" is an array of syscall name and its arguments:
- * FunctionName(arg1,arg2,..) where arg1/2/3 are values/pointers
- * note: since nacl spoils 1st two arguments if they are pointers, arg[1] are not used
+ * "One Ring" syscall main routine. in the future will replace nacl syscalls.
+ * "args" is an array of syscall name and its arguments
+ * note: since nacl patch two 1st arguments if they are pointers, arg[1] are not used
  */
 int32_t TrapHandler(struct NaClApp *nap, uint32_t args)
 {

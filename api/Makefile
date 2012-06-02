@@ -9,6 +9,7 @@ all:
 	$(NACL_TOOLCHAIN_PATH)/linux_x86/bin/x86_64-nacl-gcc -o zrt.o -Wall \
 	$(INCLUDE_FLAGS) $(MACROS_FLAGS) $(DEBUG_ENABLE) \
 	-c -Wno-long-long -pthread -O2 -msse4.1 -m64 zrt.c
+	ar rc libzrt.a syscall_manager.o zvm.o zrt.o
 
 clean:	
-	rm -f *.o
+	rm -f *.o *.a

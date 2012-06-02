@@ -10,25 +10,10 @@
 #include <stdio.h>
 #include <fcntl.h>
 
-/* remove junk */
-#include "src/service_runtime/include/bits/mman.h"
-#include "src/service_runtime/sel_ldr.h"
-#include "src/manifest/manifest_parser.h"
-#include "src/service_runtime/nacl_config.h"
-#include "src/service_runtime/sel_mem.h"
-#include "src/service_runtime/nacl_memory_object.h"
-#include "src/platform/nacl_log.h"
-#include <src/manifest/manifest_parser.h>
-#include <src/manifest/manifest_setup.h>
-/**/
-
-#include "src/service_runtime/sel_ldr.h"
-#include "src/service_runtime/nacl_config.h"
-#include "src/platform/nacl_log.h"
 #include <src/manifest/preload.h>
 #include "src/manifest/mount_channel.h"
 
-/* ### remove code doubling
+/*
  * infere file open flags by channel prefix
  */
 static int GetChannelOpenFlags(struct PreOpenedFileDesc* channel)
@@ -63,7 +48,6 @@ int PreloadChannel(struct NaClApp *nap, struct PreOpenedFileDesc* channel)
   COND_ABORT(channel->mounted != LOADED, "channel is not supposed to be loaded\n");
 
   /* open file */
-  // ### add O_DIRECT needs #define _GNU_SOURCE
   channel->handle = open((char*)channel->name, GetChannelOpenFlags(channel), S_IRWXU);
   COND_ABORT(channel->handle < 0, "channel open error\n");
 

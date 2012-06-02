@@ -27,6 +27,8 @@ Nexe = samples/zrt/hello.nexe
 NexeMax = 10000000
 SyscallsMax = 3333
 SetupCallsMax = 99999
+ContentType = VeryCleverContentType
+XObjectMetaTag = SomeNeedfullThings
 
 == this option can be disabled if user code does not use date/time functions
 ==TimeStamp = 12345

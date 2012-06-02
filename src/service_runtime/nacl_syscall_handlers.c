@@ -17,8 +17,7 @@
 #include "src/service_runtime/linux/nacl_syscall_inl.h"
 #include "src/manifest/trap.h"
 #include "include/nacl_assert.h"
-
-#include "src/manifest/manifest_setup.h" //### to make manifest work
+#include "src/manifest/manifest_setup.h"
 
 struct NaClSyscallTableEntry nacl_syscall[NACL_MAX_SYSCALLS] = {{0}};
 static const size_t kMaxUsableFileSize = (SIZE_T_MAX >> 1);
@@ -208,7 +207,7 @@ int32_t NaClSysSysbrk(struct NaClApp *nap, uintptr_t new_break)
       if(nap->user_side_flag && nap->manifest != NULL &&
           nap->manifest->user_setup->max_mem)
       {
-        /* ### skip real mprotect() syscall. or shell we? */
+        /* skip real mprotect() syscall. or shell we? */
       }
       else /* proceed real syscall */
       {
@@ -876,32 +875,6 @@ int32_t NaClSysTls_Get(struct NaClApp *nap) {
   return user_tls;
 }
 
-/* mutex */
-int32_t NaClSysMutex_Create(struct NaClApp *nap)
-{
-  int32_t              retval = -NACL_ABI_EINVAL;
-  struct NaClDescMutex *desc;
-
-  NaClLog(3,
-          ("Entered NaClCommonSysMutex_Create(0x%08"NACL_PRIxPTR")\n"),
-          (uintptr_t) nap);
-
-  desc = malloc(sizeof(*desc));
-
-  if (!desc || !NaClDescMutexCtor(desc)) {
-    retval = -NACL_ABI_ENOMEM;
-    goto cleanup;
-  }
-
-  retval = NaClSetAvail(nap, (struct NaClDesc *)desc);
-  desc = NULL;
-cleanup:
-  free(desc);
-  NaClLog(3, ("NaClCommonSysMutex_Create(0x%08"NACL_PRIxPTR") = %d\n"),
-          (uintptr_t) nap, retval);
-  return retval;
-}
-
 /*
  * decoders. get call parameters from the user stack and call the syscall
  */
@@ -968,10 +941,13 @@ static int32_t NaClSysTls_GetDecoder(struct NaClApp *nap)
   return NaClSysTls_Get(nap);
 }
 
-/* this function was automagically generated */
+/*
+ * only needed by nexe prologue. if user need real functionality
+ * zrt library can be used (in the future)
+ */
 static int32_t NaClSysMutex_CreateDecoder(struct NaClApp *nap)
 {
-  return NaClSysMutex_Create(nap);
+  return 1;
 }
 
 /* d'b: trap(). see documentation for the details */

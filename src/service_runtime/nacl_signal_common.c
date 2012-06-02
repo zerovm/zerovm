@@ -44,7 +44,7 @@ ssize_t NaClSignalErrorMessage(const char *msg) {
   return 0;
 }
 
-/* ### requires changes in other places
+/*
  * Return non-zero if the signal context is currently executing in an
  * untrusted environment.
  */

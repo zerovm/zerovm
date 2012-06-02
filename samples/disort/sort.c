@@ -42,14 +42,15 @@ quicksort_BigArrayItem_comparator( const void *m1, const void *m2 ){
 BigArrayPtr alloc_sort( BigArrayPtr array, int array_len ){
 	BigArrayPtr unsorted_array = alloc_copy_array( array, array_len );
 
-	/*for sse41 instruction use bitonic sort*/
-	if ( test_sse41_CPU() ){
-		bitonic_sort_chunked((float*)array, array_len, (float*)unsorted_array, DEFAULT_CHUNK_SIZE);
-	}
-	/*for another case use c quick sort*/
-	else{
-		qsort( array, array_len, sizeof(BigArrayItem), quicksort_BigArrayItem_comparator );
-	}
+//	/*for sse41 instruction use bitonic sort*/
+//	if ( test_sse41_CPU() ){
+//		bitonic_sort_chunked((float*)array, array_len, (float*)unsorted_array, DEFAULT_CHUNK_SIZE);
+//	}
+//	/*for another case use c quick sort*/
+//	else{
+//		qsort( array, array_len, sizeof(BigArrayItem), quicksort_BigArrayItem_comparator );
+//	}
+	qsort( array, array_len, sizeof(BigArrayItem), quicksort_BigArrayItem_comparator );
 	return array;
 }
 

@@ -41,20 +41,24 @@ NORETURN void SwitchToApp(struct NaClApp  *nap, uintptr_t stack_ptr)
   NaClThreadContextCtor(nacl_user, nap, nap->initial_entry_pt,
                         NaClSysToUserStackAddr(nap, stack_ptr), 0);
   assert(NaClSignalStackAllocate(&nap->signal_stack));
-
-  nacl_user->sysret = nap->break_addr; /* can be set from NaClThreadContextCtor() */
-  nacl_user->prog_ctr = NaClUserToSys(nap, nap->initial_entry_pt); /* which one do i need, both? */
-  nacl_user->new_prog_ctr = NaClUserToSys(nap, nap->initial_entry_pt); /* ? */
+  nacl_user->sysret = nap->break_addr;
+  nacl_user->prog_ctr = NaClUserToSys(nap, nap->initial_entry_pt);
+  nacl_user->new_prog_ctr = NaClUserToSys(nap, nap->initial_entry_pt);
 
   /* initialize "nacl_sys" global */
   if(!nacl_sys) nacl_sys = malloc(sizeof(*nacl_sys));
   assert(nacl_sys != NULL);
-
-  nacl_sys->rbp = NaClGetStackPtr(); // ### do i need it?
+  nacl_sys->rbp = NaClGetStackPtr();
   nacl_sys->rsp = NaClGetStackPtr();
 
-  gnap = nap; /* global nap now point to NaClApp object from main() */
-  NaClSwitchSSE(nacl_user); // ### put here switch to chose proper function: avx or sse
+  /* set global nap to current nap object */
+  gnap = nap;
+
+  /*
+   * todo: put here switch to chose proper function: avx or sse
+   */
+  NaClSwitchSSE(nacl_user);
+
   /* unreachable */
 }
 /* d'b end */

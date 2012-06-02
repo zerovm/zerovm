@@ -24,12 +24,11 @@
 #include "src/service_runtime/include/sys/fcntl.h"
 #include "src/service_runtime/include/bits/mman.h"
 #include "src/service_runtime/include/sys/stat.h"
-//YaroslavLitvinov fixed error: undefined reference to S_ISREG,S_ISDIR
-#include <sys/stat.h>
 
-#include "src/service_runtime/sel_ldr.h" // ### to make gnap work
-#include "src/service_runtime/nacl_globals.h" // ### to make gnap work
-#include "src/manifest/manifest_setup.h" //### to make manifest work
+/* for global nap and manifest using */
+#include "src/service_runtime/sel_ldr.h"
+#include "src/service_runtime/nacl_globals.h"
+#include "src/manifest/manifest_setup.h"
 
 /*
  * Map our ABI to the host OS's ABI.  On linux, this should be a big no-op.
@@ -137,7 +136,7 @@ uintptr_t NaClHostDescMap(struct NaClHostDesc *d,
 
   /*
    * use "whole chunk" memory manager if set in manifest
-   * and this is "user side call"
+   * and if this is "user side call"
    * note: for safety we check (global) nap before use it
    */
   if(gnap != NULL && gnap->user_side_flag && gnap->manifest != NULL &&

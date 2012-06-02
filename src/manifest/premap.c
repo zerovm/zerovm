@@ -10,47 +10,37 @@
 #include <fcntl.h>
 #include <errno.h>
 
+#include "src/desc/nacl_desc_io.h"
 #include "src/service_runtime/include/bits/mman.h"
 #include "src/service_runtime/sel_ldr.h"
-#include "src/service_runtime/nacl_config.h"
-#include "src/service_runtime/sel_mem.h"
-#include "src/service_runtime/nacl_memory_object.h"
 #include "src/service_runtime/nacl_syscall_handlers.h"
-#include "src/platform/nacl_log.h"
 #include "src/manifest/premap.h"
 #include "src/manifest/manifest_setup.h"
-
-#include "src/desc/nacl_desc_io.h"
 #include "src/manifest/mount_channel.h"
 
-/* ### remove code doubling
- * infere file open flags by channel prefix
- */
+#define GET_FLAGS(FLAGS, channel)\
+do{\
+  int flags[] = FLAGS;\
+  COND_ABORT(channel->type >= sizeof(flags)/sizeof(*flags), "unknown channel type\n");\
+  return flags[channel->type];\
+} while(0)
+
+/* infere file open flags by channel prefix */
 static int GetChannelOpenFlags(struct PreOpenedFileDesc* channel)
 {
-  int flags[] = CHANNEL_OPEN_FLAGS;
-  COND_ABORT(channel->type >= sizeof(flags)/sizeof(*flags), "unknown channel type\n");
-  return flags[channel->type];
+  GET_FLAGS(CHANNEL_OPEN_FLAGS, channel);
 }
 
-/* ### remove code doubling
- * infere file map flags by channel prefix
- */
+/* infere file map flags by channel prefix */
 static int GetChannelMapFlags(struct PreOpenedFileDesc* channel)
 {
-  int flags[] = CHANNEL_MAP_FLAGS;
-  COND_ABORT(channel->type >= sizeof(flags)/sizeof(*flags), "unknown channel type\n");
-  return flags[channel->type];
+  GET_FLAGS(CHANNEL_MAP_FLAGS, channel);
 }
 
-/* ### remove code doubling
- * infere file map protection by channel prefix
- */
+/* infere file map protection by channel prefix */
 static int GetChannelMapProt(struct PreOpenedFileDesc* channel)
 {
-  int flags[] = CHANNEL_MAP_PROT;
-  COND_ABORT(channel->type >= sizeof(flags)/sizeof(*flags), "unknown channel type\n");
-  return flags[channel->type];
+  GET_FLAGS(CHANNEL_MAP_PROT, channel);
 }
 
 /*

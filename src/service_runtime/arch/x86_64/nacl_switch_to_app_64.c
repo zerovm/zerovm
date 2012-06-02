@@ -35,7 +35,7 @@ void NaClInitSwitchToApp(struct NaClApp *nap) {
 }
 
 /*
- * ### replacement. instead of NaClAppThread is NaClApp used
+ * switch to the nacl module (untrusted content)
  */
 NORETURN void NaClSwitchToApp(struct NaClApp *nap, nacl_reg_t new_prog_ctr)
 {
