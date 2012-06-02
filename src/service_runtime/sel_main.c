@@ -444,6 +444,7 @@ int main(int argc, char **argv)
 			  err = get_all_records_from_dbtable(ZVM_DB_NAME, netw_nodename, nap->db_records);
 			  if ( err ){
 				  NaClLog(LOG_ERROR, "database %s read error= %d\n", ZVM_DB_NAME, err);
+				  NaClAbort();
 			  }else{
 				  nap->zmq_pool = malloc(sizeof(struct zeromq_pool));
 				  init_zeromq_pool(nap->zmq_pool);
@@ -452,14 +453,17 @@ int main(int argc, char **argv)
 		  }
 		  else{
 			  NaClLog(LOG_ERROR, "NETWORKING defined, db does not exist or empty\n");
+			  NaClAbort();
 		  }
 	  }
 	  else{
 		  NaClLog(LOG_ERROR, "NETWORKING defined, but NULL nodename??\n");
+		  NaClAbort();
 	  }
   }
   else{
 	  NaClLog(LOG_ERROR, "NETWORKING defined but command line parameters not valid\n");
+	  NaClAbort();
   }
 #endif
 
@@ -574,9 +578,9 @@ int main(int argc, char **argv)
   /*YaroslavLitvinov*/
 #ifdef NETWORKING
   if (nap->zmq_pool && nap->db_records){
-	  NaClLog(LOG_ERROR, "1");
+	  NaClLog(LOG_ERROR, "close_all_comm_files");
 	  close_all_comm_files(nap->zmq_pool);
-	  NaClLog(LOG_ERROR, "2");
+	  NaClLog(LOG_ERROR, "close_all_comm_files OK");
   }
 #endif
 

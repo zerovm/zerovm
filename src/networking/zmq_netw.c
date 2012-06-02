@@ -214,7 +214,7 @@ struct sock_file_t* open_sockf(struct zeromq_pool* zpool, struct db_records_t *d
 		if ( !sockf ){
 			/*no memory allocated
 			 * This code section can't be covered by unit tests because it's not depends from input params*/
-			NaClLog(LOG_ERROR, "sockf malloc NULL");
+			NaClLog(LOG_ERROR, "sockf malloc NULL\n\n");
 		}
 		else{
 			struct sock_file_t* dual_sockf = NULL;
@@ -228,7 +228,7 @@ struct sock_file_t* open_sockf(struct zeromq_pool* zpool, struct db_records_t *d
 			dual_sockf = get_dual_sockf(zpool, db_records, fd);
 			if ( dual_sockf ){
 				/*Flow2: dual direction socket, use existing zmq network socket*/
-				NaClLog(LOG_INFO, "zvm_open use dual socket");
+				NaClLog(LOG_INFO, "zvm_open use dual socket\n");
 				sockf->netw_socket = dual_sockf->netw_socket;
 			}
 			else{
@@ -236,30 +236,36 @@ struct sock_file_t* open_sockf(struct zeromq_pool* zpool, struct db_records_t *d
 				NaClLog(LOG_INFO, "open socket: %s, sock type %d\n", db_record->endpoint, db_record->sock);
 				sockf->netw_socket = zmq_socket( zpool->context, db_record->sock );
 				if ( !sockf->netw_socket ){
-					NaClLog(LOG_ERROR, "zmq_socket return NULL");
+					NaClLog(LOG_ERROR, "zmq_socket return NULL\n");
 					free(sockf), sockf=NULL;
 				}
 				else{
 					int err = ERR_OK;
 					switch(db_record->method){
 					case EMETHOD_BIND:
-						NaClLog(LOG_INFO, "open socket: bind");
+						NaClLog(LOG_INFO, "open socket: bind\n");
 						err= zmq_bind(sockf->netw_socket, db_record->endpoint);
-						NaClLog(LOG_ERROR, "zmq_bind status err %d, errno %d, status %s\n", err, zmq_errno(), zmq_strerror(zmq_errno()));
+						NaClLog(LOG_ERROR, "zmq_bind status err %d\n", err);
+						if ( err ){
+							NaClLog(LOG_ERROR, "zmq_bind errno %d, status %s\n", zmq_errno(), zmq_strerror(zmq_errno()));
+						}
 						break;
 					case EMETHOD_CONNECT:
-						NaClLog(LOG_INFO, "open socket: connect");
+						NaClLog(LOG_INFO, "open socket: connect\n");
 						err = zmq_connect(sockf->netw_socket, db_record->endpoint);
-						NaClLog(LOG_INFO, "zmq_connect status err %d, errno %d, status %s\n", err, zmq_errno(), zmq_strerror(zmq_errno()));
+						NaClLog(LOG_INFO, "zmq_connect status err %d\n", err);
+						if (err){
+							NaClLog(LOG_INFO, "zmq_connect errno %d, status %s\n", zmq_errno(), zmq_strerror(zmq_errno()));
+						}
 						break;
 					default:
-						NaClLog(LOG_ERROR, "open socket: undefined sock method");
+						NaClLog(LOG_ERROR, "open socket: undefined sock method\n");
 						err = ERR_ERROR;
 						break;
 					}
 
 					if ( err != ERR_OK ){
-						NaClLog(LOG_ERROR, "close opened socket, free sockf, because connect|bind failed");
+						NaClLog(LOG_ERROR, "close opened socket, free sockf, because connect|bind failed\n");
 						zmq_close( sockf->netw_socket );
 						free(sockf), sockf = NULL;
 					}
@@ -304,13 +310,16 @@ int close_sockf(struct zeromq_pool* zpool, struct sock_file_t *sockf){
 			free(sockf->tempbuf->buf), sockf->tempbuf->buf=NULL;
 			free(sockf->tempbuf), sockf->tempbuf = NULL;
 		}
-		NaClLog(LOG_INFO, "dual direction zmq socket should be closed later");
+		NaClLog(LOG_INFO, "dual direction zmq socket should be closed later\n");
 	}else if( sockf->netw_socket ){
 		int err = 0;
-		NaClLog(LOG_INFO, "zmq socket closing...");
+		NaClLog(LOG_INFO, "zmq socket closing...\n");
 		err = zmq_close( sockf->netw_socket );
 		sockf->netw_socket = NULL;
-		NaClLog(LOG_INFO, "zmq_close status err %d, errno %d, status %s\n", err, zmq_errno(), zmq_strerror(zmq_errno()));
+		NaClLog(LOG_INFO, "zmq_close status err %d\n", err);
+		if (err){
+			NaClLog(LOG_INFO, "zmq_close status errno %d, status %s\n", zmq_errno(), zmq_strerror(zmq_errno()));
+		}
 	}
 	if ( ERR_OK == err )
 		return remove_sockf_from_array_by_fd(zpool, sockf->fs_fd );
@@ -341,7 +350,7 @@ ssize_t  write_sockf(struct sock_file_t *sockf, const char *buf, size_t size){
 		}
 		else{
 			wrote = size;
-			NaClLog(LOG_INFO, "zmq_send ok");
+			NaClLog(LOG_INFO, "zmq_send ok\n");
 		}
 		zmq_msg_close (&msg);
 	}
@@ -427,7 +436,7 @@ ssize_t read_sockf(struct sock_file_t *sockf, char *buf, size_t count){
 
 int open_all_comm_files(struct zeromq_pool* zpool, struct db_records_t *db_records){
 	int err = ERR_OK;
-	NaClLog(LOG_INFO, "%p, %p", (void*)zpool, (void*)db_records);
+	NaClLog(LOG_INFO, "open_all_comm_files %p, %p", (void*)zpool, (void*)db_records);
 	for (int i=0; i < db_records->count; i++){
 		if ( EFILE_MSQ == db_records->array[i].ftype ){
 			struct db_record_t *record = &db_records->array[i];

@@ -20,6 +20,7 @@
 #include "api/zvm.h"
 #include "src/service_runtime/sel_ldr.h"
 #include "src/service_runtime/nacl_globals.h"
+#include "src/platform/nacl_exit.h"
 
 #  ifdef __cplusplus
 #    define EXTERN_C_BEGIN extern "C" {
@@ -123,8 +124,9 @@ int32_t TrapReadHandle(struct NaClApp *nap,
 
   /* convert address and check buffer */
   sys_buffer = (char*)NaClUserToSys(nap, (uintptr_t) buffer);
+  //void *buf_user_addr = NaClSysToUser(nap, buffer);
 
-  NaClLog(4, "%s() invoked: desc=%d, buffer=0x%lx, size=%d, offset=%ld\n",
+  NaClLog(LOG_INFO, "%s() invoked: desc=%d, buffer=0x%lx, size=%d, offset=%ld\n",
       __func__, desc, (intptr_t)buffer, size, offset);
 
 #ifdef NETWORKING
@@ -133,8 +135,12 @@ int32_t TrapReadHandle(struct NaClApp *nap,
   if ( nap && nap->zmq_pool ){
 	  struct sock_file_t* sockf = sockf_by_fd(nap->zmq_pool, desc);
 	  if ( sockf ){
-		  ssize_t read_bytes = read_sockf(sockf, buffer, size);
-		  (void)read_bytes;
+		  ssize_t read_bytes = read_sockf(sockf, sys_buffer, size);
+		  return read_bytes;
+	  }
+	  else{
+		  NaClLog(LOG_ERROR, "%s() invoked: desc=%d, socket NULL\n", __func__, desc );
+		  return -INVALID_DESC;
 	  }
   }
 #endif
@@ -183,9 +189,6 @@ int32_t TrapWriteHandle(struct NaClApp *nap,
   char *sys_buffer;
   int32_t retcode;
 
-  /* only allow this call for OutputChannel */
-  if(desc != OutputChannel) return -INVALID_DESC;
-
   /* convert address and check buffer */
   sys_buffer = (char*)NaClUserToSys(nap, (uintptr_t) buffer);
 
@@ -198,11 +201,18 @@ int32_t TrapWriteHandle(struct NaClApp *nap,
   if ( nap && nap->zmq_pool ){
 	  struct sock_file_t* sockf = sockf_by_fd(nap->zmq_pool, desc);
 	  if ( sockf ){
-		  ssize_t wrote_bytes = write_sockf(sockf, buffer, size);
-		  (void)wrote_bytes;
+		  ssize_t wrote_bytes = write_sockf(sockf, sys_buffer, size);
+		  return wrote_bytes;
+	  }
+	  else{
+		  NaClLog(LOG_FATAL, "%s() invoked: desc=%d, socket NULL\n", __func__, desc );
+		  return -INVALID_DESC;
 	  }
   }
 #endif
+
+  /* only allow this call for OutputChannel */
+  if(desc != OutputChannel) return -INVALID_DESC;
 
   /* take fd from nap with given desc */
   if(nap == NULL) return -INTERNAL_ERR;

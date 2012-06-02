@@ -79,19 +79,78 @@ static void *cur_break = NULL;
  */
 int log_msg2(char *msg)
 {
-  int32_t length = msg == NULL ? 0 : strlen(msg);
+	if (!msg) return ERR_CODE;
+	int32_t length = msg == NULL ? 0 : strlen(msg);
 
-  /* check if lenght is not overrun available data */
-  if(pos_ptr[LogChannel] + length > setup.channels[LogChannel].bsize)
-    length = setup.channels[LogChannel].bsize - pos_ptr[LogChannel];
+	/* check if lenght is not overrun available data */
+	if(pos_ptr[LogChannel] + length > setup.channels[LogChannel].bsize)
+		length = setup.channels[LogChannel].bsize - pos_ptr[LogChannel];
 
-  if(length < 0) return ERR_CODE;
+	if(length < 0) return ERR_CODE;
 
-  memcpy((void*)setup.channels[LogChannel].buffer + pos_ptr[LogChannel], msg, length);
-  pos_ptr[LogChannel] += length;
+	memcpy((void*)setup.channels[LogChannel].buffer + pos_ptr[LogChannel], msg, length);
+	pos_ptr[LogChannel] += length;
 
-  return OK_CODE;
+	return OK_CODE;
 }
+
+
+/// YaroslavLitvinov
+char *itoa(int n, char *s, int b);
+int log_int(int dec);
+size_t strlen(const char *string);
+char *strrev(char *str);
+
+int log_int(int dec)
+{
+	char log_msg_text[17];
+	itoa(dec, (char*)log_msg_text, 10);
+	return log_msg2(log_msg_text);
+}
+
+
+size_t strlen(const char *string) {
+	const char *s;
+
+	s = string;
+	while (*s)
+		s++;
+	return s - string;
+}
+
+char *strrev(char *str) {
+	char *p1, *p2;
+
+	if (!str || !*str)
+		return str;
+
+	for (p1 = str, p2 = str + strlen(str) - 1; p2 > p1; ++p1, --p2) {
+		*p1 ^= *p2;
+		*p2 ^= *p1;
+		*p1 ^= *p2;
+	}
+
+	return str;
+}
+
+char *itoa(int n, char *s, int b) {
+	static char digits[] = "0123456789abcdefghijklmnopqrstuvwxyz";
+	int i=0, sign;
+
+	if ((sign = n) < 0)
+		n = -n;
+
+	do {
+		s[i++] = digits[n % b];
+	} while ((n /= b) > 0);
+
+	if (sign < 0)
+		s[i++] = '-';
+	s[i] = '\0';
+
+	return strrev(s);
+}
+///
 
 #define DEBUG 1
 #define LOGFIX /* temporary fix until zrt library will be finished */
@@ -268,14 +327,22 @@ int32_t zrt_read(uint32_t *args)
   void *buf = (void*)args[1];
   int64_t length = (int64_t)args[2];
 
-  /* Support for MSQ files: zvm_pread, zvm_pwrite used for networking communication*/
+  /* Support for MSQ files: zvm_pread used for networking communication
+   * msq files has descriptor numbers above than 2*/
   if ( file > 2 ){
 	  /*MSQ files using streaming IO, and don't using offset, set offset as 0*/
-      return zvm_pread(file, buf, length, 0);
+	  return zvm_pread(file, (void*)args[1], length, 0);
   }
+  /*Use current pagination implementation for all std files with 0,1,2 fd numbers*/
+
+  log_msg2("file=");
+  log_int(file);
+  log_msg2(" length=");
+  log_int(length);
+  log_msg2("\n");
 
   /* check given handle. check length */
-  if(file < OutputChannel || file > LogChannel) return -EBADF;
+  if( InputChannel != file) return -EBADF;
   if(length < 0 || length > 0x7fffffff) return -EPERM;
 
   /* write data */
@@ -323,7 +390,13 @@ int32_t zrt_write(uint32_t *args)
   void *buf = (void*)args[1];
   int64_t length = (int64_t)args[2];
 
-  /* Support for MSQ files: zvm_pread, zvm_pwrite used for networking communication*/
+  //log_msg2("zrt_write desc=");
+  //log_int((int)file);
+  //log_msg2(" len=");
+  //log_int((int)length);
+  //log_msg2("\n");
+
+  /* Support for MSQ files: zvm_pwrite used for networking communication*/
   if ( file > 2 ){
 	  /*MSQ files using streaming IO, and don't using offset, set offset as 0*/
       return zvm_pwrite(file, buf, length, 0);
