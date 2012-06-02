@@ -43,8 +43,6 @@ sane_syscall:
         add $zrt_syscalls, %eax
         mov (%r15,%rax), %eax
 
-				/* ### i tryed "push" but it looks like it is restricted to use 32-bit operands.
-				   always got "Error: suffix or operands invalid for `push'" */
         /* allocate 0x18 bytes in the stack and save syscall arguments */
         naclasp $-0x18, %r15
 

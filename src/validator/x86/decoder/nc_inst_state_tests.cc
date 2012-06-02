@@ -30,7 +30,6 @@ extern "C" {
 #include "src/validator/x86/decoder/gen/nc_opcode_table_64.h"
 }
 
-// ###
 static const NaClDecodeTables kDecoderTables = {
   g_Operands,
   g_Opcodes + 0,

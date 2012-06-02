@@ -6,28 +6,26 @@
  * each line can only contain single key=value
  * parsed manifest is an array of structs "manifest_record"
  *
- * TODO: make it class with constructor/get/set methods
- * TODO: make the manifest read only after initialization
- * TODO: split it to two classes: parser and initializer
+ * TODO: make it class with constructor/get/set methods and
+ *       make the manifest read only after initialization
+ * TODO: split it into 2 classes: parser and initializer
  *
  *  Created on: Nov 1, 2011
  *      Author: d'b
  */
 
-/* ### revise headers */
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
 
-#include "src/service_runtime/sel_ldr.h"
-#include "src/service_runtime/nacl_config.h"
-#include "src/platform/nacl_log.h"
+/*
+ * todo: remove manifest_setup.h when manifest structs will
+ * be moved to one place. "manifest_parser.h" and "manifest_setup.h"
+ * should be used in that exact order, fix it.
+ */
 #include "src/manifest/manifest_parser.h"
-
-/* todo: remove it when manifest structs will be moved to one place */
 #include "src/manifest/manifest_setup.h"
-/* todo: replace it when i/o functions will be moved to one place */
-#include "src/manifest/mount_channel.h"
+
 
 /* public function. return value from manifest by given key */
 char* get_value_by_key(struct NaClApp *nap, char *key)

@@ -16,11 +16,12 @@
 #include <src/manifest/manifest_parser.h>
 #include <src/manifest/manifest_setup.h>
 
-/* ###
- * preallocate given network channel. return 0 if success, otherwise negative errcode
+/*
+ * preallocate given network channel.
+ * return 0 if success, otherwise negative errcode
  */
 int PrefetchChannel(struct NaClApp *nap, struct PreOpenedFileDesc* channel)
 {
-  // place to put zeromq calls
+  /* place to put zeromq calls */
   return -1;
 }

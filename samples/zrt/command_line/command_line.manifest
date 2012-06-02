@@ -1,8 +1,8 @@
 =====================================================================
-== "hello world" example with zrt library usage
+== "command line" example with zrt library usage
 == i/o switches
 =====================================================================
-Output = samples/zrt/hello.output.data
+Output = samples/zrt/command_line/command_line.output.data
 OutputMax = 1024000
 OutputMaxGet = 1024000
 OutputMaxGetCnt = 1024
@@ -12,7 +12,7 @@ OutputMaxPutCnt = 1024
 == this options specifies output file loading method: 0 - loaded, 1 - mapped
 OutputMode = 1
 
-UserLog = samples/zrt/hello.user.log
+UserLog = samples/zrt/command_line/command_line.user.log
 UserLogMax = 65536
 UserLogMaxGet = 65536
 
@@ -21,18 +21,11 @@ UserLogMaxGet = 65536
 == for the internal zerovm needs
 =====================================================================
 Version = 11nov2011
-Log = samples/zrt/hello.zerovm.log
-Report = samples/zrt/hello.report.log
-Nexe = samples/zrt/hello.nexe
+Log = samples/zrt/command_line/command_line.zerovm.log
+Report = samples/zrt/command_line/command_line.report.log
+Nexe = samples/zrt/command_line/command_line.nexe
 NexeMax = 10000000
 SyscallsMax = 3333
 SetupCallsMax = 99999
-ContentType = VeryCleverContentType
-XObjectMetaTag = SomeNeedfullThings
-
-== this option can be disabled if user code does not use date/time functions
-==TimeStamp = 12345
-
-== this option forces zerovm cut available for user memory to specified amount
-==MemMax = 10240000
+CommandLine = argument_number_1 argument_number_2 argument_number_3 argument_number_4 the_last_argument
 

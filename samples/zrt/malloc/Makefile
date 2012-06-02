@@ -7,7 +7,7 @@ NACL_TOOLCHAIN_PATH=~/nacl_sdk/pepper_16/toolchain/linux_x86
 all: $(NAME).o
 	$(NACL_TOOLCHAIN_PATH)/bin/x86_64-nacl-gcc -o $(NAME).nexe -s -static -T \
 	$(NACL_TOOLCHAIN_PATH)/x86_64-nacl/lib64/ldscripts/elf64_nacl.x.static -melf64_nacl -m64 \
-	$(DEBUG) $(NAME).o ~/git/zerovm/api/syscall_manager.o ~/git/zerovm/api/zrt.o ~/git/zerovm/api/zvm.o
+	$(DEBUG) $(NAME).o ~/git/zerovm/api/libzrt.a
 
 $(NAME).o:
 	$(NACL_TOOLCHAIN_PATH)/bin/x86_64-nacl-gcc -o $(NAME).o -Wall \

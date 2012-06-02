@@ -45,7 +45,10 @@ int32_t ConstructChannel(struct NaClApp *nap, enum ChannelType ch)
   channel->self_size = sizeof(*channel); /* set self size */
   GetChannelPrefixById(ch, prefix);
 
-  // ### rewrite it! we must detect not set keywords and make default action (or set default value)
+  /*
+   * todo: we must detect not initialized keywords
+   * and make default actions (or set default values)
+   */
 #define SET_LIMIT(a, limit)\
   do {\
     char str[1024];\
@@ -79,22 +82,24 @@ int32_t ConstructChannel(struct NaClApp *nap, enum ChannelType ch)
   return 0;
 }
 
-/*
- * return md5 hash of mapped _output_ file (or NULL)
- */
+/* return md5 hash of mapped _output_ file (or NULL) */
 char* MakeEtag(struct NaClApp *nap)
 {
-//  uintptr_t addr;
-
   /* check if output file exists */
   if(!nap->manifest->user_setup->channels[OutputChannel].name) return NULL;
   return "etag disabled";
 
-  /* calculate effective sys address from nexe address space */
-//  //### BUG!!! need additional check no assumtions!
-//  assert(nap->manifest->user_setup->channels[OutputChannel].buffer);
-//  addr = NaClUserToSys(nap, (uint32_t) nap->manifest->user_setup->channels[OutputChannel].buffer);
-//  return MD5((unsigned char*)addr, (uint32_t)nap->manifest->user_setup->channels[OutputChannel].bsize);
+  /*
+   * disabled until proper size detection for user data
+   * will be done
+   *
+  // calculate effective sys address from nexe address space
+  uintptr_t addr;
+
+  assert(nap->manifest->user_setup->channels[OutputChannel].buffer);
+  addr = NaClUserToSys(nap, (uint32_t) nap->manifest->user_setup->channels[OutputChannel].buffer);
+  return MD5((unsigned char*)addr, (uint32_t)nap->manifest->user_setup->channels[OutputChannel].bsize);
+   */
 }
 
 /*
@@ -103,16 +108,20 @@ char* MakeEtag(struct NaClApp *nap)
  */
 void SetupReportSettings(struct NaClApp *nap)
 {
-  /* allocate space for report */
-  struct Report *report = malloc(sizeof(*report)); // ### memory must be allocated before nexe start
+  /*
+   * allocate space for report
+   * todo: memory must be allocated before nexe start
+   */
+  struct Report *report = malloc(sizeof(*report));
   COND_ABORT(!report, "cannot allocate memory for report\n");
 
-  /* set results */
+  /* set results. note: etag is temporary disabled  */
   report->etag = MakeEtag(nap);
-  report->content_type = "application/octet-stream"; // where to get it?
-  report->x_object_meta_tag = "Format:Pickle"; // where to get it?
 
-  /* ### ret codes must be set from main() */
+  /* get custom attributes from the manifest */
+  report->content_type = get_value_by_key(nap, "ContentType");
+  report->x_object_meta_tag = get_value_by_key(nap, "XObjectMetaTag");
+
   nap->manifest->report = report;
 }
 

@@ -21,6 +21,8 @@
 #define ANSWER_KEYS {"?zerovm_retcode", "?zerovm_status", "?etag", "?#retcode", "?#status", "?#content-type", "?#x-object-meta-tag"}
 
 EXTERN_C_BEGIN
+
+extern uint64_t GetFileSize(const char *name);
 /*
  * open manifest file, parse it and initialize in the given
  * NaClApp structure two fields: "manifest" and "manifest_size"

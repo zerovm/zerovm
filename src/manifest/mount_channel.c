@@ -8,18 +8,8 @@
 #include <stdio.h>
 #include <fcntl.h>
 
-/* ### remove the junk */
-#include "src/service_runtime/include/bits/mman.h"
-#include "src/service_runtime/sel_ldr.h"
-#include "src/manifest/manifest_parser.h"
-#include "src/service_runtime/nacl_config.h"
-#include "src/service_runtime/sel_mem.h"
-#include "src/service_runtime/nacl_memory_object.h"
-#include "src/platform/nacl_log.h"
 #include <src/manifest/manifest_parser.h>
 #include <src/manifest/manifest_setup.h>
-/**/
-
 #include "src/manifest/mount_channel.h"
 
 /*

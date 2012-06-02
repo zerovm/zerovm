@@ -1,4 +1,4 @@
-NAME=hello
+NAME=command_line
 INCLUDE_FLAGS=-I ~/git/zerovm
 MACROS_FLAGS=-DUSER_SIDE -DZRT_LIB
 NACL_TOOLCHAIN_PATH=~/nacl_sdk/pepper_16/toolchain/linux_x86

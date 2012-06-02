@@ -89,7 +89,7 @@ NORETURN void NaClSyscallCSegHook()
      * user stack.
      */
     nap->syscall_args = (uintptr_t *) sp_sys;
-    nap->sysret = (*(nap->syscall_table[sysnum].handler))(nap); //###
+    nap->sysret = (*(nap->syscall_table[sysnum].handler))(nap);
   }
 
   /*
