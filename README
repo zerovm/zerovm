@@ -25,7 +25,7 @@ Quickstart for installing ZeroVM on Ubuntu (daemon)
 ==> unzip master <enter>
 ==> rm -rf master <enter> 
 ==> cd <hit tab> <enter>
-==> sudo apt-get install build-essential gcc-multilib g++-multilib libsdl1.2-dev texinfo libcrypto++-dev libssl-dev m4 <enter>
+==> sudo apt-get install build-essential gcc-multilib g++-multilib libsdl1.2-dev texinfo libcrypto++-dev libssl-dev m4 lib32z1 <enter>
 ==> mkdir obj <enter>
 ==> mkdir test <enter>
 ==> make <enter>
