@@ -26,7 +26,6 @@
 #include "src/manifest/trap.h" /* d'b */
 #include "src/manifest/mount_channel.h" /* d'b */
 #include "src/service_runtime/sel_qualify.h"
-#include "zmq.h"
 
 /*YaroslavLitvinov*/
 #ifdef NETWORKING
@@ -306,7 +305,6 @@ int main(int argc, char **argv)
   struct NaClPerfCounter        time_all_main;
   int                           ret_code = 1;
   char                          manifest[MAX_MANIFEST_LEN];
-  int                           err = 0;
 
   /* @IGNORE_LINES_FOR_CODE_HYGIENE[1] */
   /*
@@ -440,6 +438,7 @@ int main(int argc, char **argv)
 	  if ( netw_nodename ){
 		  uint64_t db_size = GetFileSize(ZVM_DB_NAME);
 		  if ( -1 != db_size && 0 != db_size ){
+			  int err = 0;
 			  NaClLog(LOG_INFO, "reading database = %s, cid=%d, nodename=%s\n", ZVM_DB_NAME, nap->db_records->cid, netw_nodename);
 			  err = get_all_records_from_dbtable(ZVM_DB_NAME, netw_nodename, nap->db_records);
 			  if ( err ){
