@@ -1,16 +1,21 @@
 #RELEASE BUILD
-#CCFLAGS=-DNDEBUG -O2
-#CXXFLAGS=-DNDEBUG -O2
+#CCFLAGS=-DNDEBUG -g ${NETWORKING}
+#CXXFLAGS=-DNDEBUG -g ${NETWORKING}
 
 #DEBUG BUILD
 CCFLAGS=-DDEBUG -g ${NETWORKING}
 CXXFLAGS=-DDEBUG -g ${NETWORKING}
 
+#CCFLAGS=-g -O2 ${NETWORKING}
+#CXXFLAGS=-g -O2 ${NETWORKING}
+
+
 #For networking support, uncomment variables below 
 #NETWORKING=-DNETWORKING
 #NETW_LIB=-lnetw -lzmq
+#NETW_MAIN_RULES=zvm_netw.db
 #NETW_RULES=obj/libsqlite3.a obj/libnetw.a
-#NETW_TEST_RULES=test/zmq_netw_test test/sqluse_srv_test test_config
+#NETW_TEST_RULES=test/zmq_netw_test test/sqluse_srv_test test/zvm_netw_test test_config
 
 CCFLAGS0=-c -m64 -fPIC -D_FORTIFY_SOURCE=2 -DNACL_WINDOWS=0 -DNACL_OSX=0 -DNACL_LINUX=1 -D_BSD_SOURCE=1 -D_POSIX_C_SOURCE=199506 -D_XOPEN_SOURCE=600 -D_GNU_SOURCE=1 -D_LARGEFILE64_SOURCE=1 -D__STDC_LIMIT_MACROS=1 -D__STDC_FORMAT_MACROS=1 -DNACL_BLOCK_SHIFT=5 -DNACL_BLOCK_SIZE=32 -DNACL_BUILD_ARCH=x86 -DNACL_BUILD_SUBARCH=64 -DNACL_TARGET_ARCH=x86 -DNACL_TARGET_SUBARCH=64 -DNACL_STANDALONE=1 -DNACL_ENABLE_TMPFS_REDIRECT_VAR=0 -I.
 CCFLAGS1=-std=gnu99 -Wdeclaration-after-statement -fPIE -Wall -pedantic -Wno-long-long -fvisibility=hidden -fstack-protector --param ssp-buffer-size=4
@@ -20,7 +25,7 @@ CCFLAGS4=-DNACL_TRUSTED_BUT_NOT_TCB
 CXXFLAGS1=-c -std=c++98 -Wno-variadic-macros -m64 -fPIE -Wall -pedantic -Wno-long-long -fvisibility=hidden -fstack-protector --param ssp-buffer-size=4 -DNACL_TRUSTED_BUT_NOT_TCB -D_FORTIFY_SOURCE=2 -DNACL_WINDOWS=0 -DNACL_OSX=0 -DNACL_LINUX=1 -D_BSD_SOURCE=1 -D_POSIX_C_SOURCE=199506 -D_XOPEN_SOURCE=600 -D_GNU_SOURCE=1 -D_LARGEFILE64_SOURCE=1 -D__STDC_LIMIT_MACROS=1 -D__STDC_FORMAT_MACROS=1 -DNACL_BLOCK_SHIFT=5 -DNACL_BLOCK_SIZE=32 -DNACL_BUILD_ARCH=x86 -DNACL_BUILD_SUBARCH=64 -DNACL_TARGET_ARCH=x86 -DNACL_TARGET_SUBARCH=64 -DNACL_STANDALONE=1 -DNACL_ENABLE_TMPFS_REDIRECT_VAR=0 -I.
 CXXFLAGS2=-Wl,-z,noexecstack -m64 -Wno-variadic-macros -L/usr/lib64 -pie -Wl,-z,relro -Wl,-z,now -Wl,-rpath=obj
 
-all: create_dirs zerovm zvm_api tests
+all: create_dirs zerovm zvm_api ${NETW_MAIN_RULES} tests 
 
 create_dirs: 
 	@mkdir obj -p
@@ -43,11 +48,13 @@ tests: test_compile
 	test/manifest_setup_test
 	test/nacl_log_test
 ifdef NETWORKING
-	test/zmq_netw_test
 	test/sqluse_srv_test
+	test/zmq_netw_test
+	test/zvm_netw_test
+	
 
 zvm_netw.db:
-	/usr/local/bin/sqlite3 zvm_netw.db < sql/db_client_dsort-50.sql
+	/usr/local/bin/sqlite3 zvm_netw.db < zerovm_config.sql
 	
 test_config: 
 	sh gtest/data/test_db_creator.sh
@@ -122,6 +129,12 @@ obj/zmq_netw_test.o: src/networking/zmq_netw_test.cc
 
 test/zmq_netw_test: obj/zmq_netw_test.o obj/libnetw.a obj/libplatform.a obj/libgio.a
 	@g++ ${CXXFLAGS} -o test/zmq_netw_test ${CXXFLAGS2} obj/zmq_netw_test.o -Lobj -lplatform -lgio ${NETW_LIB} -Lgtest -lgtest -I. -Igtest
+
+obj/zvm_netw_test.o: src/networking/zvm_netw_test.cc
+	@g++ ${CXXFLAGS} -o obj/zvm_netw_test.o ${CXXFLAGS1} -Igtest/include src/networking/zvm_netw_test.cc
+
+test/zvm_netw_test: obj/zvm_netw_test.o obj/libnetw.a obj/libplatform.a obj/libgio.a
+	@g++ ${CXXFLAGS} -o test/zvm_netw_test ${CXXFLAGS2} obj/zvm_netw_test.o -Lobj -lplatform -lgio -lsel ${NETW_LIB} -Lgtest -lgtest -I. -Igtest
 	
 obj/sqluse_srv_test.o: src/networking/sqluse_srv_test.cc
 	@g++ ${CXXFLAGS} -o obj/sqluse_srv_test.o ${CXXFLAGS1} -Igtest/include src/networking/sqluse_srv_test.cc
@@ -140,6 +153,7 @@ clean_intermediate:
 	@rm -f test/*
 	@echo unit tests has been deleted
 	@rm -f gtest/data/zerovm_test.db
+	@rm -f zvm_netw.db
 	
 clean_api:
 	@make -Capi clean
@@ -203,8 +217,8 @@ ifdef NETWORKING
 obj/libsqlite3.a: obj/sqlite3.o
 	@ar rc obj/libsqlite3.a obj/sqlite3.o
 
-obj/libnetw.a: obj/zmq_netw.o obj/sqluse_srv.o
-	@ar rc obj/libnetw.a obj/zmq_netw.o obj/sqluse_srv.o obj/sqlite3.o
+obj/libnetw.a: obj/zmq_netw.o obj/sqluse_srv.o obj/zvm_netw.o
+	@ar rc obj/libnetw.a obj/zmq_netw.o obj/zvm_netw.o obj/sqluse_srv.o obj/sqlite3.o
 endif
 
 ######################################################################## compilation to obj
@@ -567,8 +581,11 @@ ifdef NETWORKING
 obj/sqluse_srv.o: src/networking/sqluse_srv.c
 	@gcc ${CCFLAGS} -c -o obj/sqluse_srv.o ${CCFLAGS0} ${CCFLAGS1} src/networking/sqluse_srv.c
 
-obj/zmq_netw.o: src/networking/zmq_netw.c
+obj/zmq_netw.o: src/networking/zmq_netw.c src/networking/zmq_netw.h
 	@gcc ${CCFLAGS} -c -o obj/zmq_netw.o ${CCFLAGS0} ${CCFLAGS1} src/networking/zmq_netw.c
+
+obj/zvm_netw.o: src/networking/zvm_netw.c src/networking/zvm_netw.h
+	@gcc ${CCFLAGS} -c -o obj/zvm_netw.o ${CCFLAGS0} ${CCFLAGS1} src/networking/zvm_netw.c
 
 obj/sqlite3.o:
 	@gcc -c -o obj/sqlite3.o sqlite/sqlite3.c -I./sqlite ${CCFLAGS0} ${CCFLAGS1} -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION
