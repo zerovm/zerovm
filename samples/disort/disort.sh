@@ -2,17 +2,20 @@
 
 cd ../..
 
-#ALL 50SRC, 50DST
-#SRC_NODES_LIST="2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51"
-#DST_NODES_LIST="52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76 77 78 79 80 81 82 83 84 85 86 87 88 89 90 91 92 93 94 95 96 97 98 99 100 101"
+#ALL 10SRC, 10DST
+#SRC_NODES_LIST="2 3 4 5 6 7 8 9 10 11"
+#DST_NODES_LIST="12 13 14 15 16 17 18 19 20 21"
 
 #config for 5src, 5dst nodes
 SRC_FIRST=2
-SRC_LAST=6
-DST_FIRST=52
-DST_LAST=56
+SRC_LAST=11
+DST_FIRST=12
+DST_LAST=21
 
-gnome-terminal --geometry=80x20 -t "zerovm sortman.manifest" -x sh -c "./zerovm -Msamples/disort/manifest/sortman.manifest"
+rm -f ./time
+date > time
+
+gnome-terminal --geometry=80x20 -t "zerovm sortman.manifest" -x sh -c "./zerovm -Msamples/disort/manifest/sortman.manifest; date >> time"
 
 COUNTER=$SRC_FIRST
 while [  $COUNTER -le $SRC_LAST ]; do
@@ -26,6 +29,7 @@ while [  $COUNTER -le $DST_LAST ]; do
     let COUNTER=COUNTER+1 
 done
 
+date
 cat samples/disort/log/sortman.stderr.log
 
 

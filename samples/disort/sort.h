@@ -16,8 +16,14 @@
 typedef uint32_t* BigArrayPtr;
 typedef uint32_t  BigArrayItem;
 
+int
+quicksort_BigArrayItem_comparator( const void *m1, const void *m2 );
 
+/*alloc new array, sort specified array data in dependency of supported instructions set:
+ * for sse41 is used bitonic sort algorithm, for another cases c quick sort is used.
+ * return sorted array allocated in heap, caller is responsible to free it after using*/
 BigArrayPtr alloc_sort( BigArrayPtr array, int array_len );
+
 BigArrayPtr alloc_merge( BigArrayPtr left_array, int left_array_len,
 		BigArrayPtr right_array, int right_array_len );
 BigArrayPtr merge( BigArrayPtr dest_array, BigArrayPtr left_array, int left_array_len,

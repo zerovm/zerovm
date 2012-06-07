@@ -3,10 +3,10 @@
 == placed here for completeness and future changes
 =====================================================================
 Input = samples/disort/data/{NODEID}unsorted.data
-InputMax = 4000000
-InputMaxGet = 4000000
+InputMax = 20000000
+InputMaxGet = 20000000
 InputMaxGetCnt = 10240
-InputMaxPut = 4000000
+InputMaxPut = 20000000
 InputMaxPutCnt = 10240
 InputMode = 0
 

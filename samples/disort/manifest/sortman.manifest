@@ -4,7 +4,7 @@
 =====================================================================
 
 UserLog = samples/disort/log/sortman.stderr.log
-UserLogMax = 65536
+UserLogMax = 262144
 
 CommandLine = 1 manager
 

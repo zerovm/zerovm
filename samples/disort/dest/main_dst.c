@@ -19,6 +19,7 @@
 #include "dsort.h"
 #include "comm_dst.h"
 
+
 int main(int argc, char **argv){
 	int nodeid = -1;
 	if ( argc < 2 ){
@@ -34,8 +35,8 @@ int main(int argc, char **argv){
 	size_t array_size = ARRAY_ITEMS_COUNT*sizeof(BigArrayItem);
 	unsorted_array = malloc( array_size );
 	memset(unsorted_array, '\0', array_size);
-	repreq_read_sorted_ranges( DEST_FD_READ_SORTED_RANGES_REP, DEST_FD_WRITE_SORTED_RANGES_REP, nodeid,
-			unsorted_array, ARRAY_ITEMS_COUNT, SRC_NODES_COUNT );
+	repreq_read_sorted_ranges( DEST_FD_READ_SORTED_RANGES_START, nodeid, unsorted_array,
+			ARRAY_ITEMS_COUNT, SRC_NODES_COUNT );
 
 #ifdef MERGE_ON_FLY
 	sorted_array = unsorted_array;
@@ -54,7 +55,7 @@ int main(int argc, char **argv){
 	write_sort_result( DEST_FD_WRITE_SORT_RESULT, nodeid, sorted_array, ARRAY_ITEMS_COUNT );
 
 	free(unsorted_array);
-	WRITE_LOG( LOG_UI,  "[%d] Destination node complete\n");
+	WRITE_LOG( LOG_UI,  "Destination node complete\n");
 	return 0;
 }
 

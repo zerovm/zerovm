@@ -38,13 +38,13 @@ int main(int argc, char **argv){
 	//uint32_t crc_array[SRC_NODES_COUNT];
 	uint32_t *crc_array = malloc(SRC_NODES_COUNT*sizeof(uint32_t));
 	memset(crc_array, '\0', SRC_NODES_COUNT*sizeof(uint32_t));
-	read_crcs(MANAGER_FD_READ_CRC, crc_array);
+	read_crcs(MANAGER_FD_READ_CRC_START, crc_array, SRC_NODES_COUNT);
 	/*crc read ok*/
 
 	/******** Histograms reading*/
 	struct Histogram histograms[SRC_NODES_COUNT];
 	WRITE_LOG(LOG_DEBUG, "Recv histograms");
-	recv_histograms( MANAGER_FD_READ_HISTOGRAM, (struct Histogram*) &histograms, SRC_NODES_COUNT );
+	recv_histograms( MANAGER_FD_READ_HISTOGRAM_START, (struct Histogram*) &histograms, SRC_NODES_COUNT );
 	WRITE_LOG(LOG_DEBUG, "Recv histograms OK");
 	/******** Histograms reading OK*/
 
@@ -63,10 +63,12 @@ int main(int argc, char **argv){
 		print_request_data_array( range[i], SRC_NODES_COUNT );
 	}
 
+	WRITE_LOG(LOG_DETAILED_UI, "Send range requests to source nodes\n" );
+
 	/// sending range requests to every source node
 	for (int i=0; i < SRC_NODES_COUNT; i++ ){
 		///
-		int src_write_fd = range[0][i].src_nodeid - FIRST_SOURCE_NODEID + MANAGER_FD_WRITE_RANGE_REQUEST;
+		int src_write_fd = range[0][i].src_nodeid - FIRST_SOURCE_NODEID + MANAGER_FD_WRITE_RANGE_REQUEST_START;
 		WRITE_FMT_LOG(LOG_DEBUG, "write_sorted_ranges fdw=%d\n", src_write_fd );
 		write_range_request( src_write_fd, range, SRC_NODES_COUNT, i );
 	}
@@ -79,7 +81,7 @@ int main(int argc, char **argv){
 
 	WRITE_LOG(LOG_DEBUG, "Read confirmation sort results, to test it\n");
 
-	struct sort_result *results = read_sort_result( MANAGER_FD_READ_SORT_RESULTS, SRC_NODES_COUNT );
+	struct sort_result *results = read_sort_result( MANAGER_FD_READ_SORT_RESULTS_START, SRC_NODES_COUNT );
 	/*sort results by nodeid, because receive order not deterministic*/
 	qsort( results, SRC_NODES_COUNT, sizeof(struct sort_result), sortresult_comparator );
 	int sort_ok = 1;

@@ -12,7 +12,7 @@
 
 
 void
-read_crcs(int fdr, uint32_t *crc_array);
+read_crcs(int fdr, uint32_t *crc_array, int array_len);
 
 void
 recv_histograms( int fdr, struct Histogram *histograms, int wait_histograms_count );

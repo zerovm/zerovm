@@ -1,6 +1,6 @@
 NACL_TOOLCHAIN_PATH=~/nacl_sdk/pepper_16/toolchain/linux_x86
 MACROS_FLAGS=-DUSER_SIDE -DZRT_LIB
-INCLUDE_FLAGS=-I ~/git/zerovm -I.
+INCLUDE_FLAGS=-O3 -I ~/git/zerovm -I.
 ZRT_OBJ=~/git/zerovm/api/zrt.o ~/git/zerovm/api/zvm.o ~/git/zerovm/api/syscall_manager.o
 DEBUG=-g
 MANNODE=nodeman
@@ -9,22 +9,22 @@ DSTNODE=nodedst
 
 all: cleanlog prepare $(MANNODE).nexe $(SRCNODE).nexe $(DSTNODE).nexe
 	
-$(MANNODE).nexe: obj/main_man.o obj/comm_man.o obj/histanlz.o obj/dsort.o   
+$(MANNODE).nexe: obj/main_man.o obj/comm_man.o obj/histanlz.o obj/dsort.o obj/comm.o
 	@$(NACL_TOOLCHAIN_PATH)/bin/x86_64-nacl-gcc -o $(MANNODE).nexe  -s -static -T \
 	$(NACL_TOOLCHAIN_PATH)/x86_64-nacl/lib64/ldscripts/elf64_nacl.x.static -melf64_nacl -m64 \
-	obj/main_man.o obj/comm_man.o obj/histanlz.o obj/dsort.o -Wall -std=c99 \
+	obj/main_man.o obj/comm_man.o obj/histanlz.o obj/dsort.o obj/comm.o -Wall -std=c99 \
 	$(ZRT_OBJ) $(MANNODE_INCL) $(DEBUG)  
 	
-$(SRCNODE).nexe: obj/main_src.o obj/sort.o obj/dsort.o obj/comm_src.o obj/bitonic.o obj/cpuid.o
+$(SRCNODE).nexe: obj/main_src.o obj/sort.o obj/dsort.o obj/comm_src.o obj/bitonic.o obj/cpuid.o obj/comm.o
 	@$(NACL_TOOLCHAIN_PATH)/bin/x86_64-nacl-gcc -o $(SRCNODE).nexe  -s -static -T \
 	$(NACL_TOOLCHAIN_PATH)/x86_64-nacl/lib64/ldscripts/elf64_nacl.x.static -melf64_nacl -m64 \
-	obj/main_src.o obj/sort.o obj/dsort.o obj/comm_src.o obj/bitonic.o obj/cpuid.o -Wall -std=c99 \
+	obj/main_src.o obj/sort.o obj/dsort.o obj/comm_src.o obj/bitonic.o obj/cpuid.o obj/comm.o -Wall -std=c99 \
 	$(ZRT_OBJ) $(SRCNODE_INCL) $(DEBUG)  
 	
-$(DSTNODE).nexe: obj/main_dst.o obj/sort.o obj/dsort.o obj/comm_dst.o obj/bitonic.o obj/cpuid.o
+$(DSTNODE).nexe: obj/main_dst.o obj/sort.o obj/dsort.o obj/comm_dst.o obj/bitonic.o obj/cpuid.o obj/comm.o
 	@$(NACL_TOOLCHAIN_PATH)/bin/x86_64-nacl-gcc -o $(DSTNODE).nexe  -s -static -T \
 	$(NACL_TOOLCHAIN_PATH)/x86_64-nacl/lib64/ldscripts/elf64_nacl.x.static -melf64_nacl -m64 \
-	obj/main_dst.o obj/sort.o obj/dsort.o obj/comm_dst.o obj/bitonic.o obj/cpuid.o -Wall -std=c99 \
+	obj/main_dst.o obj/sort.o obj/dsort.o obj/comm_dst.o obj/bitonic.o obj/cpuid.o obj/comm.o -Wall -std=c99 \
 	$(ZRT_OBJ) $(DSTNODE_INCL) $(DEBUG)  
 
 #source node & dest node
@@ -71,6 +71,11 @@ obj/comm_man.o: manager/comm_man.c defines.h
 obj/histanlz.o: manager/histanlz.c defines.h
 	@$(NACL_TOOLCHAIN_PATH)/bin/x86_64-nacl-gcc -c -o obj/histanlz.o -Wall -std=c99 \
 	$(INCLUDE_FLAGS) $(MACROS_FLAGS) $(DEBUG) -Wno-long-long -O2 -msse4.1 -m64 -Imanager manager/histanlz.c
+
+#all nodes
+obj/comm.o : comm.c comm.h
+	@$(NACL_TOOLCHAIN_PATH)/bin/x86_64-nacl-gcc -c -o obj/comm.o -Wall -std=c99 \
+	$(INCLUDE_FLAGS) $(MACROS_FLAGS) $(DEBUG) -Wno-long-long -O2 -m64 -Imanager comm.c
 
 obj/bitonic.o: bitonic_sort.c bitonic_sort.h
 	@$(NACL_TOOLCHAIN_PATH)/bin/x86_64-nacl-gcc -c -o obj/bitonic.o -Wall -std=c99 \

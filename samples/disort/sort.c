@@ -24,7 +24,7 @@ copy_array( BigArrayPtr dst_array, const BigArrayPtr src_array, int array_len ){
 }
 
 
-static int
+int
 quicksort_BigArrayItem_comparator( const void *m1, const void *m2 ){
 
 	const BigArrayItem *t1= (BigArrayItem* const)(m1);
@@ -40,18 +40,9 @@ quicksort_BigArrayItem_comparator( const void *m1, const void *m2 ){
 
 
 BigArrayPtr alloc_sort( BigArrayPtr array, int array_len ){
-	BigArrayPtr unsorted_array = alloc_copy_array( array, array_len );
-
-//	/*for sse41 instruction use bitonic sort*/
-//	if ( test_sse41_CPU() ){
-//		bitonic_sort_chunked((float*)array, array_len, (float*)unsorted_array, DEFAULT_CHUNK_SIZE);
-//	}
-//	/*for another case use c quick sort*/
-//	else{
-//		qsort( array, array_len, sizeof(BigArrayItem), quicksort_BigArrayItem_comparator );
-//	}
-	qsort( array, array_len, sizeof(BigArrayItem), quicksort_BigArrayItem_comparator );
-	return array;
+	BigArrayPtr sorted_array = alloc_copy_array( array, array_len );
+	qsort( sorted_array, array_len, sizeof(BigArrayItem), quicksort_BigArrayItem_comparator );
+	return sorted_array;
 }
 
 BigArrayPtr merge( BigArrayPtr dest_array, BigArrayPtr left_array, int left_array_len,

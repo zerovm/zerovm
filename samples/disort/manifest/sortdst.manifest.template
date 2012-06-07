@@ -4,10 +4,10 @@
 =====================================================================
 
 Output = samples/disort/data/{NODEID}sorted.data
-OutputMax = 4000000
-OutputMaxGet = 4000000
+OutputMax = 19027968
+OutputMaxGet = 19027968
 OutputMaxGetCnt = 1024
-OutputMaxPut = 4000000
+OutputMaxPut = 19027968
 OutputMaxPutCnt = 1024
 OutputMode = 0
 

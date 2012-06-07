@@ -325,7 +325,7 @@ int32_t zrt_read(uint32_t *args)
    * stdin == 0, stdout ==  1 and stderr == 2 (wich are really
    * input, output and user_log)
    */
-  SHOWID;
+  ///SHOWID;
   int file = (int)args[0];
   void *buf = (void*)args[1];
   int64_t length = (int64_t)args[2];
@@ -338,11 +338,11 @@ int32_t zrt_read(uint32_t *args)
   }
   /*Use current pagination implementation for all std files with 0,1,2 fd numbers*/
 
-  log_msg2("file=");
-  log_int(file);
-  log_msg2(" length=");
-  log_int(length);
-  log_msg2("\n");
+  //log_msg2("file=");
+  //log_int(file);
+  //log_msg2(" length=");
+  //log_int(length);
+  //log_msg2("\n");
 
   /* check given handle. check length */
   if( InputChannel != file) return -EBADF;
@@ -388,7 +388,7 @@ int32_t zrt_write(uint32_t *args)
    * stdout ==  1 and stderr == 2 (wich are really
    * output and user_log). stdin == 0 is not allowed to write
    */
-  SHOWID;
+  //SHOWID;
   int file = (int)args[0];
   void *buf = (void*)args[1];
   int64_t length = (int64_t)args[2];
@@ -865,7 +865,7 @@ int32_t zrt_thread_nice(uint32_t *args)
 /* get tls. probably cause "printf" bug */
 int32_t zrt_tls_get(uint32_t *args)
 {
-  SHOWID;
+  //SHOWID;
   int32_t retcode;
 
   /* uninstall syscallback */

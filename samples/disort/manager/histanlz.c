@@ -297,8 +297,8 @@ request_assign_detailed_histogram( int current_histogram_len, int single_src_ite
 	/////////////////
 
 	for( int i=0; i < array_len; i++ ){
-		int fdr = i+MANAGER_FD_READ_D_HISTOGRAM_REQ;
-		int fdw = i+MANAGER_FD_WRITE_D_HISTOGRAM_REQ;
+		int fdr = i+MANAGER_FD_READ_D_HISTOGRAM_REQ_START;
+		int fdw = i+MANAGER_FD_WRITE_D_HISTOGRAM_REP_START;
 		struct Histogram *detld_histogram = reqrep_detailed_histograms_alloc(
 				fdw, fdr, nodeid, &request_detailed_histogram[i], last_request );
 		/*save received detailed histograms into workers array, transfers pointer ownership*/

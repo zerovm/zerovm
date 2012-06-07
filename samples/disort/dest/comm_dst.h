@@ -11,7 +11,7 @@
 #include "distr_common.h"
 
 void
-repreq_read_sorted_ranges( int fdr, int fdw, int nodeid, BigArrayPtr dst_array, int dst_array_len, int ranges_count );
+repreq_read_sorted_ranges( int fdr, int nodeid, BigArrayPtr dst_array, int dst_array_len, int ranges_count );
 
 void
 write_sort_result( int fdw, int nodeid, BigArrayPtr sorted_array, int len );

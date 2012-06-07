@@ -26,6 +26,6 @@ int
 read_range_request( int fdr, struct request_data_t* sequence );
 
 void
-write_sorted_ranges( int fdw, int fdr, const struct request_data_t* sequence, const BigArrayPtr src_array);
+write_sorted_ranges( int fdw, const struct request_data_t* sequence, const BigArrayPtr src_array);
 
 #endif /* COMM_SRC_H_ */

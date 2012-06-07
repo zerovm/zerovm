@@ -1,28 +1,71 @@
 /*
- * program will sort given input file and put sorted elements
- * to the specified output file. no checks will perform
- * usage: sorter <input file name> <output file name>
+ *	Apache 2.0 License (TODO add the usual blah-blah)
  *
- * update: usage has been changed. all parameters must be passed via manifest
+ *	Credits and copyrights:
  *
- * note: input must contain (power of 2) 32-bit unsigned integers
+ *		Camuel Gilyadov - camuel@gmail.com
+ *		Dmitri Bortoq - bortoq@gmail.com
+ *		Takeshi Yamamura - linguin.m.s@gmail.com
+ *		Jatin Chhugani, Akram Baransi et.al. for inspiration
+ *
+ *
+ *	The program has following functionality:
+ *
+ *		1. Library for sorting 16-byte aligned & padded memory region of 32bit
+ *     	floating point numbers using SSE-accelerated bitonic sort. Inspired by
+ *     	academic paper written by Intel guys - Jatin Chhugani et. al.
+ *
+ *     	2. Same as #1 but for unsigned 32bit integers
+ *
+ *     	3. Same as #1 but for signed 32bit integers (TODO)
+ *
+ *     	4. Same as #1-#3 but just as merge-sort component (assuming presorting
+ *     	of memory regions to be merged) (TODO for #3)
+ *
+ *     	5. a wrapper implementing C99 qsort interface and accelerating the
+ *     	sorting if required SSE functionality is supported by the processor.
+ *     	This wrapper must use realloc and padding if needed. (TODO)
+ *
+ *     	7. A small test program exercising all the above functionality.
+ *
+ *	Notes:
+ *
+ *		1. We considered the idea of using realloc and dropping both
+ *		requirements: 16 byte alignment and 16 byte padding. But decided that it
+ *		will just confuse the user of library and it is better to reject
+ *		outright unaligned and unpadded data and clearly indicate to the library
+ *		user how it should be used for its best result.
+ *
+ *		2. However, for proper qsort support we would be forced to use realloc
+ *		and padding. (TODO)
+ *
+ *	Wish list for contributors:
+ *
+ *		1. TODO items
+ *		2. gtest unit tests
+ *		3. Support for 64bit and 128bit integers
+ *		4. Support for (key,data) pairs. Data is usually fixed size index or
+ *		reference. For performance reasons keys and data are stored in same
+ *		order but in separate memory regions.
+ *
  */
+
+
+#include <math.h>
+#include <time.h>
+#include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
-#include <time.h>
 #include <emmintrin.h>
 #include <smmintrin.h>
 #include "bitonic_sort.h"
 
-#if 0
-#				define DEBUG
-#endif
+#define min(X,Y) ((X) < (Y) ? (X) : (Y))
+#define max(X,Y) ((X) > (Y) ? (X) : (Y))
 
-
-#define CLOCK(...) do {double t = clock(); __VA_ARGS__;\
-  fprintf(stderr, "\rSorting time = %.3lfsec\n", (clock() - t)/CLOCKS_PER_SEC);} while(0)
+//#define DEBUG
 
 #define _eoutput(_str)\
 	do {\
@@ -38,7 +81,7 @@
 	do {\
 		int i;\
 		for(i = 0; i < s; ++i)\
-			fprintf(stderr, "%u ", ((uint32_t*)a)[i]);\
+			fprintf(stderr, "%u(%p,%d) ", ((uint32_t*)a)[i],a,i);\
 		fprintf(stderr, "\n");\
 	} while (0)
 
@@ -58,6 +101,8 @@
 		int i;\
 		for(i = 1; i < s; ++i)\
 			if(((uint32_t*)a)[i-1] > ((uint32_t*)a)[i]) {\
+				fprintf(stderr, "%u(%p,%d) ", ((uint32_t*)a)[i-1],a,i-1);\
+				fprintf(stderr, "%u(%p,%d) ", ((uint32_t*)a)[i],a,i);\
 				SHOW_RAW(a, s);\
 				_eoutput("not sorted!");}\
 	} while(0)
@@ -81,7 +126,19 @@
 #define SHOW_RAW_FUNC(a, s)
 #endif /* DEBUG */
 
-/* sort 8 elements using bitonal method */
+
+int32_t err_check(float *d, uint32_t s) {
+	int32_t i;
+
+	for (i = 0; i < (s - 1); i++) {
+		if (d[i] > d[i + 1])
+			return -1;
+	}
+
+	return 0;
+}
+
+/* sort 8 elements using bitonic method */
 /* elements are given in 2 arrays (4 and 4),
    result will be returned in the same arrays with a straight order */
 inline void bitonic_sort_kernel4(float *a, float *b)
@@ -241,7 +298,7 @@ inline void bitonic_merge_kernel8(float *a, float *b /* must not be reversed */)
 
 /* merge "s+s" elements and return sorted result in "dest" array
    TODO(d'b): replace magic numbers with macro */
-inline void bitonic_merge_kernel16n(float *dest, float *a, float *b /* must not be reversed*/, uint32_t s)
+inline void bitonic_merge_kernel16n(float *dest, float *a, uint32_t sa, float *b /* must not be reversed*/, uint32_t sb)
 {
 	__m128 ma[4];
 	__m128 mb[4];
@@ -254,9 +311,9 @@ inline void bitonic_merge_kernel16n(float *dest, float *a, float *b /* must not 
 	mb[1] = _mm_load_ps(arg + 8); \
 	mb[0] = _mm_load_ps(arg + 12); arg+=16
 
-	float *last_a = a + s;
-	float *last_b = b + s;
-	float *last_dest = dest + 2*s;
+	float *last_a = a + sa;
+	float *last_b = b + sb;
+	float *last_dest = dest + sa + sb;
 
 	ma[0] = _mm_load_ps(a); a+=4;
 	ma[1] = _mm_load_ps(a); a+=4;
@@ -333,8 +390,12 @@ void bitonic_merge(float *d, uint32_t s, float *buf, uint32_t chunk_size)
 	{
 		for (step = 0; step < s; step += step_size * 2)
 		{
-			bitonic_merge_kernel16n(destination + step,
-				source + step, source + step + step_size, step_size);
+			bitonic_merge_kernel16n(
+				destination + min(step, s),
+				source + min(step, s),
+				min(step_size, s - step),
+				source + min(step + step_size, s),
+				min(step_size,s - min(step + step_size, s)));
 		}
 
 		temp = source;
@@ -360,7 +421,7 @@ void inline bitonic_sort32(float *d)
 	bitonic_merge_kernel8(d + 16, d + 24);
 
 	/* merge */
-	bitonic_merge_kernel16n(d, d, d + 16, 16);
+	bitonic_merge_kernel16n(d, d, 16, d + 16, 16);
 
 	CHECK_RAW(d, 32);
 }
@@ -368,11 +429,19 @@ void inline bitonic_sort32(float *d)
 /* sort given chunk (2^chunk_size) of data */
 void bitonic_sort(float *d, uint32_t s, float *buf)
 {
-	uint32_t i;
+	uint32_t i,j, k;
 
 	/* sort individual 32 strips */
-	for (i = 0; i < s ; i += 32)
+	for (i = 0; (i+32) <= s ; i += 32)
 		bitonic_sort32(d + i);
+
+	for (j = i; j < s ; j ++)
+		for (k = i; k < s - 1 ; k ++)
+			if(*((uint32_t*)(d+k)) > *((uint32_t*)(d+k+1))){
+				uint32_t temp = *((uint32_t*)(d+k+1));
+				*((uint32_t*)(d+k+1)) = *((uint32_t*)(d+k));
+				*((uint32_t*)(d+k)) = temp;
+		}
 
 	/* merge 32-long strips */
 	bitonic_merge(d, s, buf, 32);
@@ -385,23 +454,9 @@ void bitonic_sort_chunked(float *d, uint32_t s, float *buf, uint32_t chunk_size)
 {
 	uint32_t i;
 	for (i = 0; i < s ; i += chunk_size)
-		bitonic_sort(d + i, chunk_size, buf + i);
+		bitonic_sort(
+				d + i,
+				min(chunk_size, s - i),
+				buf + i);
 	bitonic_merge(d, s, buf, chunk_size);
 }
-
-/* need for SSE aligned memory access */
-void *aligned_malloc(size_t size, size_t align)
-{
-  void *mem = malloc(size + align + sizeof(void*));
-  void **ptr = (void**)(((size_t)mem + align + sizeof(void*)) & ~(align - 1));
-  ptr[-1] = mem;
-  return ptr;
-}
-
-/* replaces free() */
-void aligned_free(void *ptr)
-{
-  free(((void**)ptr)[-1]);
-}
-
-
