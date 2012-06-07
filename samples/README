@@ -22,6 +22,11 @@ sort/
   see how to use intrinsics in nacl modules - absolutely same as usual. also this is another example of pagination
   mechanism usage.
   
+disort/
+  distributed sorting, contains 2 user application that interacts as nodes implements networking communication, it uses
+  files as one-to-one network channels. It uses for sse41 bitonic sorting and for another cpu instruction sets qsort 
+  algorithm from c standard library. currently 10 source, 10nodes and single manager node.   
+  
 syscallback/
   another innovation for zerovm. this mechanism allows user to intercept all syscalls (except trap()). with zrt 
   library it gives ability to avoid real system calls usage. almost anything can be done without exploiting trusted
