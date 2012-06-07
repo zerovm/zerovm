@@ -24,29 +24,16 @@ struct db_records_t{
 #define FILE_TYPE_STD "std\0"
 #define FILE_TYPE_MSQ "msq\0"
 
+#define REQREP  "REQREP\0"
 
-#define METHOD_BIND "bind\0"
-#define METHOD_CONNECT "connect\0"
-
-#define PUSH "PUSH\0"
-#define PULL "PULL\0"
-#define REQ  "REQ\0"
-#define REP  "REP\0"
-
-enum { ECOL_NODENAME=0, ECOL_FTYPE, ECOL_SOCK, ECOL_METHOD, ECOL_ENDPOINT, ECOL_FMODE, ECOL_FPATH, ECOL_FD,
-	ECOL_COLUMNS_COUNT};
-
-enum {EFILE_STD, EFILE_MSQ, EFILE_USER};
+enum { ECOL_NODENAME=0, ECOL_ENDPOINT, ECOL_FMODE, ECOL_FD, ECOL_COLUMNS_COUNT};
 
 
 struct db_record_t{
 	char *nodename;
-	int ftype;
 	int sock;
-	int method;
 	char *endpoint;
 	char fmode;
-	char *fpath;
 	int fd;
 };
 

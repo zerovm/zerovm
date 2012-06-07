@@ -265,10 +265,6 @@ struct NaClApp {
   uint32_t                  sysret; /* syscall return code */
   uintptr_t                 sys_tls;  /* only need for nexe prolog */
   /* d'b end */
-
-	/*YarolavLitvinov*/
-	struct zeromq_pool      *zmq_pool;
-	struct db_records_t     *db_records;
 };
 
 /*

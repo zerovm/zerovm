@@ -29,22 +29,14 @@
 
 #define min(a,b) (a < b ? a : b )
 
-/*ZeroMQ related sockets open methods; Generally BIND allow to receive data, CONNECT to send;
- *Working pair of communicate sockets: one uses BIND, another CONNECT*/
-enum { EMETHOD_UNEXPECTED=-1, EMETHOD_BIND=0, EMETHOD_CONNECT=1 };
-
-
-struct tempbuf_t{
-	int pos;
-	char *buf;
-	size_t size;
-};
+enum {ESOCKET_UNKNOWN, ESOCKET_REQREP=1};
 
 struct sock_file_t{
 	void *netw_socket;
 	int sock_type;
+	char access_mode; //'w', 'r'
+	int capabilities;
 	int fs_fd;
-	struct tempbuf_t *tempbuf;
 	int unused; /*used by zeromq_pool*/
 };
 
@@ -55,6 +47,7 @@ struct zeromq_pool{
 	int count_max;
 };
 
+
 /*find sock in array*/
 struct sock_file_t* sockf_by_fd(struct zeromq_pool* zpool, int fd);
 /*add sock to array*/
@@ -62,17 +55,11 @@ int add_sockf_copy_to_array(struct zeromq_pool* zpool, struct sock_file_t* sockf
 /*remove sock from array*/
 int remove_sockf_from_array_by_fd(struct zeromq_pool* zpool, int fd);
 
+
 /*init zmq, init array of sockets*/
 int init_zeromq_pool(struct zeromq_pool * zpool);
 /*free zmq resources, and sockets array*/
 int zeromq_term(struct zeromq_pool* zpool);
-
-/*search already opened dual direction socket associated with given fd;
- *Dual direction socket is linked with two communication channels; One for reading another for writing;
- *Both of these are using the same zmq socket internally, that can be closed only if both communication
- *channels are tryed to close by close_sockf;
- *@return NULL if no socket is associated with fd, else return associated socket;*/
-struct sock_file_t* get_dual_sockf(struct zeromq_pool* zpool, struct db_records_t *db_records, int fd);
 
 /*open file socket is associated with fd; It's should be called close_sockf for every opened file socket;
  * @param zpool should be valid and preconfigured by init_zeromq_pool

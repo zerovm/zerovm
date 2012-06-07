@@ -19,6 +19,7 @@ extern "C" {
 #define TEST_FPATH "/in/file\0"
 #define TEST_FD "3"
 #define TEST_MODE_W "w\0"
+#define TEST_REQREP "REQREP\0"
 
 #define SERVER_DB_PATH "gtest/data/zerovm_test.db"
 
@@ -53,7 +54,7 @@ TEST_F(SqlUseSrvTests, TestReadDbItems) {
 	qsort( db_records.array, db_records.count, sizeof(struct db_record_t), records_comparator );
 	/*test sorted records, should not found duplicate file descriptors*/
 	for (int i=0; i < db_records.count-1; i++){
-		EXPECT_LT( db_records.array[i].fd, db_records.array[i+1].fd );
+		ASSERT_LT( db_records.array[i].fd, db_records.array[i+1].fd );
 	}
 
 	EXPECT_NE(0, db_records.count);
@@ -78,12 +79,8 @@ TEST_F(SqlUseSrvTests, TestDbItemsParser) {
 	db_records.count = 0;
 	char **row_values_array = (char**)malloc(sizeof(char*)*ECOL_COLUMNS_COUNT);
 	row_values_array[ECOL_NODENAME] = (char*)TEST_NODENAME;
-	row_values_array[ECOL_FTYPE] = (char*)FILE_TYPE_MSQ;
-	row_values_array[ECOL_SOCK] = (char*)PUSH;
-	row_values_array[ECOL_METHOD] = (char*)METHOD_CONNECT;
 	row_values_array[ECOL_ENDPOINT] = (char*)TEST_ENDPOINT;
 	row_values_array[ECOL_FMODE] = (char*)TEST_MODE_W;
-	row_values_array[ECOL_FPATH] = (char*)TEST_FPATH;
 	row_values_array[ECOL_FD] = (char*)TEST_FD;
 	get_dbrecords_callback( &db_records, ECOL_COLUMNS_COUNT, row_values_array, NULL);
 	ASSERT_TRUE( 1==db_records.count );

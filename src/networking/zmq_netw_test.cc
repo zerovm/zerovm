@@ -13,10 +13,12 @@
 extern "C" {
 #include "src/networking/errcodes.h"
 #include "src/networking/zmq_netw.h"
+#include "src/networking/sqluse_srv.h"
 }
 
 const char *__endpoint1 = "ipc:///tmp/test1\0";
 #define TEST_DATA_SIZE 1000000
+#define TEST_DB_PATH "gtest/data/zerovm_test.db"
 
 /*helpers*/
 struct zeromq_pool *CreateArrayPoolNoZmq();
@@ -69,6 +71,16 @@ char* alloc_fill_random(int bytes){
 	}
 	return data;
 
+}
+
+char* fill_by_random(char*buf, int bytes){
+	/*fill data by randoms*/
+	pid_t pid = getpid();
+	srand((time_t)pid );
+	for (int i=0; i<bytes; i++){
+		buf[i]=rand();
+	}
+	return buf;
 }
 
 TEST_F(ZmqNetwTests, TestSockfArrayAdd100items) {
@@ -136,18 +148,11 @@ TEST_F(ZmqNetwTests, TestSockfOpenClose) {
 	/*set record data*/
 	record->fd = 3;
 	record->fmode = 'w';
-	record->ftype = EFILE_MSQ;
-	record->method = EMETHOD_CONNECT;
 	record->endpoint = (char*) __endpoint1;
-	record->sock = ZMQ_PUSH;
+	record->sock = ESOCKET_REQREP;
 	/*records added*/
-	/*open socket with bad method*/
-	record->method = EMETHOD_UNEXPECTED;
+	/*open socket using good data*/
 	struct sock_file_t* sockf = open_sockf( zpool, &db_records, 3);
-	EXPECT_EQ( (struct sock_file_t*)NULL, sockf);
-	/*open normal socket*/
-	record->method = EMETHOD_CONNECT;
-	sockf = open_sockf( zpool, &db_records, 3);
 	EXPECT_NE( (struct sock_file_t*)NULL, sockf);
 	/*open twice the same file descriptor socket*/
 	sockf = open_sockf( zpool, &db_records, 3);
@@ -159,56 +164,6 @@ TEST_F(ZmqNetwTests, TestSockfOpenClose) {
 	EXPECT_EQ(ERR_OK, zeromq_term(zpool) );
 	free(zpool);
 }
-
-TEST_F(ZmqNetwTests, TestSockfCommunicationPushPull) {
-	struct zeromq_pool *zpool = (struct zeromq_pool *) malloc(sizeof(struct zeromq_pool *));
-	EXPECT_EQ(ERR_OK, init_zeromq_pool(zpool) );
-	/*zmq init ok, create db_records struct*/
-	struct db_records_t db_records = {NULL, 0, DB_RECORDS_GRANULARITY, 0};
-	db_records.array = (struct db_record_t*)malloc( sizeof(struct db_record_t)*db_records.maxcount );
-	memset(db_records.array, '\0', sizeof(struct db_record_t)*db_records.maxcount);
-	/*add test item into db_records*/
-	struct db_record_t *record1 = &db_records.array[db_records.count++];
-	/*set record1 data*/
-	record1->fd = 3;
-	record1->fmode = 'w';
-	record1->ftype = EFILE_MSQ;
-	record1->method = EMETHOD_CONNECT;
-	record1->endpoint = (char*)__endpoint1;
-	record1->sock = ZMQ_PUSH;
-	struct db_record_t *record2 = &db_records.array[db_records.count++];
-	/*set record2 data*/
-	record2->fd = 4;
-	record2->fmode = 'r';
-	record2->ftype = EFILE_MSQ;
-	record2->method = EMETHOD_BIND;
-	record2->endpoint = (char*)__endpoint1;
-	record2->sock = ZMQ_PULL;
-	/*records added*/
-	struct sock_file_t* w_sockf = open_sockf( zpool, &db_records, 3);
-	EXPECT_NE( (struct sock_file_t*)NULL, w_sockf);
-	struct sock_file_t* r_sockf = open_sockf( zpool, &db_records, 4);
-	EXPECT_NE( (struct sock_file_t*)NULL, r_sockf);
-	char *buf = alloc_fill_random(TEST_DATA_SIZE);
-	char *buf2 = (char*)malloc(TEST_DATA_SIZE);
-	if ( buf ){
-		/*write1 sockf*/
-		EXPECT_EQ( TEST_DATA_SIZE, write_sockf(w_sockf, buf, TEST_DATA_SIZE) );
-		EXPECT_EQ( TEST_DATA_SIZE, read_sockf(r_sockf, buf2, TEST_DATA_SIZE) );
-		EXPECT_EQ( 0, strncmp(buf, buf2, TEST_DATA_SIZE) );
-		/*write2 sockf*/
-		memset(buf2, '\0', TEST_DATA_SIZE);
-		EXPECT_EQ( TEST_DATA_SIZE, write_sockf(w_sockf, buf, TEST_DATA_SIZE) );
-		EXPECT_EQ( TEST_DATA_SIZE/2, read_sockf(r_sockf, buf2, TEST_DATA_SIZE/2) );
-		EXPECT_EQ( TEST_DATA_SIZE/2, read_sockf(r_sockf, buf2+TEST_DATA_SIZE/2, TEST_DATA_SIZE/2) );
-		EXPECT_EQ( 0, strncmp(buf, buf2, TEST_DATA_SIZE) );
-	}
-	close_sockf(zpool, w_sockf);
-	close_sockf(zpool, r_sockf);
-	EXPECT_EQ(ERR_OK, zeromq_term(zpool) );
-	free(zpool);
-}
-
 
 TEST_F(ZmqNetwTests, TestSockfCommunicationReqRep) {
 	struct zeromq_pool *zpool = (struct zeromq_pool *) malloc(sizeof(struct zeromq_pool *));
@@ -222,59 +177,60 @@ TEST_F(ZmqNetwTests, TestSockfCommunicationReqRep) {
 	/*set record1 data*/
 	record1->fd = 3;
 	record1->fmode = 'w';
-	record1->ftype = EFILE_MSQ;
-	record1->method = EMETHOD_CONNECT;
 	record1->endpoint = (char*)__endpoint1;
-	record1->sock = ZMQ_REQ;
+	record1->sock = ESOCKET_REQREP;
 	struct db_record_t *record2 = &db_records.array[db_records.count++];
 	/*set record2 data*/
 	record2->fd = 4;
 	record2->fmode = 'r';
-	record2->ftype = EFILE_MSQ;
-	record2->method = EMETHOD_CONNECT;
 	record2->endpoint = (char*)__endpoint1;
-	record2->sock = ZMQ_REQ;
-	struct db_record_t *record3 = &db_records.array[db_records.count++];
-	/*set record3 data*/
-	record3->fd = 5;
-	record3->fmode = 'r';
-	record3->ftype = EFILE_MSQ;
-	record3->method = EMETHOD_BIND;
-	record3->endpoint = (char*)__endpoint1;
-	record3->sock = ZMQ_REP;
-	struct db_record_t *record4 = &db_records.array[db_records.count++];
-	/*set record4 data*/
-	record4->fd = 6;
-	record4->fmode = 'w';
-	record4->ftype = EFILE_MSQ;
-	record4->method = EMETHOD_BIND;
-	record4->endpoint = (char*)__endpoint1;
-	record4->sock = ZMQ_REP;
+	record2->sock = ESOCKET_REQREP;
 	/*records added*/
-	struct sock_file_t* w_sockf_req = open_sockf( zpool, &db_records, 3);
-	EXPECT_NE( (struct sock_file_t*)NULL, w_sockf_req);
-	struct sock_file_t* r_sockf_req = open_sockf( zpool, &db_records, 4);
-	EXPECT_NE( (struct sock_file_t*)NULL, r_sockf_req);
-	struct sock_file_t* r_sockf_rep = open_sockf( zpool, &db_records, 5);
-	EXPECT_NE( (struct sock_file_t*)NULL, r_sockf_rep);
-	struct sock_file_t* w_sockf_rep = open_sockf( zpool, &db_records, 6);
-	EXPECT_NE( (struct sock_file_t*)NULL, w_sockf_rep);
+	struct sock_file_t* w_sockf = open_sockf( zpool, &db_records, 4);
+	EXPECT_NE( (struct sock_file_t*)NULL, w_sockf);
+	struct sock_file_t* r_sockf = open_sockf( zpool, &db_records, 3);
+	EXPECT_NE( (struct sock_file_t*)NULL, r_sockf);
 	char *buf = alloc_fill_random(TEST_DATA_SIZE);
 	char *buf2 = (char*)malloc(TEST_DATA_SIZE);
 	if ( buf ){
-		/*write sockf*/
-		EXPECT_EQ( TEST_DATA_SIZE, write_sockf(w_sockf_req, buf, TEST_DATA_SIZE) );
-		EXPECT_EQ( TEST_DATA_SIZE, read_sockf(r_sockf_rep, buf2, TEST_DATA_SIZE) );
+		/*write and read the same bytes count, and compare sent and recevied data*/
+		EXPECT_EQ( TEST_DATA_SIZE, write_sockf(w_sockf, buf, TEST_DATA_SIZE) );
+		EXPECT_EQ( TEST_DATA_SIZE, read_sockf(r_sockf, buf2, TEST_DATA_SIZE) );
 		EXPECT_EQ( 0, strncmp(buf, buf2, TEST_DATA_SIZE) );
+		buf = fill_by_random(buf, TEST_DATA_SIZE);
 		memset(buf2, '\0', TEST_DATA_SIZE);
-		EXPECT_EQ( TEST_DATA_SIZE, write_sockf(w_sockf_rep, buf, TEST_DATA_SIZE) );
-		EXPECT_EQ( TEST_DATA_SIZE, read_sockf(r_sockf_req, buf2, TEST_DATA_SIZE) );
+		/**/
+		/*write more than want read*/
+		EXPECT_EQ( TEST_DATA_SIZE, write_sockf(r_sockf, buf, TEST_DATA_SIZE) );
+		EXPECT_EQ( TEST_DATA_SIZE/2, read_sockf(w_sockf, buf2, TEST_DATA_SIZE/2) );
+		/*write less data than want read*/
+		EXPECT_EQ( TEST_DATA_SIZE/2, write_sockf(w_sockf, buf, TEST_DATA_SIZE/2) );
+		EXPECT_EQ( TEST_DATA_SIZE/2, read_sockf(r_sockf, buf2, TEST_DATA_SIZE) );
+		EXPECT_EQ( 0, strncmp(buf, buf2, TEST_DATA_SIZE/2) );
+		buf = fill_by_random(buf, TEST_DATA_SIZE);
+		memset(buf2, '\0', TEST_DATA_SIZE);
+		/**/
+		/*simple use REQ REP patterns */
+		EXPECT_EQ( TEST_DATA_SIZE, write_sockf(r_sockf, buf, TEST_DATA_SIZE) );
+		EXPECT_EQ( TEST_DATA_SIZE, read_sockf(w_sockf, buf2, TEST_DATA_SIZE) );
 		EXPECT_EQ( 0, strncmp(buf, buf2, TEST_DATA_SIZE) );
+		EXPECT_EQ( 3, write_sockf(w_sockf, "req", 3) );
+		EXPECT_EQ( 3, read_sockf(r_sockf, buf, 3) );
+		EXPECT_EQ( 6, write_sockf(r_sockf, "buffer", 6) );
+		EXPECT_EQ( 6, read_sockf(w_sockf, buf, 6) );
+		/*write more data than trying read, and simulate use sockets like zvm style*/
+		buf = fill_by_random(buf, TEST_DATA_SIZE);
+		memset(buf2, '\0', TEST_DATA_SIZE);
+		uint32_t req_len = 1024;
+		uint32_t readed_req_len = 0;
+		EXPECT_EQ( (ssize_t)sizeof(req_len), write_sockf(w_sockf, (const char*)&req_len, sizeof(req_len)) ); //send req
+		EXPECT_EQ( (ssize_t)sizeof(readed_req_len), read_sockf(r_sockf, (char*)&readed_req_len, sizeof(readed_req_len)) ); //read req
+		EXPECT_EQ( readed_req_len, write_sockf(r_sockf, buf, readed_req_len) ); //send req data
+		EXPECT_EQ( readed_req_len, read_sockf(w_sockf, buf2, readed_req_len) ); //read req
+		EXPECT_EQ( 0, strncmp(buf, buf2, readed_req_len) );
 	}
-	close_sockf(zpool, r_sockf_req);
-	close_sockf(zpool, w_sockf_req);
-	close_sockf(zpool, w_sockf_rep);
-	close_sockf(zpool, r_sockf_rep);
+	close_sockf(zpool, w_sockf);
+	close_sockf(zpool, r_sockf);
 	EXPECT_EQ(ERR_OK, zeromq_term(zpool) );
 	free(zpool);
 }
@@ -294,8 +250,6 @@ TEST_F(ZmqNetwTests, TestSockfIfZmqInitFailed) {
 	/*set some record1 data*/
 	record1->fd = 3;
 	record1->fmode = 'w';
-	record1->ftype = EFILE_MSQ;
-	record1->method = EMETHOD_CONNECT;
 	record1->endpoint = (char*)__endpoint1;
 	record1->sock = ZMQ_PUSH;
 	/*records added*/
@@ -327,15 +281,15 @@ TEST_F(ZmqNetwTests, TestSockfBadArgs) {
 	EXPECT_EQ( (struct sock_file_t*)NULL, open_sockf( NULL, NULL, 0) );
 	/*test using db_records not yet properly initialized*/
 	EXPECT_EQ( (struct sock_file_t*)NULL, open_sockf( zpool, db_records, 0) );
-	EXPECT_EQ(0, write_sockf(NULL, NULL, 1000000) );
+	EXPECT_EQ(-1, write_sockf(NULL, NULL, 1000000) );
 	sockf = (struct sock_file_t*)malloc(sizeof(struct sock_file_t));
 	memset(sockf, '\0', sizeof(struct sock_file_t) );
-	EXPECT_EQ(0, write_sockf(sockf, "testdata", 8) );
-	EXPECT_EQ(0, write_sockf(sockf, "testdata", -1) );
-	EXPECT_EQ(0, read_sockf(NULL, NULL, 1000000) );
+	EXPECT_EQ(-1, write_sockf(sockf, "testdata", 8) );
+	EXPECT_EQ(-1, write_sockf(sockf, "testdata", -1) );
+	EXPECT_EQ(-1, read_sockf(NULL, NULL, 1000000) );
 	char *test = (char*)malloc(8);
-	EXPECT_EQ(0, read_sockf(sockf, test, 8) );
-	EXPECT_EQ(0, read_sockf(sockf, test, -1) );
+	EXPECT_EQ(-1, read_sockf(sockf, test, 8) );
+	EXPECT_EQ(-1, read_sockf(sockf, test, -1) );
 	EXPECT_EQ( ERR_BAD_ARG, init_zeromq_pool(NULL) );
 	EXPECT_EQ( ERR_BAD_ARG, zeromq_term(NULL) );
 	zpool->sockf_array = (struct sock_file_t*) malloc(sizeof(struct sock_file_t));
@@ -346,39 +300,17 @@ TEST_F(ZmqNetwTests, TestSockfBadArgs) {
 
 TEST_F(ZmqNetwTests, TestSockfOpenAllCloseAll) {
 	struct zeromq_pool *zpool = (struct zeromq_pool *) malloc(sizeof(struct zeromq_pool *));
-	EXPECT_EQ(ERR_OK, init_zeromq_pool(zpool) );
-	/***Create db records*/
 	struct db_records_t db_records = {NULL, 0, DB_RECORDS_GRANULARITY, 0};
-	db_records.array = (struct db_record_t*)malloc( sizeof(struct db_record_t)*db_records.maxcount );
-	memset(db_records.array, '\0', sizeof(struct db_record_t)*db_records.maxcount);
-	/*add test item into db_records*/
-	struct db_record_t *record1 = &db_records.array[db_records.count++];
-	/*set record1 data*/
-	record1->fd = 3;
-	record1->fmode = 'w';
-	record1->ftype = EFILE_MSQ;
-	record1->method = EMETHOD_CONNECT;
-	record1->endpoint = (char*)__endpoint1;
-	record1->sock = ZMQ_PUSH;
-	struct db_record_t *record2 = &db_records.array[db_records.count++];
-	/*set record2 data*/
-	record2->fd = 4;
-	record2->fmode = 'r';
-	record2->ftype = EFILE_MSQ;
-	record2->method = EMETHOD_BIND;
-	record2->endpoint = (char*)__endpoint1;
-	record2->sock = ZMQ_PULL;
-	/*****test db records created*/
+	EXPECT_EQ(ERR_OK, init_zeromq_pool(zpool) );
+	EXPECT_EQ(ERR_OK, get_all_records_from_dbtable(TEST_DB_PATH, "manager\0", &db_records ) );
+	/*****test db records retrieved*/
 	EXPECT_EQ(ERR_OK, open_all_comm_files(zpool, &db_records) );
-	/******Check sockets open status*/
-	struct sock_file_t *writef = sockf_by_fd(zpool, 3);
-	EXPECT_NE( (struct sock_file_t *)NULL, writef);
-	EXPECT_EQ( 8, write_sockf(writef, "testdata\0", 8) );
-	char buf[8];
-	struct sock_file_t *readf = sockf_by_fd(zpool, 4);
-	EXPECT_NE( (struct sock_file_t *)NULL, readf);
-	EXPECT_EQ( 8, read_sockf(readf, buf, 8 ));
-	/*opened sockets tested, close it*/
+	/******Sockets opened and should be exist*/
+	for ( int i=0; i < db_records.count; i++ ){
+		if ( db_records.array[i].fd > 2 ){
+			ASSERT_NE( (struct sock_file_t *)NULL, sockf_by_fd(zpool, db_records.array[i].fd) );
+		}
+	}
 	EXPECT_EQ(ERR_OK, close_all_comm_files(zpool) );
 	EXPECT_EQ(ERR_OK, zeromq_term(zpool) );
 	free(zpool);

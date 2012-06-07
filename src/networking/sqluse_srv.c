@@ -46,6 +46,7 @@ int get_dbrecords_callback(void *file_records, int argc, char **argv, char **azC
 			records->array = realloc(records->array, sizeof(struct db_record_t)*records->maxcount);
 		}
 		frecord = &records->array[records->count++];
+		frecord->sock = ESOCKET_REQREP; /*use same socket type for all files*/
 		/*loop by table columns count*/
 		for(int i=0; i<argc; i++){
 			const char *col_value = argv[i];
@@ -55,25 +56,6 @@ int get_dbrecords_callback(void *file_records, int argc, char **argv, char **azC
 				frecord->nodename = malloc( len_value+1 );
 				strcpy(frecord->nodename, col_value);
 				frecord->nodename[len_value] = '\0';
-				break;
-			case ECOL_FTYPE:
-				if ( !strcmp(col_value, FILE_TYPE_STD) ) frecord->ftype = EFILE_STD;
-				else if ( !strcmp(col_value, FILE_TYPE_MSQ) ) frecord->ftype = EFILE_MSQ;
-				else { frecord->ftype = EFILE_USER; }
-				break;
-			case ECOL_SOCK:
-				if ( !strcmp(col_value, PUSH) ) frecord->sock = ZMQ_PUSH;
-				else if ( !strcmp(col_value, PULL) ) frecord->sock = ZMQ_PULL;
-				else if ( !strcmp(col_value, REQ) ) frecord->sock = ZMQ_REQ;
-				else if ( !strcmp(col_value, REP) ) frecord->sock = ZMQ_REP;
-				else frecord->sock = -1;
-				break;
-			case ECOL_METHOD:
-				if ( !strcmp(col_value, METHOD_BIND) )
-					frecord->method = EMETHOD_BIND;
-				else if ( !strcmp(col_value, METHOD_CONNECT) )
-					frecord->method = EMETHOD_CONNECT;
-				else frecord->method = EMETHOD_UNEXPECTED;
 				break;
 			case ECOL_ENDPOINT:
 				if ( strstr(col_value, "%d\0") ){
@@ -91,19 +73,13 @@ int get_dbrecords_callback(void *file_records, int argc, char **argv, char **azC
 			case ECOL_FMODE:
 				strncpy(&(frecord->fmode), col_value, 1);
 				break;
-			case ECOL_FPATH:
-				frecord->fpath = malloc( len_value+1 );
-				strcpy(frecord->fpath, col_value );
-				frecord->fpath[len_value] = '\0';
-				break;
 			case ECOL_FD:
 				frecord->fd = atoi( col_value );
 				break;
 			}
 		}
-		NaClLog(LOG_INFO, "nodename:%s, ftype=%d, sock=%d, method=%d, endpoint=%s, fmode=%c, fpath=%s, fd=%d\n",
-				frecord->nodename, frecord->ftype, frecord->sock, frecord->method,
-				frecord->endpoint, frecord->fmode, frecord->fpath, frecord->fd);
+		NaClLog(LOG_INFO, "nodename:%s, sock=%d, endpoint=%s, fmode=%c, fd=%d\n",
+				frecord->nodename, frecord->sock,frecord->endpoint, frecord->fmode, frecord->fd);
 	}
 	return 0;
 }

@@ -15,12 +15,15 @@
 
 #include "src/manifest/trap.h"
 #include "src/manifest/manifest_setup.h"
-#include "src/manifest/mount_channel.h"
 #include "src/platform/nacl_log.h"
 #include "api/zvm.h"
 #include "src/service_runtime/sel_ldr.h"
 #include "src/service_runtime/nacl_globals.h"
 #include "src/platform/nacl_exit.h"
+#ifdef NETWORKING
+#  include "src/networking/zvm_netw.h"
+#  include "src/networking/errcodes.h"
+#endif
 
 #  ifdef __cplusplus
 #    define EXTERN_C_BEGIN extern "C" {
@@ -120,6 +123,7 @@ int32_t TrapReadHandle(struct NaClApp *nap,
   struct PreOpenedFileDesc *fd;
   int64_t tail;
   char *sys_buffer;
+  /*todo: retcode is used int32_t type, instead of ssize_t, or even uint32_t */
   int32_t retcode;
 
   /* convert address and check buffer */
@@ -130,17 +134,22 @@ int32_t TrapReadHandle(struct NaClApp *nap,
       __func__, desc, (intptr_t)buffer, size, offset);
 
 #ifdef NETWORKING
-  /*YaroslavLitvinov
-   * Added multiple fd support, to be used by networking with MSQ files*/
-  if ( nap && nap->zmq_pool ){
-	  struct sock_file_t* sockf = sockf_by_fd(nap->zmq_pool, desc);
-	  if ( sockf ){
-		  ssize_t read_bytes = read_sockf(sockf, sys_buffer, size);
-		  return read_bytes;
+  /*YaroslavLitvinov*/
+  {
+	  int capab = ENOTALLOWED;
+	  capab = capabilities_for_file_fd(desc);
+	  if ( capab == EREAD || capab == EREADWRITE ){
+		  retcode = commf_read(desc, sys_buffer, size);
+		  if ( -1 == retcode  ){
+			  NaClLog(LOG_ERROR, "%s() read file %d error\n", __func__, desc );
+			  NaClAbort();
+		  }
+		  return retcode;
 	  }
 	  else{
-		  NaClLog(LOG_ERROR, "%s() invoked: desc=%d, socket NULL\n", __func__, desc );
-		  return -INVALID_DESC;
+		  /*todo read errcode into report log*/
+		  NaClLog(LOG_ERROR, "%s() read file %d not allowed by capabilities err=%d\n", __func__, desc, capab );
+		  NaClAbort();
 	  }
   }
 #endif
@@ -210,17 +219,22 @@ int32_t TrapWriteHandle(struct NaClApp *nap,
         __func__, desc, (intptr_t)buffer, size, offset);
 
 #ifdef NETWORKING
-  /*YaroslavLitvinov
-   * Added multiple fd support, to be used by networking with MSQ files*/
-  if ( nap && nap->zmq_pool ){
-	  struct sock_file_t* sockf = sockf_by_fd(nap->zmq_pool, desc);
-	  if ( sockf ){
-		  ssize_t wrote_bytes = write_sockf(sockf, sys_buffer, size);
-		  return wrote_bytes;
+  /*YaroslavLitvinov*/
+  {
+	  int capab = ENOTALLOWED;
+	  capab = capabilities_for_file_fd(desc);
+	  if ( capab == EWRITE || capab == EREADWRITE ){
+		  retcode = commf_write(desc, sys_buffer, size);
+		  if ( -1 == retcode  ){
+			  NaClLog(LOG_ERROR, "%s() write file %d error\n", __func__, desc );
+			  NaClAbort();
+		  }
+		  return retcode;
 	  }
 	  else{
-		  NaClLog(LOG_FATAL, "%s() invoked: desc=%d, socket NULL\n", __func__, desc );
-		  return -INVALID_DESC;
+		  /*todo write errcode into report log*/
+		  NaClLog(LOG_ERROR, "%s() write file %d not allowed by capabilities err=%d\n", __func__, desc, capab );
+		  NaClAbort();
 	  }
   }
 #endif
