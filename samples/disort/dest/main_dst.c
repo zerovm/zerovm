@@ -32,9 +32,7 @@ int main(int argc, char **argv){
 	BigArrayPtr sorted_array = NULL;
 
 	/*receive sorted ranges from all source nodes*/
-	size_t array_size = ARRAY_ITEMS_COUNT*sizeof(BigArrayItem);
-	unsorted_array = malloc( array_size );
-	memset(unsorted_array, '\0', array_size);
+	unsorted_array = calloc( sizeof(BigArrayItem), ARRAY_ITEMS_COUNT );
 	repreq_read_sorted_ranges( DEST_FD_READ_SORTED_RANGES_START, nodeid, unsorted_array,
 			ARRAY_ITEMS_COUNT, SRC_NODES_COUNT );
 

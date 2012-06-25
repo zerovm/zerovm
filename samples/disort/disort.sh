@@ -12,10 +12,7 @@ SRC_LAST=11
 DST_FIRST=12
 DST_LAST=21
 
-rm -f ./time
-date > time
-
-gnome-terminal --geometry=80x20 -t "zerovm sortman.manifest" -x sh -c "./zerovm -Msamples/disort/manifest/sortman.manifest; date >> time"
+rm -f ./samples/disort/time
 
 COUNTER=$SRC_FIRST
 while [  $COUNTER -le $SRC_LAST ]; do
@@ -29,8 +26,11 @@ while [  $COUNTER -le $DST_LAST ]; do
     let COUNTER=COUNTER+1 
 done
 
-date
-cat samples/disort/log/sortman.stderr.log
+date > ./samples/disort/time
+gnome-terminal --geometry=80x20 -t "zerovm sortman.manifest" -x sh -c "./zerovm -Msamples/disort/manifest/sortman.manifest; date >> ./samples/disort/time"
 
+
+cat samples/disort/log/sortman.stderr.log
+echo cat ./samples/disort/time
 
 

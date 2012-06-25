@@ -143,7 +143,6 @@ write_sorted_ranges( int fdw, const struct request_data_t* sequence, const BigAr
 
 	write_channel(fdw, (const char*) &t, sizeof(struct packet_data_t));
 	write_channel(fdw, (const char*) array, t.size);
-	write_channel(fdw, (const char*) "1", 1); //send at last small data
 	WRITE_LOG(LOG_DEBUG, "Reply from receiver OK;\n");
 }
 

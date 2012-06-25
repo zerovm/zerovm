@@ -37,7 +37,7 @@
 #define CHUNK_COUNT 1000
 #define BASE_HISTOGRAM_STEP (ARRAY_ITEMS_COUNT/CHUNK_COUNT)
 /*If MERGE_ON_FLY defined then sorted chunks received by destination nodes will only merged when obtained*/
-//#define MERGE_ON_FLY
+#define MERGE_ON_FLY
 
 /*Currently up to 10src and 10dst nodes supported,
  * FD values should be unchanged for less or equal nodes count*/

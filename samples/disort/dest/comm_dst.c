@@ -33,8 +33,7 @@ void
 repreq_read_sorted_ranges( int fdr, int nodeid,
 		BigArrayPtr dst_array, int dst_array_len, int ranges_count ){
 #ifdef MERGE_ON_FLY
-	BigArrayPtr merge_array = malloc(dst_array_len);
-	memset(merge_array, '\0', dst_array_len);
+	BigArrayPtr merge_array = calloc(sizeof(BigArrayItem), dst_array_len);
 #endif
 	WRITE_FMT_LOG(LOG_DEBUG, "[%d] Read ranges from fd=%d\n", nodeid, fdr);
 	int recv_bytes_count = 0;
@@ -42,27 +41,32 @@ repreq_read_sorted_ranges( int fdr, int nodeid,
 	{
 		int current_read_fd = fdr+i;
 		WRITE_FMT_LOG(LOG_DEBUG, "repreq_read_sorted_ranges #%d\n", i);
-		/* exception use of REQ-REP pattern
-		 * use 2 read calls sequently, because sender wrote data in whole message*/
 		struct packet_data_t t;
 		read_channel( current_read_fd, (char*)&t, sizeof(t) );
 		if (EPACKET_RANGE != t.type ){
 			WRITE_FMT_LOG(LOG_DEBUG, "assert t.type=%d %d(EPACKET_RANGE)\n", t.type, EPACKET_RANGE);
 			assert(0);
 		}
+#ifndef MERGE_ON_FLY
 		read_channel( current_read_fd, (char*)&dst_array[recv_bytes_count/sizeof(BigArrayItem)], t.size );
-		char c;
-		read_channel( current_read_fd, &c, 1 );
+#endif
 #ifdef MERGE_ON_FLY
-		/*copy dest array into temporary mege_array*/
-		for ( int i=0; i < recv_bytes_count+t.size; i++ ){
-			merge_array[i] = dst_array[i];
+		/* 1. Copy to merge array first chunk
+		 * 2. Copy to merge array next chunk, starting from next item from first chunk
+		 * 3. Merge both chunks and write merged result into dst_array
+		 * */
+		int count_items_part1 = t.size/sizeof(BigArrayItem);
+		int count_items_part2 = recv_bytes_count/sizeof(BigArrayItem);
+
+		read_channel( current_read_fd, (char*)&merge_array[count_items_part2], t.size );
+		/*if both chunks recevied*/
+		if ( count_items_part2 != 0 ){
+			/*merge both chunks*/
+			dst_array = merge( dst_array, merge_array, count_items_part2,
+					&merge_array[count_items_part2], count_items_part1 );
 		}
-		/*merge current sorted data and new obtained data*/
-		if ( recv_bytes_count ){
-			memset(dst_array, '\0', dst_array_len);
-			dst_array = merge( dst_array, merge_array, recv_bytes_count/sizeof(BigArrayItem),
-					&dst_array[recv_bytes_count/sizeof(BigArrayItem)], t.size/sizeof(BigArrayItem) );
+		else{
+			strncpy((char*)dst_array, (const char*)merge_array, t.size );
 		}
 #endif
 		recv_bytes_count += t.size;
