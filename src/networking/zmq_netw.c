@@ -5,144 +5,122 @@
  *      Author: YaroslavLitvinov
  */
 
-
-#include "src/networking/sqluse_srv.h"
-#include "src/networking/zmq_netw.h"
-#include "src/networking/sqluse_srv.h"
-#include "src/networking/errcodes.h"
-#include "src/platform/nacl_log.h"
-#include "src/networking/errcodes.h"
-#include <zmq.h>
-
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <assert.h>
+
+#include <zmq.h>
+
+#include "src/service_runtime/dyn_array.h"
+#include "src/service_runtime/nacl_error_code.h"
+#include "src/platform/nacl_log.h"
+
+#include "src/networking/sqluse_srv.h"
+#include "src/networking/zmq_netw.h"
+#include "src/networking/sqluse_srv.h"
+
 
 static uint32_t __bytes_recv = 0;
 static uint32_t __bytes_sent = 0;
+/*pluggable facade*/
+static struct zeromq_interface *__io_if = NULL;
 
-int init_zeromq_pool(struct zeromq_pool * zpool){
-	int err = 0;
-	NaClLog(LOG_INFO, "%p", (void*)zpool);
-	if ( !zpool ) return ERR_BAD_ARG;
+/*Do not allow zeromq objective code just here for unit tests*/
+#ifndef UNIT_TEST
+/*Initialization I/O interface by zeromq functions. Should be used only for interface initialization*/
+static struct zeromq_interface __zeromq_implementation = {
+	.init         = zmq_init,
+	.term         = zmq_term,
+	.send         = (int(*)(void *, void *, int))zmq_send,
+	.recv         = (int(*)(void *, void *, int))zmq_recv,
+	.bind         = zmq_bind,
+	.connect      = zmq_connect,
+	.open_socket  = zmq_socket,
+	.close_socket = zmq_close,
+	.msg_init_size= (int(*)(void *, size_t))zmq_msg_init_size,
+	.msg_init     = (int(*)(void *))zmq_msg_init,
+	.msg_data     = (void*(*)(void *))zmq_msg_data,
+	.msg_size     = (size_t(*)(void *))zmq_msg_size,
+	.msg_close    = (int(*)(void *))zmq_msg_close,
+	.errno_io     = zmq_errno,
+	.strerror     = zmq_strerror,
+	.realloc      = realloc,
+	.malloc       = malloc,
+	.calloc       = calloc
+};
+struct zeromq_interface* zeromq_interface_implementation(){
+	return &__zeromq_implementation;
+}
+#endif
 
-	/*create zmq context, it should be destroyed in zeromq_term; all opened sockets should be closed
+
+int init_zeromq_pool(struct zeromq_interface *io_interface, struct zeromq_pool * zpool){
+	int err = LOAD_OK;
+	assert( io_interface != NULL );
+	assert( zpool != NULL );
+	__io_if = io_interface;
+
+	/*create context, it should be destroyed in zeromq_term; all opened sockets should be closed
 	 *before finishing, either zmq_term will wait in internal loop for completion of all I/O requests*/
-	zpool->context = zmq_init(1);
-	if ( zpool->context ){
-		zpool->count_max=ESOCKF_ARRAY_GRANULARITY;
+	zpool->context = __io_if->init( ZMQ_THREAD_COUNT );
+	if ( zpool->context != NULL ){
 		/*allocated memory for array should be free at the zeromq_term */
-		zpool->sockf_array = malloc(zpool->count_max * sizeof(struct sock_file_t));
-		if ( zpool->sockf_array ) {
-			memset(zpool->sockf_array, '\0', zpool->count_max*sizeof(struct sock_file_t));
-			for (int i=0; i < zpool->count_max; i++)
-				zpool->sockf_array[i].unused = 1;
-			err = ERR_OK;
-		}
-		else{
-			/*no memory allocated
-			 * This code section can't be covered by unit tests because it's not depends from zpool parameter;
-			 * sockf_array member is completely setups internally*/
-			NaClLog(LOG_ERROR, "%d bytes alloc error", (int)sizeof(struct sock_file_t));
-			err = ERR_NO_MEMORY;
-		}
+		zpool->sockf_array = __io_if->calloc( 1, sizeof(struct DynArray) );
+		assert( zpool->sockf_array != NULL );
+		assert( 1 == DynArrayCtor(zpool->sockf_array, ESOCKF_ARRAY_GRANULARITY) );
 	}
 	else{
-		/* This code section can't be covered by unit tests because it's not depends from zpool parameter;
-		 * it's only can be produced as unexpected zeromq error*/
-		NaClLog(LOG_ERROR, "zmq_init err %d, errno %d errtext %s\n", err, zmq_errno(), zmq_strerror(zmq_errno()));
-		err = ERR_ERROR;
+		NaClLog(LOG_ERROR, "__io_if->init errno %d errtext %s\n", __io_if->errno_io(), __io_if->strerror(__io_if->errno_io()));
+		err = LOAD_0MQ_CONTEXT_INIT_FAILED;
 	}
 	return err;
 }
 
 int zeromq_term(struct zeromq_pool* zpool){
-	int err = ERR_OK;
-	NaClLog(LOG_INFO, "%p", (void*)zpool);
-	if ( !zpool ) return ERR_BAD_ARG;
-
+	int err = LOAD_OK;
+	assert( zpool != NULL );
+	assert( zpool->context != NULL );
+	assert( zpool->sockf_array != NULL );
+	for (int i=0; i < zpool->sockf_array->num_entries; i++){
+		free(zpool->sockf_array->ptr_array[i]);
+	}
+	DynArrayDtor(zpool->sockf_array);
 	free(zpool->sockf_array), zpool->sockf_array = NULL;
 
 	/*destroy zmq context*/
-	if (zpool->context){
-		int err= zmq_term(zpool->context);
-		if ( err != 0 ){
-			err = ERR_ERROR;
-			NaClLog(LOG_ERROR, "zmq_term err %d, errno %d errtext %s\n", err, zmq_errno(), zmq_strerror(zmq_errno()));
-		}
-		else{
-			err= ERR_OK;
-			zpool->context = NULL;
-			NaClLog(LOG_ERROR, "zmq_term %d\n", 1);
-		}
-	}
-	else{
-		NaClLog(LOG_ERROR, "context NULL %d", 0);
-		err = ERR_ERROR;
+	err= __io_if->term(zpool->context);
+	if ( 0 != err ){
+		err = LOAD_0MQ_CONTEXT_TERM_FAILED;
+		NaClLog(LOG_ERROR, "__io_if->term errno %d errtext %s\n", __io_if->errno_io(), __io_if->strerror(__io_if->errno_io()));
 	}
 	return err;
 }
 
 struct sock_file_t* sockf_by_fd(struct zeromq_pool* zpool, int fd){
 	if ( zpool && zpool->sockf_array ){
-		for (int i=0; i < zpool->count_max; i++)
-			if ( !zpool->sockf_array[i].unused && zpool->sockf_array[i].fs_fd == fd )
-				return &zpool->sockf_array[i];
+		struct sock_file_t *sockf = NULL;
+		for (int i=0; i < zpool->sockf_array->num_entries; i++){
+			sockf = (struct sock_file_t*)(zpool->sockf_array->ptr_array[i]);
+			if ( sockf->fs_fd == fd )
+				return sockf;
+		}
 	}
 	return NULL;
 }
 
 int add_sockf_copy_to_array(struct zeromq_pool* zpool, struct sock_file_t* sockf){
 	struct sock_file_t* sockf_add = NULL;
-	int err = ERR_OK;
-	NaClLog(LOG_INFO, "%p, %p", (void*)zpool, (void*)sockf);
-
-	if ( !zpool || !sockf ) return ERR_BAD_ARG;
-	if ( !zpool->sockf_array) return ERR_BAD_ARG;
-	if( sockf_by_fd(zpool, sockf->fs_fd) ) return ERR_ALREADY_EXIST;
-
-	do{
-		/*search unused array cell*/
-		for (int i=0; i < zpool->count_max; i++)
-			if ( zpool->sockf_array[i].unused ){
-				sockf_add = &zpool->sockf_array[i];
-				break;
-			}
-		/*extend array if not found unused cell*/
-		if ( !sockf_add ){
-			zpool->count_max+=ESOCKF_ARRAY_GRANULARITY;
-			zpool->sockf_array = realloc(zpool->sockf_array, zpool->count_max * sizeof(struct sock_file_t));
-			if ( zpool->sockf_array ){
-				for (int i=zpool->count_max-ESOCKF_ARRAY_GRANULARITY; i < zpool->count_max; i++)
-					zpool->sockf_array[i].unused = 1;
-			}
-			else{
-				/*no memory re allocated
-				 * This code section can't be covered by unit tests because it's system error*/
-				err = ERR_ERROR;
-				NaClLog(LOG_ERROR, "sockf_array realloc mem failed %d", err);
-			}
-		}
-	}while(!sockf_add || ERR_OK!=err);
+	int err = LOAD_OK;
+	if( sockf_by_fd(zpool, sockf->fs_fd) != NULL ){
+		return LOAD_ITEM_ALREADY_EXIST;
+	}
+	sockf_add = __io_if->malloc(sizeof(struct sock_file_t));
+	assert( sockf_add != NULL );
 	*sockf_add = *sockf;
-	sockf_add->unused = 0;
-	return err;
-}
-
-
-int remove_sockf_from_array_by_fd(struct zeromq_pool* zpool, int fd){
-	int err = ERR_NOT_FOUND;
-	NaClLog(LOG_INFO, "%p", (void*)zpool);
-	if ( !zpool ) return ERR_BAD_ARG;
-	if ( !zpool->sockf_array ) return ERR_BAD_ARG;
-
-	for (int i=0; i < zpool->count_max; i++)
-		if ( zpool->sockf_array[i].fs_fd == fd){
-			zpool->sockf_array[i].unused = 1;
-			err = ERR_OK;
-			break;
-		}
+	/*if save to array failed*/
+	assert( DynArraySet( zpool->sockf_array, zpool->sockf_array->num_entries, sockf_add ) != 0 );
 	return err;
 }
 
@@ -150,13 +128,10 @@ int remove_sockf_from_array_by_fd(struct zeromq_pool* zpool, int fd){
 struct sock_file_t* open_sockf(struct zeromq_pool* zpool, struct db_records_t *db_records, int fd){
 	struct sock_file_t *sockf = NULL;
 	struct db_record_t* db_record = NULL;
-	NaClLog(LOG_INFO, "%p, %p, %d", (void*)zpool, (void*)db_records, fd);
-	if (!zpool || !db_records) return NULL;
-
 	sockf = sockf_by_fd(zpool, fd );
-	if ( sockf ) {
+	if ( sockf != NULL ) {
 		/*file with predefined descriptor already opened, just return socket*/
-		NaClLog(LOG_INFO, "Existing socket: Trying to open twice? %d", sockf->fs_fd);
+		NaClLog(LOG_INFO, "Existing socket: Trying to open twice? fd=%d", sockf->fs_fd);
 		return sockf;
 	}
 
@@ -164,18 +139,19 @@ struct sock_file_t* open_sockf(struct zeromq_pool* zpool, struct db_records_t *d
 	 * trying to open socket in normal way, first search socket data associated with file descriptor
 	 * in channels DB; From found db_record retrieve socket details data and start sockf opening flow;
 	 * Flow: For non existing socket add new socket record and next create&init zmq network socket;*/
-	db_record = match_db_record_by_fd( db_records, fd);
+	for ( int i=0; i < db_records->count; i++ ){
+		if ( db_records->array[i].fd == fd )
+			db_record = &db_records->array[i];
+	}
 	if ( db_record ){
 		/*create new socket record {sock_file_t}*/
-		sockf = malloc( sizeof(struct sock_file_t) );
-		if ( !sockf ){
-			/*no memory allocated
-			 * This code section can't be covered by unit tests because it's not depends from input params*/
-			NaClLog(LOG_ERROR, "sockf malloc NULL\n\n");
+		sockf = __io_if->calloc( 1, sizeof(struct sock_file_t) );
+		if ( NULL == sockf ){
+			/*no memory allocated*/
+			NaClLog(LOG_ERROR, "sockf malloc NULL\n");
 		}
 		else{
-			int err = ERR_OK;
-			memset(sockf, '\0', sizeof(struct sock_file_t));
+			int err = 0;
 			sockf->fs_fd = db_record->fd;
 			sockf->sock_type = db_record->sock;
 			sockf->access_mode = db_record->fmode;
@@ -187,46 +163,61 @@ struct sock_file_t* open_sockf(struct zeromq_pool* zpool, struct db_records_t *d
 				sockf->capabilities = EREADWRITE;
 				if ( 'r' == db_record->fmode ){
 					NaClLog(LOG_INFO, "open socket: %s, sock type ZMQ_REQ\n", db_record->endpoint);
-					sockf->netw_socket = zmq_socket( zpool->context, ZMQ_REQ );
+					sockf->netw_socket = __io_if->open_socket( zpool->context, ZMQ_REQ );
 					if (sockf->netw_socket){
-						err= zmq_connect(sockf->netw_socket, db_record->endpoint);
-						NaClLog(LOG_ERROR, "zmq_connect status err %d\n", err);
+						if ( __io_if->connect(sockf->netw_socket, db_record->endpoint) != 0 ){
+							err = -1;
+							NaClLog(LOG_ERROR, "Error __io_if->connect errno %d, status %s\n", __io_if->errno_io(), __io_if->strerror(__io_if->errno_io()));
+						}
+						else{
+							NaClLog(LOG_INFO, "__io_if->connect OK \n");
+						}
+					}
+					else{
+						err = -1;
+						NaClLog(LOG_ERROR, "Error __io_if->open_socket errno %d, status %s\n", __io_if->errno_io(), __io_if->strerror(__io_if->errno_io()));
 					}
 				}
 				else if ( 'w' == db_record->fmode ){
 					NaClLog(LOG_INFO, "open socket: %s, sock type ZMQ_REP\n", db_record->endpoint);
-					sockf->netw_socket = zmq_socket( zpool->context, ZMQ_REP );
+					sockf->netw_socket = __io_if->open_socket( zpool->context, ZMQ_REP );
 					if (sockf->netw_socket){
-						err= zmq_bind(sockf->netw_socket, db_record->endpoint);
-						NaClLog(LOG_ERROR, "zmq_bind status err %d\n", err);
+						if ( __io_if->bind(sockf->netw_socket, db_record->endpoint) != 0 ){
+							err = -1;
+							NaClLog(LOG_ERROR, "Error __io_if->bind errno %d, status %s\n", __io_if->errno_io(), __io_if->strerror(__io_if->errno_io()));
+						}
+						else{
+							NaClLog(LOG_INFO, "__io_if->bind OK \n");
+						}
+					}
+					else{
+						err = -1;
+						NaClLog(LOG_ERROR, "Error __io_if->open_socket errno %d, status %s\n", __io_if->errno_io(), __io_if->strerror(__io_if->errno_io()));
 					}
 				}
-				if ( err ){
-					NaClLog(LOG_ERROR, "zmq_bind errno %d, status %s\n", zmq_errno(), zmq_strerror(zmq_errno()));
+				else{
+					NaClLog(LOG_ERROR, "Can't open socket: Unknown mode %c\n", db_record->fmode );
+					err = -1;
 				}
 				break;
 			case ESOCKET_UNKNOWN:
 			default:
 				NaClLog(LOG_ERROR, "open socket: unknown socket\n");
-				err = ERR_ERROR;
+				err = -1;
 				break;
 			}
 
-			if ( err != ERR_OK ){
-				NaClLog(LOG_ERROR, "close opened socket, free sockf, because connect|bind failed\n");
-				zmq_close( sockf->netw_socket );
+			if ( err != 0 ){
+				if ( sockf->netw_socket ){
+					NaClLog(LOG_ERROR, "Open socket error : close opened socket, because connect|bind failed\n");
+					__io_if->close_socket( sockf->netw_socket );
+				}
+				NaClLog(LOG_ERROR, "Open socket error : free sockf\n");
 				free(sockf), sockf = NULL;
 			}
 
 			if ( sockf ){
-				int err = add_sockf_copy_to_array(zpool, sockf);
-				if ( ERR_OK != err ){
-					/* This code section can't be covered by unit tests because it's system relative error
-					 * and additionaly function check ERR_ALREADY_EXIST case and return it*/
-					NaClLog(LOG_ERROR, "add_sockf_copy_to_array %d\n", err);
-					zmq_close(sockf->netw_socket);
-					free(sockf);
-				}
+				add_sockf_copy_to_array(zpool, sockf);
 			}
 		}
 	}
@@ -235,36 +226,20 @@ struct sock_file_t* open_sockf(struct zeromq_pool* zpool, struct db_records_t *d
 
 
 int close_sockf(struct zeromq_pool* zpool, struct sock_file_t *sockf){
-	int err = ERR_OK;
-	NaClLog(LOG_INFO, "%p, %p\n", (void*)zpool, (void*)sockf);
-
-	if ( !zpool || !sockf ) return ERR_BAD_ARG;
-	NaClLog(LOG_INFO, "fd=%d\n", sockf->fs_fd);
+	int saved_err = 0;
+	int err = 0;
+	NaClLog(LOG_INFO, "close_sockf fd=%d\n", sockf->fs_fd);
 
 	if( sockf->netw_socket ){
-		int err = 0;
-		if ( 'w' == sockf->access_mode ){
-			NaClLog(LOG_INFO, "zmq_recv ZMQ_NOBLOCK workaround zmq_send bug\n");
-			zmq_msg_t msg;
-			zmq_msg_init (&msg);
-			err = zmq_recv ( sockf->netw_socket, &msg, ZMQ_NOBLOCK);
-			NaClLog(LOG_INFO, "zmq_recv inside close err =%d, status errno %d, status %s\n",
-					err, zmq_errno(), zmq_strerror(zmq_errno()));
-			zmq_msg_close(&msg);
-		}
-
 		NaClLog(LOG_INFO, "zmq socket closing...\n");
-		err = zmq_close( sockf->netw_socket );
+		saved_err = __io_if->close_socket( sockf->netw_socket );
 		sockf->netw_socket = NULL;
-		NaClLog(LOG_INFO, "zmq_close status err %d\n", err);
-		if (err){
-			NaClLog(LOG_INFO, "zmq_close status errno %d, status %s\n", zmq_errno(), zmq_strerror(zmq_errno()));
-		}
+		/*erase closed sockf, memory will be freed in array destroy*/
+		memset(sockf, '\0', sizeof(struct sock_file_t));
+		NaClLog(LOG_INFO, "__io_if->close_socket errcode=%d\n", err);
 	}
-	if ( ERR_OK == err )
-		return remove_sockf_from_array_by_fd(zpool, sockf->fs_fd );
-	else
-		return err;
+	if ( LOAD_OK != saved_err ) return saved_err;
+	else return err;
 }
 
 
@@ -276,22 +251,22 @@ ssize_t  write_sockf(struct sock_file_t *sockf, const char *buf, size_t size){
 	if ( !sockf || !buf || !size || size==SIZE_MAX ) return -1;
 	if ( EWRITE != sockf->capabilities && EREADWRITE != sockf->capabilities  ) return -1;
 
-	err = zmq_msg_init_size (&msg, size);
+	err = __io_if->msg_init_size (&msg, size);
 	if ( err != 0 ){
-		NaClLog(LOG_ERROR, "zmq_msg_init_size err %d, errno %d, status %s\n", err, zmq_errno(), zmq_strerror(zmq_errno()));
+		NaClLog(LOG_ERROR, "__io_if->msg_init_size err %d, errno %d, status %s\n", err, __io_if->errno_io(), __io_if->strerror(__io_if->errno_io()));
 	}
 	else{
-		memcpy (zmq_msg_data (&msg), buf, size);
-		NaClLog(LOG_INFO, "zmq_sending fd=%d buf %d bytes via socket %p...\n", sockf->fs_fd, (int)size, sockf->netw_socket );
-		err = zmq_send ( sockf->netw_socket, &msg, 0);
+		memcpy (__io_if->msg_data (&msg), buf, size);
+		NaClLog(LOG_INFO, "__io_if->sending fd=%d buf %d bytes via socket %p...\n", sockf->fs_fd, (int)size, sockf->netw_socket );
+		err = __io_if->send ( sockf->netw_socket, &msg, 0);
 		if ( err != 0 ){
-			NaClLog(LOG_ERROR, "zmq_send err %d, errno %d, status %s\n", err, zmq_errno(), zmq_strerror(zmq_errno()));
+			NaClLog(LOG_ERROR, "__io_if->send err %d, errno %d, status %s\n", err, __io_if->errno_io(), __io_if->strerror(__io_if->errno_io()));
 		}
 		else{
 			wrote = size;
-			NaClLog(LOG_INFO, "zmq_send ok\n");
+			NaClLog(LOG_INFO, "__io_if->send ok\n");
 		}
-		zmq_msg_close (&msg);
+		__io_if->msg_close (&msg);
 	}
 	if ( wrote > 0 )
 		__bytes_sent +=wrote;
@@ -311,22 +286,23 @@ ssize_t read_sockf(struct sock_file_t *sockf, char *buf, size_t count){
 		void *recv_data = NULL;
 		size_t msg_size;
 		zmq_msg_t msg;
-		zmq_msg_init (&msg);
-		NaClLog(LOG_INFO, "zmq_recv fd=%d, %d bytes via socket=%p...\n", sockf->fs_fd, (int)count, sockf->netw_socket);
-		err = zmq_recv ( sockf->netw_socket, &msg, 0);
+		__io_if->msg_init (&msg);
+		NaClLog(LOG_INFO, "__io_if->recv fd=%d, %d bytes via socket=%p...\n", sockf->fs_fd, (int)count, sockf->netw_socket);
+		err = __io_if->recv ( sockf->netw_socket, &msg, 0);
 		if ( 0 != err ){
 			/*read error*/
-			NaClLog(LOG_INFO, "zmq_recv err %d, errno %d, status %s\n", err, zmq_errno(), zmq_strerror(zmq_errno()) );
-			return 0;
+			NaClLog(LOG_INFO, "__io_if->recv err %d, errno %d, status %s\n", err, __io_if->errno_io(), __io_if->strerror(__io_if->errno_io()) );
+			__io_if->msg_close (&msg);
+			return -1;
 		}
 		/*read ok*/
 		/*copy recv bytes into buf result*/
-		msg_size = zmq_msg_size (&msg);
-		NaClLog(LOG_ERROR, "zmq_recv %d bytes ok\n", (int)msg_size);
+		msg_size = __io_if->msg_size (&msg);
+		NaClLog(LOG_ERROR, "__io_if->recv %d bytes ok\n", (int)msg_size);
 		bytes_read_from_socket = min( msg_size, count );
-		recv_data = zmq_msg_data (&msg);
+		recv_data = __io_if->msg_data (&msg);
 		memcpy (buf, recv_data, bytes_read_from_socket);
-		zmq_msg_close (&msg);
+		__io_if->msg_close (&msg);
 		if ( bytes_read_from_socket > 0 )
 			__bytes_recv+=bytes_read_from_socket;
 	}
@@ -335,13 +311,13 @@ ssize_t read_sockf(struct sock_file_t *sockf, char *buf, size_t count){
 
 
 int open_all_comm_files(struct zeromq_pool* zpool, struct db_records_t *db_records){
-	int err = ERR_OK;
+	int err = LOAD_OK;
 	NaClLog(LOG_INFO, "open_all_comm_files %p, %p", (void*)zpool, (void*)db_records);
 	for (int i=0; i < db_records->count; i++){
 		struct db_record_t *record = &db_records->array[i];
-		if ( !open_sockf(zpool, db_records, record->fd) ){
+		if ( NULL == open_sockf(zpool, db_records, record->fd) ){
 			NaClLog(LOG_ERROR, "fd=%d, error NULL sockf", db_records->array[i].fd);
-			return ERR_ERROR;
+			return LOAD_0MQ_SOCKET_ERROR;
 		}
 	}
 	return err;
@@ -349,15 +325,15 @@ int open_all_comm_files(struct zeromq_pool* zpool, struct db_records_t *db_recor
 
 
 int close_all_comm_files(struct zeromq_pool* zpool){
-	int err = ERR_OK;
-	NaClLog(LOG_INFO, "%p", (void*)zpool);
-	for (int i=0; i < zpool->count_max; i++){
-		if ( !zpool->sockf_array[i].unused )
-		err = close_sockf(zpool, sockf_by_fd(zpool, zpool->sockf_array[i].fs_fd));
-		if ( ERR_OK != err ){
-			NaClLog(LOG_ERROR, "fd=%d, error=%d", zpool->sockf_array[i].fs_fd, err);
-			return err;
+	int err = LOAD_OK;
+	struct sock_file_t *sockf = NULL;
+	NaClLog(LOG_INFO, "close_all_comm_files %p", (void*)zpool);
+	for (int i=0; i < zpool->sockf_array->num_entries; i++){
+		sockf = zpool->sockf_array->ptr_array[i];
+		if( close_sockf(zpool, sockf) != LOAD_OK ){
+			err = LOAD_0MQ_SOCKET_ERROR;
 		}
+		NaClLog(LOG_ERROR, "close_all_comm_files : close_sockf fd=%d, error\n", sockf->fs_fd);
 	}
 	return err;
 }

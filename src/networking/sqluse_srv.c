@@ -5,23 +5,24 @@
  *      Author: YaroslavLitvinov
  */
 
-#include "src/networking/zmq_netw.h"
-#include "src/networking/sqluse_srv.h"
-#include "src/networking/errcodes.h"
-#include "src/platform/nacl_log.h"
-
-#include <zmq.h>
-#include <sqlite3.h>
-
 #include <assert.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 
+#include <zmq.h>
+
+#include "src/service_runtime/nacl_error_code.h"
+#include "src/networking/zmq_netw.h"
+#include "src/networking/sqluse_srv.h"
+#include "src/platform/nacl_log.h"
+
+#include <sqlite3.h>
 
 #define SQL_QUERY "select * from channels;\0"
 
+void tune_sqlstub_for_test(int testid){(void)testid;}
 
 struct db_record_t* match_db_record_by_fd(struct db_records_t *records, int fd){
 	if ( !records ) return NULL;
@@ -93,14 +94,15 @@ int get_all_records_from_dbtable(const char *path, const char *nodename, struct 
 	char *zErrMsg = 0;
 	int rc = 0;
 	char sqlstr[100];
-
-	if ( !path || !nodename || !db_records) return ERR_BAD_ARG;
+	assert(path);
+	assert(nodename);
+	assert(db_records);
 	rc = sqlite3_open( path, &db);
 	if( rc ){
 		NaClLog(LOG_FATAL, "Can't open database file=%s, errtext %s, errcode=%d\n",
 				path, sqlite3_errmsg(db), rc);
 		sqlite3_close(db);
-		return ERR_ERROR;
+		return LOAD_OPEN_ERROR;
 	}
 	db_records->maxcount = DB_RECORDS_GRANULARITY;
 	db_records->array = malloc( sizeof(struct db_record_t)*db_records->maxcount );
@@ -110,11 +112,11 @@ int get_all_records_from_dbtable(const char *path, const char *nodename, struct 
 	if ( SQLITE_OK != rc ){
 		NaClLog(LOG_ERROR, "Sql statement : %s, exec error text=%s, errcode=%d\n",
 				SQL_QUERY, sqlite3_errmsg(db), rc);
-		return ERR_ERROR;
+		return LOAD_SQL_STATEMENT_EXEC_ERROR;
 	}
 	sqlite3_free(zErrMsg);
 	sqlite3_close(db);
-	return ERR_OK;
+	return LOAD_OK;
 }
 
 

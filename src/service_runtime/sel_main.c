@@ -31,7 +31,7 @@
 #ifdef NETWORKING
 //extern "C"{
 	#include "src/networking/zvm_netw.h"
-	#include "src/networking/errcodes.h"
+	#include "src/networking/zmq_netw.h" //SockCapability
 //}
 	#define ZVM_DB_NAME "zvm_netw.db"
 #endif
@@ -434,8 +434,8 @@ int main(int argc, char **argv)
 	  /*get node id*/
 	  int nodeid = atoi(nap->manifest->system_setup->cmd_line[1]);
 	  if ( netw_nodename ){
-		  int err = init_zvm_networking(ZVM_DB_NAME, netw_nodename, nodeid);
-		  if ( EZVM_OK != err ){
+		  int err = init_zvm_networking( zmq_netw_interface_implementation(), ZVM_DB_NAME, netw_nodename, nodeid);
+		  if ( LOAD_OK != err ){
 			  NaClLog(LOG_INFO, "init_zvm_networking err=%d, nodename=%s\n", err, netw_nodename);
 			  NaClAbort();
 		  }
@@ -558,7 +558,7 @@ int main(int argc, char **argv)
 #ifdef NETWORKING
   {
 	  int err = term_zvm_networking();
-	  if ( EZVM_OK != err ){
+	  if ( LOAD_OK != err ){
 		  NaClLog(LOG_ERROR, "term_zvm_networking err=%d", err);
 		  NaClAbort();
 	  }

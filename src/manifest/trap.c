@@ -22,7 +22,7 @@
 #include "src/platform/nacl_exit.h"
 #ifdef NETWORKING
 #  include "src/networking/zvm_netw.h"
-#  include "src/networking/errcodes.h"
+#  include "src/networking/zmq_netw.h" //SockCapability
 #endif
 
 #  ifdef __cplusplus

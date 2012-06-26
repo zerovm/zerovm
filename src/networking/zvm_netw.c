@@ -12,38 +12,51 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <zmq.h>
 
+#include "src/service_runtime/nacl_error_code.h"
+#include "src/service_runtime/dyn_array.h"
+#include "src/manifest/mount_channel.h"
 #include "src/platform/nacl_log.h"
+
 #include "src/networking/zmq_netw.h"
 #include "src/networking/zvm_netw.h"
 #include "src/networking/sqluse_srv.h"
-#include "src/networking/errcodes.h"
-#include "zmq.h"
 
 static struct db_records_t* __db_records = NULL;
 static struct zeromq_pool * __zpool = NULL;
+static struct zmq_netw_interface *__netw_if = NULL;
 
-struct db_records_t* db_records_forunittest(){ return __db_records; }
-struct zeromq_pool * zpool_forunittest(){ return __zpool;}
-
-static uint64_t get_file_size(const char *name)
-{
-  struct stat fs;
-  int handle;
-  int i;
-
-  handle = open(name, O_RDONLY);
-  if(handle < 0) return -1;
-
-  i = fstat(handle, &fs);
-  close(handle);
-  return i < 0 ? -1 : fs.st_size;
+/*Do not allow zeromq objective code just here for unit tests*/
+#ifndef UNIT_TEST
+/*Initialization I/O interface by zeromq functions. Should be used only for interface initialization*/
+static struct zmq_netw_interface __zmq_netw_implementation = {
+	.get_all_dbrecords       = get_all_records_from_dbtable,
+	.match_db_record_by_fd   = match_db_record_by_fd,
+	.GetFileSize             = GetFileSize,
+	.sockf_by_fd             = sockf_by_fd,
+	.init_zeromq_pool        = init_zeromq_pool,
+	.open_all_comm_files     = open_all_comm_files,
+	.close_all_comm_files    = close_all_comm_files,
+	.zeromq_term             = zeromq_term,
+	.write_sockf             = write_sockf,
+	.read_sockf              = read_sockf
+};
+struct zmq_netw_interface* zmq_netw_interface_implementation(){
+	return &__zmq_netw_implementation;
 }
+#else
+	/*stub instead zeromq interface*/
+	struct zeromq_interface* zeromq_interface_implementation(){ return NULL; }
+	struct zeromq_pool *pool_for_unit_test(){ return __zpool; }
+	struct db_records_t *db_records_for_unit_test(){ return __db_records; }
+#endif
+
 
 int
 capabilities_for_file_fd(int fd){
 	if ( __db_records ){
-		struct db_record_t* db_record = match_db_record_by_fd( __db_records, fd);
+		struct db_record_t* db_record = __netw_if->match_db_record_by_fd( __db_records, fd);
 		if ( db_record ){
 			if ( 'r' == db_record->fmode )
 				return EREAD;
@@ -54,56 +67,110 @@ capabilities_for_file_fd(int fd){
 			NaClLog(LOG_ERROR, "%s() db_record is NULL for specified fd=%d\n", __func__, fd );
 		}
 	}
-	else{
-		NaClLog(LOG_ERROR, "%s() __db_records NULL, not properly configured\n", __func__);
-	}
 	return ENOTALLOWED;
 }
 
 
-int init_zvm_networking(const char *dbname, const char *nodename, int nodeid){
+int init_zvm_networking(struct zmq_netw_interface *netw_if, const char *dbname, const char *nodename, int nodeid){
 	uint64_t db_size = 0;
+	int err = LOAD_OK;
+	assert(nodename);
+	assert(dbname);
+	assert(nodeid);
 
-	if ( !nodename || !dbname || nodeid<0 ) return EZVMBAD_ARG;
+	__netw_if = netw_if;
 	__db_records = malloc(sizeof(struct db_records_t));
 	memset(__db_records, '\0', sizeof(struct db_records_t));
-
 	__db_records->cid = nodeid;
-	db_size = get_file_size(dbname);
+
+	db_size = __netw_if->GetFileSize(dbname);
 	if ( -1 != db_size && 0 != db_size ){
-		int err = 0;
 		NaClLog(LOG_INFO, "reading database = %s, cid=%d, nodename=%s\n", dbname, nodeid, nodename);
-		err = get_all_records_from_dbtable(dbname, nodename, __db_records);
-		if ( err ){
-			NaClLog(LOG_ERROR, "database %s read error= %d\n", dbname, err);
-			return EZVM_DBREADERR;
+		err = __netw_if->get_all_dbrecords(dbname, nodename, __db_records);
+		if ( err != LOAD_OK ){
+			return err;
 		}else{
 			__zpool = malloc(sizeof(struct zeromq_pool));
-			init_zeromq_pool(__zpool);
-			if ( ERR_OK != open_all_comm_files(__zpool, __db_records) )
-				return EZVM_SOCK_ERROR;
+			assert(__zpool != NULL);
+			/*For generic zmq_netw using init interface by zeromq implementation*/
+			err = __netw_if->init_zeromq_pool( zeromq_interface_implementation(), __zpool );
+			if ( err != LOAD_OK ){
+				return err;
+			}
+			else{
+				err = __netw_if->open_all_comm_files(__zpool, __db_records);
+				if ( err != LOAD_OK )
+					return err;
+				}
 		}
 	}
 	else{
 		NaClLog(LOG_ERROR, "NETWORKING defined, db does not exist or empty\n");
-		return EZVMDBNOTEXIST_OREMPTY;
+		return LOAD_OPEN_ERROR;
 	}
-	return EZVM_OK;
+	return LOAD_OK;
 }
 
 
 int term_zvm_networking(){
-	int err = 0;
-	if ( !__zpool || !__db_records ) return EZVM_NOT_INITED;
-	NaClLog(LOG_INFO, "close_all_comm_files");
-	if ( ERR_OK != close_all_comm_files(__zpool) ){
-		NaClLog(LOG_ERROR, "close_all_comm_files err=%d", err);
-		return EZVM_SOCK_ERROR;
+	int err = LOAD_OK;
+	int applicative_err = LOAD_OK;
+	struct sock_file_t *sockf = NULL;
+
+	/*write all FIN requests*/
+	for (int i=0; i < __zpool->sockf_array->num_entries; i++){
+		sockf = __zpool->sockf_array->ptr_array[i];
+		if ( sockf && ESOCKET_REQREP == sockf->sock_type ){
+			if ( 'r' == sockf->access_mode ){
+				/*For r socket: write FIN request*/
+				struct zvm_netw_header_t header = DEFAULT_ZVM_NETW_HEAD;
+				header.command = COMMAND_FIN;
+				NaClLog(LOG_ERROR, "%s() write FIN request to fd=%d\n", __func__, sockf->fs_fd );
+				//write FIN request
+				assert(header.protoid == PROTOID);
+				assert(header.command == COMMAND_FIN);
+				assert( sizeof(header) == __netw_if->write_sockf(sockf, (char*)&header, sizeof(header)));
+
+			}
+		}
 	}
-	else{
-		NaClLog(LOG_INFO, "close_all_comm_files OK");
-		return EZVM_OK;
+
+	/*Read all FIN requests*/
+	for (int i=0; i < __zpool->sockf_array->num_entries; i++){
+		sockf = __zpool->sockf_array->ptr_array[i];
+		if ( sockf && ESOCKET_REQREP == sockf->sock_type ){
+			if ( 'w' == sockf->access_mode ){
+				/*For r socket: write FIN request*/
+				struct zvm_netw_header_t header = DEFAULT_ZVM_NETW_HEAD;
+				NaClLog(LOG_ERROR, "%s() read FIN request from fd=%d\n", __func__, sockf->fs_fd );
+				//read request for data
+				assert( sizeof(header) == __netw_if->read_sockf(sockf, (char*)&header, sizeof(header)));
+				assert(header.protoid == PROTOID);
+				if ( header.command != COMMAND_FIN ){
+					applicative_err = LOAD_APPLICATIVE_NETWORK_ERROR;
+				}
+			}
+		}
 	}
+
+	err = __netw_if->close_all_comm_files(__zpool);
+	if ( err != LOAD_OK  ){
+		NaClLog(LOG_ERROR, "close_all_comm_files error=%d", err);
+		return err;
+	}
+	err = __netw_if->zeromq_term(__zpool);
+	if ( err != LOAD_OK ){
+		NaClLog(LOG_ERROR, "zeromq_term error=%d", err);
+		return err;
+	}
+
+	for (int i=0; i < __db_records->count; i++){
+		free(__db_records->array[i].endpoint), __db_records->array[i].endpoint = NULL;
+		free(__db_records->array[i].nodename), __db_records->array[i].nodename = NULL;
+	}
+	free(__db_records);
+
+	return applicative_err;
 }
 
 
@@ -112,23 +179,23 @@ ssize_t commf_read(int fd, char *buf, size_t count){
 	int capab = capabilities_for_file_fd(fd);
 	ssize_t read_bytes = -1;
 	if ( !__zpool ) return -1;
-	if ( EREAD != capab && EREADWRITE != capab ) return -1;
+	if ( EREAD != capab ) return -1;
 
-	sockf = sockf_by_fd(__zpool, fd);
+	sockf = __netw_if->sockf_by_fd(__zpool, fd);
 	if ( sockf ){
 		if ( sockf->sock_type == ESOCKET_REQREP ){
 			struct zvm_netw_header_t header = DEFAULT_ZVM_NETW_HEAD;
-			NaClLog(LOG_ERROR, "%s() attempt read from fd=%d, count=%d\n", __func__, fd, (int)count );
+			NaClLog(LOG_INFO, "%s() attempt read from fd=%d, count=%d\n", __func__, fd, (int)count );
 			/*use socket by REQ-REP pattern. Should be used in next way:
 			 * write request HEADER
 			 * read  response data*/
 			header.req_len = count;
 			//request data size we want read
-			NaClLog(LOG_ERROR, "%s() write fd=%d header size=%d\n", __func__, fd, (int)sizeof(header) );
-			assert( sizeof(header) == write_sockf(sockf, (const char*)&header, sizeof(header) ) );
+			NaClLog(LOG_INFO, "%s() write fd=%d header size=%d\n", __func__, fd, (int)sizeof(header) );
+			assert( sizeof(header) == __netw_if->write_sockf(sockf, (const char*)&header, sizeof(header) ) );
 			//read requested data
-			read_bytes = read_sockf(sockf, buf, count);
-			NaClLog(LOG_ERROR, "%s() read ok from fd=%d, requested%d, readed=%d\n", __func__, fd, (int)count, (int)read_bytes );
+			read_bytes = __netw_if->read_sockf(sockf, buf, count);
+			NaClLog(LOG_INFO, "%s() read ok from fd=%d, requested%d, readed=%d\n", __func__, fd, (int)count, (int)read_bytes );
 		}
 		else{
 			NaClLog(LOG_ERROR, "%s() for fd=%d, unsupported socket type=%d\n", __func__, fd, sockf->sock_type );
@@ -146,9 +213,9 @@ ssize_t commf_write(int fd, const char *buf, size_t count){
 	int capab = capabilities_for_file_fd(fd);
 	ssize_t wrote_bytes = -1;
 	if ( !__zpool ) return -1;
-	if ( EWRITE != capab && EREADWRITE != capab ) return -1;
+	if ( EWRITE != capab ) return -1;
 
-	sockf = sockf_by_fd(__zpool, fd);
+	sockf = __netw_if->sockf_by_fd(__zpool, fd);
 	if ( sockf ){
 		if ( sockf->sock_type == ESOCKET_REQREP ){
 			size_t sdata = 0;
@@ -156,15 +223,15 @@ ssize_t commf_write(int fd, const char *buf, size_t count){
 			 * read request HEADER
 			 * write requested data*/
 			struct zvm_netw_header_t header = DEFAULT_ZVM_NETW_HEAD;
-			NaClLog(LOG_ERROR, "%s() attempt write to fd=%d, count=%d\n", __func__, fd, (int)count );
+			NaClLog(LOG_INFO, "%s() attempt write to fd=%d, count=%d\n", __func__, fd, (int)count );
 			//read request for data
-			assert( sizeof(header) == read_sockf(sockf, (char*)&header, sizeof(header)));
+			assert( sizeof(header) == __netw_if->read_sockf(sockf, (char*)&header, sizeof(header)));
 			assert(header.protoid == PROTOID);
 			//write only requested data from header.len, or all data if user specifies less
 			sdata = min(header.req_len, count);
-			assert( sdata == write_sockf(sockf, buf, sdata ) );
+			assert( sdata == __netw_if->write_sockf(sockf, buf, sdata ) );
 			wrote_bytes = sdata;
-			NaClLog(LOG_ERROR, "%s() read ok from fd=%d, requested%d, readed=%d\n", __func__, fd, (int)count, (int)wrote_bytes );
+			NaClLog(LOG_INFO, "%s() read ok from fd=%d, requested%d, readed=%d\n", __func__, fd, (int)count, (int)wrote_bytes );
 		}
 		else{
 			NaClLog(LOG_ERROR, "%s() for fd=%d, unsupported socket type=%d\n", __func__, fd, sockf->sock_type );

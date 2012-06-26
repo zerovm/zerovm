@@ -4,12 +4,12 @@
  *  Date: 7.03.2012
  */
 
-#include <limits.h>
 #include <stdlib.h>
-
+#include <limits.h>
 #include "gtest/gtest.h"
+
+#include "src/service_runtime/nacl_error_code.h"
 #include "src/platform/nacl_log.h"
-#include "src/networking/errcodes.h"
 extern "C" {
 #include "src/networking/sqluse_srv.h"
 }
@@ -49,7 +49,7 @@ records_comparator( const void *m1, const void *m2 )
 TEST_F(SqlUseSrvTests, TestReadDbItems) {
 	struct db_records_t db_records;
 	memset(&db_records, '\0', sizeof(struct db_records_t));
-	EXPECT_EQ( ERR_OK, get_all_records_from_dbtable(SERVER_DB_PATH, "manager", &db_records) );
+	EXPECT_EQ( LOAD_OK, get_all_records_from_dbtable(SERVER_DB_PATH, "manager", &db_records) );
 	/*sort db records to verify that file descriptors are unique*/
 	qsort( db_records.array, db_records.count, sizeof(struct db_record_t), records_comparator );
 	/*test sorted records, should not found duplicate file descriptors*/
@@ -67,9 +67,9 @@ TEST_F(SqlUseSrvTests, TestReadDbItems) {
 
 TEST_F(SqlUseSrvTests, TestReadDbBadArgs) {
 	struct db_records_t db_records;
-	EXPECT_EQ( ERR_BAD_ARG, get_all_records_from_dbtable( NULL, NULL, NULL) );
-	EXPECT_EQ( ERR_BAD_ARG, get_all_records_from_dbtable( SERVER_DB_PATH, "manager", NULL) );
-	EXPECT_EQ( ERR_BAD_ARG, get_all_records_from_dbtable( SERVER_DB_PATH, NULL, &db_records) );
+	ASSERT_DEATH( get_all_records_from_dbtable( NULL, NULL, NULL), "" );
+	ASSERT_DEATH( get_all_records_from_dbtable( SERVER_DB_PATH, "manager", NULL), "" );
+	ASSERT_DEATH( get_all_records_from_dbtable( SERVER_DB_PATH, NULL, &db_records), "" );
 }
 
 TEST_F(SqlUseSrvTests, TestDbItemsParser) {

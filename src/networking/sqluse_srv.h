@@ -11,8 +11,8 @@
  * The main selective parameter is nodename, all records contains same nodename are related to same node.
  */
 
-#ifndef SQLUSE_CLI_H_
-#define SQLUSE_CLI_H_
+#ifndef NETWORKING_SQLUSE_CLI_H_
+#define NETWORKING_SQLUSE_CLI_H_
 
 struct db_records_t{
 	struct db_record_t *array;
@@ -37,6 +37,10 @@ struct db_record_t{
 	int fd;
 };
 
+/* saves testid, it say to stub impementation which test case need emulate.
+ * It should be used only from test framework and only sqluse_srv_stub.c has implementation, sqluse_srv.c has empty implem*/
+void tune_sqlstub_for_test(int testid);
+
 enum {DB_RECORDS_GRANULARITY=20};
 /*search record by file descriptor*/
 struct db_record_t* match_db_record_by_fd(struct db_records_t *records, int fd);
@@ -47,7 +51,8 @@ int get_dbrecords_callback(void *file_records, int argc, char **argv, char **azC
 /*Issue db request.
  * @param path DB filename
  * @param nodename which records are needed
- * @param db_records data structure to get results, should be only valid pointer*/
+ * @param db_records data structure to get results, should be only valid pointer
+ * @return LOAD_SQL_STATEMENT_EXEC_ERROR if sql statement execute error */
 int get_all_records_from_dbtable(const char *path, const char *nodename, struct db_records_t *db_records);
 
-#endif /* SQLUSE_CLI_H_ */
+#endif /* NETWORKING_SQLUSE_CLI_H_ */
