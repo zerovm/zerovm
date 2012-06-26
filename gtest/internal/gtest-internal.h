@@ -195,22 +195,31 @@ class GTEST_API_ ScopedTrace {
 template <typename T>
 String StreamableToString(const T& streamable);
 
+// The Symbian compiler has a bug that prevents it from selecting the
+// correct overload of FormatForComparisonFailureMessage (see below)
+// unless we pass the first argument by reference.  If we do that,
+// however, Visual Age C++ 10.1 generates a compiler error.  Therefore
+// we only apply the work-around for Symbian.
+#if defined(__SYMBIAN32__)
+# define GTEST_CREF_WORKAROUND_ const&
+#else
+# define GTEST_CREF_WORKAROUND_
+#endif
+
 // When this operand is a const char* or char*, if the other operand
 // is a ::std::string or ::string, we print this operand as a C string
 // rather than a pointer (we do the same for wide strings); otherwise
 // we print it as a pointer to be safe.
 
 // This internal macro is used to avoid duplicated code.
-// Making the first operand const reference works around a bug in the
-// Symbian compiler which is unable to select the correct specialization of
-// FormatForComparisonFailureMessage.
 #define GTEST_FORMAT_IMPL_(operand2_type, operand1_printer)\
 inline String FormatForComparisonFailureMessage(\
-    operand2_type::value_type* const& str, const operand2_type& /*operand2*/) {\
+    operand2_type::value_type* GTEST_CREF_WORKAROUND_ str, \
+    const operand2_type& /*operand2*/) {\
   return operand1_printer(str);\
 }\
 inline String FormatForComparisonFailureMessage(\
-    const operand2_type::value_type* const& str, \
+    const operand2_type::value_type* GTEST_CREF_WORKAROUND_ str, \
     const operand2_type& /*operand2*/) {\
   return operand1_printer(str);\
 }
@@ -233,13 +242,10 @@ GTEST_FORMAT_IMPL_(::wstring, String::ShowWideCStringQuoted)
 // printed is a char/wchar_t pointer and the other operand is not a
 // string/wstring object.  In such cases, we just print the operand as
 // a pointer to be safe.
-//
-// Making the first operand const reference works around a bug in the
-// Symbian compiler which is unable to select the correct specialization of
-// FormatForComparisonFailureMessage.
 #define GTEST_FORMAT_CHAR_PTR_IMPL_(CharType)                       \
   template <typename T>                                             \
-  String FormatForComparisonFailureMessage(CharType* const& p, const T&) { \
+  String FormatForComparisonFailureMessage(CharType* GTEST_CREF_WORKAROUND_ p, \
+                                           const T&) { \
     return PrintToString(static_cast<const void*>(p));              \
   }
 
@@ -788,13 +794,14 @@ struct RemoveConst { typedef T type; };  // NOLINT
 template <typename T>
 struct RemoveConst<const T> { typedef T type; };  // NOLINT
 
-// MSVC 8.0 and Sun C++ have a bug which causes the above definition
-// to fail to remove the const in 'const int[3]'.  The following
-// specialization works around the bug.  However, it causes trouble
-// with GCC and thus needs to be conditionally compiled.
-#if defined(_MSC_VER) || defined(__SUNPRO_CC)
+// MSVC 8.0, Sun C++, and IBM XL C++ have a bug which causes the above
+// definition to fail to remove the const in 'const int[3]' and 'const
+// char[3][4]'.  The following specialization works around the bug.
+// However, it causes trouble with GCC and thus needs to be
+// conditionally compiled.
+#if defined(_MSC_VER) || defined(__SUNPRO_CC) || defined(__IBMCPP__)
 template <typename T, size_t N>
-struct RemoveConst<T[N]> {
+struct RemoveConst<const T[N]> {
   typedef typename RemoveConst<T>::type type[N];
 };
 #endif
