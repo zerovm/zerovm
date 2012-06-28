@@ -204,8 +204,8 @@ int32_t NaClSysSysbrk(struct NaClApp *nap, uintptr_t new_break)
        * use "whole chunk" memory manager if set in manifest
        * and this is "user side call"
        */
-      if(nap->user_side_flag && nap->manifest != NULL &&
-          nap->manifest->user_setup->max_mem)
+      if(nap->user_side_flag && nap->system_manifest != NULL &&
+          nap->system_manifest->max_mem)
       {
         /* skip real mprotect() syscall. or shell we? */
       }
@@ -798,8 +798,8 @@ int32_t NaClSysMunmap(struct NaClApp *nap, void *start, size_t length) {
    * use "whole chunk" memory manager if set in manifest
    * and this is "user side call"
    */
-  if(nap->user_side_flag && nap->manifest != NULL &&
-      nap->manifest->user_setup->max_mem)
+  if(nap->user_side_flag && nap->system_manifest != NULL &&
+      nap->system_manifest->max_mem)
   {
     /* skip real syscall. all allowed memory already allocated */
   }

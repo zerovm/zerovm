@@ -1,8 +1,0 @@
-to build NaCl version of x264
-1. download latest version of x264
-2. decompress it to this folder. check the pathes: AUTHORS, config.h, config.mak, configure doc/ e.t.c. must lie
-   in this folder
-3. run "compile_x264.sh" script. NaCl SDK must be installed (also check the pathes for "x86_64-nacl-gcc" and "elf64_nacl.x.static")
-
-note: current version of x264 uses disk i/o and can be run only under old zerovm versions control because
-      needs syscalls (new version doesn't have them)

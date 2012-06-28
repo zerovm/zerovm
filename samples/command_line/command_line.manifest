@@ -1,0 +1,27 @@
+=====================================================================
+== "command line" example with zrt library usage
+== i/o switches
+=====================================================================
+Output = command_line.output.data
+OutputMaxGet = 1024000
+OutputMaxGetCnt = 1024
+OutputMaxPut = 1024000
+OutputMaxPutCnt = 1024
+
+== this options specifies output file loading method: 0 - loaded, 1 - mapped
+OutputMode = 1
+
+UserLog = command_line.user.log
+UserLogMaxPut = 65536
+
+=====================================================================
+== switches for zerovm. some of them used to control nexe, some
+== for the internal zerovm needs
+=====================================================================
+Version = 11062012
+Log = command_line.zerovm.log
+Report = command_line.report.log
+Nexe = command_line.nexe
+NexeMax = 10000000
+SyscallsMax = 3333
+CommandLine = argument_number_1 argument_number_2 argument_number_3 argument_number_4 the_last_argument

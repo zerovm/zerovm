@@ -297,7 +297,8 @@ char* MD5 (unsigned char *buf, unsigned size)
   char *p;
   char *result = malloc(33);
 
-  /* return NULL if cannot allocate memory */
+  /* checkings.. */
+  if(buf == NULL) return NULL;
   if(result == NULL) return NULL;
 
   MD5Init (&context);

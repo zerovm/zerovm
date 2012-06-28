@@ -68,10 +68,17 @@ struct nacl_abi_timeval {
 void syscall_director(void);
 
 /* need to be here for selective syscallback */
-struct SetupList setup;
+/*
+ * user manifest object. should be initialized before any usage.
+ * memory for the channels should be allocated
+ * todo(d'b): how to get number of channels?
+ */
+struct UserManifest setup;
+#define MAX_CHANNELS 1024
+char channels_space_holder[MAX_CHANNELS * sizeof(struct ChannelDesc)];
 
 /* positions of zerovm streams */
-static size_t pos_ptr[3] = {0};
+static size_t pos_ptr[ChannelTypesCount] = {0};
 
 /* current end of memory (sysbreak). must be initialized from zrt_main() */
 static void *cur_break = NULL;
@@ -82,16 +89,21 @@ static void *cur_break = NULL;
  */
 int log_msg2(char *msg)
 {
-	if (!msg) return ERR_CODE;
-	int32_t length = msg == NULL ? 0 : strlen(msg);
+  struct ChannelDesc *channel;
+  int32_t length;
+
+	if (msg == NULL) return ERR_CODE;
+	length = (msg == NULL) ? 0 : strlen(msg);
+
+	channel = &((struct ChannelDesc*)(intptr_t)setup.channels)[LogChannel];
 
 	/* check if lenght is not overrun available data */
-	if(pos_ptr[LogChannel] + length > setup.channels[LogChannel].bsize)
-		length = setup.channels[LogChannel].bsize - pos_ptr[LogChannel];
+	if(pos_ptr[LogChannel] + length > channel->bsize)
+		length = channel->bsize - pos_ptr[LogChannel];
 
 	if(length < 0) return ERR_CODE;
 
-	memcpy((void*)setup.channels[LogChannel].buffer + pos_ptr[LogChannel], msg, length);
+	memcpy((void*)channel->buffer + pos_ptr[LogChannel], msg, length);
 	pos_ptr[LogChannel] += length;
 
 	return OK_CODE;
@@ -155,7 +167,7 @@ char *itoa(int n, char *s, int b) {
 }
 ///
 
-#define DEBUG 1
+#define DEBUG 0
 #define LOGFIX /* temporary fix until zrt library will be finished */
 #if DEBUG
 #define SHOWID do {log_msg2((char*)__func__); log_msg2("() is called\n");} while(0)
@@ -325,36 +337,34 @@ int32_t zrt_read(uint32_t *args)
    * stdin == 0, stdout ==  1 and stderr == 2 (wich are really
    * input, output and user_log)
    */
-  ///SHOWID;
+  SHOWID;
   int file = (int)args[0];
   void *buf = (void*)args[1];
   int64_t length = (int64_t)args[2];
+  struct ChannelDesc *channels = (struct ChannelDesc*)(intptr_t)setup.channels;
 
-  /* Support for MSQ files: zvm_pread used for networking communication
-   * msq files has descriptor numbers above than 2*/
-  if ( file > 2 ){
-	  /*MSQ files using streaming IO, and don't using offset, set offset as 0*/
-	  return zvm_pread(file, (void*)args[1], length, 0);
+  /*
+   * Support for MSQ files: zvm_pread used for networking communication
+   * msq files has descriptor numbers above than 2
+   * todo(d'b): move it to switch after networking integration will be complete
+   */
+  if(file > 2)
+  {
+    /* MSQ files using streaming IO, and don't using offset, set offset as 0 */
+    return zvm_pread(file, (void*) args[1], length, 0);
   }
-  /*Use current pagination implementation for all std files with 0,1,2 fd numbers*/
-
-  //log_msg2("file=");
-  //log_int(file);
-  //log_msg2(" length=");
-  //log_int(length);
-  //log_msg2("\n");
 
   /* check given handle. check length */
   if( InputChannel != file) return -EBADF;
   if(length < 0 || length > 0x7fffffff) return -EPERM;
 
   /* write data */
-  switch(setup.channels[file].mounted)
+  switch(channels[file].mounted)
   {
     case MAPPED:
       /* check if length is not overrun available data */
-      if(pos_ptr[file] + length > setup.channels[file].bsize)
-        length = setup.channels[file].bsize - pos_ptr[file];
+      if(pos_ptr[file] + length > channels[file].bsize)
+        length = channels[file].bsize - pos_ptr[file];
 
       /* length must not be negative */
       if(length < 0)
@@ -363,7 +373,7 @@ int32_t zrt_read(uint32_t *args)
         break;
       }
 
-      memcpy(buf, (void*)setup.channels[file].buffer + pos_ptr[file], length);
+      memcpy(buf, (void*)channels[file].buffer + pos_ptr[file], length);
       pos_ptr[file] += length;
       break;
 
@@ -388,21 +398,20 @@ int32_t zrt_write(uint32_t *args)
    * stdout ==  1 and stderr == 2 (wich are really
    * output and user_log). stdin == 0 is not allowed to write
    */
-  //SHOWID;
+  SHOWID;
   int file = (int)args[0];
   void *buf = (void*)args[1];
   int64_t length = (int64_t)args[2];
+  struct ChannelDesc *channels = (struct ChannelDesc*)(intptr_t)setup.channels;
 
-  //log_msg2("zrt_write desc=");
-  //log_int((int)file);
-  //log_msg2(" len=");
-  //log_int((int)length);
-  //log_msg2("\n");
-
-  /* Support for MSQ files: zvm_pwrite used for networking communication*/
-  if ( file > 2 ){
-	  /*MSQ files using streaming IO, and don't using offset, set offset as 0*/
-      return zvm_pwrite(file, buf, length, 0);
+  /*
+   * Support for MSQ files: zvm_pwrite used for networking communication
+   * todo(d'b): move it to switch after networking integration will be complete
+   */
+  if(file > 2)
+  {
+    /* MSQ files using streaming IO, and don't using offset, set offset as 0 */
+    return zvm_pwrite(file, buf, length, 0);
   }
 
   /* check given handle. check length */
@@ -410,12 +419,12 @@ int32_t zrt_write(uint32_t *args)
   if(length < 0 || length > 0x7fffffff) return -EPERM;
 
   /* write data */
-  switch(setup.channels[file].mounted)
+  switch(channels[file].mounted)
   {
     case MAPPED:
       /* check if length is not overrun available data */
-      if(pos_ptr[file] + length > setup.channels[file].bsize)
-        length = setup.channels[file].bsize - pos_ptr[file];
+      if(pos_ptr[file] + length > channels[file].bsize)
+        length = channels[file].bsize - pos_ptr[file];
 
       /* length must not be negative */
       if(length < 0)
@@ -424,7 +433,7 @@ int32_t zrt_write(uint32_t *args)
         break;
       }
 
-      memcpy((void*)setup.channels[file].buffer + pos_ptr[file], buf, length);
+      memcpy((void*)channels[file].buffer + pos_ptr[file], buf, length);
       pos_ptr[file] += length;
       break;
 
@@ -456,6 +465,8 @@ int32_t zrt_lseek(uint32_t *args)
     return -EPERM;\
   }
 
+  struct ChannelDesc *channels = (struct ChannelDesc*)(intptr_t)setup.channels;
+
   SHOWID;
   enum ChannelType handle = (enum ChannelType)args[0];
   off_t offset = *((off_t*)args[1]);
@@ -477,7 +488,7 @@ int32_t zrt_lseek(uint32_t *args)
       pos_ptr[handle] = new_pos;
       break;
     case SEEK_END:
-      new_pos = setup.channels[handle].fsize + offset;
+      new_pos = channels[handle].fsize + offset;
       CHECK_NEW_POS(new_pos);
       pos_ptr[handle] = new_pos;
       break;
@@ -486,7 +497,10 @@ int32_t zrt_lseek(uint32_t *args)
       return -EPERM;
   }
 
-  /* weird way to return current position. but that is how nacl work */
+  /*
+   * return current position in a special way since 64 bits
+   * doesn't fit to return code (32 bits)
+   */
   *(off_t *)args[1] = pos_ptr[handle];
   return 0;
 }
@@ -500,6 +514,8 @@ int32_t zrt_ioctl(uint32_t *args)
 /* mock. should be implemented */
 int32_t zrt_stat(uint32_t *args)
 {
+  struct ChannelDesc *channels = (struct ChannelDesc*)(intptr_t)setup.channels;
+
   SHOWID;
   char *prefixes[] = CHANNEL_PREFIXES;
   const char *file = (const char*)args[0];
@@ -526,7 +542,7 @@ int32_t zrt_stat(uint32_t *args)
     sbuf->nacl_abi_st_uid = 1000;     /* user ID of owner */
     sbuf->nacl_abi_st_gid = 1000;     /* group ID of owner */
     sbuf->nacl_abi_st_rdev = 0;       /* device ID (if special handle) */
-    sbuf->nacl_abi_st_size = setup.channels[handle].fsize;    /* total size, in bytes */
+    sbuf->nacl_abi_st_size = channels[handle].fsize;    /* total size, in bytes */
     sbuf->nacl_abi_st_blksize = 4096; /* blocksize for file system I/O */
     /* number of 512B blocks allocated */
     sbuf->nacl_abi_st_blocks = ((sbuf->nacl_abi_st_size + sbuf->nacl_abi_st_blksize - 1) /
@@ -554,6 +570,7 @@ int32_t zrt_fstat(uint32_t *args)
   SHOWID;
   enum ChannelType handle = (int)args[0];
   struct nacl_abi_stat *sbuf = (struct nacl_abi_stat *)args[1];
+  struct ChannelDesc *channels = (struct ChannelDesc*)(intptr_t)setup.channels;
 
   /*
    * check if user request contain the proper file handle:
@@ -569,7 +586,7 @@ int32_t zrt_fstat(uint32_t *args)
     sbuf->nacl_abi_st_uid = 1000;     /* user ID of owner */
     sbuf->nacl_abi_st_gid = 1000;     /* group ID of owner */
     sbuf->nacl_abi_st_rdev = 0;       /* device ID (if special handle) */
-    sbuf->nacl_abi_st_size = setup.channels[handle].fsize;    /* total size, in bytes */
+    sbuf->nacl_abi_st_size = channels[handle].fsize;    /* total size, in bytes */
     sbuf->nacl_abi_st_blksize = 4096; /* blocksize for file system I/O */
     /* number of 512B blocks allocated */
     sbuf->nacl_abi_st_blocks = ((sbuf->nacl_abi_st_size + sbuf->nacl_abi_st_blksize - 1) /
@@ -601,8 +618,6 @@ int32_t zrt_chmod(uint32_t *args)
  * new memory engine. the new allocate specified amount of ram before
  * user code start and then user can only obtain that allocated memory.
  * zrt lib will help user to do it transparently.
- *
- * most important function here is sysbrk, both m(un)map use sysbrk.
  */
 
 /* change space allocation */
@@ -682,7 +697,8 @@ int32_t zrt_getdents(uint32_t *args)
 int32_t zrt_exit(uint32_t *args)
 {
   /* no need to check args for NULL. it is always set by syscall_manager */
-  SHOWID; zvm_exit(args[0]);
+  SHOWID;
+  zvm_exit(args[0]);
 
   /* not reached */
   return 0;
@@ -736,7 +752,7 @@ int32_t zrt_clock(uint32_t *args)
   SHOWID; return -EPERM;
 }
 
-/* mock. should be implemented */
+/* sleep for for deterministic processes */
 int32_t zrt_nanosleep(uint32_t *args)
 {
   SHOWID; return 0;
@@ -862,7 +878,10 @@ int32_t zrt_thread_nice(uint32_t *args)
   SHOWID; return 0;
 }
 
-/* get tls. probably cause "printf" bug */
+/*
+ * get tls from zerovm. can be replaced with untrusted version
+ * after "blob library" loader will be ready
+ */
 int32_t zrt_tls_get(uint32_t *args)
 {
   //SHOWID;
@@ -1066,16 +1085,190 @@ int32_t (*zrt_syscalls[])(uint32_t*) = {
     zrt_test_infoleak          /* 109 */
 };
 
-int slave_main(int argc, char **argv); /* how can i move it to "master.h"? */
+/*
+ * UserManifest data accessors
+ */
+
+/* return content_type or NULL */
+char* zvm_content_type()
+{
+  return *setup.content_type ? setup.content_type : NULL;
+}
+
+/* return timestamp or NULL */
+char* zvm_timestamp()
+{
+  return *setup.timestamp ? setup.timestamp : NULL;
+}
+
+/* return x_object_meta_tag or NULL */
+char* zvm_x_object_meta_tag()
+{
+  return *setup.x_object_meta_tag ? setup.x_object_meta_tag : NULL;
+}
+
+/* return user_etag or NULL */
+char* zvm_user_etag()
+{
+  return *setup.user_etag ? setup.user_etag : NULL;
+}
+
+/* return syscallback address or 0 */
+int32_t zvm_syscallback()
+{
+  return setup.syscallback;
+}
+
+/* set syscallback to the new address, return -1 if failed */
+int32_t zvm_set_syscallback(int32_t syscallback)
+{
+  setup.syscallback = syscallback;
+  return zvm_setup(&setup);
+}
+
+/* return memory buffer address or -1 if not available */
+void* zvm_channel_addr(enum ChannelType ch)
+{
+  struct ChannelDesc *channel;
+  channel = &((struct ChannelDesc*)(intptr_t)setup.channels)[ch];
+  return (void*)channel->buffer;
+}
+
+/* return memory buffer size or -1 if not available */
+int32_t zvm_channel_size(enum ChannelType ch)
+{
+  struct ChannelDesc *channel;
+  channel = &((struct ChannelDesc*)(intptr_t)setup.channels)[ch];
+  return channel->bsize;
+}
+
+/* return name of the channel or NULL. note: secured field (does not contain real name) */
+char* zvm_channel_name(enum ChannelType ch)
+{
+  struct ChannelDesc *channel;
+  static char *names[] = {
+      "InputChannel",
+      "OutputChannel",
+      "LogChannel",
+      "NetworkInputChannel",
+      "NetworkOutputChannel"
+  };
+
+  if(ch < InputChannel && ch >= ChannelTypesCount) return NULL;
+
+  /* if name is set by zerovm return it, otherwise return nominal one */
+  channel = &((struct ChannelDesc*)(intptr_t)setup.channels)[ch];
+  return channel->name ? (char*)(intptr_t)channel->name : names[(int)ch];
+  /* (int)ch cast to prevent compiler warning */
+}
+
+/* return handle of the channel. note: secured field */
+int32_t zvm_channel_handle(enum ChannelType ch)
+{
+  struct ChannelDesc *channel;
+  channel = &((struct ChannelDesc*)(intptr_t)setup.channels)[ch];
+  return channel->handle;
+}
+
+/* return type of the channel */
+enum ChannelType zvm_channel_type(enum ChannelType ch)
+{
+  struct ChannelDesc *channel;
+  channel = &((struct ChannelDesc*)(intptr_t)setup.channels)[ch];
+  return channel->type;
+}
+
+/* return mount mode of the channel. note: in a future can be secured */
+enum MountMode zvm_channel_mode(enum ChannelType ch)
+{
+  struct ChannelDesc *channel;
+  channel = &((struct ChannelDesc*)(intptr_t)setup.channels)[ch];
+  return channel->mounted;
+}
+
+/* return channel file size. note: in a future can be secured */
+int64_t zvm_channel_fsize(enum ChannelType ch)
+{
+  struct ChannelDesc *channel;
+  channel = &((struct ChannelDesc*)(intptr_t)setup.channels)[ch];
+  return channel->fsize;
+}
+
+/* return get size limit for the given channel */
+int64_t zvm_channel_get_size_limit(enum ChannelType ch)
+{
+  struct ChannelDesc *channel;
+  channel = &((struct ChannelDesc*)(intptr_t)setup.channels)[ch];
+  return channel->limits[GetSizeLimit];
+}
+
+/* return gets count limit for the given channel */
+int64_t zvm_channel_get_count_limit(enum ChannelType ch)
+{
+  struct ChannelDesc *channel;
+  channel = &((struct ChannelDesc*)(intptr_t)setup.channels)[ch];
+  return channel->limits[GetsLimit];
+}
+
+/* return put size limit for the given channel */
+int64_t zvm_channel_put_size_limit(enum ChannelType ch)
+{
+  struct ChannelDesc *channel;
+  channel = &((struct ChannelDesc*)(intptr_t)setup.channels)[ch];
+  return channel->limits[PutSizeLimit];
+}
+
+/* return puts count limit for the given channel */
+int64_t zvm_channel_put_count_limit(enum ChannelType ch)
+{
+  struct ChannelDesc *channel;
+  channel = &((struct ChannelDesc*)(intptr_t)setup.channels)[ch];
+  return channel->limits[PutsLimit];
+}
+
+/* return get size counter for the given channel */
+int64_t zvm_channel_get_size_count(enum ChannelType ch)
+{
+  struct ChannelDesc *channel;
+  channel = &((struct ChannelDesc*)(intptr_t)setup.channels)[ch];
+  return channel->counters[GetSizeCounter];
+}
+
+/* return gets count counter for the given channel */
+int64_t zvm_channel_get_count_count(enum ChannelType ch)
+{
+  struct ChannelDesc *channel;
+  channel = &((struct ChannelDesc*)(intptr_t)setup.channels)[ch];
+  return channel->counters[GetsCounter];
+}
+
+/* return put size counter for the given channel */
+int64_t zvm_channel_put_size_count(enum ChannelType ch)
+{
+  struct ChannelDesc *channel;
+  channel = &((struct ChannelDesc*)(intptr_t)setup.channels)[ch];
+  return channel->counters[PutSizeCounter];
+}
+
+/* return puts count counter for the given channel */
+int64_t zvm_channel_put_count_count(enum ChannelType ch)
+{
+  struct ChannelDesc *channel;
+  channel = &((struct ChannelDesc*)(intptr_t)setup.channels)[ch];
+  return channel->counters[PutsCounter];
+}
+
+int slave_main(int argc, char **argv);
 
 int main(int argc, char **argv)
 {
   int retcode = ERR_CODE;
 
   /*
-   * install syscallback function
-   * note: it will also get user manifest
+   * initialize setup (space in the stack is already allocated)
+   * get user manifest, install syscallback.
    */
+  setup.channels = (intptr_t)&channels_space_holder;
   setup.syscallback = (int32_t) syscall_director;
   retcode = zvm_setup(&setup);
   if(retcode) return retcode;

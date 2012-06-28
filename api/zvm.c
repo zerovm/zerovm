@@ -14,21 +14,31 @@
 static char *_log; /* pointer to log buffer available space */
 static int32_t _log_size; /* available space in log */
 
-/* setup log */
-int log_set(struct SetupList *setup)
-{
-  if(!setup) return PARAM_CODE;
-  _log = (char*) setup->channels[LogChannel].buffer;
-  _log_size = setup->channels[LogChannel].bsize;
-  if(!_log) return PTR_CODE; /* user log is not set in manifest */
+/* pointer to trap() through the trampoline */
+int32_t (*_trap)(uint64_t *in) = (int32_t (*)(uint64_t*))
+    0x10000 /* start of trampoline */ +
+    0x20 /* size of trampoline record */ *
+    0 /* onering syscall number */;
 
-  return OK_CODE;
+/* setup log */
+int log_set(struct UserManifest *setup)
+{
+  struct ChannelDesc *channel;
+  if(setup == NULL) return PARAM_CODE;
+
+  channel = &((struct ChannelDesc*)(intptr_t)setup->channels)[LogChannel];
+  _log = (char*)channel->buffer;
+  _log_size = channel->bsize;
+
+  return _log == NULL ? PTR_CODE : OK_CODE;
 }
 
 /* log message */
 /*
+ * OBSOLETTE.
  * known issue: the message will be append if log is already exist
  * make it feature or fix?
+ * todo(d'b): replace it with log_msg2() from zrt.c
  */
 int log_msg(char *msg)
 {
@@ -53,45 +63,32 @@ int log_msg(char *msg)
   return ret_code;
 }
 
-/* pointer to trampoline function */
-int32_t (*_trap)(uint64_t *in) = (int32_t (*)(uint64_t*))
-    0x10000 /* start of trampoline */ +
-    0x20 /* size of trampoline record */ *
-    0 /* onering syscall number */;
-
-/*
- * wrapper for zerovm "TrapUserSetup"
- */
-int32_t zvm_setup(struct SetupList *hint)
+/* wrapper for zerovm "TrapUserSetup" */
+int32_t zvm_setup(struct UserManifest *hint)
 {
   uint64_t request[] = {TrapUserSetup, 0, (uint32_t)hint};
   return _trap(request);
 }
 
-/*
- * wrapper for zerovm "TrapRead"
- */
+/* wrapper for zerovm "TrapRead" */
 int32_t zvm_pread(int desc, char *buffer, int32_t size, int64_t offset)
 {
   uint64_t request[] = {TrapRead, 0, desc, (uint32_t)buffer, size, offset};
   return _trap(request);
 }
 
-/*
- * wrapper for zerovm "TrapWrite"
- */
+/* wrapper for zerovm "TrapWrite" */
 int32_t zvm_pwrite(int desc, char *buffer, int32_t size, int64_t offset)
 {
   uint64_t request[] = {TrapWrite, 0, desc, (uint32_t)buffer, size, offset};
   return _trap(request);
 }
 
-/*
- * wrapper for zerovm "TrapExit"
- */
+/* wrapper for zerovm "TrapExit" */
 int32_t zvm_exit(int32_t code)
 {
   uint64_t request[] = {TrapExit, 0, code};
   return _trap(request);
 }
+
 #undef USER_SIDE

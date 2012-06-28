@@ -1,0 +1,39 @@
+=====================================================================
+== "hello world" example with zrt library usage
+== i/o switches
+=====================================================================
+Output = hello.output.data
+OutputMaxGet = 1024000
+OutputMaxGetCnt = 1024
+OutputMaxPut = 1024000
+OutputMaxPutCnt = 1024
+
+== this options specifies output file loading method: 0 - loaded, 1 - mapped
+OutputMode = 1
+
+UserLog = hello.user.log
+UserLogMaxPut = 65536
+== by default Mode = 0, therefore we have here "UserLogMode = 0"
+
+=====================================================================
+== switches for zerovm. some of them used to control nexe, some
+== for the internal zerovm needs
+=====================================================================
+Version = 11062012
+Log = hello.zerovm.log
+Report = hello.report.log
+Nexe = hello.nexe
+NexeMax = 10000000
+SyscallsMax = 3333
+SetupCallsMax = 99999
+ContentType = VeryCleverContentType
+XObjectMetaTag = SomeNeedfullThings
+
+=====================================================================
+== create report to host
+=====================================================================
+ReportRetCode        = give me more!
+ReportEtag           = give me more!
+ReportUserRetCode    = give me more!
+ReportContentType    = give me more!
+ReportXObjectMetaTag = give me more!

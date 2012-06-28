@@ -36,6 +36,8 @@
 
 #include "include/portability.h"
 
+EXTERN_C_BEGIN
+
 struct DynArray {
   /* public */
   size_t    num_entries;
@@ -65,5 +67,7 @@ int DynArraySet(struct DynArray *dap,
                 void            *ptr);
 
 size_t DynArrayFirstAvail(struct DynArray *dap);
+
+EXTERN_C_END
 
 #endif

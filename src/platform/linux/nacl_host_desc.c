@@ -17,6 +17,7 @@
 #include <errno.h>
 #include <sys/mman.h>
 #include <unistd.h>
+#include <assert.h>
 
 #include "src/platform/nacl_host_desc.h"
 #include "src/platform/nacl_log.h"
@@ -137,17 +138,14 @@ uintptr_t NaClHostDescMap(struct NaClHostDesc *d,
   /*
    * use "whole chunk" memory manager if set in manifest
    * and if this is "user side call"
-   * note: for safety we check (global) nap before use it
    */
-  if(gnap != NULL && gnap->user_side_flag && gnap->manifest != NULL &&
-      gnap->manifest->user_setup->max_mem)
-  {
-    map_addr = start_addr;
-  }
-  else
-  {
-    map_addr = mmap(start_addr, len, host_prot, host_flags, desc, offset);
-  }
+  assert(gnap != NULL);
+  map_addr =
+      gnap->user_side_flag &&
+      gnap->system_manifest != NULL &&
+      gnap->system_manifest->max_mem ?
+          start_addr :
+          mmap(start_addr, len, host_prot, host_flags, desc, offset);
 
   if (MAP_FAILED == map_addr) {
     NaClLog(LOG_INFO,

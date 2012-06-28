@@ -12,12 +12,6 @@
 #include "src/service_runtime/nacl_globals.h"
 
 struct NaClMutex            nacl_thread_mu;
-struct NaClThreadContext    *nacl_user = NULL; /* d'b: object to temporary hold user registers */
-struct NaClThreadContext    *nacl_sys = NULL; /* d'b: object to hold zvm registers while control is passed to nexe */
-int64_t                     syscallback = 0; /* d'b */
-jmp_buf                     user_exit; /* d'b: for user trap() exit */
-struct NaClApp              *gnap = NULL; /* d'b: global NaClApp object. could be removed later or
-                                     be a replacement for same object constructed from main() */
 
 /*
  * Hack for gdb.  This records xlate_base in a place where (1) gdb can find it,

@@ -1,3 +1,7 @@
+warning: this file is obsolete.
+todo(d'b): update it with a new samples
+-------------------------------------------
+
 this folder contain both samples of zerovm usage and functional tests (especially in "security/" folder)
 
 hello/

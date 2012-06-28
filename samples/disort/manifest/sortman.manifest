@@ -4,7 +4,7 @@
 =====================================================================
 
 UserLog = samples/disort/log/sortman.stderr.log
-UserLogMax = 262144
+UserLogMaxPut = 262144
 
 CommandLine = 1 manager
 
@@ -12,10 +12,12 @@ CommandLine = 1 manager
 == switches for zerovm. some of them used to control nexe, some
 == for the internal zerovm needs
 =====================================================================
-Version = 11nov2011
+Version = 11062012
 Log = samples/disort/vmlog/zerovm.sortman.log
 Report = samples/disort/vmlog/sortman.report.log
 Nexe = samples/disort/nodeman.nexe
 NexeMax = 10000000
 SyscallsMax = 3333
 SetupCallsMax = 99999
+Networking = bump
+

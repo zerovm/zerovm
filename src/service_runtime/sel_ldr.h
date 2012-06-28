@@ -239,13 +239,14 @@ struct NaClApp {
   struct DynArray           threads;   /* NaClAppThread pointers */ // #12 to remove
 
   struct NaClMutex          desc_mu; // #14 to remove
-  struct DynArray           desc_tbl;  /* NaClDesc pointers */ // #15 to remove
+  struct DynArray           desc_tbl;  /* NaClDesc pointers */
 
   int                       enable_debug_stub;
   struct NaClDebugCallbacks *debug_stub_callbacks;
 
 	/* d'b added fields */
-  struct Manifest           *manifest;
+  struct HostManifest       *host_manifest;
+  struct SystemManifest     *system_manifest;
   int                       skip_qualification; /* startup time variable */
   int                       fuzzing_quit_after_load; /* startup time variable */
   int                       verbosity; /* startup time variable */
@@ -260,10 +261,10 @@ struct NaClApp {
   NaClCPUFeatures           cpu_features;
 
   /* fileds taken from the natp */
-  void                      *signal_stack; /* Stack for signal handling, registered with sigaltstack(). */
+  void                      *signal_stack; /* signal handling, registered with sigaltstack() */
   uintptr_t                 *syscall_args;
   uint32_t                  sysret; /* syscall return code */
-  uintptr_t                 sys_tls;  /* only need for nexe prolog */
+  uintptr_t                 sys_tls;
   /* d'b end */
 };
 

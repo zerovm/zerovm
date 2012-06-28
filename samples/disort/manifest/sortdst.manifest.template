@@ -4,15 +4,12 @@
 =====================================================================
 
 Output = samples/disort/data/{NODEID}sorted.data
-OutputMax = 19027968
-OutputMaxGet = 19027968
-OutputMaxGetCnt = 1024
-OutputMaxPut = 19027968
+OutputMaxPut = 20000000
 OutputMaxPutCnt = 1024
 OutputMode = 0
 
 UserLog = samples/disort/log/{NODEID}sortdst.stderr.log
-UserLogMax = 262144
+UserLogMaxPut = 262144
 
 CommandLine = {NODEID} dest
 
@@ -20,10 +17,12 @@ CommandLine = {NODEID} dest
 == switches for zerovm. some of them used to control nexe, some
 == for the internal zerovm needs
 =====================================================================
-Version = 11nov2011
+Version = 11062012
 Log = samples/disort/vmlog/{NODEID}zerovm.sortdst.log
 Report = samples/disort/vmlog/{NODEID}sortdst.report.log
 Nexe = samples/disort/nodedst.nexe
 NexeMax = 10000000
 SyscallsMax = 3333
 SetupCallsMax = 99999
+Networking = bump
+

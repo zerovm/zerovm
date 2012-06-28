@@ -77,7 +77,7 @@ public:
 	static struct db_record_t *MatchDbRecordByFd(struct db_records_t *records, int fd){
 		return abstract_mock->MatchDbRecordByFd(records, fd);
 	}
-	static uint64_t GetFileSize(const char *name){
+	static int64_t GetFileSize(const char *name){
 		return abstract_mock->GetFileSize(name);
 	}
 	static struct sock_file_t* SockfByFd(struct zeromq_pool* zpool, int fd){

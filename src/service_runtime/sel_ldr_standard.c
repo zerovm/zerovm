@@ -51,12 +51,7 @@ NORETURN void SwitchToApp(struct NaClApp  *nap, uintptr_t stack_ptr)
   nacl_sys->rbp = NaClGetStackPtr();
   nacl_sys->rsp = NaClGetStackPtr();
 
-  /* set global nap to current nap object */
-  gnap = nap;
-
-  /*
-   * todo: put here switch to chose proper function: avx or sse
-   */
+  /* todo: put here switch to chose proper function: avx or sse */
   NaClSwitchSSE(nacl_user);
 
   /* unreachable */
@@ -639,9 +634,7 @@ int NaClCreateMainThread(struct NaClApp     *nap,
           NaClSysToUserStackAddr(nap, stack_ptr));
 
   /* d'b: jump directly to user code instead of using thread launching */
-  ResumeCpuClock(nap);
   SwitchToApp(nap, stack_ptr);
-  /* d'b end */
 
   retval = 1;
 cleanup:

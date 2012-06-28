@@ -1,0 +1,24 @@
+=====================================================================
+== "accessors" example with zrt library usage
+== i/o switches
+=====================================================================
+Output = accessors.output.data
+OutputMaxGet = 1024000
+OutputMaxGetCnt = 1024
+OutputMaxPut = 1024000
+OutputMaxPutCnt = 1024
+OutputMode = 1
+
+UserLog = accessors.user.log
+UserLogMaxPut = 65536
+
+=====================================================================
+== switches for zerovm. some of them used to control nexe, some
+== for the internal zerovm needs
+=====================================================================
+Version = 11062012
+Log = accessors.zerovm.log
+Report = accessors.report.log
+Nexe = accessors.nexe
+NexeMax = 10000000
+SyscallsMax = 2048

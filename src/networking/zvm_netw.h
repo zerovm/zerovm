@@ -25,7 +25,7 @@ struct sock_file_t;
 struct zmq_netw_interface {
 	int (*get_all_dbrecords)(const char *path, const char *nodename, struct db_records_t *db_records);
 	struct db_record_t* (*match_db_record_by_fd)(struct db_records_t *records, int fd);
-	uint64_t (*GetFileSize)(const char *name);
+	int64_t (*GetFileSize)(const char *name); /* d'b: tiny fix */
 	struct sock_file_t* (*sockf_by_fd)(struct zeromq_pool* zpool, int fd);
 	int (*init_zeromq_pool)(struct zeromq_interface* io_interface, struct zeromq_pool * zpool);
 	int (*open_all_comm_files)(struct zeromq_pool* zpool, struct db_records_t *db_records);

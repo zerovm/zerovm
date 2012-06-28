@@ -19,11 +19,13 @@ struct NaClAppThread;
 struct NaClMutex;
 struct NaClApp;
 
-extern int64_t syscallback; /* d'b */
-struct NaClThreadContext    *nacl_user; /* d'b */
-struct NaClThreadContext    *nacl_sys; /* d'b */
-struct NaClApp              *gnap; /* d'b */
-jmp_buf                     user_exit; /* d'b */
+/* d'b: added global variables */
+struct NaClThreadContext    *nacl_user; /* user registers storage */
+struct NaClThreadContext    *nacl_sys; /* zerovm registers storage */
+struct NaClApp              *gnap; /* pointer to global NaClApp object */
+int64_t                     syscallback; /* 0 if not installed */
+jmp_buf                     user_exit; /* part of trap() exit */
+/* variables above will be initialized later */
 
 extern struct NaClMutex         nacl_thread_mu;
 /*

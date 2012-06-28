@@ -10,9 +10,11 @@
  * todo: imc related stuff marked for removal
  */
 #include <string.h>
+#include <assert.h>
 #include <setjmp.h> /* d'b: need for trap() exit */
 
 #include "include/portability_io.h"
+#include "src/utils/tools.h"
 #include "src/gio/gio.h"
 #include "src/platform/nacl_exit.h"
 #include "src/fault_injection/fault_injection.h"
@@ -21,20 +23,20 @@
 #include "src/service_runtime/nacl_globals.h"
 #include "src/service_runtime/nacl_signal.h"
 #include "src/service_runtime/include/sys/mman.h" /* d'b */
-#include "src/manifest/manifest_parser.h" /* d'b */
-#include "src/manifest/manifest_setup.h" /* d'b */
+#include "src/manifest/manifest_parser.h" /* d'b. todo: move to initializer */
+#include "src/manifest/manifest_setup.h" /* d'b. todo: move to initializer */
 #include "src/manifest/trap.h" /* d'b */
-#include "src/manifest/mount_channel.h" /* d'b */
+#include "src/manifest/mount_channel.h" /* d'b. todo: move to manifest_setup */
 #include "src/service_runtime/sel_qualify.h"
 
+/* todo(NETWORKING): move it channels constructors */
 /*YaroslavLitvinov*/
 #ifdef NETWORKING
-//extern "C"{
-	#include "src/networking/zvm_netw.h"
-	#include "src/networking/zmq_netw.h" //SockCapability
-//}
-	#define ZVM_DB_NAME "zvm_netw.db"
+# include "src/networking/zvm_netw.h"
+# include "src/networking/zmq_netw.h" /* SockCapability */
+# define ZVM_DB_NAME "zvm_netw.db"
 #endif
+/* end */
 
 struct redir {
   struct redir  *next;
@@ -69,8 +71,10 @@ static void PrintVmmap(struct NaClApp *nap)
   NaClVmmapVisit(&nap->mem_map, VmentryPrinter, NULL);
 }
 
-int ImportModeMap(char opt) {
-  switch (opt) {
+int ImportModeMap(char opt)
+{
+  switch(opt)
+  {
     case 'h':
       return O_RDWR;
     case 'r':
@@ -78,52 +82,18 @@ int ImportModeMap(char opt) {
     case 'w':
       return O_WRONLY;
   }
-  fprintf(stderr, ("option %c not understood as a host descriptor"
-                   " import mode\n"),
-          opt);
+
+  fprintf(stderr, "option %c not understood as a host descriptor import mode\n", opt);
   exit(1);
 }
 
-static void PrintUsage() {
-  /* NOTE: this is broken up into multiple statements to work around
-           the constant string size limit */
-  fprintf(stderr,
-          "Usage: sel_ldr [-M manifest_file] [-h d:D] [-r d:D]\n"
-          "               [-w d:D] [-i d:D] [-v d] [-cFgIsQZD]\n\n"
-          " -h\n"
-          " -r\n"
-          " -w associate a host POSIX descriptor D with app desc d\n"
-          "    that was opened in O_RDWR, O_RDONLY, and O_WRONLY modes\n"
-          "    respectively\n"
-          " -i associates an IMC handle D with app desc d\n"
-          " -v <level> verbosity\n\n"
-          " (testing flags)\n"
-          " -c ignore validator! dangerous! Repeating this option twice skips\n"
-          "    validation completely.\n"
-          " -F fuzz testing; quit after loading NaCl app\n"
-          " -S enable signal handling.\n"
-          " -g enable gdb debug stub.\n"
-          " -l <file>  write log output to the given file\n"
-          " -s safely stub out non-validating instructions\n"
-          " -Q disable platform qualification (dangerous!)\n"
-		      " -M <file> load settings from manifest\n"
-          " -Z use fixed feature x86 CPU mode\n"
-          " -D enable the UNSTABLE dfa validator\n"
-          );  /* easier to add new flags/lines */
-}
-
-/*
- * parse given command line and initialize NaClApp object
- * return 0 if success, non-zero error code if failed
- */
-int ParseCommandLine(int argc, char **argv, struct NaClApp *nap)
+/* parse given command line and initialize NaClApp object */
+static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
 {
   int opt;
   struct redir *entry;
   char *rest;
   int i;
-  int nexe_argc = 1;
-  char **nexe_argv;
   char *manifest_name = NULL;
   int debug_mode_ignore_validator = 0;
   int enable_debug_stub = 0;
@@ -135,8 +105,6 @@ int ParseCommandLine(int argc, char **argv, struct NaClApp *nap)
   nap->verbosity = NaClLogGetVerbosity();
   nap->skip_qualification = 0;
   nap->fuzzing_quit_after_load = 0;
-  //YaroslavLitvinov: Fixed segmentation fault, if manifest file not found
-  nap->manifest = 0;
 
   /* note: in a future zerovm command line will be reduced */
   while((opt = getopt(argc, argv, "+cFgh:i:Il:QDZr:sSv:w:X:M:")) != -1)
@@ -164,11 +132,7 @@ int ParseCommandLine(int argc, char **argv, struct NaClApp *nap)
       case 'w':
         /* import host descriptor */
         entry = malloc(sizeof *entry);
-        if(NULL == entry)
-        {
-          fprintf(stderr, "No memory for redirection queue\n");
-          return ERR_CODE;
-        }
+        COND_ABORT(NULL == entry, "No memory for redirection queue");
         entry->next = NULL;
         entry->nacl_desc = strtol(optarg, &rest, 0);
         entry->tag = HOST_DESC;
@@ -180,11 +144,7 @@ int ParseCommandLine(int argc, char **argv, struct NaClApp *nap)
       case 'i':
         /* import IMC handle */
         entry = malloc(sizeof *entry);
-        if(NULL == entry)
-        {
-          fprintf(stderr, "No memory for redirection queue\n");
-          return ERR_CODE;
-        }
+        COND_ABORT(NULL == entry, "No memory for redirection queue");
         entry->next = NULL;
         entry->nacl_desc = strtol(optarg, &rest, 0);
         entry->tag = IMC_DESC;
@@ -217,8 +177,8 @@ int ParseCommandLine(int argc, char **argv, struct NaClApp *nap)
         break;
       default:
         fprintf(stderr, "ERROR: unknown option: [%c]\n\n", opt);
-        PrintUsage();
-        return ERR_CODE;
+        COND_ABORT(1, HELP_SCREEN);
+        break;
     }
   }
 
@@ -237,74 +197,68 @@ int ParseCommandLine(int argc, char **argv, struct NaClApp *nap)
     fprintf(stderr, "\n");
   }
 
-  /* process manifest file specified in cmdline */
-  if (manifest_name != NULL)
-  {
-    int32_t size;
-    if(!parse_manifest(manifest_name, nap))
-    {
-      fprintf(stderr, "Invalid manifest file \"%s\".\n", manifest_name);
-      return ERR_CODE;
-    }
+  /* parse manifest file specified in cmdline */
+  COND_ABORT(manifest_name == NULL, HELP_SCREEN);
+  COND_ABORT(ManifestCtor(manifest_name), "Invalid manifest file");
 
-    /* initialize user policy, zerovm settings */
-    SetupUserPolicy(nap);
-    SetupSystemPolicy(nap);
-
-    /* construct nexe command line from manifest (add nexe name as argv[0]) */
-    COND_ABORT(!(nexe_argv = malloc(128 * sizeof(char*))),
-        "cannot allocate memory for nexe command line\n");
-    nexe_argv[0] = "_";
-    nexe_argv[nexe_argc] = strtok(get_value_by_key(nap, "CommandLine"), " \t");
-    while(nexe_argv[nexe_argc])
-      nexe_argv[++nexe_argc] = strtok(NULL, " \t");
-    nap->manifest->system_setup->cmd_line = nexe_argv;
-    nap->manifest->system_setup->cmd_line_size = nexe_argc;
-
-    /* check for limits given in manifest */
-    COND_ABORT(nap->manifest->system_setup->version == NULL,
-        "manifest version is not provided\n");
-    COND_ABORT(strcmp(nap->manifest->system_setup->version, MANIFEST_VERSION),
-        "wrong manifest version\n");
-    if((size = GetFileSize(nap->manifest->system_setup->nexe)) < 0)
-    {
-      fprintf(stderr, "%s not found\n", nap->manifest->system_setup->nexe);
-      return ERR_CODE;
-    }
-    if(nap->manifest->system_setup->nexe_max)
-      COND_ABORT(nap->manifest->system_setup->nexe_max < size, "nexe file is greater then alowed\n");
-  }
-  else /* manifest file is not provided */
-  {
-    PrintUsage();
-    return ERR_CODE;
-  }
-
+  /* set available nap and manifest fields */
+  assert(nap->system_manifest != NULL);
   nap->ignore_validator_result = (debug_mode_ignore_validator > 0);
   nap->skip_validator = (debug_mode_ignore_validator > 1);
   nap->validator_stub_out_mode = stub_out_mode;
   nap->enable_debug_stub = enable_debug_stub;
-
-  /* check if nexe is given */
-  if(NULL == nap->manifest->system_setup->nexe)
-  {
-    PrintUsage();
-    return ERR_CODE;
-  }
-  return OK_CODE;
+  nap->user_side_flag = 0; /* we are in the trusted code */
+  nap->system_manifest->nexe = GetValueByKey("Nexe");
+  nap->system_manifest->blob = GetValueByKey("Blob");
+  nap->system_manifest->log = GetValueByKey("Log");
+  gnap = nap;
+  syscallback = 0;
 }
+
+/*
+ * set everything in the given NaClApp object to 0s and NULLs
+ * so we can assert() nap and nap pointers before usage
+ * note: always return LOAD_OK because we want to put the function inside assert()
+ */
+#ifdef DEBUG
+int ResetNap(struct NaClApp *nap)
+{
+  memset(nap, 0, sizeof(*nap));
+
+  /* since NULL isn't neccessery 0 set it explicitly */
+  nap->debug_stub_callbacks = NULL;
+  nap->dynamic_page_bitmap = NULL;
+  nap->dynamic_regions = NULL;
+  nap->effp = NULL;
+  nap->host_manifest = NULL;
+  nap->signal_stack = NULL;
+  nap->syscall_args = NULL;
+  nap->syscall_table = NULL;
+  nap->system_manifest = NULL;
+  nap->text_shm = NULL;
+
+  return LOAD_OK;
+}
+#endif
 
 int main(int argc, char **argv)
 {
   struct NaClApp                state, *nap = &state;
+  struct SystemManifest         sys_mft;
+  struct HostManifest           host_mft;
   NaClErrorCode                 errcode = LOAD_INTERNAL;
   struct GioFile                gout;
-  struct GioFile                *log_gio;
   struct GioMemoryFileSnapshot  blob_file;
   struct GioMemoryFileSnapshot  main_file;
   struct NaClPerfCounter        time_all_main;
+
+  /* todo(d'b): make zerovm retcode. or make it always 0 and eliminate from the code */
   int                           ret_code = 1;
-  char                          manifest[MAX_MANIFEST_LEN];
+
+  /* (re)set all (debug) or some of nap fields */
+  assert(ResetNap(nap) == LOAD_OK);
+  nap->system_manifest = &sys_mft;
+  nap->host_manifest = &host_mft;
 
   /* @IGNORE_LINES_FOR_CODE_HYGIENE[1] */
   /*
@@ -326,14 +280,11 @@ int main(int argc, char **argv)
    *   http://code.google.com/p/nativeclient/issues/detail?id=232
    */
 
-  /* whole chunk" user memory management initialization */
-  nap->user_side_flag = 0; /* we are in the trusted code */
-
   NaClAllModulesInit();
   NaClPerfCounterCtor(&time_all_main, "SelMain");
   fflush((FILE *) NULL);
-  COND_ABORT(!GioFileRefCtor(&gout, stdout), "Could not create general standard output channel\n");
-  COND_ABORT(ParseCommandLine(argc, argv, nap), "command line parse error\n");
+  COND_ABORT(!GioFileRefCtor(&gout, stdout), "Could not create general standard output channel");
+  ParseCommandLine(nap, argc, argv);
 
 	/*
 	 * change stdout/stderr to log file now, so that subsequent error
@@ -341,23 +292,18 @@ int main(int argc, char **argv)
 	 * result from getopt processing -- usually out-of-memory, which
 	 * shouldn't happen -- won't show up.
 	 */
-	if (NULL != nap->manifest && NULL != nap->manifest->system_setup->log)
-	  NaClLogSetFile(nap->manifest->system_setup->log);
+  if(NULL != nap->system_manifest->log) NaClLogSetFile(nap->system_manifest->log);
 
-  /*
-   * NB: the following cast is okay since we only ever permit GioFile
-   * objects to be used -- NaClLogModuleInit and NaClLogSetFile both
-   * can only assign the log output to a file.  If neither were
-   * called, logging goes to stderr.
-   */
-  log_gio = (struct GioFile*) NaClLogGetGio();
+  /* todo(d'b): remove it */
+  NaClLogGetGio();
 
-  COND_ABORT(!NaClAppCtor(nap), "Error while constructing app state\n");
+  /* the dyn_array constructor 1st call */
+  COND_ABORT(NaClAppCtor(nap) == 0, "Error while constructing app state");
 	errcode = LOAD_OK;
 
 	/* We use the signal handler to verify a signal took place. */
 	NaClSignalHandlerInit();
-	if (!nap->skip_qualification)
+	if (nap->skip_qualification == 0)
 	{
 		NaClErrorCode pq_error = NACL_FI_VAL("pq", NaClErrorCode, NaClRunSelQualificationTests());
 		if (LOAD_OK != pq_error)
@@ -365,50 +311,51 @@ int main(int argc, char **argv)
 			errcode = pq_error;
 			nap->module_load_status = pq_error;
 			fprintf(stderr, "Error while loading \"%s\": %s\n",
-					NULL != nap->manifest->system_setup->nexe ?
-					nap->manifest->system_setup->nexe : "(no file, to-be-supplied-via-RPC)",
+					NULL != nap->system_manifest->nexe ?
+					nap->system_manifest->nexe : "(no file, to-be-supplied-via-RPC)",
 					NaClErrorString(errcode));
 		}
 	}
 
   /* Remove the signal handler if we are not using it. */
-	if (!nap->handle_signals)
+	if (nap->handle_signals == 0)
 	{
 		NaClSignalHandlerFini();
 		NaClSignalAssertNoHandlers(); /* Sanity check. */
 	}
 
   /* Open (not load) both files nexe and blob. only need for "fuzzy load". can be removed */
+
 #define PERF_CNT(str)\
 	NaClPerfCounterMark(&time_all_main, str);\
   NaClPerfCounterIntervalLast(&time_all_main);
 
-  if(NULL != nap->manifest->system_setup->blob)
+  if(NULL != nap->system_manifest->blob)
   {
-    if(0 == GioMemoryFileSnapshotCtor(&blob_file, nap->manifest->system_setup->blob))
+    if(0 == GioMemoryFileSnapshotCtor(&blob_file, nap->system_manifest->blob))
     {
       perror("sel_main");
-      fprintf(stderr, "Cannot open \"%s\".\n", nap->manifest->system_setup->blob);
+      fprintf(stderr, "Cannot open \"%s\".\n", nap->system_manifest->blob);
       exit(1);
     }
     PERF_CNT("SnapshotBlob");
   }
 
-  if (0 == GioMemoryFileSnapshotCtor(&main_file, nap->manifest->system_setup->nexe))
+  if (0 == GioMemoryFileSnapshotCtor(&main_file, nap->system_manifest->nexe))
   {
     perror("sel_main");
-    fprintf(stderr, "Cannot open \"%s\".\n", nap->manifest->system_setup->nexe);
+    fprintf(stderr, "Cannot open \"%s\".\n", nap->system_manifest->nexe);
     exit(1);
   }
   PERF_CNT("SnapshotNaclFile");
 
   if (LOAD_OK == errcode)
   {
-    NaClLog(2, "Loading nacl file %s (non-RPC)\n", nap->manifest->system_setup->nexe);
+    NaClLog(2, "Loading nacl file %s (non-RPC)\n", nap->system_manifest->nexe);
     errcode = NaClAppLoadFile((struct Gio *) &main_file, nap);
     if (LOAD_OK != errcode)
     {
-      fprintf(stderr, "Error while loading \"%s\": %s\n", nap->manifest->system_setup->nexe,
+      fprintf(stderr, "Error while loading \"%s\": %s\n", nap->system_manifest->nexe,
               NaClErrorString(errcode));
       fprintf(stderr, ("Using the wrong type of nexe (nacl-x86-32"
               " on an x86-64 or vice versa)\nor a corrupt nexe file may be"
@@ -420,54 +367,63 @@ int main(int argc, char **argv)
 
   if(-1 == (*((struct Gio *) &main_file)->vtbl->Close)((struct Gio *) &main_file))
   {
-    fprintf(stderr, "Error while closing \"%s\".\n", nap->manifest->system_setup->nexe);
+    fprintf(stderr, "Error while closing \"%s\".\n", nap->system_manifest->nexe);
   }
 
   (*((struct Gio *) &main_file)->vtbl->Dtor)((struct Gio *) &main_file);
   if(nap->fuzzing_quit_after_load) exit(0);
 
-   /*YaroslavLitvinov*/
+  /*
+   * construct system and host manifests
+   * todo(d'b): move it to "src/platform/platform_init.c" chain. problems to solve:
+   * - channels construction needs initialized nacl descriptors (it is dyn_array)
+   * - "memory chunk" needs initialized memory manager (user stack, text, data e.t.c)
+   */
+  SystemManifestCtor(nap); /* needs dyn_array initialized */
+  HostManifestCtor(nap); /* needs dyn_array initialized */
+  assert(nap->system_manifest != NULL); /* just in case. can be removed */
+
+  /* todo(NETWORKING): move it to initializers. rewrite hardcoded part */
+  /*YaroslavLitvinov*/
 #ifdef NETWORKING
-  if ( nap->manifest && nap->manifest->system_setup->cmd_line && nap->manifest->system_setup->cmd_line_size >= 3 ){
-	  /*get node generic name*/
-	  char *netw_nodename = nap->manifest->system_setup->cmd_line[2];
-	  /*get node id*/
-	  int nodeid = atoi(nap->manifest->system_setup->cmd_line[1]);
-	  if ( netw_nodename ){
-		  int err = init_zvm_networking( zmq_netw_interface_implementation(), ZVM_DB_NAME, netw_nodename, nodeid);
-		  if ( LOAD_OK != err ){
-			  NaClLog(LOG_INFO, "init_zvm_networking err=%d, nodename=%s\n", err, netw_nodename);
-			  NaClAbort();
-		  }
-	  }
-  }else{
-	  NaClLog(LOG_ERROR, "NETWORKING defined but command line parameters not valid\n");
-	  NaClAbort();
+  if(GetValueByKey("Networking") != NULL)
+  {
+    /* check before networking initialization */
+    assert(nap != NULL);
+    assert(nap->system_manifest != NULL);
+
+    if(nap->system_manifest->cmd_line == NULL || nap->system_manifest->cmd_line_size < 3)
+      NaClLog(LOG_FATAL, "NETWORKING defined but command line parameters not valid\n");
+
+    do { /* prevent c90 warning */
+      /* get node generic name */
+      char *netw_nodename = nap->system_manifest->cmd_line[2];
+
+      /* get node id */
+      int nodeid = atoi(nap->system_manifest->cmd_line[1]);
+      if(netw_nodename != NULL)
+      {
+        int err = init_zvm_networking(zmq_netw_interface_implementation(),
+                                      ZVM_DB_NAME, netw_nodename, nodeid);
+        if (LOAD_OK != err)
+          NaClLog(LOG_FATAL, "init_zvm_networking err = %d, nodename = %s\n",
+                  err, netw_nodename);
+      }
+    } while(0);
   }
 #endif
-
-
-  /* construct each mentioned in manifest channel and mount it */
-  if(nap->manifest)
-  {
-    enum ChannelType ch;
-    for(ch = InputChannel; ch < CHANNELS_COUNT; ++ch)
-    {
-      if(ConstructChannel(nap, ch)) continue;
-      MountChannel(nap, ch);
-    }
-  }
+  /* end */
 
   /* load blob library */
-  if(NULL != nap->manifest->system_setup->blob)
+  if(NULL != nap->system_manifest->blob)
   {
     if(LOAD_OK == errcode)
     {
-      NaClLog(2, "Loading blob file %s\n", nap->manifest->system_setup->blob);
+      NaClLog(2, "Loading blob file %s\n", nap->system_manifest->blob);
       errcode = NaClAppLoadFileDynamically(nap, (struct Gio *) &blob_file);
       if(LOAD_OK != errcode)
       {
-        fprintf(stderr, "Error while loading \"%s\": %s\n", nap->manifest->system_setup->blob,
+        fprintf(stderr, "Error while loading \"%s\": %s\n", nap->system_manifest->blob,
                 NaClErrorString(errcode));
       }
       PERF_CNT("BlobLoaded");
@@ -475,7 +431,7 @@ int main(int argc, char **argv)
 
     if(-1 == (*((struct Gio *) &blob_file)->vtbl->Close)((struct Gio *) &blob_file))
     {
-      fprintf(stderr, "Error while closing \"%s\".\n", nap->manifest->system_setup->blob);
+      fprintf(stderr, "Error while closing \"%s\".\n", nap->system_manifest->blob);
     }
     (*((struct Gio *) &blob_file)->vtbl->Dtor)((struct Gio *) &blob_file);
     if(nap->verbosity)
@@ -492,9 +448,6 @@ int main(int argc, char **argv)
     goto done;
   }
 
-  /* set user space to max_mem if specified in the manifest */
-  PreallocateUserMemory(nap);
-
   PERF_CNT("CreateMainThread");
 
   /* Make sure all the file buffers are flushed before entering the nexe */
@@ -504,68 +457,34 @@ int main(int argc, char **argv)
   if((ret_code = setjmp(user_exit)) == 0)
   {
     /* pass control to the user code */
-    if(!NaClCreateMainThread(nap, nap->manifest->system_setup->cmd_line_size,
-                             nap->manifest->system_setup->cmd_line, NULL))
+    if(!NaClCreateMainThread(nap, nap->system_manifest->cmd_line_size,
+                             nap->system_manifest->cmd_line, NULL))
     {
       fprintf(stderr, "creating main thread failed\n");
       goto done;
     }
   }
-  PauseCpuClock(nap);
   PERF_CNT("WaitForMainThread");
   PERF_CNT("SelMainEnd");
 
-  /* manifest finalization */
-  if(nap->manifest)
-  {
-    FILE *f = NULL;
-    char *name = nap->manifest->system_setup->report;
-    struct PreOpenedFileDesc *log_ch = &nap->manifest->user_setup->channels[LogChannel];
-
-    /* make report if specified in manifest */
-    if(nap->manifest->system_setup->report != NULL)
-    {
-      if((f = fopen(name, "w")) == NULL)
-      {
-        NaClLog(LOG_ERROR, "cannot open report manifest = %s\n", name);
-        goto done;
-      }
-      /* generate report, "manifest" reused for report, fix it ### */
-      SetupReportSettings(nap);
-      nap->manifest->report->ret_code = 0;
-      nap->manifest->report->user_ret_code = nap->exit_status;
-      AnswerManifestPut(nap, manifest);
-
-      /* write it and free resources */
-      fwrite(manifest, 1, strlen(manifest), f);
-      fclose(f);
-    }
-
-    // make it function: UnmountChannel(nap, channel) to avoid truncate()
-    /* trim user_log */
-    if (log_ch->buffer)
-    {
-      char *p = (char*) NaClUserToSys(nap, (uint32_t)log_ch->buffer);
-      log_ch->fsize = strlen(p);
-      munmap(p, log_ch->bsize);
-      if(log_ch->fsize) truncate((char*)log_ch->name, log_ch->fsize);
-      else remove((char*)log_ch->name);
-    }
-
-  }
-
+  /* todo(NETWORKING): move it to mount_channel.c (destructor) */
   /*YaroslavLitvinov*/
 #ifdef NETWORKING
+  if(GetValueByKey("Networking") != NULL)
   {
-	  int err = term_zvm_networking();
-	  if ( LOAD_OK != err ){
-		  NaClLog(LOG_ERROR, "term_zvm_networking err=%d", err);
-		  NaClAbort();
-	  }
+    int err = term_zvm_networking();
+    if (LOAD_OK != err)
+      NaClLog(LOG_FATAL, "term_zvm_networking err = %d", err);
   }
 #endif
+  /* end */
 
-  NaClExit(ret_code);
+  /* report to host. call destructors */
+  SystemManifestDtor(nap);
+  HostManifestDtor(nap);
+
+  /* todo(): replace with ret_code when zerovm error codes will be ready */
+  NaClExit(0);
 
  done:
   if(nap->verbosity)

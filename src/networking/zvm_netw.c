@@ -14,6 +14,7 @@
 #include <fcntl.h>
 #include <zmq.h>
 
+#include "src/utils/tools.h"
 #include "src/service_runtime/nacl_error_code.h"
 #include "src/service_runtime/dyn_array.h"
 #include "src/manifest/mount_channel.h"
@@ -29,6 +30,10 @@ static struct zmq_netw_interface *__netw_if = NULL;
 
 /*Do not allow zeromq objective code just here for unit tests*/
 #ifndef UNIT_TEST
+
+/*
+ * todo(d'b): change c99 initialization to c89
+ */
 /*Initialization I/O interface by zeromq functions. Should be used only for interface initialization*/
 static struct zmq_netw_interface __zmq_netw_implementation = {
 	.get_all_dbrecords       = get_all_records_from_dbtable,

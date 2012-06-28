@@ -2,34 +2,39 @@
 == i/o switches. full list. optional. some switches now meaningless,
 == placed here for completeness and future changes
 =====================================================================
-Input = samples/sort/unsorted.data
-InputMax = 67108864
+Input = unsorted.data
 InputMaxGet = 67108864
 InputMaxGetCnt = 1024
 InputMaxPut = 67108864
 InputMaxPutCnt = 1024
 InputMode = 0
 
-Output = samples/sort/sorted.data
-OutputMax = 67108864
+Output = sorted.data
 OutputMaxGet = 67108864
 OutputMaxGetCnt = 1024
 OutputMaxPut = 67108864
 OutputMaxPutCnt = 1024
 OutputMode = 0
 
-UserLog = samples/sort/sort.stderr.log
-UserLogMax = 65536
+UserLog = sort.stderr.log
+UserLogMaxPut = 65536
 
 =====================================================================
 == switches for zerovm. some of them used to control nexe, some
 == for the internal zerovm needs
 =====================================================================
-Version = 11nov2011
-Log = samples/sort/sort.log
-Report = samples/sort/sort.report.log
-Nexe = samples/sort/sort_uint_proper_with_args.nexe
+Version = 11062012
+Log = sort.log
+Report = sort.report.log
+Nexe = sort_uint_proper_with_args.nexe
 NexeMax = 2000000
 SyscallsMax = 2048
-SetupCallsMax = 2
 
+=====================================================================
+== create report to host
+=====================================================================
+ReportRetCode        = bump
+ReportEtag           = bump
+ReportUserRetCode    = bump
+ReportContentType    = bump
+ReportXObjectMetaTag = bump

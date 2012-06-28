@@ -20,7 +20,10 @@
 
 #include <sys/types.h>
 #include <stddef.h>
+#include "include/nacl_base.h"
 #include "sqluse_srv.h"
+
+EXTERN_C_BEGIN
 
 //forward declaration
 struct DynArray;
@@ -107,5 +110,7 @@ ssize_t read_sockf(struct sock_file_t *sockf, char *buf, size_t count);
 int open_all_comm_files(struct zeromq_pool* zpool, struct db_records_t *db_records);
 /*Close all connections; used in pair with open_all_comm_files*/
 int close_all_comm_files(struct zeromq_pool* zpool);
+
+EXTERN_C_END
 
 #endif /* NETWORKING_ZMQ_NETW_H_ */

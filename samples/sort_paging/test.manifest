@@ -1,0 +1,33 @@
+=====================================================================
+== i/o switches. full list. optional. some switches now meaningless,
+== placed here for completeness and future changes
+=====================================================================
+Input = sorted.data
+InputMaxGet = 67108864
+InputMaxGetCnt = 1024
+InputMaxPut = 67108864
+InputMaxPutCnt = 1024
+InputMode = 1
+
+UserLog = tester.stderr.log
+UserLogMaxPut = 65536
+
+=====================================================================
+== switches for zerovm. some of them used to control nexe, some
+== for the internal zerovm needs
+=====================================================================
+Version = 11062012
+Log = tester.log
+Report = tester.report.log
+Nexe = tester.uint32_t.nexe
+NexeMax = 2000000
+SyscallsMax = 2048
+
+=====================================================================
+== create report to host
+=====================================================================
+ReportRetCode        = bump
+ReportEtag           = bump
+ReportUserRetCode    = bump
+ReportContentType    = bump
+ReportXObjectMetaTag = bump

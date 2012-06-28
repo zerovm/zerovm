@@ -1,0 +1,33 @@
+=====================================================================
+== i/o switches. full list. optional. some switches now meaningless,
+== placed here for completeness and future changes
+=====================================================================
+Output = unsorted.data
+OutputMaxGet = 67108864
+OutputMaxGetCnt = 1024
+OutputMaxPut = 67108864
+OutputMaxPutCnt = 1024
+OutputMode = 1
+UserLog = generator.stderr.log
+UserLogMaxPut = 65536
+
+=====================================================================
+== switches for zerovm. some of them used to control nexe, some
+== for the internal zerovm needs
+=====================================================================
+Version = 11062012
+Log = generator.log
+Report = generator.report.log
+Nexe = generator.uint32_t.nexe
+NexeMax = 2000000
+SyscallsMax = 2048
+CommandLine = 16777216
+
+=====================================================================
+== create report to host
+=====================================================================
+ReportRetCode        = bump
+ReportEtag           = bump
+ReportUserRetCode    = bump
+ReportContentType    = bump
+ReportXObjectMetaTag = bump

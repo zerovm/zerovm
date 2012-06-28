@@ -1,0 +1,26 @@
+=====================================================================
+== "file input/output" example with zrt library usage
+== i/o switches
+=====================================================================
+Output = file_stat.output.data
+OutputMaxGet = 1024000
+OutputMaxGetCnt = 1024
+OutputMaxPut = 1024000
+OutputMaxPutCnt = 1024
+
+== this options specifies output file loading method: 0 - loaded, 1 - mapped
+OutputMode = 1
+
+UserLog = file_stat.user.log
+UserLogMaxPut = 65536
+
+=====================================================================
+== switches for zerovm. some of them used to control nexe, some
+== for the internal zerovm needs
+=====================================================================
+Version = 11062012
+Log = file_stat.zerovm.log
+Report = file_stat.report.log
+Nexe = file_stat.nexe
+NexeMax = 10000000
+SyscallsMax = 3333

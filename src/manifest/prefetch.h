@@ -1,6 +1,6 @@
 /*
  * preallocate network channel
- * note: reserved for a future zmq integration
+ * todo(NETWORKING): update this file
  *
  *  Created on: Dec 5, 2011
  *      Author: d'b
@@ -10,8 +10,9 @@
 #define PREFETCH_H_
 
 /*
- * preallocate given network channel. return 0 if success, otherwise negative errcode
+ * preallocate given network channel.
+ * return 0 if success, otherwise negative errcode
  */
-int PrefetchChannel(struct NaClApp *nap, struct PreOpenedFileDesc* channel);
+int PrefetchChannel(struct NaClApp *nap, struct ChannelDesc* channel);
 
 #endif /* PREFETCH_H_ */

@@ -25,38 +25,59 @@
  * SystemList and Report structures removed. zvm onering wrappers updated.
  * SetupList structure updated with syscallback to support a new engine (see
  * "syscall overloading" in progress.txt
- * 
+ *
  * 2012-04-22
  * user main() will be replaced with zrt main() to setup syscallback/manifest
  * and other needful things
  *
+ * 2012-06-14
+ * massive changes in structures and enumerations
+ *
  * 2011-11-20
  * d'b
  */
-
 #ifndef API_ZVM_MANIFEST_H__
 #define API_ZVM_MANIFEST_H__ 1
 
-#include <stdint.h> /* how to get rid of it? */
+#include <stdint.h>
 
-#define MAX_MANIFEST_LEN 4096
+/* prefixes must have same order as enum ChannelType */
+#define CHANNEL_PREFIXES {"Input", "Output", "UserLog", "NetInput", "NetOutput"}
 
-/*
- * files available for user. very 1st channel must be InputChannel
- * the last channel must be NetworkOutputChannel
- */
+/* channel mount mode */
+enum MountMode {MAPPED=0, LOADED, NETWORK, INVALID=-1};
+
+/* channels available for user. very 1st channel must be InputChannel */
 enum ChannelType {
   InputChannel,
   OutputChannel,
   LogChannel,
   NetworkInputChannel,
-  NetworkOutputChannel
+  NetworkOutputChannel,
+  ChannelTypesCount,
+  EmptyChannel
 };
 
-#define CHANNELS_COUNT (NetworkOutputChannel + 1)
+/* todo(NETWORKING): put to this define the real channels count */
+#define CHANNELS_COUNT ChannelTypesCount
 
-/* prefixes must answer to enum "Channels" */
-#define CHANNEL_PREFIXES {"Input", "Output", "UserLog", "NetInput", "NetOutput"}
+/* limits for i/o */
+enum IOLimits {
+  GetsLimit,
+  PutsLimit,
+  GetSizeLimit,
+  PutSizeLimit,
+  IOLimitsCount
+};
+
+/* counters for i/o */
+enum IOCounters {
+  GetsCounter,
+  PutsCounter,
+  GetSizeCounter,
+  PutSizeCounter,
+  IOCountersCount
+};
 
 /* add new syscalls through "onering trap" here */
 enum TrapCalls {
@@ -66,6 +87,7 @@ enum TrapCalls {
   TrapExit
 };
 
+/* todo: rework error internal zerovm codes and put it in own header */
 /* nanosleep ret codes, only 2 because of nanosleep limitations */
 enum NANO_CODES {
   OK_CODE,
@@ -89,15 +111,15 @@ enum TRAP_CODES {
   OUT_OF_LIMITS
 };
 
-/* channel mount mode */
-enum MountMode {MAPPED=0, LOADED, NETWORK, INVALID=-1};
-
 /*
- * hold information about preopened for user file
- * note: address must be translated to user space
- * note: don't use pointers in shared structures!
+ * zerovm channel descriptor. user can access data only using channels.
+ * so far zerovm only has 5 channel types and 3 mount modes
+ * WARNING: any pointers must be translated to system/user space
+ * note: being shared between system and user space it cannot use pointers
+ *       64-bit integer should be used instead
+ * todo(d'b): revise and adapt to networking
  */
-struct PreOpenedFileDesc
+struct ChannelDesc
 {
   /* main part set from manifest */
   uint32_t self_size; /* size of this struct */
@@ -106,28 +128,19 @@ struct PreOpenedFileDesc
    *  pointers has different size. and this struct shared between
    *  zerovm and user
    */
-  uint64_t name; /* file name. n/a for user */
+  int64_t name; /* file name (real type is char*). secured */
   enum ChannelType type; /* type of channel */
-  enum MountMode mounted; /* mount mode. n/a for user */
+  enum MountMode mounted; /* mount mode. secured */
 
   /* main part set in runtime */
-  int32_t handle; /* file handle. n/a for user */
+  int32_t handle; /* file handle. secured */
   int64_t fsize; /* file size */
-  int32_t buffer; /* buffer for file content may or may not be mapped. must be int32_t since nacl mmap */
+  int32_t buffer; /* buffer for file content. only used for mapped channels */
   int32_t bsize; /* buffer size */
 
   /* limits */
-  int64_t max_size; /* allowed channel size */
-  int32_t max_gets; /* max allowed output read calls, 0 - no limit */
-  int32_t max_puts; /* max allowed output write calls, 0 - no limit */
-  int64_t max_get_size; /* amount of bytes allowed to read */
-  int64_t max_put_size; /* amount of bytes allowed to write */
-
-  /* counters */
-  int32_t cnt_gets; /* read calls counter */
-  int32_t cnt_puts; /* write calls counter */
-  int64_t cnt_get_size; /* read bytes counter */
-  int64_t cnt_put_size; /* written bytes counter */
+  int64_t limits[IOLimitsCount];
+  int64_t counters[IOCountersCount];
 };
 
 /* all magic numbers about user custom attributes are here */
@@ -136,45 +149,44 @@ struct PreOpenedFileDesc
 #define X_OBJECT_META_TAG_LEN 256
 #define USER_TAG_LEN 64
 
-/*
- * user policy. contain limits for user program and information need by nexe
- * note: object of this struct will be created by parser in place of manifest.text
- */
-struct SetupList
+/* user part of manifest. has common part with system manifest */
+struct UserManifest
 {
-  uint32_t self_size; /* size of this struct */
-  uint32_t heap_ptr; /* pointer to the start of available for user ram */
+#define COMMON_PART \
+  uint32_t self_size; /* size of this struct */\
+  uint32_t heap_ptr; /* pointer to the start of available for user ram */\
+\
+  /* resources limits and counters */\
+  uint32_t max_mem; /* memory space available for user program. if 0 = 4gb */\
+\
+  /*\
+   * todo: decide whether zerovm needs to count syscalls. it already has\
+   * better way to control user application: timeout, memory preallocation,\
+   * channels e.t.c.\
+   */\
+  int32_t max_syscalls; /* max allowed *real* system calls, 0 - no limit */\
+  int32_t cnt_syscalls; /* syscalls counter */\
+\
+  /* custom attributes. fixed length arrays, to reserve memory in the user space */\
+  char content_type[CONTENT_TYPE_LEN];\
+  char timestamp[TIMESTAMP_LEN]; /* time/seed for user */\
+  char x_object_meta_tag[X_OBJECT_META_TAG_LEN]; /* extened user attributes */\
+  char user_etag[USER_TAG_LEN]; /* user output space checksum. disabled now */\
+\
+  /*\
+   * user controlled syscalls handler. should be provided by nexe due runtime\
+   * the field has mirror in "nacl_globals.h". both variables must be set simultaniously\
+   * there is a difference between them however: syscallback in this structure uses\
+   * user coordinates and global syscallback point to same place but represented with\
+   * system address\
+   */\
+  int32_t syscallback;\
+\
+  /* array of channels. not constructed channel has NULL in "name" */\
+  int32_t channels_count; /* count of elements in the "channels" array */\
+  int64_t channels; /* array of available channels (type: struct ChannelDesc*) */
 
-  /* memory, cpu and other system resources limits */
-  uint32_t max_mem; /* max memory space available for user program < 4gb */
-  int32_t max_cpu; /* max cpu time available for user program, 0 - no limit */
-  int32_t max_syscalls; /* max allowed *real* system calls, 0 - no limit */
-  int32_t max_setup_calls; /* allowed calls of _trap_setup */
-
-  /* memory, cpu and other system resources counters */
-  int32_t cnt_mem; /* amount of memory available for user */
-  int32_t cnt_cpu; /* n/a for user */
-  int32_t cnt_cpu_last; /* n/a for user. initially should be set when nexe start */
-  int32_t cnt_syscalls; /* syscalls limit */
-  int32_t cnt_setup_calls;
-
-  /* custom attributes. fixed length arrays, to reserve memory in the user space */
-  char content_type[CONTENT_TYPE_LEN];
-  char timestamp[TIMESTAMP_LEN]; /* time/seed for user */
-  char x_object_meta_tag[X_OBJECT_META_TAG_LEN]; /* extened user attributes */
-  char user_etag[USER_TAG_LEN]; /* user output space checksum. disabled now */
-
-  /*
-   * user controlled syscalls handler. should be provided by nexe due runtime
-   * the field has mirror in "nacl_globals.h". both variables must be set simultaniously
-   * there is a difference between them however: syscallback in this structure uses
-   * user coordinates and global syscallback point to same place but represented with
-   * system address
-   */
-  int32_t syscallback;
-
-  /* array of channels. not constructed channel has NULL in "name" */
-  struct PreOpenedFileDesc channels[CHANNELS_COUNT];
+  COMMON_PART /* shared with struct SystemManifest */
 };
 
 #ifdef USER_SIDE /* disabled for trusted code */
@@ -183,7 +195,7 @@ struct SetupList
 /*
  * wrapper for zerovm "TrapUserSetup"
  */
-int32_t zvm_setup(struct SetupList *hint);
+int32_t zvm_setup(struct UserManifest *hint);
 
 /*
  * wrapper for zerovm "TrapRead"
@@ -198,7 +210,7 @@ int32_t zvm_pwrite(int desc, char *buffer, int32_t size, int64_t offset);
 /*
  * set log (if allowed). valid SetupList object must be provided.
  */
-int log_set(struct SetupList *setup);
+int log_set(struct UserManifest *setup);
 
 /*
  * wrapper for zerovm "TrapExit"
@@ -217,8 +229,76 @@ int log_msg(char *msg);
  */
 #if ZRT_LIB
 #define main slave_main
-extern struct SetupList setup;
+extern struct UserManifest setup;
 #endif
+
+/*
+ * accessors prototypes
+ * todo(d'b): remove it from here after "blob library" will be done
+ */
+
+/* return content_type or NULL */
+char* zvm_content_type();
+
+/* return timestamp or NULL */
+char* zvm_timestamp();
+
+/* return x_object_meta_tag or NULL */
+char* zvm_x_object_meta_tag();
+
+/* return user_etag or NULL */
+char* zvm_user_etag();
+
+/* return syscallback address or 0 */
+int32_t zvm_syscallback();
+
+/* set syscallback to the new address, return -1 if failed */
+int32_t zvm_set_syscallback(int32_t syscallback);
+
+/* return memory buffer address or -1 if not available */
+void* zvm_channel_addr(enum ChannelType ch);
+
+/* return memory buffer size or -1 if not available */
+int32_t zvm_channel_size(enum ChannelType ch);
+
+/* return name of the channel or NULL. note: secured field (does not contain real name) */
+char* zvm_channel_name(enum ChannelType ch);
+
+/* return handle of the channel. note: secured field */
+int32_t zvm_channel_handle(enum ChannelType ch);
+
+/* return type of the channel */
+enum ChannelType zvm_channel_type(enum ChannelType ch);
+
+/* return mount mode of the channel. note: in a future can be secured */
+enum MountMode zvm_channel_mode(enum ChannelType ch);
+
+/* return channel file size. note: in a future can be secured */
+int64_t zvm_channel_fsize(enum ChannelType ch);
+
+/* return get size limit for the given channel */
+int64_t zvm_channel_get_size_limit(enum ChannelType ch);
+
+/* return gets count limit for the given channel */
+int64_t zvm_channel_get_count_limit(enum ChannelType ch);
+
+/* return put size limit for the given channel */
+int64_t zvm_channel_put_size_limit(enum ChannelType ch);
+
+/* return puts count limit for the given channel */
+int64_t zvm_channel_put_count_limit(enum ChannelType ch);
+
+/* return get size counter for the given channel */
+int64_t zvm_channel_get_size_count(enum ChannelType ch);
+
+/* return gets count counter for the given channel */
+int64_t zvm_channel_get_count_count(enum ChannelType ch);
+
+/* return put size counter for the given channel */
+int64_t zvm_channel_put_size_count(enum ChannelType ch);
+
+/* return puts count counter for the given channel */
+int64_t zvm_channel_put_count_count(enum ChannelType ch);
 
 #endif /* USER_SIDE */
 

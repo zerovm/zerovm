@@ -1,47 +1,46 @@
 /*
- * manifest_setup.h
+ * manifest setup API, zerovm help screen, useful defines
+ * todo: move COND_ABORT() to appropriate space
  *
  *  Created on: Nov 30, 2011
  *      Author: d'b
  */
-
 #ifndef SERVICE_RUNTIME_MANIFEST_SETUP_H__
 #define SERVICE_RUNTIME_MANIFEST_SETUP_H__ 1
 
 EXTERN_C_BEGIN
 
 #include "api/zvm.h"
+#include "stdio.h"
 
-#define COND_ABORT(cond, msg) if(cond) {fprintf(stderr, "%s\n", msg); exit(1);}
-#define MAX_MAP_SIZE 0x80000000u
+/* todo(d'b): remove useless switches, find a proper header for it */
+#define HELP_SCREEN /* update command line switches here */\
+    "Usage: sel_ldr [-M manifest_file] [-h d:D] [-r d:D]\n"\
+    "               [-w d:D] [-i d:D] [-v d] [-cFgIsQZD]\n\n"\
+    " -h\n"\
+    " -r\n"\
+    " -w associate a host POSIX descriptor D with app desc d\n"\
+    "    that was opened in O_RDWR, O_RDONLY, and O_WRONLY modes\n"\
+    "    respectively\n"\
+    " -i associates an IMC handle D with app desc d\n"\
+    " -v <level> verbosity\n\n"\
+    " (testing flags)\n"\
+    " -c ignore validator! dangerous! Repeating this option twice skips\n"\
+    "    validation completely.\n"\
+    " -F fuzz testing; quit after loading NaCl app\n"\
+    " -S enable signal handling.\n"\
+    " -g enable gdb debug stub.\n"\
+    " -l <file>  write log output to the given file\n"\
+    " -s safely stub out non-validating instructions\n"\
+    " -Q disable platform qualification (dangerous!)\n"\
+    " -M <file> load settings from manifest\n"\
+    " -Z use fixed feature x86 CPU mode\n"\
+    " -D enable the UNSTABLE dfa validator\n"
+#define NEXE_PGM_NAME "bee" /* argv[0] for nexe */
+#define MANIFEST_VERSION "11062012"
+#define BIG_ENOUGH_SPACE 65536 /* ..size of the biggest temporary variable */
 
-/*
- * whole master manifest is an array made from string
- * with zeroing ends of tokens and array of pointers to tokens
- */
-struct MasterManifestRecord
-{
-  char *key;
-  char *value;
-};
-
-struct SystemList
-{
-  char *version; /* zerovm version */
-  char *zerovm;
-  char *log; /* zerovm log file name */
-  char *report;  /* report to proxy file name */
-  char *nexe; /* nexe file name */
-  int cmd_line_size; /* command line size for nexe */
-  char **cmd_line; /* command line for nexe */
-  char *blob; /* blob library name */
-  int32_t nexe_max; /* max allowed nexe length */
-  char *nexe_etag; /* digital signature. reserved for a future "short" nexe validation */
-  int32_t timeout;
-  int32_t kill_timeout;
-};
-
-struct Report
+struct HostManifest
 {
   int32_t ret_code; /* zerovm return code */
   char *etag; /* user output memory digital signature */
@@ -50,86 +49,51 @@ struct Report
   char *x_object_meta_tag; /* custom user attribute */
 };
 
-/*
- * BIG MANIFEST
- * contain all other manifests, reports and settings for zerovm, proxy and nexe
- * set to NULL if manifest was not given to zerovm
- */
-struct Manifest
+struct SystemManifest
 {
-  /* text manifest given by proxy */
-  uint32_t master_records; /* amount of records in master manifest */
-  struct MasterManifestRecord *master; /* array of master records */
+  char *version; /* zerovm version */
+  char *log; /* zerovm log file name */
+  FILE *report;  /* report to proxy file descriptor */
+  char *nexe; /* nexe file name */
+  int cmd_line_size; /* command line size for nexe */
+  char **cmd_line; /* command line for nexe */
+  char *blob; /* blob library name */
+  int32_t nexe_max; /* max allowed nexe length */
+  char *nexe_etag; /* digital signature. reserved for a future "short" nexe validation */
+  int32_t timeout; /* time user module allowed to run */
 
-  /* limits, file i/o and counters for user program */
-  /* user hints also could be passed through this structure */
-  struct SetupList *user_setup;
-
-  /* settings for zerovm */
-  struct SystemList *system_setup;
-
-  /* report fields */
-  struct Report *report;
+  COMMON_PART /* shared with struct UserManifest */
 };
 
 /*
- * construct Report (zerovm report to proxy) part of manifest structure
- * note: malloc(). must be called only once
+ * construct system_manifest object and initialize from manifest
+ * todo(d'b): everythig about 'report' should be moved to HostManifestCtor()
  */
-void SetupReportSettings(struct NaClApp *nap);
+void SystemManifestCtor(struct NaClApp *nap);
+
+/* construct host_manifest and initialize from manifest */
+void HostManifestCtor(struct NaClApp *nap);
+
+/* deallocate memory, close files, free other resources. put everything in the place */
+int SystemManifestDtor(struct NaClApp *nap);
 
 /*
- * prepare string containing proxi requested tags
+ * write report for the proxy and free used resources
+ * return 0 if success, otherwise - non 0
  */
-void AnswerManifestPut(struct NaClApp *nap, char *report);
+int HostManifestDtor(struct NaClApp *nap);
 
 /*
- * construct SetupList (policy) part of manifest structure
- * note: malloc(). must be called only once
+ * check number of trap() calls and increment by 1. update
+ * system_manifest. return 0 if success, -1 if over limit
  */
-void SetupUserPolicy(struct NaClApp *nap);
+int UpdateSyscallsCount(struct NaClApp *nap);
 
 /*
- * construct SystemList (zerovm settings) part of manifest structure
- * note: malloc(). must be called only once
+ * check if given counter not overrun the limit and increment by 1.
+ * update system_manifest. return 0 if success, -1 if over limit
  */
-void SetupSystemPolicy(struct NaClApp *nap);
-
-/* declaration: md5 digest calculation */
-char* MD5(unsigned char *buf, unsigned size);
-
-/* return md5 hash of mapped _output_ file (or NULL) */
-char* MakeEtag(struct NaClApp *nap);
-
-/*
- * construct i/o channel. the function contain "hardcoded" manifest keywords
- * if successful return initialized, but not mounted object, otherwise - NULL
- * note: malloc()
- */
-int32_t ConstructChannel(struct NaClApp *nap, enum ChannelType ch);
-
-/*
- * preallocate memory area of given size. abort if fail
- */
-void PreallocateUserMemory(struct NaClApp *nap);
-
-/* system counters */
-int32_t AccountingSyscallsInc(struct NaClApp *nap);
-int32_t AccountingSyscallsDec(struct NaClApp *nap);
-int32_t AccountingMemInc(struct NaClApp *nap);
-int32_t AccountingMemDec(struct NaClApp *nap);
-int32_t AccountingSetupcallsInc(struct NaClApp *nap);
-int32_t AccountingSetupcallsDec(struct NaClApp *nap);
-
-/* channel counters */
-int32_t AccountingGetsInc(struct NaClApp *nap, enum ChannelType ch);
-int32_t AccountingGetsDec(struct NaClApp *nap, enum ChannelType ch);
-int32_t AccountingPutsInc(struct NaClApp *nap, enum ChannelType ch);
-int32_t AccountingPutsDec(struct NaClApp *nap, enum ChannelType ch);
-int32_t AccountingGetSizeInc(struct NaClApp *nap, enum ChannelType ch);
-int32_t AccountingGetSizeDec(struct NaClApp *nap, enum ChannelType ch);
-int32_t AccountingPutSizeInc(struct NaClApp *nap, enum ChannelType ch);
-int32_t AccountingPutSizeDec(struct NaClApp *nap, enum ChannelType ch);
+int UpdateIOCounter(struct NaClApp *nap, enum ChannelType ch, enum IOCounters cntr);
 
 EXTERN_C_END
 

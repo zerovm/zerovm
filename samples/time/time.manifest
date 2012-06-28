@@ -1,0 +1,28 @@
+=====================================================================
+== "time and clock" example with zrt library usage
+== i/o switches
+=====================================================================
+Output = time.output.data
+OutputMaxGet = 1024000
+OutputMaxGetCnt = 1024
+OutputMaxPut = 1024000
+OutputMaxPutCnt = 1024
+== this options specifies output file loading method: 0 - loaded, 1 - mapped
+OutputMode = 1
+
+UserLog = time.user.log
+UserLogMaxPut = 65536
+
+=====================================================================
+== switches for zerovm. some of them used to control nexe, some
+== for the internal zerovm needs
+=====================================================================
+Version = 11062012
+Log = time.zerovm.log
+Report = time.report.log
+Nexe = time.nexe
+NexeMax = 10000000
+SyscallsMax = 3333
+
+== this option can be disabled if user code does not use date/time functions
+TimeStamp = 1337012520

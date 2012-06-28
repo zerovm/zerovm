@@ -402,10 +402,6 @@ struct NaClDesc *NaClGetDesc(struct NaClApp *nap,
 int32_t NaClSetAvail(struct NaClApp  *nap,
                      struct NaClDesc *ndp) {
   int32_t pos;
-
-  NaClXMutexLock(&nap->desc_mu);
   pos = NaClSetAvailMu(nap, ndp);
-  NaClXMutexUnlock(&nap->desc_mu);
-
   return pos;
 }

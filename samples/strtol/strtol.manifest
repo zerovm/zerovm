@@ -1,0 +1,30 @@
+=====================================================================
+== "strtol" example with zrt library
+== to reveal the problem with crash (also floating point printf)
+== i/o switches
+=====================================================================
+Output = strtol.output.data
+OutputMaxGet = 1024000
+OutputMaxGetCnt = 1024
+OutputMaxPut = 1024000
+OutputMaxPutCnt = 1024
+
+== this options specifies output file loading method: 0 - loaded, 1 - mapped
+OutputMode = 1
+
+UserLog = strtol.user.log
+UserLogMaxPut = 65536
+
+=====================================================================
+== switches for zerovm. some of them used to control nexe, some
+== for the internal zerovm needs
+=====================================================================
+Version = 11062012
+Log = strtol.zerovm.log
+Report = strtol.report.log
+Nexe = strtol.nexe
+NexeMax = 10000000
+SyscallsMax = 3333
+
+== this option forces zerovm cut available for user memory to specified amount
+MemMax = 268435456

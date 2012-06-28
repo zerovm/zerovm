@@ -1,14 +1,11 @@
 /*
- * manifest_parser.c
+ * zerovm manifest parser
  *
- * manifest file have a simple format: key = value
- * parser ignores white spaces
+ * the manifest file format: key = value. parser ignores white spaces
  * each line can only contain single key=value
- * parsed manifest is an array of structs "manifest_record"
  *
- * TODO: make it class with constructor/get/set methods and
- *       make the manifest read only after initialization
- * TODO: split it into 2 classes: parser and initializer
+ * the api is very simple: just call GetValuByKey() after
+ * manifest is constructed
  *
  *  Created on: Nov 1, 2011
  *      Author: d'b
@@ -17,30 +14,42 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
+#include <assert.h>
 
-/*
- * todo: remove manifest_setup.h when manifest structs will
- * be moved to one place. "manifest_parser.h" and "manifest_setup.h"
- * should be used in that exact order, fix it.
- */
+#include "src/utils/tools.h"
+#include "api/zvm.h" /* error codes */
+#include "src/service_runtime/include/sys/errno.h"
+#include "include/nacl_base.h"
+#include "src/service_runtime/nacl_config.h"
+#include "src/service_runtime/sel_ldr.h"
 #include "src/manifest/manifest_parser.h"
-#include "src/manifest/manifest_setup.h"
 
+#include "src/manifest/manifest_keywords.h" /* to check keywords sync */
+
+static int32_t mft_count; /* number of found keys */
+static char *mft_data; /* area to hold manifest text */
+static struct
+{
+  char *key;
+  char *value;
+} *mft_ptr; /* array of pointers to keys/values */
 
 /* public function. return value from manifest by given key */
-char* get_value_by_key(struct NaClApp *nap, char *key)
+char* GetValueByKey(char *key)
 {
 	int i;
-	for(i = 0; i < nap->manifest->master_records; ++i)
+	if(key == NULL) return NULL;
+
+	for(i = 0; i < mft_count; ++i)
 	{
-		if(strcmp(key, nap->manifest->master[i].key) == 0)
-			return nap->manifest->master[i].value;
+		if(strcmp(key, mft_ptr[i].key) == 0)
+			return mft_ptr[i].value;
 	}
 	return NULL;
 }
 
 /* remove leading and ending spaces from the given string */
-char* cut_spaces(char *a)
+static char* cut_spaces(char *a)
 {
   char *end;
   if (a == NULL) return a;
@@ -56,7 +65,7 @@ char* cut_spaces(char *a)
 }
 
 /* return string until '=' */
-char* get_key(char *a)
+static char* get_key(char *a)
 {
   char *end;
   if(a == NULL) return a;
@@ -70,7 +79,7 @@ char* get_key(char *a)
 }
 
 /* return string after '=' */
-char* get_value(char *a)
+static char* get_value(char *a)
 {
   char *begin;
   if(a == NULL) return a;
@@ -83,68 +92,79 @@ char* get_value(char *a)
 	return cut_spaces(begin);
 }
 
-/* show error, deallocate resources and return error code */
-#define FREE(a) do { if(a) { free(a); a = NULL; } } while (0)
-#define ERR(s)\
-  do {\
-    fprintf(stderr, s);\
-    FREE(str);\
-    if(nap->manifest != NULL)\
-    {\
-      FREE(nap->manifest->master);\
-      FREE(nap->manifest);\
-    }\
-    if(f != NULL) fclose(f);\
-    return 0;\
-  } while (0)
-/*
- * open given manifest file. parse it. construct "Manifest" struct and its "master" part
- * return count of records found, otherwise - 0
- * note: malloc()
- */
-int parse_manifest(const char *name, struct NaClApp *nap)
+/* parse manifest from memory. return 0 if success */
+static int ParseManifest()
 {
-	char *str = NULL;
+	char *str = mft_data;
 	char *p;
-	int count = 0;
-	int size;
-	FILE *f = NULL;
 
-	/* get manifest size */
-  if ((size = GetFileSize(name)) == -1)
-    ERR("cannot get manifest file size\n");
-
-	/* allocate memory for the Manifest object, manifest text and pointers */
-  nap->manifest = (struct Manifest*) malloc(sizeof(*nap->manifest));
-	if(nap->manifest == NULL) ERR("cannot allocate memory to hold manifest object\n");
-	str = (char*) malloc(size);
-	if(str == NULL) ERR("cannot allocate memory to hold text of manifest\n");
-	nap->manifest->master = (struct MasterManifestRecord*) malloc(4 * size);
-	if(nap->manifest->master == NULL) ERR("cannot allocate memory to hold manifest pointers\n");
-
-  /* read manifest */
-	f = fopen(name, "r");
-  if(size != (int)fread(str, 1, size, f)) ERR("cannot read manifest file\n");
+	assert(mft_count == 0);
+	assert(mft_data != 0);
+	assert(mft_ptr != 0);
 
   /* warning: the order of extracting pair key/value does matter */
   p = strtok(str, EOL);
   while(p)
   {
-    nap->manifest->master[count].value = get_value(p);
-    nap->manifest->master[count].key = get_key(p);
-  	if (nap->manifest->master[count].key && nap->manifest->master[count].value) ++count;
-
+    mft_ptr[mft_count].value = get_value(p);
+    mft_ptr[mft_count].key = get_key(p);
+  	if (mft_ptr[mft_count].key && mft_ptr[mft_count].value) ++mft_count;
 		p = strtok(NULL, EOL);
   }
 
-  /* initialize given NaClApp structure */
-  if (count == 0) ERR("no records found in the manifest\n");
-  nap->manifest->master_records = count;
-	nap->manifest->master = realloc(nap->manifest->master, sizeof(struct MasterManifestRecord) * count);
-	if (nap->manifest->master == NULL) ERR("manifest master records memory reallocation error\n");
-
-	fclose(f);
-	return count;
+  /* return error if no recods were found */
+  return mft_count ? 0 : ERR_CODE;
 }
-#undef FREE
-#undef ERR
+
+/*
+ * parse given file name as zerovm' manifest
+ * return 0 if successful, otherwise - negative error code
+ */
+int ManifestCtor(const char *name)
+{
+  int64_t mft_size;
+  int retcode;
+  FILE *mft = fopen(name, "r");
+
+  /* check if manifest keywords are syncronized */
+  char *keywords[] = MANIFEST_KEYWORDS;
+  assert(strcmp(keywords[TheEnd], "TheEnd") == 0);
+//  assert(sizeof(keywords) / sizeof(*keywords) == TheEnd + 1);
+
+  /* get file size */
+  COND_ABORT(mft == NULL, "cannot open manifest file");
+  mft_size = GetFileSize(name);
+
+  /* allocate memory to hold manifest data */
+  mft_data = malloc(mft_size + 1);
+  mft_ptr =  malloc(mft_size * 4);
+  mft_count = 0;
+  COND_ABORT(mft_data == NULL || mft_ptr == NULL,
+      "cannot allocate memory to hold manifest");
+
+  /* read data from manifest into the memory */
+  retcode = fread(mft_data, 1, mft_size, mft);
+  COND_ABORT(retcode != mft_size, "cannot read manifest");
+
+  /* parse manifest */
+  retcode = ParseManifest();
+  COND_ABORT(retcode, "cannot parse manifest");
+
+  /* close file and return */
+  fclose(mft);
+  return OK_CODE;
+}
+
+/* free resources used by manifest */
+void ManifestDtor()
+{
+  assert(mft_data != NULL);
+  assert(mft_ptr != NULL);
+  assert(mft_count != 0);
+
+  free(mft_data);
+  free(mft_ptr);
+  mft_data = NULL;
+  mft_ptr = NULL;
+  mft_count = 0;
+}

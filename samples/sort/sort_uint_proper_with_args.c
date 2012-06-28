@@ -16,18 +16,6 @@
 #include <smmintrin.h>
 #include "api/zvm.h"
 
-#define LOGFIX /* temporary fix until zrt library will be finished */
-
-#ifdef LOGFIX
-#define printf(...)\
-do {\
-  char msg[4096];\
-  sprintf(msg, __VA_ARGS__);\
-  log_msg(msg);\
-} while (0)
-#define fprintf(ch, ...) printf(__VA_ARGS__)
-#endif
-
 #if 0
 #				define DEBUG
 #endif
@@ -35,8 +23,8 @@ do {\
 #define DEFAULT_CHUNK_SIZE 18
 #define ELEMENT_SIZE sizeof(uint32_t)
 
-#define CLOCK(...) do {  double t = clock(); __VA_ARGS__; printf("test 2 ");\
-  printf("\rSorting time = %.3lfsec\n", (clock() - t)/CLOCKS_PER_SEC);} while(0)
+#define CLOCK(...) do {double t = clock(); __VA_ARGS__;\
+  fprintf(stderr, "\rSorting time = %.3lfsec\n", (clock() - t)/CLOCKS_PER_SEC);} while(0)
   
 #define _eoutput(_str)\
 	do {\
@@ -52,17 +40,17 @@ do {\
 	do {\
 		int i;\
 		for(i = 0; i < s; ++i)\
-			printf("%u ", ((uint32_t*)a)[i]);\
-		printf("\n");\
+			fprintf(stderr, "%u ", ((uint32_t*)a)[i]);\
+		fprintf(stderr, "\n");\
 	} while (0)
 
 /* show place and print "s" elements array "a" */
 #define SHOW_RAW_FUNC(a, s)\
 	do {\
 		int i;\
-		printf("%s -- %d: ", __func__, __LINE__);\
+		fprintf(stderr, "%s -- %d: ", __func__, __LINE__);\
 		for(i = 0; i < s; ++i)\
-			printf("%u ", ((uint32_t*)a)[i]);\
+			fprintf(stderr, "%u ", ((uint32_t*)a)[i]);\
 		printf("\n");\
 	} while (0)
 
@@ -107,70 +95,57 @@ inline void bitonic_sort_kernel4(float *a, float *b)
 	__m128	lo;
 	__m128	hi;
 
-	printf("bitonic_sort_kernel4 test1\n");
-
 	/* load 8 elements to sse registers */
 	ma = _mm_load_ps(a);
 	mb = _mm_load_ps(b);
 
-	printf("bitonic_sort_kernel4 test2\n");
-
 	/* In-Register sort */
 	map = _mm_shuffle_ps(ma, mb, _MM_SHUFFLE(2, 0, 2, 0)); /* 0x88: */
 	mbp = _mm_shuffle_ps(ma, mb, _MM_SHUFFLE(3, 1, 3, 1)); /* 0xdd: */
-	printf("bitonic_sort_kernel4 test3\n");
-	_mm_castps_si128(mbp);
-	printf("bitonic_sort_kernel4 test3.1\n");
-	_mm_castps_si128(map);
-	printf("bitonic_sort_kernel4 test3.2\n");
-	_mm_min_epu32(_mm_castps_si128(map), _mm_castps_si128(mbp));
-	printf("bitonic_sort_kernel4 test3.3\n");
-	printf("bitonic_sort_kernel4 test3\n");
 
 	lo = _mm_castsi128_ps (_mm_min_epu32(_mm_castps_si128(map), _mm_castps_si128(mbp)));
-	printf("bitonic_sort_kernel4 test3.10\n");
 	hi = _mm_castsi128_ps (_mm_max_epu32(_mm_castps_si128(map), _mm_castps_si128(mbp)));
-	printf("bitonic_sort_kernel4 test4\n");
+
 	map = _mm_shuffle_ps(hi, lo, _MM_SHUFFLE(3, 1, 2, 0)); /* 0xd8: */
 	mbp = _mm_shuffle_ps(hi, lo, _MM_SHUFFLE(2, 0, 3, 1)); /* 0x8d: */
-	printf("bitonic_sort_kernel4 test5\n");
+
 	lo = _mm_castsi128_ps (_mm_min_epu32(_mm_castps_si128(map), _mm_castps_si128(mbp)));
 	hi = _mm_castsi128_ps (_mm_max_epu32(_mm_castps_si128(map), _mm_castps_si128(mbp)));
-	printf("bitonic_sort_kernel4 test6\n");
+
 	map = _mm_shuffle_ps(lo, lo, _MM_SHUFFLE(3, 1, 2, 0)); /* 0xd8: */
 	mbp = _mm_shuffle_ps(hi, hi, _MM_SHUFFLE(1, 3, 0, 2)); /* 0x72: */
-	printf("bitonic_sort_kernel4 test7\n");
+
 	lo = _mm_castsi128_ps (_mm_min_epu32(_mm_castps_si128(map), _mm_castps_si128(mbp)));
 	hi = _mm_castsi128_ps (_mm_max_epu32(_mm_castps_si128(map), _mm_castps_si128(mbp)));
-	printf("bitonic_sort_kernel4 test8\n");
+
 	map = _mm_shuffle_ps(lo, hi, _MM_SHUFFLE(1, 0, 0, 1)); /* 0x41: */
 	mbp = _mm_shuffle_ps(hi, lo, _MM_SHUFFLE(3, 2, 2, 3)); /* 0xeb: */
-	printf("bitonic_sort_kernel4 test9\n");
+
 	lo = _mm_castsi128_ps (_mm_min_epu32(_mm_castps_si128(map), _mm_castps_si128(mbp)));
 	hi = _mm_castsi128_ps (_mm_max_epu32(_mm_castps_si128(map), _mm_castps_si128(mbp)));
-	printf("bitonic_sort_kernel4 test10\n");
+
 	map = _mm_shuffle_ps(lo, hi, _MM_SHUFFLE(3, 2, 1, 0)); /* 0xe4: */
 	mbp = _mm_shuffle_ps(lo, hi, _MM_SHUFFLE(1, 0, 3, 2)); /* 0x4e: */
-	printf("bitonic_sort_kernel4 test11\n");
+
 	lo = _mm_castsi128_ps (_mm_min_epu32(_mm_castps_si128(map), _mm_castps_si128(mbp)));
 	hi = _mm_castsi128_ps (_mm_max_epu32(_mm_castps_si128(map), _mm_castps_si128(mbp)));
-	printf("bitonic_sort_kernel4 test12\n");
+
 	map = _mm_shuffle_ps(lo, hi, _MM_SHUFFLE(3, 1, 2, 0)); /* 0xd8: */
 	mbp = _mm_shuffle_ps(lo, hi, _MM_SHUFFLE(2, 0, 3, 1)); /* 0x8d: */
-	printf("bitonic_sort_kernel4 test13\n");
+
 	lo = _mm_castsi128_ps (_mm_min_epu32(_mm_castps_si128(map), _mm_castps_si128(mbp)));
 	hi = _mm_castsi128_ps (_mm_max_epu32(_mm_castps_si128(map), _mm_castps_si128(mbp)));
-	printf("bitonic_sort_kernel4 test14\n");
+
 	map = _mm_shuffle_ps(hi, lo, _MM_SHUFFLE(2, 0, 2, 0)); /* 0x88: */
 	mbp = _mm_shuffle_ps(hi, lo, _MM_SHUFFLE(3, 1, 3, 1)); /* 0xdd: */
-	printf("bitonic_sort_kernel4 test15\n");
+
 	map = _mm_shuffle_ps(map, map, _MM_SHUFFLE(1, 3, 0, 2)); /* 0x72: */
 	mbp = _mm_shuffle_ps(mbp, mbp, _MM_SHUFFLE(1, 3, 0, 2)); /* 0x72: */
-	printf("bitonic_sort_kernel4 test16\n");
+
 	/* unload sorted elements to memory */
 	_mm_store_ps(a, map);
 	_mm_store_ps(b, mbp);
-	printf("bitonic_sort_kernel4 test17\n");
+
 	CHECK_RAWS(a, b, 4);
 }
 
@@ -376,28 +351,20 @@ void bitonic_merge(float *d, uint32_t s, float *buf, uint32_t chunk_size)
 /* sort given 32 elemens */
 void inline bitonic_sort32(float *d)
 {
-	printf("bitonic_sort32 %p\n", d);
 	/* sort first 16 */
 	bitonic_sort_kernel4(d, d + 4);
-	printf("bitonic_sort32 test1\n");
 	bitonic_sort_kernel4(d + 8, d + 12);
-	printf("bitonic_sort32 test2\n");
 	bitonic_merge_kernel8(d, d + 8);
-	printf("bitonic_sort32 test3\n");
 
 	/* sort second 16 */
 	bitonic_sort_kernel4(d + 16, d + 20);
-	printf("bitonic_sort32 test4\n");
 	bitonic_sort_kernel4(d + 24, d + 28);
-	printf("bitonic_sort32 test5\n");
 	bitonic_merge_kernel8(d + 16, d + 24);
-	printf("bitonic_sort32 test6\n");
+
 	/* merge */
 	bitonic_merge_kernel16n(d, d, d + 16, 16);
 
-	printf("bitonic_sort32 CHECK_RAW\n");
 	CHECK_RAW(d, 32);
-	printf("bitonic_sort32 OK\n");
 }
 
 /* sort given chunk (2^chunk_size) of data */
@@ -405,12 +372,9 @@ void bitonic_sort(float *d, uint32_t s, float *buf)
 {
 	uint32_t i;
 
-	printf("bitonic_sort\n");
 	/* sort individual 32 strips */
-	for (i = 0; i < s ; i += 32){
-		printf("i= %u, s=%u\n", i, s);
+	for (i = 0; i < s ; i += 32)
 		bitonic_sort32(d + i);
-	}
 
 	/* merge 32-long strips */
 	bitonic_merge(d, s, buf, 32);
@@ -422,11 +386,8 @@ void bitonic_sort(float *d, uint32_t s, float *buf)
 void bitonic_sort_chunked(float *d, uint32_t s, float *buf, uint32_t chunk_size)
 {
 	uint32_t i;
-	printf("bitonic_sort_chunked %u\n", chunk_size);
-	for (i = 0; i < s ; i += chunk_size){
-		printf("i= %u, buf+i=%p\n", i, buf+i);
+	for (i = 0; i < s ; i += chunk_size)
 		bitonic_sort(d + i, chunk_size, buf + i);
-	}
 	bitonic_merge(d, s, buf, chunk_size);
 }
 
@@ -451,34 +412,22 @@ int main(int argc, char **argv)
 	uint32_t  cnt;
 	uint32_t  *d; /* data to sort */
 	uint32_t  *buf; /* extra space to sort */
-  struct SetupList setup;
-  int retcode = ERR_CODE;
-
-  /* setup */
-  retcode = zvm_setup(&setup);
-  if(retcode) return retcode;
-
-#ifdef LOGFIX
-  /* set up the log */
-  retcode = log_set(&setup);
-  if(retcode) return retcode;
-#endif
 
   /* check if input map size equal to output map size */
-  if(setup.channels[InputChannel].fsize != setup.channels[OutputChannel].fsize)
+  if(zvm_channel_size(InputChannel) != zvm_channel_size(OutputChannel))
 	{
-		printf("size of input and output maps are not equal %llu != %llu\n",
-		    setup.channels[InputChannel].fsize, setup.channels[OutputChannel].fsize);
+		fprintf(stderr, "size of input and output maps are not equal %u != %u\n",
+            zvm_channel_size(InputChannel), zvm_channel_size(OutputChannel));
 		return 5;
 	}  
 
-	cnt = setup.channels[InputChannel].fsize / sizeof(*d);
+	cnt = zvm_channel_size(InputChannel) / sizeof(*d);
 	if(cnt & (cnt - 1))
 	{
-		printf("\rwrong number of elements in the input file - [%d]\n", cnt);
+		fprintf(stderr, "\rwrong number of elements in the input file - [%d]\n", cnt);
 		return 6;
 	}
-	printf("number of elements = %d\n", cnt);
+	fprintf(stderr, "number of elements = %d\n", cnt);
 	
 	/*
 	 * about memory allocation, mapping and alignement:
@@ -487,21 +436,20 @@ int main(int argc, char **argv)
 	 * always align allocated files to 64k bound, so we
 	 * don't have to worry about alignement
 	 * note: for buf we have to allocate aligned memory :(
+   * update: we cannot change input data. all data given
+   * by proxy should be untouched. so we copy everything
+   * from input to output
 	 */
-	/*
-	 * update: we cannot change input data. all data given
-	 * by proxy should be untouched. so we copy everything
-	 * from input to output
-	 */	
-	memcpy((void*)setup.channels[OutputChannel].buffer,
-	    (void*)setup.channels[InputChannel].buffer, setup.channels[InputChannel].bsize);
-	d = (uint32_t*) setup.channels[OutputChannel].buffer;
+  memcpy(zvm_channel_addr(OutputChannel),
+      zvm_channel_addr(InputChannel), zvm_channel_size(InputChannel));
+  d = zvm_channel_addr(OutputChannel);
   buf = (uint32_t*) aligned_malloc(sizeof(uint32_t) * cnt, 16);
-	if (buf == NULL) _eoutput("Can't allocate memory\n");
+  if (buf == NULL) _eoutput("Can't allocate memory\n");
 
 	/* Bitonic sort */
-  printf("data sorting.. ");
+  fprintf(stderr, "data sorting.. ");
 	CLOCK(bitonic_sort_chunked((float*)d, cnt, (float*)buf, 1u << chunk_size));
+	fprintf(stderr, "done\n");
   
 	return EXIT_SUCCESS;
 }

@@ -14,6 +14,12 @@
 EXTERN_C_BEGIN
 
 /*
+ * jump/call alignement of untrusted code. will prevent jumping into
+ * the middle of instruction and execution of uncontrolled code sequence
+ */
+#define OP_ALIGNEMENT 0x20
+
+/*
  * our "One Ring" syscall main routine
  * call given syscall with the given parameteres supposed to be invoked from NaClSysNanosleep()
  *
@@ -24,11 +30,11 @@ EXTERN_C_BEGIN
  */
 int32_t TrapHandler(struct NaClApp *nap, uint32_t args);
 
-/* pause cpu time counting. update cnt_cpu */
-void PauseCpuClock(struct NaClApp *nap);
-
-/* resume cpu time counting */
-void ResumeCpuClock(struct NaClApp *nap);
+/*
+ * check number of trap() calls and increment by 1. update
+ * system_manifest. return 0 if success, -1 if over limit
+ */
+int UpdateSyscallsCount(struct NaClApp *nap);
 
 EXTERN_C_END
 

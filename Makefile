@@ -1,7 +1,6 @@
-GCOV_FLAGS= --coverage -g3 -fprofile-arcs -ftest-coverage
-#ABS path is needed to correct gcov, gcov is used to get test coverage
-ABS_PATH=$(shell pwd)/
-
+# ABS path is needed to correct gcov, gcov is used to get test coverage
+#GCOV_FLAGS=--coverage -g3 -fprofile-arcs -ftest-coverage
+#ABS_PATH=$(shell pwd)/
 
 #RELEASE BUILD
 #CCFLAGS=-DNDEBUG -g ${NETWORKING}
@@ -11,11 +10,7 @@ ABS_PATH=$(shell pwd)/
 CCFLAGS=-DDEBUG -g ${NETWORKING} ${GCOV_FLAGS}
 CXXFLAGS=-DDEBUG -g ${NETWORKING} ${GCOV_FLAGS}
 
-#CCFLAGS=-g -O2 ${NETWORKING}
-#CXXFLAGS=-g -O2 ${NETWORKING}
-
-
-#For networking support, uncomment variables below 
+# For networking support, uncomment variables below 
 NETWORKING=-DNETWORKING
 NETW_LIB=-lnetw -lzmq
 NETW_MAIN_RULES=zvm_netw.db
@@ -46,38 +41,37 @@ zerovm: obj/sel_main.o obj/libsel.a obj/libnacl_error_code.a obj/libgio_wrapped_
 	@g++ ${CXXFLAGS} -o zerovm ${CXXFLAGS2} obj/sel_main.o -L/usr/lib -lsel -lnacl_error_code -lgio_wrapped_desc -lnrd_xfer -lnacl_perf_counter -lnacl_base -limc -lnacl_fault_inject -lplatform -lplatform_qual_lib -lncvalidate_x86_64 -lncval_reg_sfi_x86_64 -lnccopy_x86_64 -lnc_decoder_x86_64 -lnc_opcode_modeling_x86_64 -lncval_base_x86_64 -lplatform -lgio ${NETW_LIB} -lrt -lpthread -lcrypto -ldl -Lobj -Lgtest  
 
 gcov: clean all
-	lcov --directory . --base-directory=${ABS_PATH} --capture --output-file app.info
-	genhtml --output-directory cov_htmp app.info
+	@lcov --directory . --base-directory=${ABS_PATH} --capture --output-file app.info
+	@genhtml --output-directory cov_htmp app.info
 	@echo run ${ABS_PATH}cov_htmp/index.html
 
 tests: test_compile 
+	@echo == unit test =================================================
 	test/x86_validator_tests_nc_remaining_memory
 	test/service_runtime_tests
 	test/x86_decoder_tests_nc_inst_state
 	test/x86_validator_tests_halt_trim
 	test/x86_validator_tests_nc_inst_bytes
 	test/manifest_parser_test
-	test/manifest_setup_test
+#	test/manifest_setup_test
 	test/nacl_log_test
+
 ifdef NETWORKING
 	test/sqluse_srv_test
 	test/zmq_netw_test
-	test/zvm_netw_test
-	
+	test/zvm_netw_test	
 
 zvm_netw.db:
-	/usr/local/bin/sqlite3 zvm_netw.db < zerovm_config.sql
+	@/usr/local/bin/sqlite3 zvm_netw.db < zerovm_config.sql
 	
 test_config: 
-	sh gtest/data/test_db_creator.sh
-
+	@sh gtest/data/test_db_creator.sh
 endif
 
 zvm_api: api/syscall_manager.S api/zrt.c api/zvm.c
 	@make -Capi
 
 test_compile: test/x86_validator_tests_halt_trim test/service_runtime_tests test/x86_decoder_tests_nc_inst_state test/x86_validator_tests_nc_inst_bytes test/x86_validator_tests_nc_remaining_memory test/manifest_parser_test test/manifest_setup_test test/nacl_log_test ${NETW_TEST_RULES}
-
 
 obj/halt_trim_tests.o: src/validator/x86/halt_trim_tests.cc
 	@g++ ${CXXFLAGS} -o obj/halt_trim_tests.o ${CXXFLAGS1} -Igtest/include src/validator/x86/halt_trim_tests.cc
@@ -99,7 +93,6 @@ obj/nacl_log_test.o: src/platform/nacl_log_test.cc
 	@g++ ${CXXFLAGS} -o obj/nacl_log_test.o ${CXXFLAGS1} src/platform/nacl_log_test.cc
 test/nacl_log_test: obj/nacl_log_test.o obj/libsel.a obj/libgio_wrapped_desc.a obj/libnrd_xfer.a obj/libnacl_perf_counter.a obj/libnacl_base.a obj/libimc.a obj/libnacl_fault_inject.a obj/libplatform.a obj/libncvalidate_x86_64.a obj/libncval_reg_sfi_x86_64.a obj/libnccopy_x86_64.a obj/libnc_decoder_x86_64.a obj/libnc_opcode_modeling_x86_64.a obj/libncval_base_x86_64.a obj/libplatform.a obj/libgio.a
 	@g++ ${CXXFLAGS} -o test/nacl_log_test ${CXXFLAGS2} obj/nacl_log_test.o -L/usr/lib -Lobj -Lgtest -lgtest -lsel -lgio_wrapped_desc -lnrd_xfer -lnacl_perf_counter -lnacl_base -limc -lnacl_fault_inject -lplatform -lncvalidate_x86_64 -lncval_reg_sfi_x86_64 -lnccopy_x86_64 -lnc_decoder_x86_64 -lnc_opcode_modeling_x86_64 -lncval_base_x86_64 -lplatform -lgio ${NETW_LIB} -lrt -lpthread -lcrypto -ldl
-
 
 obj/sel_ldr_test.o: src/service_runtime/sel_ldr_test.cc
 	@g++ ${CXXFLAGS} -o obj/sel_ldr_test.o ${CXXFLAGS1} ${CCFLAGS2} ${CCFLAGS4} -Igtest/include src/service_runtime/sel_ldr_test.cc
@@ -159,9 +152,9 @@ test/sqluse_srv_test: obj/sqluse_srv_test.o obj/libnetw.a obj/libplatform.a obj/
 endif
 
 clean_gcov:
-	find -name "*.gcda" | xargs rm -f
-	find -name "*.gcno" | xargs rm -f
-	rm cov_htmp -f -r
+	@find -name "*.gcda" | xargs rm -f
+	@find -name "*.gcno" | xargs rm -f
+	@rm cov_htmp -f -r
 
 clean: clean_gcov clean_intermediate clean_api
 	@rm -f zerovm
@@ -178,9 +171,6 @@ clean_intermediate:
 clean_api:
 	@make -Capi clean
 	@echo api binaries has been deleted
-
-#obj/libmanifest.a: obj/manifest_parser.o obj/manifest_setup.o obj/md5.o obj/mount_channel.o obj/prefetch.o obj/preload.o obj/premap.o obj/trap.o
-#	@ar rc obj/libmanifest.a obj/manifest_parser.o obj/manifest_setup.o obj/md5.o obj/mount_channel.o obj/prefetch.o obj/preload.o obj/premap.o obj/trap.o
 
 obj/libsel.a: obj/dyn_array.o obj/elf_util.o obj/nacl_all_modules.o obj/nacl_desc_effector_ldr.o obj/nacl_globals.o obj/nacl_memory_object.o obj/nacl_signal_common.o obj/nacl_syscall_handlers.o obj/nacl_syscall_hook.o obj/nacl_text.o obj/sel_addrspace.o obj/sel_ldr.o obj/sel_ldr_standard.o obj/sel_mem.o obj/sel_qualify.o obj/sel_util-inl.o obj/sel_validate_image.o obj/nacl_ldt_x86.o obj/nacl_switch_64.o obj/nacl_switch_to_app_64.o obj/nacl_syscall_64.o obj/sel_addrspace_x86_64.o obj/sel_ldr_x86_64.o obj/sel_rt_64.o obj/tramp_64.o obj/sel_addrspace_posix_x86_64.o obj/sel_memory.o obj/nacl_ldt.o obj/sel_segments.o obj/nacl_signal.o obj/nacl_signal_64.o obj/manifest_parser.o obj/manifest_setup.o obj/md5.o obj/mount_channel.o obj/prefetch.o obj/preload.o obj/premap.o obj/trap.o
 	@ar rc obj/libsel.a obj/dyn_array.o obj/elf_util.o obj/nacl_all_modules.o obj/nacl_desc_effector_ldr.o obj/nacl_globals.o obj/nacl_memory_object.o obj/nacl_signal_common.o obj/nacl_syscall_handlers.o obj/nacl_syscall_hook.o obj/nacl_text.o obj/sel_addrspace.o obj/sel_ldr.o obj/sel_ldr_standard.o obj/sel_mem.o obj/sel_qualify.o obj/sel_util-inl.o obj/sel_validate_image.o obj/nacl_ldt_x86.o obj/nacl_switch_64.o obj/nacl_switch_to_app_64.o obj/nacl_syscall_64.o obj/sel_addrspace_x86_64.o obj/sel_ldr_x86_64.o obj/sel_rt_64.o obj/tramp_64.o obj/sel_addrspace_posix_x86_64.o obj/sel_memory.o obj/nacl_ldt.o obj/sel_segments.o obj/nacl_signal.o obj/nacl_signal_64.o obj/manifest_parser.o obj/manifest_setup.o obj/md5.o obj/mount_channel.o obj/prefetch.o obj/preload.o obj/premap.o obj/trap.o
@@ -603,15 +593,15 @@ obj/sqluse_srv.o: src/networking/sqluse_srv.c
 obj/zmq_netw.o: src/networking/zmq_netw.c src/networking/zmq_netw.h
 	@gcc ${CCFLAGS} -c -o obj/zmq_netw.o ${CCFLAGS0} ${CCFLAGS1} src/networking/zmq_netw.c 
 
-#for unittest UNIT_TEST define added
+# for unittest UNIT_TEST define added
 obj/unittest_zmq_netw.o: src/networking/zmq_netw.c src/networking/zmq_netw.h
 	@gcc ${CCFLAGS} -c -o obj/unittest_zmq_netw.o ${CCFLAGS0} ${CCFLAGS1} ${CCFLAGS6} -I.  src/networking/zmq_netw.c
 
-#for unittest UNIT_TEST define added
+# for unittest UNIT_TEST define added
 obj/unittest_zvm_netw.o: src/networking/zvm_netw.c src/networking/zvm_netw.h
 	@gcc ${CCFLAGS} -c -o obj/unittest_zvm_netw.o ${CCFLAGS0} ${CCFLAGS1} ${CCFLAGS6} -I.  src/networking/zvm_netw.c
 
-#for unittest stub implementation 
+# for unittest stub implementation 
 obj/fake_log_stub.o : src/networking/testing/fake_log_stub.c
 	@gcc ${CCFLAGS} -c -o obj/fake_log_stub.o ${CCFLAGS0} ${CCFLAGS1} src/networking/testing/fake_log_stub.c -I.
 

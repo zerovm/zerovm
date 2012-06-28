@@ -40,8 +40,7 @@ NORETURN void NaClSyscallCSegHook()
    */
   nap = gnap; /* restore NaClApp object */
   nap->user_side_flag = 1; /* set "user side call" mark */
-  PauseCpuClock(nap);
-  AccountingSyscallsInc(nap);
+  UpdateSyscallsCount(nap);
   user = nacl_user; /* restore from global */
   sp_user = NaClGetThreadCtxSp(user);
 
@@ -98,8 +97,7 @@ NORETURN void NaClSyscallCSegHook()
    */
   user_ret = (nacl_reg_t) NaClSandboxCodeAddr(nap, (uintptr_t)user_ret);
 
-  /* d'b: give control to the nexe. start cpu time counting */
-  ResumeCpuClock(nap);
+  /* d'b: give control to the nexe */
   nap->user_side_flag = 0; /* remove "user side call" mark */
   NaClSwitchToApp(nap, user_ret);
 

@@ -11,19 +11,25 @@
 #ifndef SERVICE_RUNTIME_NACL_ERROR_CODE_H__
 #define SERVICE_RUNTIME_NACL_ERROR_CODE_H__   1
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include "include/nacl_base.h"
 
-// These error codes are reported via UMA so, if you edit them:
-// 1) make sure you understand UMA, first.
-// 2) update src/tools/histograms/histograms.xml in
-//  svn://svn.chromium.org/chrome-internal/trunk/src-internal
-// Values are explicitly specified to make sure they don't shift around when
-// edited, and also to make reading about:histograms easier.
-typedef enum NaClErrorCode {
+EXTERN_C_BEGIN
+
+/*
+ * These error codes are reported via UMA so, if you edit them:
+ * 1) make sure you understand UMA, first.
+ * 2) update src/tools/histograms/histograms.xml in
+ *    svn://svn.chromium.org/chrome-internal/trunk/src-internal
+ *
+ * Values are explicitly specified to make sure they don't shift around when
+ * edited, and also to make reading about:histograms easier.
+ */
+
+/* service runtime errors (post load, during startup phase) */
+typedef enum NaClErrorCode
+{
   LOAD_OK = 0,
-  LOAD_STATUS_UNKNOWN = 1,  /* load status not available yet */
+  LOAD_STATUS_UNKNOWN = 1, /* load status not available yet */
   LOAD_UNSUPPORTED_OS_PLATFORM = 2,
   LOAD_DEP_UNSUPPORTED = 3,
   LOAD_INTERNAL = 4,
@@ -81,23 +87,26 @@ typedef enum NaClErrorCode {
   LOAD_SEGMENT_BAD_PARAM = 56,
   LOAD_VALIDATION_FAILED = 57,
   LOAD_UNIMPLEMENTED = 58,
-  LOAD_0MQ_CONTEXT_INIT_FAILED = 59,
-  LOAD_0MQ_CONTEXT_TERM_FAILED = 60,
-  LOAD_0MQ_SOCKET_ERROR = 61,
-  LOAD_ITEM_ALREADY_EXIST = 62,
-  LOAD_SQL_STATEMENT_EXEC_ERROR = 63,
-  LOAD_APPLICATIVE_NETWORK_ERROR = 64,
+  SRT_NO_SEG_SEL = 59,
+
   /*
-   * service runtime errors (post load, during startup phase)
+   * todo(d'b): perhaps this is not so good idea to add it here.
+   * revise this in the next version
    */
-  SRT_NO_SEG_SEL = 65
+  LOAD_0MQ_CONTEXT_INIT_FAILED = 60,
+  LOAD_0MQ_CONTEXT_TERM_FAILED = 61,
+  LOAD_0MQ_SOCKET_ERROR = 62,
+  LOAD_ITEM_ALREADY_EXIST = 63,
+  LOAD_SQL_STATEMENT_EXEC_ERROR = 64,
+  LOAD_APPLICATIVE_NETWORK_ERROR = 65,
+
+  NACL_ERROR_CODE_COUNT /* must have the last place in the enumeration */
 } NaClErrorCode;
-#define NACL_ERROR_CODE_MAX (SRT_NO_SEG_SEL+1)
 
-char const  *NaClErrorString(NaClErrorCode  errcode);
+#define NACL_ERROR_CODE_MAX NACL_ERROR_CODE_COUNT
 
-#ifdef __cplusplus
-}  /* end of extern "C" */
-#endif
+char const *NaClErrorString(NaClErrorCode errcode);
+
+EXTERN_C_END
 
 #endif

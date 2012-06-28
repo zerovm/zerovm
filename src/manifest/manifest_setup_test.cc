@@ -4,209 +4,175 @@
  *  Created on: Nov 30, 2011
  *      Author: d'b
  */
-
+#include <stdio.h>
+#include <stdlib.h>
 #include "gtest/gtest.h"
 #include "api/zvm.h"
 #include "src/service_runtime/sel_ldr.h"
+
+#include "src/service_runtime/dyn_array.h"
+
+#include "src/manifest/manifest_parser.h"
 #include "src/manifest/manifest_setup.h"
-//#include "src/manifest/manifest_setup.c" // trick simplifies work with static (or not defined) functions
-
-// construct valid NaClApp object (with manifest and stuff)
-// exit when memory allocation error. it is not the test fail,
-// it is just disability to run the test
-struct NaClApp* allocate_nap(void)
-{
-  // reserve space for nap and manifest
-  struct NaClApp *nap = (struct NaClApp*) malloc(sizeof(struct NaClApp));
-  if(nap == NULL) exit(1);
-
-  nap->manifest = (struct Manifest*) malloc(sizeof(struct Manifest));
-  if(nap->manifest == NULL) exit(1);
-
-  nap->manifest->master = NULL;
-  nap->manifest->master_records = 0;
-  nap->manifest->report = (struct Report*) malloc(sizeof(struct Report));
-  nap->manifest->user_setup = (struct SetupList*) malloc(sizeof(struct SetupList));
-  nap->manifest->system_setup = (struct SystemList*) malloc(sizeof(struct SystemList));
-  if(nap->manifest->user_setup == NULL ||
-      nap->manifest->system_setup == NULL ||
-      nap->manifest->report == NULL) exit(1);
-
-  return nap;
-}
-
-// deallocate memory used by nap object
-void free_nap(struct NaClApp *nap)
-{
-  free(nap->manifest->user_setup);
-  free(nap->manifest->system_setup);
-  free(nap->manifest->report);
-  free(nap->manifest);
-  free(nap);
-}
 
 /*
- * todo: find a way to test static functions w/o #include c-source
-//static void GetChannelPrefixById(enum ChannelType ch, char *prefix)
-TEST(GetChannelPrefixById_test, all_cases)
+ * plan:
+ * 1. construct maninfest from the file (write hardcoded data)
+ * 2. call SystemManifestCtor() (main work is here, channels, memory manager e.t.c.)
+ * 3. call HostManifestCtor()
+ * 4. try UpdateSyscallsCount()
+ * 5. try UpdateIOCounter()
+ * 6. call SystemManifestDtor() (check files)
+ * 7. call HostManifestDtor() (check report)
+ */
+
+#define MANIFEST_FILE "killme.manifest.txt"
+#define NEXE_FILE "manifest.nexe"
+#define INPUT_FILE "full.input.data"
+#define BLOB_FILE "zrt.blob.nexe"
+#define FAKE_DATA "fake data just to extend a file over the zero size"
+#define MANIFEST_DATA \
+  "=====================================================================\n"\
+  "== i/o keywords\n"\
+  "=====================================================================\n"\
+  "Input = full.input.data\n"\
+  "InputMaxGet = 1024000\n"\
+  "InputMaxGetCnt = 1024\n"\
+  "InputMaxPut = 1024000\n"\
+  "InputMaxPutCnt = 1024\n"\
+  "InputMode = 0\n"\
+  "\n"\
+  "Output = full.output.data\n"\
+  "OutputMaxGet = 1024000\n"\
+  "OutputMaxGetCnt = 1024\n"\
+  "OutputMaxPut = 1024000\n"\
+  "OutputMaxPutCnt = 1024\n"\
+  "OutputMode = 1\n"\
+  "\n"\
+  "UserLog = samples/zrt/manifest/full.user.log\n"\
+  "UserLogMaxGet = 0\n"\
+  "UserLogMaxGetCnt = 0\n"\
+  "UserLogMaxPut = 65536\n"\
+  "UserLogMaxPutCnt = 6554\n"\
+  "UserLogMaxMode = 0\n"\
+  "\n"\
+  "NetInput = some_url\n"\
+  "NetInputMaxGet = 1024000\n"\
+  "NetInputMaxGetCnt = 1024\n"\
+  "NetInputMaxPut = 1024000\n"\
+  "NetInputMaxPutCnt = 1024\n"\
+  "NetInputMode = 113\n"\
+  "\n"\
+  "NetOutput = some_another_url\n"\
+  "NetOutputMaxGet = 1024000\n"\
+  "NetOutputMaxGetCnt = 1024\n"\
+  "NetOutputMaxPut = 1024000\n"\
+  "NetOutputMaxPutCnt = 1024\n"\
+  "NetOutputMode = 113\n"\
+  "\n"\
+  "=====================================================================\n"\
+  "== user side keywords\n"\
+  "=====================================================================\n"\
+  "ContentType = type_name\n"\
+  "TimeStamp = 1337012520\n"\
+  "XObjectMetaTag = the tags list will be given to user \"as is\"\n"\
+  "UserETag = reserved\n"\
+  "\n"\
+  "=====================================================================\n"\
+  "== report request keywords\n"\
+  "=====================================================================\n"\
+  "ReportRetCode = bump\n"\
+  "ReportEtag = bump\n"\
+  "ReportUserRetCode = bump\n"\
+  "ReportContentType = bump\n"\
+  "ReportXObjectMetaTag = bump\n"\
+  "\n"\
+  "=====================================================================\n"\
+  "== zerovm control keywords\n"\
+  "=====================================================================\n"\
+  "Version = 11062012\n"\
+  "Log = full.zerovm.log\n"\
+  "Report = samples/zrt/manifest/manifest.report.log\n"\
+  "Nexe = manifest.nexe\n"\
+  "NexeMax = 10000000\n"\
+  "NexeEtag = 123456789\n"\
+  "Timeout = 10\n"\
+  "MemMax = 67108864\n"\
+  "SyscallsMax = 32768\n"\
+  "Blob = zrt.blob.nexe\n"\
+  "CommandLine = command line arguments for the user program. will be given as a string array\n"
+
+// construct manifest, setup system_manifest and host_manifest
+// todo(d'b): under construction
+TEST(ManifestSetupTest, FullCase)
 {
-#define EXPECT_EQ_VOID(expect, func, out, ...) \
-do {\
-  func(__VA_ARGS__, out);\
-  EXPECT_STREQ(expect, out);\
-} while(0)
+  struct NaClApp stat, *nap = &stat;
 
-  char prefix[100];
-  EXPECT_EQ_VOID("Input", GetChannelPrefixById, prefix, InputChannel);
-  EXPECT_EQ_VOID("Output", GetChannelPrefixById, prefix, OutputChannel);
-  EXPECT_EQ_VOID("UserLog", GetChannelPrefixById, prefix, LogChannel);
-  EXPECT_EQ_VOID("NetInput", GetChannelPrefixById, prefix, NetworkInputChannel);
-  EXPECT_EQ_VOID("NetOutput", GetChannelPrefixById, prefix, NetworkOutputChannel);
-  // any other value will abort testing function. but how to check it?
-}
-*/
+  // initialize nap
+  int code = 1;
+  memset(nap, 0, sizeof(*nap));
+  code &= DynArrayCtor(&nap->desc_tbl, 2);
+  code &= DynArrayCtor(&nap->threads, 2);
+  code &= NaClVmmapCtor(&nap->mem_map);
+  // todo(d'b): prepare memory: load nexe, allocate stack e.t.c
+  if(code == 0) exit(1);
 
-//int32_t ConstructChannel(struct NaClApp *nap, enum ChannelType ch)
-TEST(ConstructChannel_test, all_not_null_cases)
-{
-  struct NaClApp *nap = allocate_nap();
+#define CREATE_FILE(name, data) \
+  do {\
+    FILE *f;\
+    if((f = fopen(name, "w")) == NULL) return;\
+    fprintf(f, data);\
+    fclose(f);\
+  } while(0)
 
-  EXPECT_EQ(1, ConstructChannel(nap, InputChannel)); /* construct input channel */
-  EXPECT_EQ(1, ConstructChannel(nap, OutputChannel)); /* construct output channel */
-  EXPECT_EQ(1, ConstructChannel(nap, LogChannel)); /* construct user log channel */
-  EXPECT_EQ(1, ConstructChannel(nap, NetworkInputChannel)); /* construct network input channel */
-  EXPECT_EQ(1, ConstructChannel(nap, NetworkOutputChannel)); /* construct network  output channel */
+  // initialize manifest
+  CREATE_FILE(MANIFEST_FILE, MANIFEST_DATA);
+  ManifestCtor(MANIFEST_FILE);
+  EXPECT_EQ(0, ManifestCtor(MANIFEST_FILE));
 
-  //### fix this part of test
-  // set all channels names (Input, Output,..) to some values
-//  nap->manifest->master_records = 5;
-//  struct MasterManifestRecord master[5] = {
-//      {(char*)"Input", (char*)"dummy"},
-//      {(char*)"Output", (char*)"dummy"},
-//      {(char*)"UserLog", (char*)"dummy"},
-//      {(char*)"NetInput", (char*)"dummy"},
-//      {(char*)"NetOutput", (char*)"dummy" }
-//  };
-//  nap->manifest->master = master;
-//
-//  EXPECT_EQ(0, ConstructChannel(nap, InputChannel)); /* construct input channel */
-//  EXPECT_EQ(0, ConstructChannel(nap, OutputChannel)); /* construct output channel */
-//  EXPECT_EQ(0, ConstructChannel(nap, LogChannel)); /* construct user log channel */
-//  EXPECT_EQ(0, ConstructChannel(nap, NetworkInputChannel)); /* construct network input channel */
-//  EXPECT_EQ(0, ConstructChannel(nap, NetworkOutputChannel)); /* construct network  output channel */
+  // several files from manifest must exist before setup
+  CREATE_FILE(INPUT_FILE, FAKE_DATA);
+  CREATE_FILE(NEXE_FILE, FAKE_DATA);
+  CREATE_FILE(BLOB_FILE, FAKE_DATA);
 
-  free_nap(nap);
-}
+#undef CREATE_FILE
 
-//char* MakeEtag(struct NaClApp *nap)
-TEST(MakeEtag_test, all_not_null_cases)
-{
-  struct NaClApp *nap = allocate_nap();
-  char dummy[] = "dummy";
+  // ### check constructed manifest validity
+  EXPECT_STREQ("full.input.data", GetValueByKey((char*)"Input"));
 
-  EXPECT_EQ(NULL, MakeEtag(nap)); /* not constructed channel case */
-  nap->manifest->user_setup->channels[OutputChannel].name = (intptr_t)dummy;
-  EXPECT_STREQ("etag disabled", MakeEtag(nap)); /* not constructed channel case */
+  SystemManifestCtor(nap);
+  HostManifestCtor(nap);
 
-  free_nap(nap);
-}
-
-//void SetupReportSettings(struct NaClApp *nap)
-TEST(SetupReportSettings_test, empty_cases)
-{
-  struct NaClApp *nap = allocate_nap();
-
-  // how to test report creation? the only thing that can fail is
-  // memory allocation and it will automatically abort program
-  // todo: in a future make a death test
-
-  free_nap(nap);
+  // check constructed channels, and other fields one by one
+  printf("nap->system_manifest->blob = %s\n", nap->system_manifest->blob);
 }
 
 //void AnswerManifestPut(struct NaClApp *nap, char *report)
 //note: this test will fail when report form will change
-TEST(AnswerManifestPut_test, full_case)
-{
-  struct NaClApp *nap = allocate_nap();
-  char report[1024];
+//TEST(AnswerManifestPut_test, full_case)
+//{
+//  struct NaClApp *nap = allocate_nap();
+//  char report[1024];
+//
+//  nap->host_manifest->ret_code = 0;
+//  nap->host_manifest->etag = (char*)"0";
+//  nap->host_manifest->user_ret_code = 0;
+//  nap->host_manifest->content_type = (char*)"0";
+//  nap->host_manifest->x_object_meta_tag = (char*)"0";
+//
+//  AnswerManifestPut(nap, report);
+//  EXPECT_STREQ(
+//      "ReportRetCode        =0\n"
+//      "ReportEtag           =0\n"
+//      "ReportUserRetCode    =0\n"
+//      "ReportContentType    =0\n"
+//      "ReportXObjectMetaTag =0\n", report);
+//
+//  free_nap(nap);
 
-  nap->manifest->report->ret_code = 0;
-  nap->manifest->report->etag = (char*)"0";
-  nap->manifest->report->user_ret_code = 0;
-  nap->manifest->report->content_type = (char*)"0";
-  nap->manifest->report->x_object_meta_tag = (char*)"0";
-
-  AnswerManifestPut(nap, report);
-  EXPECT_STREQ(
-      "ReportRetCode        =0\n"
-      "ReportEtag           =0\n"
-      "ReportUserRetCode    =0\n"
-      "ReportContentType    =0\n"
-      "ReportXObjectMetaTag =0\n", report);
-
-  free_nap(nap);
-}
-
-//void SetupUserPolicy(struct NaClApp *nap)
-// todo: add sanity tests
-TEST(SetupUserPolicy_test, not_initialized_case)
-{
-  struct NaClApp *nap = allocate_nap();
-  free(nap->manifest->user_setup); // memory will be allocated by SetupUserPolicy()
-  SetupUserPolicy(nap);
-
-  /* test setup limits */
-  // nap->manifest->user_setup->self_size can be changed in a future. test disabled
-  EXPECT_EQ(0, nap->manifest->user_setup->max_cpu);
-  EXPECT_EQ(0u, nap->manifest->user_setup->max_mem);
-  EXPECT_EQ(0, nap->manifest->user_setup->max_setup_calls);
-  EXPECT_EQ(0, nap->manifest->user_setup->max_syscalls);
-
-  /* test setup counters */
-  EXPECT_EQ(0, nap->manifest->user_setup->cnt_cpu);
-  EXPECT_EQ(0, nap->manifest->user_setup->cnt_cpu_last);
-  EXPECT_EQ(0, nap->manifest->user_setup->cnt_mem);
-  EXPECT_EQ(0, nap->manifest->user_setup->cnt_setup_calls);
-  EXPECT_EQ(0, nap->manifest->user_setup->cnt_syscalls);
-  EXPECT_EQ(0u, nap->manifest->user_setup->heap_ptr); /* will be used in future */
-
-  /* test syscallback niitial value */
-  EXPECT_EQ(0, nap->manifest->user_setup->syscallback);
-
-  //### check if it must be "" (not NULL)
-  EXPECT_STREQ("", nap->manifest->user_setup->content_type);
-  EXPECT_STREQ("", nap->manifest->user_setup->timestamp);
-  EXPECT_STREQ("", nap->manifest->user_setup->x_object_meta_tag);
-  EXPECT_STREQ("", nap->manifest->user_setup->user_etag);
-
-  free_nap(nap);
-}
-
-// ### fix this test
-//void SetupSystemPolicy(struct NaClApp *nap)
-// todo: add sanity tests
-TEST(SetupSystemPolicy_test, not_initialized_case)
-{
-  struct NaClApp *nap = allocate_nap();
-  SetupUserPolicy(nap);
-
-//  EXPECT_STREQ(NULL, nap->manifest->system_setup->version);
-//  EXPECT_STREQ(NULL, nap->manifest->system_setup->zerovm);
-//  EXPECT_STREQ(NULL, nap->manifest->system_setup->log);
-//  EXPECT_STREQ(NULL, nap->manifest->system_setup->report);
-//  EXPECT_STREQ(NULL, nap->manifest->system_setup->nexe);
-//  EXPECT_STREQ(NULL, nap->manifest->system_setup->blob);
-//  EXPECT_STREQ(NULL, nap->manifest->system_setup->nexe_etag);
-//  EXPECT_EQ(0, nap->manifest->system_setup->nexe_max);
-//  EXPECT_EQ(0, nap->manifest->system_setup->timeout);
-//  EXPECT_EQ(0, nap->manifest->system_setup->kill_timeout);
-
-  free_nap(nap);
-}
-
-//void PreallocateUserMemory(struct NaClApp *nap) -- useless so far
-
-// system counters acessors -- needless so far. to remove in the future
+  // open report file
+  // compare to expected string
+//}
 
 // main. no need to change
 int main(int argc, char *argv[]) {
