@@ -40,8 +40,7 @@ static int test_amd_CPU(uint32_t test){
 
 
 int test_sse41_CPU(){
-	//return test_intel_CPU(CPUID_ECX_SSE41);
-	return 0;
+	return test_intel_CPU(CPUID_ECX_SSE41);
 }
 
 int test_sse4A_CPU(){

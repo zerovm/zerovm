@@ -61,6 +61,7 @@
 #include <emmintrin.h>
 #include <smmintrin.h>
 #include "bitonic_sort.h"
+#include "defines.h" //for logging
 
 #define min(X,Y) ((X) < (Y) ? (X) : (Y))
 #define max(X,Y) ((X) > (Y) ? (X) : (Y))
@@ -450,13 +451,13 @@ void bitonic_sort(float *d, uint32_t s, float *buf)
 }
 
 /* main sort routine. chop all data to chunks, sort and merge */
-void bitonic_sort_chunked(float *d, uint32_t s, float *buf, uint32_t chunk_size)
+void bitonic_sort_chunked(float *d, uint32_t s, float *extra_buf, uint32_t chunk_size)
 {
 	uint32_t i;
 	for (i = 0; i < s ; i += chunk_size)
 		bitonic_sort(
 				d + i,
 				min(chunk_size, s - i),
-				buf + i);
-	bitonic_merge(d, s, buf, chunk_size);
+				extra_buf + i);
+	bitonic_merge(d, s, extra_buf, chunk_size);
 }
