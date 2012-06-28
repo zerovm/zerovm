@@ -1,25 +1,24 @@
 in the current version:
 -------------------------------------------------------------
 todo
-- check array fields in common part. must garantee that user will get NULL if field is not set
-- move trap.c to service_runtime/
 -+ solve problem with the channels count: how to inform user side, or how to
   give channels descriptors to user side passing given UserManifest object?
   +temporary solution: preallocated array to hold as much as 1024 channels
   another solution: untrusted code will invoke trap setup twice - 1st time to get number of channels
                     and 2nd time to get channels information (space must be provided)
   yet another solution: allocate memory from user space and return user the pointer
-+ do something with SET_LIMIT macro. and move it to "tools.h"
-	not moved but replaced with more safe version. macro from manifest_parser.h is used
 +- replace COND_ABORT() macro to something more finished and strict:
   any fail cases which must terminate nacl should be logged to nacl log
-  any "impossible fail" must be checked by assert() (main purpose: prevent improper zerovm code changes/usage)
-  any non fatal cases must use something else (not "ABORT")
+  any "impossible fail" must be checked by assert() (main purpose: prevent 
+  improper zerovm code changes/usage) any non fatal cases must use something else (not "ABORT")
 
 in the next version:
 -------------------------------------------------------------
-- move everything about "NETWORKING" to prefetch (task for yaroslav?)
-  if impossible - remove "prefetch"
+- move trap.c to service_runtime/. even better to move the code inside *syscall*.* and remove
+  trap.* files
+- move everything about "NETWORKING" to prefetch if impossible - remove "prefetch"
+- all NETWORKING "todo" comments and NETWORKING conditional compilation must be removed
+  appropriate changes should be made, of course
 - put all invocations of manifest initializations to nacl init modules
 - make defines (or something else) to hold manifest keywords and use it
   instead of "magic" strings. defines should be put into "manifest_keywords.h"
@@ -28,12 +27,13 @@ in the next version:
 - move all error messages and codes to nacl_error_code.* (especially from sel_main.c and manifest/)
   note: except fatal errors
   WARNING: get familiar with UMA first. perhaps it is not so good to update its error codes
-- all NETWORKING "todo" comments and NETWORKING conditional compilation must be removed
-  appropriate changes should be made, of course
 - make 5 channel types: stdin (c99), stdout(c99), netin, netout, cdr(random read, append only write)
   ? what for do we need c99 stdin/stdout? stdout(stderr) will be lost after nexe exit. stdin(keyboard)
   just useless, if not redirected stdin is always empty. if redirected, represent r/o data which we
   can emulate via cdr. actually c99 stdin/stdout/stderr can be emulated via cdr
+  update: for a user it would be only 3 channel types: input, output and random acces image.
+  input stand for stdin and netin; output - stdout, stderr, netout; image - random access storage
+  over cdr
   
 - make one extra trap() function - set_syscallback(). because using trap() setup for it
   has potentially problem and yet look ugly.

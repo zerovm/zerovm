@@ -36,10 +36,10 @@
 /*
  * temporary fix for nacl. stat != nacl_abi_stat
  * also i had a weird error when tried to use "service_runtime/include/sys/stat.h"
- *
  */
 struct nacl_abi_stat
-{  /* must be renamed when ABI is exported */
+{
+  /* must be renamed when ABI is exported */
   int64_t   nacl_abi_st_dev;       /* not implemented */
   uint64_t  nacl_abi_st_ino;       /* not implemented */
   uint32_t  nacl_abi_st_mode;      /* partially implemented. */
@@ -87,7 +87,7 @@ static void *cur_break = NULL;
  * log message. needs valid initialized setup
  * replaces obsolete function from "zvm.c"
  */
-int log_msg2(char *msg)
+int log_msg(char *msg)
 {
   struct ChannelDesc *channel;
   int32_t length;
@@ -109,68 +109,10 @@ int log_msg2(char *msg)
 	return OK_CODE;
 }
 
-
-/// YaroslavLitvinov
-char *itoa(int n, char *s, int b);
-int log_int(int dec);
-size_t strlen(const char *string);
-char *strrev(char *str);
-
-int log_int(int dec)
-{
-	char log_msg_text[17];
-	itoa(dec, (char*)log_msg_text, 10);
-	return log_msg2(log_msg_text);
-}
-
-
-size_t strlen(const char *string) {
-	const char *s;
-
-	s = string;
-	while (*s)
-		s++;
-	return s - string;
-}
-
-char *strrev(char *str) {
-	char *p1, *p2;
-
-	if (!str || !*str)
-		return str;
-
-	for (p1 = str, p2 = str + strlen(str) - 1; p2 > p1; ++p1, --p2) {
-		*p1 ^= *p2;
-		*p2 ^= *p1;
-		*p1 ^= *p2;
-	}
-
-	return str;
-}
-
-char *itoa(int n, char *s, int b) {
-	static char digits[] = "0123456789abcdefghijklmnopqrstuvwxyz";
-	int i=0, sign;
-
-	if ((sign = n) < 0)
-		n = -n;
-
-	do {
-		s[i++] = digits[n % b];
-	} while ((n /= b) > 0);
-
-	if (sign < 0)
-		s[i++] = '-';
-	s[i] = '\0';
-
-	return strrev(s);
-}
-///
-
 #define DEBUG 0
-#define LOGFIX /* temporary fix until zrt library will be finished */
+
 #if DEBUG
-#define SHOWID do {log_msg2((char*)__func__); log_msg2("() is called\n");} while(0)
+#define SHOWID do {log_msg((char*)__func__); log_msg("() is called\n");} while(0)
 #else
 #define SHOWID
 #endif
@@ -244,7 +186,8 @@ char *itoa(int n, char *s, int b) {
     (NACL_sys_write * 0x20 + 0x10000))(d, buf, count)
 
 /* mmap() -- nacl syscall via trampoline */
-#define NaCl_mmap(start, length, prot, flags, d, offp) ((int32_t (*)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t)) \
+#define NaCl_mmap(start, length, prot, flags, d, offp) \
+  ((int32_t (*)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t)) \
     (NACL_sys_mmap * 0x20 + 0x10000))(start, length, prot, flags, d, offp)
 
 /* munmap() -- nacl syscall via trampoline */
@@ -287,23 +230,23 @@ int32_t zrt_nameservice(uint32_t *args)
   SHOWID; return 0;
 }
 
-/* duplicate the given file handle */
+/*
+ * duplicate the given file handle
+ * not allowed in simple zrt version
+ */
 int32_t zrt_dup(uint32_t *args)
 {
-  /*
-   * the function is not allowed on simple version of zrt library
-   */
-  SHOWID; return -EPERM; /* Operation not permitted */
+  SHOWID; return -EPERM; /* Operation is not permitted */
 }
 
-/* duplicate the given file handle */
+/*
+ * duplicate the given file handle
+ * not allowed in simple zrt version
+ */
 int32_t zrt_dup2(uint32_t *args)
 {
-  /*
-   * the function is not allowed on simple version of zrt library
-   */
   SHOWID;
-  return -EPERM; /* Operation not permitted */
+  return -EPERM; /* Operation is not permitted */
 }
 
 /* open the file with the given handle number */
@@ -346,13 +289,11 @@ int32_t zrt_read(uint32_t *args)
   /*
    * Support for MSQ files: zvm_pread used for networking communication
    * msq files has descriptor numbers above than 2
-   * todo(d'b): move it to switch after networking integration will be complete
+   * todo(NETWORKING): move it to switch after networking integration will be complete
    */
-  if(file > 2)
-  {
-    /* MSQ files using streaming IO, and don't using offset, set offset as 0 */
+  /* MSQ files using streaming IO, and don't using offset, set offset as 0 */
+  if(file > LogChannel)
     return zvm_pread(file, (void*) args[1], length, 0);
-  }
 
   /* check given handle. check length */
   if( InputChannel != file) return -EBADF;
@@ -406,13 +347,11 @@ int32_t zrt_write(uint32_t *args)
 
   /*
    * Support for MSQ files: zvm_pwrite used for networking communication
-   * todo(d'b): move it to switch after networking integration will be complete
+   * todo(NETWORKING): move it to switch after networking integration will be complete
    */
-  if(file > 2)
-  {
-    /* MSQ files using streaming IO, and don't using offset, set offset as 0 */
+  /* MSQ files using streaming IO, and don't using offset, set offset as 0 */
+  if(file > LogChannel)
     return zvm_pwrite(file, buf, length, 0);
-  }
 
   /* check given handle. check length */
   if(file < OutputChannel || file > LogChannel) return -EBADF;
@@ -453,8 +392,8 @@ int32_t zrt_write(uint32_t *args)
 /*
  * seek position does not work for stdin/stdout/stderr
  * so we just fail in simple version of zrt
- * note: actualy we can position, we just don't want to enhance
- * standard
+ * note: actualy we can position, we just don't want to enhance standard
+ * UPDATE: seek temporary allowed
  */
 int32_t zrt_lseek(uint32_t *args)
 {
@@ -511,7 +450,7 @@ int32_t zrt_ioctl(uint32_t *args)
   SHOWID; return -EINVAL;
 }
 
-/* mock. should be implemented */
+/* return synthetic channel information */
 int32_t zrt_stat(uint32_t *args)
 {
   struct ChannelDesc *channels = (struct ChannelDesc*)(intptr_t)setup.channels;
@@ -564,7 +503,7 @@ int32_t zrt_stat(uint32_t *args)
   return -ENOENT;
 }
 
-/* fstat for stdin/stdout/stderr. always return fixed values */
+/* return synthetic channel information */
 int32_t zrt_fstat(uint32_t *args)
 {
   SHOWID;
@@ -1272,12 +1211,6 @@ int main(int argc, char **argv)
   setup.syscallback = (int32_t) syscall_director;
   retcode = zvm_setup(&setup);
   if(retcode) return retcode;
-
-#ifdef LOGFIX
-  /* set up the log */
-  retcode = log_set(&setup);
-  if(retcode) return retcode;
-#endif
 
   /* setup user memory */
   cur_break = (void*)setup.heap_ptr;

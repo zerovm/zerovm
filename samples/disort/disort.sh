@@ -29,8 +29,8 @@ done
 date > ./samples/disort/time
 gnome-terminal --geometry=80x20 -t "zerovm sortman.manifest" -x sh -c "./zerovm -Msamples/disort/manifest/sortman.manifest; date >> ./samples/disort/time"
 
-
-cat samples/disort/log/sortman.stderr.log
-echo cat ./samples/disort/time
-
+cd samples/disort
+cat log/sortman.stderr.log
+echo --------------------------
+cat time
 

@@ -67,4 +67,4 @@ MemMax = 67108864
 SyscallsMax = 32768
 Blob = user library could be specified from here. not ready yet.
 CommandLine = command line arguments for the user program. will be given as a string array
-
+Networking = bump (temporary keyword. if specified net channels will be used)
