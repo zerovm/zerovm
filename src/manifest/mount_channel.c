@@ -170,14 +170,11 @@ void ChannelCtor(struct NaClApp *nap, enum ChannelType ch)
   channel->name = (uint64_t)GetValueByKey(PREFIX(ch));
   if(channel->name)
   {
-#define SET_LIMIT(a, limit) \
+#define SET_LIMIT(val, suffix) \
   do {\
-    char str[1024];\
-    char *p;\
-    if(!limit) break;\
-    sprintf(str, "%s%s", PREFIX(ch), limit);\
-    p = GetValueByKey(str);\
-    a = p ? atoll(p) : 0;\
+    char str[KEYWORD_SIZE_MAX];\
+    snprintf(str, KEYWORD_SIZE_MAX, "%s%s", PREFIX(ch), suffix);\
+    GET_INT_BY_KEY(val, str);\
   } while (0);
 
     SET_LIMIT(channel->mounted, "Mode");

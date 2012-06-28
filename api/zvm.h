@@ -31,7 +31,8 @@
  * and other needful things
  *
  * 2012-06-14
- * massive changes in structures and enumerations
+ * massive changes in structures and enumerations. SetupList replaced with
+ * UserManifest
  *
  * 2011-11-20
  * d'b
@@ -208,7 +209,7 @@ int32_t zvm_pread(int desc, char *buffer, int32_t size, int64_t offset);
 int32_t zvm_pwrite(int desc, char *buffer, int32_t size, int64_t offset);
 
 /*
- * set log (if allowed). valid SetupList object must be provided.
+ * set log (if allowed). valid UserManifest object must be provided.
  */
 int log_set(struct UserManifest *setup);
 

@@ -38,7 +38,6 @@ EXTERN_C_BEGIN
     " -D enable the UNSTABLE dfa validator\n"
 #define NEXE_PGM_NAME "bee" /* argv[0] for nexe */
 #define MANIFEST_VERSION "11062012"
-#define BIG_ENOUGH_SPACE 65536 /* ..size of the biggest temporary variable */
 
 struct HostManifest
 {

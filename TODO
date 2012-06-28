@@ -1,46 +1,30 @@
-network version
--------------------------------------------------------------
-- update readme
-? install sqlite
-? install zeromq
-? add "sudo /sbin/ldconfig" to readme. w/o this command zerovm couldnt find zqm shared library
-
-
 in the current version:
 -------------------------------------------------------------
 todo
+- check array fields in common part. must garantee that user will get NULL if field is not set
 - move trap.c to service_runtime/
 -+ solve problem with the channels count: how to inform user side, or how to
   give channels descriptors to user side passing given UserManifest object?
-  temporary solution: preallocated array to hold as much as 1024 channels
-- do something with SET_LIMIT macro. and move it to "tools.h"
-+ some bug appears when control goes to DynArrayFirstAvail 
-+ check array fields in common part. must garantee that user will get NULL if field is not set
-- make defines (or something else) to hold manifest keywords and use it
-  instead of "magic" strings. defines should be put into "manifest_keywords.h"
-- remove not nessessary switches from zerovm command line
-  only manifest, debug and validator switches must remain
-+ COND_ABORT() remove ending "\n" from each place where it happened
-+ rerwrite manifest_parser.c (new simple api)
-+ rewrite manifest_parser.h (a new structs, defines, e.t.c)
-+ rewrite manifest_setup: everything about manifest initialization should be done there
-+- make changes in sel_main.c. everything about manifest already moved to manifest_setup.*
-- put all invocations of manifest initializations to nacl init modules
-+ rewrite mount_channel.*, preload.* premap.* and prefetch.*
-- move everything about "NETWORKING" to prefetch (task for yaroslav?)
-  if impossible - remove "prefetch"
-+ make changes to trap.* (A LOT!)
-  - setup() will copy allowed and translate secured fields from system_manifest
-    to UserManifest object provided by user
+  +temporary solution: preallocated array to hold as much as 1024 channels
+  another solution: untrusted code will invoke trap setup twice - 1st time to get number of channels
+                    and 2nd time to get channels information (space must be provided)
+  yet another solution: allocate memory from user space and return user the pointer
++ do something with SET_LIMIT macro. and move it to "tools.h"
+	not moved but replaced with more safe version. macro from manifest_parser.h is used
 +- replace COND_ABORT() macro to something more finished and strict:
   any fail cases which must terminate nacl should be logged to nacl log
   any "impossible fail" must be checked by assert() (main purpose: prevent improper zerovm code changes/usage)
   any non fatal cases must use something else (not "ABORT")
--+ globals initializtion. make it and place to proper place (asap)  
-  temporary solution: patch in main() with initializations of part of manifest and globals
 
 in the next version:
 -------------------------------------------------------------
+- move everything about "NETWORKING" to prefetch (task for yaroslav?)
+  if impossible - remove "prefetch"
+- put all invocations of manifest initializations to nacl init modules
+- make defines (or something else) to hold manifest keywords and use it
+  instead of "magic" strings. defines should be put into "manifest_keywords.h"
+- remove not nessessary switches from zerovm command line
+  only manifest, debug and validator switches must remain
 - move all error messages and codes to nacl_error_code.* (especially from sel_main.c and manifest/)
   note: except fatal errors
   WARNING: get familiar with UMA first. perhaps it is not so good to update its error codes

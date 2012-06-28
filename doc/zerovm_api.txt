@@ -29,7 +29,7 @@ detailed information can be get from api/zvm.h (struct PreOpenedFileDesc)
 
 
 setup:
-detailed information can be get from api/zvm.h (struct SetupList)
+detailed information can be get from api/zvm.h (struct UserManifest)
 note that some counters are not available for user application.
 also note that amount of the setup calls may be limited by zerovm.
 user applicatin can get size of setup structure.

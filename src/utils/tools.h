@@ -16,6 +16,9 @@
 #include <unistd.h>
 #include "src/service_runtime/include/sys/errno.h"
 
+#define KEYWORD_SIZE_MAX 256
+#define BIG_ENOUGH_SPACE 65536 /* ..size of the biggest temporary variable */
+
 /* check condition 'cond' if false aborts zerovm with message 'msg' */
 /*
  * check condition 'cond' if false aborts zerovm with message 'msg'

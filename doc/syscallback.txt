@@ -23,7 +23,7 @@ argument 5 == r8d
 argument 6 == r9d
 
 to set syscallback user should call zvm_setup from zerovm api (or use trap()
-with TrapUserSetup function) with "syscallback" field of SetupList object set
+with TrapUserSetup function) with "syscallback" field of UserManifest object set
 to new handler address (defined by user code). to remove syscallback user can
 use same procedure, but "syscallback" field must be set to 0.
 

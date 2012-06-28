@@ -117,7 +117,11 @@ void SystemManifestCtor(struct NaClApp *nap)
   policy->cnt_syscalls = 0;
   policy->syscallback = 0;
 
-  /* custom attributes. fixed length arrays, to reserve memory in the user space */
+  /* read custom attributes, if absent set to empty string */
+  policy->content_type[0] = '\0';
+  policy->timestamp[0] = '\0';
+  policy->x_object_meta_tag[0] = '\0';
+  policy->user_etag[0] = '\0';
   MEMCPY(policy->content_type, GetValueByKey("ContentType"), CONTENT_TYPE_LEN);
   MEMCPY(policy->timestamp, GetValueByKey("TimeStamp"), TIMESTAMP_LEN);
   MEMCPY(policy->x_object_meta_tag, GetValueByKey("XObjectMetaTag"), X_OBJECT_META_TAG_LEN);

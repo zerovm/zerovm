@@ -4,50 +4,48 @@ todo(d'b): update it with a new samples
 
 this folder contain both samples of zerovm usage and functional tests (especially in "security/" folder)
 
-hello/
-  simple example how to write a program for zerovm. since current version of zerovm does not contain
-  syscalls (except *alloc()/free()) it is not allowed to use any i/o directly. instead of it user program
-  can exploit user log. hello_world.c is an example of it.
+accessors/
+  test for a new part of zerovm api. this part provided by zrt, so this is not strictly saying "api", but
+  wrappers for UserSetup object.
   
-onering/  
-  this code tests a new functionality - trap() - universal tonneling syscall. instead of calling 55+ system 
-  functions through mechanism offered by old google sel_ldr, zerovm uses only one syscall. in the nearest future
-  via this mechanism user program will invoke syscalls from untrusted library (see "zrt" on our github page)
-  
-pagination/
-  to allow user program manipulate data without syscalls zerovm grants access to two streams: input and output
-  "input" is read only stream and "output" can be read or written. file names will be specified in manifest 
-  (this information is not available for the user program). limits/sizes and other details about streams also 
-  provided in manifest. limits are available (in read only mode) for user. further details can be found in
-  the source code: "paging_test.c"
-  
-sort/
-  contains 3 programs which allows to create random data, sort it and test sort order. from this example you can
-  see how to use intrinsics in nacl modules - absolutely same as usual. also this is another example of pagination
-  mechanism usage.
-  
+command_line/
+  demonstrates argc/argv passed via manifest (CommandLine keyword)
+
 disort/
   distributed sorting, contains 2 user applications that interacts as nodes, implements networking communication, it uses
   files as one-to-one network channels. It uses for sse41 bitonic sort and for another cpu instruction sets qsort 
   algorithm from c standard library. currently 10 source, 10nodes and single manager node configured.   
   
-syscallback/
-  another innovation for zerovm. this mechanism allows user to intercept all syscalls (except trap()). with zrt 
-  library it gives ability to avoid real system calls usage. almost anything can be done without exploiting trusted
-  code. there are however some exceptions (like system time and date, nanosleep and some other). syscallback was
-  invented in order to keep nacl modules deterministic and in same time allow user to use already written code used
-  syscalls. from the simple example you can see how it works. for further details consult "syscallback" section of
-  zerovm documentation
+file_io/
+  example of indirect usage of zrt_read(), zrt_write() and zrt_lseek(). user program can use zrt via libc functions like:
+  read(), write(), printf(), rewind() e.t.c.
   
-user_log/
-  simple but powerfull mechanism which allow user program log any events without using any syscalls. all logged messages
-  will be saved in file specified in manifest. can be used for debugging purposes.
+file_stat/
+  addition to "file_io". demonstrates stat() / fstat(). user can get synthetic information about zerovm channels (streams)
   
-x264/
-  contain instruction how to build best available open source video codec. however, this code will work under old zerovm
-  versions (with syscalls) or after zrt library will be completed
+hello/
+  simple example how to write a program for zerovm using zerovm api.
   
-security/
-  contains several zerovm tests. these sources are not examples! they test possible zerovm security issues.
-  the set of the tests will be extended in the future
+malloc/
+  demonstration of a new memory manager. zerovm can shrink user memory to size specified in manifest. if
+  MemMax isn't specified 4gb will be used (however user can get memory allocation error). preallocation
+  will solve to problems: memory allocation errors and real syscalls usage due nexe runtime
   
+manifest/
+  full list of available keywords in manifest example
+
+sort/
+  contains 3 programs which allows to create random data, sort it and test sort order. from this example you can
+  see how to use intrinsics in nacl modules - absolutely same as usual. also this is another example of pagination
+  mechanism usage.
+
+sort_paging/
+  same "sort/" with i/o via zerovm api. also this example doesn't use mapped channels (except stderr)
+  
+strtol/
+  just a simple demonstration of conversions integers and floats
+  
+time/
+  via zerovm api user program can get date/time specified in manifest by "TimeStamp" keyword. if there is no such keyword in
+  manifest user program will get -1 (1969-12-31 time = 23:59:59 UTC)
+

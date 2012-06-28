@@ -34,18 +34,18 @@ static struct
   char *value;
 } *mft_ptr; /* array of pointers to keys/values */
 
-/* public function. return value from manifest by given key */
+/* return value from manifest by given key */
 char* GetValueByKey(char *key)
 {
-	int i;
-	if(key == NULL) return NULL;
+  int i;
+  if(key == NULL) return NULL;
 
-	for(i = 0; i < mft_count; ++i)
-	{
-		if(strcmp(key, mft_ptr[i].key) == 0)
-			return mft_ptr[i].value;
-	}
-	return NULL;
+  for(i = 0; i < mft_count; ++i)
+  {
+    if(strcmp(key, mft_ptr[i].key) == 0)
+      return mft_ptr[i].value;
+  }
+  return NULL;
 }
 
 /* remove leading and ending spaces from the given string */
