@@ -5,11 +5,10 @@ ZeroVM works under Linux x86_64.
 
 
 INSTALL:
-0. Get ZeroVM from github: https://github.com/Dazo-org/zerovm
-   or as archive: https://github.com/Dazo-org/zerovm/zipball/master
-1. Install prerequisites:
-   sudo apt-get install build-essential gcc-multilib g++-multilib libsdl1.2-dev texinfo libcrypto++-dev libssl-dev m4  
+1.0. Install prerequisites:
+   sudo apt-get install build-essential gcc-multilib g++-multilib libsdl1.2-dev texinfo libcrypto++-dev libssl-dev m4 lib32z1
 1.1. Install sqlite-autoconf
+   cd ~
    wget http://www.sqlite.org/sqlite-autoconf-3071200.tar.gz
    tar xvfz sqlite-autoconf-3071200.tar.gz
    cd sqlite-autoconf-3071200/
@@ -17,63 +16,47 @@ INSTALL:
    make
    sudo make install
    sudo ldconfig
+   cd ..
+
 1.2. Install zeromq & packages required by zeromq
-  sudo apt-get install uuid-dev
-  wget http://download.zeromq.org/zeromq-2.2.0.tar.gz
-  tar xvfz zeromq-2.2.0.tar.gz
-  cd zeromq-2.2.0
-  ./configure
-  make
-  sudo make install
-2. Go to ZeroVM folder and run make
-3. If everything is ok you will see output of unit tests. You can find "zerovm" executable in zerovm folder.
+   cd ~
+   sudo apt-get install uuid-dev
+   wget http://download.zeromq.org/zeromq-2.2.0.tar.gz
+   tar xvfz zeromq-2.2.0.tar.gz
+   cd zeromq-2.2.0
+   ./configure
+   make
+   sudo make install
+   cd ..
 
+1.3. Install NaCl SDK. Consult https://developers.google.com/native-client/sdk/download for exact procedure. Below should work okay in most cases.
+   cd ~
+   wget http://commondatastorage.googleapis.com/nativeclient-mirror/nacl/nacl_sdk/nacl_sdk.zip 
+   unzip nacl_sdk.zip 
+   cd nacl_sdk 
+   ./naclsdk list
+   ./naclsdk update
+   cd ..
 
-QUICKSTART
+   Now you can use the newly installed custom GNU toolchain to build the attached samples or your own programs
 
-==================PRELIMINARY===================================================
-Quickstart for installing ZeroVM on Ubuntu
+2. Installing actually ZeroVM
+   cd ~
+   wget https://github.com/Dazo-org/zerovm/zipball/master
+   unzip master
+   mkdir zerovm
+   mv Dazo-blah-blah-blah/* zerovm/
+   cd zerovm
+   make
 
- cd ~
- mkdir zerovm_getting_started
- cd zerovm_getting_started
- wget https://github.com/Dazo-org/zerovm/zipball/master
- unzip master
- rm -rf master 
- cd zerovm_getting_started
- sudo apt-get install build-essential gcc-multilib g++-multilib libsdl1.2-dev texinfo libcrypto++-dev libssl-dev m4 lib32z1
- mkdir obj
- mkdir test
- make
+   If everything is ok you will see output of unit tests. You can find "zerovm" executable in zerovm folder. Now if you've got RUN OK PASSED messages that everything is fine and you have ZeroVM compiled for your platform! 
 
-Now if you've got RUN OK PASSED messages that everything is fine and you have ZeroVM compiled for your platform! 
+3. Let's try to run ZeroVM
 
-Let's try to run ZeroVM
+   cd ~/zerovm
+   ./zerovm
 
- ./zerovm
-
-You should see a usage message.
-
-ZEROVM SDK INSTALL:
-
-You need to obtain an SDK in order to build samples and your own programs for ZeroVM. 
-To download and install the SDK you need to consult the following page 
-(you can install the SDK in separate terminal window): 
-https://developers.google.com/native-client/sdk/download. 
-
-For me it was (in a new terminal window):
- cd ~/zerovm_getting_started
- mkdir sdk 
- cd sdk 
- wget http://commondatastorage.googleapis.com/nativeclient-mirror/nacl/nacl_sdk/nacl_sdk.zip 
- unzip nacl_sdk.zip 
- cd nacl_sdk 
- ./naclsdk list
- ./naclsdk update
-
-Now you can use the newly installed custom GNU toolchain to build the attached samples or your own programs
-
-
+   You should see a usage message.
 
 Troubleshooting:
 1.
