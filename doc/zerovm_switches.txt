@@ -1,4 +1,4 @@
-this document describes ZeroVM command line switches
+This document describes ZeroVM command line switches
 ----------------------------------------------------
 
 ZeroVM command line switches:
@@ -32,15 +32,13 @@ ZeroVM command line switches:
 ** under construction
 
 
-switches explanation:
-
--v -- controls amount of information in the ZeroVM log
--c -- if specified once - report valiation status and ignore it
-      if specified twice - skip validation
--s -- enable 2nd pass of validator (by default ZeroVM makes only one pass)
--F -- specified NaCl application will not run, only loaded (usefull for validation)
--Q -- will skip data execution test. with this switch it is possible to run ZeroVM on platform without
-      "data execution" protection.
--M -- specifies manifest file. manifest contain set of control data for user application
-      more details about manifest can be read in the appropriate document at github.com/Dazo-org/ZeroVM
+-v -- controls verbosity of information in the ZeroVM log
+-c -- if specified once - report valiation status and ignore the validation result
+      if specified twice - skip validation alltogether
+-s -- perform 2nd pass of the validator (by default ZeroVM uses one pass only)
+-F -- specified NaCl application will be loaded but not run (usefull for validation)
+-Q -- will skip data execution test. This switch makes it possible to run ZeroVM application on a platform 
+			with no "data execution" protection.
+-M -- specifies the manifest file name. The manifest contains a set of control data for the executable.
+      More details about the manifest file can be found in the appropriate document on github.com/Dazo-org/ZeroVM
       

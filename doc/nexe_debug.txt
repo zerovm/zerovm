@@ -1,3 +1,3 @@
-this document will be updated as soon as gdb will be used for nexe debugging.
+This document will be updated as soon as gdb could be used for nexe debugging.
 
-for now user can debug nacl application using user log from manifest
+For now user can debug NaCl application by using userlog in the manifest

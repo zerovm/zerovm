@@ -1,38 +1,37 @@
-this document describes zerovm security, how zerovm stand against possible attacks
-----------------------------------------------------------------------------------
+This document describes ZeroVM security, how ZeroVM stands against possible attacks
+-----------------------------------------------------------------------------------
 
-we assume original nacl does not contain security holes and will analyse only 
-zerovm's specific features which can affect security.
+We assume that original NaCl implementation i perfect and will analyze only the 
+ZeroVM features that can affect the system security.
 
-syscallback
+Syscallback
 -----------
-most dangerous feature is syscallback engine. user allowed to set his own direct jump from 
-the trusted space to untrusted code. to prevent security leaks zerovm analyse given 
-syscallback address. the address must point to static or dynamic text, other addresses will
-be treated as invalid. the address must be modulo of 0x20 to prevent jumping to the middle of
-instruction. the address must not point to the segment end. in the current zerovm version all
-this checkings are exist. syscallback doesn't change stack, registers, memory so no data leak
+Most dangerous feature is the syscallback engine. User is allowed to set her own direct jump from 
+the trusted space to the untrusted code. To prevent security leaks zerovm analyzes the given 
+syscallback address. The address must point to a static or dynamic text, other addresses will
+be treated as invalid. The address must be modulo of 0x20 to prevent jumping to the middle of
+instruction. The address must not point to the segment end. In the current zerovm version all
+this checks already exist. Syscallback doesn't change the stack, registers or memory thus no data leak
 from the trusted space is possible.
 
 trap()
 ------
-the trap() engine contain several functions each of them can contain bugs can lead to security
-vulnerability. therefore each trap() function must have full coverage tests.
+The trap() engine contains several functions each of them can have bugs that lead to security
+vulnerability. Therefore each trap() function must have full test coverage.
 
-other zerovm code
+Other zerovm code
 -----------------
-most dangerous zerovm is the code which work when user application is working. which is: syscalls,
-nacl_syscall_64.S, nacl_switch_64.S nacl_syscall_hook.c and some other code. all this code should
+Most dangerous are the functions that work when user application is running. These are: syscalls,
+nacl_syscall_64.S, nacl_switch_64.S nacl_syscall_hook.c and some other code. All this code should
 be covered with security tests.
 
-syscalls
+Syscalls
 --------
-zerovm still have several syscalls. each syscall may possibly contain security vulnerability.
-every existing zerovm syscall must be covered with security tests.
+ZeroVM still uses several syscalls. Each syscall may possibly contain security vulnerability.
+Every existing ZeroVM syscall must be covered with security tests.
 
-manifest
+Manifest
 --------
-current version of manifest treated as secure. user only can view/change allowed fields. however
-security test will be useful.
-
+Current version of the manifest is treated as secure. User can only view/change specific fields. However
+security tests will be useful.
 

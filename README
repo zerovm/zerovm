@@ -1,13 +1,13 @@
-About:
+ABOUT:
 ZeroVM is a simple virtual machine.
-ZeroVM can run (and isolate) 64-bit x86 applications with a 32-bit address space.
-ZeroVM work under OS Linux on x86-64.
+ZeroVM can run (and isolate) 64-bit x86 applications in a 32-bit address space.
+ZeroVM works under Linux x86_64.
 
 
-Installation:
-0. get ZeroVM from github: https://github.com/Dazo-org/zerovm
-   for example as archive: https://github.com/Dazo-org/zerovm/zipball/master
-1. install prerequisites:
+INSTALL:
+0. Get ZeroVM from github: https://github.com/Dazo-org/zerovm
+   or as archive: https://github.com/Dazo-org/zerovm/zipball/master
+1. Install prerequisites:
    sudo apt-get install build-essential gcc-multilib g++-multilib libsdl1.2-dev texinfo libcrypto++-dev libssl-dev m4  
 1.1. Install sqlite-autoconf
    wget http://www.sqlite.org/sqlite-autoconf-3071200.tar.gz
@@ -25,56 +25,53 @@ Installation:
   ./configure
   make
   sudo make install
-2. go to ZeroVM folder and run make
-3. if everything is ok you will see output of unit tests. in ZeroVM folder you can find "zerovm" executable
+2. Go to ZeroVM folder and run make
+3. If everything is ok you will see output of unit tests. You can find "zerovm" executable in zerovm folder.
 
 
 QUICKSTART
 
 ==================PRELIMINARY===================================================
-Quickstart for installing ZeroVM on Ubuntu (daemon)
+Quickstart for installing ZeroVM on Ubuntu
 
-==> cd ~
-==> mkdir zerovm_getting_started <enter>
-==> cd zerovm_getting_started <enter>
-==> wget https://github.com/Dazo-org/zerovm/zipball/master <enter>
-==> unzip master <enter>
-==> rm -rf master <enter> 
-==> cd <hit tab> <enter>
-==> sudo apt-get install build-essential gcc-multilib g++-multilib libsdl1.2-dev texinfo libcrypto++-dev libssl-dev m4 lib32z1 <enter>
-==> mkdir obj <enter>
-==> mkdir test <enter>
-==> make <enter>
+ cd ~
+ mkdir zerovm_getting_started
+ cd zerovm_getting_started
+ wget https://github.com/Dazo-org/zerovm/zipball/master
+ unzip master
+ rm -rf master 
+ cd zerovm_getting_started
+ sudo apt-get install build-essential gcc-multilib g++-multilib libsdl1.2-dev texinfo libcrypto++-dev libssl-dev m4 lib32z1
+ mkdir obj
+ mkdir test
+ make
 
-Ok if you see green RUN OK PASSED messages that everything is fine and you have ZeroVM compiled for your platform! 
+Now if you've got RUN OK PASSED messages that everything is fine and you have ZeroVM compiled for your platform! 
 
 Let's try to run ZeroVM
 
-==> ./zerovm <enter>
+ ./zerovm
 
-If you see a greeting message that means your ZeroVM was most probably correctly built and functioning.
+You should see a usage message.
 
-==================PRELIMINARY===================================================
-Quickstart for installing ZeroVM SDK (which is NaCl SDK for now)
+ZEROVM SDK INSTALL:
 
-You need to obtain an SDK in order to be able to build samples and your own programs for ZeroVM. To download and install the SDK you need to consult following page (we recommend installing SDK in separate terminal window): 
+You need to obtain an SDK in order to build samples and your own programs for ZeroVM. 
+To download and install the SDK you need to consult the following page 
+(you can install the SDK in separate terminal window): 
 https://developers.google.com/native-client/sdk/download. 
 
 For me it was (in a new terminal window):
-==> cd ~/zerovm_getting_started <enter>
-==> mkdir sdk <enter>
-==> cd sdk <enter>
-==> wget http://commondatastorage.googleapis.com/nativeclient-mirror/nacl/nacl_sdk/nacl_sdk.zip <enter>
-==> unzip nacl_sdk.zip <enter>
-==> cd nacl_sdk <enter>
-==> ./naclsdk list
-==> ./naclsdk update
+ cd ~/zerovm_getting_started
+ mkdir sdk 
+ cd sdk 
+ wget http://commondatastorage.googleapis.com/nativeclient-mirror/nacl/nacl_sdk/nacl_sdk.zip 
+ unzip nacl_sdk.zip 
+ cd nacl_sdk 
+ ./naclsdk list
+ ./naclsdk update
 
-Now you can use newly installed custom versions of GNU toolchain to build attached samples or your own programs
-==================PRELIMINARY===================================================
-
-
-
+Now you can use the newly installed custom GNU toolchain to build the attached samples or your own programs
 
 
 
@@ -85,4 +82,4 @@ Troubleshooting:
 
 2. 
 - ... error: expected specifier-qualifier-list before ‘AES_KEY’
-- missing library. look at (2) of Installation chapter and issue given command
+- missing library. look at (2) of Installation chapter and issue the given command

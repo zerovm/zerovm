@@ -1,20 +1,20 @@
-this document describes syscallback
+This document describes syscallback
 -----------------------------------
 
-essencially, syscallback provide ability to intercept all syscalls from the
-user code. the only syscall that cannot be intercepted - trap (which allows
-user to exploit zerovm special services with syscallback installed). 
+Essentially, syscallback provides the ability to intercept all the syscalls from the
+user code. The only syscall that cannot be intercepted is "trap" (which allows
+user to exploit zerovm special services when syscallback is installed). 
 
-to intercept syscalls user code must contain handler (example of such code
-can be found in "samples/syscallback/syscall_manager.S" and "samples/syscallback/zrt_mock.c").
-when intercepting syscall user must take care about stack and registers.
+To intercept a syscall user code must contain a handler (example of such code
+can be found in "api/syscall_manager.S" and "api/zrt.c").
+When intercepting a syscall the user must take care of the stack and the registers.
 
-more details about syscalls insides can be found in google nacl documentation.
-in a few words syscall has special format of call:
-stack (contain 64-bit values).
+More details about the NaCl syscall guts can be found in the Google NaCl documentation.
+In a few words the NaCl syscall is a call that has a special format:
+stack (contains 64-bit values).
 stack[0] == syscall address in trampoline (syscall number can be calculated from this 64-bit value)
-stack[1] == return address to the user code invoked the syscall
-arguments for syscalls are in 32-bit registers:
+stack[1] == return address to the user code that invoked the syscall
+arguments for syscalls come inside 32-bit registers:
 argument 1 == edi
 argument 2 == esi
 argument 3 == edx
@@ -22,11 +22,11 @@ argument 4 == ecx
 argument 5 == r8d
 argument 6 == r9d
 
-to set syscallback user should call zvm_setup from zerovm api (or use trap()
-with TrapUserSetup function) with "syscallback" field of UserManifest object set
-to new handler address (defined by user code). to remove syscallback user can
-use same procedure, but "syscallback" field must be set to 0.
+To set a syscallback the user should call zvm_setup from zerovm api (or use trap()
+with TrapUserSetup callback). The user should set the "syscallback" field 
+of the UserManifest object to a new handler address (defined in the user code). 
+To remove the syscallback the user can use the same procedure, but should set the "syscallback" field to 0.
 
-note: user program cannot exit as usual if user set syscallback. to exit user
-should invoke zvm_exit from zerovm api (or use trap() with TrapExit function).
-another way, of course, remove syscallback.
+Note: user program cannot exit as usual (by calling exit) if user already set a syscallback. To perform exit 
+user should invoke zvm_exit from zerovm api (or use trap() with TrapExit callback).
+Another way, of course, is just to remove the syscallback before exit.

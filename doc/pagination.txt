@@ -1,18 +1,16 @@
-this document describes pagination engine
+This document describes pagination engine
 -----------------------------------------
 
-pagination engine (PE) is a replacement for input/output syscalls (which exist 
-no more in zerovm). in a few words with PE user can read/write data specified in
-the manifest.
+Pagination Engine (PE) is a replacement for input/output syscalls (were removed from zerovm). 
+In a few words, using PE the user can read/write data specified in the manifest.
 
-for now there are two ways to make the data available for user: mapping data into
-the memory and reading/writing portions of data from disk. user have no access
-to things like file names/attributes/e.t.c. but user can get data and size of data
-from the manifest. here the list of the PE fields from manifest user can access:
+There are two ways (at least for now) to make the data available for the user: mapping the data into
+the memory or reading/writing portions of the data from disk. User have no access
+to things like file names/attributes/etc. but user can get the data and size of the data
+from the manifest. Here is the list of the PE fields user can access:
 
-max_syscalls -- any invocation of PE treated as syscalls. user can be limited in it.
-max_setup_calls -- how many time user allowed to use manifest due one session
-channels[] -- channels/streams available for usage
+max_syscalls -- limits the amount of syscalls allowed. Any PE invocation is treated as a syscall.
+channels[] -- file channels/streams available for the user
 
   0 -- read-only stream (like stdin)
   1 -- read-write stream
@@ -20,22 +18,19 @@ channels[] -- channels/streams available for usage
   3 -- reserved
   4 -- reserved
   
-  for each channel defined following attributes (fields) available for user:
-  type -- type of channel (see 5 channels above)
-  fsize -- size of data (if applicable)
-  buffer -- contain mapped data. if channel is not mapped the field is NULL
-  bsize -- size of mapped data (if applicable), otherwise - 0
+  for each channel the following attributes (fields) are defined and available for the user:
+  type -- type of the channel (see 5 channels above)
+  fsize -- size of the data (if applicable)
+  buffer -- contains mapped data. If the channel is not mapped the field is NULL
+  bsize -- size of the mapped data (if applicable), otherwise - 0
   
-  max_size -- amount of data available for user
-  max_gets -- amount of reads allowed for user (not applicable for mapped data)
-  max_puts -- amount of writes allowed for user (not applicable for mapped data)
-  max_get_size -- amount of bytes allowed to read (not applicable for mapped data)
-  max_put_size -- amount of bytes allowed to write (not applicable for mapped data)
+  max_gets -- total number of reads allowed for the user (not applicable for mapped data)
+  max_puts -- total number of writes allowed for the user (not applicable for mapped data)
+  max_get_size -- total amount of bytes user can read (not applicable for mapped data)
+  max_put_size -- total amount of bytes user can write (not applicable for mapped data)
   
-  also user have access to PE counters (see "zvm.h" from the zerovm api)
+  User also have access to the PE counters (see "zvm.h" from the zerovm api)
 
-there is one more field: "mounted". this field is not allowed for user because
-in a future for stream abstraction sake zerovm will hide origin of data. but
-now user can infere value of the field from other fields: "buffer" and "bsize".
-perhaps, in the next versions of manifest this problem will be solved.
+There is one more field: "mounted". This field describes the type of access to the underlying data. 
+Either disk based access or memory mapped file for now, will be expanded in the future.
 

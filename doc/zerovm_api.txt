@@ -1,48 +1,48 @@
-this documents describes API for zerovm nacl applications
+This document describes API for zerovm NaCl applications
 ---------------------------------------------------------
 
 
-description:
-valid zerovm nacl applications must be both
-- compiled with Google nacl SDK
-- compiled for x86 64-bit model for linux platform 
+
+Description:
+valid zerovm NaCl applications must both
+- be compiled with Google NaCl SDK
+- be compiled for Linux x86_64
 
 
-features:
-- zerovm nacl applications are deterministic
-- to the moment zerovm nacl applications cannot use system calls. 
-  nevertheless, user can exploit zerovm i/o channels (see "channels").
-- user can work with RAM using standard c functions
-- user can get input channel from the manifest to read data.
-- user can get output channel from the manifest to read/write data.
-- user can get logger channel from the manifest to log events.
-- user application may redefine trap() function (see "syscallback").
-  using this mechanism application can intercept and handle any syscalls.
-- using special call (see "setup") application can get/set variables 
-  from manifest (see "manifest.txt" for details)
-- application can be limited (and "by default" is limited) by time, calls, memory
-  and some other system resources (see "limits")
+Features:
+- zerovm NaCl applications are deterministic
+- zerovm nacl applications can use only particular system calls (see "syscalls.txt") 
+  nevertheless, user can exploit zerovm i/o channels (see "pagination.txt")
+- user can allocate RAM using the standard C functonality
+- to read a file user can get an input channel from the manifest
+- to read/write data to file user can get an output channel from the manifest
+- to log some events user can get a userlog channel from the manifest
+- user application may redefine trap() function (see "syscallback")
+  application can intercept and handle any syscalls by using trap()
+- application can get/set variables in the manifest using a special call 
+  (see "manifest.txt" for details)
+- zerovm limits the use of cputime, number of calls, memory allocation and
+  some other system resources available to the application (see "limits.txt")
 
 
-channels:
-detailed information can be get from api/zvm.h (struct PreOpenedFileDesc)
+Channels:
+detailed information can be found in api/zvm.h (struct ChannelDesc)
 
 
-setup:
-detailed information can be get from api/zvm.h (struct UserManifest)
-note that some counters are not available for user application.
-also note that amount of the setup calls may be limited by zerovm.
-user applicatin can get size of setup structure.
+Setup:
+Detailed information can be found in api/zvm.h (struct UserManifest)
+Please note that some counters are not available for user application.
+The number of setup calls may also be limited by zerovm.
+User application should allocate buffer equal to size of the setup structure.
 
 
-syscallback:
-this is a special mechanism which allows to intercept and handle any system call.
-for instance, with it user can define own memory manager or organize file system (with channels data)
+Syscallback:
+This is a special mechanism which can be used to intercept and handle any system call.
+For instance, the user can define her own memory manager or implement a file system
 
-limits:
-- user application is limited by cpu time. the limit can be obtained from the manifest via setup().
-  the counter (currently used cpu time) is not available for user side.
-- application is limited by RAM size. limit can be read as above. counter is available.
-- syscalls are limited. limit and counter are available by setup()
-- calls of setup() are limited. both limit and counter are available for user. application allowed to call
-  setup() at least once.
+Limits:
+- user application is limited by cpu time. The limit can be obtained from the manifest via setup() call
+  the counter (currently used cpu time) is not available for user
+- application is limited by RAM size. Limit can be read as above. Counter is available
+- syscalls are limited. Limit and counter is available by setup()
+

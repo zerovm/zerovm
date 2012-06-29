@@ -1,24 +1,24 @@
-this document contain short description of nacl syscalls
+This document contains a short description of NaCl syscalls
 --------------------------------------------------------
 
-nacl application does not allowed to use real system calls, instead of that
-user can use nacl syscalls. there is however, difference between original
-nacl sel_ldr and zerovm: zerovm does not support syscalls except 
+NaCl application is not allowed to use real system calls, it should use the NaCl syscalls instead. 
+There is however a difference between the original NaCl sel_ldr (NaCl executable loader) and zerovm: 
+zerovm does not support any syscalls except the following ones:
 NACL_sys_sysbrk (20), NACL_sys_mmap (21), NACL_sys_munmap (22), NACL_sys_exit (30),
-NACL_sys_mutex_create (70), NACL_sys_tls_init (82), NACL_sys_tls_get (84). also,
-zerovm support special syscall trap (0) (see "trap.txt")
+NACL_sys_mutex_create (70), NACL_sys_tls_init (82), NACL_sys_tls_get (84). More than that,
+zerovm supports a special syscall called "trap" (0) (see "trap.txt")
 
-when zerovm encounter not supporting syscall it ignores such syscall.
+When zerovm encounters an unsupported syscall it executes the stub (just returns 0).
 
-for input/output syscall zerovm offer replacement: pagination engine (see 
-"pagination.txt"). for syscalls getting time/date there is special attribute
-in manifest: TimeStamp. user application can get it using zvm_setup() from
-zerovm api.
+For the input/output syscalls zerovm offers a replacement: the pagination engine (see 
+"pagination.txt"). For getting the date/time there is a special keyword
+in the manifest: TimeStamp. User application can read it by using zvm_setup() from
+the zerovm API.
 
-more detailed information about syscalls can be obtained from google nacl paper.
+More detailed information about syscalls can be obtained from the Google NaCl paper.
 
-user program allowed to intercept all syscalls except trap() (for further information
-see "syscallback.txt"). this is the way to emulate some (or all) nacl syscalls.
+User program could intercept all the syscalls except trap() syscall (for further information
+see "syscallback.txt"). This is the way to emulate some (or all) nacl syscalls (see "zrtlib.txt").
 
-syscalls can be used by user directly (via trampoline) or indirectly by using nacl sdk.
-sample of how to invoke nacl syscall directly can be found in "samples/direct_syscalls".
+User can call syscall directly (via a trampoline) or indirectly by using the NaCl SDK.
+You can find an example of the implementation in "api/zrt.c".

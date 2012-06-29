@@ -1,6 +1,9 @@
 in the current version:
 -------------------------------------------------------------
 todo
+
+in the next version:
+-------------------------------------------------------------
 -+ solve problem with the channels count: how to inform user side, or how to
   give channels descriptors to user side passing given UserManifest object?
   +temporary solution: preallocated array to hold as much as 1024 channels
@@ -11,9 +14,6 @@ todo
   any fail cases which must terminate nacl should be logged to nacl log
   any "impossible fail" must be checked by assert() (main purpose: prevent 
   improper zerovm code changes/usage) any non fatal cases must use something else (not "ABORT")
-
-in the next version:
--------------------------------------------------------------
 - move trap.c to service_runtime/. even better to move the code inside *syscall*.* and remove
   trap.* files
 - move everything about "NETWORKING" to prefetch if impossible - remove "prefetch"

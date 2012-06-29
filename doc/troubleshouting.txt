@@ -1,10 +1,10 @@
-this documents describes possible zerovm problems
+This document describes possible zerovm problems
 -------------------------------------------------
 
 
 zerovm troubleshouting
 --------------------------
-1. on ubuntu 11.10 desktop 64-bit make invokes error:
+1. On ubuntu 11.10 desktop 64-bit invoking make produces error:
 /usr/bin/ld: cannot find -lcrypto
 collect2: ld returned 1 exit status
 make: *** [zerovm] Error 1
