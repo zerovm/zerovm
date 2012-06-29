@@ -45,7 +45,7 @@ INSTALL:
    wget https://github.com/Dazo-org/zerovm/zipball/master
    unzip master
    mkdir zerovm
-   mv master/dazo-blah-blah-blah/* zerovm
+   mv Dazo-blah-blah-blah/* zerovm/
    cd zerovm
    make
 
