@@ -1,4 +1,4 @@
-NACL_TOOLCHAIN_PATH=~/nacl_sdk/pepper_16/toolchain/linux_x86
+NACL_TOOLCHAIN_PATH=~/nacl_sdk/pepper_19/toolchain/linux_x86_glibc
 MACROS_FLAGS=-DUSER_SIDE -DZRT_LIB
 INCLUDE_FLAGS=-I../.. -I.
 #DEBUG=-g

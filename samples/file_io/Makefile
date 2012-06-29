@@ -1,5 +1,5 @@
 NAME=file_io
-NACL_TOOLCHAIN_PATH=~/nacl_sdk/pepper_16/toolchain/linux_x86
+NACL_TOOLCHAIN_PATH=~/nacl_sdk/pepper_19/toolchain/linux_x86_glibc
 ZVM_ROOT=../..
 INCLUDE_FLAGS=-I $(ZVM_ROOT)
 MACROS_FLAGS=-DUSER_SIDE -DZRT_LIB
