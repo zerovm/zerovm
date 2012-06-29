@@ -14,6 +14,7 @@
 #include <string.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <sys/stat.h>
 #include "src/service_runtime/include/sys/errno.h"
 
 #define KEYWORD_SIZE_MAX 256
