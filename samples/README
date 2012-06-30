@@ -12,9 +12,10 @@ command_line/
   demonstrates argc/argv passed via manifest (CommandLine keyword)
 
 disort/
-  distributed sorting, contains 2 user applications that interacts as nodes, implements networking communication, it uses
-  files as one-to-one network channels. It uses for sse41 bitonic sort and for another cpu instruction sets qsort 
-  algorithm from c standard library. currently 10 source, 10nodes and single manager node configured.   
+  distributed sorting, contains 3 types of applications that interacts as nodes, that implements networking communication; 
+  it uses files as one-to-one network channels. For local sort it uses bitonic sort for sse41 instructions set or 
+  qsort from c std library for another cpu instructions set. Currently network organized by 
+  10 source, 10 destination and one manager nodes. Count of nodes and amount of sorting data are possible to configurate;   
   
 reqrep/
   example uses network facility, it's emulate simple network, where two nodes is communicating one to one. 
