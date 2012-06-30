@@ -16,10 +16,10 @@
 
 int main(int argc, char **argv)
 {
-	uint32_t i;
-	uint32_t *r;
-	uint32_t seq_size;
-	uint32_t inc;
+  uint32_t i;
+  uint32_t *r;
+  uint32_t seq_size;
+  uint32_t inc;
   struct stat fs;
 
   /* get input channel size */
@@ -47,16 +47,16 @@ int main(int argc, char **argv)
   }
 
   /* test order of the numbers */
-	inc = 4294967295U / seq_size; /* increment */
-	fprintf(stderr, "testing array of %u %u-bit numbers..\n", seq_size, sizeof(*r)*8);
-  for (i = 0; i < seq_size; ++i)
-  	if(r[i] != i * inc)
-  	{
-  		fprintf(stderr, "given data is NOT SORTED\n");
-  		fprintf(stderr, "[%u] = %u\n", i, r[i]);
-  		return 4;
-  	}
+  inc = 4294967295U / seq_size; /* increment */
+  fprintf(stderr, "testing array of %u %u-bit numbers..\n", seq_size, sizeof(*r) * 8);
+  for(i = 0; i < seq_size; ++i)
+    if(r[i] != i * inc)
+    {
+      fprintf(stderr, "given data is NOT SORTED\n");
+      fprintf(stderr, "[%u] = %u\n", i, r[i]);
+      return 4;
+    }
 
-	fprintf(stderr, "given data is SORTED\n");
-	return 0;
+  fprintf(stderr, "given data is SORTED\n");
+  return 0;
 }

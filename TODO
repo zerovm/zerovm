@@ -4,6 +4,10 @@ todo
 
 in the next version:
 -------------------------------------------------------------
+- add cpu features detection to sort (or even better - to zrt)
+- add extended signals handling to zerovm. zerovm must survive any nexe error.
+- update /readme (use "force" to make the user download nacl sdk zerovm currently uses) 
+
 -+ solve problem with the channels count: how to inform user side, or how to
   give channels descriptors to user side passing given UserManifest object?
   +temporary solution: preallocated array to hold as much as 1024 channels
