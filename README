@@ -10,6 +10,7 @@ INSTALL:
 Everything tested on Ubuntu 10.04 and Ubuntu 12.04. No issues with VMWare Player. 
 VirtualBox doesn't support SSE4.1 used by several of provided samples.
 
+1. Prerequisites
 1.0. Install ordinary prerequisites:
    sudo apt-get install build-essential gcc-multilib g++-multilib libsdl1.2-dev texinfo libcrypto++-dev libssl-dev m4 lib32z1 uuid-dev
 
@@ -45,7 +46,7 @@ VirtualBox doesn't support SSE4.1 used by several of provided samples.
 
    Now you can use the newly installed custom GNU toolchain to build the attached samples or your own programs
 
-2. Installing actually ZeroVM
+2. Installing ZeroVM
 2.1. Console installation (not needed if compiling from eclipse):
    cd ~
    wget https://github.com/Dazo-org/zerovm/zipball/master
@@ -66,7 +67,7 @@ VirtualBox doesn't support SSE4.1 used by several of provided samples.
 
    If everything is ok you will see output of unit tests. You can find "zerovm" executable in zerovm folder. Now if you've got RUN OK PASSED messages that everything is fine and you have ZeroVM compiled for your platform! 
 
-3. Let's try ZeroVM!
+3. Running ZeroVM and samples
 
    cd ~/zerovm
    ./zerovm
