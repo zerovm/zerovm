@@ -61,7 +61,7 @@ VirtualBox doesn't support SSE4.1 used by several of provided samples.
    If your system doesn't have JRE, install recent JRE. 
    Download Eclipse CDT from eclipse download site. No installation necessary, just unpack and run executable.
    Download and install Egit plugin for eclipse
-   Point Egit to git://github.com/Dazo-org/zerovm.git and pull the recent version of ZeroVM sources.
+   Point Egit to git://github.com/Dazo-org/zerovm.git and pull the recent ZeroVM sources.
    Select 'creare C/C++ project from makefile" to create new eclipse project
    Run the makefile to build the project and run unit tests
 
