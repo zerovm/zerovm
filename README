@@ -6,7 +6,7 @@ ZeroVM works under Linux x86_64.
 
 INSTALL:
 1.0. Install prerequisites:
-   sudo apt-get install build-essential gcc-multilib g++-multilib libsdl1.2-dev texinfo libcrypto++-dev libssl-dev m4 lib32z1
+   sudo apt-get install build-essential gcc-multilib g++-multilib libsdl1.2-dev texinfo libcrypto++-dev libssl-dev m4 lib32z1 uuid-dev
 1.1. Install sqlite-autoconf
    cd ~
    wget http://www.sqlite.org/sqlite-autoconf-3071200.tar.gz
@@ -20,7 +20,6 @@ INSTALL:
 
 1.2. Install zeromq & packages required by zeromq
    cd ~
-   sudo apt-get install uuid-dev
    wget http://download.zeromq.org/zeromq-2.2.0.tar.gz
    tar xvfz zeromq-2.2.0.tar.gz
    cd zeromq-2.2.0
@@ -48,6 +47,8 @@ INSTALL:
    mv Dazo-blah-blah-blah/* zerovm/
    cd zerovm
    make
+   sudo ldconfig
+   cd ..
 
    If everything is ok you will see output of unit tests. You can find "zerovm" executable in zerovm folder. Now if you've got RUN OK PASSED messages that everything is fine and you have ZeroVM compiled for your platform! 
 
