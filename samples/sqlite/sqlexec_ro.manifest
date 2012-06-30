@@ -1,0 +1,27 @@
+=====================================================================
+== "sqlexec_ro" example with zrt library usage
+== i/o switches
+=====================================================================
+Input = zvm_netw.db
+InputMaxGet = 1024000
+
+Output = samples/sqlite/sqlexec_ro.output.result
+OutputMaxPut = 1024000
+
+UserLog = samples/sqlite/sqlexec_ro.user.log
+UserLogMaxPut = 65536
+
+CommandLine = "select * from channels WHERE fmode='r';"
+=====================================================================
+== switches for zerovm. some of them used to control nexe, some
+== for the internal zerovm needs
+=====================================================================
+Version = 11062012
+Log = samples/sqlite/system.zerovm.log
+Report = samples/sqlite/system.report.log
+Nexe = samples/sqlite/sqlexec_ro.nexe
+NexeMax = 10000000
+SyscallsMax = 3333
+SetupCallsMax = 99999
+ContentType = VeryCleverContentType
+XObjectMetaTag = SomeNeedfullThings

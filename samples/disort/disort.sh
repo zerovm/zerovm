@@ -26,11 +26,12 @@ while [  $COUNTER -le $DST_LAST ]; do
     let COUNTER=COUNTER+1 
 done
 
-date > ./samples/disort/time
-gnome-terminal --geometry=80x20 -t "zerovm sortman.manifest" -x sh -c "./zerovm -Msamples/disort/manifest/sortman.manifest; date >> ./samples/disort/time"
+date > /tmp/time
+./zerovm -Msamples/disort/manifest/sortman.manifest
+date >> /tmp/time
 
 cd samples/disort
 cat log/sortman.stderr.log
-echo --------------------------
-cat time
+echo Manager node working time: 
+cat /tmp/time
 

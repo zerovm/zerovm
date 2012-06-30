@@ -16,6 +16,10 @@ disort/
   files as one-to-one network channels. It uses for sse41 bitonic sort and for another cpu instruction sets qsort 
   algorithm from c standard library. currently 10 source, 10nodes and single manager node configured.   
   
+reqrep/
+  example uses network facility, it's emulate simple network, where two nodes is communicating one to one. 
+  Single node sending 100MB and recevies the same from another node.
+  
 file_io/
   example of indirect usage of zrt_read(), zrt_write() and zrt_lseek(). user program can use zrt via libc functions like:
   read(), write(), printf(), rewind() e.t.c.
