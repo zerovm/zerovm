@@ -20,6 +20,10 @@ reqrep/
   example uses network facility, it's emulate simple network, where two nodes is communicating one to one. 
   Single node sending 100MB and recevies the same from another node.
   
+sqlite/
+  example demonstrate sqlite work under zerovm. database reading from stdin input, next it's exec query and puts result
+  to the stdout; it's get sql query string from an command line. Currently DB is opening in READ_ONLY mode;   
+  
 file_io/
   example of indirect usage of zrt_read(), zrt_write() and zrt_lseek(). user program can use zrt via libc functions like:
   read(), write(), printf(), rewind() e.t.c.
