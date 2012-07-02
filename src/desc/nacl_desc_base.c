@@ -17,7 +17,6 @@
 #include "src/desc/nacl_desc_imc_shm.h"
 #include "src/desc/nacl_desc_invalid.h"
 #include "src/desc/nacl_desc_io.h"
-#include "src/desc/nacl_desc_rng.h"
 #include "src/desc/nacl_desc_sync_socket.h"
 #include "src/service_runtime/include/sys/errno.h"
 
@@ -94,8 +93,7 @@ int (*NaClDescInternalize[NACL_DESC_TYPE_MAX])(struct NaClDesc **,
   NaClDescInternalizeNotImplemented,  /* semaphore */
   NaClDescSyncSocketInternalize,
   NaClDescXferableDataDescInternalize,
-  NaClDescInternalizeNotImplemented,  /* imc socket */
-  NaClDescRngInternalize,             /* device: rng */
+  NaClDescInternalizeNotImplemented  /* imc socket */
 };
 
 char const *NaClDescTypeString(enum NaClDescTypeTag type_tag) {
@@ -120,9 +118,8 @@ char const *NaClDescTypeString(enum NaClDescTypeTag type_tag) {
     MAP(NACL_DESC_SYNC_SOCKET);
     MAP(NACL_DESC_TRANSFERABLE_DATA_SOCKET);
     MAP(NACL_DESC_IMC_SOCKET);
-    MAP(NACL_DESC_DEVICE_RNG);
+    default: return "BAD TYPE TAG";
   }
-  return "BAD TYPE TAG";
 }
 
 

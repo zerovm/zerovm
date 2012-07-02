@@ -181,8 +181,8 @@ obj/libnacl_error_code.a: obj/nacl_error_code.o
 obj/libgio_wrapped_desc.a: obj/gio_shm.o obj/gio_shm_unbounded.o obj/gio_nacl_desc.o
 	@ar rc obj/libgio_wrapped_desc.a obj/gio_shm.o obj/gio_shm_unbounded.o obj/gio_nacl_desc.o
 
-obj/libnrd_xfer.a: obj/nacl_desc_base.o obj/nacl_desc_cond.o obj/nacl_desc_dir.o obj/nacl_desc_effector_trusted_mem.o obj/nacl_desc_imc.o obj/nacl_desc_imc_shm.o obj/nacl_desc_invalid.o obj/nacl_desc_io.o obj/nacl_desc_mutex.o obj/nacl_desc_rng.o obj/nacl_desc_semaphore.o obj/nacl_desc_sync_socket.o obj/nrd_all_modules.o obj/nacl_desc.o obj/nacl_desc_sysv_shm.o obj/nacl_desc_conn_cap.o obj/nacl_desc_imc_bound_desc.o
-	@ar rc obj/libnrd_xfer.a obj/nacl_desc_base.o obj/nacl_desc_cond.o obj/nacl_desc_dir.o obj/nacl_desc_effector_trusted_mem.o obj/nacl_desc_imc.o obj/nacl_desc_imc_shm.o obj/nacl_desc_invalid.o obj/nacl_desc_io.o obj/nacl_desc_mutex.o obj/nacl_desc_rng.o obj/nacl_desc_semaphore.o obj/nacl_desc_sync_socket.o obj/nrd_all_modules.o obj/nacl_desc.o obj/nacl_desc_sysv_shm.o obj/nacl_desc_conn_cap.o obj/nacl_desc_imc_bound_desc.o
+obj/libnrd_xfer.a: obj/nacl_desc_base.o obj/nacl_desc_cond.o obj/nacl_desc_dir.o obj/nacl_desc_effector_trusted_mem.o obj/nacl_desc_imc.o obj/nacl_desc_imc_shm.o obj/nacl_desc_invalid.o obj/nacl_desc_io.o obj/nacl_desc_mutex.o obj/nacl_desc_semaphore.o obj/nacl_desc_sync_socket.o obj/nrd_all_modules.o obj/nacl_desc.o obj/nacl_desc_sysv_shm.o obj/nacl_desc_conn_cap.o obj/nacl_desc_imc_bound_desc.o
+	@ar rc obj/libnrd_xfer.a obj/nacl_desc_base.o obj/nacl_desc_cond.o obj/nacl_desc_dir.o obj/nacl_desc_effector_trusted_mem.o obj/nacl_desc_imc.o obj/nacl_desc_imc_shm.o obj/nacl_desc_invalid.o obj/nacl_desc_io.o obj/nacl_desc_mutex.o obj/nacl_desc_semaphore.o obj/nacl_desc_sync_socket.o obj/nrd_all_modules.o obj/nacl_desc.o obj/nacl_desc_sysv_shm.o obj/nacl_desc_conn_cap.o obj/nacl_desc_imc_bound_desc.o
 
 obj/libnacl_perf_counter.a: obj/nacl_perf_counter.o
 	@ar rc obj/libnacl_perf_counter.a obj/nacl_perf_counter.o
@@ -196,8 +196,8 @@ obj/libimc.a: obj/nacl_imc_common.o obj/nacl_imc_c.o obj/nacl_imc_unistd.o obj/n
 obj/libnacl_fault_inject.a: obj/fault_injection.o
 	@ar rc obj/libnacl_fault_inject.a obj/fault_injection.o
 
-obj/libplatform.a: obj/nacl_exit.o obj/nacl_find_addrsp.o obj/nacl_host_desc.o obj/nacl_host_dir.o obj/nacl_secure_random.o obj/nacl_semaphore.o obj/nacl_time.o obj/nacl_timestamp.o obj/condition_variable.o obj/lock.o obj/nacl_check.o obj/nacl_global_secure_random.o obj/nacl_host_desc_common.o obj/nacl_interruptible_condvar.o obj/nacl_interruptible_mutex.o obj/nacl_log.o obj/nacl_secure_random_common.o obj/nacl_sync_checked.o obj/platform_init.o
-	@ar rc obj/libplatform.a obj/nacl_exit.o obj/nacl_find_addrsp.o obj/nacl_host_desc.o obj/nacl_host_dir.o obj/nacl_secure_random.o obj/nacl_semaphore.o obj/nacl_time.o obj/nacl_timestamp.o obj/condition_variable.o obj/lock.o obj/nacl_check.o obj/nacl_global_secure_random.o obj/nacl_host_desc_common.o obj/nacl_interruptible_condvar.o obj/nacl_interruptible_mutex.o obj/nacl_log.o obj/nacl_secure_random_common.o obj/nacl_sync_checked.o obj/platform_init.o
+obj/libplatform.a: obj/nacl_exit.o obj/nacl_find_addrsp.o obj/nacl_host_desc.o obj/nacl_host_dir.o obj/nacl_semaphore.o obj/nacl_time.o obj/nacl_timestamp.o obj/condition_variable.o obj/lock.o obj/nacl_check.o obj/nacl_host_desc_common.o obj/nacl_interruptible_condvar.o obj/nacl_interruptible_mutex.o obj/nacl_log.o obj/nacl_sync_checked.o obj/platform_init.o
+	@ar rc obj/libplatform.a obj/nacl_exit.o obj/nacl_find_addrsp.o obj/nacl_host_desc.o obj/nacl_host_dir.o obj/nacl_semaphore.o obj/nacl_time.o obj/nacl_timestamp.o obj/condition_variable.o obj/lock.o obj/nacl_check.o obj/nacl_host_desc_common.o obj/nacl_interruptible_condvar.o obj/nacl_interruptible_mutex.o obj/nacl_log.o obj/nacl_sync_checked.o obj/platform_init.o
 
 obj/libplatform_qual_lib.a: obj/nacl_os_qualify.o obj/sysv_shm_and_mmap.o obj/nacl_dep_qualify.o obj/nacl_dep_qualify_arch.o
 	@ar rc obj/libplatform_qual_lib.a obj/nacl_os_qualify.o obj/sysv_shm_and_mmap.o obj/nacl_dep_qualify.o obj/nacl_dep_qualify_arch.o
@@ -400,9 +400,6 @@ obj/nacl_desc_io.o: src/desc/nacl_desc_io.c
 obj/nacl_desc_mutex.o: src/desc/nacl_desc_mutex.c
 	@gcc ${CCFLAGS} -o obj/nacl_desc_mutex.o ${CCFLAGS0} ${CCFLAGS1} src/desc/nacl_desc_mutex.c
 
-obj/nacl_desc_rng.o: src/desc/nacl_desc_rng.c
-	@gcc ${CCFLAGS} -o obj/nacl_desc_rng.o ${CCFLAGS0} ${CCFLAGS1} src/desc/nacl_desc_rng.c
-
 obj/nacl_desc_semaphore.o: src/desc/nacl_desc_semaphore.c
 	@gcc ${CCFLAGS} -o obj/nacl_desc_semaphore.o ${CCFLAGS0} ${CCFLAGS1} src/desc/nacl_desc_semaphore.c
 
@@ -529,9 +526,6 @@ obj/nacl_host_desc.o: src/platform/linux/nacl_host_desc.c
 obj/nacl_host_dir.o: src/platform/linux/nacl_host_dir.c
 	@gcc ${CCFLAGS} -o obj/nacl_host_dir.o ${CCFLAGS0} ${CCFLAGS1} src/platform/linux/nacl_host_dir.c
 
-obj/nacl_secure_random.o: src/platform/linux/nacl_secure_random.c
-	@gcc ${CCFLAGS} -o obj/nacl_secure_random.o ${CCFLAGS0} ${CCFLAGS1} src/platform/linux/nacl_secure_random.c
-
 obj/nacl_semaphore.o: src/platform/linux/nacl_semaphore.c
 	@gcc ${CCFLAGS} -o obj/nacl_semaphore.o ${CCFLAGS0} ${CCFLAGS1} src/platform/linux/nacl_semaphore.c
 
@@ -550,9 +544,6 @@ obj/lock.o: src/platform/linux/lock.c
 obj/nacl_check.o: src/platform/nacl_check.c
 	@gcc ${CCFLAGS} -o obj/nacl_check.o ${CCFLAGS0} ${CCFLAGS1} src/platform/nacl_check.c
 
-obj/nacl_global_secure_random.o: src/platform/nacl_global_secure_random.c
-	@gcc ${CCFLAGS} -o obj/nacl_global_secure_random.o ${CCFLAGS0} ${CCFLAGS1} src/platform/nacl_global_secure_random.c
-
 obj/nacl_host_desc_common.o: src/platform/nacl_host_desc_common.c
 	@gcc ${CCFLAGS} -o obj/nacl_host_desc_common.o ${CCFLAGS0} ${CCFLAGS1} src/platform/nacl_host_desc_common.c
 
@@ -564,9 +555,6 @@ obj/nacl_interruptible_mutex.o: src/platform/nacl_interruptible_mutex.c
 
 obj/nacl_log.o: src/platform/nacl_log.c
 	@gcc ${CCFLAGS} -o obj/nacl_log.o ${CCFLAGS0} ${CCFLAGS1} src/platform/nacl_log.c
-
-obj/nacl_secure_random_common.o: src/platform/nacl_secure_random_common.c
-	@gcc ${CCFLAGS} -o obj/nacl_secure_random_common.o ${CCFLAGS0} ${CCFLAGS1} src/platform/nacl_secure_random_common.c
 
 obj/nacl_sync_checked.o: src/platform/nacl_sync_checked.c
 	@gcc ${CCFLAGS} -o obj/nacl_sync_checked.o ${CCFLAGS0} ${CCFLAGS1} src/platform/nacl_sync_checked.c

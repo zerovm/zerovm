@@ -1,25 +1,18 @@
 in the current version:
 -------------------------------------------------------------
+: WILL BE REPLACED WITH LINKING OPTIONS. 
+  BLOB WILL BE REMOVED FROM ZEROVM
 - blob engine. move blob to untrusted code. make changes in the code
 - prepare demo zrt version using untrusted blob engine
 - write helloworld program to demonstrate new zrt
-- check NaCl_page_alloc_randomized() and nap->dispatch_thunk.
+
++ check NaCl_page_alloc_randomized() and nap->dispatch_thunk.
   if it is really randomized and user can read it, it should be
   changed. user must not get random values bypassing manifest
   update: fix thunk. it should be constant. remove randomization
-  
- - i need to extract
-   static NaClValidationStatus ApplyDfaValidator_x86_64(
-    uintptr_t guest_addr,
-    uint8_t *data,
-    size_t size,
-    int stubout_mode,
-    int readonly_text,
-    const NaClCPUFeaturesX86 *cpu_features,
-    struct NaClValidationCache *cache)
-   this is the dfa validator
-   also i need to find place to embed it
-   warning: stubout_mode, readonly_text are not supported 
+- update validator (remove dfa support)
+  decide should we use standalone validator or not?
+- completely remove nacl random  
 
 in the next version:
 -------------------------------------------------------------

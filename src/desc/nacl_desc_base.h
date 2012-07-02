@@ -83,7 +83,7 @@ enum NaClDescTypeTag {
   NACL_DESC_SYNC_SOCKET,
   NACL_DESC_TRANSFERABLE_DATA_SOCKET,
   NACL_DESC_IMC_SOCKET,
-  NACL_DESC_DEVICE_RNG
+  NACL_DESC_TYPE_MAX
   /*
    * Add new NaClDesc subclasses here.
    *
@@ -91,7 +91,7 @@ enum NaClDescTypeTag {
    * also be updated to add new internalization functions.
    */
 };
-#define NACL_DESC_TYPE_MAX      (NACL_DESC_DEVICE_RNG + 1)
+
 #define NACL_DESC_TYPE_END_TAG  (0xff)
 
 struct NaClInternalRealHeader {
