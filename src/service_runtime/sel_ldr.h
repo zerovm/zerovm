@@ -86,14 +86,7 @@ struct NaClApp {
    */
   uintptr_t                 mem_start;
 
-#if (NACL_ARCH(NACL_BUILD_ARCH) == NACL_x86 \
-     && NACL_BUILD_SUBARCH == 32 && __PIC__)
-  uintptr_t                 pcrel_thunk;
-#endif
-#if (NACL_ARCH(NACL_BUILD_ARCH) == NACL_x86 \
-     && NACL_BUILD_SUBARCH == 64)
   uintptr_t                 dispatch_thunk;
-#endif
 
   /* only used for ET_EXEC:  for CS restriction */
   uintptr_t                 static_text_end;  /* relative to mem_start */
@@ -220,11 +213,6 @@ struct NaClApp {
   int                       ignore_validator_result;
   int                       skip_validator;
   int                       validator_stub_out_mode;
-
-#if NACL_ARCH(NACL_BUILD_ARCH) == NACL_x86 && NACL_BUILD_SUBARCH == 32
-  uint16_t                  code_seg_sel;
-  uint16_t                  data_seg_sel;
-#endif
 
   uintptr_t                 break_addr;   /* user addr */
   /* data_end <= break_addr is an invariant */
@@ -410,19 +398,7 @@ void NaClFillTrampolineRegion(struct NaClApp *nap);
 
 void NaClFillEndOfTextRegion(struct NaClApp *nap);
 
-#if (NACL_ARCH(NACL_BUILD_ARCH) == NACL_x86 \
-     && NACL_BUILD_SUBARCH == 32 && __PIC__)
-
-int NaClMakePcrelThunk(struct NaClApp *nap);
-
-#endif
-
-#if (NACL_ARCH(NACL_BUILD_ARCH) == NACL_x86 \
-     && NACL_BUILD_SUBARCH == 64)
-
 int NaClMakeDispatchThunk(struct NaClApp *nap);
-
-#endif
 
 void NaClPatchOneTrampoline(struct NaClApp *nap,
                             uintptr_t target_addr);
@@ -451,11 +427,6 @@ struct NaClPatchInfo {
 
   struct NaClPatch    *abs64;
   size_t              num_abs64;
-
-#if NACL_TARGET_SUBARCH == 32
-  uintptr_t           *rel32;
-  size_t              num_rel32;
-#endif
 
   uintptr_t           *rel64;
   size_t              num_rel64;

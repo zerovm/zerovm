@@ -18,30 +18,6 @@
  */
 void *g_nacl_prereserved_sandbox_addr = NULL;
 
-///*
-// * Find sandbox memory pre-reserved by the nacl_helper in chrome. The
-// * nacl_helper, if present, reserves the bottom 1G of the address space
-// * for use by Native Client.
-// *
-// * NOTE: num_bytes is currently ignored. It should be 1GB on Linux and
-// * 1GB plus a few pages on ARM. TODO(bradchen): deal with num_bytes.
-// *
-// * Out parameter p should be either:
-// *   0: reserved memory was not found
-// *   less than 128K: indicates the bottom 1G was reserved.
-// */
-//int   NaCl_find_prereserved_sandbox_memory(void   **p,
-//                                           size_t num_bytes) {
-//  UNREFERENCED_PARAMETER(num_bytes);
-//
-//  NaClLog(2,
-//          "NaCl_find_prereserved_sandbox_memory(, %#.8"NACL_PRIxPTR") => %p\n",
-//          num_bytes, g_nacl_prereserved_sandbox_addr);
-//
-//  *p = g_nacl_prereserved_sandbox_addr;
-//  return g_nacl_prereserved_sandbox_addr != NULL;
-//}
-
 void NaCl_page_free(void     *p,
                     size_t   size) {
   if (p == 0 || size == 0)
@@ -92,24 +68,14 @@ int NaCl_page_alloc_intern(void   **p,
   if (NULL != *p) {
     map_flags |= MAP_FIXED;
   }
- #if NACL_LINUX
+
   /*
    * Indicate to the kernel that we just want these pages allocated, not
    * committed.  This is important for systems with relatively little RAM+swap.
    * See bug 251.
    */
   map_flags |= MAP_NORESERVE;
-#elif NACL_OSX
-  /*
-   * TODO(cbiffle): Contrary to its name, this file is used by Mac OS X as well
-   * as Linux.  An equivalent fix may require this to stop, since we might have
-   * to drop to the xnu layer and use vm_allocate.
-   *
-   * Currently this code is not guaranteed to work for non-x86-32 Mac OS X.
-   */
-#else
-# error This file should be included only by Linux and (surprisingly) OS X.
-#endif
+
   return NaCl_page_alloc_intern_flags(p, size, map_flags);
 }
 
@@ -127,15 +93,7 @@ int NaCl_page_alloc_randomized(void   **p,
    */
 
   for (tries = 0; tries < kNumTries; ++tries) {
-#if NACL_HOST_WORDSIZE == 32
-    addr = NaClGlobalSecureRngUint32();
-    NaClLog(LOG_INFO, "NaCl_page_alloc_randomized: 0x%"NACL_PRIxPTR"\n",
-            addr);
-    /* linux permits 3-4 GB of user address space */
-    *p = (void *) (addr & ~((uintptr_t) NACL_MAP_PAGESIZE - 1)
-                   & ((~(uintptr_t) 0) >> 1));
-#elif NACL_HOST_WORDSIZE == 64
-    addr = NaClGlobalSecureRngUint32();
+    addr = 0xABAD4A55; /* d'b: for sake of determenism "= NaClGlobalSecureRngUint32();" disabled */
     NaClLog(LOG_INFO, "NaCl_page_alloc_randomized: 0x%"NACL_PRIxPTR"\n",
             addr);
     /*
@@ -145,9 +103,6 @@ int NaCl_page_alloc_randomized(void   **p,
      */
     *p = (void *) ((addr << NACL_MAP_PAGESHIFT)  /* bits [47:16] are random */
                    & ((((uintptr_t) 1) << 47) - 1));  /* now bits [46:16] */
-#else
-# error "where am i?"
-#endif
 
     NaClLog(LOG_INFO, "NaCl_page_alloc_randomized: hint 0x%"NACL_PRIxPTR"\n",
             (uintptr_t) *p);
