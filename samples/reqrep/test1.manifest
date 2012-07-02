@@ -1,0 +1,23 @@
+=====================================================================
+== i/o switches. full list. optional. some switches now meaningless,
+== placed here for completeness and future changes
+=====================================================================
+
+UserLog = samples/reqrep/log/test1.stderr.log
+UserLogMaxPut = 65536
+
+CommandLine = 1 test1
+
+=====================================================================
+== switches for zerovm. some of them used to control nexe, some
+== for the internal zerovm needs
+=====================================================================
+Version = 11062012
+Log = samples/reqrep/log/zerovm.test1.log
+Report = samples/reqrep/log/test1.report.log
+Nexe = samples/reqrep/test1.nexe
+NexeMax = 10000000
+SyscallsMax = 3333
+SetupCallsMax = 99999
+Networking = bump
+
