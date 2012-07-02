@@ -1,9 +1,29 @@
 in the current version:
 -------------------------------------------------------------
-todo
+- blob engine. move blob to untrusted code. make changes in the code
+- prepare demo zrt version using untrusted blob engine
+- write helloworld program to demonstrate new zrt
+- check NaCl_page_alloc_randomized() and nap->dispatch_thunk.
+  if it is really randomized and user can read it, it should be
+  changed. user must not get random values bypassing manifest
+  update: fix thunk. it should be constant. remove randomization
+  
+ - i need to extract
+   static NaClValidationStatus ApplyDfaValidator_x86_64(
+    uintptr_t guest_addr,
+    uint8_t *data,
+    size_t size,
+    int stubout_mode,
+    int readonly_text,
+    const NaClCPUFeaturesX86 *cpu_features,
+    struct NaClValidationCache *cache)
+   this is the dfa validator
+   also i need to find place to embed it
+   warning: stubout_mode, readonly_text are not supported 
 
 in the next version:
 -------------------------------------------------------------
+- add NodeName to manifest (for networking)
 - add cpu features detection to sort (or even better - to zrt)
 - add extended signals handling to zerovm. zerovm must survive any nexe error.
 - update /readme (use "force" to make the user download nacl sdk zerovm currently uses) 
@@ -38,6 +58,7 @@ in the next version:
   update: for a user it would be only 3 channel types: input, output and random acces image.
   input stand for stdin and netin; output - stdout, stderr, netout; image - random access storage
   over cdr
+  update: make 2 channel types: generic and cdr
   
 - make one extra trap() function - set_syscallback(). because using trap() setup for it
   has potentially problem and yet look ugly.
@@ -61,12 +82,6 @@ in the next version:
   4. only those who translated to the real system calls -- GOOD CANDIDATE
   5. none
 
-in the future versions:
+problems to solve in the future versions:
 -------------------------------------------------------------
-
-comments (to place to zerovm code):
-- manifest initializators need:
-  dyn_array ready, 
-  mem manager from sel_mem constructed,
-  
-
+- find the way how to exchange variable length arrays between trusted and untrusted code 

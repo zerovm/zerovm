@@ -324,43 +324,67 @@ int main(int argc, char **argv)
 		NaClSignalAssertNoHandlers(); /* Sanity check. */
 	}
 
-  /* Open (not load) both files nexe and blob. only need for "fuzzy load". can be removed */
-
 #define PERF_CNT(str)\
 	NaClPerfCounterMark(&time_all_main, str);\
   NaClPerfCounterIntervalLast(&time_all_main);
 
-  if(NULL != nap->system_manifest->blob)
-  {
-    if(0 == GioMemoryFileSnapshotCtor(&blob_file, nap->system_manifest->blob))
-    {
-      perror("sel_main");
-      fprintf(stderr, "Cannot open \"%s\".\n", nap->system_manifest->blob);
-      exit(1);
-    }
-    PERF_CNT("SnapshotBlob");
-  }
+#define READ_MODULE(snapshot, name, perf) \
+  do {\
+    if(0 == GioMemoryFileSnapshotCtor(snapshot, name))\
+    {\
+      perror("sel_main");\
+      fprintf(stderr, "Cannot open \"%s\".\n", name);\
+      exit(1);\
+    }\
+    PERF_CNT(perf);\
+  } while(0)
 
-  if (0 == GioMemoryFileSnapshotCtor(&main_file, nap->system_manifest->nexe))
-  {
-    perror("sel_main");
-    fprintf(stderr, "Cannot open \"%s\".\n", nap->system_manifest->nexe);
-    exit(1);
-  }
-  PERF_CNT("SnapshotNaclFile");
+#define VALIDATE_MODULE(snapshot, name) \
+  do {\
+    NaClLog(2, "Loading nacl file %s (non-RPC)\n", name);\
+    errcode = NaClAppLoadFile((struct Gio *) snapshot, nap);\
+    if (LOAD_OK != errcode)\
+    {\
+      fprintf(stderr, "Error while loading \"%s\": %s\n", name,\
+              NaClErrorString(errcode));\
+      fprintf(stderr, ("Using the wrong type of nexe (nacl-x86-32"\
+              " on an x86-64 or vice versa)\nor a corrupt nexe file may be"\
+              " responsible for this error.\n"));\
+    }\
+  } while(0)
 
+	/*
+	 * todo(d'b): find out how to compile a blob library. pay attention
+	 * that we change the blob nature: it is an untrusted code now.
+	 * the blob library differ from the nexe only by 1 thing: order
+	 * of initialization. blob will take control before nexe
+	 *
+	 * another important thing: how to load blob and nexe. they
+	 * will share 4gb user space
+	 */
+
+  /* read the nexe and (if specified, the blob) into the memory */
+  /* ###
+   * todo(d'b): blob loading temporary disabled
+   * probably blob will be completely removed
+   */
+	UNREFERENCED_PARAMETER(blob_file);
+//  if(NULL != nap->system_manifest->blob)
+//    READ_MODULE(&blob_file, nap->system_manifest->blob, "SnapshotBlob");
+  READ_MODULE(&main_file, nap->system_manifest->nexe, "SnapshotNaclFile");
+
+  /* validate untrusted code: the nexe and (if specified, the blob) */
   if (LOAD_OK == errcode)
   {
-    NaClLog(2, "Loading nacl file %s (non-RPC)\n", nap->system_manifest->nexe);
-    errcode = NaClAppLoadFile((struct Gio *) &main_file, nap);
-    if (LOAD_OK != errcode)
-    {
-      fprintf(stderr, "Error while loading \"%s\": %s\n", nap->system_manifest->nexe,
-              NaClErrorString(errcode));
-      fprintf(stderr, ("Using the wrong type of nexe (nacl-x86-32"
-              " on an x86-64 or vice versa)\nor a corrupt nexe file may be"
-              " responsible for this error.\n"));
-    }
+    /* ###
+     * todo(d'b): blob loading temporary disabled
+     * probably blob will be completely removed
+     */
+//    if(NULL != nap->system_manifest->blob)
+//      VALIDATE_MODULE(&blob_file, nap->system_manifest->blob);
+
+    VALIDATE_MODULE(&main_file, nap->system_manifest->nexe);
+
     PERF_CNT("AppLoadEnd");
     nap->module_load_status = errcode;
   }
@@ -414,32 +438,37 @@ int main(int argc, char **argv)
 #endif
   /* end */
 
-  /* load blob library */
-  if(NULL != nap->system_manifest->blob)
-  {
-    if(LOAD_OK == errcode)
-    {
-      NaClLog(2, "Loading blob file %s\n", nap->system_manifest->blob);
-      errcode = NaClAppLoadFileDynamically(nap, (struct Gio *) &blob_file);
-      if(LOAD_OK != errcode)
-      {
-        fprintf(stderr, "Error while loading \"%s\": %s\n", nap->system_manifest->blob,
-                NaClErrorString(errcode));
-      }
-      PERF_CNT("BlobLoaded");
-    }
+  /*
+   * todo(d'b): we gonna load the blob using the nexe loader (and
+   * it has been done in the code above)
+   */
 
-    if(-1 == (*((struct Gio *) &blob_file)->vtbl->Close)((struct Gio *) &blob_file))
-    {
-      fprintf(stderr, "Error while closing \"%s\".\n", nap->system_manifest->blob);
-    }
-    (*((struct Gio *) &blob_file)->vtbl->Dtor)((struct Gio *) &blob_file);
-    if(nap->verbosity)
-    {
-      gprintf((struct Gio *) &gout, "printing post-IRT NaClApp details\n");
-      NaClAppPrintDetails(nap, (struct Gio *) &gout);
-    }
-  }
+//  /* load blob library */
+//  if(NULL != nap->system_manifest->blob)
+//  {
+//    if(LOAD_OK == errcode)
+//    {
+//      NaClLog(2, "Loading blob file %s\n", nap->system_manifest->blob);
+//      errcode = NaClAppLoadFileDynamically(nap, (struct Gio *) &blob_file);
+//      if(LOAD_OK != errcode)
+//      {
+//        fprintf(stderr, "Error while loading \"%s\": %s\n", nap->system_manifest->blob,
+//                NaClErrorString(errcode));
+//      }
+//      PERF_CNT("BlobLoaded");
+//    }
+//
+//    if(-1 == (*((struct Gio *) &blob_file)->vtbl->Close)((struct Gio *) &blob_file))
+//    {
+//      fprintf(stderr, "Error while closing \"%s\".\n", nap->system_manifest->blob);
+//    }
+//    (*((struct Gio *) &blob_file)->vtbl->Dtor)((struct Gio *) &blob_file);
+//    if(nap->verbosity)
+//    {
+//      gprintf((struct Gio *) &gout, "printing post-IRT NaClApp details\n");
+//      NaClAppPrintDetails(nap, (struct Gio *) &gout);
+//    }
+//  }
 
   /* error reporting done; can quit now if there was an error earlier */
   if (LOAD_OK != errcode) {
