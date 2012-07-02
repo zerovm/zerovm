@@ -1,0 +1,25 @@
+=====================================================================
+== "lua" port of LUA scripting language
+== takes .lua scripts from input
+=====================================================================
+Input = samples/lua-scripting/script.lua
+InputMaxGet = 102400
+
+Output = samples/lua-scripting/lua.script.result
+OutputMaxPut = 1024000
+
+UserLog = samples/lua-scripting/lua.user.log
+UserLogMaxPut = 65536
+
+=====================================================================
+== switches for zerovm. some of them used to control nexe, some
+== for the internal zerovm needs
+=====================================================================
+Version = 11062012
+Log = samples/lua-scripting/system.zerovm.log
+Report = samples/lua-scripting/system.report.log
+Nexe = samples/lua-scripting/lua.nexe
+NexeMax = 10000000
+SyscallsMax = 3333
+SetupCallsMax = 99999
+
