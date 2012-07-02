@@ -74,7 +74,7 @@ int main(int argc, char **argv)
 	int rc = 0;
 
 	if ( argc < 2 ){
-		query_string = "select * from channels WHERE fmode='r';";
+		query_string = "select * from channels;";
 		fprintf(stderr, "SQL QUERY STRING should be passed to application parameters\n\n");
 		fprintf(stderr, "default SQL QUERY STRING: '%s'\n", query_string);
 	}

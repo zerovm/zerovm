@@ -11,7 +11,10 @@ OutputMaxPut = 1024000
 UserLog = samples/sqlite/sqlexec_ro.user.log
 UserLogMaxPut = 65536
 
-CommandLine = "select * from channels WHERE fmode='r';"
+==Command line currently not supported values using '=' char
+==CommandLine = "select * from channels WHERE fmode='r';"
+==CommandLine = select * from channels WHERE fmode='r';
+
 =====================================================================
 == switches for zerovm. some of them used to control nexe, some
 == for the internal zerovm needs
