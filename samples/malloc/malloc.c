@@ -1,16 +1,19 @@
 /*
  * demonstration of the simple zrt memory management.
  * it involves zrt_mmap(), zrt_munmap(), zrt_sysbrk()
+ *
  * MaxMem field must be set (in manifest to sane value)
+ * this example also uses zerovm api in order to get max_mem
  */
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include "api/zrt.h"
 #include "api/zvm.h"
 
 #define SMALL_AMOUNT 0x1000000
 #define GAP_AMOUNT 0x2000000
-#define AVAILABLE_AMOUNT setup.max_mem
+#define AVAILABLE_AMOUNT (zvm_memory_size() - (GAP_AMOUNT))
 #define VAR_NAME_TO_STRING(var) #var
 
 #define TEST_PTR(ptr)\
@@ -27,9 +30,9 @@ int main()
 {
   /* first off check manifest */
   fprintf(stdout, "we are using %sTRUSTED memory manager\n",
-      setup.heap_ptr ? "UN" : "");
+          zvm_memory_size() ? "UN" : "");
 
-  TEST_PTR((void*)setup.heap_ptr);
+  TEST_PTR(zvm_heap_start());
 
   fprintf(stdout, "initial memory allocation\n");
   /*

@@ -2,7 +2,7 @@
  * test for user manifest accessors provided by zrt
  */
 #include <stdio.h>
-#include "api/zvm.h"
+#include "api/zrt.h"
 
 /* to show enum values as strings */
 static char *enum_strings[] = {

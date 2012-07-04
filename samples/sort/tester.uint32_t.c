@@ -9,7 +9,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include "api/zvm.h"
+#include "api/zrt.h"
 
 #define ELEMENT_SIZE sizeof(uint32_t)
 

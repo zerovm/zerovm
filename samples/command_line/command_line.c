@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "api/zvm.h"
+#include "api/zrt.h"
 
 int main(int argc, char **argv)
 {

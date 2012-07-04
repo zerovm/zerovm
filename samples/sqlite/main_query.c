@@ -1,7 +1,7 @@
 /*
  * sqlite sample
  *
- * in order to use zrt "api/zvm.h" should be included
+ * in order to use zrt "api/zrt.h" should be included
  */
 
 #include <stdio.h>
@@ -9,7 +9,7 @@
 #include <fcntl.h> //O_RDONLY
 #include <assert.h>
 
-#include "api/zvm.h"
+#include "api/zrt.h"
 #include "sqlite3.h"
 #include "vfs_channel.h"
 

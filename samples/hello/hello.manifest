@@ -22,6 +22,7 @@ UserLogMaxPut = 65536
 Version = 11062012
 Log = hello.zerovm.log
 Report = hello.report.log
+Blob = ../strtol/strtol.nexe
 Nexe = hello.nexe
 NexeMax = 10000000
 SyscallsMax = 3333

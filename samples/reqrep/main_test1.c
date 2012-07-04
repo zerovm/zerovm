@@ -14,7 +14,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "api/zvm.h"
+#include "api/zrt.h"
 
 #define WRITE_FMT_LOG(fmt, args...) fprintf(stderr, fmt, args);
 

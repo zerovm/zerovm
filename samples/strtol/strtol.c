@@ -3,7 +3,7 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
-#include "api/zvm.h"
+#include "api/zrt.h"
 
 int main()
 {

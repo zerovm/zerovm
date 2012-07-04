@@ -12,7 +12,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "api/zvm.h"
+#include "api/zrt.h"
 #include "defines.h"
 #include "comm_man.h"
 #include "distr_common.h"

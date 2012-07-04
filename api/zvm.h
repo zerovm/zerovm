@@ -190,42 +190,38 @@ struct UserManifest
   COMMON_PART /* shared with struct SystemManifest */
 };
 
-#ifdef USER_SIDE /* disabled for trusted code */
-/* "One Ring" wrappers and logger */
-
 /*
- * wrapper for zerovm "TrapUserSetup"
+ * "One Ring" wrappers and logger. disabled for trusted code
  */
+#ifdef USER_SIDE
+
+/* must be called before api usage */
+struct UserManifest* zvm_init();
+
+/* wrapper for zerovm "TrapUserSetup" */
 int32_t zvm_setup(struct UserManifest *hint);
 
-/*
- * wrapper for zerovm "TrapRead"
- */
+/* wrapper for zerovm "TrapRead" */
 int32_t zvm_pread(int desc, char *buffer, int32_t size, int64_t offset);
 
-/*
- * wrapper for zerovm "TrapWrite"
- */
+/* wrapper for zerovm "TrapWrite" */
 int32_t zvm_pwrite(int desc, char *buffer, int32_t size, int64_t offset);
 
-/*
- * wrapper for zerovm "TrapExit"
- */
+/* wrapper for zerovm "TrapExit" */
 int32_t zvm_exit(int32_t code);
 
 /*
- * temporary solution for zrt library. can be removed after
- * "blob library" mechanism will be complete
+ * user_manifest accessors prototypes
  */
-#if ZRT_LIB
-#define main slave_main
-extern struct UserManifest setup;
-#endif
+
+/* return user heap starting address */
+void* zvm_heap_start();
 
 /*
- * accessors prototypes
- * todo(d'b): remove it from here after "blob library" will be done
+ * return user memory size. note that this is not the heap
+ * size, but whole memory available for user
  */
+uint32_t zvm_memory_size();
 
 /* return content_type or NULL */
 char* zvm_content_type();
