@@ -12,6 +12,8 @@
 #include "src/platform/nacl_log.h"
 #include "src/service_runtime/nacl_config.h"
 
+#define DISPATCH_THUNK_ADDRESS ((void*)0x5AFECA110000)
+
 /*
  * When we're built into Chromium's "nacl_helper", its main will set this.
  */
@@ -82,41 +84,17 @@ int NaCl_page_alloc_intern(void   **p,
 
 /*
  * Pick a "hint" address that is random.
- * d'b: for sake of determenism randomization has been disabled
+ * update(d'b): for sake of determenism randomization has been disabled
  */
 int NaCl_page_alloc_randomized(void **p, size_t size)
 {
-  uintptr_t addr;
-  int neg_errno = -ENOMEM; /* in case we change kNumTries to 0 */
-  int tries;
-  const int kNumTries = 4;
-  /*
-   * linux permits 128 TB of user address space.
-   */
+  *p = DISPATCH_THUNK_ADDRESS;
+  NaClLog(LOG_INFO, "NaCl_page_alloc_randomized: hint 0x%"NACL_PRIxPTR"\n", (uintptr_t) *p);
 
-  for(tries = 0; tries < kNumTries; ++tries)
-  {
-    addr = 0xABAD4A55;
-    NaClLog(LOG_INFO, "NaCl_page_alloc_randomized: 0x%"NACL_PRIxPTR"\n", addr);
+  if(NaCl_page_alloc_intern_flags(p, size, 0) != 0)
+    NaClLog(LOG_FATAL, "NaCl_page_alloc_randomized: failed, dropping hints\n");
 
-    /*
-     * linux permits 128 TB of user address space, and we keep the low 16 bits
-     * free (64K alignment to match Windows), so we have 47-16=31 bits of entropy.
-     */
-    *p = (void *) ((addr << NACL_MAP_PAGESHIFT) /* bits [47:16] are random */
-    & ((((uintptr_t) 1) << 47) - 1)); /* now bits [46:16] */
-
-    NaClLog(LOG_INFO, "NaCl_page_alloc_randomized: hint 0x%"NACL_PRIxPTR"\n", (uintptr_t) *p);
-    neg_errno = NaCl_page_alloc_intern_flags(p, size, 0);
-    if(0 == neg_errno) break;
-  }
-  if(0 != neg_errno)
-  {
-    NaClLog(LOG_INFO, "NaCl_page_alloc_randomized: failed (%d), dropping hints\n", -neg_errno);
-    *p = 0;
-    neg_errno = NaCl_page_alloc_intern_flags(p, size, 0);
-  }
-  return neg_errno;
+  return 0;
 }
 
 int NaCl_page_alloc(void   **p,
