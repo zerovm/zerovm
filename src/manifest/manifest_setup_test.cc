@@ -29,7 +29,6 @@
 #define MANIFEST_FILE "killme.manifest.txt"
 #define NEXE_FILE "manifest.nexe"
 #define INPUT_FILE "full.input.data"
-#define BLOB_FILE "zrt.blob.nexe"
 #define FAKE_DATA "fake data just to extend a file over the zero size"
 #define MANIFEST_DATA \
   "=====================================================================\n"\
@@ -99,7 +98,6 @@
   "Timeout = 10\n"\
   "MemMax = 67108864\n"\
   "SyscallsMax = 32768\n"\
-  "Blob = zrt.blob.nexe\n"\
   "CommandLine = command line arguments for the user program. will be given as a string array\n"
 
 // construct manifest, setup system_manifest and host_manifest
@@ -133,7 +131,6 @@ TEST(ManifestSetupTest, FullCase)
   // several files from manifest must exist before setup
   CREATE_FILE(INPUT_FILE, FAKE_DATA);
   CREATE_FILE(NEXE_FILE, FAKE_DATA);
-  CREATE_FILE(BLOB_FILE, FAKE_DATA);
 
 #undef CREATE_FILE
 
@@ -144,7 +141,6 @@ TEST(ManifestSetupTest, FullCase)
   HostManifestCtor(nap);
 
   // check constructed channels, and other fields one by one
-  printf("nap->system_manifest->blob = %s\n", nap->system_manifest->blob);
 }
 
 //void AnswerManifestPut(struct NaClApp *nap, char *report)

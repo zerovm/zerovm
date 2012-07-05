@@ -75,7 +75,6 @@
   "Timeout", /* maximum zerovm time to run */\
   "MemMax", /* size of memory available for nexe */\
   "SyscallsMax", /* syscalls allowed nexe to invoke */\
-  "Blob", /* blob library if it will retain */\
   "CommandLine", /* command line for nexe */\
   "Networking", /* todo(d'b): remove it */\
   "TheEnd" /* used to check if this array is in sync with the enum */\
@@ -150,7 +149,6 @@ enum ManifestKeywords
   Timeout, /* maximum zerovm time to run */
   MemMax, /* size of memory available for nexe */
   SyscallsMax, /* syscalls allowed nexe to invoke */
-  Blob, /* blob library if it will retain */
   CommandLine, /* command line for nexe */
   Networking, /* todo(d'b): added temporary, remove it */
   TheEnd /* used to check if this enum is in sync with the string array */

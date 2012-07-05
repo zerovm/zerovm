@@ -92,7 +92,6 @@ void SystemManifestCtor(struct NaClApp *nap)
   policy->version = GetValueByKey("Version");
   policy->log = GetValueByKey("Log");
   policy->nexe = GetValueByKey("Nexe");
-  policy->blob = GetValueByKey("Blob");
   policy->nexe_etag = GetValueByKey("NexeEtag");
   GET_INT_BY_KEY(policy->nexe_max, "NexeMax");
   GET_INT_BY_KEY(policy->timeout, "Timeout");

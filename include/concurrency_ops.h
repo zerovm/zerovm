@@ -11,18 +11,18 @@
 #include "include/nacl_base.h"
 #include "include/portability.h"
 
-static INLINE void NaClWriteMemoryBarrier() {
-  __asm__ __volatile__("sfence");
-}
+//static INLINE void NaClWriteMemoryBarrier() {
+//  __asm__ __volatile__("sfence");
+//}
 
-static INLINE void NaClClearInstructionCache(void *start, void *end) {
-  /*
-   * Clearing the icache explicitly is not necessary on x86.  We could
-   * call gcc's __builtin___clear_cache() on x86, where it is a no-op,
-   * except that it is not available in Mac OS X's old version of gcc.
-   */
-  UNREFERENCED_PARAMETER(start);
-  UNREFERENCED_PARAMETER(end);
-}
+//static INLINE void NaClClearInstructionCache(void *start, void *end) {
+//  /*
+//   * Clearing the icache explicitly is not necessary on x86.  We could
+//   * call gcc's __builtin___clear_cache() on x86, where it is a no-op,
+//   * except that it is not available in Mac OS X's old version of gcc.
+//   */
+//  UNREFERENCED_PARAMETER(start);
+//  UNREFERENCED_PARAMETER(end);
+//}
 
 #endif  /* NATIVE_CLIENT_SRC_INCLUDE_CONCURRENCY_OPS_H_ */
