@@ -38,26 +38,6 @@
 #endif
 /* end */
 
-struct redir
-{
-  struct redir *next;
-  int nacl_desc;
-  enum
-  {
-    HOST_DESC, IMC_DESC
-  } tag;
-  union
-  {
-    struct
-    {
-      int d;
-      int mode;
-    } host;
-    NaClHandle handle;
-    struct NaClSocketAddress addr;
-  } u;
-};
-
 static void VmentryPrinter(void *state, struct NaClVmmapEntry *vmep)
 {
   UNREFERENCED_PARAMETER(state);
@@ -74,43 +54,24 @@ static void PrintVmmap(struct NaClApp *nap)
   NaClVmmapVisit(&nap->mem_map, VmentryPrinter, NULL);
 }
 
-int ImportModeMap(char opt)
-{
-  switch(opt)
-  {
-    case 'h':
-      return O_RDWR;
-    case 'r':
-      return O_RDONLY;
-    case 'w':
-      return O_WRONLY;
-  }
-
-  fprintf(stderr, "option %c not understood as a host descriptor import mode\n", opt);
-  exit(1);
-}
-
 /* parse given command line and initialize NaClApp object */
 static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
 {
   int opt;
-  struct redir *entry;
-  char *rest;
   int i;
   char *manifest_name = NULL;
   int debug_mode_ignore_validator = 0;
   int enable_debug_stub = 0;
-  struct redir *redir_queue = NULL;
-  struct redir **redir_qend = &redir_queue;
   int stub_out_mode = 0;
 
   nap->handle_signals = 0;
   nap->verbosity = NaClLogGetVerbosity();
   nap->skip_qualification = 0;
   nap->fuzzing_quit_after_load = 0;
+  nap->handle_signals = 1;
 
-  /* note: in a future zerovm command line will be reduced */
-  while((opt = getopt(argc, argv, "+cFgh:i:Il:QDZr:sSv:w:X:M:")) != -1)
+  /* todo(d'b): revise switches and rename them */
+  while((opt = getopt(argc, argv, "+cFgQDZsSv:M:")) != -1)
   {
     switch(opt)
     {
@@ -128,34 +89,9 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
         enable_debug_stub = 1;
         break;
       case 'S':
-        nap->handle_signals = 1;
+        /* d'b: disable signals handling */
+        nap->handle_signals = 0;
         break;
-      case 'h':
-      case 'r':
-      case 'w':
-        /* import host descriptor */
-        entry = malloc(sizeof *entry);
-        COND_ABORT(NULL == entry, "No memory for redirection queue");
-        entry->next = NULL;
-        entry->nacl_desc = strtol(optarg, &rest, 0);
-        entry->tag = HOST_DESC;
-        entry->u.host.d = strtol(rest + 1, (char **) 0, 0);
-        entry->u.host.mode = ImportModeMap(opt);
-        *redir_qend = entry;
-        redir_qend = &entry->next;
-        break;
-      case 'i':
-        /* import IMC handle */
-        entry = malloc(sizeof *entry);
-        COND_ABORT(NULL == entry, "No memory for redirection queue");
-        entry->next = NULL;
-        entry->nacl_desc = strtol(optarg, &rest, 0);
-        entry->tag = IMC_DESC;
-        entry->u.handle = (NaClHandle) strtol(rest + 1, (char **) 0, 0);
-        *redir_qend = entry;
-        redir_qend = &entry->next;
-        break;
-        /* case 'r':  with 'h' and 'w' above */
       case 'v':
         i = atoi(optarg);
         i = nap->verbosity = i < 1 ? 0 : i;

@@ -15,27 +15,19 @@ EXTERN_C_BEGIN
 
 /* todo(d'b): remove useless switches, find a proper header for it */
 #define HELP_SCREEN /* update command line switches here */\
-    "Usage: sel_ldr [-M manifest_file] [-h d:D] [-r d:D]\n"\
-    "               [-w d:D] [-i d:D] [-v d] [-cFgIsQZD]\n\n"\
-    " -h\n"\
-    " -r\n"\
-    " -w associate a host POSIX descriptor D with app desc d\n"\
-    "    that was opened in O_RDWR, O_RDONLY, and O_WRONLY modes\n"\
-    "    respectively\n"\
-    " -i associates an IMC handle D with app desc d\n"\
-    " -v <level> verbosity\n\n"\
+    "Usage: ZeroVM [-M manifest_file] [-v d] [-cFSgsQZD]\n\n"\
+    " -M <file> load settings from manifest\n"\
+    " -v [level] verbosity\n\n"\
     " (testing flags)\n"\
-    " -c ignore validator! dangerous! Repeating this option twice skips\n"\
-    "    validation completely.\n"\
+    " -c ignore validator! dangerous!\n"\
+    "    repeating this option twice skips validation completely\n"\
     " -F fuzz testing; quit after loading NaCl app\n"\
-    " -S enable signal handling.\n"\
+    " -S disable signal handling.\n"\
     " -g enable gdb debug stub.\n"\
-    " -l <file>  write log output to the given file\n"\
     " -s safely stub out non-validating instructions\n"\
     " -Q disable platform qualification (dangerous!)\n"\
-    " -M <file> load settings from manifest\n"\
     " -Z use fixed feature x86 CPU mode\n"\
-    " -D enable the UNSTABLE dfa validator\n"
+    " -D (switch disabled) enable the UNSTABLE dfa validator\n"
 #define NEXE_PGM_NAME "bee" /* argv[0] for nexe */
 #define MANIFEST_VERSION "11062012"
 

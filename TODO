@@ -1,32 +1,45 @@
+CHANNELS DESIGN
+===============
+manifest: name / uri
+manifest: access type: sequantal / random
+manifest: gets
+manifest: get bytes
+manifest: puts
+manifest: put bytes
+zerovm: handle (given by syscall)
+zerovm: connection (mounting) type (infered from manifest by rule described in doc/channels.txt)
+
+
 in the current version:
 -------------------------------------------------------------
-: WILL BE REPLACED WITH LINKING OPTIONS. 
-  BLOB WILL BE REMOVED FROM ZEROVM
-- blob engine. move blob to untrusted code. make changes in the code
-- prepare demo zrt version using untrusted blob engine
-- write helloworld program to demonstrate new zrt
-
-+ check NaCl_page_alloc_randomized() and nap->dispatch_thunk.
-  if it is really randomized and user can read it, it should be
-  changed. user must not get random values bypassing manifest
-  update: fix thunk. it should be constant. remove randomization
-- update validator (remove dfa support)
-  decide should we use standalone validator or not?
-- completely remove nacl random  
-
-in the next version:
--------------------------------------------------------------
-- add NodeName to manifest (for networking)
-- add cpu features detection to sort (or even better - to zrt)
-- add extended signals handling to zerovm. zerovm must survive any nexe error.
-- update /readme (use "force" to make the user download nacl sdk zerovm currently uses) 
-
 -+ solve problem with the channels count: how to inform user side, or how to
   give channels descriptors to user side passing given UserManifest object?
   +temporary solution: preallocated array to hold as much as 1024 channels
   another solution: untrusted code will invoke trap setup twice - 1st time to get number of channels
                     and 2nd time to get channels information (space must be provided)
   yet another solution: allocate memory from user space and return user the pointer
+
+- make 5 channel types: stdin (c99), stdout(c99), netin, netout, cdr(random read, append only write)
+  ? what for do we need c99 stdin/stdout? stdout(stderr) will be lost after nexe exit. stdin(keyboard)
+  just useless, if not redirected stdin is always empty. if redirected, represent r/o data which we
+  can emulate via cdr. actually c99 stdin/stdout/stderr can be emulated via cdr
+  update: for a user it would be only 3 channel types: input, output and random acces image.
+  input stand for stdin and netin; output - stdout, stderr, netout; image - random access storage
+  over cdr
+  update: make 2 channel types: generic and cdr
+  
+- write more strict channels dealocation: free all allocated memory, free nacl descriptor e.t.c
+
+
+in the next version:
+-------------------------------------------------------------
+- update validator (remove dfa support)
+  decide should we use standalone validator or not?
+- add NodeName to manifest (for networking)
+- add cpu features detection to sort (or even better - to zrt)
+- add extended signals handling to zerovm. zerovm must survive any nexe error.
+- update /readme (use "force" to make the user download nacl sdk zerovm currently uses) 
+
 +- replace COND_ABORT() macro to something more finished and strict:
   any fail cases which must terminate nacl should be logged to nacl log
   any "impossible fail" must be checked by assert() (main purpose: prevent 
@@ -44,15 +57,6 @@ in the next version:
 - move all error messages and codes to nacl_error_code.* (especially from sel_main.c and manifest/)
   note: except fatal errors
   WARNING: get familiar with UMA first. perhaps it is not so good to update its error codes
-- make 5 channel types: stdin (c99), stdout(c99), netin, netout, cdr(random read, append only write)
-  ? what for do we need c99 stdin/stdout? stdout(stderr) will be lost after nexe exit. stdin(keyboard)
-  just useless, if not redirected stdin is always empty. if redirected, represent r/o data which we
-  can emulate via cdr. actually c99 stdin/stdout/stderr can be emulated via cdr
-  update: for a user it would be only 3 channel types: input, output and random acces image.
-  input stand for stdin and netin; output - stdout, stderr, netout; image - random access storage
-  over cdr
-  update: make 2 channel types: generic and cdr
-  
 - make one extra trap() function - set_syscallback(). because using trap() setup for it
   has potentially problem and yet look ugly.
 - nacl log. discuss with other members of our group. i would propose make the log constant:
@@ -66,7 +70,6 @@ in the next version:
 - gather and classify all internal error codes to one enumeration
   perhaps it would be a good idea to include "src/service_runtime/include/sys/errno.h"
   (and other headers with error/return codes)
-- write more strict channels dealocation: free all allocated memory, free nacl descriptor e.t.c
 - make timeout engine instead of useless ResumeCpuClock() and PauseCpuClock()
 - i need to decide what nacl syscalls will be counted against max_syscall:
   1. all
@@ -75,6 +78,21 @@ in the next version:
   4. only those who translated to the real system calls -- GOOD CANDIDATE
   5. none
 
+
+completed releases:
+-------------------------------------------------------------
++ completely remove nacl random  
++ "blob" completely removed from the zerovm code
++ check NaCl_page_alloc_randomized() and nap->dispatch_thunk.
+  if it is really randomized and user can read it, it should be
+  changed. user must not get random values bypassing manifest
+  +update: fix thunk. it should be constant. remove randomization
+
+
 problems to solve in the future versions:
 -------------------------------------------------------------
 - find the way how to exchange variable length arrays between trusted and untrusted code 
+
+
+9172
+#11603951
