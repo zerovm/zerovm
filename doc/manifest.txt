@@ -21,14 +21,16 @@ Structure:
 
 Valid keywords:
 Input/Output
-	Channel -- expects 7 comma separated attributes. the order does matter. example:
+	Channel -- expects 7 comma separated attributes. The order does matter. Example:
 	  Channel = /home/dazo/git/zerovm/samples/sort/sort.stdout.log, /dev/stdout, 5, 0, 0, 99999999, 99999999
 	  where: [1] trusted channel name (n/a for the user), [2] untrusted channel name, [3] access type, 
 	         [4] gets limit, [5] get size limits, [6] puts limit, [7] put size limits
+See channels.txt for more info.
 
 User space custom attributes
   Environment -- expects comma separated pairs: key, value. example:
   Environment = TimeStamp, 1337012520, UserETag, 74ebada55, XObjectMetaTag, klaatu_barada_nikto, ContentType, utf-8
+See environment.txt for more info.
 
 Nexe command line
   CommandLine -- command line arguments for nexe (will be redesigned soon)
@@ -56,4 +58,4 @@ ZeroVM control
   SyscallsMax -- number of syscall invocation allowed to nexe
   
 
-Both keywords and values has size limit 64kb so far.
+Both keywords and values have size limit of 64kb, so far.

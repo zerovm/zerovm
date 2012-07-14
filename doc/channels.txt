@@ -1,48 +1,53 @@
 this is the premature zerovm channels description
 -------------------------------------------------
 
-zerovm has 7 types of channels: 4, 5, 6 - reserved for the standard c90 
-streams (stdin, stdout, stdout); 0, 1, 2, 3 - sequential read / sequential write,
-sequential read / random write, random read / sequential write, random read / random write.
-of course channels 4, 5, 6 can be described with combination of 0, 1, 2, 3 types and
-read/write limits. however zerovm must guarantee existence of standard streams. and this
+ZeroVM has 7 types of channels: 
+4, 5, 6 are reserved for the standard c90 streams (stdin, stdout, stdout)
+The rest are distributed as following: 
+0 - sequential read / sequential write
+1 - sequential read / random write
+2 - random read / sequential write
+3 - random read / random write
+
+Although channels 4, 5, 6 can be described with the combination of 0, 1, 2, 3 types and
+read/write limits zerovm must guarantee existence of standard streams and this
 is the way to control presence of mandatory channels.
 
-channel is the file abstraction over the local files and network streams. local files
+Channel is the file abstraction over the local files and network streams. Local files
 can have random access type, network streams are always sequential. 
 
-channel fields passed via the manifest:
-name -- local file name or ipc address
-alias -- name for user side. cannot be same as "name".
-type -- access type. can be 0..6
-gets -- the number of gets allowed for the channel
-get_size -- data allowed to read in bytes
-puts -- the number of puts allowed for the channel
-put_size -- data allowed to write in bytes
+Channel fields passed via the manifest:
+name -- local file name or zeromq-type url
+alias -- device name for the user side. Cannot be the same as "name". Must follow the device naming scheme: /dev/device-name
+type -- access type. Can be in 0..6 range
+gets -- the number of gets allowed for this channel
+get_size -- total amount of data to be read from this channel in bytes
+puts -- the number of puts allowed for this channel
+put_size -- total amount of data to be written to this channel in bytes
 
 
-fields set up by zerovm:
-handle -- local file / network stream number in channels list. this number the only
-          way to identify channel. secured from user: user get synthetic number
+Fields set up by zerovm:
+handle -- local file / network stream number in channels list. This number is the only
+          way to identify a channel. Hidden from user: user gets synthetic number
           (index in channels array)
-size -- channel size. only available for user when channel has pure or mixed random access
-position -- (get position, put position) - channel cursor position. only available 
-            for user when channel has pure or mixed random access
-counters -- counters for each i/o limit. available for user
+size -- channel size. Only available to user when channel has some sort of random access
+position -- (get position, put position) - channel cursor position. Only available 
+            to user when channel has some sort of random access
+counters -- counters for each I/O limit. Available to user
           
-all channels opened before the nexe start and closed after nexe end.
+All channels are opened before the nexe starts and closed after nexe ends.
 
 
-user channel description (this information user can get through zerovm api)
+User channel description (user can get this information through zerovm api)
 1. [secured] channel name
 2. [secured] channel handle
 3. access type
-	 sequential read, sequential write 
+   sequential read, sequential write 
    random read, sequential write
    sequential read, random write
    random read, random write
-0. [optional] channel size. only valid for random (or mixed) access channels
-0. [optional] position. only valid for random (or mixed) access channels
+0. [optional] channel size. Only valid for random (or mixed) access channels
+0. [optional] position. Only valid for random (or mixed) access channels
 4. access restrictions
 	 - gets
 	 - get bytes
