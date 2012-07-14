@@ -2,9 +2,9 @@ in the current version:
 -------------------------------------------------------------
 CHANNELS DESIGN
 ===============
-- replace 2nd channel attribute "id" with "alias".
++- replace 2nd channel attribute "id" with "alias".
 - add network channels to the file abstraction
-- write more strict channels dealocation: free all allocated memory, free nacl descriptor e.t.c
++ write more strict channels dealocation: free all allocated memory, free nacl descriptor e.t.c
 - all NETWORKING "todo" comments and NETWORKING conditional compilation must be removed
   appropriate changes should be made, of course
 

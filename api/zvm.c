@@ -24,6 +24,7 @@ static struct UserManifest setup;
 /* initialization of zerovm api */
 struct UserManifest *zvm_init()
 {
+  int i;
   struct UserManifest *result = &setup;
 
   /* system */
@@ -35,6 +36,21 @@ struct UserManifest *zvm_init()
   result->channels_count = zvm_channels(NULL);
   result->channels = calloc(result->channels_count, sizeof(*result->channels));
   zvm_channels(result->channels);
+
+  /* channels names */
+  for(i = 0; i < result->channels_count; ++i)
+  {
+    struct ZVMChannel *channel = &result->channels[i];
+    int length = zvm_channel_name(channel);
+    channel->name = malloc(length);
+
+    /*
+     * allocate space to hold channel name
+     * todo(d'b): raise here error flag
+     */
+    if(channel->name == NULL) break;
+    zvm_channel_name(channel);
+  }
 
   /* limits, counters */
   result->syscalls_limit = zvm_syscalls_limit();
@@ -89,6 +105,16 @@ void* zvm_heap_ptr()
 uint32_t zvm_mem_size()
 {
   uint64_t request[] = {TrapMemSize};
+  return _trap(request);
+}
+
+/*
+ * if channel->name in given channel is NULL returns channel name
+ * length, otherwise copy channel name to provided pointer
+ */
+int32_t zvm_channel_name(struct ZVMChannel *channel)
+{
+  uint64_t request[] = {TrapChannelName, 0, (intptr_t)channel};
   return _trap(request);
 }
 

@@ -51,8 +51,50 @@ SYSCALL_MOCK(null, 0)
 SYSCALL_MOCK(nameservice, 0)
 SYSCALL_MOCK(dup, -EPERM) /* duplicate the given file handle. n/a in the simple zrt version */
 SYSCALL_MOCK(dup2, -EPERM) /* duplicate the given file handle. n/a in the simple zrt version */
-SYSCALL_MOCK(open, -ENOENT) /* open the file with the given handle number */
-SYSCALL_MOCK(close, -EBADF) /* close the file with the given handle number */
+
+/*
+ * return channel handle by given name. if given flags
+ * doesn't answer channel's type/limits
+ */
+static int32_t zrt_open(uint32_t *args)
+{
+  SHOWID;
+  char* name = (char*)args[0];
+  int flags = (int)args[1];
+  int mode = (int)args[2];
+  int handle = -ENOENT;
+
+  name = name;
+  flags = flags;
+  mode = mode;
+  handle = handle;
+  /* search for name through the channels */
+
+  /* if found check flags and mode against type and limits/counters */
+
+  /* if all check passed return channel handle */
+
+  return handle;
+}
+
+/* do nothing but checks given handle */
+static int32_t zrt_close(uint32_t *args)
+{
+  SHOWID;
+  int handle = (int)args[0];
+  int result = -EBADF;
+
+  handle = handle;
+
+  /* did channel was "opened" with zrt_open() ? */
+
+  /*
+   * if so fix channel position and return OK
+   * otherwise - appropriate error
+   */
+
+  return result;
+}
 
 /* read the file with the given handle number */
 static int32_t zrt_read(uint32_t *args)
@@ -167,21 +209,18 @@ SYSCALL_MOCK(ioctl, -EINVAL) /* not implemented in the simple version of zrtlib 
 static int32_t zrt_stat(uint32_t *args)
 {
   SHOWID;
-  char *prefixes[] = {STDIN, STDOUT, STDERR};
+//  char *prefixes[] = {STDIN, STDOUT, STDERR};
   const char *file = (const char*)args[0];
   struct nacl_abi_stat *sbuf = (struct nacl_abi_stat *)args[1];
-  struct ZVMChannel *channel;
+//  struct ZVMChannel *channel;
   int handle;
 
   /* calculate handle number */
-  /* todo(d'b): solve the problem with the file names service */
   if(file == NULL) return -EFAULT;
-  for(handle = STDIN_FILENO; handle < sizeof(prefixes)/sizeof(*prefixes); ++handle)
-      if(!strcmp(file, prefixes[handle])) break;
+  for(handle = STDIN_FILENO; handle < setup->channels_count; ++handle)
+    if(!strcmp(file, setup->channels[handle].name)) break;
 
-  /* so far no support for files except stdin/stdout/stderr */
-  if(handle < STDIN_FILENO  || handle > STDERR_FILENO) return -EPERM;
-  channel = &setup->channels[handle];
+  /* todo(d'b): make difference for random/sequential channels */
 
   /* return stat object */
   sbuf->nacl_abi_st_dev = 2049;     /* ID of device containing handle */
@@ -191,7 +230,7 @@ static int32_t zrt_stat(uint32_t *args)
   sbuf->nacl_abi_st_uid = 1000;     /* user ID of owner */
   sbuf->nacl_abi_st_gid = 1000;     /* group ID of owner */
   sbuf->nacl_abi_st_rdev = 0;       /* device ID (if special handle) */
-  sbuf->nacl_abi_st_size = channel->size;    /* total size, in bytes */
+  sbuf->nacl_abi_st_size = setup->channels[handle].size; /* size in bytes */
   sbuf->nacl_abi_st_blksize = 4096; /* block size for file system I/O */
   sbuf->nacl_abi_st_blocks = /* number of 512B blocks allocated */
       ((sbuf->nacl_abi_st_size + sbuf->nacl_abi_st_blksize - 1)
@@ -551,6 +590,12 @@ int main(int argc, char **argv, char **envp)
 
   if(zvm_syscallback((intptr_t)syscall_director) == 0)
   return ERR_CODE;
+
+  // #### debug. remove it
+  fprintf(stdout, "setup->channels[0].name = %s\n", setup->channels[0].name);
+  fprintf(stdout, "setup->channels[1].name = %s\n", setup->channels[1].name);
+  fprintf(stdout, "setup->channels[2].name = %s\n", setup->channels[2].name);
+  /////////////// end
 
   /* call user main() and care about return code */
   retcode = slave_main(argc, argv, envp);

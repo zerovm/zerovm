@@ -12,9 +12,9 @@
 #include "zvm_errors.h"
 
 /* names for reserved channels. not secured */
-#define STDIN "/dev/stdin"
-#define STDOUT "/dev/stdout"
-#define STDERR "/dev/stderr"
+//#define STDIN "/dev/stdin"
+//#define STDOUT "/dev/stdout"
+//#define STDERR "/dev/stderr"
 
 /* channels available for user. very 1st channel must be InputChannel */
 enum AccessType {
@@ -47,6 +47,7 @@ enum TrapCalls {
   TrapWrite,
   TrapSyscallback,
   TrapChannels,
+  TrapChannelName,
   TrapAttributes,
   TrapSyscallsCount,
   TrapSyscallsLimit,
@@ -140,6 +141,12 @@ uint32_t zvm_mem_size();
 
 /* set syscallback address. return active syscallback */
 int32_t zvm_syscallback(intptr_t addr);
+
+/*
+ * if channel->name in given channel is NULL returns channel name
+ * length, otherwise copy channel name to provided pointer
+ */
+int32_t zvm_channel_name(struct ZVMChannel *channel);
 
 /*
  * called with NULL return channels number, otherwise copy

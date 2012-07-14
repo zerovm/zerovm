@@ -74,9 +74,9 @@ static struct ChannelDesc* SelectNextChannel(struct NaClApp *nap, char *type)
   assert(nap->system_manifest->channels != NULL);
   assert(type != NULL);
 
-#define STD_INIT(ch, num) do {\
+#define STD_INIT(num) do {\
     channel = &nap->system_manifest->channels[num];\
-    COND_ABORT(STREQ((char*)channel->name, ch), ch " already allocated");\
+    COND_ABORT(channel->name != NULL, "channel is already allocated");\
     channel->type = SGetSPut; /* ### remove it? */\
   } while(0)
 
@@ -84,16 +84,13 @@ static struct ChannelDesc* SelectNextChannel(struct NaClApp *nap, char *type)
   switch(access_type)
   {
     case Stdin:
-      STD_INIT(STDIN, STDIN_FILENO);
-    /* ### set and check other attributes */
+      STD_INIT(STDIN_FILENO);
       break;
     case Stdout:
-      STD_INIT(STDOUT, STDOUT_FILENO);
-      /* ### set and check other attributes */
+      STD_INIT(STDOUT_FILENO);
       break;
     case Stderr:
-      STD_INIT(STDERR, STDERR_FILENO);
-      /* ### set and check other attributes */
+      STD_INIT(STDERR_FILENO);
       break;
     case SGetSPut:
     case RGetSPut:
@@ -125,7 +122,7 @@ static void ChannelCtor(struct NaClApp *nap, char **tokens)
   /* pick the channel. "access type" attribute will be set inside */
   channel = SelectNextChannel(nap, tokens[ChannelAccessType]);
   channel->name = tokens[ChannelName];
-  channel->handle = ATOI(tokens[ChannelAlias]);
+  channel->alias = tokens[ChannelAlias];
 
   /* limits and counters */
   channel->limits[GetsLimit] = ATOI(tokens[ChannelGets]);
@@ -173,19 +170,20 @@ void ChannelsCtor(struct NaClApp *nap)
   assert(nap != NULL);
   assert(nap->system_manifest != NULL);
 
-  /* calculate channels count. allowed (MAX_CHANNELS_NUMBER - 1) channels */
+  /*
+   * calculate channels count. maximum allowed (MAX_CHANNELS_NUMBER - 1)
+   * channels, minimum - RESERVED_CHANNELS
+   */
   mft = nap->system_manifest;
   mft->channels_count =
       GetValuesByKey("Channel", values, MAX_CHANNELS_NUMBER);
   COND_ABORT(mft->channels_count >= MAX_CHANNELS_NUMBER,
       "channels number reached maximum");
-
-  /* exit if no channels requested */
-  if(mft->channels_count == 0) return;
+  COND_ABORT(mft->channels_count < RESERVED_CHANNELS,
+      "not all standard channels are provided");
 
   /* allocate memory for channels */
-  mft->channels =
-      malloc(sizeof(*mft->channels) * (mft->channels_count + RESERVED_CHANNELS));
+  mft->channels = calloc(mft->channels_count, sizeof(*mft->channels));
   COND_ABORT(mft->channels == NULL, "cannot allocate memory for channels");
 
   /* parse channels. 0..2 reserved for stdin/stdout/stderr */

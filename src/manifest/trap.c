@@ -281,6 +281,49 @@ static int32_t ZVMSyscallsCount(struct NaClApp *nap)
 }
 
 /*
+ * return channel name length + 1 if given pointer is not NULL
+ * and "name" field in the given channel descriptor is NULL
+ * otherwise also copy channel alias to "name" field
+ * note: "handle" in given channel means index in zerovm channels
+ */
+int32_t ZVMChannelName(struct NaClApp *nap, struct ZVMChannel *chnl)
+{
+  struct ZVMChannel *uchannel;
+  struct ChannelDesc *channel;
+  char *alias;
+
+  assert(nap != NULL);
+  assert(nap->system_manifest != NULL);
+
+  /*
+   * check for invalid channel descriptor
+   * todo(d'b): put here proper error code
+   */
+  if(chnl == NULL) return ERR_CODE;
+
+  uchannel = (struct ZVMChannel*)NaClUserToSys(nap, (uintptr_t)chnl);
+
+  /*
+   * channel handle validity
+   * todo(d'b): put here proper error code
+   */
+  if(uchannel->handle < 0
+      && uchannel->handle >= nap->system_manifest->channels_count)
+    return ERR_CODE;
+
+  channel = &nap->system_manifest->channels[uchannel->handle];
+
+  /* user asked for the name. give her the channel alias */
+  if(uchannel->name != NULL)
+  {
+    alias = (char*)NaClUserToSys(nap, (uintptr_t)uchannel->name);
+    strcpy(alias, channel->alias);
+  }
+
+  return strlen(channel->alias) + 1;
+}
+
+/*
  * initializer: channels
  * returns channels number if buffer == NULL, otherwise
  * returns channels number and initializes given buffer with channels data
@@ -298,14 +341,14 @@ static int32_t ZVMChannels(struct NaClApp *nap, struct ZVMChannel *buf)
   if(buf == NULL) return nap->system_manifest->channels_count;
 
   channels = nap->system_manifest->channels;
-  uchannels = (struct ZVMChannel *)NaClUserToSys(nap, (uintptr_t)buf);
+  uchannels = (struct ZVMChannel*)NaClUserToSys(nap, (uintptr_t)buf);
 
   /* populate given array with the channels information */
   for(ch = 0; ch < nap->system_manifest->channels_count; ++ch)
   {
     int i;
 
-    uchannels[ch].name = NULL; /* todo(d'b): solve namespace service problem */
+    uchannels[ch].name = NULL; /* see ZVMChannelName() */
     uchannels[ch].handle = ch;
     uchannels[ch].type = channels[ch].type;
 
@@ -425,6 +468,9 @@ int32_t TrapHandler(struct NaClApp *nap, uint32_t args)
       break;
     case TrapChannels:
       retcode = ZVMChannels(nap, (struct ZVMChannel*)sys_args[2]);
+      break;
+    case TrapChannelName:
+      retcode = ZVMChannelName(nap, (struct ZVMChannel*)sys_args[2]);
       break;
     case TrapSyscallsCount:
       retcode = ZVMSyscallsCount(nap);

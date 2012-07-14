@@ -39,6 +39,7 @@ enum ChannelSourceType {
 struct ChannelDesc
 {
   char *name; /* file name */
+  char *alias; /* file name */
   int32_t handle; /* file handle */
   enum AccessType type; /* type of access sequential/random */
   int64_t size; /* channel size */
