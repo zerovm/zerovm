@@ -591,12 +591,6 @@ int main(int argc, char **argv, char **envp)
   if(zvm_syscallback((intptr_t)syscall_director) == 0)
   return ERR_CODE;
 
-  // #### debug. remove it
-  fprintf(stdout, "setup->channels[0].name = %s\n", setup->channels[0].name);
-  fprintf(stdout, "setup->channels[1].name = %s\n", setup->channels[1].name);
-  fprintf(stdout, "setup->channels[2].name = %s\n", setup->channels[2].name);
-  /////////////// end
-
   /* call user main() and care about return code */
   retcode = slave_main(argc, argv, envp);
   free(pos_ptr);
