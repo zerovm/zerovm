@@ -21,213 +21,288 @@
 #include "src/manifest/prefetch.h"
 #include "src/manifest/mount_channel.h"
 
-static char *prefixes[] = CHANNEL_PREFIXES;
-#define PREFIX(ch) prefixes[ch] /* get channel name by channel id */
+/*
+ * return source type infered from the channel name
+ * todo(d'b): rewrite it. so far it assumes local files
+ */
+#define NET_PREFIX "ipc://"
+static int GetSourceType(char *name)
+{
+  /* check for design errors */
+  assert(name != NULL);
+  assert(*name != 0);
+
+  return strncmp(name, NET_PREFIX, strlen(NET_PREFIX)) == 0 ?
+      NetworkChannel : LocalFile ;
+}
 
 /*
  * mount given channel (must be constructed)
  * todo(NETWORKING): update with network channel initialization
  */
-static void MountChannel(struct NaClApp *nap, enum ChannelType ch)
+static void MountChannel(struct NaClApp *nap, struct ChannelDesc *channel)
 {
-  struct ChannelDesc *channel;
-
   assert(nap != NULL);
-  assert(nap->system_manifest != NULL);
-  assert(ch >= InputChannel && ch < nap->system_manifest->channels_count);
-  assert((void*)nap->system_manifest->channels != NULL);
+  assert(channel != NULL);
 
-  channel = &((struct ChannelDesc*)nap->system_manifest->channels)[ch];
-
-  if(channel)
+  switch(GetSourceType((char*)channel->name))
   {
-    switch(channel->mounted)
-    {
-      int code;
-      case MAPPED:
-        code = PremapChannel(nap, channel);
-        COND_ABORT(code, "cannot premap channel");
-        break;
-      case LOADED:
-        code = PreloadChannel(nap, channel);
-        COND_ABORT(code, "cannot preload channel");
-        break;
-      case NETWORK:
-        code = PrefetchChannel(nap, channel);
-        COND_ABORT(code, "cannot allocate network channel");
-        break;
-      default:
-        COND_ABORT(1, "mounting method is not supported");
-        break;
-    }
+    int code;
+    case LocalFile:
+      code = PreloadChannelCtor(channel);
+      COND_ABORT(code, "cannot allocate local file channel");
+      break;
+    case NetworkChannel:
+      code = PrefetchChannelCtor(channel);
+      COND_ABORT(code, "cannot allocate network channel");
+      break;
+    default:
+      NaClLog(LOG_FATAL, "invalid channel source type\n");
+      break;
   }
 }
 
-/* finalize and close InputChannel */
-static void InputChannelDtor(struct NaClApp *nap)
+/* return the channel by channel type */
+static struct ChannelDesc* SelectNextChannel(struct NaClApp *nap, char *type)
 {
+  static int current_channel = RESERVED_CHANNELS;
   struct ChannelDesc *channel;
+  int access_type; /* stdin, stdout, cdr,.. */
 
   assert(nap != NULL);
   assert(nap->system_manifest != NULL);
-  assert((void*)nap->system_manifest->channels != NULL);
+  assert(nap->system_manifest->channels != NULL);
+  assert(type != NULL);
 
-  channel = &((struct ChannelDesc*)nap->system_manifest->channels)[InputChannel];
-  if(channel->name) close(channel->handle);
-}
+#define STD_INIT(ch, num) do {\
+    channel = &nap->system_manifest->channels[num];\
+    COND_ABORT(STREQ((char*)channel->name, ch), ch " already allocated");\
+    channel->type = SGetSPut; /* ### remove it? */\
+  } while(0)
 
-/* finalize and close OutputChannel */
-static void OutputChannelDtor(struct NaClApp *nap)
-{
-  struct ChannelDesc *channel;
-
-  assert(nap != NULL);
-  assert(nap->system_manifest != NULL);
-  assert((void*)nap->system_manifest->channels != NULL);
-
-  /* todo: find the way how to determine file size for "premapped" output */
-  channel = &((struct ChannelDesc*)nap->system_manifest->channels)[OutputChannel];
-  if(channel->name) close(channel->handle);
-}
-
-/* finalize and close LogChannel */
-static void LogChannelDtor(struct NaClApp *nap)
-{
-  struct ChannelDesc* channel;
-
-  assert(nap != NULL);
-  assert(nap->system_manifest != NULL);
-  assert((void*)nap->system_manifest->channels != NULL);
-
-  /*
-   * trim user log and close the channel
-   * todo(d'b): find a solution (for binary content) to avoid truncate()
-   */
-  channel = &((struct ChannelDesc*)nap->system_manifest->channels)[LogChannel];
-
-  if (channel->name && channel->buffer)
+  access_type = ATOI(type);
+  switch(access_type)
   {
-    char *p = (char*) NaClUserToSys(nap, (uint32_t)channel->buffer);
-    channel->fsize = strlen(p);
-    munmap(p, channel->bsize);
-    if(channel->fsize) truncate((char*)channel->name, channel->fsize);
-    else remove((char*)channel->name);
+    case Stdin:
+      STD_INIT(STDIN, STDIN_FILENO);
+    /* ### set and check other attributes */
+      break;
+    case Stdout:
+      STD_INIT(STDOUT, STDOUT_FILENO);
+      /* ### set and check other attributes */
+      break;
+    case Stderr:
+      STD_INIT(STDERR, STDERR_FILENO);
+      /* ### set and check other attributes */
+      break;
+    case SGetSPut:
+    case RGetSPut:
+    case SGetRPut:
+    case RGetRPut:
+      /* take current channel index */
+      channel = &nap->system_manifest->channels[current_channel++];
+      channel->type = access_type;
+      break;
+    default:
+      NaClLog(LOG_FATAL, "invalid channel access type\n");
+      break;
+  }
+#undef STD_INIT
+
+  return channel;
+}
+
+///* finalize and close InputChannel */
+//static void InputChannelDtor(struct NaClApp *nap)
+//{
+//  struct ChannelDesc *channel;
+//
+//  assert(nap != NULL);
+//  assert(nap->system_manifest != NULL);
+//  assert((void*)nap->system_manifest->channels != NULL);
+//
+//  channel = &((struct ChannelDesc*)nap->system_manifest->channels)[InputChannel];
+//  if(channel->name) close(channel->handle);
+//}
+//
+///* finalize and close OutputChannel */
+//static void OutputChannelDtor(struct NaClApp *nap)
+//{
+//  struct ChannelDesc *channel;
+//
+//  assert(nap != NULL);
+//  assert(nap->system_manifest != NULL);
+//  assert((void*)nap->system_manifest->channels != NULL);
+//
+//  /* todo: find the way how to determine file size for "premapped" output */
+//  channel = &((struct ChannelDesc*)nap->system_manifest->channels)[OutputChannel];
+//  if(channel->name) close(channel->handle);
+//}
+//
+///* finalize and close LogChannel */
+//static void LogChannelDtor(struct NaClApp *nap)
+//{
+//  struct ChannelDesc* channel;
+//
+//  assert(nap != NULL);
+//  assert(nap->system_manifest != NULL);
+//  assert((void*)nap->system_manifest->channels != NULL);
+//
+//  /*
+//   * trim user log and close the channel
+//   * todo(d'b): find a solution (for binary content) to avoid truncate()
+//   */
+//  channel = &((struct ChannelDesc*)nap->system_manifest->channels)[LogChannel];
+//
+//  if (channel->name && channel->buffer)
+//  {
+//    char *p = (char*) NaClUserToSys(nap, (uint32_t)channel->buffer);
+//    channel->fsize = strlen(p);
+//    munmap(p, channel->bsize);
+//    if(channel->fsize) truncate((char*)channel->name, channel->fsize);
+//    else remove((char*)channel->name);
+//  }
+//}
+//
+///*
+// * finalize and close NetworkInputChannel
+// * todo(NETWORKING): put NetworkInputChannel finalizer here
+// * note: there can be more than one NetworkInputChannel channels
+// */
+//static void NetworkInputChannelDtor(struct NaClApp *nap, enum ChannelType ch)
+//{
+//  struct ChannelDesc *channel;
+//
+//  assert(nap != NULL);
+//  assert(nap->system_manifest != NULL);
+//  assert((void*)nap->system_manifest->channels != NULL);
+//
+//  UNREFERENCED_PARAMETER(channel);
+//}
+//
+///*
+// * finalize and close NetworkOutputChannel
+// * todo(NETWORKING): put NetworkOutputChannel finalizer here
+// * note: there can be more than one NetworkOutputChannel channels
+// */
+//static void NetworkOutputChannelDtor(struct NaClApp *nap, enum ChannelType ch)
+//{
+//  struct ChannelDesc *channel;
+//
+//  assert(nap != NULL);
+//  assert(nap->system_manifest != NULL);
+//  assert((void*)nap->system_manifest->channels != NULL);
+//
+//  UNREFERENCED_PARAMETER(channel);
+//}
+
+/* construct and initialize the channel */
+static void ChannelCtor(struct NaClApp *nap, char **tokens)
+{
+  struct ChannelDesc *channel;
+
+  assert(nap != NULL);
+  assert(tokens != NULL);
+  assert(nap->system_manifest != NULL);
+  assert(nap->system_manifest->channels != NULL);
+
+  /* pick the channel. "access type" attribute will be set inside */
+  channel = SelectNextChannel(nap, tokens[ChannelAccessType]);
+  channel->name = tokens[ChannelName];
+  channel->handle = ATOI(tokens[ChannelId]);
+
+  /* limits and counters */
+  channel->limits[GetsLimit] = ATOI(tokens[ChannelGets]);
+  channel->limits[GetSizeLimit] = ATOI(tokens[ChannelGetSize]);
+  channel->limits[PutsLimit] = ATOI(tokens[ChannelPuts]);
+  channel->limits[PutSizeLimit] = ATOI(tokens[ChannelPutSize]);
+  channel->counters[GetsLimit] = 0;
+  channel->counters[GetSizeLimit] = 0;
+  channel->counters[PutsLimit] = 0;
+  channel->counters[PutSizeLimit] = 0;
+
+  /* initialize the channel */
+  MountChannel(nap, channel);
+}
+
+/* close channel and deallocate its resources */
+static void ChannelDtor(struct ChannelDesc *channel)
+{
+  assert(channel != NULL);
+
+  switch(GetSourceType((char*)channel->name))
+  {
+    case LocalFile:
+      PreloadChannelDtor(channel);
+      break;
+    case NetworkChannel:
+      PrefetchChannelDtor(channel);
+      break;
+    default:
+      NaClLog(LOG_ERROR, "unknown channel source\n");
+      break;
   }
 }
 
 /*
- * finalize and close NetworkInputChannel
- * todo(NETWORKING): put NetworkInputChannel finalizer here
- * note: there can be more than one NetworkInputChannel channels
+ * construct and initialize all channels
+ * note: standard channels must be specified in manifest
  */
-static void NetworkInputChannelDtor(struct NaClApp *nap, enum ChannelType ch)
+void ChannelsCtor(struct NaClApp *nap)
 {
-  struct ChannelDesc *channel;
+  int i;
+  char *values[MAX_CHANNELS_NUMBER];
+  struct SystemManifest *mft;
 
   assert(nap != NULL);
   assert(nap->system_manifest != NULL);
-  assert((void*)nap->system_manifest->channels != NULL);
 
-  UNREFERENCED_PARAMETER(channel);
-}
+  /* calculate channels count. allowed (MAX_CHANNELS_NUMBER - 1) channels */
+  mft = nap->system_manifest;
+  mft->channels_count =
+      GetValuesByKey("Channel", values, MAX_CHANNELS_NUMBER);
+  COND_ABORT(mft->channels_count >= MAX_CHANNELS_NUMBER,
+      "channels number reached maximum");
 
-/*
- * finalize and close NetworkOutputChannel
- * todo(NETWORKING): put NetworkOutputChannel finalizer here
- * note: there can be more than one NetworkOutputChannel channels
- */
-static void NetworkOutputChannelDtor(struct NaClApp *nap, enum ChannelType ch)
-{
-  struct ChannelDesc *channel;
+  /* exit if no channels requested */
+  if(mft->channels_count == 0) return;
 
-  assert(nap != NULL);
-  assert(nap->system_manifest != NULL);
-  assert((void*)nap->system_manifest->channels != NULL);
+  /* allocate memory for channels */
+  mft->channels =
+      malloc(sizeof(*mft->channels) * (mft->channels_count + RESERVED_CHANNELS));
+  COND_ABORT(mft->channels == NULL, "cannot allocate memory for channels");
 
-  UNREFERENCED_PARAMETER(channel);
-}
-
-/*
- * construct channel, mount it and update system_manifest.
- * note: space for channels must be already allocated.
- * todo(NETWORKING): put network channel initialization here
- * if successful return 0
- */
-void ChannelCtor(struct NaClApp *nap, enum ChannelType ch)
-{
-  struct ChannelDesc *channel;
-
-  assert(nap != NULL);
-  assert(nap->system_manifest != NULL);
-  assert(ch >= InputChannel && ch < nap->system_manifest->channels_count);
-  assert((void*)nap->system_manifest->channels != NULL);
-
-  /*
-   * if channel is not set in manifest and the name will be NULL and
-   * that fact will be used later to determine which channels are available
-   */
-  channel = &((struct ChannelDesc*)nap->system_manifest->channels)[ch];
-  channel->name = (uint64_t)GetValueByKey(PREFIX(ch));
-  if(channel->name)
+  /* parse channels. 0..2 reserved for stdin/stdout/stderr */
+  for(i = 0; i < mft->channels_count; ++i)
   {
-#define SET_LIMIT(val, suffix) \
-  do {\
-    char str[KEYWORD_SIZE_MAX];\
-    snprintf(str, KEYWORD_SIZE_MAX, "%s%s", PREFIX(ch), suffix);\
-    GET_INT_BY_KEY(val, str);\
-  } while (0);
+    char *tokens[CHANNEL_ATTRIBUTES + 1]; // to detect wrong attributes number
+    int count = ParseValue(values[i], ", \t", tokens, CHANNEL_ATTRIBUTES + 1);
+    COND_ABORT(count != CHANNEL_ATTRIBUTES, "wrong number of the channel attributes");
 
-    SET_LIMIT(channel->mounted, "Mode");
-    channel->self_size = sizeof(*channel);
-    channel->type = ch;
-
-    /* set limits */
-    SET_LIMIT(channel->limits[GetSizeLimit], "MaxGet");
-    SET_LIMIT(channel->limits[GetsLimit], "MaxGetCnt");
-    SET_LIMIT(channel->limits[PutSizeLimit], "MaxPut");
-    SET_LIMIT(channel->limits[PutsLimit], "MaxPutCnt");
-
-#undef SET_LIMIT
-
-    /* set counters */
-    channel->counters[GetSizeCounter] = 0;
-    channel->counters[GetsCounter] = 0;
-    channel->counters[PutSizeCounter] = 0;
-    channel->counters[PutsCounter] = 0;
-
-    MountChannel(nap, ch);
+    /* construct and initialize channel */
+    ChannelCtor(nap, tokens);
   }
+
+  /* channels array validation */
+  for(i = 0; i < nap->system_manifest->channels_count; ++i)
+    COND_ABORT(nap->system_manifest->channels[i].name == (int64_t)NULL,
+               "the channels array must not have uninitialized elements");
+  COND_ABORT(nap->system_manifest->channels_count < RESERVED_CHANNELS,
+      "some of the standard channels weren't initialized");
 }
 
-/*
- * close / deallocate resources used by channel
- * todo(NETWORKING): put net channels finalizers here
- */
-void ChannelDtor(struct NaClApp *nap, enum ChannelType ch)
+/* finalize all channels and free memory */
+void ChannelsDtor(struct NaClApp *nap)
 {
+  int i;
+
   assert(nap != NULL);
   assert(nap->system_manifest != NULL);
-  assert(ch >= InputChannel && ch < nap->system_manifest->channels_count);
-  assert((void*)nap->system_manifest->channels != NULL);
+  assert(nap->system_manifest->channels != NULL);
+  assert(nap->system_manifest->channels_count > 0);
 
-  /* by channel number choose finalization routine */
-  switch(ch)
-  {
-    case InputChannel:
-      InputChannelDtor(nap);
-      break;
-    case OutputChannel:
-      OutputChannelDtor(nap);
-      break;
-    case LogChannel:
-      LogChannelDtor(nap);
-      break;
-    default: /* network channels */
-      if(0)
-      {
-        NetworkInputChannelDtor(nap, ch);
-        NetworkOutputChannelDtor(nap, ch);
-      }
-      break;
-  }
+  for(i = 0; i < nap->system_manifest->channels_count; ++i)
+    ChannelDtor(&nap->system_manifest->channels[i]);
+
+  free(nap->system_manifest->channels);
 }

@@ -63,22 +63,26 @@ zerovm internal channel description
 5. source descriptor (handle, socket). initialized after the source opening
 6. source type (loaded file, shared file, network). infered from the source name
 
-user channel description
-1. secured name ("con" or "/dev/stdin" e.t.c.)
-2. access type
-	 - sequential
-	 - random
-3. access restrictions
+user channel description (this information user can get through zerovm api)
+1. [secured] name ("con" or "/dev/stdin" e.t.c.)
+2. [secured] descriptor id (handle, socket...)
+3. access type
+	 sequential read, sequential write 
+   random read, sequential write
+   sequential read, random write
+   random read, random write
+0. [optional] channel size. only valid for files
+0. [optional] position. not applicable for a full sequential access    
+4. access restrictions
 	 - gets
 	 - get bytes
 	 - puts
 	 - put bytes 
-4. access counters
+5. access counters
 	 - gets
 	 - get bytes
 	 - puts
 	 - put bytes
-5. secured descriptor (handle)
 
 
 

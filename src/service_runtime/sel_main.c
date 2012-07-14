@@ -338,7 +338,8 @@ int main(int argc, char **argv)
     do
     { /* prevent c90 warning */
       /* get node generic name */
-      char *netw_nodename = nap->system_manifest->cmd_line[2];
+//      char *netw_nodename = nap->system_manifest->cmd_line[2];
+      char *netw_nodename = GetValueByKey("Node");
 
       /* get node id */
       int nodeid = atoi(nap->system_manifest->cmd_line[1]);
@@ -372,13 +373,13 @@ int main(int argc, char **argv)
   if((ret_code = setjmp(user_exit)) == 0)
   {
     /* pass control to the user code */
-    if(!NaClCreateMainThread(nap, nap->system_manifest->cmd_line_size,
-                             nap->system_manifest->cmd_line, NULL))
+    if(!NaClCreateMainThread(nap))
     {
       fprintf(stderr, "creating main thread failed\n");
       goto done;
     }
-  }PERF_CNT("WaitForMainThread");
+  }
+  PERF_CNT("WaitForMainThread");
   PERF_CNT("SelMainEnd");
 
   /* todo(NETWORKING): move it to mount_channel.c (destructor) */

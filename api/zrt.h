@@ -164,16 +164,6 @@ struct nacl_abi_timeval {
 #define NaCl_invalid() ((int32_t (*)()) \
     (999 * 0x20 + 0x10000))()
 
-/*
- * user manifest object should be initialized before any usage.
- * memory for the channels should be allocated
- * todo(d'b): how to get number of channels?
- * todo(d'b): ### must be replaced with zvm api initializer
- */
-#define MAX_CHANNELS 1024 /* todo(d'b): ### must be replaced with zvm api accessor */
-/* todo(d'b): ### must be replaced with zvm api accessor */
-struct ChannelDesc channels_space_holder[MAX_CHANNELS * sizeof(struct ChannelDesc)];
-
 /* entry point for zrt library sample (see "syscall_manager.S" file) */
 void syscall_director(void);
 

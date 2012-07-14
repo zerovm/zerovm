@@ -26,6 +26,18 @@ void ManifestDtor();
 char* GetValueByKey(char *key);
 
 /*
+ * return number of found values from manifest by given key
+ * the values pointers will be stored into provided array
+ */
+int GetValuesByKey(char *key, char *values[], int capacity);
+
+/*
+ * parse given string with the given delimiter
+ * return number of the tokens, populate given array with them
+ */
+int ParseValue(char *value, char *delimiter, char *tokens[], int capacity);
+
+/*
  * get integer value by key from the manifest. 0 if not found
  * todo(d'b): find how to inform caller if key not found
  */

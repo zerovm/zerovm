@@ -8,21 +8,54 @@
 #ifndef MOUNT_CHANNEL_H_
 #define MOUNT_CHANNEL_H_
 
-#include "api/zvm.h"
 #include "src/service_runtime/sel_ldr.h"
+#include "api/zvm.h"
 
 EXTERN_C_BEGIN
 
-/*
- * construct channel, mount it and update system_manifest.
- * note: space for channels must be already allocated.
- * todo(NETWORKING): put network channel initialization here
- * if successful return 0
- */
-void ChannelCtor(struct NaClApp *nap, enum ChannelType ch);
+#define MAX_CHANNELS_NUMBER BIG_ENOUGH_SPACE
+#define CHANNEL_ATTRIBUTES ChannelAttributesNumber /* name, id, access type, gets, getsize, puts, putsize */
+#define RESERVED_CHANNELS 3 /* stdin, stdout, stderr */
 
-/* close / deallocate resources used by channel */
-void ChannelDtor(struct NaClApp *nap, enum ChannelType ch);
+/* attributes has fixed order, thats why enum has been used */
+enum ChannelAttributes {
+  ChannelName,
+  ChannelId,
+  ChannelAccessType,
+  ChannelGets,
+  ChannelGetSize,
+  ChannelPuts,
+  ChannelPutSize,
+  ChannelAttributesNumber
+};
+
+enum ChannelSourceType {
+  LocalFile,
+  NetworkChannel,
+  ChannelSourceTypeNumber
+};
+
+/* zerovm channel descriptor. part of information available for the user side */
+struct ChannelDesc
+{
+  char *name; /* file name */
+  int32_t handle; /* file handle */
+  enum AccessType type; /* type of access sequential/random */
+  int64_t size; /* channel size */
+  int64_t getpos; /* read position */
+  int64_t putpos; /* write position */
+
+  /* limits and counters */
+  int64_t limits[IOLimitsCount];
+  int64_t counters[IOLimitsCount];
+};
+
+/* construct all channels, initialize it and update system_manifest */
+void ChannelsCtor(struct NaClApp *nap);
+
+/* close all channels, initialize it and update system_manifest */
+void ChannelsDtor(struct NaClApp *nap);
 
 EXTERN_C_END
+
 #endif /* MOUNT_CHANNEL_H_ */

@@ -12,49 +12,56 @@
 #include "api/zvm.h"
 #include "src/utils/tools.h"
 #include "src/service_runtime/sel_ldr.h"
+#include "src/manifest/mount_channel.h"
 #include "src/manifest/preload.h"
 
-static int flags[] = CHANNEL_OPEN_FLAGS;
-#define FLAGS(ch) flags[ch] /* get open flags by channel type */
-
-/*
- * preallocate channel. if size of the file is not 0 - skip. for output files only.
- * note: must be called from PreloadChannel() after file opened and measured
- */
-static void PreallocateChannel(struct ChannelDesc* channel)
+/* todo(d'b): under construction */
+int PreloadChannelDtor(struct ChannelDesc* channel)
 {
-  assert(channel != NULL);
-
-  if(channel->fsize < 1 &&
-      (channel->type == OutputChannel || channel->type == LogChannel))
-  {
-    int ret_code = ftruncate(channel->handle, 0);
-    COND_ABORT(ret_code < 0, "cannot extend file for the preloaded channel");
-    channel->fsize = channel->limits[PutSizeLimit];
-  }
+  ftruncate(channel->handle, channel->putpos);
+  close(channel->handle);
+  return OK_CODE;
 }
 
 /*
  * preload given file to channel.
  * return 0 if success, otherwise negative errcode
  */
-int PreloadChannel(struct NaClApp *nap, struct ChannelDesc* channel)
+int PreloadChannelCtor(struct ChannelDesc* channel)
 {
-  assert(nap != NULL);
+  uint32_t rw = 0;
+
   assert(channel != NULL);
-  assert(nap != NULL);
-  assert(channel->mounted == LOADED);
+  assert(channel->name != (int64_t)NULL);
 
-  /* if channel is not constructed. skip it */
-  if((void*)channel->name == NULL) return ERR_CODE;
+  /* set start position */
+  channel->getpos = 0; /* todo(d'b): add attribute to manifest? */
+  channel->putpos = 0; /* todo(d'b): add attribute to manifest? */
 
-  /* open file and allocate channel */
-  channel->handle = open((char*)channel->name, FLAGS(channel->type), S_IRWXU);
+  /* calculate the read/write type */
+  rw |= channel->limits[GetsLimit] && channel->limits[GetSizeLimit];
+  rw |= (channel->limits[PutsLimit] && channel->limits[PutSizeLimit]) << 1;
+  switch(rw)
+  {
+    case 0: /* inaccessible */
+      return ERR_CODE;
+    case 1: /* read only */
+      channel->handle = open((char*)channel->name, O_RDONLY, S_IRWXU);
+      break;
+    case 2: /* write only */
+      channel->handle = open((char*)channel->name, O_WRONLY|O_CREAT|O_TRUNC, S_IRWXU);
+      posix_fallocate(channel->handle, channel->putpos, channel->limits[PutSizeLimit]);
+      break;
+    case 3: /* read/write */
+      channel->handle = open((char*)channel->name, O_RDWR|O_CREAT, S_IRWXU);
+      posix_fallocate(channel->handle, channel->putpos, channel->limits[PutSizeLimit]);
+      break;
+    default: /* unreachable */
+      return ERR_CODE;
+  }
+
   COND_ABORT(channel->handle < 0, "preloaded file open error");
-  channel->fsize = GetFileSize((char*)channel->name);
-  PreallocateChannel(channel);
+  channel->size = GetFileSize((char*)channel->name);
 
-  /* mounting finalization */
-  channel->bsize = -1; /* will be provided by user */
   return OK_CODE;
 }

@@ -38,7 +38,11 @@ static struct
 char* GetValueByKey(char *key)
 {
   int i;
-  if(key == NULL) return NULL;
+
+  /* check for a design error */
+  assert(key != NULL);
+  assert(mft_ptr != NULL);
+  assert(mft_count > 0);
 
   for(i = 0; i < mft_count; ++i)
   {
@@ -46,6 +50,63 @@ char* GetValueByKey(char *key)
       return mft_ptr[i].value;
   }
   return NULL;
+}
+
+/*
+ * return number of found values from manifest by given key
+ * the values pointers will be stored into provided array
+ */
+int GetValuesByKey(char *key, char *values[], int capacity)
+{
+  int count = 0;
+  int i;
+
+  /* check for a design error */
+  assert(key != NULL);
+  assert(values != NULL);
+  assert(capacity > 0);
+  assert(mft_ptr != NULL);
+  assert(mft_count > 0);
+
+  /* populate array with found "value" strings */
+  for(i = 0; i < mft_count; ++i)
+    if(strcmp(key, mft_ptr[i].key) == 0 && count < capacity)
+      values[count++] = mft_ptr[i].value;
+
+  return count;
+}
+
+/*
+ * parse given string with the given delimiter
+ * returns number of the non NULL tokens, populates given array with them
+ */
+int ParseValue(char *value, char *delimiter, char *tokens[], int capacity)
+{
+  int count;
+  int i;
+
+  /* control design errors */
+  assert(delimiter != NULL);
+  assert(tokens != NULL);
+  assert(capacity > 0);
+  assert(mft_ptr != NULL);
+  assert(mft_count > 0);
+
+  /* by design. useful */
+  if(value == NULL) return 0;
+
+  /* 1st token */
+  tokens[0] = strtok(value, delimiter);
+  count = tokens[0] != NULL ? 1 : 0;
+
+  /* the rest of tokens */
+  for(i = 1; i < capacity; ++i)
+  {
+    tokens[i] = strtok(NULL, delimiter);
+    if(tokens[i] != NULL) ++count;
+  }
+
+  return count;
 }
 
 /* remove leading and ending spaces from the given string */

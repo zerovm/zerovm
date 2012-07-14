@@ -36,8 +36,39 @@ static inline void *my_malloc(size_t size, const char *msg)
 }
 #define MALLOC(size, msg) my_malloc((size), (msg))
 
+/* safe strlen(). NULL can be used. return 0 for NULL */
+static inline size_t my_strlen(const char *str)
+{
+  return (str == NULL) ? 0 : strlen(str);
+}
+#define STRLEN(str) my_strlen(str)
+
+/*
+ * safe atoi(). NULL can be used. return 0 for NULL
+ * todo(d'b): c99 function used. should be replaced with c90 code
+ */
+static inline int64_t my_atoi(const char *str)
+{
+  return (str == NULL) ? 0 : (int64_t)strtoll(str, NULL, 10);
+}
+#define ATOI(str) my_atoi(str)
+
+/* safe strcpy(). NULL can be used. return NULL if dst or src is NULL */
+static inline void *my_strcpy(char *dst, const char *src)
+{
+  return (src == NULL || dst == NULL) ? NULL : strcpy(dst, src);
+}
+#define STRCPY(dst, src) my_strcpy((dst), (src))
+
+/* safe strncpy(). NULL can be used. return NULL if dst or src is NULL */
+static inline void *my_strncpy(char *dst, const char *src, size_t size)
+{
+  return (src == NULL || dst == NULL) ? NULL : strncpy(dst, src, size);
+}
+#define STRNCPY(dst, src) my_strncpy((dst), (src))
+
 /* safe memcpy(). NULL can be used. return NULL if copy failed */
-static inline void *my_memcpy(void *dst, void const *src, size_t size)
+static inline void *my_memcpy(void *dst, const void *src, size_t size)
 {
   return (dst == NULL || src == NULL) ? NULL : memcpy(dst, src, size);
 }
@@ -49,6 +80,20 @@ static inline int my_strcmp(const char *a, const char *b)
   return (a == NULL || b == NULL) ? -1 : strcmp(a, b);
 }
 #define STRCMP(a, b) my_strcmp((a), (b))
+
+/* safe streq(). NULL can be used. return -1 if failed */
+static inline int my_streq(const char *a, const char *b)
+{
+  return STRCMP(a, b) == 0;
+}
+#define STREQ(a, b) my_streq((a), (b))
+
+/* safe strneq(). NULL can be used. return -1 if failed */
+static inline int my_strneq(const char *a, const char *b)
+{
+  return !STREQ(a, b);
+}
+#define STRNEQ(a, b) my_strneq((a), (b))
 
 /* return size of given file or negative error code */
 static inline int64_t GetFileSize(const char *name)

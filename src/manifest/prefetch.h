@@ -9,10 +9,10 @@
 #ifndef PREFETCH_H_
 #define PREFETCH_H_
 
-/*
- * preallocate given network channel.
- * return 0 if success, otherwise negative errcode
- */
-int PrefetchChannel(struct NaClApp *nap, struct ChannelDesc* channel);
+/* todo(d'b): under construction */
+int PrefetchChannelCtor(struct ChannelDesc* channel);
+
+/* todo(d'b): under construction */
+int PrefetchChannelDtor(struct ChannelDesc* channel);
 
 #endif /* PREFETCH_H_ */

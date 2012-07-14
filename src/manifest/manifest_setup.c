@@ -19,6 +19,7 @@
 #include "src/platform/nacl_log.h"
 #include "src/service_runtime/nacl_syscall_handlers.h"
 
+#include <src/manifest/manifest_keywords.h>
 #include <src/manifest/manifest_parser.h>
 #include <src/manifest/manifest_setup.h>
 #include <src/manifest/mount_channel.h>
@@ -42,6 +43,8 @@ static void PreallocateUserMemory(struct NaClApp *nap)
   /* quit function if max_mem is not specified in manifest */
   assert(nap != NULL);
   assert(nap->system_manifest != NULL);
+
+  nap->system_manifest->heap_ptr = (uint32_t)(intptr_t)NULL;
   if(nap->system_manifest->max_mem == 0) return;
 
   /* user memory chunk must be allocated next to the data end */
@@ -73,16 +76,45 @@ static void PreallocateUserMemory(struct NaClApp *nap)
   NaClVmmapMakeSorted(&nap->mem_map);
 }
 
+/* helper. sets custom user attributes for user */
+static void SetCustomAttributes(struct SystemManifest *policy)
+{
+  int i;
+  int count = 0;
+  char *keys[] = CUSTOM_ATTRIBUTES;
+
+  assert(policy != NULL);
+  assert(policy->envp == NULL);
+
+  /* allocate memory for environment pointers. plus one NULL at the end */
+  policy->envp = calloc(sizeof(keys)/sizeof(*keys) + 1, sizeof(*keys));
+
+  for(i = 0; i < sizeof(keys)/sizeof(*keys); ++i)
+  {
+    char *value = GetValueByKey(keys[i]);
+    int length;
+
+    /* construct attribute if exist */
+    if(value == NULL) continue;
+
+    length = strlen(keys[i]) + strlen(value);
+    policy->envp[count] = calloc(length + 1, sizeof(*policy->envp[count]));
+    COND_ABORT(policy->envp[count] == NULL, "cannot allocate memory for custom attribute");
+    sprintf(policy->envp[count], "%s=%s", keys[i], value);
+    ++count;
+  }
+}
+
 /*
  * construct system_manifest object and initialize from manifest
  * todo(d'b): everythig about 'report' should be moved to HostManifestCtor()
  */
 void SystemManifestCtor(struct NaClApp *nap)
 {
-  enum ChannelType ch;
-  struct SystemManifest *policy;
   int32_t size;
+  struct SystemManifest *policy;
 
+  /* check for design errors */
   assert(nap != NULL);
   assert(nap->system_manifest != NULL);
 
@@ -90,6 +122,7 @@ void SystemManifestCtor(struct NaClApp *nap)
 
   /* get zerovm settings from manifest */
   policy->version = GetValueByKey("Version");
+  policy->node = GetValueByKey("Node");
   policy->log = GetValueByKey("Log");
   policy->nexe = GetValueByKey("Nexe");
   policy->nexe_etag = GetValueByKey("NexeEtag");
@@ -109,44 +142,26 @@ void SystemManifestCtor(struct NaClApp *nap)
       nap->system_manifest->nexe_max < size, "nexe file is larger then alowed");
   COND_ABORT(policy->report == NULL, "cannot open proxy report");
 
-  /* common fields (shared with user manifest) setup */
-  policy->self_size = sizeof(*policy);
+  /* user variables and limits */
   GET_INT_BY_KEY(policy->max_mem, "MemMax");
   GET_INT_BY_KEY(policy->max_syscalls, "SyscallsMax");
   policy->cnt_syscalls = 0;
   policy->syscallback = 0;
 
-  /* read custom attributes, if absent set to empty string */
-  policy->content_type[0] = '\0';
-  policy->timestamp[0] = '\0';
-  policy->x_object_meta_tag[0] = '\0';
-  policy->user_etag[0] = '\0';
-  MEMCPY(policy->content_type, GetValueByKey("ContentType"), CONTENT_TYPE_LEN);
-  MEMCPY(policy->timestamp, GetValueByKey("TimeStamp"), TIMESTAMP_LEN);
-  MEMCPY(policy->x_object_meta_tag, GetValueByKey("XObjectMetaTag"), X_OBJECT_META_TAG_LEN);
-  MEMCPY(policy->user_etag, GetValueByKey("UserETag"), USER_TAG_LEN);
+  policy->envp = NULL;
+  SetCustomAttributes(policy);
 
   /* prepare command line arguments for nexe */
   /* todo(d'b): replace malloc with stack allocation */
-  COND_ABORT(!(policy->cmd_line = malloc(128 * sizeof(char*))),
+#define NEXE_CMD_LEN 128
+  COND_ABORT(!(policy->cmd_line = malloc(NEXE_CMD_LEN * sizeof(char*))),
       "cannot allocate memory for nexe command line");
-  policy->cmd_line_size = 1;
   policy->cmd_line[0] = NEXE_PGM_NAME;
-  policy->cmd_line[policy->cmd_line_size] =
-      strtok(GetValueByKey("CommandLine"), " \t");
-  while(policy->cmd_line[policy->cmd_line_size])
-    policy->cmd_line[++policy->cmd_line_size] = strtok(NULL, " \t");
+  policy->cmd_line_size = 1 + ParseValue(GetValueByKey("CommandLine"),
+      " \t", &policy->cmd_line[1], NEXE_CMD_LEN - 1);
 
-  /*
-   * construct and mount channels
-   * todo(NETWORKING): put network channels initialization here
-   * todo(d'b): move the section to "mount_channel.c"
-   */
-  policy->channels_count = CHANNELS_COUNT; /* todo(NETWORKING): must be fixed after integration */
-  policy->channels = (int64_t)malloc(policy->channels_count * sizeof(struct ChannelDesc));
-  COND_ABORT((void*)policy->channels == NULL, "cannot allocate memory for channels");
-  for(ch = InputChannel; ch < policy->channels_count; ++ch)
-    ChannelCtor(nap, ch);
+  /* construct and initialize all channels */
+  ChannelsCtor(nap);
 
   /*
    * allocate "whole memory chunk" if specified. should be the last allocation
@@ -168,21 +183,10 @@ void HostManifestCtor(struct NaClApp *nap)
 /* deallocate memory, close files, free other resources. put everything in the place */
 int SystemManifestDtor(struct NaClApp *nap)
 {
-  enum ChannelType ch;
-
   assert(nap != NULL);
   assert(nap->system_manifest != NULL);
 
-  /*
-   * dismount and destruct channels
-   * todo(NETWORKING): put network channels finalization here
-   * todo(d'b): move it to "mount_channel.c"
-   */
-  for(ch = InputChannel; ch < nap->system_manifest->channels_count; ++ch)
-    ChannelDtor(nap, ch);
-  free((void*)nap->system_manifest->channels);
-  nap->system_manifest->channels = (int64_t)NULL;
-  nap->system_manifest->channels_count = 0;
+  ChannelsDtor(nap);
 
   return OK_CODE;
 }
@@ -206,14 +210,15 @@ int HostManifestDtor(struct NaClApp *nap)
 
   /* set report fields if asked in manifest. note: retcodes were set earlier */
   nap->host_manifest->etag = MakeEtag(nap);
-  nap->host_manifest->content_type = nap->system_manifest->content_type;
-  nap->host_manifest->x_object_meta_tag = nap->system_manifest->x_object_meta_tag;
+  // ### redesign user attributes for report
+//  nap->host_manifest->content_type = nap->system_manifest->content_type;
+//  nap->host_manifest->x_object_meta_tag = nap->system_manifest->x_object_meta_tag;
   nap->host_manifest->user_ret_code = nap->exit_status;
   sprintf(ret_code, "%d", nap->host_manifest->ret_code);
   sprintf(user_ret_code, "%d", nap->host_manifest->user_ret_code);
 
   /* prepare text for the report */
-  sprintf(report,
+  snprintf(report, BIG_ENOUGH_SPACE,
     "ReportRetCode        =%s\n"
     "ReportEtag           =%s\n"
     "ReportUserRetCode    =%s\n"
@@ -222,10 +227,12 @@ int HostManifestDtor(struct NaClApp *nap)
     GetValueByKey("ReportRetCode") ? ret_code : "",
     GetValueByKey("ReportEtag") ? nap->host_manifest->etag : "",
     GetValueByKey("ReportUserRetCode") ? user_ret_code : "",
-    GetValueByKey("ReportContentType") ? nap->host_manifest->content_type : "",
-    GetValueByKey("ReportXObjectMetaTag") ? nap->host_manifest->x_object_meta_tag : "");
+//    GetValueByKey("ReportContentType") ? nap->host_manifest->content_type : "",
+//    GetValueByKey("ReportXObjectMetaTag") ? nap->host_manifest->x_object_meta_tag : ""
+    "disabled", "disabled");
 
   /* write report and close the report file */
+  report[BIG_ENOUGH_SPACE] = '\0';
   fprintf(nap->system_manifest->report, "%s", report);
   fclose(nap->system_manifest->report);
 

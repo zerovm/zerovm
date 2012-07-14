@@ -339,10 +339,7 @@ int NaClAddrIsValidEntryPt(struct NaClApp *nap,
  * alternative design, NaClWaitForMainThreadToExit will become a
  * no-op.
  */
-int NaClCreateMainThread(struct NaClApp     *nap,
-                         int                argc,
-                         char               **argv,
-                         char const *const  *envp) NACL_WUR;
+int NaClCreateMainThread(struct NaClApp     *nap) NACL_WUR;
 
 int NaClWaitForMainThreadToExit(struct NaClApp  *nap);
 

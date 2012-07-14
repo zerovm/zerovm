@@ -15,6 +15,9 @@
  * preload given file to channel.
  * return 0 if success, otherwise negative errcode
  */
-int PreloadChannel(struct NaClApp *nap, struct ChannelDesc* channel);
+int PreloadChannelCtor(struct ChannelDesc* channel);
+
+/* todo(d'b): under construction */
+int PreloadChannelDtor(struct ChannelDesc* channel);
 
 #endif /* PRELOAD_H_ */

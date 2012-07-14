@@ -1,28 +1,20 @@
 =====================================================================
 == "time and clock" example with zrt library usage
-== i/o switches
+== the example tests untrusted code memory manager. new channels design
 =====================================================================
-Output = time.output.data
-OutputMaxGet = 1024000
-OutputMaxGetCnt = 1024
-OutputMaxPut = 1024000
-OutputMaxPutCnt = 1024
-== this options specifies output file loading method: 0 - loaded, 1 - mapped
-OutputMode = 1
-
-UserLog = time.user.log
-UserLogMaxPut = 65536
+Channel = /dev/null, 0, 4, 999999, 999999, 0, 0
+Channel = stdout.data, 0, 5, 0, 0, 999999, 999999
+Channel = stderr.data, 0, 6, 0, 0, 999999, 999999
 
 =====================================================================
 == switches for zerovm. some of them used to control nexe, some
 == for the internal zerovm needs
 =====================================================================
-Version = 11062012
-Log = time.zerovm.log
-Report = time.report.log
+Version = 13072012
+Log = zerovm.log
+Report = report.log
 Nexe = time.nexe
 NexeMax = 10000000
 SyscallsMax = 3333
-
-== this option can be disabled if user code does not use date/time functions
 TimeStamp = 1337012520
+

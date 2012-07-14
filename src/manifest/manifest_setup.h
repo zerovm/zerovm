@@ -29,7 +29,7 @@ EXTERN_C_BEGIN
     " -Z use fixed feature x86 CPU mode\n"\
     " -D (switch disabled) enable the UNSTABLE dfa validator\n"
 #define NEXE_PGM_NAME "bee" /* argv[0] for nexe */
-#define MANIFEST_VERSION "11062012"
+#define MANIFEST_VERSION "13072012"
 
 struct HostManifest
 {
@@ -40,19 +40,36 @@ struct HostManifest
   char *x_object_meta_tag; /* custom user attribute */
 };
 
+/*
+ * todo(d'b): make a decition: leave it here or move to NaClApp
+ */
 struct SystemManifest
 {
+  /* zerovm control */
   char *version; /* zerovm version */
+  char *node; /* node name */
   char *log; /* zerovm log file name */
   FILE *report;  /* report to proxy file descriptor */
+
+  /* nexe control */
   char *nexe; /* nexe file name */
-  int cmd_line_size; /* command line size for nexe */
-  char **cmd_line; /* command line for nexe */
   int32_t nexe_max; /* max allowed nexe length */
-  char *nexe_etag; /* digital signature. reserved for a future "short" nexe validation */
+  char *nexe_etag; /* signature. reserved for a future "short" nexe validation */
   int32_t timeout; /* time user module allowed to run */
 
-  COMMON_PART /* shared with struct UserManifest */
+  /* variables and limits for a nexe */
+  uint32_t heap_ptr; /* pointer to the start of available for user ram */
+  uint32_t max_mem; /* memory space available for user program. if 0 = 4gb */
+  int cmd_line_size; /* command line size for nexe */
+  char **cmd_line; /* command line for nexe */
+  char **envp; /* environment variables for user */
+  int32_t max_syscalls; /* max allowed *real* system calls, 0 - no limit */
+  int32_t cnt_syscalls; /* syscalls counter */
+  int32_t syscallback; /* untrusted address callback (see "syscallback.txt") */
+
+  /* channels */
+  int32_t channels_count; /* count of channels */
+  struct ChannelDesc *channels; /* i/o channels */
 };
 
 /*
@@ -78,12 +95,6 @@ int HostManifestDtor(struct NaClApp *nap);
  * system_manifest. return 0 if success, -1 if over limit
  */
 int UpdateSyscallsCount(struct NaClApp *nap);
-
-/*
- * check if given counter not overrun the limit and increment by 1.
- * update system_manifest. return 0 if success, -1 if over limit
- */
-int UpdateIOCounter(struct NaClApp *nap, enum ChannelType ch, enum IOCounters cntr);
 
 EXTERN_C_END
 

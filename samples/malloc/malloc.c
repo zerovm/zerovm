@@ -13,7 +13,7 @@
 
 #define SMALL_AMOUNT 0x1000000
 #define GAP_AMOUNT 0x2000000
-#define AVAILABLE_AMOUNT (zvm_memory_size() - (GAP_AMOUNT))
+#define AVAILABLE_AMOUNT (zvm_mem_size() - (GAP_AMOUNT))
 #define VAR_NAME_TO_STRING(var) #var
 
 #define TEST_PTR(ptr)\
@@ -30,9 +30,9 @@ int main()
 {
   /* first off check manifest */
   fprintf(stdout, "we are using %sTRUSTED memory manager\n",
-          zvm_memory_size() ? "UN" : "");
+          zvm_mem_size() ? "UN" : "");
 
-  TEST_PTR(zvm_heap_start());
+  TEST_PTR(zvm_heap_ptr());
 
   fprintf(stdout, "initial memory allocation\n");
   /*

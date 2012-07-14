@@ -10,44 +10,16 @@
 #ifndef MANIFEST_KEYWORDS_H_
 #define MANIFEST_KEYWORDS_H_
 
+#define CUSTOM_ATTRIBUTES {"ContentType", "TimeStamp", "XObjectMetaTag", "UserETag"}
+
 /*
  * this macro substitution can be used to create array of keywords
  * should be synchronized with enum ManifestKeywords
  */
 #define MANIFEST_KEYWORDS {\
-  /* i/o channels keywords */\
-  "Input", /* name of the input channel/file */\
-  "InputMaxGet", /* bytes count allowed to get */\
-  "InputMaxGetCnt", /* how many times allowed to invoke "get" syscall. n/a for mounted resiources */\
-  "InputMaxPut", /* n/a */\
-  "InputMaxPutCnt", /* n/a */\
-  "InputMode", /* 0 - premounted channel, 1 - preloaded, 2 - preallocated from network */\
-  "Output", /* name of the output channel/file */\
-  "OutputMaxGet", /* bytes count allowed to get */\
-  "OutputMaxGetCnt", /* how many times allowed to invoke "get" syscall. n/a for mounted resiources */\
-  "OutputMaxPut", /* bytes count allowed to put */\
-  "OutputMaxPutCnt", /* how many times allowed to invoke "put" syscall. n/a for mounted resiources */\
-  "OutputMode", /* 0 - premounted channel, 1 - preloaded, 2 - preallocated from network */\
-  "UserLog", /* user log file name. gets/puts/e.t.c. are unlimited */\
-  "UserLogMaxGet", /* n/a */\
-  "UserLogMaxGetCnt", /* n/a */\
-  "UserLogMaxPut", /* n/a */\
-  "UserLogMaxPutCnt", /* n/a */\
-  "UserLogMode", /* n/a */\
-  "NetInput",\
-  "NetInputMaxGet",\
-  "NetInputMaxGetCnt",\
-  "NetInputMaxPut",\
-  "NetInputMaxPutCnt",\
-  "NetInputMode",\
-  "NetOutput",\
-  "NetOutputMaxGet",\
-  "NetOutputMaxGetCnt",\
-  "NetOutputMaxPut",\
-  "NetOutputMaxPutCnt",\
-  "NetOutputMode",\
+  "Channel",\
 \
-  /* user side keywords */\
+  /* custom attributes for the user */\
   "ContentType",\
   "TimeStamp", /* time/seed */\
   "XObjectMetaTag", /* custom attributes */\
@@ -67,6 +39,7 @@
 \
   /* zerovm control keywords */\
   "Version", /* zerovm version */\
+  "Node", /* node name */\
   "Log", /* zerovm log file name */\
   "Report", /* report file descriptor */\
   "Nexe", /* nexe file name */\
@@ -76,46 +49,13 @@
   "MemMax", /* size of memory available for nexe */\
   "SyscallsMax", /* syscalls allowed nexe to invoke */\
   "CommandLine", /* command line for nexe */\
-  "Networking", /* todo(d'b): remove it */\
   "TheEnd" /* used to check if this array is in sync with the enum */\
 };
 
 /* should be synchronized with string array above */
 enum ManifestKeywords
 {
-  /*
-   * i/o channels keywords
-   */
-  Input, /* name of the input channel/file */
-  InputMaxGet, /* bytes count allowed to get */
-  InputMaxGetCnt, /* how many times allowed to invoke "get" syscall. n/a for mounted resiources */
-  InputMaxPut, /* n/a */
-  InputMaxPutCnt, /* n/a */
-  InputMode, /* 0 - premounted channel, 1 - preloaded, 2 - preallocated from network */
-  Output, /* name of the output channel/file */
-  OutputMaxGet, /* bytes count allowed to get */
-  OutputMaxGetCnt, /* how many times allowed to invoke "get" syscall. n/a for mounted resiources */
-  OutputMaxPut, /* bytes count allowed to put */
-  OutputMaxPutCnt, /* how many times allowed to invoke "put" syscall. n/a for mounted resiources */
-  OutputMode, /* 0 - premounted channel, 1 - preloaded, 2 - preallocated from network */
-  UserLog, /* user log file name. gets/puts/e.t.c. are unlimited */
-  UserLogMaxGet, /* n/a */
-  UserLogMaxGetCnt, /* n/a */
-  UserLogMaxPut, /* n/a */
-  UserLogMaxPutCnt, /* n/a */
-  UserLogMaxMode, /* n/a */
-  NetInput,
-  NetInputMaxGet,
-  NetInputMaxGetCnt,
-  NetInputMaxPut,
-  NetInputMaxPutCnt,
-  NetInputMode,
-  NetOutput,
-  NetOutputMaxGet,
-  NetOutputMaxGetCnt,
-  NetOutputMaxPut,
-  NetOutputMaxPutCnt,
-  NetOutputMode,
+  Channel,
 
   /*
    * user side keywords
@@ -141,6 +81,7 @@ enum ManifestKeywords
    *  zerovm control keywords
    */
   Version, /* zerovm version */
+  Node, /* node name */
   Log, /* zerovm log file name */
   Report, /* report file descriptor */
   Nexe, /* nexe file name */
@@ -150,7 +91,6 @@ enum ManifestKeywords
   MemMax, /* size of memory available for nexe */
   SyscallsMax, /* syscalls allowed nexe to invoke */
   CommandLine, /* command line for nexe */
-  Networking, /* todo(d'b): added temporary, remove it */
   TheEnd /* used to check if this enum is in sync with the string array */
 };
 

@@ -1,7 +1,8 @@
 CHANNELS DESIGN
 ===============
-manifest: name / uri
+manifest: name / ipc
 manifest: access type: sequantal / random
+manifest: offset (?) (or socket #)
 manifest: gets
 manifest: get bytes
 manifest: puts
@@ -9,9 +10,43 @@ manifest: put bytes
 zerovm: handle (given by syscall)
 zerovm: connection (mounting) type (infered from manifest by rule described in doc/channels.txt)
 
+plan:
++ change "manifest_parser.c" "manifest_parser.h". new function to get "Channel" variable length array
++ another new function: parse "value" by given delimiter (use for commandline and channel)
++ manifest_setup. new initializer for system manifest
+- main(remove networking) to prefetch/mount_chanel 
+- "prefetch.c"/"prefetch.h". move zmq network channels draft
++ preload
+--- removed premap
++ mount_chanel.c/mount_chanel.h new channels design
++ trap
++- manifest_keywords. replace everything about channels with the sing new keyword "Channel"
+
+- check std*. all std must be set before nexe start. if not passed by manifest... (fail, do default action?)
+
+ZEROVM API
+==========
+- zvm.c / zvm.h a new zvm api
+- trap.c / trap.h 
+? split error codes from zvm.h into 2 parts: internal zerovm and external (for the user)
+- rewrite user attributes routines / data
+
+MANIFEST
+========
+- change manifest version
+
 
 in the current version:
 -------------------------------------------------------------
+- add extended signals handling to zerovm. zerovm must survive any nexe error.
+	care about zerovm report
+	care about channels
+
+- constant zerovm log.
+  remove log setup from manifest
+  generate log name using define from compiler -D and pid
+  create log asap (all zerovm messages goes there)
+
 -+ solve problem with the channels count: how to inform user side, or how to
   give channels descriptors to user side passing given UserManifest object?
   +temporary solution: preallocated array to hold as much as 1024 channels
@@ -27,6 +62,13 @@ in the current version:
   input stand for stdin and netin; output - stdout, stderr, netout; image - random access storage
   over cdr
   update: make 2 channel types: generic and cdr
+
+- move everything about "NETWORKING" to prefetch if impossible - remove "prefetch"
+
+- all NETWORKING "todo" comments and NETWORKING conditional compilation must be removed
+  appropriate changes should be made, of course
+
+- add NodeName to manifest (for networking)
   
 - write more strict channels dealocation: free all allocated memory, free nacl descriptor e.t.c
 
@@ -35,9 +77,7 @@ in the next version:
 -------------------------------------------------------------
 - update validator (remove dfa support)
   decide should we use standalone validator or not?
-- add NodeName to manifest (for networking)
 - add cpu features detection to sort (or even better - to zrt)
-- add extended signals handling to zerovm. zerovm must survive any nexe error.
 - update /readme (use "force" to make the user download nacl sdk zerovm currently uses) 
 
 +- replace COND_ABORT() macro to something more finished and strict:
@@ -46,31 +86,20 @@ in the next version:
   improper zerovm code changes/usage) any non fatal cases must use something else (not "ABORT")
 - move trap.c to service_runtime/. even better to move the code inside *syscall*.* and remove
   trap.* files
-- move everything about "NETWORKING" to prefetch if impossible - remove "prefetch"
-- all NETWORKING "todo" comments and NETWORKING conditional compilation must be removed
-  appropriate changes should be made, of course
 - put all invocations of manifest initializations to nacl init modules
 - make defines (or something else) to hold manifest keywords and use it
   instead of "magic" strings. defines should be put into "manifest_keywords.h"
-- remove not nessessary switches from zerovm command line
-  only manifest, debug and validator switches must remain
 - move all error messages and codes to nacl_error_code.* (especially from sel_main.c and manifest/)
   note: except fatal errors
   WARNING: get familiar with UMA first. perhaps it is not so good to update its error codes
 - make one extra trap() function - set_syscallback(). because using trap() setup for it
   has potentially problem and yet look ugly.
-- nacl log. discuss with other members of our group. i would propose make the log constant:
-  pro: 
-    - zerovm can use log much earlier and therefore keep more advanced statistics / error msgs
-    - with constant log zerovm always can log. now it can log only if specified in manifest
-      if not - log will be shown on the screen
-  contra:
-    - less flexibility with log naming (can be solved with constant log)
-    - use disk space (can be solved with pipe to stdin/stderr)    
+  update: rework trap() api
 - gather and classify all internal error codes to one enumeration
   perhaps it would be a good idea to include "src/service_runtime/include/sys/errno.h"
   (and other headers with error/return codes)
-- make timeout engine instead of useless ResumeCpuClock() and PauseCpuClock()
+-+ make timeout engine instead of useless ResumeCpuClock() and PauseCpuClock()
+	update: ResumeCpuClock() and PauseCpuClock() removed
 - i need to decide what nacl syscalls will be counted against max_syscall:
   1. all
   2. existing only
@@ -81,6 +110,8 @@ in the next version:
 
 completed releases:
 -------------------------------------------------------------
++ remove not nessessary switches from zerovm command line
+  only manifest, debug and validator switches must remain
 + completely remove nacl random  
 + "blob" completely removed from the zerovm code
 + check NaCl_page_alloc_randomized() and nap->dispatch_thunk.
@@ -92,7 +123,3 @@ completed releases:
 problems to solve in the future versions:
 -------------------------------------------------------------
 - find the way how to exchange variable length arrays between trusted and untrusted code 
-
-
-9172
-#11603951

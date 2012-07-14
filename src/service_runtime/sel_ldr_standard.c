@@ -20,7 +20,7 @@
 #include "src/service_runtime/nacl_text.h"
 #include "src/service_runtime/sel_memory.h"
 #include "src/service_runtime/sel_addrspace.h"
-#include "src/manifest/trap.h" /* d'b: PauseCpuClock(), ResumeCpuClock() */
+#include "src/manifest/manifest_setup.h" /* d'b: system_manifest */
 #include "src/service_runtime/nacl_globals.h" /* d'b: nacl_user */
 #include "src/service_runtime/nacl_signal.h"
 
@@ -439,10 +439,8 @@ int NaClAddrIsValidEntryPt(struct NaClApp *nap,
  * envv may be NULL (this happens on MacOS/Cocoa
  * if envv is non-NULL it is 'consistent', null terminated etc.
  */
-int NaClCreateMainThread(struct NaClApp     *nap,
-                         int                argc,
-                         char               **argv,
-                         char const *const  *envv) {
+int NaClCreateMainThread(struct NaClApp *nap)
+{
   /*
    * Compute size of string tables for argv and envv
    */
@@ -457,6 +455,19 @@ int NaClCreateMainThread(struct NaClApp     *nap,
   size_t                *argv_len;
   size_t                *envv_len;
   uintptr_t             stack_ptr;
+
+  /* d'b {{ */
+  int                   argc;
+  char                  **argv;
+  char const *const     *envv;
+
+  assert(nap != NULL);
+  assert(nap->system_manifest != NULL);
+
+  argc = nap->system_manifest->cmd_line_size;
+  argv = nap->system_manifest->cmd_line;
+  envv = (char const* const*)nap->system_manifest->envp;
+  /* }} */
 
   retval = 0;  /* fail */
   CHECK(argc > 0);

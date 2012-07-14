@@ -22,102 +22,115 @@
 
 #define SQL_QUERY "select * from channels;\0"
 
-void tune_sqlstub_for_test(int testid){(void)testid;}
+void tune_sqlstub_for_test(int testid)
+{
+  (void) testid;
+}
 
-struct db_record_t* match_db_record_by_fd(struct db_records_t *records, int fd){
-	if ( !records ) return NULL;
-	if ( !records->array ) return NULL;
-	for ( int i=0; i < records->count; i++ ){
-		if ( records->array[i].fd == fd )
-			return &records->array[i];
-	}
-	return NULL;
+struct db_record_t* match_db_record_by_fd(struct db_records_t *records, int fd)
+{
+  if(!records) return NULL;
+  if(!records->array) return NULL;
+  for(int i = 0; i < records->count; i++)
+  {
+    if(records->array[i].fd == fd) return &records->array[i];
+  }
+  return NULL;
 }
 
 /* In use case it's should not be directly called, but only as callback for sqlite API;
  *@param argc columns count
  *@param argv columns values */
-int get_dbrecords_callback(void *file_records, int argc, char **argv, char **azColName){
-	if ( file_records ){
-		struct db_record_t *frecord = NULL;
-		struct db_records_t *records = (struct db_records_t *) file_records;
-		//if need to expand array
-		if ( records->count >= records->maxcount ){
-			records->maxcount += DB_RECORDS_GRANULARITY;
-			records->array = realloc(records->array, sizeof(struct db_record_t)*records->maxcount);
-		}
-		frecord = &records->array[records->count++];
-		frecord->sock = ESOCKET_REQREP; /*use same socket type for all files*/
-		/*loop by table columns count*/
-		for(int i=0; i<argc; i++){
-			const char *col_value = argv[i];
-			int len_value = strlen(col_value);
-			switch(i){
-			case ECOL_NODENAME:
-				frecord->nodename = malloc( len_value+1 );
-				strcpy(frecord->nodename, col_value);
-				frecord->nodename[len_value] = '\0';
-				break;
-			case ECOL_ENDPOINT:
-				if ( strstr(col_value, "%d\0") ){
-					//needs to be postprocessed
-					frecord->endpoint = malloc( len_value+20 );
-					memset(frecord->endpoint, '\0', len_value+20);
-					sprintf(frecord->endpoint, col_value, records->cid);
-				}
-				else{
-					frecord->endpoint = malloc( len_value+1 );
-					strcpy(frecord->endpoint, col_value);
-					frecord->endpoint[len_value] = '\0';
-				break;
-			}
-			case ECOL_FMODE:
-				strncpy(&(frecord->fmode), col_value, 1);
-				break;
-			case ECOL_FD:
-				frecord->fd = atoi( col_value );
-				break;
-			}
-		}
-		NaClLog(LOG_INFO, "nodename:%s, sock=%d, endpoint=%s, fmode=%c, fd=%d\n",
-				frecord->nodename, frecord->sock,frecord->endpoint, frecord->fmode, frecord->fd);
-	}
-	return 0;
+int get_dbrecords_callback(void *file_records, int argc, char **argv, char **azColName)
+{
+  if(file_records)
+  {
+    struct db_record_t *frecord = NULL;
+    struct db_records_t *records = (struct db_records_t *) file_records;
+    //if need to expand array
+    if(records->count >= records->maxcount)
+    {
+      records->maxcount += DB_RECORDS_GRANULARITY;
+      records->array = realloc(records->array, sizeof(struct db_record_t) * records->maxcount);
+    }
+    frecord = &records->array[records->count++];
+    frecord->sock = ESOCKET_REQREP; /*use same socket type for all files*/
+    /*loop by table columns count*/
+    for(int i = 0; i < argc; i++)
+    {
+      const char *col_value = argv[i];
+      int len_value = strlen(col_value);
+      switch(i)
+      {
+        case ECOL_NODENAME:
+          frecord->nodename = malloc(len_value + 1);
+          strcpy(frecord->nodename, col_value);
+          frecord->nodename[len_value] = '\0';
+          break;
+        case ECOL_ENDPOINT:
+          if(strstr(col_value, "%d\0"))
+          {
+            //needs to be postprocessed
+            frecord->endpoint = malloc(len_value + 20);
+            memset(frecord->endpoint, '\0', len_value + 20);
+            sprintf(frecord->endpoint, col_value, records->cid);
+          }
+          else
+          {
+            frecord->endpoint = malloc(len_value + 1);
+            strcpy(frecord->endpoint, col_value);
+            frecord->endpoint[len_value] = '\0';
+            break;
+          }
+        case ECOL_FMODE:
+          strncpy(&(frecord->fmode), col_value, 1);
+          break;
+        case ECOL_FD:
+          frecord->fd = atoi(col_value);
+          break;
+      }
+    }
+    NaClLog(LOG_INFO, "nodename:%s, sock=%d, endpoint=%s, fmode=%c, fd=%d\n", frecord->nodename,
+            frecord->sock, frecord->endpoint, frecord->fmode, frecord->fd);
+  }
+  return 0;
 }
 
 /*Issue db request.
  * @param path DB filename
  * @param nodename which records are needed
  * @param db_records data structure to get results, should be only valid pointer*/
-int get_all_records_from_dbtable(const char *path, const char *nodename, struct db_records_t *db_records){
-	sqlite3 *db = NULL;
-	char *zErrMsg = 0;
-	int rc = 0;
-	char sqlstr[100];
-	assert(path);
-	assert(nodename);
-	assert(db_records);
-	rc = sqlite3_open( path, &db);
-	if( rc ){
-		NaClLog(LOG_FATAL, "Can't open database file=%s, errtext %s, errcode=%d\n",
-				path, sqlite3_errmsg(db), rc);
-		sqlite3_close(db);
-		return LOAD_OPEN_ERROR;
-	}
-	db_records->maxcount = DB_RECORDS_GRANULARITY;
-	db_records->array = malloc( sizeof(struct db_record_t)*db_records->maxcount );
-	db_records->count = 0;
-	sprintf(sqlstr, "select * from channels where nodename='%s';", nodename);
-	rc = sqlite3_exec(db, sqlstr, get_dbrecords_callback, db_records, &zErrMsg);
-	if ( SQLITE_OK != rc ){
-		NaClLog(LOG_ERROR, "Sql statement : %s, exec error text=%s, errcode=%d\n",
-				SQL_QUERY, sqlite3_errmsg(db), rc);
-		return LOAD_SQL_STATEMENT_EXEC_ERROR;
-	}
-	sqlite3_free(zErrMsg);
-	sqlite3_close(db);
-	return LOAD_OK;
+int get_all_records_from_dbtable(const char *path, const char *nodename,
+    struct db_records_t *db_records)
+{
+  sqlite3 *db = NULL;
+  char *zErrMsg = 0;
+  int rc = 0;
+  char sqlstr[100];
+  assert(path);
+  assert(nodename);
+  assert(db_records);
+  rc = sqlite3_open(path, &db);
+  if(rc)
+  {
+    NaClLog(LOG_FATAL, "Can't open database file=%s, errtext %s, errcode=%d\n", path,
+            sqlite3_errmsg(db), rc);
+    sqlite3_close(db);
+    return LOAD_OPEN_ERROR;
+  }
+  db_records->maxcount = DB_RECORDS_GRANULARITY;
+  db_records->array = malloc(sizeof(struct db_record_t) * db_records->maxcount);
+  db_records->count = 0;
+  sprintf(sqlstr, "select * from channels where nodename='%s';", nodename);
+  rc = sqlite3_exec(db, sqlstr, get_dbrecords_callback, db_records, &zErrMsg);
+  if(SQLITE_OK != rc)
+  {
+    NaClLog(LOG_ERROR, "Sql statement : %s, exec error text=%s, errcode=%d\n", SQL_QUERY,
+            sqlite3_errmsg(db), rc);
+    return LOAD_SQL_STATEMENT_EXEC_ERROR;
+  }
+  sqlite3_free(zErrMsg);
+  sqlite3_close(db);
+  return LOAD_OK;
 }
-
-
 

@@ -14,9 +14,11 @@
 #include <sys/time.h>
 #include <assert.h>
 
+#include "src/utils/tools.h"
 #include "src/manifest/trap.h"
 #include "src/manifest/manifest_parser.h"
 #include "src/manifest/manifest_setup.h"
+#include "src/manifest/mount_channel.h"
 #include "src/platform/nacl_log.h"
 #include "api/zvm.h"
 #include "src/service_runtime/sel_ldr.h"
@@ -49,33 +51,8 @@ int UpdateSyscallsCount(struct NaClApp *nap)
   return retcode;
 }
 
-/*
- * check if given counter not overrun the limit and increment by 1.
- * update system_manifest. return 0 if success, -1 if over limit
- * todo(d'b): this function is useless. remove it.
- */
-int UpdateIOCounter(struct NaClApp *nap, enum ChannelType ch, enum IOCounters cntr)
-{
-  int retcode = ERR_CODE;
-  struct ChannelDesc *channel;
-
-  assert(nap != NULL);
-  assert(nap->system_manifest != NULL);
-  assert((void*)nap->system_manifest->channels != NULL);
-
-  channel = &((struct ChannelDesc*)nap->system_manifest->channels)[ch];
-
-  if(channel->counters[cntr] < channel->limits[cntr])
-  {
-    ++channel->counters[cntr];
-    retcode = OK_CODE;
-  }
-
-  return retcode;
-}
-
 /* user exit. invokes long jump to main(). uses global var */
-static int32_t TrapExitHandle(struct NaClApp *nap, int32_t code)
+static int32_t ZVMExitHandle(struct NaClApp *nap, int32_t code)
 {
   assert(nap != NULL);
 
@@ -86,100 +63,38 @@ static int32_t TrapExitHandle(struct NaClApp *nap, int32_t code)
   return code; /* prevent compiler warning. not reached */
 }
 
-/*
- * validate and set syscallback (both local and global)
- * return 0 if syscallback installed, otherwise -1
- *
- * update: please note, syscallback is same far jump. so it
- * must be tested the same way. we cannot use validator to
- * prevent potential danger. therefore the code below must be *very* safe
- * and must check all possibilities.
- */
-static int32_t UpdateSyscallback(struct NaClApp *nap, struct UserManifest *hint)
-{
-  int32_t addr;
-  int32_t retcode = ERR_CODE;
-
-  assert(nap != NULL);
-  assert(hint != NULL);
-  assert(nap->system_manifest != NULL);
-
-  /* uninstall syscallback if 0 given */
-  syscallback = 0; /* global variable */
-  nap->system_manifest->syscallback = 0;
-  addr = hint->syscallback;
-  if(addr == 0) return OK_CODE;
-
-  /* check alignement */
-  if(addr & (OP_ALIGNEMENT - 1)) return ERR_CODE;
-
-  /* check if syscallback points to static text */
-  retcode &=
-      (uintptr_t)addr >= nap->dynamic_text_start &&
-      (uintptr_t)addr < nap->dynamic_text_end ?
-          OK_CODE : ERR_CODE;
-
-  /* check if syscallback points to dynamic text */
-  retcode &=
-      (uintptr_t)addr >= NACL_TRAMPOLINE_END &&
-      (uintptr_t)addr < nap->static_text_end ?
-          OK_CODE : ERR_CODE;
-
-  /* set the new syscallback if found in the proper place */
-  if(retcode == OK_CODE)
-  {
-    nap->system_manifest->syscallback = addr;
-    syscallback = NaClUserToSys(nap, (intptr_t) addr);
-  }
-
-  return retcode;
-}
+#define CHANNEL_READABLE(channel) (ChannelIOMask(channel) & 1)
+#define CHANNEL_WRITEABLE(channel) (ChannelIOMask(channel) & 2)
 
 /*
- * return 0 if channel allowed to read
- * todo(NETWORKING): update with network channels
+ * returns mask of the channel accessibility considering if the channel
+ * exceeded limits and cannot be read (and/or) write
+ * 0x0 - inaccessible channel
+ * 0x1 - read only
+ * 0x2 - write only
+ * 0x3 - read/write
+ * note: for the cdr 0x1 means the channel exceeded write limit
  */
-static int ChannelCanBeRead(struct NaClApp *nap, enum ChannelType ch)
+static int ChannelIOMask(struct ChannelDesc *channel)
 {
-  struct ChannelDesc *channel;
+  uint32_t rw = 0;
+  int64_t puts_rest = channel->limits[PutsLimit] - channel->counters[PutsLimit];
+  int64_t putsize_rest = channel->limits[PutSizeLimit] - channel->counters[PutSizeLimit];
+  int64_t gets_rest = channel->limits[GetsLimit] - channel->counters[GetsLimit];
+  int64_t getsize_rest = channel->limits[GetSizeLimit] - channel->counters[GetSizeLimit];
 
-  assert(nap != NULL);
-  assert(nap->system_manifest != NULL);
-  assert((void*)nap->system_manifest->channels != NULL);
+  rw |= gets_rest && getsize_rest;
+  rw |= (puts_rest && putsize_rest) << 1;
 
-  channel = &((struct ChannelDesc*)nap->system_manifest->channels)[ch];
-
-  if(channel->mounted != LOADED) return ERR_CODE;
-  return ch < InputChannel && ch >= nap->system_manifest->channels_count ?
-      ERR_CODE : OK_CODE;
-}
-
-/*
- * return 0 if channel allowed to write
- * todo(NETWORKING): update with network channels
- */
-static int ChannelCanBeWritten(struct NaClApp *nap, enum ChannelType ch)
-{
-  struct ChannelDesc *channel;
-
-  assert(nap != NULL);
-  assert(nap->system_manifest != NULL);
-  assert((void*)nap->system_manifest->channels != NULL);
-
-  channel = &((struct ChannelDesc*)nap->system_manifest->channels)[ch];
-
-  if(channel->mounted != LOADED) return ERR_CODE;
-  if(ch < InputChannel && ch >= nap->system_manifest->channels_count)
-    return ERR_CODE;
-  return ch == InputChannel ? ERR_CODE : OK_CODE;
+  return rw;
 }
 
 /*
  * read specified amount of bytes from given desc/offset to buffer
  * return amount of read bytes or negative error code if call failed
  */
-int32_t TrapReadHandle(struct NaClApp *nap,
-    enum ChannelType ch, char *buffer, int32_t size, int64_t offset)
+int32_t ZVMReadHandle(struct NaClApp *nap,
+    int ch, char *buffer, int32_t size, int64_t offset)
 {
   struct ChannelDesc *channel;
   int64_t tail;
@@ -188,7 +103,8 @@ int32_t TrapReadHandle(struct NaClApp *nap,
 
   assert(nap != NULL);
   assert(nap->system_manifest != NULL);
-  assert((void*)nap->system_manifest->channels != NULL);
+  assert(nap->system_manifest->channels != NULL);
+  assert(nap->system_manifest->channels_count > 0);
 
   /* convert address and check buffer */
   sys_buffer = (char*)NaClUserToSys(nap, (uintptr_t) buffer);
@@ -196,48 +112,58 @@ int32_t TrapReadHandle(struct NaClApp *nap,
   NaClLog(LOG_INFO, "%s() invoked: desc=%d, buffer=0x%lx, size=%d, offset=%ld\n",
       __func__, ch, (intptr_t)buffer, size, offset);
 
-  /* todo(NETWORKING): integrate it into the channels */
-#ifdef NETWORKING
-  /*YaroslavLitvinov*/
-  if(GetValueByKey("Networking") != NULL)
-  {
-	  int capab = ENOTALLOWED;
-	  capab = capabilities_for_file_fd(ch);
-	  if ( capab == EREAD || capab == EREADWRITE ){
-		  retcode = commf_read(ch, sys_buffer, size);
-		  if ( -1 == retcode  ){
-			  NaClLog(LOG_ERROR, "%s() read file %d error\n", __func__, ch );
-			  NaClAbort();
-		  }
-		  return retcode;
-	  }
-	  else{
-		  /*todo read errcode into report log*/
-		  NaClLog(LOG_ERROR, "%s() read file %d not allowed by capabilities err=%d\n", __func__, ch, capab );
-		  NaClAbort();
-	  }
-  }
-#endif
+//  /* todo(NETWORKING): integrate it into the channels */
+//#ifdef NETWORKING
+//  /*YaroslavLitvinov*/
+//  if(GetValueByKey("Networking") != NULL)
+//  {
+//    int capab = ENOTALLOWED;
+//    capab = capabilities_for_file_fd(ch);
+//    if (capab == EREAD || capab == EREADWRITE)
+//    {
+//      retcode = commf_read(ch, sys_buffer, size);
+//      if ( -1 == retcode )
+//      {
+//        NaClLog(LOG_ERROR, "%s() read file %d error\n", __func__, ch );
+//        NaClAbort();
+//      }
+//      return retcode;
+//    }
+//    else
+//    {
+//      /*todo read errcode into report log*/
+//      NaClLog(LOG_ERROR, "%s() read file %d not allowed by capabilities err=%d\n", __func__, ch, capab );
+//      NaClAbort();
+//    }
+//  }
+//#endif
 
-  if(ChannelCanBeRead(nap, ch) != OK_CODE) return -INVALID_DESC;
-  channel = &((struct ChannelDesc*)nap->system_manifest->channels)[ch];
+  channel = &nap->system_manifest->channels[ch];
+  if(CHANNEL_READABLE(channel) == 0) return -INVALID_DESC;
+
+  /* ignore user offset for sequential access read */
+  if(channel->type == SGetSPut || channel->type == SGetRPut || channel->type == Stdin)
+    offset = channel->getpos;
 
   /* check arguments sanity */
-  if(size < 1) return -INSANE_SIZE;
   if(offset < 0) return -INSANE_OFFSET;
+  if(size < 1) return -INSANE_SIZE;
 
-  /* check limits. update counters */
-  if(offset >= channel->fsize) return -OUT_OF_BOUNDS;
-  if(channel->counters[GetsCounter] >= channel->limits[GetsLimit])
+  /* check limits */
+  if(offset >= channel->size) return -OUT_OF_BOUNDS;
+  if(channel->counters[GetsLimit] >= channel->limits[GetsLimit])
     return -OUT_OF_LIMITS;
-  tail = channel->limits[GetSizeLimit] - channel->counters[GetSizeCounter];
+  tail = channel->limits[GetSizeLimit] - channel->counters[GetSizeLimit];
   if(size > tail) size = tail;
   if(size < 1) return -OUT_OF_LIMITS;
-  ++channel->counters[GetsCounter];
-  channel->counters[GetSizeCounter] += size;
 
-  /* read data */
+  /* update counters */
+  ++channel->counters[GetsLimit];
+  channel->counters[GetSizeLimit] += size;
+
+  /* read data and update position */
   retcode = pread(channel->handle, sys_buffer, (size_t)size, (off_t)offset);
+  if(retcode > 0) channel->getpos = offset + retcode;
 
   return retcode;
 }
@@ -246,8 +172,8 @@ int32_t TrapReadHandle(struct NaClApp *nap,
  * write specified amount of bytes from buffer to given desc/offset
  * return amount of read bytes or negative error code if call failed
  */
-int32_t TrapWriteHandle(struct NaClApp *nap,
-    enum ChannelType ch, char *buffer, int32_t size, int64_t offset)
+int32_t ZVMWriteHandle(struct NaClApp *nap,
+    int ch, char *buffer, int32_t size, int64_t offset)
 {
   struct ChannelDesc *channel;
   int64_t tail;
@@ -264,116 +190,200 @@ int32_t TrapWriteHandle(struct NaClApp *nap,
   NaClLog(4, "%s() invoked: desc=%d, buffer=0x%lx, size=%d, offset=%ld\n",
         __func__, ch, (intptr_t)buffer, size, offset);
 
-  /* todo(NETWORKING): integrate it into the channels */
-#ifdef NETWORKING
-  /*YaroslavLitvinov*/
-  if(GetValueByKey("Networking") != NULL)
-  {
-	  int capab = ENOTALLOWED;
-	  capab = capabilities_for_file_fd(ch);
-	  if ( capab == EWRITE || capab == EREADWRITE ){
-		  retcode = commf_write(ch, sys_buffer, size);
-		  if ( -1 == retcode  ){
-			  NaClLog(LOG_ERROR, "%s() write file %d error\n", __func__, ch );
-			  NaClAbort();
-		  }
-		  return retcode;
-	  }
-	  else{
-		  /*todo write errcode into report log*/
-		  NaClLog(LOG_ERROR, "%s() write file %d not allowed by capabilities err=%d\n", __func__, ch, capab );
-		  NaClAbort();
-	  }
-  }
-#endif
+//  /* todo(NETWORKING): integrate it into the channels */
+//#ifdef NETWORKING
+//  /*YaroslavLitvinov*/
+//  if(GetValueByKey("Networking") != NULL)
+//  {
+//	  int capab = ENOTALLOWED;
+//	  capab = capabilities_for_file_fd(ch);
+//	  if ( capab == EWRITE || capab == EREADWRITE ){
+//		  retcode = commf_write(ch, sys_buffer, size);
+//		  if ( -1 == retcode  ){
+//			  NaClLog(LOG_ERROR, "%s() write file %d error\n", __func__, ch );
+//			  NaClAbort();
+//		  }
+//		  return retcode;
+//	  }
+//	  else{
+//		  /*todo write errcode into report log*/
+//		  NaClLog(LOG_ERROR, "%s() write file %d not allowed by capabilities err=%d\n", __func__, ch, capab );
+//		  NaClAbort();
+//	  }
+//  }
+//#endif
 
-  if(ChannelCanBeWritten(nap, ch) != OK_CODE) return -INVALID_DESC;
-  channel = &((struct ChannelDesc*)nap->system_manifest->channels)[ch];
+  channel = &nap->system_manifest->channels[ch];
+  if(CHANNEL_WRITEABLE(channel) == 0) return -INVALID_DESC;
+
+  /* ignore user offset for sequential access write */
+  if(channel->type == SGetSPut || channel->type == RGetSPut
+      || channel->type == Stdout || channel->type == Stderr)
+    offset = channel->putpos;
 
   /* check arguments sanity */
   if(size < 1) return -INSANE_SIZE;
   if(offset < 0) return -INSANE_OFFSET;
 
-  /* check limits. update counters */
-  if(offset >= channel->fsize) return -OUT_OF_BOUNDS;
-  if(channel->counters[PutsCounter] >= channel->limits[PutsLimit])
+  /* check limits */
+  if(offset >= channel->size) return -OUT_OF_BOUNDS;
+  if(channel->counters[PutsLimit] >= channel->limits[PutsLimit])
     return -OUT_OF_LIMITS;
-  tail = channel->limits[PutSizeLimit] - channel->counters[PutSizeCounter];
+  tail = channel->limits[PutSizeLimit] - channel->counters[PutSizeLimit];
   if(size > tail) size = tail;
   if(size < 1) return -OUT_OF_LIMITS;
-  ++channel->counters[PutsCounter];
-  channel->counters[PutSizeCounter] += size;
 
-  /* write data */
+  /* update counters */
+  ++channel->counters[PutsLimit];
+  channel->counters[PutSizeLimit] += size;
+
+  /* write data and update position */
   retcode = pwrite(channel->handle, sys_buffer, (size_t)size, (off_t)offset);
+  if(retcode > 0) channel->putpos = offset + retcode;
 
   return retcode;
 }
 
 /*
- * put allowed information from the system manifest to provided
- * object of struct UserManifest and update syscallback
- * return 0 if syscallback was updated, otherwise negative error code
- * todo(d'b): extract syscallback setting to separate function
+ * ZeroVM API. accessors and initializers
  */
-static int32_t TrapUserSetupHandle(struct NaClApp *nap, struct UserManifest *h)
+
+/* accessor: returns user heap start address */
+static int32_t ZVMHeapPtr(struct NaClApp *nap)
 {
-  struct SystemManifest *policy;
-  struct UserManifest *hint;
-  int32_t retcode = OK_CODE;
-  enum ChannelType ch;
+  assert(nap != NULL);
+  assert(nap->system_manifest != NULL);
+  return nap->system_manifest->heap_ptr;
+}
+
+/* accessor: returns memory size available for user program, 0 means 4gb */
+static int32_t ZVMMemSize(struct NaClApp *nap)
+{
+  assert(nap != NULL);
+  assert(nap->system_manifest != NULL);
+  return nap->system_manifest->max_mem;
+}
+
+/* accessor: how much syscalls allowed for the user */
+static int32_t ZVMSyscallsLimit(struct NaClApp *nap)
+{
+  assert(nap != NULL);
+  assert(nap->system_manifest != NULL);
+  return nap->system_manifest->max_syscalls;
+}
+
+/* accessor: how much syscalls the user already used */
+static int32_t ZVMSyscallsCount(struct NaClApp *nap)
+{
+  assert(nap != NULL);
+  assert(nap->system_manifest != NULL);
+  return nap->system_manifest->cnt_syscalls;
+}
+
+/*
+ * initializer: channels
+ * returns channels number if buffer == NULL, otherwise
+ * returns channels number and initializes given buffer with channels data
+ */
+static int32_t ZVMChannels(struct NaClApp *nap, struct ZVMChannel *buf)
+{
+  struct ZVMChannel *uchannels;
+  struct ChannelDesc *channels;
+  int ch;
 
   assert(nap != NULL);
   assert(nap->system_manifest != NULL);
-  assert((void*)nap->system_manifest->channels != NULL);
 
-  /* check provided object */
-  if(h == NULL) return ERR_CODE;
-  hint = (struct UserManifest*)NaClUserToSys(nap, (intptr_t) h);
-  if((void*)hint->channels == NULL) return ERR_CODE;
+  /* user asked for the channels count */
+  if(buf == NULL) return nap->system_manifest->channels_count;
 
-  /* copy and translate information from system manifest */
-  policy = nap->system_manifest;
-  hint->cnt_syscalls = policy->cnt_syscalls;
-  memcpy(hint->content_type, policy->content_type, CONTENT_TYPE_LEN);
-  hint->heap_ptr = policy->heap_ptr;
-  hint->max_mem = policy->max_mem;
-  hint->max_syscalls = policy->max_syscalls;
-  hint->self_size = sizeof(*hint);
-  memcpy(hint->timestamp, policy->timestamp, TIMESTAMP_LEN);
-  memcpy(hint->user_etag, policy->user_etag, USER_TAG_LEN);
-  memcpy(hint->x_object_meta_tag, policy->x_object_meta_tag, X_OBJECT_META_TAG_LEN);
+  channels = nap->system_manifest->channels;
+  uchannels = (struct ZVMChannel *)NaClUserToSys(nap, (uintptr_t)buf);
 
-  /* secure set of channels information */
-  for(ch = InputChannel; ch < nap->system_manifest->channels_count; ++ch)
+  /* populate given array with the channels information */
+  for(ch = 0; ch < nap->system_manifest->channels_count; ++ch)
   {
-    /* pick current channel settings */
-    struct ChannelDesc *channel = &((struct ChannelDesc*)policy->channels)[ch];
-    struct ChannelDesc *hint_channel = (struct ChannelDesc*)
-        NaClUserToSys(nap, (uintptr_t)&((struct ChannelDesc*)hint->channels)[ch]);
+    int i;
 
-    /* skip empty channels but put the mark that channel does not exist */
-    hint_channel->type = EmptyChannel;
-    if(channel->name == (int64_t)NULL) continue;
+    uchannels[ch].name = NULL; /* todo(d'b): solve namespace service problem */
+    uchannels[ch].handle = ch;
+    uchannels[ch].type = channels[ch].type;
 
-    hint_channel->bsize = channel->bsize;
-    hint_channel->buffer = channel->buffer;
-    memcpy(hint_channel->counters, channel->counters,
-        IOCountersCount * sizeof(*hint_channel->counters));
-    hint_channel->fsize = channel->fsize;
-    hint_channel->handle = ch;
-    memcpy(hint_channel->limits, channel->limits,
-        IOLimitsCount * sizeof(*hint_channel->limits));
-    hint_channel->mounted = channel->mounted;
-    hint_channel->name = 0; /* NULL. todo(d'b): give user standard channel name */
-    hint_channel->self_size = sizeof(*hint_channel);
-    hint_channel->type = channel->type;
+    /* copy limits and counters */
+    for(i = 0; i < IOLimitsCount; ++i)
+    {
+      uchannels[ch].limits[i] = channels[ch].limits[i];
+      uchannels[ch].counters[i] = channels[ch].counters[i];
+    }
+
+    /* channel size/position */
+    switch(channels->type)
+    {
+      case SGetSPut:
+        /* size/position is not defined */
+        break;
+      case SGetRPut:
+      case Stdin:
+        uchannels[ch].size = channels[ch].size;
+        uchannels[ch].position = channels[ch].putpos;
+        break;
+      case RGetSPut:
+      case Stdout:
+      case Stderr:
+        uchannels[ch].size = channels[ch].size;
+        uchannels[ch].position = channels[ch].getpos;
+        break;
+      case RGetRPut:
+        /* in this case get or put updates both positions synchronously */
+        uchannels[ch].size = channels[ch].size;
+        uchannels[ch].position = channels[ch].getpos;
+        break;
+      default:
+        /* invalid access type */
+        break;
+    }
   }
 
-  /* update syscallback */
-  if(UpdateSyscallback(nap, hint) == ERR_CODE) retcode = ERR_CODE;
+  return nap->system_manifest->channels_count;
+}
 
-  return retcode;
+/*
+ * set syscallback
+ * returns a new syscallback when successfully installed or
+ * returns an old syscallback if installation failed
+ * note: global syscallback uses system address space,
+ *       nap->system_manifest->syscallback - user space
+ */
+static int32_t ZVMSyscallback(struct NaClApp *nap, int32_t addr)
+{
+  int32_t good_pos = 0;
+
+  assert(nap != NULL);
+  assert(nap->system_manifest != NULL);
+
+  /* uninstall syscallback if 0 given */
+  if(addr == 0)
+  {
+    syscallback = 0; /* global variable */
+    nap->system_manifest->syscallback = 0;
+    return 0;
+  }
+
+  /* check alignement */
+  if(addr & (OP_ALIGNEMENT - 1))
+    return nap->system_manifest->syscallback;
+
+  /* check if syscallback points to text */
+  good_pos |= addr >= NACL_TRAMPOLINE_END && addr < nap->static_text_end;
+  good_pos |= addr >= nap->dynamic_text_start && addr < nap->dynamic_text_end;
+
+  if(good_pos)
+  {
+    nap->system_manifest->syscallback = addr;
+    syscallback = NaClUserToSys(nap, (intptr_t) addr);
+  }
+
+  return nap->system_manifest->syscallback;
 }
 
 /*
@@ -400,19 +410,35 @@ int32_t TrapHandler(struct NaClApp *nap, uint32_t args)
   switch(*sys_args)
   {
     case TrapExit:
-      retcode = TrapExitHandle(nap, (int32_t) sys_args[2]);
-      break;
-    case TrapUserSetup:
-      retcode = TrapUserSetupHandle(nap, (struct UserManifest*) sys_args[2]);
+      retcode = ZVMExitHandle(nap, (int32_t) sys_args[2]);
       break;
     case TrapRead:
-      retcode = TrapReadHandle(nap,
-          (enum ChannelType)sys_args[2], (char*)sys_args[3], (int32_t)sys_args[4], sys_args[5]);
+      retcode = ZVMReadHandle(nap,
+          (int)sys_args[2], (char*)sys_args[3], (int32_t)sys_args[4], sys_args[5]);
       break;
     case TrapWrite:
-      retcode = TrapWriteHandle(nap,
-          (enum ChannelType)sys_args[2], (char*)sys_args[3], (int32_t)sys_args[4], sys_args[5]);
+      retcode = ZVMWriteHandle(nap,
+          (int)sys_args[2], (char*)sys_args[3], (int32_t)sys_args[4], sys_args[5]);
       break;
+    case TrapSyscallback:
+      retcode = ZVMSyscallback(nap, (int32_t)sys_args[2]);
+      break;
+    case TrapChannels:
+      retcode = ZVMChannels(nap, (struct ZVMChannel*)sys_args[2]);
+      break;
+    case TrapSyscallsCount:
+      retcode = ZVMSyscallsCount(nap);
+      break;
+    case TrapSyscallsLimit:
+      retcode = ZVMSyscallsLimit(nap);
+      break;
+    case TrapMemSize:
+      retcode = ZVMMemSize(nap);
+      break;
+    case TrapHeapPtr:
+      retcode = ZVMHeapPtr(nap);
+      break;
+
     default:
       retcode = ERR_CODE;
       NaClLog(LOG_ERROR, "function %ld is not supported\n", *sys_args);
@@ -422,4 +448,3 @@ int32_t TrapHandler(struct NaClApp *nap, uint32_t args)
   NaClLog(4, "leaving Trap with code = 0x%x\n", retcode);
   return retcode;
 }
-

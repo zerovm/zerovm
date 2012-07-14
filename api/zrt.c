@@ -38,8 +38,8 @@
 /* pointer to the user manifest object */
 static struct UserManifest *setup;
 
-/* positions of zerovm streams */
-static size_t pos_ptr[ChannelTypesCount] = {0};
+/* positions of zerovm channels. should be allocated before usage */
+static size_t *pos_ptr;
 
 /*
  * ZRT IMPLEMENTATION OF NACL SYSCALLS
@@ -57,145 +57,77 @@ SYSCALL_MOCK(close, -EBADF) /* close the file with the given handle number */
 /* read the file with the given handle number */
 static int32_t zrt_read(uint32_t *args)
 {
-  /*
-   * in the simple zrt library version we only can read
-   * stdin == 0, stdout ==  1 and stderr == 2 (wich are really
-   * input, output and user_log)
-   */
   SHOWID;
   int file = (int)args[0];
   void *buf = (void*)args[1];
   int64_t length = (int64_t)args[2];
-  struct ChannelDesc *channels = (struct ChannelDesc*)(intptr_t)setup->channels;
 
-  /*
-   * Support for MSQ files: zvm_pread used for networking communication
-   * msq files has descriptor numbers above than 2
-   * todo(NETWORKING): move it to switch after networking integration will be complete
-   */
-  /* MSQ files using streaming IO, and don't using offset, set offset as 0 */
-  if(file > LogChannel)
-    return zvm_pread(file, (void*) args[1], length, 0);
-
-  /* check given handle. check length */
-  if( InputChannel != file) return -EBADF;
-  if(length < 0 || length > 0x7fffffff) return -EPERM;
-
-  /* write data */
-  switch(channels[file].mounted)
-  {
-    case MAPPED:
-      /* check if length is not overrun available data */
-      if(pos_ptr[file] + length > channels[file].bsize)
-        length = channels[file].bsize - pos_ptr[file];
-
-      /* length must not be negative */
-      if(length < 0)
-      {
-        length = -EBADF;
-        break;
-      }
-
-      memcpy(buf, (void*)channels[file].buffer + pos_ptr[file], length);
-      pos_ptr[file] += length;
-      break;
-
-    case LOADED:
-      length = zvm_pread(file, buf, length, pos_ptr[file]);
-      if(length > 0) pos_ptr[file] += length;
-      break;
-
-    default: /* the mounting method is not supported */
-      length = -EBADF;
-      break;
-  }
+  /* for the new zvm channels design */
+  length = zvm_pread(file, buf, length, pos_ptr[file]);
+  if(length > 0) pos_ptr[file] += length;
 
   return length;
 }
 
-/* example how to implement zrt syscall */
+/* write the file with the given handle number */
 static int32_t zrt_write(uint32_t *args)
 {
-  /*
-   * in the simple zrt library version we only can write
-   * stdout ==  1 and stderr == 2 (wich are really
-   * output and user_log). stdin == 0 is not allowed to write
-   */
   SHOWID;
   int file = (int)args[0];
   void *buf = (void*)args[1];
   int64_t length = (int64_t)args[2];
-  struct ChannelDesc *channels = (struct ChannelDesc*)(intptr_t)setup->channels;
 
-  /*
-   * Support for MSQ files: zvm_pwrite used for networking communication
-   * todo(NETWORKING): move it to switch after networking integration will be complete
-   */
-  /* MSQ files using streaming IO, and don't using offset, set offset as 0 */
-  if(file > LogChannel)
-    return zvm_pwrite(file, buf, length, 0);
-
-  /* check given handle. check length */
-  if(file < OutputChannel || file > LogChannel) return -EBADF;
-  if(length < 0 || length > 0x7fffffff) return -EPERM;
-
-  /* write data */
-  switch(channels[file].mounted)
-  {
-    case MAPPED:
-      /* check if length is not overrun available data */
-      if(pos_ptr[file] + length > channels[file].bsize)
-        length = channels[file].bsize - pos_ptr[file];
-
-      /* length must not be negative */
-      if(length < 0)
-      {
-        length = -EBADF;
-        break;
-      }
-
-      memcpy((void*)channels[file].buffer + pos_ptr[file], buf, length);
-      pos_ptr[file] += length;
-      break;
-
-    case LOADED:
-      length = zvm_pwrite(file, buf, length, pos_ptr[file]);
-      if(length > 0) pos_ptr[file] += length;
-      break;
-
-    default: /* the mounting method is not supported */
-      length = -EBADF;
-      break;
-  }
+  /* for the new zvm channels design */
+  length = zvm_pwrite(file, buf, length, pos_ptr[file]);
+  if(length > 0) pos_ptr[file] += length;
 
   return length;
 }
 
 /*
- * seek position does not work for stdin/stdout/stderr
- * so we just fail in simple version of zrt
- * note: actually we can position, we just don't want to enhance standard
- * UPDATE: seek temporary allowed
+ * seek for the new zerovm channels design
  */
 static int32_t zrt_lseek(uint32_t *args)
 {
-  struct ChannelDesc *channels = (struct ChannelDesc*)(intptr_t)setup->channels;
   SHOWID;
+  struct ZVMChannel *channel;
 
-  #define CHECK_NEW_POS(offset)\
+#define CHECK_NEW_POS(offset)\
   if(offset < 0 || offset > 0x7fffffff)\
   {\
     errno = EPERM; /* in advanced version should be set to conventional value */\
     return -EPERM;\
   }
 
-  enum ChannelType handle = (enum ChannelType)args[0];
+  int32_t handle = (int32_t)args[0];
   off_t offset = *((off_t*)args[1]);
   int whence = (int)args[2];
   off_t new_pos;
 
-  /* check if given handle is valid and seekable */
-  if(handle < InputChannel || handle > LogChannel) return -EBADF;
+  /* check handle */
+  if(handle < 0 || handle >= setup->channels_count) return EBADF;
+
+  /* select channel and make checks */
+  channel = &setup->channels[handle];
+  if(channel->position != pos_ptr[handle]) return EIO;
+
+  /* check if channel has random access */
+  if(channel->type == SGetSPut) return ESPIPE;
+  if(channel->type == Stdin) return ESPIPE;
+  if(channel->type == Stdout) return ESPIPE;
+  if(channel->type == Stderr) return ESPIPE;
+
+  /*
+   * following check doesn't garantee absence of errors since
+   * it does not envolves counters update
+   * todo(d'b): try to solve it w/o syscalls
+   */
+  /* sequential r/o channel */
+  if(channel->type == SGetRPut && (channel->limits[PutsLimit] == 0
+      || channel->limits[PutSizeLimit] == 0)) return ESPIPE;
+  /* sequential w/o channel */
+  if(channel->type == RGetSPut && (channel->limits[GetsLimit] == 0
+      || channel->limits[GetSizeLimit] == 0)) return ESPIPE;
 
   switch(whence)
   {
@@ -209,7 +141,7 @@ static int32_t zrt_lseek(uint32_t *args)
       pos_ptr[handle] = new_pos;
       break;
     case SEEK_END:
-      new_pos = channels[handle].fsize + offset;
+      new_pos = channel->size + offset;
       CHECK_NEW_POS(new_pos);
       pos_ptr[handle] = new_pos;
       break;
@@ -228,97 +160,87 @@ static int32_t zrt_lseek(uint32_t *args)
 
 SYSCALL_MOCK(ioctl, -EINVAL) /* not implemented in the simple version of zrtlib */
 
-/* return synthetic channel information */
+/*
+ * return synthetic channel information
+ * todo(d'b): the function needs update after the channels design will complete
+ */
 static int32_t zrt_stat(uint32_t *args)
 {
-  struct ChannelDesc *channels = (struct ChannelDesc*)(intptr_t)setup->channels;
-
   SHOWID;
-  char *prefixes[] = CHANNEL_PREFIXES;
+  char *prefixes[] = {STDIN, STDOUT, STDERR};
   const char *file = (const char*)args[0];
   struct nacl_abi_stat *sbuf = (struct nacl_abi_stat *)args[1];
-  enum ChannelType handle;
+  struct ZVMChannel *channel;
+  int handle;
 
-  /* ensure "file" is not NULL. calculate handle number */
+  /* calculate handle number */
+  /* todo(d'b): solve the problem with the file names service */
   if(file == NULL) return -EFAULT;
-  for(handle = InputChannel; handle < sizeof(prefixes)/sizeof(*prefixes); ++handle)
-      if(!strcmp(file, prefixes[0])) break;
+  for(handle = STDIN_FILENO; handle < sizeof(prefixes)/sizeof(*prefixes); ++handle)
+      if(!strcmp(file, prefixes[handle])) break;
 
-  /*
-   * check if user request contain the proper file name:
-   * stdin == Input, stdout == Output, stderr == UserLog
-   * note: input, output, log are default zerovm streams names
-   */
-  if(handle >= InputChannel && handle <= LogChannel)
-  {
-    /* return stat object */
-    sbuf->nacl_abi_st_dev = 2049;     /* ID of device containing handle */
-    sbuf->nacl_abi_st_ino = 1967;     /* inode number */
-    sbuf->nacl_abi_st_mode = 33261;   /* protection */
-    sbuf->nacl_abi_st_nlink = 1;      /* number of hard links */
-    sbuf->nacl_abi_st_uid = 1000;     /* user ID of owner */
-    sbuf->nacl_abi_st_gid = 1000;     /* group ID of owner */
-    sbuf->nacl_abi_st_rdev = 0;       /* device ID (if special handle) */
-    sbuf->nacl_abi_st_size = channels[handle].fsize;    /* total size, in bytes */
-    sbuf->nacl_abi_st_blksize = 4096; /* block size for file system I/O */
-    /* number of 512B blocks allocated */
-    sbuf->nacl_abi_st_blocks = ((sbuf->nacl_abi_st_size + sbuf->nacl_abi_st_blksize - 1) /
-        sbuf->nacl_abi_st_blksize) * sbuf->nacl_abi_st_blksize / 512;
+  /* so far no support for files except stdin/stdout/stderr */
+  if(handle < STDIN_FILENO  || handle > STDERR_FILENO) return -EPERM;
+  channel = &setup->channels[handle];
 
-    /*
-     * we are not allowed to have real date/time. for streams
-     * we can use any constant or time stamp from manifest (if available)
-     */
-    sbuf->nacl_abi_st_atime = 0;      /* time of last access */
-    sbuf->nacl_abi_st_mtime = 0;      /* time of last modification */
-    sbuf->nacl_abi_st_ctime = 0;      /* time of last status change */
-    sbuf->nacl_abi_st_atimensec = 0;
-    sbuf->nacl_abi_st_mtimensec = 0;
-    sbuf->nacl_abi_st_ctimensec = 0;
+  /* return stat object */
+  sbuf->nacl_abi_st_dev = 2049;     /* ID of device containing handle */
+  sbuf->nacl_abi_st_ino = 1967;     /* inode number */
+  sbuf->nacl_abi_st_mode = 33261;   /* protection */
+  sbuf->nacl_abi_st_nlink = 1;      /* number of hard links */
+  sbuf->nacl_abi_st_uid = 1000;     /* user ID of owner */
+  sbuf->nacl_abi_st_gid = 1000;     /* group ID of owner */
+  sbuf->nacl_abi_st_rdev = 0;       /* device ID (if special handle) */
+  sbuf->nacl_abi_st_size = channel->size;    /* total size, in bytes */
+  sbuf->nacl_abi_st_blksize = 4096; /* block size for file system I/O */
+  sbuf->nacl_abi_st_blocks = /* number of 512B blocks allocated */
+      ((sbuf->nacl_abi_st_size + sbuf->nacl_abi_st_blksize - 1)
+      / sbuf->nacl_abi_st_blksize) * sbuf->nacl_abi_st_blksize / 512;
 
-    return 0;
-  }
-  return -ENOENT;
+  /* files are not allowed to have real date/time */
+  sbuf->nacl_abi_st_atime = 0;      /* time of the last access */
+  sbuf->nacl_abi_st_mtime = 0;      /* time of the last modification */
+  sbuf->nacl_abi_st_ctime = 0;      /* time of the last status change */
+  sbuf->nacl_abi_st_atimensec = 0;
+  sbuf->nacl_abi_st_mtimensec = 0;
+  sbuf->nacl_abi_st_ctimensec = 0;
+
+  return 0;
 }
 
 /* return synthetic channel information */
 static int32_t zrt_fstat(uint32_t *args)
 {
   SHOWID;
-  enum ChannelType handle = (int)args[0];
+  int handle = (int)args[0];
   struct nacl_abi_stat *sbuf = (struct nacl_abi_stat *)args[1];
-  struct ChannelDesc *channels = (struct ChannelDesc*)(intptr_t)setup->channels;
+  struct ZVMChannel *channel;
 
-  /*
-   * check if user request contain the proper file handle:
-   * stdin == 0, stdout == 1, stderr == 2
-   */
-  if(handle < InputChannel || handle > LogChannel) return -EBADF;
+  /* check if user request contain the proper file handle */
+  if(handle < STDIN_FILENO || handle >= setup->channels_count) return -EBADF;
+  channel = &setup->channels[handle];
 
   /* return stat object */
-    sbuf->nacl_abi_st_dev = 2049;     /* ID of device containing handle */
-    sbuf->nacl_abi_st_ino = 1967;     /* inode number */
-    sbuf->nacl_abi_st_mode = 33261;   /* protection */
-    sbuf->nacl_abi_st_nlink = 1;      /* number of hard links */
-    sbuf->nacl_abi_st_uid = 1000;     /* user ID of owner */
-    sbuf->nacl_abi_st_gid = 1000;     /* group ID of owner */
-    sbuf->nacl_abi_st_rdev = 0;       /* device ID (if special handle) */
-    sbuf->nacl_abi_st_size = channels[handle].fsize;    /* total size, in bytes */
-    sbuf->nacl_abi_st_blksize = 4096; /* blocksize for file system I/O */
-    /* number of 512B blocks allocated */
-    sbuf->nacl_abi_st_blocks = ((sbuf->nacl_abi_st_size + sbuf->nacl_abi_st_blksize - 1) /
-        sbuf->nacl_abi_st_blksize) * sbuf->nacl_abi_st_blksize / 512;
+  sbuf->nacl_abi_st_dev = 2049; /* ID of device containing handle */
+  sbuf->nacl_abi_st_ino = 1967; /* inode number */
+  sbuf->nacl_abi_st_mode = 33261; /* protection */
+  sbuf->nacl_abi_st_nlink = 1; /* number of hard links */
+  sbuf->nacl_abi_st_uid = 1000; /* user ID of owner */
+  sbuf->nacl_abi_st_gid = 1000; /* group ID of owner */
+  sbuf->nacl_abi_st_rdev = 0; /* device ID (if special handle) */
+  sbuf->nacl_abi_st_size = channel->size; /* total size, in bytes */
+  sbuf->nacl_abi_st_blksize = 4096; /* blocksize for file system I/O */
+  sbuf->nacl_abi_st_blocks = /* number of 512B blocks allocated */
+      ((sbuf->nacl_abi_st_size + sbuf->nacl_abi_st_blksize - 1)
+      / sbuf->nacl_abi_st_blksize) * sbuf->nacl_abi_st_blksize / 512;
 
-    /*
-     * we are not allowed to have real date/time. for streams
-     * we can use any constant or timestamp from manifest (if available)
-     */
-    sbuf->nacl_abi_st_atime = 0;      /* time of last access */
-    sbuf->nacl_abi_st_mtime = 0;      /* time of last modification */
-    sbuf->nacl_abi_st_ctime = 0;      /* time of last status change */
-    sbuf->nacl_abi_st_atimensec = 0;
-    sbuf->nacl_abi_st_mtimensec = 0;
-    sbuf->nacl_abi_st_ctimensec = 0;
+  /* files are not allowed to have real date/time */
+  sbuf->nacl_abi_st_atime = 0; /* time of the last access */
+  sbuf->nacl_abi_st_mtime = 0; /* time of the last modification */
+  sbuf->nacl_abi_st_ctime = 0; /* time of the last status change */
+  sbuf->nacl_abi_st_atimensec = 0;
+  sbuf->nacl_abi_st_mtimensec = 0;
+  sbuf->nacl_abi_st_ctimensec = 0;
 
   return 0;
 }
@@ -338,16 +260,9 @@ static int32_t zrt_sysbrk(uint32_t *args)
   SHOWID;
   int32_t retcode;
 
-  /* uninstall syscallback */
-  setup->syscallback = 0;
-  zvm_setup(setup);
-
-  /* invoke syscall directly */
-  retcode = NaCl_sysbrk(args[0]);
-
-  /* reinstall syscallback */
-  setup->syscallback = (int32_t) syscall_director;
-  zvm_setup(setup);
+  zvm_syscallback(0); /* uninstall syscallback */
+  retcode = NaCl_sysbrk(args[0]); /* invoke syscall directly */
+  zvm_syscallback((intptr_t)syscall_director); /* reinstall syscallback */
 
   return retcode;
 }
@@ -358,16 +273,9 @@ static int32_t zrt_mmap(uint32_t *args)
   SHOWID;
   int32_t retcode;
 
-  /* uninstall syscallback */
-  setup->syscallback = 0;
-  zvm_setup(setup);
-
-  /* invoke syscall directly */
+  zvm_syscallback(0); /* uninstall syscallback */
   retcode = NaCl_mmap(args[0], args[1], args[2], args[3], args[4], args[5]);
-
-  /* reinstall syscallback */
-  setup->syscallback = (int32_t) syscall_director;
-  zvm_setup(setup);
+  zvm_syscallback((intptr_t)syscall_director); /* reinstall syscallback */
 
   return retcode;
 }
@@ -382,16 +290,9 @@ static int32_t zrt_munmap(uint32_t *args)
   SHOWID;
   int32_t retcode;
 
-  /* uninstall syscallback */
-  setup->syscallback = 0;
-  zvm_setup(setup);
-
-  /* invoke syscall directly */
+  zvm_syscallback(0); /* uninstall syscallback */
   retcode = NaCl_munmap(args[0], args[1]);
-
-  /* reinstall syscallback */
-  setup->syscallback = (int32_t) syscall_director;
-  zvm_setup(setup);
+  zvm_syscallback((intptr_t)syscall_director); /* reinstall syscallback */
 
   return retcode;
 }
@@ -407,9 +308,7 @@ static int32_t zrt_exit(uint32_t *args)
   /* no need to check args for NULL. it is always set by syscall_manager */
   SHOWID;
   zvm_exit(args[0]);
-
-  /* not reached */
-  return 0;
+  return 0; /* unreachable */
 }
 
 SYSCALL_MOCK(getpid, 0)
@@ -417,14 +316,27 @@ SYSCALL_MOCK(sched_yield, 0)
 SYSCALL_MOCK(sysconf, 0)
 
 /* if given in manifest let user to have it */
+#define TIMESTAMP_STR "TimeStamp="
+#define TIMESTAMP_STRLEN strlen("TimeStamp=")
 static int32_t zrt_gettimeofday(uint32_t *args)
 {
-  struct nacl_abi_timeval  *tv = (struct nacl_abi_timeval *)args[0];
-  char *stamp = (char *)setup->timestamp;
   SHOWID;
+  struct nacl_abi_timeval  *tv = (struct nacl_abi_timeval *)args[0];
+  char *stamp = NULL;
+  int i;
+
+  /* get time stamp from the environment */
+  for(i = 0; setup->envp[i] != NULL; ++i)
+  {
+    if(strncmp(setup->envp[i], TIMESTAMP_STR, TIMESTAMP_STRLEN) != 0)
+      continue;
+
+    stamp = setup->envp[i] + TIMESTAMP_STRLEN;
+    break;
+  }
 
   /* check if timestampr is set */
-  if(!*stamp) return -EPERM;
+  if(stamp == NULL || !*stamp) return -EPERM;
 
   /* check given arguments validity */
   if(!tv) return -EFAULT;
@@ -473,16 +385,9 @@ static int32_t zrt_tls_get(uint32_t *args)
   SHOWID;
   int32_t retcode;
 
-  /* uninstall syscallback */
-  setup->syscallback = 0;
-  zvm_setup(setup);
-
-  /* invoke syscall directly */
-  retcode = NaCl_tls_get();
-
-  /* reinstall syscallback */
-  setup->syscallback = (int32_t) syscall_director;
-  zvm_setup(setup);
+  zvm_syscallback(0); /* uninstall syscallback */
+  retcode = NaCl_tls_get(); /* invoke syscall directly */
+  zvm_syscallback((intptr_t)syscall_director); /* reinstall syscallback */
 
   return retcode;
 }
@@ -632,16 +537,25 @@ int32_t (*zrt_syscalls[])(uint32_t*) = {
  * initialize zerovm api, get the user manifest, install syscallback
  * and invoke user code
  */
-int main(int argc, char **argv)
+int main(int argc, char **argv, char **envp)
 {
+  int retcode;
+
+  /* get user manifest */
   setup = zvm_init();
   if(setup == NULL) return ERR_CODE;
+//  if(setup == NULL) return 111;
 
-  /* todo(d'b): replace it with a good engine. should be done asap */
-  setup->channels = (intptr_t) &channels_space_holder;
-  if(zvm_set_syscallback((int32_t)syscall_director))
-    return ERR_CODE;
+  /* set up internals */
+  pos_ptr = calloc(setup->channels_count, sizeof(setup->channels_count));
+  setup->envp = envp; /* user custom attributes passed via environment */
+
+  if(zvm_syscallback((intptr_t)syscall_director) == 0)
+//    return 112;
+  return ERR_CODE;
 
   /* call user main() and care about return code */
-  return slave_main(argc, argv);
+  retcode = slave_main(argc, argv, envp);
+  free(pos_ptr);
+  return retcode;
 }

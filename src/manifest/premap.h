@@ -9,6 +9,7 @@
 #define PREMAP_H_
 #include "src/service_runtime/sel_ldr.h"
 #include "api/zvm.h"
+#include "src/manifest/mount_channel.h"
 
 /* flags and modes for file mapping. -1 means absense of value */
 #undef CHANNEL_OPEN_FLAGS /* prevent warning in mount_channel.c */
