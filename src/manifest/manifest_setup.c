@@ -29,7 +29,7 @@ static char* MakeEtag(struct NaClApp *nap)
 {
   assert(nap != NULL);
   assert(nap->system_manifest != NULL);
-  return "etag disabled";
+  return "disabled";
 }
 
 /* preallocate memory area of given size. abort if fail */
@@ -80,34 +80,43 @@ static void PreallocateUserMemory(struct NaClApp *nap)
 static void SetCustomAttributes(struct SystemManifest *policy)
 {
   int i;
-  int count = 0;
-  char *keys[] = CUSTOM_ATTRIBUTES;
+  int count;
+  char *environment;
+  char *buf[BIG_ENOUGH_SPACE], **tokens = buf;
 
   assert(policy != NULL);
   assert(policy->envp == NULL);
 
-  /* allocate memory for environment pointers. plus one NULL at the end */
-  policy->envp = calloc(sizeof(keys)/sizeof(*keys) + 1, sizeof(*keys));
+  /* get environment */
+  environment = GetValueByKey("Environment");
+  if(environment == NULL) return;
 
-  for(i = 0; i < sizeof(keys)/sizeof(*keys); ++i)
+  /* parse and check count of attributes */
+  count = ParseValue(environment, ", \t", tokens, BIG_ENOUGH_SPACE);
+  COND_ABORT((count & 1) != 0, "odd number of user environment variables");
+  COND_ABORT(count == 0, "invalid user environment");
+  COND_ABORT(count == BIG_ENOUGH_SPACE, "user environment exceeded the limit");
+
+  /* allocate space to hold string pointers */
+  count >>= 1;
+  policy->envp = calloc(count + 1, sizeof(*policy->envp));
+
+  /* construct array of environment variables */
+  for(i = 0; i < count; ++i)
   {
-    char *value = GetValueByKey(keys[i]);
-    int length;
+    char *key = *tokens++;
+    char *value = *tokens++;
+    int length = strlen(key) + strlen(value);
 
-    /* construct attribute if exist */
-    if(value == NULL) continue;
-
-    length = strlen(keys[i]) + strlen(value);
-    policy->envp[count] = calloc(length + 1, sizeof(*policy->envp[count]));
-    COND_ABORT(policy->envp[count] == NULL, "cannot allocate memory for custom attribute");
-    sprintf(policy->envp[count], "%s=%s", keys[i], value);
-    ++count;
+    policy->envp[i] = calloc(length + 1, sizeof(*policy->envp[0]));
+    COND_ABORT(policy->envp[i] == NULL, "cannot allocate memory for custom attribute");
+    sprintf(policy->envp[i], "%s=%s", key, value);
   }
 }
 
 /*
  * construct system_manifest object and initialize from manifest
- * todo(d'b): everythig about 'report' should be moved to HostManifestCtor()
+ * todo(d'b): everything about 'report' should be moved to HostManifestCtor()
  */
 void SystemManifestCtor(struct NaClApp *nap)
 {
@@ -153,6 +162,7 @@ void SystemManifestCtor(struct NaClApp *nap)
 
   /* prepare command line arguments for nexe */
   /* todo(d'b): replace malloc with stack allocation */
+  /* todo(d'b): allow passing '=' ',' and ' ' */
 #define NEXE_CMD_LEN 128
   COND_ABORT(!(policy->cmd_line = malloc(NEXE_CMD_LEN * sizeof(char*))),
       "cannot allocate memory for nexe command line");
@@ -166,8 +176,9 @@ void SystemManifestCtor(struct NaClApp *nap)
   /*
    * allocate "whole memory chunk" if specified. should be the last allocation
    * in raw because after chunk allocated there will be no free user memory
+   * note: will set "heap_ptr"
    */
-  PreallocateUserMemory(nap); /* will set "heap_ptr" */
+  PreallocateUserMemory(nap);
 }
 
 /* construct host_manifest and initialize from manifest */
@@ -194,6 +205,10 @@ int SystemManifestDtor(struct NaClApp *nap)
 /*
  * write report for the proxy and free used resources
  * return 0 if success, otherwise - non 0
+ * todo(d'b): rewrite for a new manifest keyword design "Report"
+ *            report will be created in very main() beginning with the
+ *            constant name. all requested keywords will be given in the
+ *            "Report" keyword, comma separated.
  */
 int HostManifestDtor(struct NaClApp *nap)
 {

@@ -20,7 +20,7 @@ EXTERN_C_BEGIN
 /* attributes has fixed order, thats why enum has been used */
 enum ChannelAttributes {
   ChannelName,
-  ChannelId,
+  ChannelAlias,
   ChannelAccessType,
   ChannelGets,
   ChannelGetSize,

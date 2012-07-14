@@ -544,14 +544,12 @@ int main(int argc, char **argv, char **envp)
   /* get user manifest */
   setup = zvm_init();
   if(setup == NULL) return ERR_CODE;
-//  if(setup == NULL) return 111;
 
   /* set up internals */
   pos_ptr = calloc(setup->channels_count, sizeof(setup->channels_count));
   setup->envp = envp; /* user custom attributes passed via environment */
 
   if(zvm_syscallback((intptr_t)syscall_director) == 0)
-//    return 112;
   return ERR_CODE;
 
   /* call user main() and care about return code */

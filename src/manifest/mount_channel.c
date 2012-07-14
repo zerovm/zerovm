@@ -112,90 +112,6 @@ static struct ChannelDesc* SelectNextChannel(struct NaClApp *nap, char *type)
   return channel;
 }
 
-///* finalize and close InputChannel */
-//static void InputChannelDtor(struct NaClApp *nap)
-//{
-//  struct ChannelDesc *channel;
-//
-//  assert(nap != NULL);
-//  assert(nap->system_manifest != NULL);
-//  assert((void*)nap->system_manifest->channels != NULL);
-//
-//  channel = &((struct ChannelDesc*)nap->system_manifest->channels)[InputChannel];
-//  if(channel->name) close(channel->handle);
-//}
-//
-///* finalize and close OutputChannel */
-//static void OutputChannelDtor(struct NaClApp *nap)
-//{
-//  struct ChannelDesc *channel;
-//
-//  assert(nap != NULL);
-//  assert(nap->system_manifest != NULL);
-//  assert((void*)nap->system_manifest->channels != NULL);
-//
-//  /* todo: find the way how to determine file size for "premapped" output */
-//  channel = &((struct ChannelDesc*)nap->system_manifest->channels)[OutputChannel];
-//  if(channel->name) close(channel->handle);
-//}
-//
-///* finalize and close LogChannel */
-//static void LogChannelDtor(struct NaClApp *nap)
-//{
-//  struct ChannelDesc* channel;
-//
-//  assert(nap != NULL);
-//  assert(nap->system_manifest != NULL);
-//  assert((void*)nap->system_manifest->channels != NULL);
-//
-//  /*
-//   * trim user log and close the channel
-//   * todo(d'b): find a solution (for binary content) to avoid truncate()
-//   */
-//  channel = &((struct ChannelDesc*)nap->system_manifest->channels)[LogChannel];
-//
-//  if (channel->name && channel->buffer)
-//  {
-//    char *p = (char*) NaClUserToSys(nap, (uint32_t)channel->buffer);
-//    channel->fsize = strlen(p);
-//    munmap(p, channel->bsize);
-//    if(channel->fsize) truncate((char*)channel->name, channel->fsize);
-//    else remove((char*)channel->name);
-//  }
-//}
-//
-///*
-// * finalize and close NetworkInputChannel
-// * todo(NETWORKING): put NetworkInputChannel finalizer here
-// * note: there can be more than one NetworkInputChannel channels
-// */
-//static void NetworkInputChannelDtor(struct NaClApp *nap, enum ChannelType ch)
-//{
-//  struct ChannelDesc *channel;
-//
-//  assert(nap != NULL);
-//  assert(nap->system_manifest != NULL);
-//  assert((void*)nap->system_manifest->channels != NULL);
-//
-//  UNREFERENCED_PARAMETER(channel);
-//}
-//
-///*
-// * finalize and close NetworkOutputChannel
-// * todo(NETWORKING): put NetworkOutputChannel finalizer here
-// * note: there can be more than one NetworkOutputChannel channels
-// */
-//static void NetworkOutputChannelDtor(struct NaClApp *nap, enum ChannelType ch)
-//{
-//  struct ChannelDesc *channel;
-//
-//  assert(nap != NULL);
-//  assert(nap->system_manifest != NULL);
-//  assert((void*)nap->system_manifest->channels != NULL);
-//
-//  UNREFERENCED_PARAMETER(channel);
-//}
-
 /* construct and initialize the channel */
 static void ChannelCtor(struct NaClApp *nap, char **tokens)
 {
@@ -209,7 +125,7 @@ static void ChannelCtor(struct NaClApp *nap, char **tokens)
   /* pick the channel. "access type" attribute will be set inside */
   channel = SelectNextChannel(nap, tokens[ChannelAccessType]);
   channel->name = tokens[ChannelName];
-  channel->handle = ATOI(tokens[ChannelId]);
+  channel->handle = ATOI(tokens[ChannelAlias]);
 
   /* limits and counters */
   channel->limits[GetsLimit] = ATOI(tokens[ChannelGets]);

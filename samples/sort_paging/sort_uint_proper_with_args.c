@@ -429,16 +429,18 @@ int main(int argc, char **argv)
 
   /* get input channel size */
   if(fstat(fileno(stdin), &fs) == -1)
-  _eoutput("cannot get data size from the input channel\n");
+    _eoutput("cannot get data size from the input channel\n");
 
   /* allocate data buffer */
   cnt = fs.st_size / sizeof(*d);
   d = aligned_malloc(fs.st_size, 16);
-  if(d == NULL ) _eoutput("cannot allocate data buffer\n");
+  if(d == NULL) _eoutput("cannot allocate data buffer\n");
+
+  fprintf(stderr, "input file size = %d\n", fs.st_size);
 
   /* allocate extra memory for the sort */
   buf = aligned_malloc(fs.st_size, 16);
-  if(buf == NULL ) _eoutput("cannot allocate extra buffer\n");
+  if(buf == NULL) _eoutput("cannot allocate extra buffer\n");
 
   /* elements count should be the power of 2 */
   if(cnt & (cnt - 1))
@@ -450,7 +452,7 @@ int main(int argc, char **argv)
 
   /* read data */
   if(fread(d, sizeof(*d), cnt, stdin) != cnt)
-  _eoutput("cannot read data from the input channel\n");
+    _eoutput("cannot read data from the input channel\n");
 
   /* Bitonic sort */
   fprintf(stderr, "data sorting.. ");

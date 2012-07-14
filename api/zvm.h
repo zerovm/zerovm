@@ -9,6 +9,7 @@
 #define API_ZVM_MANIFEST_H__ 1
 
 #include <stdint.h>
+#include "zvm_errors.h"
 
 /* names for reserved channels. not secured */
 #define STDIN "/dev/stdin"
@@ -16,8 +17,6 @@
 #define STDERR "/dev/stderr"
 
 /* channels available for user. very 1st channel must be InputChannel */
-// #### move it to trusted
-// note: sequential access means separate positions for get and puts
 enum AccessType {
   SGetSPut, /* sequential read, sequential write */
   RGetSPut, /* random read, sequential write */
@@ -44,8 +43,7 @@ enum IOLimits {
  * note: the try to make user exploit function names instead of numbers
  */
 enum TrapCalls {
-//  TrapUserSetup = 17770430, /* obsolette from the r12 version */
-  TrapRead = 17770430,
+  TrapRead = 17770431,
   TrapWrite,
   TrapSyscallback,
   TrapChannels,
@@ -56,32 +54,6 @@ enum TrapCalls {
   TrapHeapPtr,
   TrapExit
 };
-
-/* todo: split it into internal and external zerovm codes
- * and put it in own header {{ */
-/* nanosleep ret codes, only 2 because of nanosleep limitations */
-enum NANO_CODES {
-  OK_CODE,
-  PARAM_CODE, /* invalid parameter */
-  SIZE_CODE, /* invalid size */
-  PTR_CODE, /* invalid pointer */
-  SMALL_CODE, /* too small */
-  LARGE_CODE, /* too large */
-  ERR_CODE = -1 /* common error */
-};
-
-/* trap error codes (addition to errno) */
-enum TRAP_CODES {
-  INTERNAL_ERR = 256, /* codes bellow reserved by errno */
-  INVALID_DESC,
-  INVALID_MODE,
-  INSANE_SIZE,
-  INSANE_OFFSET,
-  INVALID_BUFFER,
-  OUT_OF_BOUNDS,
-  OUT_OF_LIMITS
-};
-/* }} */
 
 /*
  * the file abstraction over a zerovm channel. user work with

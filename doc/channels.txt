@@ -1,78 +1,48 @@
 this is the premature zerovm channels description
 -------------------------------------------------
 
-zerovm has only 3 types of channels: local file, network and cdr 
-(random access read only, append r/w access). paging/mapping for
-local files can be infered from i/o limits. same method can be used
-to determine the r/o channel or r/w channel e.t.c. (see bellow)
+zerovm has 7 types of channels: 4, 5, 6 - reserved for the standard c90 
+streams (stdin, stdout, stdout); 0, 1, 2, 3 - sequential read / sequential write,
+sequential read / random write, random read / sequential write, random read / random write.
+of course channels 4, 5, 6 can be described with combination of 0, 1, 2, 3 types and
+read/write limits. however zerovm must guarantee existence of standard streams. and this
+is the way to control presence of mandatory channels.
+
+channel is the file abstraction over the local files and network streams. local files
+can have random access type, network streams are always sequential. 
 
 channel fields passed via the manifest:
-channel_name -- local file name, url or another channel id, image name
-channel_gets -- the number of gets allowed for the channel
-channel_get_size -- data allowed to read in bytes
-channel_puts -- the number of puts allowed for the channel
-channel_put_size -- data allowed to write in bytes
-channel_type --
-				local file
-				network
-				cdr
-notice:
-zerovm can infer mode from the allowed sizes and number of accesses:
-r/o channel, paging: gets > 1, get_size > 0, puts == 0, put_size == any
-r/o channel, mapping: gets == 1, get_size > 0, puts == 0, put_size == any
-w/o channel, paging: gets == 0, get_size == any, puts > 1, put_size > 0
-w/o channel, mapping: gets == 0, get_size == any, puts == 1, put_size > 0
-r/w channel, paging: gets > 1, get_size > 0, puts > 1, put_size > 0
-r/w channel, mapping: gets == 1, get_size > 0, puts == 1, put_size > 0
-
- 
-fields set up by zerovm: 
-number -- local file handle or network channel socket (descriptor number)
+name -- local file name or ipc address
+alias -- name for user side. cannot be same as "name".
+type -- access type. can be 0..6
+gets -- the number of gets allowed for the channel
+get_size -- data allowed to read in bytes
+puts -- the number of puts allowed for the channel
+put_size -- data allowed to write in bytes
 
 
+fields set up by zerovm:
+handle -- local file / network stream number in channels list. this number the only
+          way to identify channel. secured from user: user get synthetic number
+          (index in channels array)
+size -- channel size. only available for user when channel has pure or mixed random access
+position -- (get position, put position) - channel cursor position. only available 
+            for user when channel has pure or mixed random access
+counters -- counters for each i/o limit. available for user
+          
+all channels opened before the nexe start and closed after nexe end.
 
-UPDATE (new design)
----------------------------------------------------------------------------
-manifest channel description
-(we assume that combination of following attributes cover all our needs)
-1. name as URI (e.g.: "http://something.org", "file://somefile", "someprotocol://something")
-2. access type
-	 - sequential
-	 - random
-3. access restrictions
-	 - gets
-	 - get bytes
-	 - puts
-	 - put bytes 
-
-zerovm internal channel description
-1. name as URI (e.g.: "http://something.org", "file://somefile", "someprotocol://something")
-2. access type
-	 - sequential
-	 - random
-3. access restrictions
-	 - gets
-	 - get bytes
-	 - puts
-	 - put bytes
-4. access counters
-	 - gets
-	 - get bytes
-	 - puts
-	 - put bytes
-5. source descriptor (handle, socket). initialized after the source opening
-6. source type (loaded file, shared file, network). infered from the source name
 
 user channel description (this information user can get through zerovm api)
-1. [secured] name ("con" or "/dev/stdin" e.t.c.)
-2. [secured] descriptor id (handle, socket...)
+1. [secured] channel name
+2. [secured] channel handle
 3. access type
 	 sequential read, sequential write 
    random read, sequential write
    sequential read, random write
    random read, random write
-0. [optional] channel size. only valid for files
-0. [optional] position. not applicable for a full sequential access    
+0. [optional] channel size. only valid for random (or mixed) access channels
+0. [optional] position. only valid for random (or mixed) access channels
 4. access restrictions
 	 - gets
 	 - get bytes
@@ -83,16 +53,3 @@ user channel description (this information user can get through zerovm api)
 	 - get bytes
 	 - puts
 	 - put bytes
-
-
-
-to solve:
----------
-- how to give the user the number of channels?
-  1. add the data visible to nexe as an environment variables. and define variables names
-     in zerovm api
-  2. use trap setup() 2 times. 1st time the user will ask zerovm for the number of channels
-     and 2nd time will give the space to store channels information     
-  3. same as (2) but zvm should be advanced by 1 extra function extracted from trap setup():
-     GetChannelsCount() 
-  4. limit the number of channels to some constant. it can only be a temporary solution.

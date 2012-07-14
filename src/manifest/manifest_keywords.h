@@ -10,21 +10,20 @@
 #ifndef MANIFEST_KEYWORDS_H_
 #define MANIFEST_KEYWORDS_H_
 
-#define CUSTOM_ATTRIBUTES {"ContentType", "TimeStamp", "XObjectMetaTag", "UserETag"}
-
 /*
  * this macro substitution can be used to create array of keywords
  * should be synchronized with enum ManifestKeywords
  */
 #define MANIFEST_KEYWORDS {\
+  /* look at "doc/channels.txt" */\
   "Channel",\
 \
-  /* custom attributes for the user */\
-  "ContentType",\
-  "TimeStamp", /* time/seed */\
-  "XObjectMetaTag", /* custom attributes */\
-  "UserETag", /* checksum of the user output */\
+  /* generic custom attributes (look at "doc/environment.txt") */\
+  /* replaces "custom attributes for the user" below */\
+  "Environment",\
 \
+  /* will replace "report request keywords" below */\
+  /*"Report",*/\
 /*\
  * report request keywords\
  * note: values should exist to make valid manifest record\
@@ -39,9 +38,8 @@
 \
   /* zerovm control keywords */\
   "Version", /* zerovm version */\
-  "Node", /* node name */\
   "Log", /* zerovm log file name */\
-  "Report", /* report file descriptor */\
+  "Report", /* report file descriptor (will be removed) */\
   "Nexe", /* nexe file name */\
   "NexeMax", /* maximum allowed nexe size */\
   "NexeEtag", /* reserved for "fast validation" */\
@@ -57,13 +55,8 @@ enum ManifestKeywords
 {
   Channel,
 
-  /*
-   * user side keywords
-   */
-  ContentType,
-  TimeStamp, /* time/seed */
-  XObjectMetaTag, /* custom attributes */
-  UserETag, /* checksum of the user output */
+  /* custom user attributes (environment) */
+  Environment,
 
   /*
    * report request keywords
@@ -81,7 +74,6 @@ enum ManifestKeywords
    *  zerovm control keywords
    */
   Version, /* zerovm version */
-  Node, /* node name */
   Log, /* zerovm log file name */
   Report, /* report file descriptor */
   Nexe, /* nexe file name */

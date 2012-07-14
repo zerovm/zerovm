@@ -1,4 +1,5 @@
 This document describes manifest for ZeroVM NaCl application.
+update: a new design
 -------------------------------------------------------------
 
 
@@ -15,48 +16,22 @@ Structure:
 - lines are delimited with EOL (unix or windows style)
 - invalid lines will be ignored
 - lines with unknown keywords (not mentioned below) will be ignored
+- some keywords expects complex values: comma separated values. for example, "Environment"
 
 
-Keywords:
+Valid keywords:
 Input/Output
-  Input -- name of the input channel/file
-  InputMaxGet -- total number of bytes that can be read from input file
-  InputMaxGetCnt -- how many "get" syscall invocations are allowed. n/a for mounted resources
-  InputMaxPut -- n/a
-  InputMaxPutCnt -- n/a
-  InputMode -- 0 - pre-mounted channel, 1 - pre-loaded, 2 - preallocated from network
-  Output -- name of the output channel/file
-  OutputMaxGet -- total number of bytes that can be read from output file
-  OutputMaxGetCnt -- how many "get" syscall invocations are allowed. n/a for mounted resources
-  OutputMaxPut -- total number of bytes that can be written to output file
-  OutputMaxPutCnt -- how many "put" syscall invocations are allowed. n/a for mounted resources
-  OutputMode -- 0 - pre-mounted channel, 1 - pre-loaded, 2 - preallocated from network
-  UserLog -- user log file name. gets/puts/e.t.c. are unlimited
-  UserMaxLogGet -- n/a
-  UserMaxLogGetCnt -- n/a
-  UserMaxLogPut -- n/a
-  UserMaxLogPutCnt -- n/a
-  UserLogMode -- n/a
-  NetInput -- reserved
-  NetInputMax -- limit for receive bytes
-  NetInputMaxGet -- reserved
-  NetInputMaxGetCnt -- reserved
-  NetInputMaxPut -- reserved
-  NetInputMaxPutCnt -- reserved
-  NetInputMode -- reserved
-  NetOutput -- reserved
-  NetOutputMax -- limit for send bytes
-  NetOutputMaxGet -- reserved
-  NetOutputMaxGetCnt -- reserved
-  NetOutputMaxPut -- reserved
-  NetOutputMaxPutCnt -- reserved
-  NetOutputMode -- reserved
+	Channel -- expects 7 comma separated attributes. the order does matter. example:
+	  Channel = /home/dazo/git/zerovm/samples/sort/sort.stdout.log, /dev/stdout, 5, 0, 0, 99999999, 99999999
+	  where: [1] trusted channel name (n/a for the user), [2] untrusted channel name, [3] access type, 
+	         [4] gets limit, [5] get size limits, [6] puts limit, [7] put size limits
 
-User space
-  ContentType -- reserved
-  TimeStamp -- time/seed
-  XObjectMetaTag -- custom attributes
-  UserETag -- checksum of the user output
+User space custom attributes
+  Environment -- expects comma separated pairs: key, value. example:
+  Environment = TimeStamp, 1337012520, UserETag, 74ebada55, XObjectMetaTag, klaatu_barada_nikto, ContentType, utf-8
+
+Nexe command line
+  CommandLine -- command line arguments for nexe (will be redesigned soon)
 
 Report request
   ReportRetCode -- request exit code of ZeroVM executable
@@ -65,10 +40,13 @@ Report request
   ReportContentType -- reserved
   ReportXObjectMetaTag -- request custom attributes (set by user)
 
+  perhaps will be replaced by a new design: Report = {comma separated keys}. for example:
+  Report = RetCode, Etag, UserRetCode, ContentType, XObjectMetaTag
+
 ZeroVM control
-  Version -- ZeroVM version
-  Log -- ZeroVM log file name
-  Report -- report file name
+  Version -- manifest version. ZeroVM only can parse known version
+  Log -- ZeroVM log file name (will be removed soon)
+  Report -- report file name (will be removed soon)
   Nexe -- nexe file name
   NexeMax -- maximum allowed nexe size in bytes
   NexeEtag -- reserved for "fast validation"
@@ -76,7 +54,6 @@ ZeroVM control
   MemMax -- total available memory size for nexe
   CPUMax -- cpu time allotted to nexe execution
   SyscallsMax -- number of syscall invocation allowed to nexe
-  SetupCallsMax -- number of setup calls allowed to nexe
-  Blob -- blob library (if it will retain)
-  CommandLine -- command line arguments for nexe
-	Networking -- ZeroVM networking indication flag (temporary)
+  
+
+Both keywords and values has size limit 64kb so far.

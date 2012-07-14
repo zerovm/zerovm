@@ -1,43 +1,25 @@
+in the current version:
+-------------------------------------------------------------
 CHANNELS DESIGN
 ===============
-manifest: name / ipc
-manifest: access type: sequantal / random
-manifest: offset (?) (or socket #)
-manifest: gets
-manifest: get bytes
-manifest: puts
-manifest: put bytes
-zerovm: handle (given by syscall)
-zerovm: connection (mounting) type (infered from manifest by rule described in doc/channels.txt)
-
-plan:
-+ change "manifest_parser.c" "manifest_parser.h". new function to get "Channel" variable length array
-+ another new function: parse "value" by given delimiter (use for commandline and channel)
-+ manifest_setup. new initializer for system manifest
-- main(remove networking) to prefetch/mount_chanel 
-- "prefetch.c"/"prefetch.h". move zmq network channels draft
-+ preload
---- removed premap
-+ mount_chanel.c/mount_chanel.h new channels design
-+ trap
-+- manifest_keywords. replace everything about channels with the sing new keyword "Channel"
-
-- check std*. all std must be set before nexe start. if not passed by manifest... (fail, do default action?)
+- replace 2nd channel attribute "id" with "alias".
+- add network channels to the file abstraction
+- write more strict channels dealocation: free all allocated memory, free nacl descriptor e.t.c
+- all NETWORKING "todo" comments and NETWORKING conditional compilation must be removed
+  appropriate changes should be made, of course
 
 ZEROVM API
 ==========
-- zvm.c / zvm.h a new zvm api
-- trap.c / trap.h 
-? split error codes from zvm.h into 2 parts: internal zerovm and external (for the user)
-- rewrite user attributes routines / data
+- finish api error codes
 
 MANIFEST
 ========
-- change manifest version
++ add a new "Environment" keyword
+- add a new "Report" keyword. remove the old one. 
+  this task needs constant report and log ready
 
-
-in the current version:
--------------------------------------------------------------
+OTHER
+=====
 - add extended signals handling to zerovm. zerovm must survive any nexe error.
 	care about zerovm report
 	care about channels
@@ -46,31 +28,8 @@ in the current version:
   remove log setup from manifest
   generate log name using define from compiler -D and pid
   create log asap (all zerovm messages goes there)
-
--+ solve problem with the channels count: how to inform user side, or how to
-  give channels descriptors to user side passing given UserManifest object?
-  +temporary solution: preallocated array to hold as much as 1024 channels
-  another solution: untrusted code will invoke trap setup twice - 1st time to get number of channels
-                    and 2nd time to get channels information (space must be provided)
-  yet another solution: allocate memory from user space and return user the pointer
-
-- make 5 channel types: stdin (c99), stdout(c99), netin, netout, cdr(random read, append only write)
-  ? what for do we need c99 stdin/stdout? stdout(stderr) will be lost after nexe exit. stdin(keyboard)
-  just useless, if not redirected stdin is always empty. if redirected, represent r/o data which we
-  can emulate via cdr. actually c99 stdin/stdout/stderr can be emulated via cdr
-  update: for a user it would be only 3 channel types: input, output and random acces image.
-  input stand for stdin and netin; output - stdout, stderr, netout; image - random access storage
-  over cdr
-  update: make 2 channel types: generic and cdr
-
-- move everything about "NETWORKING" to prefetch if impossible - remove "prefetch"
-
-- all NETWORKING "todo" comments and NETWORKING conditional compilation must be removed
-  appropriate changes should be made, of course
-
-- add NodeName to manifest (for networking)
   
-- write more strict channels dealocation: free all allocated memory, free nacl descriptor e.t.c
+- constant zerovm report
 
 
 in the next version:
