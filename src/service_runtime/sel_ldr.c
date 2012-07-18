@@ -16,6 +16,7 @@
 #include "src/service_runtime/nacl_globals.h"
 #include "src/service_runtime/nacl_syscall_handlers.h"
 #include "src/service_runtime/nacl_desc_effector_ldr.h"
+#include "src/manifest/manifest_setup.h"
 
 static int IsEnvironmentVariableSet(char const *env_name) {
   return NULL != getenv(env_name);
@@ -122,7 +123,8 @@ int NaClAppWithSyscallTableCtor(struct NaClApp               *nap,
     goto cleanup_threads_cv;
   }
 
-  nap->exit_status = -1;
+  /* d'b: moved to system manifest */
+  nap->system_manifest->user_ret_code = -1;
 
   nap->enable_debug_stub = 0;
   nap->debug_stub_callbacks = NULL;

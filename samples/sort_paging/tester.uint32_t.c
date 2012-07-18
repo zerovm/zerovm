@@ -14,36 +14,62 @@
 
 #define ELEMENT_SIZE sizeof(uint32_t)
 
+int64_t file_size(char *name)
+{
+  FILE *f;
+
+  f = fopen(name, "rb");
+  if(f == NULL) return -1; /* file open error */
+  if(fseek(f, 0, SEEK_END) != 0) return -1; /* seek error */
+  return ftell(f);
+}
+
 int main(int argc, char **argv)
 {
   uint32_t i;
   uint32_t *r;
   uint32_t seq_size;
+  int32_t filesize;
   uint32_t inc;
-  struct stat fs;
+  FILE *f;
 
-  /* get input channel size */
-  if(fstat(fileno(stdin), &fs) == -1)
+  /* check command line */
+  if(argc != 2)
   {
-    fprintf(stderr, "cannot get data size from the input channel\n");
+    fprintf(stderr, "usage: tester file_name\n");
     return 1;
   }
 
+  /* open data file and get the size */
+  f = fopen(argv[1], "rb");
+  if(f == NULL)
+  {
+    fprintf(stderr, "cannot open input file\n");
+    return 2;
+  }
+
+  filesize = file_size(argv[1]);
+  if(filesize < 0)
+  {
+    fprintf(stderr, "cannot get data size from the input file\n");
+    return 3;
+  }
+
   /* allocate data buffer */
-  seq_size = fs.st_size / sizeof(*r);
-  r = malloc(fs.st_size);
+  seq_size = filesize / sizeof(*r);
+  r = malloc(filesize);
   if(r == NULL)
   {
     fprintf(stderr, "cannot allocate data buffer\n");
-    return 2;
+    return 4;
   }
   fprintf(stderr, "number of elements = %d\n", seq_size);
 
   /* read the data */
   if(fread(r, sizeof(*r), seq_size, stdin) != seq_size)
   {
-    fprintf(stderr, "cannot read data from the input channel\n");
-    return 3;
+    fprintf(stderr, "cannot read data from the input file\n");
+    return 5;
   }
 
   /* test order of the numbers */

@@ -31,10 +31,5 @@ int main()
             tramp_ptr[i + 7]);
   }
 
-  *tramp_ptr = 0x12345678; /* segmentation fault */
-  i = i / 0; /* divide by zero */
-  
-  
-  
   return 0;
 }

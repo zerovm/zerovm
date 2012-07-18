@@ -29,6 +29,8 @@
 #include "src/manifest/mount_channel.h" /* d'b. todo: move to manifest_setup */
 #include "src/service_runtime/sel_qualify.h"
 
+#include <syslog.h> /* d'b(LOG) syslog. must have lower order then nacl_log.h */
+
 /* todo(NETWORKING): move it channels constructors */
 /*YaroslavLitvinov*/
 #ifdef NETWORKING
@@ -52,6 +54,18 @@ static void PrintVmmap(struct NaClApp *nap)
   printf("In PrintVmmap\n");
   fflush(stdout);
   NaClVmmapVisit(&nap->mem_map, VmentryPrinter, NULL);
+}
+
+/* initialize syslog to put ZeroVm log messages */
+static void ZeroVMLogCtor()
+{
+  openlog(ZEROVMLOG_NAME, ZEROVMLOG_OPTIONS, ZEROVMLOG_PRIORITY);
+}
+
+/* close log. ### optional? */
+static void ZeroVMLogDtor()
+{
+  closelog();
 }
 
 /* parse given command line and initialize NaClApp object */
@@ -148,7 +162,6 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
   nap->enable_debug_stub = enable_debug_stub;
   nap->user_side_flag = 0; /* we are in the trusted code */
   nap->system_manifest->nexe = GetValueByKey("Nexe");
-  nap->system_manifest->log = GetValueByKey("Log");
   gnap = nap;
   syscallback = 0;
 }
@@ -168,7 +181,6 @@ int ResetNap(struct NaClApp *nap)
   nap->dynamic_page_bitmap = NULL;
   nap->dynamic_regions = NULL;
   nap->effp = NULL;
-  nap->host_manifest = NULL;
   nap->signal_stack = NULL;
   nap->syscall_args = NULL;
   nap->syscall_table = NULL;
@@ -183,7 +195,6 @@ int main(int argc, char **argv)
 {
   struct NaClApp state, *nap = &state;
   struct SystemManifest sys_mft;
-  struct HostManifest host_mft;
   NaClErrorCode errcode = LOAD_INTERNAL;
   struct GioFile gout;
   struct GioMemoryFileSnapshot main_file;
@@ -192,10 +203,11 @@ int main(int argc, char **argv)
   /* todo(d'b): make zerovm retcode. or make it always 0 and eliminate from the code */
   int ret_code = 1;
 
+  ZeroVMLogCtor();
+
   /* (re)set all (debug) or some of nap fields */
   assert(ResetNap(nap) == LOAD_OK);
   nap->system_manifest = &sys_mft;
-  nap->host_manifest = &host_mft;
 
   /* @IGNORE_LINES_FOR_CODE_HYGIENE[1] */
   /*
@@ -224,15 +236,15 @@ int main(int argc, char **argv)
              "Could not create general standard output channel");
   ParseCommandLine(nap, argc, argv);
 
-  /*
-   * change stdout/stderr to log file now, so that subsequent error
-   * messages will go there.  unfortunately, error messages that
-   * result from getopt processing -- usually out-of-memory, which
-   * shouldn't happen -- won't show up.
-   */
-  if(NULL != nap->system_manifest->log) NaClLogSetFile(nap->system_manifest->log);
+//  /*
+//   * change stdout/stderr to log file now, so that subsequent error
+//   * messages will go there.  unfortunately, error messages that
+//   * result from getopt processing -- usually out-of-memory, which
+//   * shouldn't happen -- won't show up.
+//   */
+//  if(NULL != nap->system_manifest->log) NaClLogSetFile(nap->system_manifest->log);
 
-  /* todo(d'b): remove it */
+  /* todo(d'b): remove it after validator will be removed from the project */
   NaClLogGetGio();
 
   /* the dyn_array constructor 1st call */
@@ -319,9 +331,6 @@ int main(int argc, char **argv)
    * - "memory chunk" needs initialized memory manager (user stack, text, data e.t.c)
    */
   SystemManifestCtor(nap); /* needs dyn_array initialized */
-  HostManifestCtor(nap); /* needs dyn_array initialized */
-  assert(nap->system_manifest != NULL);
-  /* just in case. can be removed */
 
   /* todo(NETWORKING): move it to initializers. rewrite hardcoded part */
   /*YaroslavLitvinov*/
@@ -396,7 +405,8 @@ int main(int argc, char **argv)
 
   /* report to host. call destructors */
   SystemManifestDtor(nap);
-  HostManifestDtor(nap);
+  ProxyReport(nap);
+  ZeroVMLogDtor();
 
   /* todo(): replace with ret_code when zerovm error codes will be ready */
   NaClExit(0);

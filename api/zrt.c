@@ -60,35 +60,28 @@ static int32_t zrt_open(uint32_t *args)
 {
   SHOWID;
   char* name = (char*)args[0];
-  int flags = (int)args[1];
-  int mode = (int)args[2];
-  int handle = -ENOENT;
+//  int flags = (int)args[1];
+//  int mode = (int)args[2];
+  int handle;
 
-  name = name;
-  flags = flags;
-  mode = mode;
-  handle = handle;
   /* search for name through the channels */
+  for(handle = 0; handle < setup->channels_count; ++handle)
+    if(strcmp(setup->channels[handle].name, name) == 0)
+      return handle;
 
-  /* if found check flags and mode against type and limits/counters */
-
-  /* if all check passed return channel handle */
-
-  return handle;
+  /* todo: check flags and mode against type and limits/counters */
+  return -ENOENT;
 }
 
 /* do nothing but checks given handle */
 static int32_t zrt_close(uint32_t *args)
 {
   SHOWID;
-  int handle = (int)args[0];
+//  int handle = (int)args[0];
   int result = -EBADF;
 
-  handle = handle;
-
-  /* did channel was "opened" with zrt_open() ? */
-
   /*
+   * todo: did channel was "opened" with zrt_open() ?
    * if so fix channel position and return OK
    * otherwise - appropriate error
    */

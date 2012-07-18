@@ -16,8 +16,6 @@ Environment = TimeStamp, 1337012520, SaveUs, klaato_verada_nikto
 == for the internal zerovm needs
 =====================================================================
 Version = 13072012
-Log = zerovm.log
-Report = report.log
 Nexe = time.nexe
 NexeMax = 10000000
 SyscallsMax = 3333

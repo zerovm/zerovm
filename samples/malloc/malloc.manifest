@@ -11,8 +11,6 @@ Channel = stderr.data, 0, 6, 0, 0, 999999, 999999
 == for the internal zerovm needs
 =====================================================================
 Version = 13072012
-Log = malloc.zerovm.log
-Report = malloc.report.log
 Nexe = malloc.nexe
 NexeMax = 10000000
 SyscallsMax = 3333

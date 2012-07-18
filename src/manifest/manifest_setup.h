@@ -30,15 +30,9 @@ EXTERN_C_BEGIN
     " -D (switch disabled) enable the UNSTABLE dfa validator\n"
 #define NEXE_PGM_NAME "bee" /* argv[0] for nexe */
 #define MANIFEST_VERSION "13072012"
-
-struct HostManifest
-{
-  int32_t ret_code; /* zerovm return code */
-  char *etag; /* user output memory digital signature */
-  int32_t user_ret_code; /* nexe return code */
-  char *content_type; /* custom user attribute */
-  char *x_object_meta_tag; /* custom user attribute */
-};
+#define ZEROVMLOG_NAME "ZeroVM"
+#define ZEROVMLOG_OPTIONS (LOG_CONS | LOG_PID | LOG_NDELAY)
+#define ZEROVMLOG_PRIORITY LOG_USER
 
 /*
  * todo(d'b): make a decition: leave it here or move to NaClApp
@@ -47,15 +41,16 @@ struct SystemManifest
 {
   /* zerovm control */
   char *version; /* zerovm version */
-  char *node; /* node name */
-  char *log; /* zerovm log file name */
-  FILE *report;  /* report to proxy file descriptor */
+  int32_t ret_code; /* zerovm return code */
 
   /* nexe control */
   char *nexe; /* nexe file name */
   int32_t nexe_max; /* max allowed nexe length */
   char *nexe_etag; /* signature. reserved for a future "short" nexe validation */
+  char *etag; /* user output memory digital signature */
   int32_t timeout; /* time user module allowed to run */
+  int32_t user_ret_code; /* nexe return code */
+  char *user_state; /* nexe exit state (ok, timeout, terminated by signal) */
 
   /* variables and limits for a nexe */
   uint32_t heap_ptr; /* pointer to the start of available for user ram */
@@ -78,9 +73,6 @@ struct SystemManifest
  */
 void SystemManifestCtor(struct NaClApp *nap);
 
-/* construct host_manifest and initialize from manifest */
-void HostManifestCtor(struct NaClApp *nap);
-
 /* deallocate memory, close files, free other resources. put everything in the place */
 int SystemManifestDtor(struct NaClApp *nap);
 
@@ -88,7 +80,7 @@ int SystemManifestDtor(struct NaClApp *nap);
  * write report for the proxy and free used resources
  * return 0 if success, otherwise - non 0
  */
-int HostManifestDtor(struct NaClApp *nap);
+int ProxyReport(struct NaClApp *nap);
 
 /*
  * check number of trap() calls and increment by 1. update

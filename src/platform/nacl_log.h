@@ -219,6 +219,9 @@ void NaClLogV(int         detail_level,
               char const  *fmt,
               va_list     ap);
 
+/* accessor for "current_detail_level" */
+int CurrentDetailLevel();
+
 void NaClLog(int         detail_level,
              char const  *fmt,
              ...) ATTRIBUTE_FORMAT_PRINTF(2, 3);

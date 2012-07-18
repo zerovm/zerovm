@@ -138,7 +138,6 @@ TEST(ManifestSetupTest, FullCase)
   EXPECT_STREQ("full.input.data", GetValueByKey((char*)"Input"));
 
   SystemManifestCtor(nap);
-  HostManifestCtor(nap);
 
   // check constructed channels, and other fields one by one
 }

@@ -57,7 +57,7 @@ static int32_t ZVMExitHandle(struct NaClApp *nap, int32_t code)
   assert(nap != NULL);
 
   NaClLog(1, "Exit syscall handler: %d\n", code);
-  nap->exit_status = code;
+  nap->system_manifest->user_ret_code = code;
   longjmp(user_exit, code);
 
   return code; /* prevent compiler warning. not reached */

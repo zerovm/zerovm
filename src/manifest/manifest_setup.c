@@ -131,13 +131,10 @@ void SystemManifestCtor(struct NaClApp *nap)
 
   /* get zerovm settings from manifest */
   policy->version = GetValueByKey("Version");
-  policy->node = GetValueByKey("Node");
-  policy->log = GetValueByKey("Log");
   policy->nexe = GetValueByKey("Nexe");
   policy->nexe_etag = GetValueByKey("NexeEtag");
   GET_INT_BY_KEY(policy->nexe_max, "NexeMax");
   GET_INT_BY_KEY(policy->timeout, "Timeout");
-  policy->report = fopen(GetValueByKey("Report"), "w");
 
   /* check mandatory manifest keys */
   COND_ABORT(nap->system_manifest->version == NULL,
@@ -149,7 +146,6 @@ void SystemManifestCtor(struct NaClApp *nap)
   COND_ABORT(nap->system_manifest->nexe == NULL, "nexe name is not provided");
   if(nap->system_manifest->nexe_max) COND_ABORT(
       nap->system_manifest->nexe_max < size, "nexe file is larger then alowed");
-  COND_ABORT(policy->report == NULL, "cannot open proxy report");
 
   /* user variables and limits */
   GET_INT_BY_KEY(policy->max_mem, "MemMax");
@@ -179,16 +175,9 @@ void SystemManifestCtor(struct NaClApp *nap)
    * note: will set "heap_ptr"
    */
   PreallocateUserMemory(nap);
-}
 
-/* construct host_manifest and initialize from manifest */
-void HostManifestCtor(struct NaClApp *nap)
-{
-  assert(nap != NULL);
-  assert(nap->host_manifest != NULL);
-
-  /* other report fields will be initialized at the HostManifestDtor() */
-  nap->host_manifest->ret_code = OK_CODE;
+  /* zerovm return code */
+  nap->system_manifest->ret_code = OK_CODE;
 }
 
 /* deallocate memory, close files, free other resources. put everything in the place */
@@ -202,54 +191,11 @@ int SystemManifestDtor(struct NaClApp *nap)
   return OK_CODE;
 }
 
-/*
- * write report for the proxy and free used resources
- * return 0 if success, otherwise - non 0
- * todo(d'b): rewrite for a new manifest keyword design "Report"
- *            report will be created in very main() beginning with the
- *            constant name. all requested keywords will be given in the
- *            "Report" keyword, comma separated.
- */
-int HostManifestDtor(struct NaClApp *nap)
+/* proxy awaits report from zerovm stdout */
+int ProxyReport(struct NaClApp *nap)
 {
-  char report[BIG_ENOUGH_SPACE];
-  char ret_code[20]; /* todo(d'b):find neat solution for "magic number" */
-  char user_ret_code[20]; /* todo(d'b):find neat solution for "magic number" */
-
-  assert(nap != NULL);
-  assert(nap->system_manifest != NULL);
-  assert(nap->host_manifest != NULL);
-
-  /* check if we need to create report */
-  if(nap->system_manifest->report == NULL) return OK_CODE;
-
-  /* set report fields if asked in manifest. note: retcodes were set earlier */
-  nap->host_manifest->etag = MakeEtag(nap);
-  // ### redesign user attributes for report
-//  nap->host_manifest->content_type = nap->system_manifest->content_type;
-//  nap->host_manifest->x_object_meta_tag = nap->system_manifest->x_object_meta_tag;
-  nap->host_manifest->user_ret_code = nap->exit_status;
-  sprintf(ret_code, "%d", nap->host_manifest->ret_code);
-  sprintf(user_ret_code, "%d", nap->host_manifest->user_ret_code);
-
-  /* prepare text for the report */
-  snprintf(report, BIG_ENOUGH_SPACE,
-    "ReportRetCode        =%s\n"
-    "ReportEtag           =%s\n"
-    "ReportUserRetCode    =%s\n"
-    "ReportContentType    =%s\n"
-    "ReportXObjectMetaTag =%s\n",
-    GetValueByKey("ReportRetCode") ? ret_code : "",
-    GetValueByKey("ReportEtag") ? nap->host_manifest->etag : "",
-    GetValueByKey("ReportUserRetCode") ? user_ret_code : "",
-//    GetValueByKey("ReportContentType") ? nap->host_manifest->content_type : "",
-//    GetValueByKey("ReportXObjectMetaTag") ? nap->host_manifest->x_object_meta_tag : ""
-    "disabled", "disabled");
-
-  /* write report and close the report file */
-  report[BIG_ENOUGH_SPACE] = '\0';
-  fprintf(nap->system_manifest->report, "%s", report);
-  fclose(nap->system_manifest->report);
-
+  printf("user return code = %d\n", nap->system_manifest->user_ret_code);
+  printf("user etag = %s\n", MakeEtag(nap));
+  printf("user state = %s\n", nap->system_manifest->user_state);
   return OK_CODE;
 }

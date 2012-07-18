@@ -56,7 +56,7 @@ static char const       *nacl_log_module_name = NULL;
 static int              verbosity = NACL_VERBOSITY_UNSET;
 static struct Gio       *log_stream = NULL;
 static struct GioFile   log_file_stream;
-static int              timestamp_enabled = 1;
+//static int              timestamp_enabled = 1; /* d'b(LOG): stamp disabled */
 
 /* global, but explicitly not exposed in non-test header file */
 void (*gNaClLogAbortBehavior)(void) = NaClAbort;
@@ -300,15 +300,16 @@ struct Gio  *NaClLogGetGio(void) {
 }
 
 static void NaClLogOutputTag(struct Gio *s) {
-  char timestamp[128];
-  int  pid;
-
-  if (timestamp_enabled) {
-    pid = GETPID();
-    gprintf(s, "[%d,%u:%s] ",
-            pid,
-            NaClTimeStampString(timestamp, sizeof timestamp));
-  }
+  /* d'b(LOG) */
+//  char timestamp[128];
+//  int  pid;
+//
+//  if (timestamp_enabled) {
+//    pid = GETPID();
+//    gprintf(s, "[%d,%u:%s] ",
+//            pid,
+//            NaClTimeStampString(timestamp, sizeof timestamp));
+//  }
 }
 
 /*
@@ -465,19 +466,25 @@ void NaClLogDoLogAndUnsetModule(int        detail_level,
   va_end(ap);
 }
 
+/* d'b(LOG): accessor for "current_detail_level" {{ */
+static int current_detail_level;
+int CurrentDetailLevel()
+{
+  return current_detail_level;
+}
 
-void NaClLog(int         detail_level,
-             char const  *fmt,
-             ...) {
+void NaClLog(int detail_level, char const *fmt, ...)
+{
   va_list ap;
 
 #if !THREAD_SAFE_DETAIL_CHECK
-  if (detail_level > verbosity) {
-    return;
-  }
+  if (detail_level > verbosity) return;
 #endif
+
+  current_detail_level = detail_level;
 
   va_start(ap, fmt);
   NaClLogV(detail_level, fmt, ap);
   va_end(ap);
 }
+/* }} */

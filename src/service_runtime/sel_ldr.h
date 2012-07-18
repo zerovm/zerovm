@@ -208,8 +208,6 @@ struct NaClApp {
    */
   int                       dynamic_delete_generation;
 
-  int                       exit_status; // has duplicate: exit also return code with longjump()
-
   int                       ignore_validator_result;
   int                       skip_validator;
   int                       validator_stub_out_mode;
@@ -233,7 +231,6 @@ struct NaClApp {
   struct NaClDebugCallbacks *debug_stub_callbacks;
 
 	/* d'b added fields */
-  struct HostManifest       *host_manifest;
   struct SystemManifest     *system_manifest;
   int                       skip_qualification; /* startup time variable */
   int                       fuzzing_quit_after_load; /* startup time variable */

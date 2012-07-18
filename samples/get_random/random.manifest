@@ -1,24 +1,16 @@
 =====================================================================
-== "determinism hole"
-== i/o switches
+== "determinism hole". the new channels design
+== following channels: stdin, stdout, stderr used
 =====================================================================
-Output = random.output.data
-OutputMaxGet = 1024000
-OutputMaxGetCnt = 1024
-OutputMaxPut = 1024000
-OutputMaxPutCnt = 1024
-OutputMode = 1
-
-UserLog = time.user.log
-UserLogMaxPut = 65536
+Channel = /dev/null, /dev/stdin, 4, 999999, 999999, 0, 0
+Channel = random.stdout.data, /dev/stdout, 5, 0, 0, 999999, 999999
+Channel = random.stderr.data, /dev/stderr, 6, 0, 0, 999999, 999999
 
 =====================================================================
 == switches for zerovm. some of them used to control nexe, some
 == for the internal zerovm needs
 =====================================================================
-Version = 11062012
-Log = random.zerovm.log
-Report = random.report.log
+Version = 13072012
 Nexe = random.nexe
 NexeMax = 10000000
 SyscallsMax = 3333
