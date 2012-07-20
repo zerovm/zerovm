@@ -14,26 +14,31 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "api/zrt.h"
+#include "zrt.h"
 
 #define WRITE_FMT_LOG(fmt, args...) fprintf(stderr, fmt, args);
 
 #define WRITE_LOG(str) fprintf(stderr, "%s\n", str);
 
-#define FDR 3
-#define FDW 4
-
 int main(int argc, char **argv){
 	WRITE_LOG("test2 started\n");
+
+	int fda = open("testa", O_RDWR);
+	int fdb = open("testb", O_RDWR);
+	WRITE_FMT_LOG("test2: fda=%d, fdb=%d\n", fda, fdb);
+
 	int testlen = 1000000;
 	char *buf = malloc(testlen+1);
 	buf[testlen] = '\0';
-	for (int i=0; i < 100; i++){
-		ssize_t bwrote = write(FDW, buf, testlen);
+	for (int i=0; i < 10; i++){
+		ssize_t bwrote = write(fdb, buf, testlen);
 		WRITE_FMT_LOG("#%d case1: write passed=%d, wrote=%d\n", i, testlen, (int)bwrote );
-		ssize_t bread = read(FDR, buf, testlen);
+		ssize_t bread = read(fda, buf, testlen);
 		WRITE_FMT_LOG("#%d case2: read requested=%d, read=%d\n", i, testlen, (int)bread );
 	}
 	free(buf);
+
+	close(fda);
+	close(fdb);
 	return 0;
 }
