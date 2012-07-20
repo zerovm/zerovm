@@ -71,9 +71,9 @@ void NaClVmentryPrint(void                  *state,
                       struct NaClVmmapEntry *vmep) {
   UNREFERENCED_PARAMETER(state);
 
-  printf("page num 0x%06x\n", (uint32_t)vmep->page_num);
-  printf("num pages %d\n", (uint32_t)vmep->npages);
-  printf("prot bits %x\n", vmep->prot);
+  NaClLog(LOG_INFO, "page num 0x%06x\n", (uint32_t)vmep->page_num);
+  NaClLog(LOG_INFO, "num pages %d\n", (uint32_t)vmep->npages);
+  NaClLog(LOG_INFO, "prot bits %x\n", vmep->prot);
   fflush(stdout);
 }
 

@@ -16,16 +16,20 @@
 #include <sys/mman.h>
 
 #include "src/platform_qualify/linux/sysv_shm_and_mmap.h"
+#include "src/platform/nacl_log.h"
 
 #define SYSVSHM_SIZE  65536
 #define MMAP_OFFSET   4096
 #define MMAP_SIZE     4096
 
-#ifdef DEBUG_SHM_AND_MMAP
-# define DPRINTF(arglist) do { printf arglist; } while (0)
-#else
+
+/* d'b: must not be used {{ */
+//#ifdef DEBUG_SHM_AND_MMAP
+//# define DPRINTF(arglist) do { printf arglist; } while (0)
+//#else
 # define DPRINTF(arglist) do { ; } while (0)
-#endif
+//#endif
+/* }} */
 
 static void FillWithPattern(void   *memory,
                             size_t size,
@@ -48,11 +52,8 @@ static int VerifyPattern(void   *memory,
 
   for (ix = 0; ix < size; ++ix) {
     if (mem_ptr[ix] != counter) {
-      fprintf(stderr,
-              "Memory at %p is wrong: expected %d, got %d\n",
-              mem_ptr + ix,
-              counter,
-              mem_ptr[ix]);
+      NaClLog(LOG_ERROR, "Memory at %p is wrong: expected %d, got %d\n",
+              mem_ptr + ix, counter, mem_ptr[ix]);
       return 0;
     }
     ++counter;
@@ -73,19 +74,20 @@ int NaClPlatformQualifySysVShmId(int shm_id) {
   shm_addr = shmat(shm_id, (const void *) NULL, 0);
   DPRINTF(("shmat -> %p\n", shm_addr));
   if (NULL == shm_addr) {
-    perror("platform_qualify: sysv_shm_and_mmap: shmat");
+    NaClLog(LOG_ERROR, "platform_qualify: sysv_shm_and_mmap: shmat");
+    NaClLog(LOG_ERROR, "%s", strerror(errno));
     return 2;
   }
 
   FillWithPattern(shm_addr, SYSVSHM_SIZE, 0);
 
   if (-1 == shmctl(shm_id, IPC_STAT, &shm_ds)) {
-    perror("platform_qualify: sysv_shm_and_mmap: no shmctl IPC_STAT\n");
+    NaClLog(LOG_ERROR, "platform_qualify: sysv_shm_and_mmap: no shmctl IPC_STAT\n");
+    NaClLog(LOG_ERROR, "%s", strerror(errno));
     return 3;
   }
   if (1 != shm_ds.shm_nattch) {
-    fprintf(stderr,
-            "platform_qualify: sysv_shm_and_mmap: shm_nattch (%lu) != 1\n",
+    NaClLog(LOG_ERROR, "platform_qualify: sysv_shm_and_mmap: shm_nattch (%lu) != 1\n",
             (unsigned long) shm_ds.shm_nattch);
     return 4;
   }
@@ -98,7 +100,8 @@ int NaClPlatformQualifySysVShmId(int shm_id) {
                          MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED,
                          -1,
                          0)) {
-    perror("platform_qualify: sysv_shm_and_mmap: mmap");
+    NaClLog(LOG_ERROR, "platform_qualify: sysv_shm_and_mmap: mmap");
+    NaClLog(LOG_ERROR, "%s", strerror(errno));
     return 5;
   }
   DPRINTF(("mmap succeeded\n"));
@@ -107,13 +110,13 @@ int NaClPlatformQualifySysVShmId(int shm_id) {
    */
 
   if (-1 == shmctl(shm_id, IPC_STAT, &shm_ds)) {
-    perror("platform_qualify: sysv_shm_and_mmap: no shmctl IPC_STAT\n");
+    NaClLog(LOG_ERROR, "platform_qualify: sysv_shm_and_mmap: no shmctl IPC_STAT\n");
+    NaClLog(LOG_ERROR, "%s", strerror(errno));
     return 6;
   }
   if (2 != shm_ds.shm_nattch) {
-    fprintf(stderr,
-            "platform_qualify: sysv_shm_and_mmap: shm_nattch (%lu) != 2\n",
-           (unsigned long) shm_ds.shm_nattch);
+    NaClLog(LOG_ERROR, "platform_qualify: sysv_shm_and_mmap: shm_nattch (%lu) != 2\n",
+            (unsigned long) shm_ds.shm_nattch);
     return 7;
   }
 
@@ -122,31 +125,30 @@ int NaClPlatformQualifySysVShmId(int shm_id) {
   shm_addr2 = shmat(shm_id, (const void *) NULL, 0);
   DPRINTF(("shmat -> %p\n", shm_addr2));
   if (NULL == shm_addr2) {
-    perror("platform_qualify: sysv_shm_and_mmap: shmat 2nd time\n");
+    NaClLog(LOG_ERROR, "platform_qualify: sysv_shm_and_mmap: shmat 2nd time\n");
+    NaClLog(LOG_ERROR, "%s", strerror(errno));
     return 8;
   }
 
   if (-1 == shmctl(shm_id, IPC_STAT, &shm_ds)) {
-    perror("platform_qualify: sysv_shm_and_mmap: no shmctl IPC_STAT\n");
+    NaClLog(LOG_ERROR, "platform_qualify: sysv_shm_and_mmap: no shmctl IPC_STAT\n");
+    NaClLog(LOG_ERROR, "%s", strerror(errno));
     return 9;
   }
   if (3 != shm_ds.shm_nattch) {
-    fprintf(stderr,
-            "platform_qualify: sysv_shm_and_mmap: shm_nattch (%lu) != 3\n",
-           (unsigned long) shm_ds.shm_nattch);
+    NaClLog(LOG_ERROR, "platform_qualify: sysv_shm_and_mmap: shm_nattch (%lu) != 3\n",
+            (unsigned long) shm_ds.shm_nattch);
     return 10;
   }
 
   if (!VerifyPattern(shm_addr2, SYSVSHM_SIZE, 0)) {
-    fprintf(stderr,
-            "platform_qualify: writing to mmap memory overwrote"
+    NaClLog(LOG_ERROR, "platform_qualify: writing to mmap memory overwrote"
             " sysv shm memory?!?\n");
     return 11;
   }
   FillWithPattern(shm_addr2, SYSVSHM_SIZE, 0);
   if (!VerifyPattern(mmap_addr, MMAP_SIZE, 1)) {
-    fprintf(stderr,
-            "platform_qualify: writng to shm memory"
+    NaClLog(LOG_ERROR, "platform_qualify: writng to shm memory"
             " overwrite mmap memory?!?\n");
     return 12;
   }
@@ -156,19 +158,20 @@ int NaClPlatformQualifySysVShmId(int shm_id) {
                          MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED,
                          -1,
                          0)) {
-    perror("platform_qualify: sysv_shm_and_mmap: mmap over all"
-           " shm_addr failed\n");
+    NaClLog(LOG_ERROR, "platform_qualify: sysv_shm_and_mmap: mmap over all"
+            " shm_addr failed\n");
+    NaClLog(LOG_ERROR, "%s", strerror(errno));
     return 13;
   }
 
   if (-1 == shmctl(shm_id, IPC_STAT, &shm_ds)) {
-    perror("platform_qualify: sysv_shm_and_mmap: no shmctl IPC_STAT\n");
+    NaClLog(LOG_ERROR, "platform_qualify: sysv_shm_and_mmap: no shmctl IPC_STAT\n");
+    NaClLog(LOG_ERROR, "%s", strerror(errno));
     return 14;
   }
   if (1 != shm_ds.shm_nattch) {
-    fprintf(stderr,
-            "platform_qualify: sysv_shm_and_mmap: shm_nattch (%lu) != 1\n",
-           (unsigned long) shm_ds.shm_nattch);
+    NaClLog(LOG_ERROR, "platform_qualify: sysv_shm_and_mmap: shm_nattch (%lu) != 1\n",
+            (unsigned long) shm_ds.shm_nattch);
     return 15;
   }
 
@@ -178,19 +181,19 @@ int NaClPlatformQualifySysVShmId(int shm_id) {
                          MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED,
                          -1,
                          0)) {
-    perror("platform_qualify: sysv_shm_and_mmap: mmap over all"
-           " shm_addr2 failed\n");
+    NaClLog(LOG_ERROR, "platform_qualify: sysv_shm_and_mmap: mmap over all"
+            " shm_addr2 failed\n");
+    NaClLog(LOG_ERROR, "%s", strerror(errno));
     return 16;
   }
   if (-1 == shmctl(shm_id, IPC_STAT, &shm_ds)) {
-    perror("platform_qualify: sysv_shm_and_mmap: no shmctl IPC_STAT\n");
+    NaClLog(LOG_ERROR, "platform_qualify: sysv_shm_and_mmap: no shmctl IPC_STAT\n");
+    NaClLog(LOG_ERROR, "%s", strerror(errno));
     return 17;
   }
   if (0 != shm_ds.shm_nattch) {
-    fprintf(stderr,
-            "platform_qualify: sysv_shm_and_mmap: over-mmap'd shm does not"
-            " reduce shm_nattch (%lu)\n",
-            (unsigned long) shm_ds.shm_nattch);
+    NaClLog(LOG_ERROR, "platform_qualify: sysv_shm_and_mmap: over-mmap'd shm does not"
+            " reduce shm_nattch (%lu)\n", (unsigned long) shm_ds.shm_nattch);
     return 18;
   }
 
@@ -218,14 +221,16 @@ int NaClPlatformQualifySysVShmAndMmapHasProblems(void) {
   DPRINTF(("shmget -> %d\n", shm_id));
 
   if (-1 == shm_id) {
-    perror("platform_qualify: sysv_shm_and_mmap: shmget");
+    NaClLog(LOG_ERROR, "platform_qualify: sysv_shm_and_mmap: shmget");
+    NaClLog(LOG_ERROR, "%s", strerror(errno));
     return 1;
   }
 
   err_code = NaClPlatformQualifySysVShmId(shm_id);
 
   if (-1 == shmctl(shm_id, IPC_RMID, NULL)) {
-    perror("platform_qualify: sysv_shm_and_mmap: shmctl IPC_RMID failed\n");
+    NaClLog(LOG_ERROR, "platform_qualify: sysv_shm_and_mmap: shmctl IPC_RMID failed\n");
+    NaClLog(LOG_ERROR, "%s", strerror(errno));
 
     /*
      * Set the err code to a release failure only if we do not already have

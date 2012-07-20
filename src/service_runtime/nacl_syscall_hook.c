@@ -102,6 +102,5 @@ NORETURN void NaClSyscallCSegHook()
   NaClSwitchToApp(nap, user_ret);
 
   /* NOTREACHED */
-  fprintf(stderr, "NORETURN NaClSwitchToApp returned!?!\n");
-  NaClAbort();
+  NaClLog(LOG_FATAL, "NORETURN NaClSwitchToApp returned!?!");
 }

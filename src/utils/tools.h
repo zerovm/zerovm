@@ -15,17 +15,24 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/stat.h>
+#include "src/platform/nacl_exit.h"
+#include "src/platform/nacl_log.h"
 #include "src/service_runtime/include/sys/errno.h"
 
 #define KEYWORD_SIZE_MAX 256
 #define BIG_ENOUGH_SPACE 65536 /* ..size of the biggest temporary variable */
 
-/* check condition 'cond' if false aborts zerovm with message 'msg' */
 /*
  * check condition 'cond' if false aborts zerovm with message 'msg'
  * WARNING: must not be defined as an empty macro! it used to run functions
+ * todo(d'b): redesign it. design zerovm errors as well.
  */
-#define COND_ABORT(cond, msg) if(cond) {fprintf(stderr, "%s\n", msg); exit(1);}
+#define COND_ABORT(cond, msg) \
+    if(cond) {\
+      NaClLog(LOG_ERROR, "%s:%d: %s\n", __FILE__, __LINE__, msg);\
+      NaClExit(1);\
+    }
+
 
 /* malloc and check. if allocation failed abort with message 'msg' */
 static inline void *my_malloc(size_t size, const char *msg)

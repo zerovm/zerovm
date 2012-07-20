@@ -3,6 +3,7 @@
  * content of this file should be moved to documentation
  *
  * update: all keywords now put into the string array indexed with enumeration
+ * todo(d'b): rewrite it using x-macro
  *
  *  Created on: Dec 5, 2011
  *      Author: d'b
@@ -24,26 +25,13 @@
 \
   /* will replace "report request keywords" below */\
   /*"Report",*/\
-/*\
- * report request keywords\
- * note: values should exist to make valid manifest record\
- *       but they will be ignored. recommended way is: ReportEtag = :)\
- *       NOT recommended, misleading way: ReportEtag = yes\
- */\
-  "ReportRetCode", /* exit code of zerovm */\
-  "ReportEtag", /* checksum of the user output */\
-  "ReportUserRetCode", /* exit code of the user program */\
-  "ReportContentType",\
-  "ReportXObjectMetaTag", /* custom attributes set by user */\
 \
   /* zerovm control keywords */\
   "Version", /* zerovm version */\
-  "Log", /* zerovm log file name */\
-  "Report", /* report file descriptor (will be removed) */\
   "Nexe", /* nexe file name */\
   "NexeMax", /* maximum allowed nexe size */\
   "NexeEtag", /* reserved for "fast validation" */\
-  "Timeout", /* maximum zerovm time to run */\
+  "Timeout", /* maximum nexe time to run */\
   "MemMax", /* size of memory available for nexe */\
   "SyscallsMax", /* syscalls allowed nexe to invoke */\
   "CommandLine", /* command line for nexe */\
@@ -59,27 +47,13 @@ enum ManifestKeywords
   Environment,
 
   /*
-   * report request keywords
-   * note: values should exist to make valid manifest record
-   *       but they will be ignored. recommended way is: ReportEtag = :)
-   *       NOT recommended, misleading way: ReportEtag = yes
-   */
-  ReportRetCode, /* exit code of zerovm */
-  ReportEtag, /* checksum of the user output */
-  ReportUserRetCode, /* exit code of the user program */
-  ReportContentType,
-  ReportXObjectMetaTag, /* custom attributes set by user */
-
-  /*
    *  zerovm control keywords
    */
   Version, /* zerovm version */
-  Log, /* zerovm log file name */
-  Report, /* report file descriptor */
   Nexe, /* nexe file name */
   NexeMax, /* maximum allowed nexe size */
   NexeEtag, /* reserved for "fast validation" */
-  Timeout, /* maximum zerovm time to run */
+  Timeout, /* maximum nexe time to run */
   MemMax, /* size of memory available for nexe */
   SyscallsMax, /* syscalls allowed nexe to invoke */
   CommandLine, /* command line for nexe */

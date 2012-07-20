@@ -15,21 +15,24 @@ ZEROVM API
 MANIFEST
 ========
 + add a new "Environment" keyword
-- add a new "Report" keyword. remove the old one. 
++ add a new "Report" keyword. remove the old one. 
   this task needs constant report and log ready
+  update: completely removed. substituted with stdout print
 
 OTHER
 =====
-- add extended signals handling to zerovm. zerovm must survive any nexe error.
+-+ add extended signals handling to zerovm. zerovm must survive any nexe error.
 	care about zerovm report
 	care about channels
 
-- constant zerovm log.
-  remove log setup from manifest
-  generate log name using define from compiler -D and pid
-  create log asap (all zerovm messages goes there)
++- constant zerovm log.
+  + remove log setup from manifest
+  + generate log name using define from compiler -D and pid
+    update: syslog used
+  + create log asap (all zerovm messages goes there)
+  - remove all printf, fprintf, perror e.t.c occurences
   
-- constant zerovm report
++ constant zerovm report
 
 
 in the next version:

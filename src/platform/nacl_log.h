@@ -81,6 +81,8 @@
 #define NATIVE_CLIENT_SRC_TRUSTED_PLATFORM_NACL_LOG_H__
 
 #include <stdarg.h>
+#include <errno.h> /* d'b(LOG): to provide access to errno (perror replacement) */
+#include <string.h> /* d'b(LOG): to provide access to strerror (perror replacement) */
 
 #ifdef __native_client__
 # define ATTRIBUTE_FORMAT_PRINTF(m, n) __attribute__((format(printf, m, n)))

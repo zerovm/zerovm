@@ -172,8 +172,8 @@ clean_api:
 	@make -Capi clean
 	@echo api binaries has been deleted
 
-obj/libsel.a: obj/dyn_array.o obj/elf_util.o obj/nacl_all_modules.o obj/nacl_desc_effector_ldr.o obj/nacl_globals.o obj/nacl_memory_object.o obj/nacl_signal_common.o obj/nacl_syscall_handlers.o obj/nacl_syscall_hook.o obj/nacl_text.o obj/sel_addrspace.o obj/sel_ldr.o obj/sel_ldr_standard.o obj/sel_mem.o obj/sel_qualify.o obj/sel_util-inl.o obj/sel_validate_image.o obj/nacl_ldt_x86.o obj/nacl_switch_64.o obj/nacl_switch_to_app_64.o obj/nacl_syscall_64.o obj/sel_addrspace_x86_64.o obj/sel_ldr_x86_64.o obj/sel_rt_64.o obj/tramp_64.o obj/sel_addrspace_posix_x86_64.o obj/sel_memory.o obj/nacl_ldt.o obj/sel_segments.o obj/nacl_signal.o obj/nacl_signal_64.o obj/manifest_parser.o obj/manifest_setup.o obj/md5.o obj/mount_channel.o obj/prefetch.o obj/preload.o obj/premap.o obj/trap.o
-	@ar rc obj/libsel.a obj/dyn_array.o obj/elf_util.o obj/nacl_all_modules.o obj/nacl_desc_effector_ldr.o obj/nacl_globals.o obj/nacl_memory_object.o obj/nacl_signal_common.o obj/nacl_syscall_handlers.o obj/nacl_syscall_hook.o obj/nacl_text.o obj/sel_addrspace.o obj/sel_ldr.o obj/sel_ldr_standard.o obj/sel_mem.o obj/sel_qualify.o obj/sel_util-inl.o obj/sel_validate_image.o obj/nacl_ldt_x86.o obj/nacl_switch_64.o obj/nacl_switch_to_app_64.o obj/nacl_syscall_64.o obj/sel_addrspace_x86_64.o obj/sel_ldr_x86_64.o obj/sel_rt_64.o obj/tramp_64.o obj/sel_addrspace_posix_x86_64.o obj/sel_memory.o obj/nacl_ldt.o obj/sel_segments.o obj/nacl_signal.o obj/nacl_signal_64.o obj/manifest_parser.o obj/manifest_setup.o obj/md5.o obj/mount_channel.o obj/prefetch.o obj/preload.o obj/premap.o obj/trap.o
+obj/libsel.a: obj/dyn_array.o obj/elf_util.o obj/nacl_all_modules.o obj/nacl_desc_effector_ldr.o obj/nacl_globals.o obj/nacl_memory_object.o obj/nacl_signal_common.o obj/nacl_syscall_handlers.o obj/nacl_syscall_hook.o obj/nacl_text.o obj/sel_addrspace.o obj/sel_ldr.o obj/sel_ldr_standard.o obj/sel_mem.o obj/sel_qualify.o obj/sel_util-inl.o obj/sel_validate_image.o obj/nacl_ldt_x86.o obj/nacl_switch_64.o obj/nacl_switch_to_app_64.o obj/nacl_syscall_64.o obj/sel_addrspace_x86_64.o obj/sel_ldr_x86_64.o obj/sel_rt_64.o obj/tramp_64.o obj/sel_addrspace_posix_x86_64.o obj/sel_memory.o obj/nacl_ldt.o obj/sel_segments.o obj/nacl_signal.o obj/nacl_signal_64.o obj/manifest_parser.o obj/manifest_setup.o obj/md5.o obj/mount_channel.o obj/prefetch.o obj/preload.o obj/trap.o
+	@ar rc obj/libsel.a obj/dyn_array.o obj/elf_util.o obj/nacl_all_modules.o obj/nacl_desc_effector_ldr.o obj/nacl_globals.o obj/nacl_memory_object.o obj/nacl_signal_common.o obj/nacl_syscall_handlers.o obj/nacl_syscall_hook.o obj/nacl_text.o obj/sel_addrspace.o obj/sel_ldr.o obj/sel_ldr_standard.o obj/sel_mem.o obj/sel_qualify.o obj/sel_util-inl.o obj/sel_validate_image.o obj/nacl_ldt_x86.o obj/nacl_switch_64.o obj/nacl_switch_to_app_64.o obj/nacl_syscall_64.o obj/sel_addrspace_x86_64.o obj/sel_ldr_x86_64.o obj/sel_rt_64.o obj/tramp_64.o obj/sel_addrspace_posix_x86_64.o obj/sel_memory.o obj/nacl_ldt.o obj/sel_segments.o obj/nacl_signal.o obj/nacl_signal_64.o obj/manifest_parser.o obj/manifest_setup.o obj/md5.o obj/mount_channel.o obj/prefetch.o obj/preload.o obj/trap.o
 
 obj/libnacl_error_code.a: obj/nacl_error_code.o
 	@ar rc obj/libnacl_error_code.a obj/nacl_error_code.o
@@ -240,9 +240,6 @@ obj/prefetch.o: src/manifest/prefetch.c
 
 obj/preload.o: src/manifest/preload.c
 	@gcc ${CCFLAGS} -o obj/preload.o ${CCFLAGS0} ${CCFLAGS1} ${CCFLAGS4} src/manifest/preload.c
-
-obj/premap.o: src/manifest/premap.c
-	@gcc ${CCFLAGS} -o obj/premap.o ${CCFLAGS0} ${CCFLAGS1} ${CCFLAGS4} src/manifest/premap.c
 
 obj/trap.o: src/manifest/trap.c
 	@gcc ${CCFLAGS} -o obj/trap.o ${CCFLAGS0} ${CCFLAGS1} ${CCFLAGS4} src/manifest/trap.c

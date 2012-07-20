@@ -67,7 +67,8 @@ static void *NaClAllocatePow2AlignedMemory(size_t mem_sz,
             orig_addr,
             extra);
     if (-1 == munmap((void *) orig_addr, extra)) {
-      perror("munmap (front)");
+      NaClLog(LOG_ERROR, "munmap (front)");
+      NaClLog(LOG_ERROR, "%s", strerror(errno));
       NaClLog(LOG_FATAL,
               "NaClAllocatePow2AlignedMemory: munmap front failed\n");
     }
@@ -82,7 +83,8 @@ static void *NaClAllocatePow2AlignedMemory(size_t mem_sz,
             extra);
     if (-1 == munmap((void *) (rounded_addr + mem_sz),
          extra)) {
-      perror("munmap (end)");
+      NaClLog(LOG_ERROR, "munmap (end)");
+      NaClLog(LOG_ERROR, "%s", strerror(errno));
       NaClLog(LOG_FATAL,
               "NaClAllocatePow2AlignedMemory: munmap tail failed\n");
     }
@@ -116,7 +118,8 @@ NaClErrorCode NaClAllocateSpace(void **mem, size_t addrsp_size) {
   mem_ptr = NaClAllocatePow2AlignedMemory(mem_sz, log_align);
   if (NULL == mem_ptr) {
     if (0 != errno) {
-      perror("NaClAllocatePow2AlignedMemory");
+      NaClLog(LOG_ERROR, "NaClAllocatePow2AlignedMemory");
+      NaClLog(LOG_ERROR, "%s", strerror(errno));
     }
     NaClLog(LOG_WARNING, "Memory allocation failed\n");
 

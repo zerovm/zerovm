@@ -10,6 +10,7 @@
  * todo: imc related stuff marked for removal
  */
 #include <string.h>
+#include <errno.h>
 #include <assert.h>
 #include <setjmp.h> /* d'b: need for trap() exit */
 
@@ -29,7 +30,7 @@
 #include "src/manifest/mount_channel.h" /* d'b. todo: move to manifest_setup */
 #include "src/service_runtime/sel_qualify.h"
 
-#include <syslog.h> /* d'b(LOG) syslog. must have lower order then nacl_log.h */
+//#include <syslog.h> /* d'b(LOG) syslog. must have lower order then nacl_log.h */
 
 /* todo(NETWORKING): move it channels constructors */
 /*YaroslavLitvinov*/
@@ -43,15 +44,15 @@
 static void VmentryPrinter(void *state, struct NaClVmmapEntry *vmep)
 {
   UNREFERENCED_PARAMETER(state);
-  printf("page num 0x%06x\n", (uint32_t) vmep->page_num);
-  printf("num pages %d\n", (uint32_t) vmep->npages);
-  printf("prot bits %x\n", vmep->prot);
+  NaClLog(LOG_INFO, "page num 0x%06x\n", (uint32_t) vmep->page_num);
+  NaClLog(LOG_INFO, "num pages %d\n", (uint32_t) vmep->npages);
+  NaClLog(LOG_INFO, "prot bits %x\n", vmep->prot);
   fflush(stdout);
 }
 
 static void PrintVmmap(struct NaClApp *nap)
 {
-  printf("In PrintVmmap\n");
+  NaClLog(LOG_INFO, "In PrintVmmap\n");
   fflush(stdout);
   NaClVmmapVisit(&nap->mem_map, VmentryPrinter, NULL);
 }
@@ -59,12 +60,23 @@ static void PrintVmmap(struct NaClApp *nap)
 /* initialize syslog to put ZeroVm log messages */
 static void ZeroVMLogCtor()
 {
+  /*
+   * are here to avoid redefinition LOG_*
+   * todo(d'b): remove this ugliness
+   */
+#define LOG_PID   0x01  /* log the pid with each message */
+#define LOG_CONS  0x02  /* log on the console if errors in sending */
+#define LOG_NDELAY  0x08  /* don't delay open */
+#define LOG_USER  (1<<3)  /* random user-level messages */
+  extern void openlog (const char *ident, int option, int facility);
+
   openlog(ZEROVMLOG_NAME, ZEROVMLOG_OPTIONS, ZEROVMLOG_PRIORITY);
 }
 
 /* close log. ### optional? */
 static void ZeroVMLogDtor()
 {
+  extern void closelog (void); /* to avoid redefinition LOG_* */
   closelog();
 }
 
@@ -85,7 +97,7 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
   nap->handle_signals = 1;
 
   /* todo(d'b): revise switches and rename them */
-  while((opt = getopt(argc, argv, "+cFgQDZsSv:M:")) != -1)
+  while((opt = getopt(argc, argv, "+cFgQZsSv:M:")) != -1)
   {
     switch(opt)
     {
@@ -114,7 +126,7 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
         break;
         /* case 'w':  with 'h' and 'r' above */
       case 'Q':
-        fprintf(stderr, "PLATFORM QUALIFICATION DISABLED BY -Q - "
+        NaClLog(LOG_WARNING, "PLATFORM QUALIFICATION DISABLED BY -Q - "
                 "Native Client's sandbox will be unreliable!\n");
         nap->skip_qualification = 1;
         break;
@@ -124,30 +136,31 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
       case 'Z':
         nap->fixed_feature_cpu_mode = 1;
         break;
+#if 0 /* d'b: disabled */
       case 'D':
         nap->enable_dfa_validator = 1;
-        fprintf(stderr, "DANGER! USING THE UNSTABLE DFA VALIDATOR!\n");
+        NaClLog(LOG_WARNING, "DANGER! USING THE UNSTABLE DFA VALIDATOR!\n");
         break;
+#endif
       default:
-        fprintf(stderr, "ERROR: unknown option: [%c]\n\n", opt);
+        NaClLog(LOG_ERROR, "ERROR: unknown option: [%c]\n\n", opt);
         COND_ABORT(1, HELP_SCREEN);
         break;
     }
   }
 
   /* show validator mode */
-  if(debug_mode_ignore_validator == 1) fprintf(stderr,
-                                               "DEBUG MODE ENABLED (ignore validator)\n");
+  if(debug_mode_ignore_validator == 1)
+    NaClLog(LOG_WARNING, "DEBUG MODE ENABLED (ignore validator)\n");
   else if(debug_mode_ignore_validator > 1)
-    fprintf(stderr, "DEBUG MODE ENABLED (skip validator)\n");
+    NaClLog(LOG_WARNING, "DEBUG MODE ENABLED (skip validator)\n");
 
   /* show zerovm command line */
   if(nap->verbosity)
   {
-    fprintf(stderr, "zerovm argument list:\n");
+    NaClLog(LOG_INFO, "zerovm argument list:\n");
     for(i = 0; i < argc; ++i)
-      fprintf(stderr, "%s ", argv[i]);
-    fprintf(stderr, "\n");
+      NaClLog(LOG_INFO, "%s\n", argv[i]);
   }
 
   /* parse manifest file specified in cmdline */
@@ -260,9 +273,7 @@ int main(int argc, char **argv)
     {
       errcode = pq_error;
       nap->module_load_status = pq_error;
-      fprintf(
-          stderr,
-          "Error while loading \"%s\": %s\n",
+      NaClLog(LOG_ERROR, "Error while loading \"%s\": %s\n",
           NULL != nap->system_manifest->nexe ?
               nap->system_manifest->nexe : "(no file, to-be-supplied-via-RPC)",
           NaClErrorString(errcode));
@@ -280,49 +291,36 @@ int main(int argc, char **argv)
 	NaClPerfCounterMark(&time_all_main, str);\
   NaClPerfCounterIntervalLast(&time_all_main);
 
-#define READ_MODULE(snapshot, name, perf) \
-  do {\
-    if(0 == GioMemoryFileSnapshotCtor(snapshot, name))\
-    {\
-      perror("sel_main");\
-      fprintf(stderr, "Cannot open \"%s\".\n", name);\
-      exit(1);\
-    }\
-    PERF_CNT(perf);\
-  } while(0)
-
-#define VALIDATE_MODULE(snapshot, name) \
-  do {\
-    NaClLog(2, "Loading nacl file %s (non-RPC)\n", name);\
-    errcode = NaClAppLoadFile((struct Gio *) snapshot, nap);\
-    if (LOAD_OK != errcode)\
-    {\
-      fprintf(stderr, "Error while loading \"%s\": %s\n", name,\
-              NaClErrorString(errcode));\
-      fprintf(stderr, ("Using the wrong type of nexe (nacl-x86-32"\
-              " on an x86-64 or vice versa)\nor a corrupt nexe file may be"\
-              " responsible for this error.\n"));\
-    }\
-  } while(0)
-
-  READ_MODULE(&main_file, nap->system_manifest->nexe, "SnapshotNaclFile");
+  if(0 == GioMemoryFileSnapshotCtor(&main_file, nap->system_manifest->nexe))
+  {
+    NaClLog(LOG_ERROR, "%s", strerror(errno));
+    NaClLog(LOG_FATAL, "Cannot open \"%s\".\n", nap->system_manifest->nexe);
+  }
+  PERF_CNT("SnapshotNaclFile");
 
   /* validate untrusted code (nexe) */
   if(LOAD_OK == errcode)
   {
-    VALIDATE_MODULE(&main_file, nap->system_manifest->nexe);
+    NaClLog(2, "Loading nacl file %s (non-RPC)\n", nap->system_manifest->nexe);
+    errcode = NaClAppLoadFile((struct Gio *) &main_file, nap);
+    if (LOAD_OK != errcode)
+    {
+      NaClLog(LOG_ERROR, "Error while loading \"%s\": %s\n",
+              nap->system_manifest->nexe, NaClErrorString(errcode));
+      NaClLog(LOG_ERROR, ("Using the wrong type of nexe (nacl-x86-32"
+          " on an x86-64 or vice versa)\nor a corrupt nexe file may be"
+          " responsible for this error.\n"));
+    }
 
     PERF_CNT("AppLoadEnd");
     nap->module_load_status = errcode;
   }
 
   if(-1 == (*((struct Gio *) &main_file)->vtbl->Close)((struct Gio *) &main_file))
-  {
-    fprintf(stderr, "Error while closing \"%s\".\n", nap->system_manifest->nexe);
-  }
+    NaClLog(LOG_ERROR, "Error while closing \"%s\".\n", nap->system_manifest->nexe);
 
   (*((struct Gio *) &main_file)->vtbl->Dtor)((struct Gio *) &main_file);
-  if(nap->fuzzing_quit_after_load) exit(0);
+  if(nap->fuzzing_quit_after_load) NaClExit(0);
 
   /*
    * construct system and host manifests
@@ -342,25 +340,23 @@ int main(int argc, char **argv)
     assert(nap->system_manifest != NULL);
 
     if(nap->system_manifest->cmd_line == NULL || nap->system_manifest->cmd_line_size < 3)
-    NaClLog(LOG_FATAL, "NETWORKING defined but command line parameters not valid\n");
+        NaClLog(LOG_FATAL, "NETWORKING defined but command line parameters not valid\n");
 
     do
     { /* prevent c90 warning */
-      /* get node generic name */
-//      char *netw_nodename = nap->system_manifest->cmd_line[2];
+      /* get node generic name and id */
       char *netw_nodename = GetValueByKey("Node");
+      int nodeid = ATOI(GetValueByKey("NodeID"));
 
-      /* get node id */
-      int nodeid = atoi(nap->system_manifest->cmd_line[1]);
       if(netw_nodename != NULL)
       {
         int err = init_zvm_networking(zmq_netw_interface_implementation(),
             ZVM_DB_NAME, netw_nodename, nodeid);
         if (LOAD_OK != err)
-        NaClLog(LOG_FATAL, "init_zvm_networking err = %d, nodename = %s\n",
+            NaClLog(LOG_FATAL, "init_zvm_networking err = %d, nodename = %s\n",
             err, netw_nodename);
       }
-    }while(0);
+    } while(0);
   }
 #endif
   /* end */
@@ -368,8 +364,8 @@ int main(int argc, char **argv)
   /* error reporting done; can quit now if there was an error earlier */
   if(LOAD_OK != errcode)
   {
-    NaClLog(4, "Not running app code since errcode is %s (%d)\n", NaClErrorString(errcode),
-            errcode);
+    NaClLog(4, "Not running app code since errcode is %s (%d)\n",
+            NaClErrorString(errcode), errcode);
     goto done;
   }
 
@@ -384,7 +380,7 @@ int main(int argc, char **argv)
     /* pass control to the user code */
     if(!NaClCreateMainThread(nap))
     {
-      fprintf(stderr, "creating main thread failed\n");
+      NaClLog(LOG_ERROR, "creating main thread failed\n");
       goto done;
     }
   }
@@ -411,15 +407,17 @@ int main(int argc, char **argv)
   /* todo(): replace with ret_code when zerovm error codes will be ready */
   NaClExit(0);
 
-  done: if(nap->verbosity)
+  /* todo(d'b): replace the label with the finalizer function */
+  done:
+  if(nap->verbosity)
   {
-    gprintf((struct Gio *) &gout, "exiting -- printing NaClApp details\n");
+    NaClLog(LOG_INFO, "exiting -- printing NaClApp details\n");
     NaClAppPrintDetails(nap, (struct Gio *) &gout);
-    printf("Dumping vmmap.\n");
+    NaClLog(LOG_INFO, "Dumping vmmap.\n");
     PrintVmmap(nap);
   }
 
-  if(nap->verbosity) printf("Done.\n");
+  if(nap->verbosity) NaClLog(LOG_INFO, "Done.\n");
   if(nap->handle_signals) NaClSignalHandlerFini();
   NaClAllModulesFini();
   NaClExit(ret_code);

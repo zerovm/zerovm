@@ -17,7 +17,6 @@
 #include "src/manifest/manifest_parser.h"
 #include "src/service_runtime/include/sys/errno.h"
 #include "src/manifest/preload.h"
-#include "src/manifest/premap.h"
 #include "src/manifest/prefetch.h"
 #include "src/manifest/mount_channel.h"
 
@@ -189,7 +188,7 @@ void ChannelsCtor(struct NaClApp *nap)
   /* parse channels. 0..2 reserved for stdin/stdout/stderr */
   for(i = 0; i < mft->channels_count; ++i)
   {
-    char *tokens[CHANNEL_ATTRIBUTES + 1]; // to detect wrong attributes number
+    char *tokens[CHANNEL_ATTRIBUTES + 1]; /* to detect wrong attributes number */
     int count = ParseValue(values[i], ", \t", tokens, CHANNEL_ATTRIBUTES + 1);
     COND_ABORT(count != CHANNEL_ATTRIBUTES, "wrong number of the channel attributes");
 

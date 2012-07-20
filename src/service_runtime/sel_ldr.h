@@ -240,7 +240,10 @@ struct NaClApp {
   /* d'b: fields required by "whole chunk" user memory management */
   int                       user_side_flag; /* 0 - trusted syscall, 1 - called from user side */
 
-  /* added for a new validator */
+  /*
+   * added for a new validator
+   * d'b: disabled. in a future can be re-enabled
+   */
   int                       enable_dfa_validator;
   int                       fixed_feature_cpu_mode;
   NaClCPUFeatures           cpu_features;

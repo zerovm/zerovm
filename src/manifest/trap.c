@@ -112,31 +112,31 @@ int32_t ZVMReadHandle(struct NaClApp *nap,
   NaClLog(LOG_INFO, "%s() invoked: desc=%d, buffer=0x%lx, size=%d, offset=%ld\n",
       __func__, ch, (intptr_t)buffer, size, offset);
 
-//  /* todo(NETWORKING): integrate it into the channels */
-//#ifdef NETWORKING
-//  /*YaroslavLitvinov*/
-//  if(GetValueByKey("Networking") != NULL)
-//  {
-//    int capab = ENOTALLOWED;
-//    capab = capabilities_for_file_fd(ch);
-//    if (capab == EREAD || capab == EREADWRITE)
-//    {
-//      retcode = commf_read(ch, sys_buffer, size);
-//      if ( -1 == retcode )
-//      {
-//        NaClLog(LOG_ERROR, "%s() read file %d error\n", __func__, ch );
-//        NaClAbort();
-//      }
-//      return retcode;
-//    }
-//    else
-//    {
-//      /*todo read errcode into report log*/
-//      NaClLog(LOG_ERROR, "%s() read file %d not allowed by capabilities err=%d\n", __func__, ch, capab );
-//      NaClAbort();
-//    }
-//  }
-//#endif
+  /* todo(NETWORKING): integrate it into the channels */
+#ifdef NETWORKING
+  /*YaroslavLitvinov*/
+  if(GetValueByKey("Networking") != NULL)
+  {
+    int capab = ENOTALLOWED;
+    capab = capabilities_for_file_fd(ch);
+    if (capab == EREAD || capab == EREADWRITE)
+    {
+      retcode = commf_read(ch, sys_buffer, size);
+      if ( -1 == retcode )
+      {
+        NaClLog(LOG_ERROR, "%s() read file %d error\n", __func__, ch );
+        NaClAbort();
+      }
+      return retcode;
+    }
+    else
+    {
+      /*todo read errcode into report log*/
+      NaClLog(LOG_ERROR, "%s() read file %d not allowed by capabilities err=%d\n", __func__, ch, capab );
+      NaClAbort();
+    }
+  }
+#endif
 
   channel = &nap->system_manifest->channels[ch];
   if(CHANNEL_READABLE(channel) == 0) return -INVALID_DESC;
@@ -190,28 +190,28 @@ int32_t ZVMWriteHandle(struct NaClApp *nap,
   NaClLog(4, "%s() invoked: desc=%d, buffer=0x%lx, size=%d, offset=%ld\n",
         __func__, ch, (intptr_t)buffer, size, offset);
 
-//  /* todo(NETWORKING): integrate it into the channels */
-//#ifdef NETWORKING
-//  /*YaroslavLitvinov*/
-//  if(GetValueByKey("Networking") != NULL)
-//  {
-//	  int capab = ENOTALLOWED;
-//	  capab = capabilities_for_file_fd(ch);
-//	  if ( capab == EWRITE || capab == EREADWRITE ){
-//		  retcode = commf_write(ch, sys_buffer, size);
-//		  if ( -1 == retcode  ){
-//			  NaClLog(LOG_ERROR, "%s() write file %d error\n", __func__, ch );
-//			  NaClAbort();
-//		  }
-//		  return retcode;
-//	  }
-//	  else{
-//		  /*todo write errcode into report log*/
-//		  NaClLog(LOG_ERROR, "%s() write file %d not allowed by capabilities err=%d\n", __func__, ch, capab );
-//		  NaClAbort();
-//	  }
-//  }
-//#endif
+  /* todo(NETWORKING): integrate it into the channels */
+#ifdef NETWORKING
+  /*YaroslavLitvinov*/
+  if(GetValueByKey("Networking") != NULL)
+  {
+	  int capab = ENOTALLOWED;
+	  capab = capabilities_for_file_fd(ch);
+	  if ( capab == EWRITE || capab == EREADWRITE ){
+		  retcode = commf_write(ch, sys_buffer, size);
+		  if ( -1 == retcode  ){
+			  NaClLog(LOG_ERROR, "%s() write file %d error\n", __func__, ch );
+			  NaClAbort();
+		  }
+		  return retcode;
+	  }
+	  else{
+		  /*todo write errcode into report log*/
+		  NaClLog(LOG_ERROR, "%s() write file %d not allowed by capabilities err=%d\n", __func__, ch, capab );
+		  NaClAbort();
+	  }
+  }
+#endif
 
   channel = &nap->system_manifest->channels[ch];
   if(CHANNEL_WRITEABLE(channel) == 0) return -INVALID_DESC;
