@@ -85,3 +85,5 @@ completed releases:
 problems to solve in the future versions:
 -------------------------------------------------------------
 - find the way how to exchange variable length arrays between trusted and untrusted code 
+- bug in environment: Environment = TimeStamp, 1337012520, Gort, klaato_barada_nikto
+  gives "klaato_barada_niktoQ". i already looked in nap->envp and its ok.

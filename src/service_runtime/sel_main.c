@@ -372,8 +372,6 @@ int main(int argc, char **argv)
   /* end */
 
   /* report to host. call destructors. exit */
-//  SystemManifestDtor(nap);
-//  ProxyReport(nap);
   ZeroVMLogDtor();
   NaClExit(0);
 

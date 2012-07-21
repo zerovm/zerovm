@@ -209,10 +209,11 @@ void ChannelsDtor(struct NaClApp *nap)
 {
   int i;
 
+  /* exit if channels are not constructed */
   assert(nap != NULL);
-  assert(nap->system_manifest != NULL);
-  assert(nap->system_manifest->channels != NULL);
-  assert(nap->system_manifest->channels_count > 0);
+  if(nap->system_manifest == NULL) return;
+  if(nap->system_manifest->channels == NULL) return;
+  if(nap->system_manifest->channels_count == 0) return;
 
   for(i = 0; i < nap->system_manifest->channels_count; ++i)
     ChannelDtor(&nap->system_manifest->channels[i]);

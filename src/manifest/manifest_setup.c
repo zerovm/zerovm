@@ -108,7 +108,7 @@ static void SetCustomAttributes(struct SystemManifest *policy)
   {
     char *key = *tokens++;
     char *value = *tokens++;
-    int length = strlen(key) + strlen(value);
+    int length = strlen(key) + strlen(value) + 1 + 1; /* + '=' + '\0' */
 
     policy->envp[i] = calloc(length + 1, sizeof(*policy->envp[0]));
     COND_ABORT(policy->envp[i] == NULL, "cannot allocate memory for custom attribute");
@@ -159,11 +159,11 @@ void SystemManifestCtor(struct NaClApp *nap)
   SetCustomAttributes(policy);
 
   /* prepare command line arguments for nexe */
-  /* todo(d'b): replace malloc with stack allocation */
+  /* todo(d'b): rewrite it like SetCustomAttributes() */
   /* todo(d'b): allow passing '=' ',' and ' ' */
 #define NEXE_CMD_LEN 128
-  COND_ABORT(!(policy->cmd_line = malloc(NEXE_CMD_LEN * sizeof(char*))),
-      "cannot allocate memory for nexe command line");
+  policy->cmd_line = calloc(NEXE_CMD_LEN, sizeof *policy->cmd_line);
+  COND_ABORT(policy->cmd_line == NULL, "cannot allocate memory for nexe command line");
   policy->cmd_line[0] = NEXE_PGM_NAME;
   policy->cmd_line_size = 1 + ParseValue(GetValueByKey("CommandLine"),
       " \t", &policy->cmd_line[1], NEXE_CMD_LEN - 1);
@@ -182,13 +182,16 @@ void SystemManifestCtor(struct NaClApp *nap)
   nap->system_manifest->ret_code = OK_CODE;
 }
 
-/* deallocate memory, close files, free other resources. put everything in the place */
+/*
+ * deallocate memory, close files, free other resources.
+ * note: can be invoked from any place
+ */
 int SystemManifestDtor(struct NaClApp *nap)
 {
   assert(nap != NULL);
-  assert(nap->system_manifest != NULL);
 
-  ChannelsDtor(nap);
+  if(nap->system_manifest != NULL)
+    ChannelsDtor(nap);
 
   return OK_CODE;
 }
@@ -200,12 +203,14 @@ int SystemManifestDtor(struct NaClApp *nap)
 int ProxyReport(struct NaClApp *nap)
 {
   char buf[BIG_ENOUGH_SPACE + 1], *report = buf;
+
+  /* if codes are not set assume them "ok" */
   char *state = nap->system_manifest->user_state;
   char *zvm_code = nap->zvm_code;
-
   if(state == NULL) state = "ok";
   if(zvm_code[0] == '\0') zvm_code = "0";
 
+  /* construct report string */
   strcpy(report, "user return code = ");
   strcat(report, nap->system_manifest->user_ret_code);
   strcat(report, "\n");
