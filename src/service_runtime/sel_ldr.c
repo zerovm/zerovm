@@ -111,9 +111,6 @@ int NaClAppWithSyscallTableCtor(struct NaClApp               *nap,
     goto cleanup_threads_cv;
   }
 
-  /* d'b: moved to system manifest */
-  nap->system_manifest->user_ret_code = -1;
-
   nap->enable_debug_stub = 0;
   nap->debug_stub_callbacks = NULL;
 

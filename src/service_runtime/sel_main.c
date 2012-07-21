@@ -200,7 +200,8 @@ int main(int argc, char **argv)
 
   /* d'b: initial settings */
   nap->system_manifest = &sys_mft;
-  nap->zvm_code = 0;
+  memset(nap->zvm_code, 0, INT32_STRLEN);
+  memset(nap->system_manifest->user_ret_code, 0, INT32_STRLEN);
   nap->system_manifest->user_state = NULL;
   ZeroVMLogCtor();
 
@@ -233,14 +234,6 @@ int main(int argc, char **argv)
   COND_ABORT(!GioFileRefCtor(&gout, stdout),
              "Could not create general standard output channel");
   ParseCommandLine(nap, argc, argv);
-
-//  /*
-//   * change stdout/stderr to log file now, so that subsequent error
-//   * messages will go there.  unfortunately, error messages that
-//   * result from getopt processing -- usually out-of-memory, which
-//   * shouldn't happen -- won't show up.
-//   */
-//  if(NULL != nap->system_manifest->log) NaClLogSetFile(nap->system_manifest->log);
 
   /* todo(d'b): remove it after validator will be removed from the project */
   NaClLogGetGio();
@@ -357,7 +350,7 @@ int main(int argc, char **argv)
   fflush((FILE *) NULL);
 
   /* set user code trap() exit location */
-  if((nap->zvm_code = setjmp(user_exit)) == 0)
+  if(setjmp(user_exit) == 0)
   {
     /* pass control to the user code */
     if(!NaClCreateMainThread(nap))
@@ -385,5 +378,5 @@ int main(int argc, char **argv)
   NaClExit(0);
 
   /* Unreachable, but having the return prevents a compiler error. */
-  return nap->zvm_code;
+  return -1;
 }

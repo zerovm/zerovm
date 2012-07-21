@@ -24,6 +24,7 @@
 #include <src/manifest/manifest_setup.h>
 #include <src/manifest/mount_channel.h>
 
+#if 0 /* disabled until "snapshot" engine will be done */
 /* return md5 hash of mapped _output_ file (or NULL) */
 static char* MakeEtag(struct NaClApp *nap)
 {
@@ -31,6 +32,7 @@ static char* MakeEtag(struct NaClApp *nap)
   assert(nap->system_manifest != NULL);
   return "disabled";
 }
+#endif
 
 /* preallocate memory area of given size. abort if fail */
 static void PreallocateUserMemory(struct NaClApp *nap)
@@ -191,18 +193,29 @@ int SystemManifestDtor(struct NaClApp *nap)
   return OK_CODE;
 }
 
-/* proxy awaits report from zerovm stdout */
-/* write() is safe and must be used instead of printf() */
+/*
+ * proxy awaits report from zerovm stdout
+ * only signal safe functions should be used (printf is not safe)
+ */
 int ProxyReport(struct NaClApp *nap)
 {
   char buf[BIG_ENOUGH_SPACE + 1], *report = buf;
   char *state = nap->system_manifest->user_state;
+  char *zvm_code = nap->zvm_code;
 
   if(state == NULL) state = "ok";
+  if(zvm_code[0] == '\0') zvm_code = "0";
 
-  snprintf(report, BIG_ENOUGH_SPACE,
-      "user return code = %d\nuser etag = %s\nuser state = %s\n",
-      nap->system_manifest->user_ret_code, MakeEtag(nap), state);
+  strcpy(report, "user return code = ");
+  strcat(report, nap->system_manifest->user_ret_code);
+  strcat(report, "\n");
+  strcat(report, "ZeroVM return code = ");
+  strcat(report, zvm_code);
+  strcat(report, "\n");
+  strcat(report, "user state = ");
+  strcat(report, state);
+  strcat(report, "\n");
+
   write(STDOUT_FILENO, report, strlen(report));
   return OK_CODE;
 }

@@ -50,7 +50,8 @@ struct SystemManifest
   char *nexe_etag; /* signature. reserved for a future "short" nexe validation */
   char *etag; /* user output memory digital signature */
   int32_t timeout; /* time user module allowed to run */
-  int32_t user_ret_code; /* nexe return code */
+//  int32_t user_ret_code; /* nexe return code */
+  char user_ret_code[INT32_STRLEN]; /* nexe return code. can be used within signal handler */
   char *user_state; /* nexe exit state (NULL == ok, timeout, terminated by signal) */
 
   /* variables and limits for a nexe */

@@ -36,6 +36,7 @@
 #include "src/service_runtime/sel_mem.h"
 #include "src/service_runtime/sel_util.h"
 #include "src/service_runtime/sel_rt.h"
+#include "src/utils/tools.h"
 
 #include "src/validator/cpufeatures.h"
 
@@ -232,7 +233,7 @@ struct NaClApp {
 
 	/* d'b: added fields {{ */
   struct SystemManifest     *system_manifest;
-  int                       zvm_code; /* zerovm return code */
+  char                      zvm_code[INT32_STRLEN]; /* zerovm return code. can be used within signal handler */
   int                       skip_qualification; /* startup time variable */
   int                       fuzzing_quit_after_load; /* startup time variable */
   int                       verbosity; /* startup time variable */
