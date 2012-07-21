@@ -3,8 +3,8 @@
 == following channels: stdin, stdout, stderr used
 =====================================================================
 Channel = /dev/null, /dev/stdin, 4, 999999, 999999, 0, 0
-Channel = file_stat.output.data, /dev/stdout, 5, 0, 0, 999999, 999999
-Channel = file_stat.user.log, /dev/stderr, 6, 0, 0, 999999, 999999
+Channel = stdout.data, /dev/stdout, 5, 0, 0, 999999, 999999
+Channel = /dev/null, /dev/stderr, 6, 0, 0, 999999, 999999
 
 =====================================================================
 == switches for zerovm. some of them used to control nexe, some

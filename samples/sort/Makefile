@@ -6,7 +6,6 @@ INCLUDE_FLAGS=-I $(ZVM_ROOT)
 MACROS_FLAGS=-DUSER_SIDE -DZRT_LIB
 NACL_TOOLCHAIN_PATH=~/nacl_sdk/pepper_19/toolchain/linux_x86_glibc
 
-
 all: $(NAME_1).o $(NAME_2).o $(NAME_3).o
 	$(NACL_TOOLCHAIN_PATH)/bin/x86_64-nacl-gcc -o $(NAME_1).nexe -s -static -T \
 	$(NACL_TOOLCHAIN_PATH)/x86_64-nacl/lib64/ldscripts/elf64_nacl.x.static -melf64_nacl -m64 \
@@ -17,7 +16,7 @@ all: $(NAME_1).o $(NAME_2).o $(NAME_3).o
 	$(NACL_TOOLCHAIN_PATH)/bin/x86_64-nacl-gcc -o $(NAME_3).nexe -s -static -T \
 	$(NACL_TOOLCHAIN_PATH)/x86_64-nacl/lib64/ldscripts/elf64_nacl.x.static -melf64_nacl -m64 \
 	$(DEBUG) $(NAME_3).o $(ZVM_ROOT)/api/libzrt.a
-
+	
 	./run_test.sh
 
 $(NAME_1).o:

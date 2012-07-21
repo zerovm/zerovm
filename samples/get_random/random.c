@@ -20,15 +20,15 @@ int main()
 
   for(i = 0; i < SYSCALLS_NUMBER; i += 8)
   {
-    fprintf(stdout, "%4d: %08X %08X %08X %08X %08X %08X %08X %08X\n", i, 
-            tramp_ptr[i + 0],
-            tramp_ptr[i + 1],
-            tramp_ptr[i + 2],
-            tramp_ptr[i + 3],
-            tramp_ptr[i + 4],
-            tramp_ptr[i + 5],
-            tramp_ptr[i + 6],
-            tramp_ptr[i + 7]);
+    printf("%4d: %08X %08X %08X %08X %08X %08X %08X %08X\n", i, 
+        tramp_ptr[i + 0],
+        tramp_ptr[i + 1],
+        tramp_ptr[i + 2],
+        tramp_ptr[i + 3],
+        tramp_ptr[i + 4],
+        tramp_ptr[i + 5],
+        tramp_ptr[i + 6],
+        tramp_ptr[i + 7]);
   }
 
   return 0;

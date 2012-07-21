@@ -22,6 +22,7 @@
 #define KEYWORD_SIZE_MAX 256
 #define BIG_ENOUGH_SPACE 65536 /* ..size of the biggest temporary variable */
 #define INT32_STRLEN (11) /* enough space to place maximum int32 value + '\0' */
+#define SIGNAL_STRLEN (128) /* enough space to place signal message + '\0' */
 
 /*
  * check condition 'cond' if false aborts zerovm with message 'msg'

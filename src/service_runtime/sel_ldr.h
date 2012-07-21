@@ -233,7 +233,9 @@ struct NaClApp {
 
 	/* d'b: added fields {{ */
   struct SystemManifest     *system_manifest;
-  char                      zvm_code[INT32_STRLEN]; /* zerovm return code. can be used within signal handler */
+  int32_t                   zvm_code; /* zerovm return code */
+  /* nexe exit state. NULL == ok, otherwise terminated by signal/timeout */
+  char                      zvm_state[SIGNAL_STRLEN];
   int                       skip_qualification; /* startup time variable */
   int                       fuzzing_quit_after_load; /* startup time variable */
   int                       verbosity; /* startup time variable */
@@ -241,6 +243,7 @@ struct NaClApp {
 
   /* fields required by "whole chunk" user memory management */
   int                       user_side_flag; /* 0 - trusted syscall, 1 - called from user side */
+  int                       trusted_code; /* mark to catch source of signal */
 
   /*
    * added for a new validator

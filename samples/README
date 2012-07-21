@@ -49,11 +49,7 @@ manifest/
 
 sort/
   contains 3 programs which allows to create random data, sort it and test sort order. from this example you can
-  see how to use intrinsics in nacl modules - absolutely same as usual. also this is another example of pagination
-  mechanism usage.
-
-sort_paging/
-  same "sort/" with i/o via zerovm api. also this example doesn't use mapped channels (except stderr)
+  see how to use intrinsics in nacl modules - absolutely same as usual. also this is another example of zrt library
   
 strtol/
   just a simple demonstration of conversions integers and floats

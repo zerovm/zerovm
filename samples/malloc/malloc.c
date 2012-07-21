@@ -16,25 +16,20 @@
 #define AVAILABLE_AMOUNT (zvm_mem_size() - (GAP_AMOUNT))
 #define VAR_NAME_TO_STRING(var) #var
 
-#define TEST_PTR(ptr)\
+#define TEST_PTR(ptr) \
 if(ptr == NULL)\
-{\
-  fprintf(stdout, "[%s] memory allocation error\n", VAR_NAME_TO_STRING(ptr));\
-}\
+  printf("[%s] memory allocation error\n", VAR_NAME_TO_STRING(ptr));\
 else\
-{\
-  fprintf(stdout, "[%s] was allocated at 0x%X\n", VAR_NAME_TO_STRING(ptr), (uintptr_t)ptr);\
-}
+  printf("[%s] was allocated at 0x%X\n", VAR_NAME_TO_STRING(ptr), (uintptr_t)ptr);
 
 int main()
 {
   /* first off check manifest */
-  fprintf(stdout, "we are using %sTRUSTED memory manager\n",
-          zvm_mem_size() ? "UN" : "");
-
+  printf("we are using %sTRUSTED memory manager\n", zvm_mem_size() ? "UN" : "");
   TEST_PTR(zvm_heap_ptr());
 
-  fprintf(stdout, "initial memory allocation\n");
+  printf("initial memory allocation\n");
+
   /*
    * "auto" variables will be placed to stack. we use them
    * for sake of completeness
@@ -55,31 +50,31 @@ int main()
   TEST_PTR(huge_ptr);
 
   /* reallocate memory */
-  fprintf(stdout, "memory reallocation\n");
+  printf("memory reallocation\n");
   huge_ptr = realloc(huge_ptr, SMALL_AMOUNT);
   TEST_PTR(huge_ptr);
   small_ptr = realloc(small_ptr, SMALL_AMOUNT);
   TEST_PTR(small_ptr);
 
   /* free allocated memory */
-  fprintf(stdout, "memory deallocation\n");
+  printf("memory deallocation\n");
   free(small_ptr);
   TEST_PTR(small_ptr);
   free(huge_ptr);
   TEST_PTR(huge_ptr);
 
   /* allocate it again */
-  fprintf(stdout, "final memory allocation\n");
+  printf("final memory allocation\n");
   small_ptr = malloc(SMALL_AMOUNT);
   huge_ptr = malloc(AVAILABLE_AMOUNT - GAP_AMOUNT - SMALL_AMOUNT);
 
   /* free allocated memory */
-  fprintf(stdout, "final memory deallocation\n");
+  printf("final memory deallocation\n");
   free(small_ptr);
   TEST_PTR(small_ptr);
   free(huge_ptr);
   TEST_PTR(huge_ptr);
 
-  fprintf(stdout, "exiting..\n");
+  printf("exiting..\n");
   return 0;
 }

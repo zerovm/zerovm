@@ -157,37 +157,8 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
   nap->enable_debug_stub = enable_debug_stub;
   nap->user_side_flag = 0; /* we are in the trusted code */
   nap->system_manifest->nexe = GetValueByKey("Nexe");
-  gnap = nap;
   syscallback = 0;
 }
-
-/*
- * set everything in the given NaClApp object to 0s and NULLs
- * so we can assert() nap and nap pointers before usage
- * note: always return LOAD_OK because we want to put the function inside assert()
- */
-#ifdef DEBUG
-int ResetNap(struct NaClApp *nap)
-{
-  void *p = nap->system_manifest;
-
-  memset(nap->system_manifest, 0, sizeof(*nap->system_manifest));
-  memset(nap, 0, sizeof(*nap));
-
-  /* since NULL isn't neccessery 0 set it explicitly */
-  nap->debug_stub_callbacks = NULL;
-  nap->dynamic_page_bitmap = NULL;
-  nap->dynamic_regions = NULL;
-  nap->effp = NULL;
-  nap->signal_stack = NULL;
-  nap->syscall_args = NULL;
-  nap->syscall_table = NULL;
-  nap->system_manifest = p;
-  nap->text_shm = NULL;
-
-  return LOAD_OK;
-}
-#endif
 
 int main(int argc, char **argv)
 {
@@ -199,14 +170,14 @@ int main(int argc, char **argv)
   struct NaClPerfCounter time_all_main;
 
   /* d'b: initial settings */
+  memset(nap, 0, sizeof *nap);
+  nap->trusted_code = 1;
   nap->system_manifest = &sys_mft;
-  memset(nap->zvm_code, 0, INT32_STRLEN);
-  memset(nap->system_manifest->user_ret_code, 0, INT32_STRLEN);
-  nap->system_manifest->user_state = NULL;
+  memset(nap->system_manifest, 0, sizeof *nap->system_manifest);
+  gnap = nap;
+  sprintf(nap->zvm_state, "ok");
   ZeroVMLogCtor();
-
-  /* (re)set all (debug) or some of nap fields */
-  assert(ResetNap(nap) == LOAD_OK);
+  NaClSignalHandlerInit();
 
   /* @IGNORE_LINES_FOR_CODE_HYGIENE[1] */
   /*
@@ -243,7 +214,7 @@ int main(int argc, char **argv)
   errcode = LOAD_OK;
 
   /* We use the signal handler to verify a signal took place. */
-  NaClSignalHandlerInit();
+//  NaClSignalHandlerInit();
   if(nap->skip_qualification == 0)
   {
     NaClErrorCode pq_error = NACL_FI_VAL("pq", NaClErrorCode, NaClRunSelQualificationTests());

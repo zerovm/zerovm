@@ -12,6 +12,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <time.h>
+#include <sys/stat.h>
 #include <emmintrin.h>
 #include <smmintrin.h>
 #include "api/zrt.h"
@@ -23,13 +24,18 @@
 #define DEFAULT_CHUNK_SIZE 18
 #define ELEMENT_SIZE sizeof(uint32_t)
 
-#define CLOCK(...) do {double t = clock(); __VA_ARGS__;\
-  fprintf(stderr, "\rSorting time = %.3lfsec\n", (clock() - t)/CLOCKS_PER_SEC);} while(0)
+#define CLOCK(...)\
+  do {\
+    /* double t = clock(); */\
+    __VA_ARGS__;\
+    /* fprintf(stderr, "\rSorting time = %.3lfsec\n", (clock() - t)/CLOCKS_PER_SEC); */\
+    fprintf(stderr, "\rSorting time = very short\n");\
+  } while(0)
 
 #define _eoutput(_str)\
 	do {\
 		fprintf(stderr, "Error in %s() at %u: %s\n", __func__, __LINE__, (_str));\
-		abort();\
+		exit(1);\
 	} while (0)
 
 #ifdef DEBUG
@@ -413,50 +419,72 @@ void aligned_free(void *ptr)
   free(((void**) ptr)[-1]);
 }
 
+int64_t file_size(char *name)
+{
+  FILE *f;
+
+  f = fopen(name, "rb");
+  if(f == NULL) return -1; /* file open error */
+  if(fseek(f, 0, SEEK_END) != 0) return -1; /* seek error */
+  return ftell(f);
+}
+
 int main(int argc, char **argv)
 {
   uint32_t chunk_size = DEFAULT_CHUNK_SIZE;
-  uint32_t cnt;
+  uint32_t cnt; /* elements count */
   uint32_t *d; /* data to sort */
   uint32_t *buf; /* extra space to sort */
+  int64_t filesize;
+  FILE *in, *out;
 
-  /* check if input map size equal to output map size */
-  if(zvm_channel_size(InputChannel) != zvm_channel_size(OutputChannel))
-  {
-    fprintf(stderr, "size of input and output maps are not equal %u != %u\n",
-            zvm_channel_size(InputChannel), zvm_channel_size(OutputChannel));
-    return 5;
-  }
+  /* check command line */
+  if(argc != 3)
+    _eoutput("usage: sort input_file_name output_file_name\n");
 
-  cnt = zvm_channel_size(InputChannel) / sizeof(*d);
+  /* open input and output files */
+  in = fopen(argv[1], "rb");
+  out = fopen(argv[2], "wb");
+  if(in == NULL)
+    _eoutput("input file open error\n");
+  if(out == NULL)
+    _eoutput("output file open error\n");
+
+  /* allocate data buffer */
+  filesize = file_size(argv[1]);
+  cnt = filesize / sizeof(*d);
+  d = aligned_malloc(filesize, 16);
+  if(d == NULL) _eoutput("cannot allocate data buffer\n");
+
+  fprintf(stderr, "input handle = %d, output handle = %d\n", fileno(in), fileno(out));
+  fprintf(stderr, "input file size = %lld\n", filesize);
+
+  /* allocate extra memory for the sort */
+  buf = aligned_malloc(filesize, 16);
+  if(buf == NULL) _eoutput("cannot allocate extra buffer\n");
+
+  /* elements count should be the power of 2 */
   if(cnt & (cnt - 1))
   {
     fprintf(stderr, "\rwrong number of elements in the input file - [%d]\n", cnt);
-    return 6;
+    return 3;
   }
   fprintf(stderr, "number of elements = %d\n", cnt);
 
-  /*
-   * about memory allocation, mapping and alignement:
-   * since we got our data to sort through mapped file
-   * we don't have to allocate memory. moreover zerovm
-   * always align allocated files to 64k bound, so we
-   * don't have to worry about alignement
-   * note: for buf we have to allocate aligned memory :(
-   * update: we cannot change input data. all data given
-   * by proxy should be untouched. so we copy everything
-   * from input to output
-   */
-  memcpy(zvm_channel_addr(OutputChannel), zvm_channel_addr(InputChannel),
-         zvm_channel_size(InputChannel));
-  d = zvm_channel_addr(OutputChannel);
-  buf = (uint32_t*) aligned_malloc(sizeof(uint32_t) * cnt, 16);
-  if(buf == NULL ) _eoutput("Can't allocate memory\n");
+  /* read data */
+  if(fread(d, sizeof(*d), cnt, in) != cnt)
+    _eoutput("cannot read data from the input channel\n");
 
   /* Bitonic sort */
   fprintf(stderr, "data sorting.. ");
   CLOCK(bitonic_sort_chunked((float*)d, cnt, (float*)buf, 1u << chunk_size));
   fprintf(stderr, "done\n");
 
+  /* save results */
+  fwrite(d, sizeof(*d), cnt, out);
+  fprintf(stderr, "sorted data is written\n");
+
+  fclose(in);
+  fclose(out);
   return EXIT_SUCCESS;
 }

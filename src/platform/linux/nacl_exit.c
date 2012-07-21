@@ -54,7 +54,7 @@ void NaClAbort(void)
    * d'b: finalize. show dump (if needed). release resources, close channels.
    * note: use global nap because can be invoked from signal handler
    */
-  if(gnap->system_manifest->user_state != NULL)
+  if(gnap->zvm_state != NULL)
     FinalDump(gnap);
   SystemManifestDtor(gnap);
   ProxyReport(gnap);
@@ -68,7 +68,7 @@ void NaClExit(int err_code)
    * d'b: finalize. show dump (if needed). release resources, close channels.
    * note: use global nap because can be invoked from signal handler
    */
-  if(gnap->system_manifest->user_state != NULL)
+  if(gnap->zvm_state != NULL)
     FinalDump(gnap);
   SystemManifestDtor(gnap);
   ProxyReport(gnap);

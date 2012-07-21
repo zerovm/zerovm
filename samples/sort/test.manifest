@@ -1,33 +1,20 @@
 =====================================================================
-== i/o switches. full list. optional. some switches now meaningless,
-== placed here for completeness and future changes
+== "tester" example with zrt library usage. new channels design
+== following channels stdin, stdout, stderr (4, 5, 6) must be specified
+== read/write: 0 - seq/seq, 1 - rnd/seq, 2 - seq/rnd, 3 - rnd/rnd
+== cdr channel is the mix of type 2 and r/w limits >0, >0, >0, >0
 =====================================================================
-Input = sorted.data
-InputMaxGet = 67108864
-InputMaxGetCnt = 1024
-InputMaxPut = 67108864
-InputMaxPutCnt = 1024
-InputMode = 0
-
-UserLog = tester.stderr.log
-UserLogMaxPut = 65536
+Channel = /dev/null, /dev/stdin, 4, 99999999, 99999999, 0, 0
+Channel = /dev/null, /dev/stdout, 5, 0, 0, 99999999, 99999999
+Channel = sort.stderr.log, /dev/stderr, 6, 0, 0, 99999999, 99999999
+Channel = sorted.data, sorted.dat, 2, 99999999, 99999999, 0, 0
 
 =====================================================================
 == switches for zerovm. some of them used to control nexe, some
 == for the internal zerovm needs
 =====================================================================
-Version = 11062012
-Log = tester.log
-Report = tester.report.log
+Version = 13072012
 Nexe = tester.uint32_t.nexe
-NexeMax = 2000000
-SyscallsMax = 2048
-
-=====================================================================
-== create report to host
-=====================================================================
-ReportRetCode        = bump
-ReportEtag           = bump
-ReportUserRetCode    = bump
-ReportContentType    = bump
-ReportXObjectMetaTag = bump
+NexeMax = 10000000
+SyscallsMax = 3333
+CommandLine = sorted.dat

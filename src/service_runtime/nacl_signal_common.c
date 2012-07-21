@@ -12,6 +12,8 @@
 #include "src/platform/nacl_exit.h"
 #include "src/service_runtime/nacl_signal.h"
 #include "src/service_runtime/sel_ldr.h"
+#include "src/manifest/manifest_setup.h"
+#include "src/service_runtime/nacl_globals.h"
 
 #define MAX_NACL_HANDLERS 16
 
@@ -38,7 +40,7 @@ ssize_t NaClSignalErrorMessage(const char *msg) {
    * generate a negative value.  Only print if it matches.
    */
   if ((len > 0) && (len_t == (size_t) len)) {
-    return (ssize_t) write(2, msg, len);
+    return (ssize_t) write(STDOUT_FILENO, msg, len);
   }
 
   return 0;
@@ -50,9 +52,8 @@ ssize_t NaClSignalErrorMessage(const char *msg) {
  */
 int NaClSignalContextIsUntrusted(const struct NaClSignalContext *sigCtx)
 {
-  /* d'b: set sigCtx->rax to 1 before pass control to nexe and clear it
-     each time when control returned to trusted code */
-  return sigCtx->rax;
+  /* d'b(REPORT) */
+  return !gnap->trusted_code;
 }
 
 enum NaClSignalResult NaClSignalHandleNone(int signal, void *ctx) {
@@ -63,29 +64,23 @@ enum NaClSignalResult NaClSignalHandleNone(int signal, void *ctx) {
   return NACL_SIGNAL_SKIP;
 }
 
+/* d'b(REPORT): updated */
 enum NaClSignalResult NaClSignalHandleAll(int signal, void *ctx) {
   struct NaClSignalContext sigCtx;
-  char tmp[128];
 
   /*
    * Return an 8 bit error code which is -signal to
    * simulate normal OS behavior
    */
-
   NaClSignalContextFromHandler(&sigCtx, ctx);
-  if (NaClSignalContextIsUntrusted(&sigCtx)) {
-    SNPRINTF(tmp, sizeof(tmp), "\n** Signal %d from untrusted code: Halting "
-             "at %" NACL_PRIXNACL_REG "h\n", signal, sigCtx.prog_ctr);
-    NaClSignalErrorMessage(tmp);
-    NaClExit((-signal) & 0xFF);
-  }
-  else {
-    SNPRINTF(tmp, sizeof(tmp), "\n** Signal %d from trusted code: Halting "
-             "at %" NACL_PRIXNACL_REG "h\n", signal, sigCtx.prog_ctr);
-    NaClSignalErrorMessage(tmp);
-    NaClExit((-signal) & 0xFF);
-  }
-  return NACL_SIGNAL_RETURN;
+
+  /* todo(d'b): restore registers to make it work */
+  SNPRINTF(gnap->zvm_state, SIGNAL_STRLEN,
+      "Signal %d from %strusted code: Halting at 0x%lX", signal,
+      NaClSignalContextIsUntrusted(&sigCtx) ? "un" : "", sigCtx.prog_ctr);
+
+  NaClExit((-signal) & 0xFF);
+  return NACL_SIGNAL_RETURN; /* unreachable */
 }
 
 int NaClSignalHandlerAdd(NaClSignalHandler func) {

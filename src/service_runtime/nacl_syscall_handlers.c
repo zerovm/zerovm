@@ -833,7 +833,6 @@ cleanup:
 int32_t NaClSysExit(struct NaClApp *nap, int status)
 {
   NaClLog(1, "Exit syscall handler: %d\n", status);
-  sprintf(nap->system_manifest->user_ret_code, "%d", status);
   longjmp(user_exit, status);
 
   /* NOTREACHED */

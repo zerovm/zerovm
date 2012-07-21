@@ -40,6 +40,7 @@ NORETURN void NaClSyscallCSegHook()
    */
   nap = gnap; /* restore NaClApp object */
   nap->user_side_flag = 1; /* set "user side call" mark */
+  nap->trusted_code = 1; /* we are in the trusted code */
   UpdateSyscallsCount(nap);
   user = nacl_user; /* restore from global */
   sp_user = NaClGetThreadCtxSp(user);
@@ -99,6 +100,7 @@ NORETURN void NaClSyscallCSegHook()
 
   /* d'b: give control to the nexe */
   nap->user_side_flag = 0; /* remove "user side call" mark */
+  nap->trusted_code = 0; /* we are going to the untrusted code */
   NaClSwitchToApp(nap, user_ret);
 
   /* NOTREACHED */

@@ -5,7 +5,7 @@
  * update: usage changed. all command line switches must be specified
  * via manifest (see manifest keywords)
  *
- * note: program will generate as much numbers as allowed in manifest
+ * note: program can only write as much bytes as allowed in manifest
  */
 
 #include <stdio.h>
@@ -27,11 +27,32 @@ int main(int argc, char **argv)
   uint32_t *r;
   uint32_t seq_size;
   uint32_t inc;
+  FILE *f;
 
-  /* get buffer, calculate count of elements */
-  r = zvm_channel_addr(OutputChannel);
-  seq_size = zvm_channel_size(OutputChannel) / sizeof(*r);
-  inc = 4294967295U / seq_size; /* increment */
+  /*
+   * unlike previous generator version (resided in "samples/sort")
+   * this program use paginated channel instead of mapped
+   */
+
+  /* check command line */
+  if(argc != 3)
+  {
+    fprintf(stderr, "usage: generator number_of_elements file_name\n");
+    return 1;
+  }
+
+  /* open file to output numbers */
+  f = fopen(argv[2], "wb");
+  if(f == NULL)
+  {
+    fprintf(stderr, "cannot open output file\n");
+    return 2;
+  }
+
+  /* get buffer for the output channel */
+  seq_size = strtoll(argv[1], NULL, 10);
+  inc = -1U / seq_size; /* increment */
+  r = malloc(seq_size * sizeof(*r));
 
   /* check output buffer */
   if(r == NULL || seq_size < 1)
@@ -39,7 +60,7 @@ int main(int argc, char **argv)
     fprintf(stderr, "OutputChannel is not initialized "
             "addr = 0x%X, size = %d\n",
             (intptr_t) r, seq_size);
-    return 1;
+    return 3;
   }
 
   /* populate array with sequence of numbers */
@@ -55,5 +76,12 @@ int main(int argc, char **argv)
   }
   fprintf(stderr, "numbers are generated\n");
 
+  /* write data to the output channel */
+  i = fwrite(r, sizeof(*r), seq_size, f);
+  fprintf(stderr, "%u elements is written\n", i);
+  if(i != seq_size)
+    fprintf(stderr, "ERROR: couldn't write all generated elements!\n");
+
+  fclose(f);
   return 0;
 }

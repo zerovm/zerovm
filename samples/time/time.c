@@ -15,13 +15,12 @@ int main()
   int64_t i;
 
   /* call zrt_gettimeofday() indirectly */
-  fprintf(stdout, "timestamp from manifest = %ld\n"
-      "which means..\n", (long)time(&cur_time));
+  printf("timestamp from manifest = %ld\nwhich means..\n",
+      (long)time(&cur_time));
 
-  /* infere and print the current time and date */
+  /* infer and print the current time and date */
   date_time = localtime(&cur_time);
-  fprintf(stdout, "date = %d-%02d-%02d "
-      "time = %02d:%02d:%02d %s\n\n",
+  printf("date = %d-%02d-%02d time = %02d:%02d:%02d %s\n\n",
       date_time->tm_year + 1900,
       date_time->tm_mon + 1,
       date_time->tm_mday,

@@ -52,9 +52,11 @@ NORETURN void SwitchToApp(struct NaClApp  *nap, uintptr_t stack_ptr)
   nacl_sys->rsp = NaClGetStackPtr();
 
   /* todo: put here switch to chose proper function: avx or sse */
+  nap->user_side_flag = 1;
+  nap->trusted_code = 0;
   NaClSwitchSSE(nacl_user);
 
-  /* unreachable */
+  NaClAbort(); /* unreachable */
 }
 /* d'b end */
 

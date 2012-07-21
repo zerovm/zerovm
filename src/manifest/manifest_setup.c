@@ -197,29 +197,18 @@ int SystemManifestDtor(struct NaClApp *nap)
 }
 
 /*
- * proxy awaits report from zerovm stdout
+ * proxy awaits zerovm report from stdout
  * only signal safe functions should be used (printf is not safe)
+ * but looks like snprintf() is safe
+ * todo(d'b): add timeout detection
  */
 int ProxyReport(struct NaClApp *nap)
 {
   char buf[BIG_ENOUGH_SPACE + 1], *report = buf;
 
-  /* if codes are not set assume them "ok" */
-  char *state = nap->system_manifest->user_state;
-  char *zvm_code = nap->zvm_code;
-  if(state == NULL) state = "ok";
-  if(zvm_code[0] == '\0') zvm_code = "0";
-
-  /* construct report string */
-  strcpy(report, "user return code = ");
-  strcat(report, nap->system_manifest->user_ret_code);
-  strcat(report, "\n");
-  strcat(report, "ZeroVM return code = ");
-  strcat(report, zvm_code);
-  strcat(report, "\n");
-  strcat(report, "user state = ");
-  strcat(report, state);
-  strcat(report, "\n");
+  snprintf(report, BIG_ENOUGH_SPACE,
+      "user return code = %d\nZeroVM return code = %d\nuser state = %s\n",
+      nap->system_manifest->user_ret_code, nap->zvm_code, nap->zvm_state);
 
   write(STDOUT_FILENO, report, strlen(report));
   return OK_CODE;
