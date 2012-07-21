@@ -55,7 +55,7 @@ int UpdateSyscallsCount(struct NaClApp *nap)
 static int32_t ZVMExitHandle(struct NaClApp *nap, int32_t code)
 {
   assert(nap != NULL);
-
+  nap->system_manifest->user_ret_code = code;
   NaClLog(1, "Exit syscall handler: %d\n", code);
   longjmp(user_exit, code);
 
