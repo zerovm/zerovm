@@ -2,6 +2,7 @@ PNACL_TOOL=~/nacl_sdk/pepper_19/toolchain/linux_x86_glibc
 NAME=malloc
 ZRT_ROOT=../..
 INCLUDE_FLAGS=-I$(ZRT_ROOT)/api
+MACROS_FLAGS=-DUSER_SIDE -DZRT_LIB
 
 all: createdirs clean test1.nexe test2.nexe
 	
@@ -17,11 +18,11 @@ test2.nexe: obj/main_test2.o
 
 obj/main_test1.o: main_test1.c
 	@$(PNACL_TOOL)/bin/x86_64-nacl-gcc -c -o obj/main_test1.o -Wall -std=c99 \
-	$(INCLUDE_FLAGS) $(DEBUG) -Wno-long-long -m64 main_test1.c
+	$(INCLUDE_FLAGS) $(MACROS_FLAGS) $(DEBUG) -Wno-long-long -m64 main_test1.c
 
 obj/main_test2.o: main_test2.c
 	@$(PNACL_TOOL)/bin/x86_64-nacl-gcc -c -o obj/main_test2.o -Wall -std=c99 \
-	$(INCLUDE_FLAGS) $(DEBUG) -Wno-long-long -m64 main_test2.c
+	$(INCLUDE_FLAGS) $(MACROS_FLAGS) $(DEBUG) -Wno-long-long -m64 main_test2.c
 	
 createdirs:
 	@mkdir -p obj log
@@ -29,6 +30,5 @@ createdirs:
 clean: 
 	@rm -f obj/*.o
 	@rm -f log/*.log
-	@rm -f *.nexe
-	
+	@rm -f *.nexe testa testb	
 

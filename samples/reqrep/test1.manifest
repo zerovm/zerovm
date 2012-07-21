@@ -2,9 +2,8 @@
 == i/o switches. full list. optional. some switches now meaningless,
 == placed here for completeness and future changes
 =====================================================================
-
-Channel = /dev/null, 0, 4, 999999, 999999, 0, 0
-Channel = /dev/null, 0, 5, 0, 0, 999999, 999999
+Channel = /dev/null, /dev/stdin, 4, 999999, 999999, 0, 0
+Channel = /dev/null, /dev/stdout, 5, 0, 0, 999999, 999999
 Channel = samples/reqrep/log/test1.stderr.log, /dev/stderr, 6, 0, 0, 999999, 999999
 Channel = samples/reqrep/testa, testa, 0, 999999999, 999999999, 999999999, 999999999
 Channel = samples/reqrep/testb, testb, 0, 999999999, 999999999, 999999999, 999999999 

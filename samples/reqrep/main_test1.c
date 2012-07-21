@@ -14,9 +14,13 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef USER_SIDE
 #include "zrt.h"
+#else
+#error user side macros are not defined
+#endif
 
-#define WRITE_FMT_LOG(fmt, args...) fprintf(stderr, fmt, args);
+#define WRITE_FMT_LOG(fmt, ...) fprintf(stderr, fmt, __VA_ARGS__);
 
 #define WRITE_LOG(str) fprintf(stderr, "%s\n", str);
 
