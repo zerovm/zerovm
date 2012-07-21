@@ -230,30 +230,31 @@ struct NaClApp {
   int                       enable_debug_stub;
   struct NaClDebugCallbacks *debug_stub_callbacks;
 
-	/* d'b added fields */
+	/* d'b: added fields {{ */
   struct SystemManifest     *system_manifest;
+  int                       zvm_code; /* zerovm return code */
   int                       skip_qualification; /* startup time variable */
   int                       fuzzing_quit_after_load; /* startup time variable */
   int                       verbosity; /* startup time variable */
   int                       handle_signals; /* startup time variable */
 
-  /* d'b: fields required by "whole chunk" user memory management */
+  /* fields required by "whole chunk" user memory management */
   int                       user_side_flag; /* 0 - trusted syscall, 1 - called from user side */
 
   /*
    * added for a new validator
-   * d'b: disabled. in a future can be re-enabled
+   * disabled. in a future can be re-enabled
    */
   int                       enable_dfa_validator;
   int                       fixed_feature_cpu_mode;
   NaClCPUFeatures           cpu_features;
 
-  /* fileds taken from the natp */
+  /* fields taken from the natp */
   void                      *signal_stack; /* signal handling, registered with sigaltstack() */
   uintptr_t                 *syscall_args;
   uint32_t                  sysret; /* syscall return code */
   uintptr_t                 sys_tls;
-  /* d'b end */
+  /* }} */
 };
 
 /*

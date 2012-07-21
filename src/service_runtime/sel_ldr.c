@@ -18,36 +18,24 @@
 #include "src/service_runtime/nacl_desc_effector_ldr.h"
 #include "src/manifest/manifest_setup.h"
 
-static int IsEnvironmentVariableSet(char const *env_name) {
-  return NULL != getenv(env_name);
-}
-
-static int ShouldEnableDynamicLoading() {
-  return !IsEnvironmentVariableSet("NACL_DISABLE_DYNAMIC_LOADING");
-}
-
 int NaClAppWithSyscallTableCtor(struct NaClApp               *nap,
                                 struct NaClSyscallTableEntry *table)
 {
   struct NaClDescEffectorLdr  *effp;
   nap->addr_bits = NACL_MAX_ADDR_BITS;
-
   nap->stack_size = NACL_DEFAULT_STACK_MAX;
-
   nap->mem_start = 0;
-
-#if (NACL_ARCH(NACL_BUILD_ARCH) == NACL_x86 \
-     && NACL_BUILD_SUBARCH == 64)
   nap->dispatch_thunk = 0;
-#endif
 
   /* Get the set of features that the CPU we're running on supports. */
   /* These may be adjusted later in sel_main.c for fixed-feature CPU mode. */
   NaClGetCurrentCPUFeatures(&nap->cpu_features);
 
+#if 0
   /* The validation cache will be injected later, if it exists. */
   /* will be used in a future. */
-//  nap->validation_cache = NULL;
+  nap->validation_cache = NULL;
+#endif
 
   nap->enable_dfa_validator = 0;
   nap->fixed_feature_cpu_mode = 0;
@@ -81,7 +69,7 @@ int NaClAppWithSyscallTableCtor(struct NaClApp               *nap,
   }
   nap->effp = (struct NaClDescEffector *) effp;
 
-  nap->use_shm_for_dynamic_text = ShouldEnableDynamicLoading();
+  nap->use_shm_for_dynamic_text = 0; /* d'b: permanently disabled */
   nap->text_shm = NULL;
   if (!NaClMutexCtor(&nap->dynamic_load_mutex)) {
     goto cleanup_effp_dtor;

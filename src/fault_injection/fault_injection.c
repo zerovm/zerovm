@@ -383,16 +383,18 @@ void NaClFaultInjectionModuleInternalInit(void) {
   char                        *next_entry;
   struct NaClFaultInjectInfo  fi_entry;
 
+  /*
+   * d'b: permanently disabled
+   * todo(d'b): should be revised. perhaps whole thing should be removed
+   */
+  return;
+
 #if !NACL_HAS_TLS && NACL_HAS_TSD
   pthread_key_create(&gTsd_FaultInjectCountKey,
                      NaClFaultInjectCallSiteCounterDtor);
   pthread_key_create(&gTsd_FaultInjectValueKey, NULL);
 #endif
 
-  config = getenv("NACL_FAULT_INJECTION");
-  if (NULL == config) {
-    return;
-  }
   /* get a definitely-mutable version that we will free later */
   config = STRDUP(config);
   CHECK(NULL != config);

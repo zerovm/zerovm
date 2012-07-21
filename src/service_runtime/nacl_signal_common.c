@@ -88,28 +88,6 @@ enum NaClSignalResult NaClSignalHandleAll(int signal, void *ctx) {
   return NACL_SIGNAL_RETURN;
 }
 
-enum NaClSignalResult NaClSignalHandleUntrusted(int signal, void *ctx) {
-  struct NaClSignalContext sigCtx;
-  char tmp[128];
-  /*
-   * Return an 8 bit error code which is -signal to
-   * simulate normal OS behavior
-   */
-  NaClSignalContextFromHandler(&sigCtx, ctx);
-  if (NaClSignalContextIsUntrusted(&sigCtx)) {
-    SNPRINTF(tmp, sizeof(tmp), "\n** Signal %d from untrusted code: Halting "
-             "at %" NACL_PRIXNACL_REG "h\n", signal, sigCtx.prog_ctr);
-    NaClSignalErrorMessage(tmp);
-    NaClExit((-signal) & 0xFF);
-  }
-  else {
-    SNPRINTF(tmp, sizeof(tmp), "\n** Signal %d from trusted code: Continuing "
-             "from %" NACL_PRIXNACL_REG "h\n", signal, sigCtx.prog_ctr);
-    NaClSignalErrorMessage(tmp);
-  }
-  return NACL_SIGNAL_SEARCH;
-}
-
 int NaClSignalHandlerAdd(NaClSignalHandler func) {
   int id = 0;
 
@@ -187,23 +165,9 @@ void NaClSignalHandlerInit() {
   }
 
   NaClSignalHandlerInitPlatform();
-#ifdef NACL_STANDALONE
+
   /* In stand-alone mode (sel_ldr) we handle all signals. */
   NaClSignalHandlerAdd(NaClSignalHandleAll);
-#else
-  /*
-   * When run in Chrome we handle only signals in untrusted code.
-   * Signals in trusted code are allowed to pass back to Chrome so
-   * that Breakpad can create a minidump when applicable.
-   */
-  NaClSignalHandlerAdd(NaClSignalHandleUntrusted);
-#endif
-  if (getenv("NACL_CRASH_TEST") != NULL) {
-    NaClSignalErrorMessage("[CRASH_TEST] Causing crash in NaCl "
-                           "trusted code...\n");
-    /* Clang removes non-volatile NULL pointer references. */
-    *(volatile int *) 0 = 0;
-  }
 }
 
 void NaClSignalHandlerFini() {

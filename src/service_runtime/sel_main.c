@@ -30,8 +30,6 @@
 #include "src/manifest/mount_channel.h" /* d'b. todo: move to manifest_setup */
 #include "src/service_runtime/sel_qualify.h"
 
-//#include <syslog.h> /* d'b(LOG) syslog. must have lower order then nacl_log.h */
-
 /* todo(NETWORKING): move it channels constructors */
 /*YaroslavLitvinov*/
 #ifdef NETWORKING
@@ -40,22 +38,6 @@
 # define ZVM_DB_NAME "zvm_netw.db"
 #endif
 /* end */
-
-static void VmentryPrinter(void *state, struct NaClVmmapEntry *vmep)
-{
-  UNREFERENCED_PARAMETER(state);
-  NaClLog(LOG_INFO, "page num 0x%06x\n", (uint32_t) vmep->page_num);
-  NaClLog(LOG_INFO, "num pages %d\n", (uint32_t) vmep->npages);
-  NaClLog(LOG_INFO, "prot bits %x\n", vmep->prot);
-  fflush(stdout);
-}
-
-static void PrintVmmap(struct NaClApp *nap)
-{
-  NaClLog(LOG_INFO, "In PrintVmmap\n");
-  fflush(stdout);
-  NaClVmmapVisit(&nap->mem_map, VmentryPrinter, NULL);
-}
 
 /* initialize syslog to put ZeroVm log messages */
 static void ZeroVMLogCtor()
@@ -187,6 +169,9 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
 #ifdef DEBUG
 int ResetNap(struct NaClApp *nap)
 {
+  void *p = nap->system_manifest;
+
+  memset(nap->system_manifest, 0, sizeof(*nap->system_manifest));
   memset(nap, 0, sizeof(*nap));
 
   /* since NULL isn't neccessery 0 set it explicitly */
@@ -197,7 +182,7 @@ int ResetNap(struct NaClApp *nap)
   nap->signal_stack = NULL;
   nap->syscall_args = NULL;
   nap->syscall_table = NULL;
-  nap->system_manifest = NULL;
+  nap->system_manifest = p;
   nap->text_shm = NULL;
 
   return LOAD_OK;
@@ -213,14 +198,14 @@ int main(int argc, char **argv)
   struct GioMemoryFileSnapshot main_file;
   struct NaClPerfCounter time_all_main;
 
-  /* todo(d'b): make zerovm retcode. or make it always 0 and eliminate from the code */
-  int ret_code = 1;
-
+  /* d'b: initial settings */
+  nap->system_manifest = &sys_mft;
+  nap->zvm_code = 0;
+  nap->system_manifest->user_state = NULL;
   ZeroVMLogCtor();
 
   /* (re)set all (debug) or some of nap fields */
   assert(ResetNap(nap) == LOAD_OK);
-  nap->system_manifest = &sys_mft;
 
   /* @IGNORE_LINES_FOR_CODE_HYGIENE[1] */
   /*
@@ -363,11 +348,8 @@ int main(int argc, char **argv)
 
   /* error reporting done; can quit now if there was an error earlier */
   if(LOAD_OK != errcode)
-  {
-    NaClLog(4, "Not running app code since errcode is %s (%d)\n",
+    NaClLog(LOG_FATAL, "Not running app code since errcode is %s (%d)\n",
             NaClErrorString(errcode), errcode);
-    goto done;
-  }
 
   PERF_CNT("CreateMainThread");
 
@@ -375,14 +357,11 @@ int main(int argc, char **argv)
   fflush((FILE *) NULL);
 
   /* set user code trap() exit location */
-  if((ret_code = setjmp(user_exit)) == 0)
+  if((nap->zvm_code = setjmp(user_exit)) == 0)
   {
     /* pass control to the user code */
     if(!NaClCreateMainThread(nap))
-    {
-      NaClLog(LOG_ERROR, "creating main thread failed\n");
-      goto done;
-    }
+      NaClLog(LOG_FATAL, "creating main thread failed\n");
   }
   PERF_CNT("WaitForMainThread");
   PERF_CNT("SelMainEnd");
@@ -399,29 +378,12 @@ int main(int argc, char **argv)
 #endif
   /* end */
 
-  /* report to host. call destructors */
-  SystemManifestDtor(nap);
-  ProxyReport(nap);
+  /* report to host. call destructors. exit */
+//  SystemManifestDtor(nap);
+//  ProxyReport(nap);
   ZeroVMLogDtor();
-
-  /* todo(): replace with ret_code when zerovm error codes will be ready */
   NaClExit(0);
 
-  /* todo(d'b): replace the label with the finalizer function */
-  done:
-  if(nap->verbosity)
-  {
-    NaClLog(LOG_INFO, "exiting -- printing NaClApp details\n");
-    NaClAppPrintDetails(nap, (struct Gio *) &gout);
-    NaClLog(LOG_INFO, "Dumping vmmap.\n");
-    PrintVmmap(nap);
-  }
-
-  if(nap->verbosity) NaClLog(LOG_INFO, "Done.\n");
-  if(nap->handle_signals) NaClSignalHandlerFini();
-  NaClAllModulesFini();
-  NaClExit(ret_code);
-
   /* Unreachable, but having the return prevents a compiler error. */
-  return ret_code;
+  return nap->zvm_code;
 }

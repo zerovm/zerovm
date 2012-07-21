@@ -11,6 +11,7 @@
 EXTERN_C_BEGIN
 
 #include "api/zvm.h"
+#include "src/service_runtime/sel_ldr.h"
 #include "stdio.h"
 
 /* todo(d'b): remove useless switches, find a proper header for it */
@@ -50,7 +51,7 @@ struct SystemManifest
   char *etag; /* user output memory digital signature */
   int32_t timeout; /* time user module allowed to run */
   int32_t user_ret_code; /* nexe return code */
-  char *user_state; /* nexe exit state (ok, timeout, terminated by signal) */
+  char *user_state; /* nexe exit state (NULL == ok, timeout, terminated by signal) */
 
   /* variables and limits for a nexe */
   uint32_t heap_ptr; /* pointer to the start of available for user ram */

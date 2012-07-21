@@ -235,12 +235,9 @@ void NaClLogModuleInitExtended2(int         default_verbosity,
   NaClLogSetGio(log_gio);
 }
 
-void NaClLogModuleInitExtended(int        initial_verbosity,
-                               struct Gio *log_gio) {
-
-  NaClLogModuleInitExtended2(initial_verbosity,
-                             getenv("NACLVERBOSITY"),
-                             log_gio);
+void NaClLogModuleInitExtended(int initial_verbosity, struct Gio *log_gio)
+{
+  NaClLogModuleInitExtended2(initial_verbosity, NULL, log_gio);
 }
 
 void NaClLogModuleInit(void) {

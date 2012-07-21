@@ -192,10 +192,17 @@ int SystemManifestDtor(struct NaClApp *nap)
 }
 
 /* proxy awaits report from zerovm stdout */
+/* write() is safe and must be used instead of printf() */
 int ProxyReport(struct NaClApp *nap)
 {
-  printf("user return code = %d\n", nap->system_manifest->user_ret_code);
-  printf("user etag = %s\n", MakeEtag(nap));
-  printf("user state = %s\n", nap->system_manifest->user_state);
+  char buf[BIG_ENOUGH_SPACE + 1], *report = buf;
+  char *state = nap->system_manifest->user_state;
+
+  if(state == NULL) state = "ok";
+
+  snprintf(report, BIG_ENOUGH_SPACE,
+      "user return code = %d\nuser etag = %s\nuser state = %s\n",
+      nap->system_manifest->user_ret_code, MakeEtag(nap), state);
+  write(STDOUT_FILENO, report, strlen(report));
   return OK_CODE;
 }

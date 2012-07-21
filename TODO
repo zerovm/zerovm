@@ -25,12 +25,12 @@ OTHER
 	care about zerovm report
 	care about channels
 
-+- constant zerovm log.
++ constant zerovm log.
   + remove log setup from manifest
   + generate log name using define from compiler -D and pid
     update: syslog used
   + create log asap (all zerovm messages goes there)
-  - remove all printf, fprintf, perror e.t.c occurences
+  + remove all printf, fprintf, perror e.t.c occurences
   
 + constant zerovm report
 
