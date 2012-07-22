@@ -9,6 +9,9 @@
 #include <assert.h>
 #include <string.h>
 #include <ctype.h>
+#include <sys/resource.h> /* timeout */
+#include <sys/time.h> /* timeout */
+#include <unistd.h> /* timeout */
 
 #include "src/utils/tools.h"
 #include "src/service_runtime/include/bits/mman.h"
@@ -149,12 +152,24 @@ void SystemManifestCtor(struct NaClApp *nap)
   if(nap->system_manifest->nexe_max) COND_ABORT(
       nap->system_manifest->nexe_max < size, "nexe file is larger then alowed");
 
-  /* user variables and limits */
+  /* limits */
   GET_INT_BY_KEY(policy->max_mem, "MemMax");
   GET_INT_BY_KEY(policy->max_syscalls, "SyscallsMax");
+
+  /* get the timeout an install if specified */
+  GET_INT_BY_KEY(nap->system_manifest->timeout, "Timeout");
+  if(nap->system_manifest->timeout != 0)
+  {
+    struct rlimit rl;
+    rl.rlim_cur = nap->system_manifest->timeout;
+    setrlimit (RLIMIT_CPU, &rl);
+  }
+
+  /* counters */
   policy->cnt_syscalls = 0;
   policy->syscallback = 0;
 
+  /* user data (environment, command line) */
   policy->envp = NULL;
   SetCustomAttributes(policy);
 

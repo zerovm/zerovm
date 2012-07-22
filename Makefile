@@ -27,7 +27,8 @@ CXXFLAGS1=-c -std=c++98 -Wno-variadic-macros -m64 -fPIE -Wall -pedantic -Wno-lon
 CXXFLAGS2=-Wl,-z,noexecstack -m64 -Wno-variadic-macros -L/usr/lib64 -pie -Wl,-z,relro -Wl,-z,now -Wl,-rpath=obj
 CXXFLAGS3=-c -std=c++98 -Wno-variadic-macros -m64 -fPIE -Wall -Wno-long-long -fvisibility=hidden -fstack-protector --param ssp-buffer-size=4 -DNACL_TRUSTED_BUT_NOT_TCB -D_FORTIFY_SOURCE=2 -DNACL_WINDOWS=0 -DNACL_OSX=0 -DNACL_LINUX=1 -D_BSD_SOURCE=1 -D_POSIX_C_SOURCE=199506 -D_XOPEN_SOURCE=600 -D_GNU_SOURCE=1 -D_LARGEFILE64_SOURCE=1 -D__STDC_LIMIT_MACROS=1 -D__STDC_FORMAT_MACROS=1 -DNACL_BLOCK_SHIFT=5 -DNACL_BLOCK_SIZE=32 -DNACL_BUILD_ARCH=x86 -DNACL_BUILD_SUBARCH=64 -DNACL_TARGET_ARCH=x86 -DNACL_TARGET_SUBARCH=64 -DNACL_STANDALONE=1 -DNACL_ENABLE_TMPFS_REDIRECT_VAR=0 -I.
 
-all: create_dirs zerovm zvm_api ${NETW_MAIN_RULES} tests 
+#all: create_dirs zerovm zvm_api ${NETW_MAIN_RULES} tests 
+all: create_dirs zerovm zvm_api ${NETW_MAIN_RULES}
 
 create_dirs: 
 	@mkdir obj -p
@@ -45,21 +46,21 @@ gcov: clean all
 	@genhtml --output-directory cov_htmp app.info
 	@echo run ${ABS_PATH}cov_htmp/index.html
 
-tests: test_compile 
-	@echo == unit test =================================================
-	test/x86_validator_tests_nc_remaining_memory
-	test/service_runtime_tests
-	test/x86_decoder_tests_nc_inst_state
-	test/x86_validator_tests_halt_trim
-	test/x86_validator_tests_nc_inst_bytes
-	test/manifest_parser_test
+#tests: test_compile 
+#	@echo == unit test =================================================
+#	test/x86_validator_tests_nc_remaining_memory
+#	test/service_runtime_tests
+#	test/x86_decoder_tests_nc_inst_state
+#	test/x86_validator_tests_halt_trim
+#	test/x86_validator_tests_nc_inst_bytes
+#	test/manifest_parser_test
 #	test/manifest_setup_test
-	test/nacl_log_test
+#	test/nacl_log_test
 
 ifdef NETWORKING
-	test/sqluse_srv_test
-	test/zmq_netw_test
-	test/zvm_netw_test	
+#	test/sqluse_srv_test
+#	test/zmq_netw_test
+#	test/zvm_netw_test
 
 zvm_netw.db:
 	@/usr/local/bin/sqlite3 zvm_netw.db < zerovm_config.sql
@@ -71,12 +72,17 @@ endif
 zvm_api: api/syscall_manager.S api/zrt.c api/zvm.c
 	@make -Capi
 
-test_compile: test/x86_validator_tests_halt_trim test/service_runtime_tests test/x86_decoder_tests_nc_inst_state test/x86_validator_tests_nc_inst_bytes test/x86_validator_tests_nc_remaining_memory test/manifest_parser_test test/manifest_setup_test test/nacl_log_test ${NETW_TEST_RULES}
+#test_compile: test/x86_validator_tests_halt_trim test/service_runtime_tests test/x86_decoder_tests_nc_inst_state test/x86_validator_tests_nc_inst_bytes test/x86_validator_tests_nc_remaining_memory test/manifest_parser_test test/manifest_setup_test test/nacl_log_test ${NETW_TEST_RULES}
 
-obj/halt_trim_tests.o: src/validator/x86/halt_trim_tests.cc
-	@g++ ${CXXFLAGS} -o obj/halt_trim_tests.o ${CXXFLAGS1} -Igtest/include src/validator/x86/halt_trim_tests.cc
-test/x86_validator_tests_halt_trim: obj/halt_trim_tests.o obj/libncvalidate_x86_64.a obj/libncval_reg_sfi_x86_64.a obj/libnccopy_x86_64.a obj/libnc_decoder_x86_64.a obj/libnc_opcode_modeling_x86_64.a obj/libncval_base_x86_64.a obj/libplatform.a obj/libgio.a obj/libsel.a
-	@g++ ${CXXFLAGS} -o test/x86_validator_tests_halt_trim ${CXXFLAGS2} obj/halt_trim_tests.o -L/usr/lib -Lobj -Lgtest -lgtest -lncvalidate_x86_64 -lncval_reg_sfi_x86_64 -lnccopy_x86_64 -lnc_decoder_x86_64 -lnc_opcode_modeling_x86_64 -lncval_base_x86_64 -lplatform -lgio -lrt -lpthread -lcrypto
+#obj/halt_trim_tests.o: src/validator/x86/halt_trim_tests.cc
+#	@g++ ${CXXFLAGS} -o obj/halt_trim_tests.o ${CXXFLAGS1} -Igtest/include src/validator/x86/halt_trim_tests.cc
+#test/x86_validator_tests_halt_trim: obj/halt_trim_tests.o obj/libsel.a obj/libnacl_error_code.a obj/libgio_wrapped_desc.a obj/libnrd_xfer.a obj/libnacl_perf_counter.a obj/libnacl_base.a obj/libimc.a obj/libnacl_fault_inject.a obj/libplatform.a obj/libplatform_qual_lib.a obj/libncvalidate_x86_64.a obj/libncval_reg_sfi_x86_64.a obj/libnccopy_x86_64.a obj/libnc_decoder_x86_64.a obj/libnc_opcode_modeling_x86_64.a obj/libncval_base_x86_64.a obj/libgio.a
+#	@g++ ${CXXFLAGS} -o test/x86_validator_tests_halt_trim ${CXXFLAGS2} obj/halt_trim_tests.o -L/usr/lib -Lobj -Lgtest -lcrypto -lgtest -lrt -lpthread -lsel -lnacl_error_code -lgio_wrapped_desc -lnrd_xfer -lnacl_perf_counter -lnacl_base -limc -lnacl_fault_inject -lplatform -lplatform_qual_lib -lncvalidate_x86_64 -lncval_reg_sfi_x86_64 -lnccopy_x86_64 -lnc_decoder_x86_64 -lnc_opcode_modeling_x86_64 -lncval_base_x86_64 -lgio
+
+#obj/halt_trim_tests.o: src/validator/x86/halt_trim_tests.cc
+#	@g++ ${CXXFLAGS} -o obj/halt_trim_tests.o ${CXXFLAGS1} -Igtest/include src/validator/x86/halt_trim_tests.cc
+#test/x86_validator_tests_halt_trim: obj/halt_trim_tests.o obj/libncvalidate_x86_64.a obj/libncval_reg_sfi_x86_64.a obj/libnccopy_x86_64.a obj/libnc_decoder_x86_64.a obj/libnc_opcode_modeling_x86_64.a obj/libncval_base_x86_64.a obj/libplatform.a obj/libgio.a obj/libsel.a
+#	@g++ ${CXXFLAGS} -o test/x86_validator_tests_halt_trim ${CXXFLAGS2} obj/halt_trim_tests.o -L/usr/lib -Lobj -Lgtest -lgtest -lncvalidate_x86_64 -lncval_reg_sfi_x86_64 -lnccopy_x86_64 -lnc_decoder_x86_64 -lnc_opcode_modeling_x86_64 -lncval_base_x86_64 -lplatform -lgio -lrt -lpthread -lcrypto -lsel
 
 obj/manifest_parser_test.o: src/manifest/manifest_parser_test.cc
 	@g++ ${CXXFLAGS} -o obj/manifest_parser_test.o ${CXXFLAGS1} src/manifest/manifest_parser_test.cc

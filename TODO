@@ -2,15 +2,15 @@ in the current version:
 -------------------------------------------------------------
 CHANNELS DESIGN
 ===============
-+- replace 2nd channel attribute "id" with "alias".
-- add network channels to the file abstraction
-+ write more strict channels dealocation: free all allocated memory, free nacl descriptor e.t.c
++ add network channels to the file abstraction
 - all NETWORKING "todo" comments and NETWORKING conditional compilation must be removed
   appropriate changes should be made, of course
+  - the last thing to do:
+  move zeromq code to proper places (still needs refactoring)
+  or write a new code using using udt
 
-ZEROVM API
-==========
-- finish api error codes
++ replace 2nd channel attribute "id" with "alias".
++ write more strict channels dealocation: free all allocated memory, free nacl descriptor e.t.c
 
 MANIFEST
 ========
@@ -21,9 +21,12 @@ MANIFEST
 
 OTHER
 =====
--+ add extended signals handling to zerovm. zerovm must survive any nexe error.
-	care about zerovm report
-	care about channels
+- fix broken tests
+
++ add extended signals handling to zerovm. zerovm must survive any nexe error.
+	+ care about zerovm report
+	+ care about channels
+	update. the most likely zerovm will survive own errors and generate report
 
 + constant zerovm log.
   + remove log setup from manifest
@@ -32,13 +35,15 @@ OTHER
   + create log asap (all zerovm messages goes there)
   + remove all printf, fprintf, perror e.t.c occurences
   
-+ constant zerovm report
++ constant zerovm report. stdout used. contains 3 fields:
+  nexe retcode. zerovm retcode. state (ok, timeout, signal)
 
 
 in the next version:
 -------------------------------------------------------------
-- update validator (remove dfa support)
-  decide should we use standalone validator or not?
+- update validator 
++ remove dfa validator support. disabled to better times
+- decide should we use standalone validator or not?
 - add cpu features detection to sort (or even better - to zrt)
 - update /readme (use "force" to make the user download nacl sdk zerovm currently uses) 
 
@@ -85,6 +90,16 @@ completed releases:
 problems to solve in the future versions:
 -------------------------------------------------------------
 - find the way how to exchange variable length arrays between trusted and untrusted code 
-+ bug in environment: Environment = TimeStamp, 1337012520, Gort, klaato_barada_nikto
-  gives "klaato_barada_niktoQ". i already looked in nap->envp and its ok.
 - there is snprintf usage in signal handler. is it safe?
+- replace (if possible) lonjump with naclexit(). looks doable. problems are:
+  - perf_counters
+  - syslog finilizer (perhaps can be skipped)
+
+- timeout. 1. problem to intercept sigxcpu 2. sigxcpu doesn't occure when sleep or i/o
+  perhaps this is linked to (1)
+- cpu accounting
+- use setrlimit() to limit resources usage (according to given manifest)
+- finish with api error codes
++ bug in environment: Environment = TimeStamp, 1337012520, Gort, klaato_barada_nikto
+  gives "klaato_barada_niktoQ". fixed
+

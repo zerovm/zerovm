@@ -170,6 +170,7 @@ int main(int argc, char **argv)
   struct NaClPerfCounter time_all_main;
 
   /* d'b: initial settings */
+  /* todo(d'b): move to inline function {{ */
   memset(nap, 0, sizeof *nap);
   nap->trusted_code = 1;
   nap->system_manifest = &sys_mft;
@@ -178,6 +179,9 @@ int main(int argc, char **argv)
   sprintf(nap->zvm_state, "ok");
   ZeroVMLogCtor();
   NaClSignalHandlerInit();
+
+//  memset(NULL, 0, 0xffffffffffffffff);
+  /* }} */
 
   /* @IGNORE_LINES_FOR_CODE_HYGIENE[1] */
   /*

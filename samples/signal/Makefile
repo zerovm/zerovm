@@ -1,4 +1,4 @@
-NAME=accessors
+NAME=signal
 NACL_TOOLCHAIN_PATH=~/nacl_sdk/pepper_19/toolchain/linux_x86_glibc
 ZVM_ROOT=../..
 INCLUDE_FLAGS=-I $(ZVM_ROOT)

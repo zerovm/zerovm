@@ -1,24 +1,17 @@
 =====================================================================
-== "accessors" example with zrt library usage
-== i/o switches
+== "timeout" demonstrates the manifest keyword work
+== following channels: stdin, stdout, stderr used
 =====================================================================
-Output = accessors.output.data
-OutputMaxGet = 1024000
-OutputMaxGetCnt = 1024
-OutputMaxPut = 1024000
-OutputMaxPutCnt = 1024
-OutputMode = 1
-
-UserLog = accessors.user.log
-UserLogMaxPut = 65536
+Channel = /dev/null, /dev/stdin, 4, 999999, 999999, 0, 0
+Channel = stdout.data, /dev/stdout, 5, 0, 0, 999999, 999999
+Channel = /dev/null, /dev/stderr, 6, 0, 0, 999999, 999999
 
 =====================================================================
 == switches for zerovm. some of them used to control nexe, some
 == for the internal zerovm needs
 =====================================================================
-Version = 11062012
-Log = accessors.zerovm.log
-Report = accessors.report.log
-Nexe = accessors.nexe
+Version = 13072012
+Nexe = timeout.nexe
 NexeMax = 10000000
-SyscallsMax = 2048
+SyscallsMax = 3333
+Timeout = 1
