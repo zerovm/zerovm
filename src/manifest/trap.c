@@ -26,13 +26,6 @@
 #include "src/service_runtime/nacl_globals.h"
 #include "src/platform/nacl_exit.h"
 
-/* ### to remove */
-/*YaroslavLitvinov*/
-#ifdef NETWORKING
-#  include "src/networking/zvm_netw.h"
-#  include "src/networking/zmq_netw.h" /* SockCapability */
-#endif
-
 /*
  * check number of trap() calls and increment by 1. update
  * system_manifest. return 0 if success, -1 if over limit
@@ -263,9 +256,8 @@ static int32_t ZVMSyscallsCount(struct NaClApp *nap)
  * return channel name length + 1 if given pointer is not NULL
  * and "name" field in the given channel descriptor is NULL
  * otherwise also copy channel alias to "name" field
- * note: "handle" in given channel means index in zerovm channels
  */
-int32_t ZVMChannelName(struct NaClApp *nap, struct ZVMChannel *chnl)
+int32_t ZVMChannelName(struct NaClApp *nap, struct ZVMChannel *chnl, int ch)
 {
   struct ZVMChannel *uchannel;
   struct ChannelDesc *channel;
@@ -274,23 +266,10 @@ int32_t ZVMChannelName(struct NaClApp *nap, struct ZVMChannel *chnl)
   assert(nap != NULL);
   assert(nap->system_manifest != NULL);
 
-  /*
-   * check for invalid channel descriptor
-   * todo(d'b): put here proper error code
-   */
   if(chnl == NULL) return ERR_CODE;
 
   uchannel = (struct ZVMChannel*)NaClUserToSys(nap, (uintptr_t)chnl);
-
-  /*
-   * channel handle validity
-   * todo(d'b): put here proper error code
-   */
-  if(uchannel->handle < 0
-      && uchannel->handle >= nap->system_manifest->channels_count)
-    return ERR_CODE;
-
-  channel = &nap->system_manifest->channels[uchannel->handle];
+  channel = &nap->system_manifest->channels[ch];
 
   /* user asked for the name. give her the channel alias */
   if(uchannel->name != NULL)
@@ -328,15 +307,11 @@ static int32_t ZVMChannels(struct NaClApp *nap, struct ZVMChannel *buf)
     int i;
 
     uchannels[ch].name = NULL; /* see ZVMChannelName() */
-    uchannels[ch].handle = ch;
     uchannels[ch].type = channels[ch].type;
 
     /* copy limits and counters */
     for(i = 0; i < IOLimitsCount; ++i)
-    {
       uchannels[ch].limits[i] = channels[ch].limits[i];
-      uchannels[ch].counters[i] = channels[ch].counters[i];
-    }
 
     /* channel size/position */
     switch(channels->type)
@@ -345,20 +320,14 @@ static int32_t ZVMChannels(struct NaClApp *nap, struct ZVMChannel *buf)
         /* size/position is not defined */
         break;
       case SGetRPut:
-      case Stdin:
         uchannels[ch].size = channels[ch].size;
-        uchannels[ch].position = channels[ch].putpos;
         break;
       case RGetSPut:
-      case Stdout:
-      case Stderr:
         uchannels[ch].size = channels[ch].size;
-        uchannels[ch].position = channels[ch].getpos;
         break;
       case RGetRPut:
         /* in this case get or put updates both positions synchronously */
         uchannels[ch].size = channels[ch].size;
-        uchannels[ch].position = channels[ch].getpos;
         break;
       default:
         /* invalid access type */
@@ -449,7 +418,7 @@ int32_t TrapHandler(struct NaClApp *nap, uint32_t args)
       retcode = ZVMChannels(nap, (struct ZVMChannel*)sys_args[2]);
       break;
     case TrapChannelName:
-      retcode = ZVMChannelName(nap, (struct ZVMChannel*)sys_args[2]);
+      retcode = ZVMChannelName(nap, (struct ZVMChannel*)sys_args[2], (int32_t)sys_args[3]);
       break;
     case TrapSyscallsCount:
       retcode = ZVMSyscallsCount(nap);

@@ -4,11 +4,11 @@
 == read/write: 0 - seq/seq, 1 - rnd/seq, 2 - seq/rnd, 3 - rnd/rnd
 == cdr channel is the mix of type 2 and r/w limits >0, >0, >0, >0
 =====================================================================
-Channel = /dev/null, /dev/stdin, 4, 99999999, 99999999, 0, 0
-Channel = sort.stdout.log, /dev/stdout, 5, 0, 0, 99999999, 99999999
-Channel = sort.stderr.log, /dev/stderr, 6, 0, 0, 99999999, 99999999
+Channel = /dev/null, /dev/stdin, 0, 99999999, 99999999, 0, 0
+Channel = sort.stdout.log, /dev/stdout, 0, 0, 0, 99999999, 99999999
+Channel = sort.stderr.log, /dev/stderr, 0, 0, 0, 99999999, 99999999
 Channel = unsorted.data, random.dat, 2, 99999999, 99999999, 0, 0
-Channel = sorted.data, sorted.dat, 2, 99999999, 99999999, 99999999, 99999999
+Channel = sorted.data, sorted.dat, 2, 0, 0, 99999999, 99999999
 
 =====================================================================
 == switches for zerovm. some of them used to control nexe, some

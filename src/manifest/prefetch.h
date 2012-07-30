@@ -1,6 +1,5 @@
 /*
  * preallocate network channel
- * todo(NETWORKING): update this file
  *
  *  Created on: Dec 5, 2011
  *      Author: d'b

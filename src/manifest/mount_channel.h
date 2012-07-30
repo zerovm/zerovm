@@ -15,9 +15,29 @@
 EXTERN_C_BEGIN
 
 #define MAX_CHANNELS_NUMBER BIG_ENOUGH_SPACE
-#define CHANNEL_ATTRIBUTES ChannelAttributesNumber /* name, id, access type, gets, getsize, puts, putsize */
-#define RESERVED_CHANNELS 3 /* stdin, stdout, stderr */
+
+/* name, id, access type, gets, getsize, puts, putsize */
+#define CHANNEL_ATTRIBUTES ChannelAttributesNumber
+
+/* stdin, stdout, stderr. in the future 2 more channels will be added */
+#define RESERVED_CHANNELS 3
 #define NET_BUFFER_SIZE 0x10000
+
+/* allowed network prefixes */
+#define IPC_PREFIX "ipc://"
+#define TCP_PREFIX "tcp://"
+#define INPROC_PREFIX "inproc://"
+#define PGM_PREFIX "pgm://"
+#define EPGM_PREFIX "epgm://"
+
+/* reserved zerovm channels names */
+#define STDIN "/dev/stdin" /* c90 stdin */
+#define STDOUT "/dev/stdout" /* c90 stdout */
+#define STDERR "/dev/stderr" /* c90 stderr */
+
+/* not used so far */
+#define INPUT "/dev/input" /* random access read-only channel */
+#define OUTPUT "/dev/input" /* random access write-only channel */
 
 /* attributes has fixed order, thats why enum has been used */
 enum ChannelAttributes {

@@ -1,6 +1,5 @@
 /*
  * channels constructor / destructor
- * todo(NETWORKING): update this code with net channels routines
  *
  *  Created on: Dec 5, 2011
  *      Author: d'b
@@ -20,66 +19,45 @@
 #include "src/manifest/prefetch.h"
 #include "src/manifest/mount_channel.h"
 
-/*
- * return source type infered from the channel name
- * todo(d'b): rewrite it. so far it assumes local files
- */
-#define NET_PREFIX "ipc://"
+/* return source type inferred from the channel name */
 static int GetSourceType(char *name)
 {
   /* check for design errors */
   assert(name != NULL);
   assert(*name != 0);
 
-  return strncmp(name, NET_PREFIX, strlen(NET_PREFIX)) == 0 ?
-      NetworkChannel : LocalFile ;
+#define IS_TRANSPORT(prefix) \
+  if(strncmp(name, prefix, sizeof(prefix) - 1) == 0) return NetworkChannel;
+  IS_TRANSPORT(IPC_PREFIX);
+  IS_TRANSPORT(TCP_PREFIX);
+  IS_TRANSPORT(INPROC_PREFIX);
+  IS_TRANSPORT(PGM_PREFIX);
+  IS_TRANSPORT(EPGM_PREFIX);
+#undef IS_TRANSPORT
+
+  return LocalFile;
 }
 
 /* return the channel by channel type */
-static struct ChannelDesc* SelectNextChannel(struct NaClApp *nap, char *type)
+static struct ChannelDesc* SelectNextChannel(struct NaClApp *nap, char *alias)
 {
   static int current_channel = RESERVED_CHANNELS;
-  struct ChannelDesc *channel;
-  int access_type; /* stdin, stdout, cdr,.. */
+  struct ChannelDesc *channels;
 
   assert(nap != NULL);
   assert(nap->system_manifest != NULL);
   assert(nap->system_manifest->channels != NULL);
-  assert(type != NULL);
+  assert(alias != NULL);
 
-#define STD_INIT(num) do {\
-    channel = &nap->system_manifest->channels[num];\
-    COND_ABORT(channel->name != NULL, "channel is already allocated");\
-    channel->type = SGetSPut; /* ### remove it? */\
-  } while(0)
+  channels = nap->system_manifest->channels;
 
-  access_type = ATOI(type);
-  switch(access_type)
-  {
-    case Stdin:
-      STD_INIT(STDIN_FILENO);
-      break;
-    case Stdout:
-      STD_INIT(STDOUT_FILENO);
-      break;
-    case Stderr:
-      STD_INIT(STDERR_FILENO);
-      break;
-    case SGetSPut:
-    case RGetSPut:
-    case SGetRPut:
-    case RGetRPut:
-      /* take current channel index */
-      channel = &nap->system_manifest->channels[current_channel++];
-      channel->type = access_type;
-      break;
-    default:
-      NaClLog(LOG_FATAL, "invalid channel access type\n");
-      break;
-  }
-#undef STD_INIT
+  /* check for the standard names */
+  if(STREQ(alias, STDIN)) return &channels[STDIN_FILENO];
+  if(STREQ(alias, STDOUT)) return &channels[STDOUT_FILENO];
+  if(STREQ(alias, STDERR)) return &channels[STDERR_FILENO];
 
-  return channel;
+  /* otherwise just return next channel */
+  return &channels[current_channel++];
 }
 
 /* construct and initialize the channel */
@@ -92,8 +70,16 @@ static void ChannelCtor(struct NaClApp *nap, char **tokens)
   assert(nap->system_manifest != NULL);
   assert(nap->system_manifest->channels != NULL);
 
-  /* pick the channel. "access type" attribute will be set inside */
-  channel = SelectNextChannel(nap, tokens[ChannelAccessType]);
+  /*
+   * pick the channel and check if the channel is available
+   * channels must not have duplicate aliases
+   */
+  channel = SelectNextChannel(nap, tokens[ChannelAlias]);
+  COND_ABORT(channel->alias != NULL, "channel is already allocated");
+
+  channel->type = ATOI(tokens[ChannelAccessType]);
+  COND_ABORT(channel->type < SGetSPut || channel->type > RGetRPut,
+      "invalid channel access type");
   channel->name = tokens[ChannelName];
   channel->alias = tokens[ChannelAlias];
   channel->source = GetSourceType((char*)channel->name);

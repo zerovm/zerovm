@@ -145,13 +145,9 @@ static int32_t zrt_lseek(uint32_t *args)
 
   /* select channel and make checks */
   channel = &setup->channels[handle];
-  if(channel->position != pos_ptr[handle]) return EIO;
 
   /* check if channel has random access */
   if(channel->type == SGetSPut) return ESPIPE;
-  if(channel->type == Stdin) return ESPIPE;
-  if(channel->type == Stdout) return ESPIPE;
-  if(channel->type == Stderr) return ESPIPE;
 
   /*
    * following check doesn't garantee absence of errors since

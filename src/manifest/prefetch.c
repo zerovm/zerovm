@@ -1,18 +1,10 @@
 /*
  * preallocate network channel
  * note: made over zeromq library
- * todo(NETWORKING): make EOF for network channels. EOF flag will be set
- *   when writer code close the channel using zvm api or on exit(channels destructors
- *   will be called). than when reader code will reach the end of the input data it
- *   will get EOF which means -1 read bytes. in case if zerovm of writer failed EOF
- *   cannot be send, but in that case whole claster ill be restarted anyway.
  *
- * todo(d'b): create file for ipc:// transport before bind. file name
- * should be "name" w/o "ipc://". e.g. for name "ipc:///tmp/snake" -- "/tmp/snake"
- *
- *  based on code created by YaroslavLitvinov
- *  updated on: Dec 5, 2011
- *      Author: d'b
+ * based on code created by YaroslavLitvinov
+ * updated on: Dec 5, 2011
+ *     Author: d'b
  */
 #include <assert.h>
 #include <stdio.h>

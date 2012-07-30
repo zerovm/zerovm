@@ -1,9 +1,9 @@
 =====================================================================
 == "environment" example. demo of the new user custom attributes design
 =====================================================================
-Channel = /dev/null, /dev/stdin, 4, 999999, 999999, 0, 0
-Channel = stdout.data, /dev/stdout, 5, 0, 0, 999999, 999999
-Channel = /dev/null, /dev/stderr, 6, 0, 0, 999999, 999999
+Channel = /dev/null, /dev/stdin, 0, 999999, 999999, 0, 0
+Channel = stdout.data, /dev/stdout, 0, 0, 0, 999999, 999999
+Channel = /dev/null, /dev/stderr, 0, 0, 0, 999999, 999999
 
 =====================================================================
 == Environment and command line

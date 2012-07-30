@@ -28,7 +28,6 @@ struct UserManifest *zvm_init()
   struct UserManifest *result = &setup;
 
   /* system */
-  result->syscallback = zvm_syscallback(1);
   result->heap_ptr = zvm_heap_ptr();
   result->mem_size = zvm_mem_size();
 
@@ -40,8 +39,11 @@ struct UserManifest *zvm_init()
   /* channels names */
   for(i = 0; i < result->channels_count; ++i)
   {
+    int length;
     struct ZVMChannel *channel = &result->channels[i];
-    int length = zvm_channel_name(channel);
+
+    channel->name = NULL;
+    length = zvm_channel_name(channel, i);
     channel->name = malloc(length);
 
     /*
@@ -49,12 +51,11 @@ struct UserManifest *zvm_init()
      * todo(d'b): raise here error flag
      */
     if(channel->name == NULL) break;
-    zvm_channel_name(channel);
+    zvm_channel_name(channel, i);
   }
 
   /* limits, counters */
   result->syscalls_limit = zvm_syscalls_limit();
-  result->syscalls_count = zvm_syscalls_count();
 
   return result;
 }
@@ -112,9 +113,9 @@ uint32_t zvm_mem_size()
  * if channel->name in given channel is NULL returns channel name
  * length, otherwise copy channel name to provided pointer
  */
-int32_t zvm_channel_name(struct ZVMChannel *channel)
+int32_t zvm_channel_name(struct ZVMChannel *channel, int ch)
 {
-  uint64_t request[] = {TrapChannelName, 0, (intptr_t)channel};
+  uint64_t request[] = {TrapChannelName, 0, (intptr_t)channel, ch};
   return _trap(request);
 }
 
@@ -126,15 +127,6 @@ int32_t zvm_channels(struct ZVMChannel *channels)
 {
   uint64_t request[] = {TrapChannels, 0, (intptr_t)channels};
   return _trap(request);
-}
-
-/* return syscalls count */
-int64_t zvm_syscalls_count()
-{
-  int64_t result;
-  uint64_t request[] = {TrapSyscallsCount, 0, (intptr_t)&result};
-  _trap(request); /* ignore the returnings, real value passed by reference */
-  return result;
 }
 
 /* return syscalls limit */

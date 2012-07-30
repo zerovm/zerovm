@@ -2,9 +2,9 @@
 == "strtol" example with zrt library usage. new channels design
 == following channels stdin, stdout, stderr (4, 5, 6) must be specified
 =====================================================================
-Channel = /dev/null, /dev/stdin, 4, 99999999, 99999999, 0, 0
-Channel = stdout.log, /dev/stdout, 5, 0, 0, 99999999, 99999999
-Channel = /dev/null, /dev/stderr, 6, 0, 0, 99999999, 99999999
+Channel = /dev/null, /dev/stdin, 0, 99999999, 99999999, 0, 0
+Channel = stdout.log, /dev/stdout, 0, 0, 0, 99999999, 99999999
+Channel = /dev/null, /dev/stderr, 0, 0, 0, 99999999, 99999999
 
 =====================================================================
 == switches for zerovm. some of them used to control nexe, some

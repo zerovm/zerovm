@@ -11,11 +11,12 @@ CCFLAGS=-DDEBUG -g ${NETWORKING} ${GCOV_FLAGS}
 CXXFLAGS=-DDEBUG -g ${NETWORKING} ${GCOV_FLAGS}
 
 # For networking support, uncomment variables below 
-NETWORKING=-DNETWORKING
-NETW_LIB=-lnetw -lzmq
-NETW_MAIN_RULES=zvm_netw.db
-NETW_RULES=obj/libsqlite3.a obj/libnetw.a
-NETW_TEST_RULES=test/zmq_netw_test test/zvm_netw_test test/sqluse_srv_test test_config
+#NETWORKING=-DNETWORKING
+#NETW_LIB=-lnetw -lzmq
+NETW_LIB=-lzmq
+#NETW_MAIN_RULES=zvm_netw.db
+#NETW_RULES=obj/libsqlite3.a obj/libnetw.a
+#NETW_TEST_RULES=test/zmq_netw_test test/zvm_netw_test test/sqluse_srv_test test_config
 
 CCFLAGS0=-c -m64 -fPIC -D_FORTIFY_SOURCE=2 -DNACL_WINDOWS=0 -DNACL_OSX=0 -DNACL_LINUX=1 -D_BSD_SOURCE=1 -D_POSIX_C_SOURCE=199506 -D_XOPEN_SOURCE=600 -D_GNU_SOURCE=1 -D_LARGEFILE64_SOURCE=1 -D__STDC_LIMIT_MACROS=1 -D__STDC_FORMAT_MACROS=1 -DNACL_BLOCK_SHIFT=5 -DNACL_BLOCK_SIZE=32 -DNACL_BUILD_ARCH=x86 -DNACL_BUILD_SUBARCH=64 -DNACL_TARGET_ARCH=x86 -DNACL_TARGET_SUBARCH=64 -DNACL_STANDALONE=1 -DNACL_ENABLE_TMPFS_REDIRECT_VAR=0 -I.
 CCFLAGS1=-std=gnu99 -Wdeclaration-after-statement -fPIE -Wall -pedantic -Wno-long-long -fvisibility=hidden -fstack-protector --param ssp-buffer-size=4
@@ -33,10 +34,6 @@ all: create_dirs zerovm zvm_api ${NETW_MAIN_RULES}
 create_dirs: 
 	@mkdir obj -p
 	@mkdir test -p
-ifdef NETWORKING	
-	chmod u+rwx create_zerovm_config.sh
-	./create_zerovm_config.sh
-endif
 
 zerovm: obj/sel_main.o obj/libsel.a obj/libnacl_error_code.a obj/libgio_wrapped_desc.a obj/libnrd_xfer.a obj/libnacl_perf_counter.a obj/libnacl_base.a obj/libimc.a obj/libnacl_fault_inject.a obj/libplatform.a obj/libplatform_qual_lib.a obj/libncvalidate_x86_64.a obj/libncval_reg_sfi_x86_64.a obj/libnccopy_x86_64.a obj/libnc_decoder_x86_64.a obj/libnc_opcode_modeling_x86_64.a obj/libncval_base_x86_64.a obj/libplatform.a obj/libgio.a ${NETW_RULES}
 	@g++ ${CXXFLAGS} -o zerovm ${CXXFLAGS2} obj/sel_main.o -L/usr/lib -lsel -lnacl_error_code -lgio_wrapped_desc -lnrd_xfer -lnacl_perf_counter -lnacl_base -limc -lnacl_fault_inject -lplatform -lplatform_qual_lib -lncvalidate_x86_64 -lncval_reg_sfi_x86_64 -lnccopy_x86_64 -lnc_decoder_x86_64 -lnc_opcode_modeling_x86_64 -lncval_base_x86_64 -lplatform -lgio ${NETW_LIB} -lrt -lpthread -lcrypto -ldl -Lobj -Lgtest  
@@ -56,18 +53,6 @@ gcov: clean all
 #	test/manifest_parser_test
 #	test/manifest_setup_test
 #	test/nacl_log_test
-
-ifdef NETWORKING
-#	test/sqluse_srv_test
-#	test/zmq_netw_test
-#	test/zvm_netw_test
-
-zvm_netw.db:
-	@/usr/local/bin/sqlite3 zvm_netw.db < zerovm_config.sql
-	
-test_config: 
-	@sh gtest/data/test_db_creator.sh
-endif
 
 zvm_api: api/syscall_manager.S api/zrt.c api/zvm.c
 	@make -Capi
@@ -131,30 +116,6 @@ obj/nc_remaining_memory_tests.o: src/validator/x86/nc_remaining_memory_tests.cc
 
 test/x86_validator_tests_nc_remaining_memory: obj/nc_remaining_memory_tests.o obj/libncvalidate_x86_64.a obj/libncval_reg_sfi_x86_64.a obj/libnccopy_x86_64.a obj/libnc_decoder_x86_64.a obj/libnc_opcode_modeling_x86_64.a obj/libncval_base_x86_64.a obj/libplatform.a obj/libgio.a
 	@g++ ${CXXFLAGS} -o test/x86_validator_tests_nc_remaining_memory ${CXXFLAGS2} obj/nc_remaining_memory_tests.o -L/usr/lib -lgtest -lncvalidate_x86_64 -lncval_reg_sfi_x86_64 -lnccopy_x86_64 -lnc_decoder_x86_64 -lnc_opcode_modeling_x86_64 -lncval_base_x86_64 -lplatform -lgio -lrt -lpthread -lcrypto -Lobj -Lgtest
-
-ifdef NETWORKING
-
-obj/zmq_netw_test.o: src/networking/testing/zmq_netw_test.cc
-	@g++ ${CXXFLAGS}  -o obj/zmq_netw_test.o ${CXXFLAGS3} -Igmock/gtest -Igmock src/networking/testing/zmq_netw_test.cc
-
-test/zmq_netw_test: obj/zmq_netw_test.o obj/fake_log_stub.o obj/unittest_zmq_netw.o obj/dyn_array.o 
-	@g++ ${CXXFLAGS} -o test/zmq_netw_test ${CXXFLAGS2} obj/fake_log_stub.o obj/unittest_zmq_netw.o obj/dyn_array.o \
-	obj/zmq_netw_test.o -Lgmock -lgmock -Lgtest -lgtest -pthread
-
-obj/zvm_netw_test.o: src/networking/testing/zvm_netw_test.cc
-	@g++ ${CXXFLAGS}  -o obj/zvm_netw_test.o ${CXXFLAGS3} -Igmock/gtest -Igmock src/networking/testing/zvm_netw_test.cc
-
-test/zvm_netw_test: obj/zvm_netw_test.o obj/zvm_netw.o obj/fake_log_stub.o obj/unittest_zvm_netw.o 
-	@g++ ${CXXFLAGS} -o test/zvm_netw_test ${CXXFLAGS2} obj/fake_log_stub.o obj/unittest_zvm_netw.o obj/zvm_netw_test.o \
-	-Lgmock -lgmock -Lgtest -lgtest -pthread
-	
-obj/sqluse_srv_test.o: src/networking/testing/sqluse_srv_test.cc
-	@g++ ${CXXFLAGS} -o obj/sqluse_srv_test.o ${CXXFLAGS1} -Igtest/include src/networking/testing/sqluse_srv_test.cc
-	
-test/sqluse_srv_test: obj/sqluse_srv_test.o obj/libnetw.a obj/libplatform.a obj/libgio.a
-	@g++ ${CXXFLAGS} -o test/sqluse_srv_test ${CXXFLAGS2}  obj/sqluse_srv_test.o -lpthread -Lobj -lnetw -lplatform -lgio -Lgtest -lgtest -I. -Igtest -Iserver
-
-endif
 
 clean_gcov:
 	@find -name "*.gcda" | xargs rm -f
@@ -227,14 +188,6 @@ obj/libncval_base_x86_64.a: obj/error_reporter.o obj/halt_trim.o obj/nacl_cpuid.
 
 obj/libgio.a: obj/gio.o obj/gio_mem.o obj/gprintf.o obj/gio_mem_snapshot.o
 	@ar rc obj/libgio.a obj/gio.o obj/gio_mem.o obj/gprintf.o obj/gio_mem_snapshot.o
-
-ifdef NETWORKING
-obj/libsqlite3.a: obj/sqlite3.o
-	@ar rc obj/libsqlite3.a obj/sqlite3.o
-
-obj/libnetw.a: obj/zmq_netw.o obj/sqluse_srv.o obj/zvm_netw.o
-	@ar rc obj/libnetw.a obj/zmq_netw.o obj/zvm_netw.o obj/sqluse_srv.o obj/sqlite3.o
-endif
 
 ######################################################################## compilation to obj
 obj/mount_channel.o: src/manifest/mount_channel.c
@@ -576,33 +529,6 @@ obj/gprintf.o: src/gio/gprintf.c
 obj/gio_mem_snapshot.o: src/gio/gio_mem_snapshot.c
 	@gcc ${CCFLAGS} -o obj/gio_mem_snapshot.o ${CCFLAGS0} ${CCFLAGS1} src/gio/gio_mem_snapshot.c
 
-ifdef NETWORKING
-obj/sqluse_srv.o: src/networking/sqluse_srv.c
-	@gcc ${CCFLAGS} -c -o obj/sqluse_srv.o ${CCFLAGS0} ${CCFLAGS1} src/networking/sqluse_srv.c
-
-obj/zmq_netw.o: src/networking/zmq_netw.c src/networking/zmq_netw.h
-	@gcc ${CCFLAGS} -c -o obj/zmq_netw.o ${CCFLAGS0} ${CCFLAGS1} src/networking/zmq_netw.c 
-
-# for unittest UNIT_TEST define added
-obj/unittest_zmq_netw.o: src/networking/zmq_netw.c src/networking/zmq_netw.h
-	@gcc ${CCFLAGS} -c -o obj/unittest_zmq_netw.o ${CCFLAGS0} ${CCFLAGS1} ${CCFLAGS6} -I.  src/networking/zmq_netw.c
-
-# for unittest UNIT_TEST define added
-obj/unittest_zvm_netw.o: src/networking/zvm_netw.c src/networking/zvm_netw.h
-	@gcc ${CCFLAGS} -c -o obj/unittest_zvm_netw.o ${CCFLAGS0} ${CCFLAGS1} ${CCFLAGS6} -I.  src/networking/zvm_netw.c
-
-# for unittest stub implementation 
-obj/fake_log_stub.o : src/networking/testing/fake_log_stub.c
-	@gcc ${CCFLAGS} -c -o obj/fake_log_stub.o ${CCFLAGS0} ${CCFLAGS1} src/networking/testing/fake_log_stub.c -I.
-
-obj/zvm_netw.o: src/networking/zvm_netw.c src/networking/zvm_netw.h
-	@gcc ${CCFLAGS} -c -o obj/zvm_netw.o ${CCFLAGS0} ${CCFLAGS1} src/networking/zvm_netw.c
-
-obj/sqlite3.o:
-	@gcc -c -o obj/sqlite3.o sqlite/sqlite3.c -I./sqlite ${CCFLAGS0} ${CCFLAGS1} -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION
-
-endif	
-	
 obj/nacl_imc_common.o: src/imc/nacl_imc_common.cc
 	@g++ ${CXXFLAGS} -o obj/nacl_imc_common.o ${CXXFLAGS1} ${CCFLAGS2} ${CCFLAGS4} src/imc/nacl_imc_common.cc
 
