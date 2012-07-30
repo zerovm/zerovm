@@ -1,17 +1,19 @@
 =====================================================================
-== "signal" example. only purpose to test zerovm signal handling
+== "network channel" example. the new channels design
 == following channels: stdin, stdout, stderr used
 =====================================================================
-Channel = /dev/null, /dev/stdin, 0, 999999, 999999, 0, 0
-Channel = stdout.data, /dev/stdout, 0, 0, 0, 999999, 999999
-Channel = /dev/null, /dev/stderr, 0, 0, 0, 999999, 999999
+Channel = /dev/null, /dev/stdin, 0, 999999999, 999999999, 0, 0
+Channel = stdout.log, /dev/stdout, 0, 0, 0, 999999999, 999999999
+Channel = stderr.log, /dev/stderr, 0, 0, 0, 999999999, 999999999
+Channel = ipc:///tmp/snake, in, 0, 999999999, 999999999, 0, 0
+Channel = ipc:///tmp/snake, out, 0, 0, 0, 999999999, 999999999
 
 =====================================================================
 == switches for zerovm. some of them used to control nexe, some
 == for the internal zerovm needs
 =====================================================================
 Version = 13072012
-Nexe = signal.nexe
+Nexe = net.nexe
 NexeMax = 10000000
 SyscallsMax = 3333
-CommandLine = 8
+MaxMem = 99999999
