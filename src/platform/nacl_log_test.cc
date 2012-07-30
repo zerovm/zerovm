@@ -111,9 +111,9 @@ TEST_F(LoggingTests, LogTestFormatString)
 }
 
 // TEST_F(LoggingTests, LogTestFatal) {
-// 	// LOG_FATAL should log data and abort application running
-// 	TestWriteLog(LOG_FATAL, 0, "LOG_FATAL");
-// 	ASSERT_TRUE(0);
+//   // LOG_FATAL should log data and abort application running
+//   TestWriteLog(LOG_FATAL, 0, "LOG_FATAL");
+//   ASSERT_TRUE(0);
 // }
 
 int main(int argc, char **argv)

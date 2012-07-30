@@ -35,32 +35,6 @@ static int GetSourceType(char *name)
       NetworkChannel : LocalFile ;
 }
 
-/*
- * mount given channel (must be constructed)
- * todo(NETWORKING): update with network channel initialization
- */
-static void MountChannel(struct NaClApp *nap, struct ChannelDesc *channel)
-{
-  assert(nap != NULL);
-  assert(channel != NULL);
-
-  switch(GetSourceType((char*)channel->name))
-  {
-    int code;
-    case LocalFile:
-      code = PreloadChannelCtor(channel);
-      COND_ABORT(code, "cannot allocate local file channel");
-      break;
-    case NetworkChannel:
-      code = PrefetchChannelCtor(channel);
-      COND_ABORT(code, "cannot allocate network channel");
-      break;
-    default:
-      NaClLog(LOG_FATAL, "invalid channel source type\n");
-      break;
-  }
-}
-
 /* return the channel by channel type */
 static struct ChannelDesc* SelectNextChannel(struct NaClApp *nap, char *type)
 {
@@ -122,6 +96,7 @@ static void ChannelCtor(struct NaClApp *nap, char **tokens)
   channel = SelectNextChannel(nap, tokens[ChannelAccessType]);
   channel->name = tokens[ChannelName];
   channel->alias = tokens[ChannelAlias];
+  channel->source = GetSourceType((char*)channel->name);
 
   /* limits and counters */
   channel->limits[GetsLimit] = ATOI(tokens[ChannelGets]);
@@ -133,8 +108,22 @@ static void ChannelCtor(struct NaClApp *nap, char **tokens)
   channel->counters[PutsLimit] = 0;
   channel->counters[PutSizeLimit] = 0;
 
-  /* initialize the channel */
-  MountChannel(nap, channel);
+  /* mount given channel */
+  switch(channel->source)
+  {
+    int code;
+    case LocalFile:
+      code = PreloadChannelCtor(channel);
+      COND_ABORT(code, "cannot allocate local file channel");
+      break;
+    case NetworkChannel:
+      code = PrefetchChannelCtor(channel);
+      COND_ABORT(code, "cannot allocate network channel");
+      break;
+    default:
+      NaClLog(LOG_FATAL, "invalid channel source type\n");
+      break;
+  }
 }
 
 /* close channel and deallocate its resources */
@@ -142,7 +131,7 @@ static void ChannelDtor(struct ChannelDesc *channel)
 {
   assert(channel != NULL);
 
-  switch(GetSourceType((char*)channel->name))
+  switch(channel->source)
   {
     case LocalFile:
       PreloadChannelDtor(channel);

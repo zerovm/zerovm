@@ -25,9 +25,9 @@ quicksort_BigArrayItem_comparator( const void *m1, const void *m2 );
 BigArrayPtr alloc_sort( BigArrayPtr array, int array_len );
 
 BigArrayPtr alloc_merge( BigArrayPtr left_array, int left_array_len,
-		BigArrayPtr right_array, int right_array_len );
+    BigArrayPtr right_array, int right_array_len );
 BigArrayPtr merge( BigArrayPtr dest_array, BigArrayPtr left_array, int left_array_len,
-		BigArrayPtr right_array, int right_array_len );
+    BigArrayPtr right_array, int right_array_len );
 
 int test_sort_result( BigArrayPtr unsorted, BigArrayPtr sorted, int len );
 uint32_t array_crc( BigArrayPtr array, int len );

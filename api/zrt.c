@@ -121,6 +121,7 @@ static int32_t zrt_write(uint32_t *args)
 
 /*
  * seek for the new zerovm channels design
+ * todo(d'b): fix offset value. must allow more than 2gb
  */
 static int32_t zrt_lseek(uint32_t *args)
 {
@@ -202,18 +203,24 @@ SYSCALL_MOCK(ioctl, -EINVAL) /* not implemented in the simple version of zrtlib 
 static int32_t zrt_stat(uint32_t *args)
 {
   SHOWID;
-//  char *prefixes[] = {STDIN, STDOUT, STDERR};
   const char *file = (const char*)args[0];
   struct nacl_abi_stat *sbuf = (struct nacl_abi_stat *)args[1];
-//  struct ZVMChannel *channel;
+  struct ZVMChannel *channel;
   int handle;
+  int blksize;
 
-  /* calculate handle number */
+  /* calculate handle number and select the channel */
   if(file == NULL) return -EFAULT;
-  for(handle = STDIN_FILENO; handle < setup->channels_count; ++handle)
+  for(handle = 0; handle < setup->channels_count; ++handle)
     if(!strcmp(file, setup->channels[handle].name)) break;
+  channel = &setup->channels[handle];
 
-  /* todo(d'b): make difference for random/sequential channels */
+  /* for r/o sequential channels blksize should be 1. non-buffered input */
+  blksize = channel->type == SGetSPut && (channel->limits[PutsLimit] == 0
+          || channel->limits[PutSizeLimit] == 0) ? 1 : 0x1000;
+
+  // ###
+  blksize = 1;
 
   /* return stat object */
   sbuf->nacl_abi_st_dev = 2049;     /* ID of device containing handle */
@@ -224,7 +231,7 @@ static int32_t zrt_stat(uint32_t *args)
   sbuf->nacl_abi_st_gid = 1000;     /* group ID of owner */
   sbuf->nacl_abi_st_rdev = 0;       /* device ID (if special handle) */
   sbuf->nacl_abi_st_size = setup->channels[handle].size; /* size in bytes */
-  sbuf->nacl_abi_st_blksize = 4096; /* block size for file system I/O */
+  sbuf->nacl_abi_st_blksize = blksize; /* block size for file system I/O */
   sbuf->nacl_abi_st_blocks = /* number of 512B blocks allocated */
       ((sbuf->nacl_abi_st_size + sbuf->nacl_abi_st_blksize - 1)
       / sbuf->nacl_abi_st_blksize) * sbuf->nacl_abi_st_blksize / 512;
@@ -247,10 +254,18 @@ static int32_t zrt_fstat(uint32_t *args)
   int handle = (int)args[0];
   struct nacl_abi_stat *sbuf = (struct nacl_abi_stat *)args[1];
   struct ZVMChannel *channel;
+  int blksize;
 
   /* check if user request contain the proper file handle */
-  if(handle < STDIN_FILENO || handle >= setup->channels_count) return -EBADF;
+  if(handle < 0 || handle >= setup->channels_count) return -EBADF;
   channel = &setup->channels[handle];
+
+  /* for r/o sequential channels blksize should be 1. non-buffered input */
+  blksize = channel->type == SGetSPut && (channel->limits[PutsLimit] == 0
+          || channel->limits[PutSizeLimit] == 0) ? 1 : 0x1000;
+
+  // ###
+  blksize = 1;
 
   /* return stat object */
   sbuf->nacl_abi_st_dev = 2049; /* ID of device containing handle */
@@ -261,7 +276,7 @@ static int32_t zrt_fstat(uint32_t *args)
   sbuf->nacl_abi_st_gid = 1000; /* group ID of owner */
   sbuf->nacl_abi_st_rdev = 0; /* device ID (if special handle) */
   sbuf->nacl_abi_st_size = channel->size; /* total size, in bytes */
-  sbuf->nacl_abi_st_blksize = 4096; /* blocksize for file system I/O */
+  sbuf->nacl_abi_st_blksize = blksize; /* block size for file system I/O */
   sbuf->nacl_abi_st_blocks = /* number of 512B blocks allocated */
       ((sbuf->nacl_abi_st_size + sbuf->nacl_abi_st_blksize - 1)
       / sbuf->nacl_abi_st_blksize) * sbuf->nacl_abi_st_blksize / 512;

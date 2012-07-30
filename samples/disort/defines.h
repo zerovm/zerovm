@@ -16,13 +16,13 @@
 #define LOG_LEVEL LOG_DEBUG
 
 #define WRITE_FMT_LOG(level, fmt, args...) \
-		if (level<=LOG_LEVEL ){\
-			fprintf(stderr, fmt, args); \
-		}
+    if (level<=LOG_LEVEL ){\
+      fprintf(stderr, fmt, args); \
+    }
 #define WRITE_LOG(level, str) \
-		if (level<=LOG_LEVEL ){\
-			fprintf(stderr, "%s\n", str); \
-		}
+    if (level<=LOG_LEVEL ){\
+      fprintf(stderr, "%s\n", str); \
+    }
 /*log section end*/
 
 

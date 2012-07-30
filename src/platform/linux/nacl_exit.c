@@ -48,30 +48,28 @@ static void FinalDump(struct NaClApp *nap)
   NaClAllModulesFini();
 }
 
-void NaClAbort(void)
+/*
+ * d'b: show dump (if needed). release resources, close channels.
+ * note: use global nap because can be invoked from signal handler
+ */
+static void Finalizer(void)
 {
-  /*
-   * d'b: finalize. show dump (if needed). release resources, close channels.
-   * note: use global nap because can be invoked from signal handler
-   */
-  if(gnap->zvm_state != NULL)
+  /* todo(d'b): get rid of hardcoded "ok" */
+  if(!STREQ(gnap->zvm_state, "ok"))
     FinalDump(gnap);
+
   SystemManifestDtor(gnap);
   ProxyReport(gnap);
+}
 
-  abort();
+void NaClAbort(void)
+{
+  Finalizer();
+  _exit(gnap->zvm_code);
 }
 
 void NaClExit(int err_code)
 {
-  /*
-   * d'b: finalize. show dump (if needed). release resources, close channels.
-   * note: use global nap because can be invoked from signal handler
-   */
-  if(gnap->zvm_state != NULL)
-    FinalDump(gnap);
-  SystemManifestDtor(gnap);
-  ProxyReport(gnap);
-
-  _exit(err_code);
+  Finalizer();
+  _exit(err_code); /* supposed to be sync to gnap->zvm_code */
 }

@@ -23,7 +23,10 @@ enum AccessType {
   SGetRPut, /* sequential read, random write */
   RGetRPut, /* random read, random write */
 
-  /* following fields zerovm needs to answer c standard */
+  /*
+   * following fields zerovm needs to answer c standard
+   * must not be used elsewhere than channel construction
+   */
   Stdin, /* standard c input channel */
   Stdout, /* standard c output channel */
   Stderr /* standard c error channel */

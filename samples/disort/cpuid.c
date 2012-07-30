@@ -26,23 +26,23 @@ static void asm_CPUID(uint32_t op, volatile uint32_t reg[4]) {
 }
 
 static int test_intel_CPU(uint32_t test){
-	uint32_t reg[4] = {0, 0, 0, 0 };
-	asm_CPUID(1, reg);
-	return 0 != (reg[2] & test);
+  uint32_t reg[4] = {0, 0, 0, 0 };
+  asm_CPUID(1, reg);
+  return 0 != (reg[2] & test);
 }
 
 static int test_amd_CPU(uint32_t test){
-	uint32_t reg[4] = {0, 0, 0, 0 };
-	asm_CPUID(0x80000001, reg);
-	return 0 != (reg[2] & test);
+  uint32_t reg[4] = {0, 0, 0, 0 };
+  asm_CPUID(0x80000001, reg);
+  return 0 != (reg[2] & test);
 }
 
 
 
 int test_sse41_CPU(){
-	return test_intel_CPU(CPUID_ECX_SSE41);
+  return test_intel_CPU(CPUID_ECX_SSE41);
 }
 
 int test_sse4A_CPU(){
-	return test_amd_CPU(CPUID_ECX_SSE4A);
+  return test_amd_CPU(CPUID_ECX_SSE4A);
 }

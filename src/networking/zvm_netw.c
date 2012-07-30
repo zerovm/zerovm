@@ -216,15 +216,18 @@ ssize_t commf_read(int fd, char *buf, size_t count)
     {
       struct zvm_netw_header_t header = DEFAULT_ZVM_NETW_HEAD;
       NaClLog(LOG_INFO, "%s() attempt read from fd=%d, count=%d\n", __func__, fd, (int) count);
+
       /*use socket by REQ-REP pattern. Should be used in next way:
        * write request HEADER
        * read  response data*/
       header.req_len = count;
+
       //request data size we want read
       NaClLog(LOG_INFO, "%s() write fd=%d header size=%d\n", __func__, fd,
               (int) sizeof(header));
-      assert(
-          sizeof(header) == __netw_if->write_sockf(sockf, (const char*)&header, sizeof(header) ));
+      assert(sizeof(header) == __netw_if->write_sockf
+          (sockf, (const char*)&header, sizeof(header) ));
+
       //read requested data
       read_bytes = __netw_if->read_sockf(sockf, buf, count);
       NaClLog(LOG_INFO, "%s() read ok from fd=%d, requested%d, readed=%d\n", __func__, fd,
@@ -262,12 +265,15 @@ ssize_t commf_write(int fd, const char *buf, size_t count)
        * write requested data*/
       struct zvm_netw_header_t header = DEFAULT_ZVM_NETW_HEAD;
       NaClLog(LOG_INFO, "%s() attempt write to fd=%d, count=%d\n", __func__, fd, (int) count);
+
       //read request for data
       assert( sizeof(header) == __netw_if->read_sockf(sockf, (char*)&header, sizeof(header)));
       assert(header.protoid == PROTOID);
+
       //write only requested data from header.len, or all data if user specifies less
       sdata = min(header.req_len, count);
       assert( sdata == __netw_if->write_sockf(sockf, buf, sdata ));
+
       wrote_bytes = sdata;
       NaClLog(LOG_INFO, "%s() read ok from fd=%d, requested%d, readed=%d\n", __func__, fd,
               (int) count, (int) wrote_bytes);

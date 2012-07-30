@@ -55,6 +55,7 @@ static void PreallocateUserMemory(struct NaClApp *nap)
   /* user memory chunk must be allocated next to the data end */
   stump = nap->system_manifest->max_mem - nap->stack_size - nap->data_end;
   i = nap->data_end;
+  /* todo(d'b): make it macro or inline function */
   i = (i + NACL_MAP_PAGESIZE - 1) & ~(NACL_MAP_PAGESIZE - 1);
   nap->system_manifest->heap_ptr =
       NaClCommonSysMmapIntern(nap, (void*)i, stump, 3, 0x22, -1, 0);
@@ -98,7 +99,7 @@ static void SetCustomAttributes(struct SystemManifest *policy)
 
   /* parse and check count of attributes */
   count = ParseValue(environment, ", \t", tokens, BIG_ENOUGH_SPACE);
-  COND_ABORT((count & 1) != 0, "odd number of user environment variables");
+  COND_ABORT(count % 2 != 0, "odd number of user environment variables");
   COND_ABORT(count == 0, "invalid user environment");
   COND_ABORT(count == BIG_ENOUGH_SPACE, "user environment exceeded the limit");
 

@@ -2,6 +2,7 @@
  * all macros, definitions and small functions which
  * not fit to other header and often used are here
  *
+ * todo(d'b): split into macro functions and zvm setup values
  *  Created on: Jun 17, 2012
  *      Author: d'b
  */
@@ -19,10 +20,14 @@
 #include "src/platform/nacl_log.h"
 #include "src/service_runtime/include/sys/errno.h"
 
+#define MANIFEST_MAX 0x100000 /* limit for the manifest size */
 #define KEYWORD_SIZE_MAX 256
 #define BIG_ENOUGH_SPACE 65536 /* ..size of the biggest temporary variable */
 #define INT32_STRLEN (11) /* enough space to place maximum int32 value + '\0' */
 #define SIGNAL_STRLEN (128) /* enough space to place signal message + '\0' */
+
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
 
 /*
  * check condition 'cond' if false aborts zerovm with message 'msg'
@@ -34,7 +39,6 @@
       NaClLog(LOG_ERROR, "%s:%d: %s\n", __FILE__, __LINE__, msg);\
       NaClExit(1);\
     }
-
 
 /* malloc and check. if allocation failed abort with message 'msg' */
 static inline void *my_malloc(size_t size, const char *msg)

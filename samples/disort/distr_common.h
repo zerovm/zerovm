@@ -26,48 +26,48 @@ typedef struct histogram_item_t HistogramArrayItem;
 
 /*Identifiers of packets sending beetwen nodes*/
 enum packet_t { EPACKET_UNKNOWN=-1, EPACKET_HISTOGRAM, EPACKET_SEQUENCE_REQUEST,
-	EPACKET_RANGE, EPACKET_RANGE_PART };
+  EPACKET_RANGE, EPACKET_RANGE_PART };
 
 struct histogram_item_t
 {
-	int item_index;
-	int last_item_index;
-	BigArrayItem item;
+  int item_index;
+  int last_item_index;
+  BigArrayItem item;
 };
 
 
 struct Histogram{
-	int src_nodeid;
-	size_t array_len;
-	HistogramArrayPtr array;
+  int src_nodeid;
+  size_t array_len;
+  HistogramArrayPtr array;
 };
 
 
 struct request_data_t{
-	int first_item_index;
-	int last_item_index;
-	int src_nodeid;
-	int dst_nodeid;
+  int first_item_index;
+  int last_item_index;
+  int src_nodeid;
+  int dst_nodeid;
 };
 
 
 struct node_pid_t{
-	pid_t src_nodeid;
-	pid_t dst_nodeid;
+  pid_t src_nodeid;
+  pid_t dst_nodeid;
 };
 
 struct sort_result{
-	int nodeid;
-	BigArrayItem min;
-	BigArrayItem max;
-	uint32_t crc;
+  int nodeid;
+  BigArrayItem min;
+  BigArrayItem max;
+  uint32_t crc;
 };
 
 /**It used by sorting protocol*/
 struct packet_data_t{
-	int type; //packet_t enum
-	size_t size; //size of next packet
-	int src_nodeid;
+  int type; //packet_t enum
+  size_t size; //size of next packet
+  int src_nodeid;
 };
 
 #endif /* DISTR_SORT_H_ */

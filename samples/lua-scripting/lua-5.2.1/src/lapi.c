@@ -35,10 +35,10 @@ const char lua_ident[] =
 
 
 /* value at a non-valid index */
-#define NONVALIDVALUE		cast(TValue *, luaO_nilobject)
+#define NONVALIDVALUE    cast(TValue *, luaO_nilobject)
 
 /* corresponding test */
-#define isvalid(o)	((o) != luaO_nilobject)
+#define isvalid(o)  ((o) != luaO_nilobject)
 
 #define api_checkvalidindex(L, i)  api_check(L, isvalid(i), "invalid index")
 
@@ -871,7 +871,7 @@ LUA_API void lua_setuservalue (lua_State *L, int idx) {
 
 #define checkresults(L,na,nr) \
      api_check(L, (nr) == LUA_MULTRET || (L->ci->top - L->top >= (nr) - (na)), \
-	"results from function overflow current stack size")
+  "results from function overflow current stack size")
 
 
 LUA_API int lua_getctx (lua_State *L, int *ctx) {

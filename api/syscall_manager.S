@@ -37,7 +37,7 @@ syscall_director:
         jb sane_syscall
         xor %eax, %eax
 
-				/* calculate the syscall address (low part): eax */
+        /* calculate the syscall address (low part): eax */
 sane_syscall:
         shl $2, %eax
         add $zrt_syscalls, %eax
@@ -46,7 +46,7 @@ sane_syscall:
         /* allocate 0x18 bytes in the stack and save syscall arguments */
         naclasp $-0x18, %r15
 
-				/* store syscall arguments */
+        /* store syscall arguments */
         mov %edi, 0x00(%rsp)
         mov %esi, 0x04(%rsp)
         mov %edx, 0x08(%rsp)
@@ -54,15 +54,15 @@ sane_syscall:
         mov %r8d, 0x10(%rsp)
         mov %r9d, 0x14(%rsp)
 
-				/* prepare syscall argument (*args) */
-				mov %esp, %edi
+        /* prepare syscall argument (*args) */
+        mov %esp, %edi
 
         /* invoke syscall (rax == syscall return value if applicable) */
-    		naclcall %eax, %r15
+        naclcall %eax, %r15
 
         /* restore stack to jump back to user code and prepare "jump back" address in r11 */
-    		naclasp $0x18, %r15
+        naclasp $0x18, %r15
         pop %r11
 
-				/* jump back to user code. nacl "jump" pattern should be used */
-				nacljmp %r11d, %r15
+        /* jump back to user code. nacl "jump" pattern should be used */
+        nacljmp %r11d, %r15

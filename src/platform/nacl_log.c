@@ -484,4 +484,61 @@ void NaClLog(int detail_level, char const *fmt, ...)
   NaClLogV(detail_level, fmt, ap);
   va_end(ap);
 }
+
+///* d'b: conditional log */
+//void LogIf(int cond, int detail_level, char const *fmt, ...)
+//{
+//  va_list ap;
+//
+//  if(cond)
+//  {
+//    current_detail_level = detail_level;
+//
+//    va_start(ap, fmt);
+//    NaClLogV(detail_level, fmt, ap);
+//    va_end(ap);
+//  }
+//}
+
+/* d'b: log with "LOG_ERROR" if condition is true  */
+void LogIf(int cond, char const *fmt, ...)
+{
+  va_list ap;
+
+  if(cond)
+  {
+    current_detail_level = LOG_ERROR;
+
+    va_start(ap, fmt);
+    NaClLogV(current_detail_level, fmt, ap);
+    va_end(ap);
+  }
+}
+
+/* d'b: log with "LOG_FATAL" (aborts zerovm) if condition is true  */
+void FailIf(int cond, char const *fmt, ...)
+{
+  va_list ap;
+
+  if(cond)
+  {
+    current_detail_level = LOG_FATAL;
+
+    va_start(ap, fmt);
+    NaClLogV(current_detail_level, fmt, ap);
+    va_end(ap);
+  }
+}
+
+/* todo(d'b): make RetIf() if possible. return current function if condition is true */
+
 /* }} */
+
+
+
+
+
+
+
+
+

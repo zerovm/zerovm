@@ -29,7 +29,7 @@ EXTERN_C_BEGIN
 //forward declaration
 struct DynArray;
 
-#define min(a,b) (a < b ? a : b )
+#define min(a, b) ((a) < (b) ? (a) : (b)) /* d'b: left to avoid compilation errors */
 
 enum SockCapability
 {
@@ -74,11 +74,12 @@ enum
 
 struct sock_file_t
 {
-  void *netw_socket;
-  int sock_type;
-  char access_mode; //'w', 'r'
-  int capabilities;
-  int fs_fd;
+  void *netw_socket; /* d'b: redesign channel->handle to union: int32/void* */
+  int sock_type; /* d'b: useless. the only significant value: ESOCKET_REQREP */
+  char access_mode; //'w', 'r' /* d'b: can be inferred from channel->limits */
+  int capabilities; /* d'b: subset of channel->type */
+  int fs_fd; /* d'b: for now is an index in channels array. originally used
+                     for identifying purposes. channel->alias should be used */
 };
 
 enum

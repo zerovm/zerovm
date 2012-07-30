@@ -78,7 +78,8 @@ int GetValuesByKey(char *key, char *values[], int capacity)
 
 /*
  * parse given string with the given delimiter
- * returns number of the non NULL tokens, populates given array with them
+ * returns number of the non NULL tokens, populates given array with ALL tokens
+ * note: function is not re-enterable
  */
 int ParseValue(char *value, char *delimiter, char *tokens[], int capacity)
 {
@@ -126,42 +127,44 @@ static char* cut_spaces(char *a)
 }
 
 /* return string until '=' */
+/* todo(d'b): can be replaced with ParseValue() */
 static char* get_key(char *a)
 {
   char *end;
   if(a == NULL) return a;
 
   end = strrchr(a, (int)'=');
-  if(end == NULL) return NULL;	/* string does not contain '='. invalid key. */
-  if(a == end) return NULL;			/* empty key is not allowed. invalid key. */
-  *end	= '\0';									/* cut the string in position of the last '=' */
+  if(end == NULL) return NULL;  /* string does not contain '='. invalid key. */
+  if(a == end) return NULL;     /* empty key is not allowed. invalid key. */
+  *end  = '\0';                 /* cut the string in position of the last '=' */
 
-	return cut_spaces(a);
+  return cut_spaces(a);
 }
 
 /* return string after '=' */
+/* todo(d'b): can be replaced with ParseValue() */
 static char* get_value(char *a)
 {
   char *begin;
   if(a == NULL) return a;
 
   begin = strchr(a, '=');
-	if(begin == NULL) return NULL;				/* string does not contain '='. invalid line. */
-	if(strchr(++begin, '=')) return NULL;	/* string contain more the one '='. invalid line. */
-	if(*begin == '\0') return NULL;				/* empty value is not allowed. invalid line. */
+  if(begin == NULL) return NULL;        /* string does not contain '='. invalid line. */
+  if(strchr(++begin, '=')) return NULL; /* string contain more the one '='. invalid line. */
+  if(*begin == '\0') return NULL;       /* empty value is not allowed. invalid line. */
 
-	return cut_spaces(begin);
+  return cut_spaces(begin);
 }
 
 /* parse manifest from memory. return 0 if success */
 static int ParseManifest()
 {
-	char *str = mft_data;
-	char *p;
+  char *str = mft_data;
+  char *p;
 
-	assert(mft_count == 0);
-	assert(mft_data != 0);
-	assert(mft_ptr != 0);
+  assert(mft_count == 0);
+  assert(mft_data != 0);
+  assert(mft_ptr != 0);
 
   /* warning: the order of extracting pair key/value does matter */
   p = strtok(str, EOL);
@@ -169,8 +172,8 @@ static int ParseManifest()
   {
     mft_ptr[mft_count].value = get_value(p);
     mft_ptr[mft_count].key = get_key(p);
-  	if (mft_ptr[mft_count].key && mft_ptr[mft_count].value) ++mft_count;
-		p = strtok(NULL, EOL);
+    if (mft_ptr[mft_count].key && mft_ptr[mft_count].value) ++mft_count;
+    p = strtok(NULL, EOL);
   }
 
   /* return error if no recods were found */
@@ -190,26 +193,27 @@ int ManifestCtor(const char *name)
   /* check if manifest keywords are syncronized */
   char *keywords[] = MANIFEST_KEYWORDS;
   assert(strcmp(keywords[TheEnd], "TheEnd") == 0);
-//  assert(sizeof(keywords) / sizeof(*keywords) == TheEnd + 1);
 
-  /* get file size */
-  COND_ABORT(mft == NULL, "cannot open manifest file");
+  /* get file size and check it for sanity */
+  FailIf(mft == NULL, "cannot open manifest file");
   mft_size = GetFileSize(name);
+  FailIf(mft_size > MANIFEST_MAX, "manifest file exceeded the limit %d", mft_size);
 
   /* allocate memory to hold manifest data */
   mft_data = malloc(mft_size + 1);
-  mft_ptr =  malloc(mft_size * 4);
+  mft_ptr =  calloc(mft_size, sizeof *mft_ptr);
   mft_count = 0;
-  COND_ABORT(mft_data == NULL || mft_ptr == NULL,
-      "cannot allocate memory to hold manifest");
+  FailIf(mft_data == NULL, "cannot allocate memory to hold manifest data");
+  FailIf(mft_ptr == NULL, "cannot allocate memory to hold manifest tokens");
+  mft_data[mft_size] = '\0';
 
   /* read data from manifest into the memory */
   retcode = fread(mft_data, 1, mft_size, mft);
-  COND_ABORT(retcode != mft_size, "cannot read manifest");
+  FailIf(retcode != mft_size, "cannot read manifest");
 
   /* parse manifest */
   retcode = ParseManifest();
-  COND_ABORT(retcode, "cannot parse manifest");
+  FailIf(retcode, "cannot parse manifest");
 
   /* close file and return */
   fclose(mft);

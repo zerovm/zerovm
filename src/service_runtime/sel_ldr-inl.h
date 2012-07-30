@@ -80,11 +80,11 @@ static INLINE uintptr_t NaClUserToSysAddrRange(struct NaClApp  *nap,
   uintptr_t end_addr;
 
   if (0 == uaddr) {
-  	return kNaClBadAddress;
+    return kNaClBadAddress;
   }
   end_addr = uaddr + count;
   if (end_addr < uaddr) {
-  	/* unsigned wraparound */
+    /* unsigned wraparound */
     return kNaClBadAddress;
   }
   if (((uintptr_t) 1U << nap->addr_bits) <= end_addr) {

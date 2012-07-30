@@ -10,6 +10,6 @@
 void NaClLog(int         detail_level,
              char const  *fmt,
              ...){
-	(void)detail_level;
-	(void)fmt;
+  (void)detail_level;
+  (void)fmt;
 }

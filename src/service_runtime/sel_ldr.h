@@ -231,7 +231,7 @@ struct NaClApp {
   int                       enable_debug_stub;
   struct NaClDebugCallbacks *debug_stub_callbacks;
 
-	/* d'b: added fields {{ */
+  /* d'b: added fields {{ */
   struct SystemManifest     *system_manifest;
   int32_t                   zvm_code; /* zerovm return code */
   /* nexe exit state. NULL == ok, otherwise terminated by signal/timeout */

@@ -5,9 +5,7 @@
  */
 
 /*
- * ZeroVM main. still under construction. there is a lot of things to remove
- * and to refactor. also the code needs to be polished
- * todo: imc related stuff marked for removal
+ * ZeroVM main. updated by d'b
  */
 #include <string.h>
 #include <errno.h>
@@ -30,20 +28,11 @@
 #include "src/manifest/mount_channel.h" /* d'b. todo: move to manifest_setup */
 #include "src/service_runtime/sel_qualify.h"
 
-/* todo(NETWORKING): move it channels constructors */
-/*YaroslavLitvinov*/
-#ifdef NETWORKING
-# include "src/networking/zvm_netw.h"
-# include "src/networking/zmq_netw.h" /* SockCapability */
-# define ZVM_DB_NAME "zvm_netw.db"
-#endif
-/* end */
-
 /* initialize syslog to put ZeroVm log messages */
 static void ZeroVMLogCtor()
 {
   /*
-   * are here to avoid redefinition LOG_*
+   * are here to avoid redefinition LOG_* used in "nacl_log.h"
    * todo(d'b): remove this ugliness
    */
 #define LOG_PID   0x01  /* log the pid with each message */
@@ -180,9 +169,6 @@ int main(int argc, char **argv)
   ZeroVMLogCtor();
   NaClSignalHandlerInit();
 
-//  memset(NULL, 0, 0xffffffffffffffff);
-  /* }} */
-
   /* @IGNORE_LINES_FOR_CODE_HYGIENE[1] */
   /*
    * Set malloc not to use mmap even for large allocations.  This is currently
@@ -218,7 +204,6 @@ int main(int argc, char **argv)
   errcode = LOAD_OK;
 
   /* We use the signal handler to verify a signal took place. */
-//  NaClSignalHandlerInit();
   if(nap->skip_qualification == 0)
   {
     NaClErrorCode pq_error = NACL_FI_VAL("pq", NaClErrorCode, NaClRunSelQualificationTests());
@@ -241,7 +226,7 @@ int main(int argc, char **argv)
   }
 
 #define PERF_CNT(str)\
-	NaClPerfCounterMark(&time_all_main, str);\
+  NaClPerfCounterMark(&time_all_main, str);\
   NaClPerfCounterIntervalLast(&time_all_main);
 
   if(0 == GioMemoryFileSnapshotCtor(&main_file, nap->system_manifest->nexe))
@@ -283,37 +268,6 @@ int main(int argc, char **argv)
    */
   SystemManifestCtor(nap); /* needs dyn_array initialized */
 
-  /* todo(NETWORKING): move it to initializers. rewrite hardcoded part */
-  /*YaroslavLitvinov*/
-#ifdef NETWORKING
-  if(GetValueByKey("Networking") != NULL)
-  {
-    /* check before networking initialization */
-    assert(nap != NULL);
-    assert(nap->system_manifest != NULL);
-
-    if(nap->system_manifest->cmd_line == NULL || nap->system_manifest->cmd_line_size < 3)
-        NaClLog(LOG_FATAL, "NETWORKING defined but command line parameters not valid\n");
-
-    do
-    { /* prevent c90 warning */
-      /* get node generic name and id */
-      char *netw_nodename = GetValueByKey("Node");
-      int nodeid = ATOI(GetValueByKey("NodeID"));
-
-      if(netw_nodename != NULL)
-      {
-        int err = init_zvm_networking(zmq_netw_interface_implementation(),
-            ZVM_DB_NAME, netw_nodename, nodeid);
-        if (LOAD_OK != err)
-            NaClLog(LOG_FATAL, "init_zvm_networking err = %d, nodename = %s\n",
-            err, netw_nodename);
-      }
-    } while(0);
-  }
-#endif
-  /* end */
-
   /* error reporting done; can quit now if there was an error earlier */
   if(LOAD_OK != errcode)
     NaClLog(LOG_FATAL, "Not running app code since errcode is %s (%d)\n",
@@ -333,18 +287,6 @@ int main(int argc, char **argv)
   }
   PERF_CNT("WaitForMainThread");
   PERF_CNT("SelMainEnd");
-
-  /* todo(NETWORKING): move it to mount_channel.c (destructor) */
-  /*YaroslavLitvinov*/
-#ifdef NETWORKING
-  if(GetValueByKey("Networking") != NULL)
-  {
-    int err = term_zvm_networking();
-    if (LOAD_OK != err)
-    NaClLog(LOG_FATAL, "term_zvm_networking err = %d", err);
-  }
-#endif
-  /* end */
 
   /* report to host. call destructors. exit */
   ZeroVMLogDtor();

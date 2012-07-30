@@ -18,6 +18,8 @@
 /* todo(d'b): under construction */
 int PreloadChannelDtor(struct ChannelDesc* channel)
 {
+  assert(channel != NULL);
+
   ftruncate(channel->handle, channel->putpos);
   close(channel->handle);
   return OK_CODE;

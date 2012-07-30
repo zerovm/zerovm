@@ -2,6 +2,9 @@ in the current version:
 -------------------------------------------------------------
 CHANNELS DESIGN
 ===============
+- make EOF. for example pass it as 0 read bytes and -1 current position
+- zvm_pread/zvm_pwrite must return -1 on error and set eerno to correct standard error code
+  http://publib.boulder.ibm.com/infocenter/zos/v1r12/index.jsp?topic=%2Fcom.ibm.zos.r12.bpxbd00%2Fpread.htm
 + add network channels to the file abstraction
 - all NETWORKING "todo" comments and NETWORKING conditional compilation must be removed
   appropriate changes should be made, of course

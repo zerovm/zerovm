@@ -19,7 +19,7 @@
 
 /* macro 'l_tg' allows the addition of an 'l' or 'f' to all math operations */
 #if !defined(l_tg)
-#define l_tg(x)		(x)
+#define l_tg(x)    (x)
 #endif
 
 

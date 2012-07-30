@@ -10,6 +10,7 @@
 
 #include "api/zvm.h"
 #include "src/service_runtime/sel_ldr.h"
+#include "src/manifest/mount_channel.h"
 
 EXTERN_C_BEGIN
 
@@ -29,6 +30,18 @@ EXTERN_C_BEGIN
  * note: in a future will be moved to "nacl_syscall_handler.c" to be only syscall
  */
 int32_t TrapHandler(struct NaClApp *nap, uint32_t args);
+
+/* helper. should be used with macros */
+/* todo(d'b): yakk! */
+int ChannelIOMask(struct ChannelDesc *channel);
+#define CHANNEL_READABLE(channel) ((ChannelIOMask(channel) & 1) == 1)
+#define CHANNEL_WRITEABLE(channel) ((ChannelIOMask(channel) & 2) == 2)
+#define CHANNEL_SEQ_READABLE(channel) \
+  ((ChannelIOMask(channel) == 1 || ChannelIOMask(channel) == 3) && !(channel->type & 0x1))
+#define CHANNEL_RND_READABLE(channel) \
+  ((ChannelIOMask(channel) == 1 || ChannelIOMask(channel) == 3) && (channel->type & 0x1))
+#define CHANNEL_SEQ_WRITEABLE(channel) (ChannelIOMask(channel) == 2 && !(channel->type & 0x2))
+#define CHANNEL_RND_WRITEABLE(channel) (ChannelIOMask(channel) == 2 && (channel->type & 0x2))
 
 /*
  * check number of trap() calls and increment by 1. update

@@ -18,7 +18,7 @@
 #include "api/zrt.h"
 
 #if 0
-#				define DEBUG
+#        define DEBUG
 #endif
 
 #define DEFAULT_CHUNK_SIZE 18
@@ -33,53 +33,53 @@
   } while(0)
 
 #define _eoutput(_str)\
-	do {\
-		fprintf(stderr, "Error in %s() at %u: %s\n", __func__, __LINE__, (_str));\
-		exit(1);\
-	} while (0)
+  do {\
+    fprintf(stderr, "Error in %s() at %u: %s\n", __func__, __LINE__, (_str));\
+    exit(1);\
+  } while (0)
 
 #ifdef DEBUG
 #define _doutput(...) fprintf(stderr, __VA_ARGS__)
 
 /* print "s" elements array "a" */
 #define SHOW_RAW(a, s)\
-	do {\
-		int i;\
-		for(i = 0; i < s; ++i)\
-			fprintf(stderr, "%u ", ((uint32_t*)a)[i]);\
-		fprintf(stderr, "\n");\
-	} while (0)
+  do {\
+    int i;\
+    for(i = 0; i < s; ++i)\
+      fprintf(stderr, "%u ", ((uint32_t*)a)[i]);\
+    fprintf(stderr, "\n");\
+  } while (0)
 
 /* show place and print "s" elements array "a" */
 #define SHOW_RAW_FUNC(a, s)\
-	do {\
-		int i;\
-		fprintf(stderr, "%s -- %d: ", __func__, __LINE__);\
-		for(i = 0; i < s; ++i)\
-			fprintf(stderr, "%u ", ((uint32_t*)a)[i]);\
-		printf("\n");\
-	} while (0)
+  do {\
+    int i;\
+    fprintf(stderr, "%s -- %d: ", __func__, __LINE__);\
+    for(i = 0; i < s; ++i)\
+      fprintf(stderr, "%u ", ((uint32_t*)a)[i]);\
+    printf("\n");\
+  } while (0)
 
 /* check if "s" elements of array "a" are sorted */
 #define CHECK_RAW(a, s)\
-	do {\
-		int i;\
-		for(i = 1; i < s; ++i)\
-			if(((uint32_t*)a)[i-1] > ((uint32_t*)a)[i]) {\
-				SHOW_RAW(a, s);\
-				_eoutput("not sorted!");}\
-	} while(0)
+  do {\
+    int i;\
+    for(i = 1; i < s; ++i)\
+      if(((uint32_t*)a)[i-1] > ((uint32_t*)a)[i]) {\
+        SHOW_RAW(a, s);\
+        _eoutput("not sorted!");}\
+  } while(0)
 
 /* check if "s+s" elements of array "a"+"b" are sorted */
 #define CHECK_RAWS(a, b, s)\
-	do {\
-		CHECK_RAW(a, s);\
-		CHECK_RAW(b, s);\
-		if(((uint32_t*)a)[s-1] > ((uint32_t*)b)[0]) {\
-			SHOW_RAW(a, s);\
-			SHOW_RAW(b, s);\
-			_eoutput("not sorted!");}\
-	} while(0)
+  do {\
+    CHECK_RAW(a, s);\
+    CHECK_RAW(b, s);\
+    if(((uint32_t*)a)[s-1] > ((uint32_t*)b)[0]) {\
+      SHOW_RAW(a, s);\
+      SHOW_RAW(b, s);\
+      _eoutput("not sorted!");}\
+  } while(0)
 
 #else
 #define _doutput(...)
@@ -258,10 +258,10 @@ inline void bitonic_merge_kernel16n(float *dest, float *a, float *b /* must not 
   __m128 hi[4];
 
 #define LOAD16(arg) \
-	mb[3] = _mm_load_ps(arg); \
-	mb[2] = _mm_load_ps(arg + 4); \
-	mb[1] = _mm_load_ps(arg + 8); \
-	mb[0] = _mm_load_ps(arg + 12); arg+=16
+  mb[3] = _mm_load_ps(arg); \
+  mb[2] = _mm_load_ps(arg + 4); \
+  mb[1] = _mm_load_ps(arg + 8); \
+  mb[0] = _mm_load_ps(arg + 12); arg+=16
 
   float *last_a = a + s;
   float *last_b = b + s;

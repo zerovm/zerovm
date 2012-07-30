@@ -13,9 +13,10 @@ int main(int argc, char **argv, char **envp)
 
   if(argc == 2) signal = atoi(argv[1]);
   
-  /* since raise doesn't work from zerovm so far */
-  memset(NULL, 0xff, 0xf0000000); /* #11 */
+  /* since raise() doesn't work from zerovm.. */
+  memset((void*)1, 0xff, -1); /* #11 */
 
+#if 0
   /*
    * duplicates were removed: SIGIOT, SIGCLD, SIGPOLL
    */
@@ -60,6 +61,7 @@ int main(int argc, char **argv, char **envp)
       printf("invalid signal number or invalid argument(s) passed\n");
       break;
   }
+#endif
 
-  return 13;
+  return 0xABAD1DEA;
 }

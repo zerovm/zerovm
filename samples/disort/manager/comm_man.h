@@ -21,7 +21,7 @@ recv_histograms( int fdr, struct Histogram *histograms, int wait_histograms_coun
  *return Histogram Caller is responsive to free memory after using result*/
 struct Histogram*
 reqrep_detailed_histograms_alloc( int fdw, int fdr, int nodeid,
-		const struct request_data_t* request_data, int complete );
+    const struct request_data_t* request_data, int complete );
 
 void
 write_range_request( int fdw, struct request_data_t** range, int len, int i );

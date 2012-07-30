@@ -8,6 +8,7 @@
 #ifndef MOUNT_CHANNEL_H_
 #define MOUNT_CHANNEL_H_
 
+#include <zmq.h>
 #include "src/service_runtime/sel_ldr.h"
 #include "api/zvm.h"
 
@@ -16,6 +17,7 @@ EXTERN_C_BEGIN
 #define MAX_CHANNELS_NUMBER BIG_ENOUGH_SPACE
 #define CHANNEL_ATTRIBUTES ChannelAttributesNumber /* name, id, access type, gets, getsize, puts, putsize */
 #define RESERVED_CHANNELS 3 /* stdin, stdout, stderr */
+#define NET_BUFFER_SIZE 0x10000
 
 /* attributes has fixed order, thats why enum has been used */
 enum ChannelAttributes {
@@ -35,14 +37,30 @@ enum ChannelSourceType {
   ChannelSourceTypeNumber
 };
 
-/* zerovm channel descriptor. part of information available for the user side */
+/*
+ * zerovm channel descriptor. part of information available for the user side
+ * todo(d'b): add "flags" field. will contain EOF, i/o errors, e.t.c.
+ */
 struct ChannelDesc
 {
-  char *name; /* file name */
-  char *alias; /* file name */
+  char *name; /* real name */
+  char *alias; /* name for untrusted */
+
+  /* group #1.1 */
   int32_t handle; /* file handle */
-  enum AccessType type; /* type of access sequential/random */
+  /* group #1.2 */
+  void *socket; /* zmq socket */
+
+  /* group #2.1 */
   int64_t size; /* channel size */
+  /* group #2.2 */
+  char *buffer; /* fixed size buffer to hold the message leftovers */
+  int32_t bufpos; /* index of the 1st available byte in the buffer */
+  int32_t bufend; /* index of the 1st unavailable byte in the buffer */
+  zmq_msg_t *msg; /* zeromq message container. should be initialized before usage */
+
+  enum AccessType type; /* type of access sequential/random */
+  enum ChannelSourceType source; /* network or local file */
   int64_t getpos; /* read position */
   int64_t putpos; /* write position */
 

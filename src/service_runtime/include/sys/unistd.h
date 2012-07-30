@@ -27,9 +27,9 @@ extern "C" {
 
 extern char **environ;
 
-void	_EXFUN(_exit, (int __status ) _ATTRIBUTE ((noreturn)));
+void  _EXFUN(_exit, (int __status ) _ATTRIBUTE ((noreturn)));
 
-int	_EXFUN(access,(const char *__path, int __amode ));
+int  _EXFUN(access,(const char *__path, int __amode ));
 unsigned  _EXFUN(alarm, (unsigned __secs ));
 int     _EXFUN(chdir, (const char *__path ));
 int     _EXFUN(chmod, (const char *__path, mode_t __mode ));
@@ -41,17 +41,17 @@ int     _EXFUN(chroot, (const char *__path ));
 #endif
 int     _EXFUN(close, (int __fildes ));
 #if defined(__CYGWIN__)
-size_t	_EXFUN(confstr, (int __name, char *__buf, size_t __len));
+size_t  _EXFUN(confstr, (int __name, char *__buf, size_t __len));
 #endif
 char    _EXFUN(*ctermid, (char *__s ));
 char    _EXFUN(*cuserid, (char *__s ));
 #if defined(__CYGWIN__)
-int	_EXFUN(daemon, (int nochdir, int noclose));
+int  _EXFUN(daemon, (int nochdir, int noclose));
 #endif
 int     _EXFUN(dup, (int __fildes ));
 int     _EXFUN(dup2, (int __fildes, int __fildes2 ));
 #if defined(__CYGWIN__)
-void	_EXFUN(endusershell, (void));
+void  _EXFUN(endusershell, (void));
 #endif
 int     _EXFUN(execl, (const char *__path, const char *, ... ));
 int     _EXFUN(execle, (const char *__path, const char *, ... ));
@@ -72,7 +72,7 @@ int     _EXFUN(fsync, (int __fd));
 int     _EXFUN(fdatasync, (int __fd));
 char    _EXFUN(*getcwd, (char *__buf, size_t __size ));
 #if defined(__CYGWIN__)
-int	_EXFUN(getdomainname ,(char *__name, size_t __len));
+int  _EXFUN(getdomainname ,(char *__name, size_t __len));
 #endif
 #if !defined(__INSIDE_CYGWIN__)
 gid_t   _EXFUN(getegid, (void ));
@@ -87,7 +87,7 @@ char    _EXFUN(*getlogin, (void ));
 #if defined(_POSIX_THREAD_SAFE_FUNCTIONS)
 int _EXFUN(getlogin_r, (char *name, size_t namesize) );
 #endif
-char 	_EXFUN(*getpass, (const char *__prompt));
+char   _EXFUN(*getpass, (const char *__prompt));
 size_t  _EXFUN(getpagesize, (void));
 #if defined(__CYGWIN__)
 int    _EXFUN(getpeereid, (int, uid_t *, gid_t *));
@@ -103,42 +103,42 @@ pid_t   _EXFUN(getsid, (pid_t));
 uid_t   _EXFUN(getuid, (void ));
 #endif
 #ifdef __CYGWIN__
-char *	_EXFUN(getusershell, (void));
+char *  _EXFUN(getusershell, (void));
 char    _EXFUN(*getwd, (char *__buf ));
-int	_EXFUN(iruserok, (unsigned long raddr, int superuser, const char *ruser, const char *luser));
+int  _EXFUN(iruserok, (unsigned long raddr, int superuser, const char *ruser, const char *luser));
 #endif
 int     _EXFUN(isatty, (int __fildes ));
 #if !defined(__INSIDE_CYGWIN__)
 int     _EXFUN(lchown, (const char *__path, uid_t __owner, gid_t __group ));
 #endif
 int     _EXFUN(link, (const char *__path1, const char *__path2 ));
-int	_EXFUN(nice, (int __nice_value ));
+int  _EXFUN(nice, (int __nice_value ));
 #if !defined(__INSIDE_CYGWIN__)
 off_t   _EXFUN(lseek, (int __fildes, off_t __offset, int __whence ));
 #endif
 #if defined(__SPU__)
-#define F_ULOCK	0
-#define F_LOCK	1
-#define F_TLOCK	2
-#define F_TEST	3
+#define F_ULOCK  0
+#define F_LOCK  1
+#define F_TLOCK  2
+#define F_TEST  3
 int     _EXFUN(lockf, (int __fd, int __cmd, off_t __len));
 #endif
 long    _EXFUN(pathconf, (const char *__path, int __name ));
 int     _EXFUN(pause, (void ));
 #ifdef __CYGWIN__
-int	_EXFUN(pthread_atfork, (void (*)(void), void (*)(void), void (*)(void)));
+int  _EXFUN(pthread_atfork, (void (*)(void), void (*)(void), void (*)(void)));
 #endif
 int     _EXFUN(pipe, (int __fildes[2] ));
 ssize_t _EXFUN(pread, (int __fd, void *__buf, size_t __nbytes, off_t __offset));
 ssize_t _EXFUN(pwrite, (int __fd, const void *__buf, size_t __nbytes, off_t __offset));
 _READ_WRITE_RETURN_TYPE _EXFUN(read, (int __fd, void *__buf, size_t __nbyte ));
 #if defined(__CYGWIN__)
-int	_EXFUN(rresvport, (int *__alport));
-int	_EXFUN(revoke, (char *__path));
+int  _EXFUN(rresvport, (int *__alport));
+int  _EXFUN(revoke, (char *__path));
 #endif
 int     _EXFUN(rmdir, (const char *__path ));
 #if defined(__CYGWIN__)
-int	_EXFUN(ruserok, (const char *rhost, int superuser, const char *ruser, const char *luser));
+int  _EXFUN(ruserok, (const char *rhost, int superuser, const char *ruser, const char *luser));
 #endif
 void *  _EXFUN(sbrk,  (intptr_t __incr));
 #if !defined(__INSIDE_CYGWIN__)
@@ -149,20 +149,20 @@ int     _EXFUN(seteuid, (uid_t __uid ));
 int     _EXFUN(setgid, (gid_t __gid ));
 #endif
 #if defined(__CYGWIN__)
-int	_EXFUN(setgroups, (int ngroups, const gid_t *grouplist ));
+int  _EXFUN(setgroups, (int ngroups, const gid_t *grouplist ));
 #endif
 int     _EXFUN(setpgid, (pid_t __pid, pid_t __pgid ));
 int     _EXFUN(setpgrp, (void ));
 #if defined(__CYGWIN__) && !defined(__INSIDE_CYGWIN__)
-int	_EXFUN(setregid, (gid_t __rgid, gid_t __egid));
-int	_EXFUN(setreuid, (uid_t __ruid, uid_t __euid));
+int  _EXFUN(setregid, (gid_t __rgid, gid_t __egid));
+int  _EXFUN(setreuid, (uid_t __ruid, uid_t __euid));
 #endif
 pid_t   _EXFUN(setsid, (void ));
 #if !defined(__INSIDE_CYGWIN__)
 int     _EXFUN(setuid, (uid_t __uid ));
 #endif
 #if defined(__CYGWIN__)
-void	_EXFUN(setusershell, (void));
+void  _EXFUN(setusershell, (void));
 #endif
 unsigned _EXFUN(sleep, (unsigned int __seconds ));
 void    _EXFUN(swab, (const void *, void *, ssize_t));
@@ -174,7 +174,7 @@ char    _EXFUN(*ttyname, (int __fildes ));
 int     _EXFUN(ttyname_r, (int, char *, size_t));
 #endif
 int     _EXFUN(unlink, (const char *__path ));
-int 	_EXFUN(usleep, (useconds_t __useconds));
+int   _EXFUN(usleep, (useconds_t __useconds));
 int     _EXFUN(vhangup, (void ));
 _READ_WRITE_RETURN_TYPE _EXFUN(write, (int __fd, const void *__buf, size_t __nbyte ));
 
@@ -183,17 +183,17 @@ _READ_WRITE_RETURN_TYPE _EXFUN(write, (int __fd, const void *__buf, size_t __nby
 # include <getopt.h>
 # undef __UNISTD_GETOPT__
 #else
-extern char *optarg;			/* getopt(3) external variables */
+extern char *optarg;      /* getopt(3) external variables */
 extern int optind, opterr, optopt;
-int	 getopt(int, char * const [], const char *);
-extern int optreset;			/* getopt(3) external variable */
+int   getopt(int, char * const [], const char *);
+extern int optreset;      /* getopt(3) external variable */
 #endif
 
 #ifndef        _POSIX_SOURCE
 pid_t   _EXFUN(vfork, (void ));
 
-extern char *suboptarg;			/* getsubopt(3) external variable */
-int	 getsubopt(char **, char * const *, char **);
+extern char *suboptarg;      /* getsubopt(3) external variable */
+int   getsubopt(char **, char * const *, char **);
 #endif /* _POSIX_SOURCE */
 
 #ifdef _COMPILING_NEWLIB
@@ -222,14 +222,14 @@ int     _EXFUN(truncate, (const char *, off_t __length));
 #endif
 
 #if defined(__CYGWIN__) || defined(__rtems__)
-int	_EXFUN(getdtablesize, (void));
-int	_EXFUN(setdtablesize, (int));
+int  _EXFUN(getdtablesize, (void));
+int  _EXFUN(setdtablesize, (int));
 useconds_t _EXFUN(ualarm, (useconds_t __useconds, useconds_t __interval));
 #if !(defined  (_WINSOCK_H) || defined (__USE_W32_SOCKETS))
 /* winsock[2].h defines as __stdcall, and with int as 2nd arg */
-int	_EXFUN(gethostname, (char *__name, size_t __len));
+int  _EXFUN(gethostname, (char *__name, size_t __len));
 #endif
-char *	_EXFUN(mktemp, (char *));
+char *  _EXFUN(mktemp, (char *));
 #endif
 
 #if defined(__CYGWIN__) || defined(__SPU__)
@@ -241,14 +241,14 @@ int     _EXFUN(sync, (void));
 int     _EXFUN(readlink, (const char *__path, char *__buf, int __buflen));
 int     _EXFUN(symlink, (const char *__name1, const char *__name2));
 
-#define	F_OK	0
-#define	R_OK	4
-#define	W_OK	2
-#define	X_OK	1
+#define  F_OK  0
+#define  R_OK  4
+#define  W_OK  2
+#define  X_OK  1
 
-# define	SEEK_SET	0
-# define	SEEK_CUR	1
-# define	SEEK_END	2
+# define  SEEK_SET  0
+# define  SEEK_CUR  1
+# define  SEEK_END  2
 
 #include <sys/features.h>
 
@@ -306,7 +306,7 @@ enum {
  *  confstr values per IEEE Std 1003.1, 2004 Edition
  */
 
-#ifdef __CYGWIN__	/* Only defined on Cygwin for now. */
+#ifdef __CYGWIN__  /* Only defined on Cygwin for now. */
 #define _CS_PATH                               0
 #define _CS_POSIX_V6_ILP32_OFF32_CFLAGS        1
 #define _CS_XBS5_ILP32_OFF32_CFLAGS           _CS_POSIX_V6_ILP32_OFF32_CFLAGS
@@ -342,7 +342,7 @@ enum {
 #endif  /* __native_client__ */
 
 #ifndef __CYGWIN__
-# define	MAXPATHLEN	1024
+# define  MAXPATHLEN  1024
 #endif
 
 #ifdef __cplusplus

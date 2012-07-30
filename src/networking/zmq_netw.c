@@ -15,6 +15,8 @@
 
 #include "src/service_runtime/dyn_array.h"
 #include "src/service_runtime/nacl_error_code.h"
+#include "src/manifest/mount_channel.h" /* d'b */
+#include "src/utils/tools.h" /* d'b */
 #include "src/platform/nacl_log.h"
 
 #include "src/networking/sqluse_srv.h"
@@ -28,15 +30,30 @@ static struct zeromq_interface *__io_if = NULL;
 
 /*Do not allow zeromq objective code just here for unit tests*/
 #ifndef UNIT_TEST
+
 /*Initialization I/O interface by zeromq functions. Should be used only for interface initialization*/
 static struct zeromq_interface __zeromq_implementation =
-{ .init = zmq_init, .term = zmq_term, .send = (int(*)(void *, void *, int)) zmq_send, .recv =
-    (int(*)(void *, void *, int)) zmq_recv, .bind = zmq_bind, .connect = zmq_connect,
-    .open_socket = zmq_socket, .close_socket = zmq_close, .msg_init_size = (int(*)(void *,
-        size_t)) zmq_msg_init_size, .msg_init = (int(*)(void *)) zmq_msg_init, .msg_data =
-        (void*(*)(void *)) zmq_msg_data, .msg_size = (size_t(*)(void *)) zmq_msg_size,
-    .msg_close = (int(*)(void *)) zmq_msg_close, .errno_io = zmq_errno,
-    .strerror = zmq_strerror, .realloc = realloc, .malloc = malloc, .calloc = calloc };
+{
+  .init = zmq_init,
+  .term = zmq_term,
+  .send = (int(*)(void *, void *, int)) zmq_send,
+  .recv = (int(*)(void *, void *, int)) zmq_recv,
+  .bind = zmq_bind,
+  .connect = zmq_connect,
+  .open_socket = zmq_socket,
+  .close_socket = zmq_close,
+  .msg_init_size = (int(*)(void *, size_t)) zmq_msg_init_size,
+  .msg_init = (int(*)(void *)) zmq_msg_init,
+  .msg_data = (void*(*)(void *)) zmq_msg_data,
+  .msg_size = (size_t(*)(void *)) zmq_msg_size,
+  .msg_close = (int(*)(void *)) zmq_msg_close,
+  .errno_io = zmq_errno,
+  .strerror = zmq_strerror,
+  .realloc = realloc,
+  .malloc = malloc,
+  .calloc = calloc
+};
+
 struct zeromq_interface* zeromq_interface_implementation()
 {
   return &__zeromq_implementation;
