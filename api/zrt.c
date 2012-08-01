@@ -41,6 +41,7 @@
 static struct UserManifest *setup;
 
 /* positions of zerovm channels. should be allocated before usage */
+/* todo: need solution for cdr channels */
 static size_t *pos_ptr;
 
 static int debug_handle;

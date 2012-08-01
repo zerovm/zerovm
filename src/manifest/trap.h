@@ -34,8 +34,10 @@ int32_t TrapHandler(struct NaClApp *nap, uint32_t args);
 /* helper. should be used with macros */
 /* todo(d'b): yakk! */
 int ChannelIOMask(struct ChannelDesc *channel);
+/* macros uses channel type and limits */
 #define CHANNEL_READABLE(channel) ((ChannelIOMask(channel) & 1) == 1)
 #define CHANNEL_WRITEABLE(channel) ((ChannelIOMask(channel) & 2) == 2)
+/* macros uses only channel type */
 #define CHANNEL_SEQ_READABLE(channel) (channel->type == 0 || channel->type == 2)
 #define CHANNEL_SEQ_WRITEABLE(channel) (channel->type == 0 || channel->type == 1)
 #define CHANNEL_RND_READABLE(channel) (channel->type == 1 || channel->type == 3)

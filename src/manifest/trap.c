@@ -154,8 +154,14 @@ int32_t ZVMReadHandle(struct NaClApp *nap,
   /* update the channel position */
   if(retcode > 0)
   {
+    /*
+     * current get cursor. must be updated if channel have seq get
+     * but there is nothing wrong to update it even it have random get
+     */
     channel->getpos = offset + retcode;
-    channel->putpos = channel->getpos;
+
+    /* if channel have random put update put cursor */
+    if(CHANNEL_RND_WRITEABLE(channel)) channel->putpos = offset + retcode;
   }
 
   return retcode;
@@ -226,8 +232,11 @@ int32_t ZVMWriteHandle(struct NaClApp *nap,
   /* update the channel position */
   if(retcode > 0)
   {
+    /* current put cursor. must be updated in any case to properly close the channel */
     channel->putpos = offset + retcode;
-    channel->getpos = channel->putpos;
+
+    /* if the channel have random read cursor must be updated, otherwise - must not */
+    if(CHANNEL_RND_READABLE(channel)) channel->getpos = channel->putpos;
   }
 
   return retcode;

@@ -129,7 +129,6 @@ int PrefetchChannelCtor(struct ChannelDesc* channel)
     COND_ABORT(result != 0, "cannot connect 'push' socket to address");
   }
 
-
   return OK_CODE;
 }
 
