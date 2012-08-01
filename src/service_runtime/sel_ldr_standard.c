@@ -51,6 +51,9 @@ NORETURN void SwitchToApp(struct NaClApp  *nap, uintptr_t stack_ptr)
   nacl_sys->rbp = NaClGetStackPtr();
   nacl_sys->rsp = NaClGetStackPtr();
 
+  /* set state to "ok" just before the nexe start */
+  sprintf(nap->zvm_state, "ok");
+
   /* todo: put here switch to chose proper function: avx or sse */
   nap->user_side_flag = 1;
   nap->trusted_code = 0;

@@ -165,7 +165,7 @@ int main(int argc, char **argv)
   nap->system_manifest = &sys_mft;
   memset(nap->system_manifest, 0, sizeof *nap->system_manifest);
   gnap = nap;
-  sprintf(nap->zvm_state, "ok");
+  sprintf(nap->zvm_state, "nexe didn't start");
   ZeroVMLogCtor();
   NaClSignalHandlerInit();
 
