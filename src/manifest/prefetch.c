@@ -141,22 +141,21 @@ int PrefetchChannelDtor(struct ChannelDesc* channel)
   assert(channel->socket != NULL);
 
   /* send EOF if the channel is writable */
-  if(CHANNEL_SEQ_WRITEABLE(channel))
+  if(channel->limits[PutsLimit] && channel->limits[PutsLimit])
   {
     zmq_msg_t msg;
-    void *hint = NULL;
-    void *buf[1];
 
     /* the last send must be non-blocking or it will never complete */
+    /* todo(): fix the bug "Resource temporarily unavailable" when send */
     if(zmq_msg_init(&msg) == 0)
     {
-      result = zmq_msg_init_data(&msg, buf, 0, ZMQFree, hint);
+      result = zmq_msg_init_size(&msg, 0);
       result = zmq_send(channel->socket, &msg, ZMQ_NOBLOCK);
       result = zmq_msg_close(&msg);
     }
   }
 
-  if(CHANNEL_SEQ_READABLE(channel))
+  if(channel->limits[GetsLimit] && channel->limits[GetsLimit])
   {
     /* make zeromq deallocate used resources */
     zmq_msg_close(channel->msg);
