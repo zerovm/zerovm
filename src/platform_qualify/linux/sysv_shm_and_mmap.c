@@ -21,15 +21,7 @@
 #define SYSVSHM_SIZE  65536
 #define MMAP_OFFSET   4096
 #define MMAP_SIZE     4096
-
-
-/* d'b: must not be used {{ */
-//#ifdef DEBUG_SHM_AND_MMAP
-//# define DPRINTF(arglist) do { printf arglist; } while (0)
-//#else
-# define DPRINTF(arglist) do { ; } while (0)
-//#endif
-/* }} */
+#define DPRINTF(arglist) do { ; } while (0)
 
 static void FillWithPattern(void   *memory,
                             size_t size,

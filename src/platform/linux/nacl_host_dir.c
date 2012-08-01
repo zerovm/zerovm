@@ -22,7 +22,8 @@
 #include "src/platform/nacl_sync_checked.h"
 #include "src/service_runtime/include/sys/dirent.h"
 #include "src/service_runtime/include/sys/errno.h"
-//YaroslavLitvinov fixed error: undefined reference to S_ISREG,S_ISDIR
+
+/* YaroslavLitvinov fixed error: undefined reference to S_ISREG,S_ISDIR */
 #include <sys/stat.h>
 
 #ifdef _syscall3

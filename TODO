@@ -10,8 +10,9 @@ cdr: random read, sequential write
 
 CHANNELS DESIGN
 ===============
-- fix bug in cdr
-- fix crash: "malloc(): smallbin double linked list corrupted"
+- ensure that network eof is working
++ fix bug in cdr
++ fix crash: "malloc(): smallbin double linked list corrupted"
 +- fix cdr special case: initialize putpos with file size or (even better) add new fields 
   to channel description (read offset and write offset)
 + zvm_pread/zvm_pwrite must return -1 on error and set eerno to correct standard error code

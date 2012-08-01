@@ -8,7 +8,6 @@
  * NaCl Service Runtime.  I/O Descriptor / Handle abstraction.
  */
 
-//#include <stdlib.h>
 #include <string.h>
 #include <errno.h>
 

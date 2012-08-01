@@ -39,13 +39,9 @@ int NaCl_page_alloc_intern_flags(void   **p,
 
   map_flags |= MAP_PRIVATE | MAP_ANONYMOUS;
 
-  /* d'b: causes syntax error */
-  /* todo(d'b): clear this */
-//  NaClLog(4,
-//            "sel_memory: NaCl_page_alloc_intern:"
-//            " mmap(%p, %"NACL_PRIxS", %#x, %#x, %d, %"NACL_PRIdNACL_OFF64")\n",
-//            *p, size, PROT_NONE, map_flags, -1,
-//            (nacl_abi_off64_t) 0);
+  /* d'b: syntax error fixed */
+  NaClLog(4, "sel_memory: NaCl_page_alloc_intern: mmap(%p, %lX, %#x, %#x, %d, %d)\n",
+              *p, size, PROT_NONE, map_flags, -1, 0);
   addr = mmap(*p, size, PROT_NONE, map_flags, -1, (off_t) 0);
   if (MAP_FAILED == addr) {
     addr = NULL;

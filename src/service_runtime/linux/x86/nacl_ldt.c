@@ -11,7 +11,6 @@
 #include <asm/ldt.h>
 #include <stdio.h>
 
-//#include "src/platform/nacl_sync.h"
 #include "src/platform/nacl_sync_checked.h"
 #include "src/service_runtime/arch/x86/nacl_ldt_x86.h"
 
