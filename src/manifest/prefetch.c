@@ -97,7 +97,7 @@ int PrefetchChannelCtor(struct ChannelDesc* channel)
    */
 
   /* assume it server */
-  if(CHANNEL_SEQ_READABLE(channel))
+  if(CHANNEL_SEQ_READABLE(channel) && CHANNEL_READABLE(channel))
   {
     channel->socket = zmq_socket(context, ZMQ_PULL);
     COND_ABORT(channel->socket == NULL, "cannot obtain socket");
@@ -119,7 +119,7 @@ int PrefetchChannelCtor(struct ChannelDesc* channel)
   }
 
   /* assume it client */
-  if(CHANNEL_SEQ_WRITEABLE(channel))
+  if(CHANNEL_SEQ_WRITEABLE(channel) && CHANNEL_WRITEABLE(channel))
   {
     channel->socket = zmq_socket(context, ZMQ_PUSH);
     COND_ABORT(channel->socket == NULL, "cannot obtain socket");

@@ -21,6 +21,15 @@ static int32_t (*_trap)(uint64_t *in) = (int32_t (*)(uint64_t*))
 /* holds all information which could get via api */
 static struct UserManifest setup;
 
+/* zerovm error number */
+static int32_t zvm_errno_num = 0;
+
+/* zerovm error code accessor */
+int32_t zvm_errno()
+{
+  return zvm_errno_num;
+}
+
 /* initialization of zerovm api */
 struct UserManifest *zvm_init()
 {
@@ -60,18 +69,47 @@ struct UserManifest *zvm_init()
   return result;
 }
 
-/* wrapper for zerovm "TrapRead" */
+/*
+ * wrapper for zerovm "TrapRead"
+ * affects zvm_errno. can be used to detect EOF
+ */
 int32_t zvm_pread(int desc, char *buffer, int32_t size, int64_t offset)
 {
+  int32_t code;
   uint64_t request[] = {TrapRead, 0, desc, (uint32_t)buffer, size, offset};
-  return _trap(request);
+  code = _trap(request);
+
+  /* eof case */
+  if(code == ZVM_EOF)
+  {
+    zvm_errno_num = code;
+    return 0;
+  }
+
+  /* error encountered */
+  if(code < 0)
+  {
+    zvm_errno_num = -code;
+    return -1;
+  }
+  return code;
 }
 
-/* wrapper for zerovm "TrapWrite" */
+/*
+ * wrapper for zerovm "TrapWrite"
+ * affects zvm_errno
+ */
 int32_t zvm_pwrite(int desc, char *buffer, int32_t size, int64_t offset)
 {
+  int32_t code;
   uint64_t request[] = {TrapWrite, 0, desc, (uint32_t)buffer, size, offset};
-  return _trap(request);
+  code = _trap(request);
+  if(code < 0)
+  {
+    zvm_errno_num = -code;
+    return -1;
+  }
+  return code;
 }
 
 /* wrapper for zerovm "TrapExit" */
@@ -112,11 +150,19 @@ uint32_t zvm_mem_size()
 /*
  * if channel->name in given channel is NULL returns channel name
  * length, otherwise copy channel name to provided pointer
+ * affects zvm_errno (if invalid argument given)
  */
 int32_t zvm_channel_name(struct ZVMChannel *channel, int ch)
 {
+  int32_t code;
   uint64_t request[] = {TrapChannelName, 0, (intptr_t)channel, ch};
-  return _trap(request);
+  code = _trap(request);
+  if(code < 0)
+  {
+    zvm_errno_num = -code;
+    return -1;
+  }
+  return code;
 }
 
 /*

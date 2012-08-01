@@ -2,18 +2,16 @@ in the current version:
 -------------------------------------------------------------
 CHANNELS DESIGN
 ===============
-- make EOF. for example pass it as 0 read bytes and -1 current position
+- fix cdr special case: initialize putpos with file size or (even better) add new fields 
+  to channel description (read offset and write offset)
 - zvm_pread/zvm_pwrite must return -1 on error and set eerno to correct standard error code
   http://publib.boulder.ibm.com/infocenter/zos/v1r12/index.jsp?topic=%2Fcom.ibm.zos.r12.bpxbd00%2Fpread.htm
++ make EOF. for example pass it as 0 read bytes and -1 current position
 + add network channels to the file abstraction
-- all NETWORKING "todo" comments and NETWORKING conditional compilation must be removed
-  appropriate changes should be made, of course
-  - the last thing to do:
-  move zeromq code to proper places (still needs refactoring)
-  or write a new code using using udt
-
++ all NETWORKING "todo" comments and NETWORKING conditional compilation must be removed
 + replace 2nd channel attribute "id" with "alias".
 + write more strict channels dealocation: free all allocated memory, free nacl descriptor e.t.c
+- zerovm special channel names (resides in "/dev/"): stdin, stdout, stderr, input, output, debug
 
 MANIFEST
 ========

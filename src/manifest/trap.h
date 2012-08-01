@@ -36,13 +36,10 @@ int32_t TrapHandler(struct NaClApp *nap, uint32_t args);
 int ChannelIOMask(struct ChannelDesc *channel);
 #define CHANNEL_READABLE(channel) ((ChannelIOMask(channel) & 1) == 1)
 #define CHANNEL_WRITEABLE(channel) ((ChannelIOMask(channel) & 2) == 2)
-#define CHANNEL_SEQ_READABLE(channel) \
-  ((ChannelIOMask(channel) == 1 || ChannelIOMask(channel) == 3) && !(channel->type & 0x1))
-#define CHANNEL_RND_READABLE(channel) \
-  ((ChannelIOMask(channel) == 1 || ChannelIOMask(channel) == 3) && (channel->type & 0x1))
-#define CHANNEL_SEQ_WRITEABLE(channel) (ChannelIOMask(channel) == 2 && !(channel->type & 0x2))
-#define CHANNEL_RND_WRITEABLE(channel) (ChannelIOMask(channel) == 2 && (channel->type & 0x2))
-
+#define CHANNEL_SEQ_READABLE(channel) (channel->type == 0 || channel->type == 2)
+#define CHANNEL_SEQ_WRITEABLE(channel) (channel->type == 0 || channel->type == 1)
+#define CHANNEL_RND_READABLE(channel) (channel->type == 1 || channel->type == 3)
+#define CHANNEL_RND_WRITEABLE(channel) (channel->type == 2 || channel->type == 3)
 /*
  * check number of trap() calls and increment by 1. update
  * system_manifest. return 0 if success, -1 if over limit

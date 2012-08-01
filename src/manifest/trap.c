@@ -106,15 +106,15 @@ int32_t ZVMReadHandle(struct NaClApp *nap,
       __func__, ch, (intptr_t)buffer, size, offset);
 
   channel = &nap->system_manifest->channels[ch];
-  if(!CHANNEL_READABLE(channel)) return -INVALID_DESC;
+  if(!CHANNEL_READABLE(channel)) return -EBADF;
 
   /* ignore user offset for sequential access read */
   if(CHANNEL_SEQ_READABLE(channel)) offset = channel->getpos;
 
   /* check arguments sanity */
   if(size == 0) return 0; /* success. user has read 0 bytes */
-  if(size < 0) return -INSANE_SIZE;
-  if(offset < 0) return -INSANE_OFFSET;
+  if(size < 0) return -EFAULT;
+  if(offset < 0) return -EINVAL;
 
   /* check for NET_EOF */
   if(channel->source == NetworkChannel
@@ -122,12 +122,12 @@ int32_t ZVMReadHandle(struct NaClApp *nap,
 
   /* check limits */
   if(channel->counters[GetsLimit] >= channel->limits[GetsLimit])
-    return -OUT_OF_LIMITS;
+    return -EDQUOT;
 
   /* calculate i/o leftovers */
   tail = channel->limits[GetSizeLimit] - channel->counters[GetSizeLimit];
   if(size > tail) size = tail;
-  if(size < 1) return -OUT_OF_LIMITS;
+  if(size < 1) return -EDQUOT;
 
   /* update counters */
   ++channel->counters[GetsLimit];
@@ -139,15 +139,24 @@ int32_t ZVMReadHandle(struct NaClApp *nap,
   {
     case LocalFile:
       retcode = pread(channel->handle, sys_buffer, (size_t)size, (off_t)offset);
+      if(retcode == -1) retcode = -errno;
+      else if(retcode == 0) retcode = ZVM_EOF;
       break;
     case NetworkChannel:
       retcode = FetchMessage(channel, sys_buffer, size);
+      if(retcode == -1) retcode = -EIO;
       break;
     default: /* design error */
       FailIf(1, "invalid channel source");
       break;
   }
-  if(retcode > 0) channel->getpos = offset + retcode;
+
+  /* update the channel position */
+  if(retcode > 0)
+  {
+    channel->getpos = offset + retcode;
+    channel->putpos = channel->getpos;
+  }
 
   return retcode;
 }
@@ -177,22 +186,22 @@ int32_t ZVMWriteHandle(struct NaClApp *nap,
         __func__, ch, (intptr_t)buffer, size, offset);
 
   channel = &nap->system_manifest->channels[ch];
-  if(CHANNEL_WRITEABLE(channel) == 0) return -INVALID_DESC;
+  if(CHANNEL_WRITEABLE(channel) == 0) return -EBADF;
 
   /* ignore user offset for sequential access write */
   if(CHANNEL_SEQ_WRITEABLE(channel)) offset = channel->putpos;
 
   /* check arguments sanity */
   if(size == 0) return 0; /* success. user has read 0 bytes */
-  if(size < 0) return -INSANE_SIZE;
-  if(offset < 0) return -INSANE_OFFSET;
+  if(size < 0) return -EFAULT;
+  if(offset < 0) return -EINVAL;
 
   /* check limits */
   if(channel->counters[PutsLimit] >= channel->limits[PutsLimit])
-    return -OUT_OF_LIMITS;
+    return -EDQUOT;
   tail = channel->limits[PutSizeLimit] - channel->counters[PutSizeLimit];
   if(size > tail) size = tail;
-  if(size < 1) return -OUT_OF_LIMITS;
+  if(size < 1) return -EDQUOT;
 
   /* update counters */
   ++channel->counters[PutsLimit];
@@ -203,15 +212,23 @@ int32_t ZVMWriteHandle(struct NaClApp *nap,
   {
     case LocalFile:
       retcode = pwrite(channel->handle, sys_buffer, (size_t)size, (off_t)offset);
+      if(retcode == -1) retcode = -errno;
       break;
     case NetworkChannel:
       retcode = SendMessage(channel, sys_buffer, size);
+      if(retcode == -1) retcode = -EIO;
       break;
     default: /* design error */
       FailIf(1, "invalid channel source");
       break;
   }
-  if(retcode > 0) channel->putpos = offset + retcode;
+
+  /* update the channel position */
+  if(retcode > 0)
+  {
+    channel->putpos = offset + retcode;
+    channel->getpos = channel->putpos;
+  }
 
   return retcode;
 }
@@ -266,7 +283,7 @@ int32_t ZVMChannelName(struct NaClApp *nap, struct ZVMChannel *chnl, int ch)
   assert(nap != NULL);
   assert(nap->system_manifest != NULL);
 
-  if(chnl == NULL) return ERR_CODE;
+  if(chnl == NULL) return -EINVAL;
 
   uchannel = (struct ZVMChannel*)NaClUserToSys(nap, (uintptr_t)chnl);
   channel = &nap->system_manifest->channels[ch];
@@ -434,7 +451,7 @@ int32_t TrapHandler(struct NaClApp *nap, uint32_t args)
       break;
 
     default:
-      retcode = ERR_CODE;
+      retcode = -EPERM;
       NaClLog(LOG_ERROR, "function %ld is not supported\n", *sys_args);
       break;
   }

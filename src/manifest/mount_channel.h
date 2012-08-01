@@ -19,6 +19,9 @@ EXTERN_C_BEGIN
 /* name, id, access type, gets, getsize, puts, putsize */
 #define CHANNEL_ATTRIBUTES ChannelAttributesNumber
 
+/* we just need unique id to pass eof state to untrusted */
+#define ZVM_EOF -0x2012
+
 /* stdin, stdout, stderr. in the future 2 more channels will be added */
 #define RESERVED_CHANNELS 3
 #define NET_BUFFER_SIZE 0x10000

@@ -13,15 +13,6 @@
 
 #ifdef USER_SIDE /* disabled for trusted code */
 
-/* enabling */
-#define DEBUG 0
-
-#if DEBUG
-#define SHOWID do {log_msg((char*)__func__); log_msg("() is called\n");} while(0)
-#else
-#define SHOWID
-#endif
-
 /*
  * user program entry point. old style function prototyping
  * allows to avoid error when main has an empty arguments list
@@ -32,17 +23,6 @@
  */
 #define main slave_main
 int slave_main();
-
-#define JOIN(x,y) x##y
-#define ZRT_FUNC(x) JOIN(zrt_, x)
-
-/* mock. replacing real syscall handler */
-#define SYSCALL_MOCK(name_wo_zrt_prefix, code) \
-static int32_t ZRT_FUNC(name_wo_zrt_prefix)(uint32_t *args)\
-{\
-  SHOWID;\
-  return code;\
-}
 
 /*
  * temporary fix for nacl. stat != nacl_abi_stat

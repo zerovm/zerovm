@@ -10,7 +10,7 @@
 
 #include "src/manifest/mount_channel.h"
 
-#define NET_EOF -1 /* mark of the channel end */
+#define NET_EOF ZVM_EOF /* mark of the channel end */
 
 /* construct network channel and connect/bind it to specified address */
 int PrefetchChannelCtor(struct ChannelDesc* channel);

@@ -34,7 +34,7 @@ int PreloadChannelCtor(struct ChannelDesc* channel)
   uint32_t rw = 0;
 
   assert(channel != NULL);
-  assert(channel->name != (int64_t)NULL);
+  assert(channel->name != NULL);
 
   /* set start position */
   channel->getpos = 0; /* todo(d'b): add attribute to manifest? */
@@ -48,22 +48,41 @@ int PreloadChannelCtor(struct ChannelDesc* channel)
     case 0: /* inaccessible */
       return ERR_CODE;
     case 1: /* read only */
-      channel->handle = open((char*)channel->name, O_RDONLY, S_IRWXU);
+      channel->handle = open(channel->name, O_RDONLY, S_IRWXU);
+      channel->size = GetFileSize((char*)channel->name);
       break;
     case 2: /* write only */
-      channel->handle = open((char*)channel->name, O_WRONLY|O_CREAT|O_TRUNC, S_IRWXU);
+      channel->handle = open(channel->name, O_WRONLY|O_CREAT|O_TRUNC, S_IRWXU);
       posix_fallocate(channel->handle, channel->putpos, channel->limits[PutSizeLimit]);
+      channel->size = 0;
       break;
-    case 3: /* read/write */
-      channel->handle = open((char*)channel->name, O_RDWR|O_CREAT, S_IRWXU);
-      posix_fallocate(channel->handle, channel->putpos, channel->limits[PutSizeLimit]);
+    case 3: /* read/write and cdr (append) */
+      channel->handle = open(channel->name, O_RDWR|O_CREAT, S_IRWXU);
+      channel->size = GetFileSize(channel->name);
+      COND_ABORT(channel->putpos > channel->size,
+          "cdr channel size is less then specified append position");
+
+      /* file does not exist */
+      if(channel->size == 0)
+      {
+        posix_fallocate(channel->handle, channel->putpos, channel->limits[PutSizeLimit]);
+        channel->size = 0;
+      }
+      /* file exists */
+      else
+      {
+        /* set append position for cdr */
+        if(channel->putpos > 0) break; /* prefer to use manifest value */
+        channel->putpos = channel->type == RGetSPut && channel->size > 0 ?
+            channel->size : 0;
+      }
       break;
+
     default: /* unreachable */
       return ERR_CODE;
   }
 
   COND_ABORT(channel->handle < 0, "preloaded file open error");
-  channel->size = GetFileSize((char*)channel->name);
 
   return OK_CODE;
 }

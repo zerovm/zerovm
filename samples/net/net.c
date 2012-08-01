@@ -38,12 +38,12 @@
 "Falling\n"\
 "Are we falling in love?\n"
 
-#define CROWD 0x100
+#define CROWD 0x1000
 
 int main(int argc, char **argv)
 {
-//  char message[] = FALLING;
-  char message[0x100000];
+  char message[] = FALLING;
+//  char message[0x100000];
   char in_message[sizeof message];
   FILE *in, *out;
   int i;
@@ -59,8 +59,10 @@ int main(int argc, char **argv)
   }
   
   /* populate buffer with values */
+  /*
   for(i = 0; i < sizeof message; ++i)
     message[i] = (char)random();
+  */
   
   for(i = 0; i < CROWD; ++i)
   {
@@ -73,7 +75,8 @@ int main(int argc, char **argv)
     fprintf(stderr, "%d iteration: %d bytes has been read of %d\n", i, code, sizeof(message) * sizeof(*message));
   
     /* print the input message */
-    fwrite(message, sizeof message, sizeof *message, stdout);
+    code = fwrite(message, sizeof message, sizeof *message, stdout);
+    fprintf(stderr, "%d iteration: %d bytes has been written to stdout\n", i, code);
   }
   
   fclose(in);

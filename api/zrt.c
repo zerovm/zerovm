@@ -28,6 +28,8 @@
 #include <string.h>
 #include <errno.h>
 #include <unistd.h> /* only for tests */
+#include <fcntl.h> /* only for tests */
+#include <sys/stat.h> /* only for tests */
 
 #include "zvm.h"
 #include "zrt.h"
@@ -40,6 +42,34 @@ static struct UserManifest *setup;
 
 /* positions of zerovm channels. should be allocated before usage */
 static size_t *pos_ptr;
+
+static int debug_handle;
+
+/* if debug_handle is initialized put message to debug log */
+#define zrt_log(fmt, ...) \
+  do {\
+    char buf[0x1000];\
+    int len;\
+    if(debug_handle < 3) break;\
+    len = snprintf(buf, 0x1000, "%s; %s, %d: " fmt "\n", \
+      __FILE__, __func__, __LINE__, __VA_ARGS__);\
+    zvm_pwrite(debug_handle, buf, len, 0);\
+  } while(0)
+
+/* just show current position in the source code */
+#define SHOWID
+//#define SHOWID zrt_log("%c", ' ')
+
+#define JOIN(x,y) x##y
+#define ZRT_FUNC(x) JOIN(zrt_, x)
+
+/* mock. replacing real syscall handler */
+#define SYSCALL_MOCK(name_wo_zrt_prefix, code) \
+static int32_t ZRT_FUNC(name_wo_zrt_prefix)(uint32_t *args)\
+{\
+  /*  zrt_log("%s", " "); */\
+  return code;\
+}
 
 /*
  * ZRT IMPLEMENTATION OF NACL SYSCALLS
@@ -58,7 +88,8 @@ SYSCALL_MOCK(dup2, -EPERM) /* duplicate the given file handle. n/a in the simple
  */
 static int32_t zrt_open(uint32_t *args)
 {
-  SHOWID;
+  zrt_log("name = %s, flags = %d, mode = %d",
+      (char*)args[0], (int)args[1], (int)args[2]);
   char* name = (char*)args[0];
 //  int flags = (int)args[1];
 //  int mode = (int)args[2];
@@ -76,7 +107,7 @@ static int32_t zrt_open(uint32_t *args)
 /* do nothing but checks given handle */
 static int32_t zrt_close(uint32_t *args)
 {
-  SHOWID;
+  zrt_log("handle = %d", (int)args[0]);
 //  int handle = (int)args[0];
   int result = -EBADF;
 
@@ -92,7 +123,8 @@ static int32_t zrt_close(uint32_t *args)
 /* read the file with the given handle number */
 static int32_t zrt_read(uint32_t *args)
 {
-  SHOWID;
+  zrt_log("handle = %d, buffer = %x, length = %lld",
+      (int)args[0], (intptr_t)args[1], (int64_t)args[2]);
   int file = (int)args[0];
   void *buf = (void*)args[1];
   int64_t length = (int64_t)args[2];
@@ -101,13 +133,15 @@ static int32_t zrt_read(uint32_t *args)
   length = zvm_pread(file, buf, length, pos_ptr[file]);
   if(length > 0) pos_ptr[file] += length;
 
+  zrt_log("%lld bytes has been read", length);
   return length;
 }
 
 /* write the file with the given handle number */
 static int32_t zrt_write(uint32_t *args)
 {
-  SHOWID;
+  zrt_log("handle = %d, buffer = %x, length = %lld",
+      (int)args[0], (intptr_t)args[1], (int64_t)args[2]);
   int file = (int)args[0];
   void *buf = (void*)args[1];
   int64_t length = (int64_t)args[2];
@@ -116,6 +150,7 @@ static int32_t zrt_write(uint32_t *args)
   length = zvm_pwrite(file, buf, length, pos_ptr[file]);
   if(length > 0) pos_ptr[file] += length;
 
+  zrt_log("%lld bytes has been written", length);
   return length;
 }
 
@@ -125,11 +160,12 @@ static int32_t zrt_write(uint32_t *args)
  */
 static int32_t zrt_lseek(uint32_t *args)
 {
-  SHOWID;
+  zrt_log("handle = %d, offset = %lld, whence = %d",
+          (int32_t)args[0], *((off_t*)args[1]), (int)args[2]);
   struct ZVMChannel *channel;
 
 #define CHECK_NEW_POS(offset)\
-  if(offset < 0 || offset > 0x7fffffff)\
+  if(offset < 0)\
   {\
     errno = EPERM; /* in advanced version should be set to conventional value */\
     return -EPERM;\
@@ -143,24 +179,8 @@ static int32_t zrt_lseek(uint32_t *args)
   /* check handle */
   if(handle < 0 || handle >= setup->channels_count) return EBADF;
 
-  /* select channel and make checks */
+  /* select channel and set the position */
   channel = &setup->channels[handle];
-
-  /* check if channel has random access */
-  if(channel->type == SGetSPut) return ESPIPE;
-
-  /*
-   * following check doesn't garantee absence of errors since
-   * it does not envolves counters update
-   * todo(d'b): try to solve it w/o syscalls
-   */
-  /* sequential r/o channel */
-  if(channel->type == SGetRPut && (channel->limits[PutsLimit] == 0
-      || channel->limits[PutSizeLimit] == 0)) return ESPIPE;
-  /* sequential w/o channel */
-  if(channel->type == RGetSPut && (channel->limits[GetsLimit] == 0
-      || channel->limits[GetSizeLimit] == 0)) return ESPIPE;
-
   switch(whence)
   {
     case SEEK_SET:
@@ -187,6 +207,7 @@ static int32_t zrt_lseek(uint32_t *args)
    * doesn't fit to return code (32 bits)
    */
   *(off_t *)args[1] = pos_ptr[handle];
+  zrt_log("new position = %d\n", pos_ptr[handle]);
   return 0;
 }
 
@@ -198,7 +219,8 @@ SYSCALL_MOCK(ioctl, -EINVAL) /* not implemented in the simple version of zrtlib 
  */
 static int32_t zrt_stat(uint32_t *args)
 {
-  SHOWID;
+  zrt_log("file = '%s', stat_addr = %X",
+          (const char*)args[0], (intptr_t)args[1]);
   const char *file = (const char*)args[0];
   struct nacl_abi_stat *sbuf = (struct nacl_abi_stat *)args[1];
   struct ZVMChannel *channel;
@@ -246,7 +268,8 @@ static int32_t zrt_stat(uint32_t *args)
 /* return synthetic channel information */
 static int32_t zrt_fstat(uint32_t *args)
 {
-  SHOWID;
+  zrt_log("handle = %d, stat_addr = %X",
+          (int)args[0], (intptr_t)args[1]);
   int handle = (int)args[0];
   struct nacl_abi_stat *sbuf = (struct nacl_abi_stat *)args[1];
   struct ZVMChannel *channel;
@@ -300,7 +323,7 @@ SYSCALL_MOCK(chmod, -EPERM) /* in a simple version of zrt chmod is not allowed *
 /* change space allocation */
 static int32_t zrt_sysbrk(uint32_t *args)
 {
-  SHOWID;
+  zrt_log("break = %X", (int)args[0]);
   int32_t retcode;
 
   zvm_syscallback(0); /* uninstall syscallback */
@@ -313,7 +336,9 @@ static int32_t zrt_sysbrk(uint32_t *args)
 /* map region of memory */
 static int32_t zrt_mmap(uint32_t *args)
 {
-  SHOWID;
+  zrt_log("args[0] = %X, args[1] = %X, args[2] = %X, "
+          "args[3] = %X, args[4] = %X, args[5] = %X, ",
+          args[0], args[1], args[2], args[3], args[4], args[5]);
   int32_t retcode;
 
   zvm_syscallback(0); /* uninstall syscallback */
@@ -330,7 +355,7 @@ static int32_t zrt_mmap(uint32_t *args)
  */
 static int32_t zrt_munmap(uint32_t *args)
 {
-  SHOWID;
+  zrt_log("args[0] = %X, args[1] = %X", args[0], args[1]);
   int32_t retcode;
 
   zvm_syscallback(0); /* uninstall syscallback */
@@ -349,7 +374,7 @@ SYSCALL_MOCK(getdents, 0)
 static int32_t zrt_exit(uint32_t *args)
 {
   /* no need to check args for NULL. it is always set by syscall_manager */
-  SHOWID;
+  zrt_log("code = %d", (int)args[0]);
   zvm_exit(args[0]);
   return 0; /* unreachable */
 }
@@ -363,7 +388,7 @@ SYSCALL_MOCK(sysconf, 0)
 #define TIMESTAMP_STRLEN strlen("TimeStamp=")
 static int32_t zrt_gettimeofday(uint32_t *args)
 {
-  SHOWID;
+  zrt_log("stat = %X", (intptr_t)args[0]);
   struct nacl_abi_timeval  *tv = (struct nacl_abi_timeval *)args[0];
   char *stamp = NULL;
   int i;
@@ -425,7 +450,8 @@ SYSCALL_MOCK(thread_nice, 0)
  */
 static int32_t zrt_tls_get(uint32_t *args)
 {
-  SHOWID;
+//  zrt_log(" args[0] = %X", (int)args[0]);
+//  zvm_pwrite(debug_handle, "zrt_tls_get()\n", strlen("zrt_tls_get()\n"), 0);
   int32_t retcode;
 
   zvm_syscallback(0); /* uninstall syscallback */
@@ -443,7 +469,7 @@ SYSCALL_MOCK(second_tls_set, 0)
  */
 static int32_t zrt_second_tls_get(uint32_t *args)
 {
-  SHOWID;
+  //  zrt_log("%s", " ");
   return zrt_tls_get(NULL);
 }
 
@@ -583,6 +609,7 @@ int32_t (*zrt_syscalls[])(uint32_t*) = {
 int main(int argc, char **argv, char **envp)
 {
   int retcode;
+  uint32_t args[6];
 
   /* get user manifest */
   setup = zvm_init();
@@ -594,6 +621,12 @@ int main(int argc, char **argv, char **envp)
 
   if(zvm_syscallback((intptr_t)syscall_director) == 0)
   return ERR_CODE;
+
+  /* set zrt debug channel */
+  args[0] = (intptr_t)"/dev/debug";
+  args[1] = O_RDONLY;
+  args[2] = S_IRWXU;
+  debug_handle = zrt_open(args);
 
   /* call user main() and care about return code */
   retcode = slave_main(argc, argv, envp);
