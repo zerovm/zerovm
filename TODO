@@ -1,5 +1,13 @@
 in the current version:
 -------------------------------------------------------------
+CHANNELS KINDS
+==============
+sequential read-only
+random read-only
+sequential write-only
+random write-only
+cdr: random read, sequential write
+
 CHANNELS DESIGN
 ===============
 - fix bug in cdr

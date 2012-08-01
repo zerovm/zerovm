@@ -111,6 +111,9 @@ int32_t ZVMReadHandle(struct NaClApp *nap,
   /* ignore user offset for sequential access read */
   if(CHANNEL_SEQ_READABLE(channel)) offset = channel->getpos;
 
+  /* prevent reading beyond the end */
+  size = MIN(channel->size - offset, size);
+
   /* check arguments sanity */
   if(size == 0) return 0; /* success. user has read 0 bytes */
   if(size < 0) return -EFAULT;
@@ -160,7 +163,7 @@ int32_t ZVMReadHandle(struct NaClApp *nap,
      */
     channel->getpos = offset + retcode;
 
-    /* if channel have random put update put cursor */
+    /* if channel have random put update put cursor. not allowed for cdr */
     if(CHANNEL_RND_WRITEABLE(channel)) channel->putpos = offset + retcode;
   }
 
@@ -232,11 +235,10 @@ int32_t ZVMWriteHandle(struct NaClApp *nap,
   /* update the channel position */
   if(retcode > 0)
   {
-    /* current put cursor. must be updated in any case to properly close the channel */
     channel->putpos = offset + retcode;
-
-    /* if the channel have random read cursor must be updated, otherwise - must not */
-    if(CHANNEL_RND_READABLE(channel)) channel->getpos = channel->putpos;
+    channel->size = channel->type == 2 ?
+        MAX(channel->size, channel->putpos) : channel->putpos;
+    channel->getpos = channel->putpos;
   }
 
   return retcode;

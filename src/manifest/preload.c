@@ -15,12 +15,15 @@
 #include "src/manifest/mount_channel.h"
 #include "src/manifest/preload.h"
 
-/* todo(d'b): under construction */
+/* (adjust and) close file associated with the channel */
 int PreloadChannelDtor(struct ChannelDesc* channel)
 {
   assert(channel != NULL);
 
-  ftruncate(channel->handle, channel->putpos);
+  /* adjust the size of writable channels */
+  if(channel->limits[PutSizeLimit] && channel->limits[PutsLimit])
+    ftruncate(channel->handle, channel->putpos);
+
   close(channel->handle);
   return OK_CODE;
 }
@@ -51,12 +54,15 @@ int PreloadChannelCtor(struct ChannelDesc* channel)
       channel->handle = open(channel->name, O_RDONLY, S_IRWXU);
       channel->size = GetFileSize((char*)channel->name);
       break;
-    case 2: /* write only */
+    case 2: /* write only. existing file will be overwritten */
       channel->handle = open(channel->name, O_WRONLY|O_CREAT|O_TRUNC, S_IRWXU);
-      posix_fallocate(channel->handle, channel->putpos, channel->limits[PutSizeLimit]);
+      ftruncate(channel->handle, channel->limits[PutSizeLimit]);
       channel->size = 0;
       break;
-    case 3: /* read/write and cdr (append) */
+    case 3: /* cdr */
+      COND_ABORT(channel->type != 1, "only cdr channels can have r/w access");
+
+      /* open the file and ensure that putpos is not greater than the file size */
       channel->handle = open(channel->name, O_RDWR|O_CREAT, S_IRWXU);
       channel->size = GetFileSize(channel->name);
       COND_ABORT(channel->putpos > channel->size,
@@ -65,17 +71,12 @@ int PreloadChannelCtor(struct ChannelDesc* channel)
       /* file does not exist */
       if(channel->size == 0)
       {
-        posix_fallocate(channel->handle, channel->putpos, channel->limits[PutSizeLimit]);
-        channel->size = 0;
+        ftruncate(channel->handle, channel->limits[PutSizeLimit]);
+        break;
       }
-      /* file exists */
-      else
-      {
-        /* set append position for cdr */
-        if(channel->putpos > 0) break; /* prefer to use manifest value */
-        channel->putpos = channel->type == RGetSPut && channel->size > 0 ?
-            channel->size : 0;
-      }
+
+      /* update putpos preferring to use manifest value */
+      if(channel->putpos == 0) channel->putpos = channel->size;
       break;
 
     default: /* unreachable */
