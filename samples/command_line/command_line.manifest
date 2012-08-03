@@ -15,3 +15,4 @@ Nexe = command_line.nexe
 NexeMax = 10000000
 SyscallsMax = 3333
 CommandLine = argument_number_1 argument_number_2 argument_number_3 argument_number_4 the_last_argument
+NodeName = master_node

@@ -120,6 +120,50 @@ static void SetCustomAttributes(struct SystemManifest *policy)
   }
 }
 
+/* helper. sets command line parameters for the user */
+static void SetCommandLine(struct SystemManifest *policy)
+{
+  int i;
+  char *parameters;
+  char *buf[BIG_ENOUGH_SPACE], **tokens = buf;
+  char *pgm_name = GetValueByKey("NodeName");
+
+  assert(policy != NULL);
+  assert(policy->cmd_line == NULL);
+  assert(policy->cmd_line_size == 0);
+
+  /* get parameters */
+  parameters = GetValueByKey("CommandLine");
+
+  /* if there is command line parse and check count of parameters */
+  if(parameters != NULL)
+  {
+    policy->cmd_line_size = ParseValue(parameters, " \t", tokens, BIG_ENOUGH_SPACE);
+    COND_ABORT(policy->cmd_line_size == 0, "invalid user parameters");
+    COND_ABORT(policy->cmd_line_size == BIG_ENOUGH_SPACE,
+        "user command line parameters exceeded the limit");
+  }
+
+  /*
+   * allocate space to hold string pointers. 0st element reserved
+   * for argv[0]. last element should be NULL so 1 extra element must
+   * be reserved
+   */
+  ++policy->cmd_line_size;
+  policy->cmd_line = calloc(policy->cmd_line_size + 1, sizeof *policy->cmd_line);
+  COND_ABORT(policy->cmd_line == NULL,
+      "cannot allocate memory to hold user command line parameters");
+
+  /* set the node name (0st parameter) */
+  policy->cmd_line[0] = (pgm_name == NULL) ? NEXE_PGM_NAME : pgm_name;
+
+  /* populate command line arguments array with pointers */
+  for(i = 0; i < policy->cmd_line_size - 1; ++i)
+    policy->cmd_line[i + 1] = tokens[i];
+
+  assert(policy->cmd_line[policy->cmd_line_size] == NULL);
+}
+
 /*
  * construct system_manifest object and initialize from manifest
  * todo(d'b): everything about 'report' should be moved to HostManifestCtor()
@@ -174,15 +218,13 @@ void SystemManifestCtor(struct NaClApp *nap)
   policy->envp = NULL;
   SetCustomAttributes(policy);
 
-  /* prepare command line arguments for nexe */
-  /* todo(d'b): rewrite it like SetCustomAttributes() */
-  /* todo(d'b): allow passing '=' ',' and ' ' */
-#define NEXE_CMD_LEN 128
-  policy->cmd_line = calloc(NEXE_CMD_LEN, sizeof *policy->cmd_line);
-  COND_ABORT(policy->cmd_line == NULL, "cannot allocate memory for nexe command line");
-  policy->cmd_line[0] = NEXE_PGM_NAME;
-  policy->cmd_line_size = 1 + ParseValue(GetValueByKey("CommandLine"),
-      " \t", &policy->cmd_line[1], NEXE_CMD_LEN - 1);
+  /*
+   * prepare command line arguments for nexe
+   * todo(d'b): allow passing '=' ',' and ' '
+   */
+  policy->cmd_line = NULL;
+  policy->cmd_line_size = 0;
+  SetCommandLine(policy);
 
   /* construct and initialize all channels */
   ChannelsCtor(nap);

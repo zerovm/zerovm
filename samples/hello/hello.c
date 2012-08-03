@@ -14,8 +14,7 @@ int main(int argc, char **argv)
   printf("hello, world\n");
 
   /* write to user log (stderr) */
-//  fprintf(stderr, "hello, world\n");
-  fprintf(stderr, "hello, world -- %d\n", sizeof(struct ZVMChannel));
+  fprintf(stderr, "hello, world\n");
 
   return 0;
 }

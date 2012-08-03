@@ -10,10 +10,17 @@ cdr: random read, sequential write
 
 CHANNELS DESIGN
 ===============
+- add name service
+  - prepare 2 structures to hold "bind" and "connect" channels list
+  - make hash function to hash channels names to 32-bit values
+  - make (de)serializers to receive/send channels list
+- add read and write offsets to channel definition in manifest (9 fields?)
 - ensure that network eof is working
+- write complete test to test network channels (over tcp protocol)
++ fix bug in struct ZVMChannel
 + fix bug in cdr
 + fix crash: "malloc(): smallbin double linked list corrupted"
-+- fix cdr special case: initialize putpos with file size or (even better) add new fields 
++ fix cdr special case: initialize putpos with file size or (even better) add new fields 
   to channel description (read offset and write offset)
 + zvm_pread/zvm_pwrite must return -1 on error and set eerno to correct standard error code
   http://publib.boulder.ibm.com/infocenter/zos/v1r12/index.jsp?topic=%2Fcom.ibm.zos.r12.bpxbd00%2Fpread.htm
@@ -23,9 +30,11 @@ CHANNELS DESIGN
 + replace 2nd channel attribute "id" with "alias".
 + write more strict channels dealocation: free all allocated memory, free nacl descriptor e.t.c
 + zerovm special channel names (resides in "/dev/"): stdin, stdout, stderr, input, output, debug
++ design debug channel. zrt library can use it for the debugging purposes
 
 MANIFEST
 ========
+- add a new keyword "NodeName" and pass it as argv[0]
 + add a new "Environment" keyword
 + add a new "Report" keyword. remove the old one. 
   this task needs constant report and log ready
@@ -101,7 +110,8 @@ completed releases:
 
 problems to solve in the future versions:
 -------------------------------------------------------------
-- find the way how to exchange variable length arrays between trusted and untrusted code 
++ find the way how to exchange variable length arrays between trusted and untrusted code 
+  just use "push-pull". ugly but simple and safe (of course if made via zvm api)
 - there is snprintf usage in signal handler. is it safe?
 - replace (if possible) lonjump with naclexit(). looks doable. problems are:
   - perf_counters
@@ -111,7 +121,31 @@ problems to solve in the future versions:
   perhaps this is linked to (1)
 - cpu accounting
 - use setrlimit() to limit resources usage (according to given manifest)
-- finish with api error codes
++ finish with api error codes
+  standard errno has been used
+  - remove "zvm_errors.h"
 + bug in environment: Environment = TimeStamp, 1337012520, Gort, klaato_barada_nikto
   gives "klaato_barada_niktoQ". fixed
-
+  
+global plan
+-------------------------------------------------------------
+1. remove validator and clean up all project removing needless parts
+   - remove imc
+   - remove (almost all) desc
+   - remove reference counter?
+   - remove log
+   - remove fault injection
+   - remove gio (or replace with very tiny version)
+   - remove platform
+   - remove platform_qualify
+2. add name service for the network channels
+3. redesign src structure
+   - utils (scrapyard)
+   - manifest (parser)
+   - setup (main and stuff)
+   - loader (elf loader and stuff)
+   - channels (all about channels)
+   - tests (functional, security and unit tests). all "/samples/*" goes there
+4. cover all source code with tests
+5. rewrite project's makefile. make it small, clean and clear
+6. 

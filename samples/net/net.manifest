@@ -18,3 +18,4 @@ Nexe = net.nexe
 NexeMax = 10000000
 SyscallsMax = 3333
 MaxMem = 99999999
+NodeName = n2D3_0

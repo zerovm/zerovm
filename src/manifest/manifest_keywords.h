@@ -35,6 +35,7 @@
   "MemMax", /* size of memory available for nexe */\
   "SyscallsMax", /* syscalls allowed nexe to invoke */\
   "CommandLine", /* command line for nexe */\
+  "NodeName", /* node name. available for user as argv[0] */\
   "TheEnd" /* used to check if this array is in sync with the enum */\
 };
 
@@ -57,6 +58,7 @@ enum ManifestKeywords
   MemMax, /* size of memory available for nexe */
   SyscallsMax, /* syscalls allowed nexe to invoke */
   CommandLine, /* command line for nexe */
+  NodeName, /* node name. available for user as argv[0] */
   TheEnd /* used to check if this enum is in sync with the string array */
 };
 
