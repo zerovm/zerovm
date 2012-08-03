@@ -176,12 +176,10 @@ int32_t zvm_channels(struct ZVMChannel *channels)
 }
 
 /* return syscalls limit */
-int64_t zvm_syscalls_limit()
+int32_t zvm_syscalls_limit()
 {
-  int64_t result;
-  uint64_t request[] = {TrapSyscallsLimit, 0, (intptr_t)&result};
-  _trap(request); /* ignore the returnings, real value passed by reference */
-  return result;
+  uint64_t request[] = {TrapSyscallsLimit};
+  return _trap(request);
 }
 
 #undef USER_SIDE

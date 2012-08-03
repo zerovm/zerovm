@@ -12,7 +12,6 @@ int main()
 {
   time_t cur_time;
   struct tm *date_time;
-  int64_t i;
 
   /* call zrt_gettimeofday() indirectly */
   printf("timestamp from manifest = %ld\nwhich means..\n",

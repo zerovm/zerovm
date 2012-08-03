@@ -386,21 +386,21 @@ SYSCALL_MOCK(sysconf, 0)
 
 /* if given in manifest let user to have it */
 #define TIMESTAMP_STR "TimeStamp="
-#define TIMESTAMP_STRLEN strlen("TimeStamp=")
+#define TIMESTAMP_LEN (sizeof(TIMESTAMP_STR) - 1)
 static int32_t zrt_gettimeofday(uint32_t *args)
 {
   zrt_log("stat = %X", (intptr_t)args[0]);
-  struct nacl_abi_timeval  *tv = (struct nacl_abi_timeval *)args[0];
+  struct nacl_abi_timeval *tv = (struct nacl_abi_timeval *)args[0];
   char *stamp = NULL;
   int i;
 
   /* get time stamp from the environment */
   for(i = 0; setup->envp[i] != NULL; ++i)
   {
-    if(strncmp(setup->envp[i], TIMESTAMP_STR, TIMESTAMP_STRLEN) != 0)
+    if(strncmp(setup->envp[i], TIMESTAMP_STR, TIMESTAMP_LEN) != 0)
       continue;
 
-    stamp = setup->envp[i] + TIMESTAMP_STRLEN;
+    stamp = setup->envp[i] + TIMESTAMP_LEN;
     break;
   }
 
@@ -452,7 +452,6 @@ SYSCALL_MOCK(thread_nice, 0)
 static int32_t zrt_tls_get(uint32_t *args)
 {
 //  zrt_log(" args[0] = %X", (int)args[0]);
-//  zvm_pwrite(debug_handle, "zrt_tls_get()\n", strlen("zrt_tls_get()\n"), 0);
   int32_t retcode;
 
   zvm_syscallback(0); /* uninstall syscallback */
@@ -611,6 +610,7 @@ int main(int argc, char **argv, char **envp)
 {
   int retcode;
   uint32_t args[6];
+  int i;
 
   /* get user manifest */
   setup = zvm_init();
@@ -628,6 +628,27 @@ int main(int argc, char **argv, char **envp)
   args[1] = O_RDONLY;
   args[2] = S_IRWXU;
   debug_handle = zrt_open(args);
+
+  /* debug print */
+  zrt_log("DEBUG INFORMATION FOR '%s' NODE", argv[0]);
+  zrt_log("user heap pointer address = %d", (intptr_t)setup->heap_ptr);
+  zrt_log("user memory size = %d", setup->mem_size);
+  zrt_log("syscall limit = %lld", setup->syscalls_limit);
+  zrt_log("%060d", 0);
+  zrt_log("sizeof(struct ZVMChannel) = %d", sizeof(struct ZVMChannel));
+  zrt_log("channels count = %d", setup->channels_count);
+  zrt_log("%060d", 0);
+  for(i = 0; i < setup->channels_count; ++i)
+  {
+    zrt_log("channel[%d].name = '%s'", i, setup->channels[i].name);
+    zrt_log("channel[%d].type = %d", i, setup->channels[i].type);
+    zrt_log("channel[%d].size = %lld", i, setup->channels[i].size);
+    zrt_log("channel[%d].limits[GetsLimit] = %lld", i, setup->channels[i].limits[GetsLimit]);
+    zrt_log("channel[%d].limits[GetSizeLimit] = %lld", i, setup->channels[i].limits[GetSizeLimit]);
+    zrt_log("channel[%d].limits[PutsLimit] = %lld", i, setup->channels[i].limits[PutsLimit]);
+    zrt_log("channel[%d].limits[PutSizeLimit] = %lld", i, setup->channels[i].limits[PutSizeLimit]);
+  }
+  zrt_log("%060o", 0);
 
   /* call user main() and care about return code */
   retcode = slave_main(argc, argv, envp);

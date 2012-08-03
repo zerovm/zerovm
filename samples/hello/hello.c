@@ -6,6 +6,7 @@
  */
 #include <stdio.h>
 #include "api/zrt.h"
+#include "api/zvm.h"
 
 int main(int argc, char **argv)
 {
@@ -13,7 +14,8 @@ int main(int argc, char **argv)
   printf("hello, world\n");
 
   /* write to user log (stderr) */
-  fprintf(stderr, "hello, world\n");
+//  fprintf(stderr, "hello, world\n");
+  fprintf(stderr, "hello, world -- %d\n", sizeof(struct ZVMChannel));
 
   return 0;
 }

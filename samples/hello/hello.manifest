@@ -14,5 +14,8 @@ Channel = stderr.data, /dev/stderr, 0, 0, 0, 999999, 999999
 Version = 13072012
 Nexe = hello.nexe
 NexeMax = 10000000
-SyscallsMax = 3333
+SyscallsMax = 1234
+
+== minimal amount of memory to make the nexe start = 17965169
+MemMax = 17965169
 

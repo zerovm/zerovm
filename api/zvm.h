@@ -62,10 +62,13 @@ enum TrapCalls {
  */
 struct ZVMChannel
 {
-  char *name; /* file name (int32_t). secured */
-  enum AccessType type; /* type of access sequential/random */
-  int64_t size; /* channel size. optional */
   int64_t limits[IOLimitsCount];
+  int64_t size; /* channel size. optional */
+  enum AccessType type; /* type of access sequential/random */
+#ifdef USER_SIDE
+  int32_t pad2;
+#endif
+  char *name; /* file name (int32_t). secured */
 };
 
 /*
@@ -134,7 +137,7 @@ int32_t zvm_channels(struct ZVMChannel *channels);
 int32_t zvm_errno();
 
 /* return syscalls limit */
-int64_t zvm_syscalls_limit();
+int32_t zvm_syscalls_limit();
 
 #endif /* USER_SIDE */
 
