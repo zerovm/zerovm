@@ -99,7 +99,7 @@ int32_t zvm_pread(int desc, char *buffer, int32_t size, int64_t offset)
  * wrapper for zerovm "TrapWrite"
  * affects zvm_errno
  */
-int32_t zvm_pwrite(int desc, char *buffer, int32_t size, int64_t offset)
+int32_t zvm_pwrite(int desc, const char *buffer, int32_t size, int64_t offset)
 {
   int32_t code;
   uint64_t request[] = {TrapWrite, 0, desc, (uint32_t)buffer, size, offset};
