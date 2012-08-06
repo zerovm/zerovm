@@ -112,6 +112,22 @@ int32_t zvm_pwrite(int desc, const char *buffer, int32_t size, int64_t offset)
   return code;
 }
 
+/*
+ * close the channel. make a sence only for a channels with
+ * sequential write. uses special form of TrapWrite call
+ * return 0 if successful or -1 when error
+ */
+int32_t zvm_close(int desc)
+{
+  /*
+   * it is safe to give request as buffer - writer will not use
+   * NULL cannot be given as a buffer address because this value
+   * is prohibited and TrapWrite will return an error
+   */
+  uint64_t request[] = {TrapWrite, 0, desc, (uint32_t)request, ZVM_EOF, ZVM_EOF};
+  return _trap(request);
+}
+
 /* wrapper for zerovm "TrapExit" */
 int32_t zvm_exit(int32_t code)
 {

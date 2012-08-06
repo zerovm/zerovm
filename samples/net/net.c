@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include "api/zrt.h"
 
 #define FALLING \
@@ -38,12 +39,12 @@
 "Falling\n"\
 "Are we falling in love?\n\n\n\n"
 
-#define CROWD 0x1000
+#define CROWD 0x100
 
 int main(int argc, char **argv)
 {
-  char message[] = FALLING;
-//  char message[0x100000];
+//  char message[] = FALLING;
+  char message[0x100000];
   char in_message[sizeof message];
   FILE *in, *out;
   int i;
@@ -57,20 +58,29 @@ int main(int argc, char **argv)
     fprintf(stderr, "couldn't open i/o file(s)\n");
     return 1;
   }
-  
-  /* populate buffer with values */
-  /*
+
+  /* initialize the array */
+  srand(time(0));
+  fprintf(stderr, "time = %d\n", (int)time(0));
   for(i = 0; i < sizeof message; ++i)
-    message[i] = (char)random();
-  */
+    message[i] = random();
   
+  /* send own name as the 1st message */
+  code = fwrite(argv[0], 1, strlen(argv[0]), out);
+  fprintf(stderr, "%d bytes has been written of '%s'\n", code, argv[0]);
+  
+  /* read the 1st message with the name */
+  code = fread(in_message, 1, strlen(argv[0]), in);
+  fprintf(stderr, "%d bytes has been read of '%s'\n", code, in_message);
+
+  /* main loop */
   for(i = 0; i < CROWD; ++i)
   {
-    /* write to stdout (which is connected to "tale" of the net channel) */
+    /* write to "out" (which is connected to "tale" of the net channel) */
     code = fwrite(message, sizeof *message, sizeof message, out);
     fprintf(stderr, "%d iteration: %d bytes has been written of %d\n", i, code, sizeof(message) * sizeof(*message));
 
-    /* read from stdin (which is connected to "head" of the net channel) */
+    /* read from "in" (which is connected to "head" of the net channel) */
     code = fread(in_message, sizeof *message, sizeof message, in);
     fprintf(stderr, "%d iteration: %d bytes has been read of %d\n", i, code, sizeof(message) * sizeof(*message));
   
@@ -78,9 +88,8 @@ int main(int argc, char **argv)
     code = fwrite(message, sizeof *message, sizeof message - 1, stdout);
     fprintf(stderr, "%d iteration: %d bytes has been written to stdout\n", i, code);
   }
-  
-  fclose(in);
-  fclose(out);
 
+  fclose(out);
+  fclose(in);
   return 0;
 }

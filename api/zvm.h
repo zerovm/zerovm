@@ -106,6 +106,13 @@ int32_t zvm_pread(int desc, char *buffer, int32_t size, int64_t offset);
 /* wrapper for zerovm "TrapWrite" */
 int32_t zvm_pwrite(int desc, const char *buffer, int32_t size, int64_t offset);
 
+/*
+ * close the channel. make a sence only for a channels with
+ * sequential write. uses special form of TrapWrite call
+ * return 0 if successful or -1 when error
+ */
+int32_t zvm_close(int desc);
+
 /* wrapper for zerovm "TrapExit" */
 int32_t zvm_exit(int32_t code);
 

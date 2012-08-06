@@ -15,4 +15,4 @@ $(NAME).o:
 	$(INCLUDE_FLAGS) $(MACROS_FLAGS) $(DEBUG) -c -Wno-long-long -O2 -msse4.1 -m64 $(NAME).c
 
 clean:
-	rm -f $(NAME).nexe $(NAME).o *.log *.data debug
+	rm -f $(NAME).nexe $(NAME).o *.log *.data debug*

@@ -264,9 +264,16 @@ int ProxyReport(struct NaClApp *nap)
 {
   char buf[BIG_ENOUGH_SPACE + 1], *report = buf;
 
+  /* for debugging purposes it is useful to see more advanced information */
+#ifdef DEBUG
   snprintf(report, BIG_ENOUGH_SPACE,
-      "user return code = %d\nZeroVM return code = %d\nuser state = %s\n",
-      nap->system_manifest->user_ret_code, nap->zvm_code, nap->zvm_state);
+      "user return code = %d\nuser ETag = %s\nZeroVM return code = %d\nuser state = %s\n",
+      nap->system_manifest->user_ret_code, "disabled", nap->zvm_code, nap->zvm_state);
+#else
+  /* .. but for production zvm will switch to more brief output */
+  snprintf(report, BIG_ENOUGH_SPACE, "%d\n%s\n",
+      nap->system_manifest->user_ret_code, "disabled");
+#endif
 
   write(STDOUT_FILENO, report, strlen(report));
   return OK_CODE;

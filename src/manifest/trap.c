@@ -99,13 +99,16 @@ int32_t ZVMReadHandle(struct NaClApp *nap,
 
   /* todo(d'b): check buffer address and size to prevent SYGSEGV */
 
-  /* convert address and check buffer */
+  /* check buffer and convert address */
+  if(buffer == NULL) return -EINVAL;
   sys_buffer = (char*)NaClUserToSys(nap, (uintptr_t) buffer);
-
   NaClLog(LOG_INFO, "%s() invoked: desc=%d, buffer=0x%lx, size=%d, offset=%ld\n",
       __func__, ch, (intptr_t)buffer, size, offset);
 
   channel = &nap->system_manifest->channels[ch];
+
+  /* prevent reading from the closed or not readable channel */
+  if(channel->closed) return -EBADF;
   if(!CHANNEL_READABLE(channel)) return -EBADF;
 
   /* ignore user offset for sequential access read */
@@ -189,13 +192,32 @@ int32_t ZVMWriteHandle(struct NaClApp *nap,
 
   /* todo(d'b): check buffer address and size to prevent SYGSEGV */
 
-  /* convert address and check buffer */
+  /* check buffer and convert address */
+  if(buffer == NULL) return -EINVAL;
   sys_buffer = (char*)NaClUserToSys(nap, (uintptr_t) buffer);
-
   NaClLog(4, "%s() invoked: desc=%d, buffer=0x%lx, size=%d, offset=%ld\n",
         __func__, ch, (intptr_t)buffer, size, offset);
 
   channel = &nap->system_manifest->channels[ch];
+
+  /* prevent writing to the closed channel */
+  if(channel->closed) return -EBADF;
+
+  /*
+   * special case: the user called to close the channel
+   * note: the channel can have any type of access even read-only
+   */
+  if(size == ZVM_EOF && offset == ZVM_EOF)
+  {
+    if(channel->closed) return -1;
+    channel->closed = 1;
+
+    /* for a w/o network channel EOF should be send */
+    /* todo(d'b): .. */
+    return 0;
+  }
+
+  /* prevent writing to the not writable channel */
   if(CHANNEL_WRITEABLE(channel) == 0) return -EBADF;
 
   /* ignore user offset for sequential access write */
