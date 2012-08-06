@@ -109,10 +109,11 @@ int32_t ZVMReadHandle(struct NaClApp *nap,
   if(!CHANNEL_READABLE(channel)) return -EBADF;
 
   /* ignore user offset for sequential access read */
-  if(CHANNEL_SEQ_READABLE(channel)) offset = channel->getpos;
-
-  /* prevent reading beyond the end */
-  size = MIN(channel->size - offset, size);
+  if(CHANNEL_SEQ_READABLE(channel))
+    offset = channel->getpos;
+  else
+    /* prevent reading beyond the end of the random access channels */
+    size = MIN(channel->size - offset, size);
 
   /* check arguments sanity */
   if(size == 0) return 0; /* success. user has read 0 bytes */

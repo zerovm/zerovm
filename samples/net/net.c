@@ -36,7 +36,7 @@
 "\n"\
 "Falling\n"\
 "Falling\n"\
-"Are we falling in love?\n"
+"Are we falling in love?\n\n\n\n"
 
 #define CROWD 0x1000
 
@@ -67,15 +67,15 @@ int main(int argc, char **argv)
   for(i = 0; i < CROWD; ++i)
   {
     /* write to stdout (which is connected to "tale" of the net channel) */
-    code = fwrite(message, sizeof message, sizeof *message, out);
+    code = fwrite(message, sizeof *message, sizeof message, out);
     fprintf(stderr, "%d iteration: %d bytes has been written of %d\n", i, code, sizeof(message) * sizeof(*message));
 
     /* read from stdin (which is connected to "head" of the net channel) */
-    code = fread(in_message, sizeof message, sizeof *message, in);
+    code = fread(in_message, sizeof *message, sizeof message, in);
     fprintf(stderr, "%d iteration: %d bytes has been read of %d\n", i, code, sizeof(message) * sizeof(*message));
   
-    /* print the input message */
-    code = fwrite(message, sizeof message, sizeof *message, stdout);
+    /* print the input message (minus ending '\0') */
+    code = fwrite(message, sizeof *message, sizeof message - 1, stdout);
     fprintf(stderr, "%d iteration: %d bytes has been written to stdout\n", i, code);
   }
   
