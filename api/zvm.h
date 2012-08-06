@@ -104,7 +104,7 @@ struct UserManifest *zvm_init();
 int32_t zvm_pread(int desc, char *buffer, int32_t size, int64_t offset);
 
 /* wrapper for zerovm "TrapWrite" */
-int32_t zvm_pwrite(int desc, char *buffer, int32_t size, int64_t offset);
+int32_t zvm_pwrite(int desc, const char *buffer, int32_t size, int64_t offset);
 
 /* wrapper for zerovm "TrapExit" */
 int32_t zvm_exit(int32_t code);
