@@ -134,7 +134,7 @@ static int32_t zrt_read(uint32_t *args)
   if(length > 0) pos_ptr[file] += length;
 
   zrt_log("%lld bytes has been read", length);
-  return (int16_t)length;
+  return (int32_t)length;
 }
 
 /* write the file with the given handle number */
