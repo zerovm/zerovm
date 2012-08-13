@@ -30,4 +30,12 @@ int32_t FetchMessage(struct ChannelDesc *channel, char *buf, int32_t count);
  */
 int32_t SendMessage(struct ChannelDesc *channel, char *buf, int32_t count);
 
+/*
+ * if name service is available then go through all available
+ * channels, pick the network ones and connect them
+ * note: if no name service is available quietly return - all channels
+ * are already bound and connected due 1st pass
+ */
+void KickPrefetchChannels(struct NaClApp *nap);
+
 #endif /* PREFETCH_H_ */

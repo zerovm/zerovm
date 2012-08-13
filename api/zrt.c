@@ -31,11 +31,16 @@
 #include <fcntl.h> /* only for tests */
 #include <sys/stat.h> /* only for tests */
 
+#ifndef USER_SIDE
+#define USER_SIDE
+#endif
+
 #include "zvm.h"
 #include "zrt.h"
 
 // ### revise it
 #undef main /* prevent misuse macro */
+
 
 /* pointer to the user manifest object */
 static struct UserManifest *setup;

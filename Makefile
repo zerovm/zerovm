@@ -36,7 +36,7 @@ create_dirs:
 	@mkdir test -p
 
 zerovm: obj/sel_main.o obj/libsel.a obj/libnacl_error_code.a obj/libgio_wrapped_desc.a obj/libnrd_xfer.a obj/libnacl_perf_counter.a obj/libnacl_base.a obj/libimc.a obj/libnacl_fault_inject.a obj/libplatform.a obj/libplatform_qual_lib.a obj/libncvalidate_x86_64.a obj/libncval_reg_sfi_x86_64.a obj/libnccopy_x86_64.a obj/libnc_decoder_x86_64.a obj/libnc_opcode_modeling_x86_64.a obj/libncval_base_x86_64.a obj/libplatform.a obj/libgio.a ${NETW_RULES}
-	@g++ ${CXXFLAGS} -o zerovm ${CXXFLAGS2} obj/sel_main.o -L/usr/lib -lsel -lnacl_error_code -lgio_wrapped_desc -lnrd_xfer -lnacl_perf_counter -lnacl_base -limc -lnacl_fault_inject -lplatform -lplatform_qual_lib -lncvalidate_x86_64 -lncval_reg_sfi_x86_64 -lnccopy_x86_64 -lnc_decoder_x86_64 -lnc_opcode_modeling_x86_64 -lncval_base_x86_64 -lplatform -lgio ${NETW_LIB} -lrt -lpthread -lcrypto -ldl -Lobj -Lgtest  
+	@g++ ${CXXFLAGS} -o zerovm ${CXXFLAGS2} obj/sel_main.o -L/usr/lib -lsel -lnacl_error_code -lgio_wrapped_desc -lnrd_xfer -lnacl_perf_counter -lnacl_base -limc -lnacl_fault_inject -lplatform -lplatform_qual_lib -lncvalidate_x86_64 -lncval_reg_sfi_x86_64 -lnccopy_x86_64 -lnc_decoder_x86_64 -lnc_opcode_modeling_x86_64 -lncval_base_x86_64 -lplatform -lgio ${NETW_LIB} -lrt -lpthread -lcrypto -ldl -lglib-2.0 -Lobj -Lgtest  
 
 gcov: clean all
 	@lcov --directory . --base-directory=${ABS_PATH} --capture --output-file app.info
@@ -194,7 +194,7 @@ obj/mount_channel.o: src/manifest/mount_channel.c
 	@gcc ${CCFLAGS} -o obj/mount_channel.o ${CCFLAGS0} ${CCFLAGS1} ${CCFLAGS4} src/manifest/mount_channel.c
 
 obj/prefetch.o: src/manifest/prefetch.c
-	@gcc ${CCFLAGS} -o obj/prefetch.o ${CCFLAGS0} ${CCFLAGS1} ${CCFLAGS4} src/manifest/prefetch.c
+	@gcc ${CCFLAGS} -o obj/prefetch.o ${CCFLAGS0} ${CCFLAGS1} ${CCFLAGS4} -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include src/manifest/prefetch.c
 
 obj/preload.o: src/manifest/preload.c
 	@gcc ${CCFLAGS} -o obj/preload.o ${CCFLAGS0} ${CCFLAGS1} ${CCFLAGS4} src/manifest/preload.c

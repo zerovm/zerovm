@@ -26,6 +26,8 @@
 #define INT32_STRLEN (11) /* enough space to place maximum int32 value + '\0' */
 #define SIGNAL_STRLEN (128) /* enough space to place signal message + '\0' */
 
+#undef MIN /* prevent conflict with glib.h*/
+#undef MAX /* prevent conflict with glib.h*/
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 

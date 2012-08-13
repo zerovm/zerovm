@@ -79,7 +79,7 @@ int GetValuesByKey(char *key, char *values[], int capacity)
 /*
  * parse given string with the given delimiter
  * returns number of the non NULL tokens, populates given array with ALL tokens
- * note: function is not re-enterable
+ * note: function is not re-enterable; value will be overwritten
  */
 int ParseValue(char *value, char *delimiter, char *tokens[], int capacity)
 {

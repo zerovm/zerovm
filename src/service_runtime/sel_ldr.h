@@ -241,6 +241,10 @@ struct NaClApp {
   int                       verbosity; /* startup time variable */
   int                       handle_signals; /* startup time variable */
 
+  /* for channels */
+  int                       node_id; /* own node id from manifest */
+  char                      *node_name; /* own node name from manifest. available for user */
+
   /* fields required by "whole chunk" user memory management */
   int                       user_side_flag; /* 0 - trusted syscall, 1 - called from user side */
   int                       trusted_code; /* mark to catch source of signal */

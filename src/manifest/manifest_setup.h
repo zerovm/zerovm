@@ -29,7 +29,7 @@ EXTERN_C_BEGIN
     " -Q disable platform qualification (dangerous!)\n"\
     " -Z use fixed feature x86 CPU mode\n"\
     " -D (switch disabled) enable the UNSTABLE dfa validator\n"
-#define NEXE_PGM_NAME "bee" /* argv[0] for nexe */
+#define NEXE_PGM_NAME "loner" /* default argv[0] for nexe */
 #define MANIFEST_VERSION "13072012"
 #define ZEROVMLOG_NAME "ZeroVM"
 #define ZEROVMLOG_OPTIONS (LOG_CONS | LOG_PID | LOG_NDELAY)

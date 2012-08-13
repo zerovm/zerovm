@@ -19,23 +19,61 @@
 #include "src/manifest/prefetch.h"
 #include "src/manifest/mount_channel.h"
 
-/* return source type inferred from the channel name */
+/*
+ * returns protocol or ChannelProtoNumber if protocol isn't supported
+ * note: can be used globally
+ * todo(d'b): use x-macro
+ */
+enum ChannelNetProtocol GetChannelProtocol(const char *url)
+{
+  assert(url != NULL);
+
+#define IS_TRANSPORT(prefix, proto) \
+  if(strncmp(url, prefix, sizeof(prefix) - 1) == 0) return proto;
+  IS_TRANSPORT(IPC_PREFIX, ChannelIPC);
+  IS_TRANSPORT(TCP_PREFIX, ChannelTCP);
+  IS_TRANSPORT(INPROC_PREFIX, ChannelINPROC);
+  IS_TRANSPORT(PGM_PREFIX, ChannelPGM);
+  IS_TRANSPORT(EPGM_PREFIX, ChannelEPGM);
+  IS_TRANSPORT(UDP_PREFIX, ChannelUDP);
+#undef IS_TRANSPORT
+
+  return ChannelProtoNumber;
+}
+
+/* get string contain protocol name by protocol id */
+/* todo(d'b): use x-macro */
+char *StringizeChannelProtocol(enum ChannelNetProtocol id)
+{
+  switch(id)
+  {
+    case ChannelIPC: return IPC_PREFIX;
+    case ChannelTCP: return TCP_PREFIX;
+    case ChannelINPROC: return INPROC_PREFIX;
+    case ChannelPGM: return PGM_PREFIX;
+    case ChannelEPGM: return EPGM_PREFIX;
+    case ChannelUDP: return UDP_PREFIX;
+    case ChannelProtoNumber: return NULL; /* to prevent compiler warning */
+  }
+  return NULL;
+}
+
+/*
+ * return source type inferred from the channel name. also checks
+ * protocol validity for the network channels
+ */
 static int GetSourceType(char *name)
 {
   /* check for design errors */
   assert(name != NULL);
-  assert(*name != 0);
 
-#define IS_TRANSPORT(prefix) \
-  if(strncmp(name, prefix, sizeof(prefix) - 1) == 0) return NetworkChannel;
-  IS_TRANSPORT(IPC_PREFIX);
-  IS_TRANSPORT(TCP_PREFIX);
-  IS_TRANSPORT(INPROC_PREFIX);
-  IS_TRANSPORT(PGM_PREFIX);
-  IS_TRANSPORT(EPGM_PREFIX);
-#undef IS_TRANSPORT
+  /* network channel always contain ':'s */
+  if(strchr(name, ':') == NULL) return LocalFile;
 
-  return LocalFile;
+  COND_ABORT(GetChannelProtocol(name) == ChannelProtoNumber,
+      "the specified protocol isn't supported for channels");
+
+  return NetworkChannel;
 }
 
 /* return the channel by channel type */
@@ -178,6 +216,9 @@ void ChannelsCtor(struct NaClApp *nap)
                "the channels array must not have uninitialized elements");
   COND_ABORT(nap->system_manifest->channels_count < RESERVED_CHANNELS,
       "some of the standard channels weren't initialized");
+
+  /* 2nd pass for the network channels if name service specified */
+  KickPrefetchChannels(nap);
 }
 
 /* finalize all channels and free memory */

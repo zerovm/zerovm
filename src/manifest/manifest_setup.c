@@ -120,13 +120,42 @@ static void SetCustomAttributes(struct SystemManifest *policy)
   }
 }
 
+/* sets node_id in nap object and user argv[0] */
+static void SetNodeName(struct NaClApp *nap)
+{
+  int i;
+  char *buf[BIG_ENOUGH_SPACE], **tokens = buf;
+  char *pgm_name = GetValueByKey("NodeName");
+
+  assert(nap != NULL);
+  assert(nap->system_manifest != NULL);
+  assert(nap->system_manifest->cmd_line != NULL);
+  assert(nap->system_manifest->cmd_line_size > 0);
+
+  /* set the node name (0st parameter) and node id (n/a for the user) */
+  if(pgm_name == NULL)
+  {
+    nap->system_manifest->cmd_line[0] = NEXE_PGM_NAME;
+    nap->node_id = 0;
+  }
+  else
+  {
+    i = ParseValue(pgm_name, ",", tokens, BIG_ENOUGH_SPACE);
+    COND_ABORT(i != 2, "invalid NodeName specified");
+    COND_ABORT(tokens[0] == NULL, "invalid node name");
+    COND_ABORT(tokens[1] == NULL, "invalid node id");
+    nap->system_manifest->cmd_line[0] = tokens[0];
+    nap->node_id = ATOI(tokens[1]);
+    COND_ABORT(nap->node_id == 0, "node id must be > 0");
+  }
+}
+
 /* helper. sets command line parameters for the user */
 static void SetCommandLine(struct SystemManifest *policy)
 {
   int i;
   char *parameters;
   char *buf[BIG_ENOUGH_SPACE], **tokens = buf;
-  char *pgm_name = GetValueByKey("NodeName");
 
   assert(policy != NULL);
   assert(policy->cmd_line == NULL);
@@ -145,23 +174,17 @@ static void SetCommandLine(struct SystemManifest *policy)
   }
 
   /*
-   * allocate space to hold string pointers. 0st element reserved
-   * for argv[0]. last element should be NULL so 1 extra element must
-   * be reserved
+   * allocate space to hold string pointers. 0st element reserved for argv[0].
+   * also, the last element should be NULL so 1 extra element must be reserved
    */
   ++policy->cmd_line_size;
   policy->cmd_line = calloc(policy->cmd_line_size + 1, sizeof *policy->cmd_line);
   COND_ABORT(policy->cmd_line == NULL,
       "cannot allocate memory to hold user command line parameters");
 
-  /* set the node name (0st parameter) */
-  policy->cmd_line[0] = (pgm_name == NULL) ? NEXE_PGM_NAME : pgm_name;
-
   /* populate command line arguments array with pointers */
   for(i = 0; i < policy->cmd_line_size - 1; ++i)
     policy->cmd_line[i + 1] = tokens[i];
-
-  assert(policy->cmd_line[policy->cmd_line_size] == NULL);
 }
 
 /*
@@ -225,6 +248,9 @@ void SystemManifestCtor(struct NaClApp *nap)
   policy->cmd_line = NULL;
   policy->cmd_line_size = 0;
   SetCommandLine(policy);
+
+  /* get node name and id */
+  SetNodeName(nap);
 
   /* construct and initialize all channels */
   ChannelsCtor(nap);

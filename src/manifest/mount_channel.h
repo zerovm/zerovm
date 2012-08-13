@@ -27,11 +27,24 @@ EXTERN_C_BEGIN
 #define NET_BUFFER_SIZE 0x10000
 
 /* allowed network prefixes */
-#define IPC_PREFIX "ipc://"
-#define TCP_PREFIX "tcp://"
-#define INPROC_PREFIX "inproc://"
-#define PGM_PREFIX "pgm://"
-#define EPGM_PREFIX "epgm://"
+#define IPC_PREFIX "ipc"
+#define TCP_PREFIX "tcp"
+#define INPROC_PREFIX "inproc"
+#define PGM_PREFIX "pgm"
+#define EPGM_PREFIX "epgm"
+#define UDP_PREFIX "udp"
+
+/* list of protocols supported for zvm channels */
+enum ChannelNetProtocol
+{
+  ChannelIPC, /* not fully: socket should already exist */
+  ChannelTCP,
+  ChannelINPROC, /* not tested */
+  ChannelPGM, /* not tested */
+  ChannelEPGM, /* not tested */
+  ChannelUDP, /* going to be supported in the future */
+  ChannelProtoNumber /* number of supported protocols yet means protocol isn't supported */
+};
 
 /* reserved zerovm channels names */
 #define STDIN "/dev/stdin" /* c90 stdin */
@@ -98,6 +111,12 @@ void ChannelsCtor(struct NaClApp *nap);
 
 /* close all channels, initialize it and update system_manifest */
 void ChannelsDtor(struct NaClApp *nap);
+
+/* returns protocol or ChannelProtoNumber if protocol isn't supported */
+enum ChannelNetProtocol GetChannelProtocol(const char *url);
+
+/* get string with the protocol name by protocol id */
+char *StringizeChannelProtocol(enum ChannelNetProtocol id);
 
 EXTERN_C_END
 
