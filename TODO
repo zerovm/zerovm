@@ -12,14 +12,18 @@ CHANNELS DESIGN
 ===============
 - fix issue with zmq_term(). it blocks even if there ar no outgoing messages
   perhaps the problem lies in the finalization order: PUSH channels should be closed 1st.
-  can be solved with bugfix or with proper order in manifest ("push" channels should be last ones)
+  can be solved with bugfix or with proper order in manifest ("push" channels should be 1st)
 - solve problem with send blocking. it doesn't block even with zmq_hwm set to 1!
   . looks like there is a solution: rzmq. but this is not even 3d party, so it is not safe to use it
   . another solution is to use single port to send messages and single port to receive messages
-+- add name service
++ add name service
   + prepare 2 structures to hold "bind" and "connect" channels list
   + make hash function to hash channels names to 32-bit values
   + make (de)serializers to receive/send channels list
+- split prefetch.* into prefetch and name service. name service should have a very simple api:
+  - init / dispose
+  - the 2nd pass to connect channels. used from mount_channels.c
+  - bind() / connect()
 - add read and write offsets to channel definition in manifest (9 fields?)
 - ensure that network eof is working
 - write complete test to test network channels (over tcp protocol)
@@ -41,7 +45,7 @@ CHANNELS DESIGN
 MANIFEST
 ========
 + add a new keyword "NodeName" and pass it as argv[0]
-- make "NodeName" containg 2 parts: user specified string, and id (number) assigned by the proxy
++ make "NodeName" containg 2 parts: user specified string, and id (number) assigned by the proxy
 + add a new "Environment" keyword
 + add a new "Report" keyword. remove the old one. 
   this task needs constant report and log ready
@@ -69,12 +73,13 @@ OTHER
 
 in the next version:
 -------------------------------------------------------------
-- update validator 
+- update validator
+- extract validator from the zervm code. zerovm will use standalone validator
 + remove dfa validator support. disabled to better times
-- decide should we use standalone validator or not?
 - add cpu features detection to sort (or even better - to zrt)
 - update /readme (use "force" to make the user download nacl sdk zerovm currently uses) 
 
+- add more logs
 +- replace COND_ABORT() macro to something more finished and strict:
   any fail cases which must terminate nacl should be logged to nacl log
   any "impossible fail" must be checked by assert() (main purpose: prevent 
@@ -159,5 +164,8 @@ global plan
    - tests (functional, security and unit tests). all "/samples/*" goes there
 4. cover all source code with tests
 5. rewrite project's makefile. make it small, clean and clear
+6. add random read random write channels
+7. add logging for all code
+8. allocate all zerovm memory in start of zerovm and remove "NULL checks"
 999. replace all third party code (so far it is zeromq) to prevent leaks, security holes and misbehaviour
 

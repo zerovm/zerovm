@@ -519,13 +519,13 @@ static void DecodeParcel(const char *parcel, const uint32_t count)
     key = MakeKey(&r);
     record = g_hash_table_lookup(netlist, GUINT_TO_POINTER(key));
 
+    assert(record != NULL);
     assert(r.host == record->host);
     assert(r.port != 0);
 
-    /* update the record and put it back to netlist */
+    /* update the record */
     record->port = bswap_16(records[i].port);
     record->host = bswap_32(records[i].ip);
-    g_hash_table_insert(netlist, GUINT_TO_POINTER(key), record);
   }
 }
 
@@ -646,7 +646,8 @@ static inline void NetCtor()
    * (still under construction) in the future if no name service
    * used the allocation can be removed
    */
-  netlist = g_hash_table_new(g_direct_hash, g_direct_equal);
+//  netlist = g_hash_table_new(g_direct_hash, g_direct_equal);
+  netlist = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, free);
   COND_ABORT(netlist == NULL, "cannot allocate netlist");
 
   /* get name service connection string if available */
@@ -730,8 +731,8 @@ int PrefetchChannelCtor(struct ChannelDesc *channel)
 int PrefetchChannelDtor(struct ChannelDesc* channel)
 {
   int result;
-  gpointer record;
-  struct ChannelConnection r; /* fake record */
+//  gpointer record;
+//  struct ChannelConnection r; /* fake record */
 
   assert(channel != NULL);
   assert(channel->socket != NULL);
@@ -767,10 +768,10 @@ int PrefetchChannelDtor(struct ChannelDesc* channel)
     free(channel->msg);
   }
 
-  /* free channel url from netlist */
-  ParseURL(channel, &r);
-  record = g_hash_table_lookup(netlist, GUINT_TO_POINTER(MakeKey(&r)));
-  free(record);
+//  /* free channel url from netlist */
+//  ParseURL(channel, &r);
+//  record = g_hash_table_lookup(netlist, GUINT_TO_POINTER(MakeKey(&r)));
+//  free(record);
 
   /* close zmq socket */
   result = zmq_close(channel->socket);
