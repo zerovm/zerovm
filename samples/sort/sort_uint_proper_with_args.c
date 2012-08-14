@@ -439,19 +439,19 @@ int main(int argc, char **argv)
   FILE *in, *out;
 
   /* check command line */
-  if(argc != 3)
-    _eoutput("usage: sort input_file_name output_file_name\n");
+  if(argc > 3)
+    _eoutput("usage: sort [number_of_elements] | [input_file_name output_file_name]\n");
 
   /* open input and output files */
-  in = fopen(argv[1], "rb");
-  out = fopen(argv[2], "wb");
+  in = argc == 3 ? fopen(argv[1], "rb") : stdin;
+  out = argc == 3 ? fopen(argv[2], "wb") : stdout;
   if(in == NULL)
     _eoutput("input file open error\n");
   if(out == NULL)
     _eoutput("output file open error\n");
 
   /* allocate data buffer */
-  filesize = file_size(argv[1]);
+  filesize = argc == 3 ? file_size(argv[1]) : strtoll(argv[1], NULL, 10);
   cnt = filesize / sizeof(*d);
   d = aligned_malloc(filesize, 16);
   if(d == NULL) _eoutput("cannot allocate data buffer\n");

@@ -22,8 +22,8 @@ CHANNELS DESIGN
   + make (de)serializers to receive/send channels list
 - split prefetch.* into prefetch and name service. name service should have a very simple api:
   - init / dispose
-  - the 2nd pass to connect channels. used from mount_channels.c
-  - bind() / connect()
+  - the 2nd pass to connect channels. used from mount_channels.c: KickNetworkChannels()
+  - give_url() / get_url()
 - add read and write offsets to channel definition in manifest (9 fields?)
 - ensure that network eof is working
 - write complete test to test network channels (over tcp protocol)

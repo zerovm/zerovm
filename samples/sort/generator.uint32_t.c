@@ -35,14 +35,14 @@ int main(int argc, char **argv)
    */
 
   /* check command line */
-  if(argc != 3)
+  if(argc < 2 || argc > 3)
   {
-    fprintf(stderr, "usage: generator number_of_elements file_name\n");
+    fprintf(stderr, "usage: generator number_of_elements [file_name]\n");
     return 1;
   }
 
-  /* open file to output numbers */
-  f = fopen(argv[2], "wb");
+  /* open file (or use stdout) to output numbers */
+  f = argc == 3 ? fopen(argv[2], "wb") : stdout;
   if(f == NULL)
   {
     fprintf(stderr, "cannot open output file\n");

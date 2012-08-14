@@ -36,7 +36,7 @@ int main(int argc, char **argv)
   /* check command line */
   if(argc != 2)
   {
-    fprintf(stderr, "usage: tester file_name\n");
+    fprintf(stderr, "usage: tester [number_of_elements] | [file_name}\n");
     return 1;
   }
 
@@ -44,19 +44,21 @@ int main(int argc, char **argv)
   f = fopen(argv[1], "rb");
   if(f == NULL)
   {
-    fprintf(stderr, "cannot open input file\n");
-    return 2;
+    f = stdin;
+    filesize = strtoll(argv[1], NULL, 10);
+  } else
+  {
+    filesize = file_size(argv[1]);
   }
 
-  filesize = file_size(argv[1]);
-  if(filesize < 0)
+  if(filesize < ELEMENT_SIZE)
   {
     fprintf(stderr, "cannot get data size from the input file\n");
     return 3;
   }
 
   /* allocate data buffer */
-  seq_size = filesize / sizeof(*r);
+  seq_size = filesize / ELEMENT_SIZE;
   r = malloc(filesize);
   if(r == NULL)
   {
@@ -66,15 +68,15 @@ int main(int argc, char **argv)
   fprintf(stderr, "number of elements = %d\n", seq_size);
 
   /* read the data */
-  if(fread(r, sizeof(*r), seq_size, stdin) != seq_size)
+  if(fread(r, ELEMENT_SIZE, seq_size, stdin) != seq_size)
   {
     fprintf(stderr, "cannot read data from the input file\n");
     return 5;
   }
 
   /* test order of the numbers */
-  inc = 4294967295U / seq_size; /* increment */
-  fprintf(stderr, "testing array of %u %u-bit numbers..\n", seq_size, sizeof(*r) * 8);
+  inc = -1U / seq_size; /* increment */
+  fprintf(stderr, "testing array of %u %u-bit numbers..\n", seq_size, ELEMENT_SIZE * 8);
   for(i = 0; i < seq_size; ++i)
     if(r[i] != i * inc)
     {

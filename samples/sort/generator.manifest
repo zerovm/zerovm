@@ -5,9 +5,8 @@
 == cdr channel is the mix of type 2 and r/w limits >0, >0, >0, >0
 =====================================================================
 Channel = /dev/null, /dev/stdin, 0, 99999999, 99999999, 0, 0
-Channel = generator.stdout.log, /dev/stdout, 0, 0, 0, 99999999, 99999999
+Channel = unsorted.data, /dev/stdout, 0, 0, 0, 99999999, 99999999
 Channel = generator.stderr.log, /dev/stderr, 0, 0, 0, 99999999, 99999999
-Channel = unsorted.data, random.dat, 2, 99999999, 99999999, 99999999, 99999999
 
 =====================================================================
 == switches for zerovm. some of them used to control nexe, some
@@ -17,5 +16,5 @@ Version = 13072012
 Nexe = generator.uint32_t.nexe
 NexeMax = 10000000
 SyscallsMax = 3333
-CommandLine = 16777216 random.dat
+CommandLine = 16777216
 
