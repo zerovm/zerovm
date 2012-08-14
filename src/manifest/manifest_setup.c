@@ -297,8 +297,8 @@ int ProxyReport(struct NaClApp *nap)
       nap->system_manifest->user_ret_code, "disabled", nap->zvm_code, nap->zvm_state);
 #else
   /* .. but for production zvm will switch to more brief output */
-  snprintf(report, BIG_ENOUGH_SPACE, "%d\n%s\n",
-      nap->system_manifest->user_ret_code, "disabled");
+  snprintf(report, BIG_ENOUGH_SPACE, "%d\n%s\n%s\n",
+      nap->system_manifest->user_ret_code, "disabled", nap->zvm_state);
 #endif
 
   write(STDOUT_FILENO, report, strlen(report));

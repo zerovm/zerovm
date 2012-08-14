@@ -138,8 +138,15 @@ static void FailOnInvalidNetChannel(const struct ChannelDesc *channel)
  */
 inline static uint32_t MakeKey(const struct ChannelConnection *record)
 {
+  uint32_t result;
+  NaClLog(LOG_DEBUG, "%s; %s, %d: ", __FILE__, __func__, __LINE__);
   assert(record != NULL);
-  return ((uint32_t)record->mark)<<24 ^ record->host;
+
+  result = ((uint32_t)record->mark)<<24 ^ record->host;
+  NaClLog(LOG_DEBUG, "%s; %s, %d: mark = %u, host = %u",
+      __FILE__, __func__, __LINE__, record->mark, record->host);
+  NaClLog(LOG_DEBUG, "%s; %s, %d: result = %u", __FILE__, __func__, __LINE__, result);
+  return result;
 }
 
 /*
@@ -155,6 +162,8 @@ static void ParseURL(const struct ChannelDesc *channel, struct ChannelConnection
   assert(channel->name != NULL);
   assert(record != NULL);
   assert(channel->source == NetworkChannel);
+
+  NaClLog(LOG_DEBUG, "%s; %s, %d: url = %s", __FILE__, __func__, __LINE__, channel->name);
 
   /* copy the channel name aside and parse it */
   strncpy(name, channel->name, BIG_ENOUGH_SPACE);
@@ -187,7 +196,7 @@ static void ParseURL(const struct ChannelDesc *channel, struct ChannelConnection
 static void MakeURL(char *url, const int32_t size,
     const struct ChannelDesc *channel, const struct ChannelConnection *record)
 {
-  struct in_addr ip;
+  char host[BIG_ENOUGH_SPACE];
 
   assert(url != NULL);
   assert(record != NULL);
@@ -198,28 +207,38 @@ static void MakeURL(char *url, const int32_t size,
       "named host isn't supporting yet");
   COND_ABORT(size < 6, "too short url buffer");
 
-  /*
-   * todo(d'b): to distiguish dotted ip and host id a very ugly
-   * method has been used. need more neat solution
-   */
-  if(strchr(channel->name, '.') == NULL)
+  /* create string containing ip or id as the host name */
+  switch(record->mark)
   {
-    snprintf(url, size, "%s://%d:%u",
-        StringizeChannelProtocol(record->protocol), record->host, record->port);
+    struct in_addr ip;
+    case BIND_MARK:
+      snprintf(host, BIG_ENOUGH_SPACE, "%d", record->host);
+      break;
+
+    case CONNECT_MARK:
+    case OUTSIDER_MARK:
+      ip.s_addr = bswap_32(record->host);
+      snprintf(host, BIG_ENOUGH_SPACE, "%s", inet_ntoa(ip));
+      break;
+
+    default:
+      COND_ABORT(1, "unknown channel mark");
+      break;
   }
-  else
-  {
-    ip.s_addr = bswap_32(record->host);
-    snprintf(url, size, "%s://%s:%u",
-        StringizeChannelProtocol(record->protocol), inet_ntoa(ip), record->port);
-  }
+
+  /* construct url */
+  host[BIG_ENOUGH_SPACE - 1] = '\0';
+  snprintf(url, size, "%s://%s:%u",
+      StringizeChannelProtocol(record->protocol), host, record->port);
   url[size-1] = '\0';
+
+  NaClLog(LOG_DEBUG, "%s; %s, %d: url = %s", __FILE__, __func__, __LINE__, url);
 }
 
 /*
  * extract the channel connection information and store it into
- * the netlist hash table
- * note: malloc()
+ * the netlist hash table. on destruction all allocated memory will
+ * be deallocated for key, value and hashtable itself
  */
 static void StoreChannelConnectionInfo(const struct ChannelDesc *channel)
 {
@@ -252,23 +271,6 @@ static struct ChannelConnection *GetChannelConnectionInfo
       g_hash_table_lookup(netlist, GUINT_TO_POINTER(MakeKey(&r)));
 }
 
-/*
- * bind the given channel using info from netlist
- * returns not 0 if failed
- * note: replaces PrepareBind if no name service available
- */
-static int DoBind(const struct ChannelDesc* channel)
-{
-  struct ChannelConnection *record;
-  char buf[BIG_ENOUGH_SPACE], *url = buf;
-
-  record = GetChannelConnectionInfo(channel);
-  assert(record != NULL);
-
-  MakeURL(url, BIG_ENOUGH_SPACE, channel, record);
-  return zmq_bind(channel->socket, url);
-}
-
 /* cheat zmq: open message (see ReadSocket) */
 static void CheatZMQPullMessage(struct ChannelDesc *channel)
 {
@@ -284,6 +286,24 @@ static void CheatZMQPullMessage(struct ChannelDesc *channel)
   COND_ABORT(channel->msg == NULL, "cannot allocate memory to hold message");
   result = zmq_msg_init(channel->msg);
   COND_ABORT(result != 0, "cannot pre-open the pulling channel");
+}
+
+/*
+ * bind the given channel using info from netlist
+ * returns not 0 if failed
+ * note: replaces PrepareBind if no name service available
+ */
+static int DoBind(const struct ChannelDesc* channel)
+{
+  struct ChannelConnection *record;
+  char buf[BIG_ENOUGH_SPACE], *url = buf;
+
+  record = GetChannelConnectionInfo(channel);
+  assert(record != NULL);
+
+  MakeURL(url, BIG_ENOUGH_SPACE, channel, record);
+
+  return zmq_bind(channel->socket, url);
 }
 
 /*
@@ -330,12 +350,19 @@ static void PrepareBind(struct ChannelDesc *channel)
   assert(record != NULL);
   for(;port >= LOWEST_AVAILABLE_PORT; ++port)
   {
-    record->port = port;
+//    record->port = port;
+    /// ### {{
+    srand(time(NULL));
+    record->port = port + random() % (0xffff - LOWEST_AVAILABLE_PORT);
+    // }}
+
     result = DoBind(channel);
     if(result == OK_CODE) break;
   }
 
   COND_ABORT(result != OK_CODE, "cannot get the port to bind the channel");
+  NaClLog(LOG_DEBUG, "%s; %s, %d: host = %u, port = %u",
+      __FILE__, __func__, __LINE__, record->host, record->port);
   CheatZMQPullMessage(channel);
 }
 
@@ -353,6 +380,7 @@ static int DoConnect(struct ChannelDesc* channel)
   assert(record != NULL);
 
   MakeURL(url, BIG_ENOUGH_SPACE, channel, record);
+  NaClLog(LOG_DEBUG, "%s; %s, %d: url = %s", __FILE__, __func__, __LINE__, url);
   return zmq_connect(channel->socket, url);
 }
 
@@ -504,28 +532,19 @@ static void DecodeParcel(const char *parcel, const uint32_t count)
   records = (void*)(parcel + PARCEL_CONNECTS);
   for(i = 0; i < size; ++i)
   {
-    struct ChannelConnection r; /* fake record */
-    struct ChannelConnection *record;
-    uint32_t key;
+    struct ChannelConnection r, *record = &r;
 
-    /*
-     * get the connection record from netlist
-     * note: only absence of protocol information prevents us just
-     * to replace the record in netlist. but if all connect channels
-     * use the same protocol it is possible to simplify following routine
-     */
-    r.host = bswap_32(records[i].id);
-    r.mark = CONNECT_MARK;
-    key = MakeKey(&r);
-    record = g_hash_table_lookup(netlist, GUINT_TO_POINTER(key));
-
+    /* get the connection record from netlist */
+    record->host = bswap_32(records[i].id);
+    record->mark = CONNECT_MARK;
+    record = g_hash_table_lookup(netlist, GUINT_TO_POINTER(MakeKey(record)));
     assert(record != NULL);
-    assert(r.host == record->host);
-    assert(r.port != 0);
 
     /* update the record */
     record->port = bswap_16(records[i].port);
     record->host = bswap_32(records[i].ip);
+    assert(record->host != 0);
+    assert(record->port != 0);
   }
 }
 
@@ -610,7 +629,7 @@ void KickPrefetchChannels(struct NaClApp *nap)
     {\
       NaClLog(LOG_ERROR, "zmq: error %d, %s\n",\
               zmq_errno(), zmq_strerror(zmq_errno()));\
-      if(msg_ptr != NULL) zmq_msg_close(msg_ptr);\
+      zmq_msg_close(msg_ptr);\
       return ERR_CODE;\
     }
 
@@ -646,7 +665,6 @@ static inline void NetCtor()
    * (still under construction) in the future if no name service
    * used the allocation can be removed
    */
-//  netlist = g_hash_table_new(g_direct_hash, g_direct_equal);
   netlist = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, free);
   COND_ABORT(netlist == NULL, "cannot allocate netlist");
 
@@ -731,8 +749,6 @@ int PrefetchChannelCtor(struct ChannelDesc *channel)
 int PrefetchChannelDtor(struct ChannelDesc* channel)
 {
   int result;
-//  gpointer record;
-//  struct ChannelConnection r; /* fake record */
 
   assert(channel != NULL);
   assert(channel->socket != NULL);
@@ -767,11 +783,6 @@ int PrefetchChannelDtor(struct ChannelDesc* channel)
     zmq_msg_close(channel->msg);
     free(channel->msg);
   }
-
-//  /* free channel url from netlist */
-//  ParseURL(channel, &r);
-//  record = g_hash_table_lookup(netlist, GUINT_TO_POINTER(MakeKey(&r)));
-//  free(record);
 
   /* close zmq socket */
   result = zmq_close(channel->socket);

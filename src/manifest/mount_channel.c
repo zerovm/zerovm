@@ -212,7 +212,7 @@ void ChannelsCtor(struct NaClApp *nap)
 
   /* channels array validation */
   for(i = 0; i < nap->system_manifest->channels_count; ++i)
-    COND_ABORT(nap->system_manifest->channels[i].name == (int64_t)NULL,
+    COND_ABORT(nap->system_manifest->channels[i].name == NULL,
                "the channels array must not have uninitialized elements");
   COND_ABORT(nap->system_manifest->channels_count < RESERVED_CHANNELS,
       "some of the standard channels weren't initialized");
