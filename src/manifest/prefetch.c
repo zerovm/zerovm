@@ -212,7 +212,7 @@ static void MakeURL(char *url, const int32_t size,
   {
     struct in_addr ip;
     case BIND_MARK:
-      snprintf(host, BIG_ENOUGH_SPACE, "%d", record->host);
+      snprintf(host, BIG_ENOUGH_SPACE, "*");
       break;
 
     case CONNECT_MARK:
@@ -350,12 +350,7 @@ static void PrepareBind(struct ChannelDesc *channel)
   assert(record != NULL);
   for(;port >= LOWEST_AVAILABLE_PORT; ++port)
   {
-//    record->port = port;
-    /// ### {{
-    srand(time(NULL));
-    record->port = port + random() % (0xffff - LOWEST_AVAILABLE_PORT);
-    // }}
-
+    record->port = port;
     result = DoBind(channel);
     if(result == OK_CODE) break;
   }
@@ -803,8 +798,14 @@ static int32_t ReadSocket(struct ChannelDesc *channel)
   int result;
   int64_t more;
   size_t more_size = sizeof more;
+  char url[BIG_ENOUGH_SPACE];  /* debug purposes only */
 
   assert(channel != NULL);
+
+  /* log parameters and channel internals */
+  MakeURL(url, BIG_ENOUGH_SPACE, channel, GetChannelConnectionInfo(channel));
+  NaClLog(LOG_DEBUG, "%s; %s, %d: alias = %s, url = %s",
+      __FILE__, __func__, __LINE__, channel->alias, url);
 
   /* rewind the channel buffer and mark that no data is available */
   channel->bufpos = 0;
@@ -893,9 +894,15 @@ static int32_t WriteSocket(struct ChannelDesc *channel, char *buf, int32_t count
   int32_t writerest;
   zmq_msg_t msg;
   void *hint = NULL;
+  char url[BIG_ENOUGH_SPACE];  /* debug purposes only */
 
   assert(channel != NULL);
   assert(buf != NULL);
+
+  /* log parameters and channel internals */
+  MakeURL(url, BIG_ENOUGH_SPACE, channel, GetChannelConnectionInfo(channel));
+  NaClLog(LOG_DEBUG, "%s; %s, %d: alias = %s, url = %s",
+      __FILE__, __func__, __LINE__, channel->alias, url);
 
   /* emit the message */
   result = zmq_msg_init(&msg);
@@ -922,7 +929,7 @@ static int32_t WriteSocket(struct ChannelDesc *channel, char *buf, int32_t count
     /* do send */
     result = zmq_msg_init_data(&msg, buf, towrite, ZMQFree, hint);
     ZMQ_TEST_STATE(result, &msg);
-    result = zmq_send(channel->socket, &msg, flag);
+      result = zmq_send(channel->socket, &msg, flag);
     ZMQ_TEST_STATE(result, &msg);
     buf += towrite;
   }
