@@ -740,6 +740,27 @@ int PrefetchChannelCtor(struct ChannelDesc *channel)
   return OK_CODE;
 }
 
+#if 0
+/*
+ * ###
+ * postponed network channels finalization. 1st in the finalizing raw are
+ * "push" channels, "pull" channels are the last.
+ * note: does not depend on name service (whether specified or not)
+ * todo(d'b): move it up before NetDtor()
+ */
+static void PostponedDtor()
+{
+  assert(netlist != NULL);
+
+  /* iterate through netlist and finalize "push" channels (w/o) */
+  g_hash_table_foreach(netlist, PushChannelDtor,
+        parcel + PARCEL_NODE_ID + PARCEL_BINDS);
+
+
+  /* iterate through netlist and finalize "pull" channels (r/o) */
+}
+#endif
+
 /* finalize and deallocate network channel */
 int PrefetchChannelDtor(struct ChannelDesc* channel)
 {
@@ -749,12 +770,11 @@ int PrefetchChannelDtor(struct ChannelDesc* channel)
   assert(channel->socket != NULL);
 
   /* send EOF if the channel is writable */
-  if(channel->limits[PutsLimit] && channel->limits[PutsLimit])
+  if(channel->limits[PutsLimit] && channel->limits[PutSizeLimit])
   {
     zmq_msg_t msg;
 
     /* the last send must be non-blocking or it will never complete */
-    /* todo(): fix the bug "Resource temporarily unavailable" when send */
     if(zmq_msg_init(&msg) == 0)
     {
       result = zmq_msg_init_size(&msg, 0);
@@ -763,7 +783,7 @@ int PrefetchChannelDtor(struct ChannelDesc* channel)
     }
   }
 
-  if(channel->limits[GetsLimit] && channel->limits[GetsLimit])
+  if(channel->limits[GetsLimit] && channel->limits[GetSizeLimit])
   {
     int linger = 0; /* to drop the rest of the ingoing data */
 

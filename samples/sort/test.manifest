@@ -12,7 +12,7 @@ Channel = tester.stderr.log, /dev/stderr, 0, 0, 0, 99999999, 99999999
 == switches for zerovm. some of them used to control nexe, some
 == for the internal zerovm needs
 =====================================================================
-Version = 13072012
+Version = 09082012
 Nexe = tester.uint32_t.nexe
 NexeMax = 10000000
 SyscallsMax = 3333
