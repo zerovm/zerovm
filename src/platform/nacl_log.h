@@ -290,6 +290,7 @@ void NaClLogDoLogAndUnsetModule(int        detail_level,
 
 #define GETPID getpid /* from removed header */
 
+#define LOG_SUICIDE (6) /* d'b */
 #define LOG_DEBUG   (4) /* d'b */
 #define LOG_INFO    (-1)
 #define LOG_WARNING (-2)

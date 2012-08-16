@@ -109,7 +109,7 @@ uintptr_t NaClHostDescMap(struct NaClHostDesc *d,
   int   host_prot;
   int   host_flags;
 
-  NaClLog(4,
+  NaClLog(LOG_SUICIDE,
           ("NaClHostDescMap(0x%08"NACL_PRIxPTR", "
            "0x%08"NACL_PRIxPTR", 0x%08"NACL_PRIxS", "
            "0x%x, 0x%x, 0x%08"NACL_PRIx64")\n"),
@@ -132,7 +132,7 @@ uintptr_t NaClHostDescMap(struct NaClHostDesc *d,
   host_flags = NaClMapFlagMap(flags);
   host_prot = NaClProtMap(prot);
 
-  NaClLog(4, "NaClHostDescMap: host_flags 0x%x, host_prot 0x%x\n",
+  NaClLog(LOG_SUICIDE, "NaClHostDescMap: host_flags 0x%x, host_prot 0x%x\n",
           host_flags, host_prot);
 
   /*
@@ -165,7 +165,7 @@ uintptr_t NaClHostDescMap(struct NaClHostDesc *d,
             (uintptr_t) map_addr,
             (uintptr_t) start_addr);
   }
-  NaClLog(4, "NaClHostDescMap: returning 0x%08"NACL_PRIxPTR"\n",
+  NaClLog(LOG_SUICIDE, "NaClHostDescMap: returning 0x%08"NACL_PRIxPTR"\n",
           (uintptr_t) start_addr);
 
   return (uintptr_t) start_addr;

@@ -705,10 +705,16 @@ static inline void NetDtor()
 int PrefetchChannelCtor(struct ChannelDesc *channel)
 {
   int sock_type;
+  char url[BIG_ENOUGH_SPACE];  /* debug purposes only */
 
   /* check for the design errors */
   assert(channel != NULL);
   assert(channel->source == NetworkChannel);
+
+  /* log parameters and channel internals */
+  MakeURL(url, BIG_ENOUGH_SPACE, channel, GetChannelConnectionInfo(channel));
+  NaClLog(LOG_DEBUG, "%s; %s, %d: alias = %s, url = %s",
+      __FILE__, __func__, __LINE__, channel->alias, url);
 
   /* explicitly reset network regarded fields */
   channel->socket = NULL;
@@ -765,9 +771,15 @@ static void PostponedDtor()
 int PrefetchChannelDtor(struct ChannelDesc* channel)
 {
   int result;
+  char url[BIG_ENOUGH_SPACE];  /* debug purposes only */
 
   assert(channel != NULL);
   assert(channel->socket != NULL);
+
+  /* log parameters and channel internals */
+  MakeURL(url, BIG_ENOUGH_SPACE, channel, GetChannelConnectionInfo(channel));
+  NaClLog(LOG_DEBUG, "%s; %s, %d: alias = %s, url = %s",
+      __FILE__, __func__, __LINE__, channel->alias, url);
 
   /* todo(d'b): eof temporary disabled. will be re-enabled after the design change */
 #if 0
