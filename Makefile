@@ -194,7 +194,7 @@ obj/mount_channel.o: src/manifest/mount_channel.c
 	@gcc ${CCFLAGS} -o obj/mount_channel.o ${CCFLAGS0} ${CCFLAGS1} ${CCFLAGS4} src/manifest/mount_channel.c
 
 obj/prefetch.o: src/manifest/prefetch.c
-	@gcc ${CCFLAGS} -o obj/prefetch.o ${CCFLAGS0} ${CCFLAGS1} ${CCFLAGS4} -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include src/manifest/prefetch.c
+	@gcc ${CCFLAGS} -o obj/prefetch.o ${CCFLAGS0} ${CCFLAGS1} ${CCFLAGS4} `pkg-config --cflags glib-2.0` src/manifest/prefetch.c
 
 obj/preload.o: src/manifest/preload.c
 	@gcc ${CCFLAGS} -o obj/preload.o ${CCFLAGS0} ${CCFLAGS1} ${CCFLAGS4} src/manifest/preload.c
