@@ -14,7 +14,7 @@
 
 EXTERN_C_BEGIN
 
-#define MAX_CHANNELS_NUMBER BIG_ENOUGH_SPACE
+#define MAX_CHANNELS_NUMBER 6548
 
 /* name, id, access type, gets, getsize, puts, putsize */
 #define CHANNEL_ATTRIBUTES ChannelAttributesNumber

@@ -769,6 +769,8 @@ int PrefetchChannelDtor(struct ChannelDesc* channel)
   assert(channel != NULL);
   assert(channel->socket != NULL);
 
+  /* todo(d'b): eof temporary disabled. will be re-enabled after the design change */
+#if 0
   /* send EOF if the channel is writable */
   if(channel->limits[PutsLimit] && channel->limits[PutSizeLimit])
   {
@@ -782,6 +784,7 @@ int PrefetchChannelDtor(struct ChannelDesc* channel)
       result = zmq_msg_close(&msg);
     }
   }
+#endif
 
   if(channel->limits[GetsLimit] && channel->limits[GetSizeLimit])
   {
