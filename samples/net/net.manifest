@@ -21,3 +21,5 @@ NexeMax = 10000000
 SyscallsMax = 3333
 MaxMem = 99999999
 NodeName = loner, 1
+CommandLine = 0
+

@@ -14,16 +14,7 @@ VirtualBox doesn't support SSE4.1 used by several of provided samples.
 1.1. Install ordinary prerequisites:
    sudo apt-get install build-essential gcc-multilib g++-multilib libsdl1.2-dev texinfo libcrypto++-dev libssl-dev m4 lib32z1 uuid-dev
 
-1.2. Install sqlite-autoconf
-   cd ~
-   wget http://www.sqlite.org/sqlite-autoconf-3071200.tar.gz
-   tar xvfz sqlite-autoconf-3071200.tar.gz
-   cd sqlite-autoconf-3071200/
-   ./configure
-   make
-   sudo make install
-   sudo ldconfig
-   cd ..
+1.2. sqlite was here. no need anymore
 
 1.3. Install zeromq & packages required by zeromq
    cd ~
@@ -74,6 +65,9 @@ VirtualBox doesn't support SSE4.1 used by several of provided samples.
 
    You should see a usage message.
    Consider building and running samples located in samples directory.
+   
+   notice: some of samples can be found in samples/ but more of them resides in the
+   zrt project
 
 Troubleshooting:
 1.

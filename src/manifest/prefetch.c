@@ -279,11 +279,9 @@ static void CheatZMQPullMessage(struct ChannelDesc *channel)
   assert(channel != NULL);
 
   /*
-   * allocate memory to hold message and initialize message 1st time
-   * (it will be closed on the 1st ReadSocket() invocation)
+   * initialize the message 1st time (it will be closed
+   * on the 1st ReadSocket() invocation)
    */
-  channel->msg = malloc(sizeof *channel->msg);
-  COND_ABORT(channel->msg == NULL, "cannot allocate memory to hold message");
   result = zmq_msg_init(channel->msg);
   COND_ABORT(result != 0, "cannot pre-open the pulling channel");
 }
@@ -396,11 +394,11 @@ static void PrepareConnect(struct ChannelDesc* channel)
   {
     uint64_t hwm = 1; /* high water mark for PUSH socket to block on sending */
 
-    result = DoConnect(channel);
-    COND_ABORT(result != 0, "cannot bind the channel");
-
     result = zmq_setsockopt(channel->socket, ZMQ_HWM, &hwm, sizeof hwm);
     COND_ABORT(result != 0, "cannot set high water mark");
+
+    result = DoConnect(channel);
+    COND_ABORT(result != 0, "cannot bind the channel");
   }
 }
 
@@ -688,6 +686,44 @@ static inline void NetDtor()
   /* context will be destroyed at the last call */
   if(--channels_cnt) return;
 
+  // ### {{
+  // wait until all eofs are really sent
+  {
+    extern struct NaClApp *gnap;
+    struct ChannelDesc *channels = gnap->system_manifest->channels;
+    int busy;
+
+    do
+    {
+      int i;
+      busy = 0;
+
+      for(i = 0; i < gnap->system_manifest->channels_count; ++i)
+      {
+        struct ChannelDesc *channel = &channels[i];
+        if(channel->source == NetworkChannel
+            && channel->limits[PutsLimit] != 0
+            && channel->limits[PutSizeLimit] != 0)
+        {
+          uint32_t more;
+          size_t more_size = sizeof more;
+          int result;
+
+          if(channel->socket == NULL) continue;
+
+          result = zmq_getsockopt(channel->socket, ZMQ_EVENTS, &more, &more_size);
+          busy |= more != ZMQ_POLLOUT;
+          if(more == ZMQ_POLLOUT)
+          {
+            zmq_close(channel->socket);
+            channel->socket = NULL;
+          }
+        }
+      }
+    } while(busy);
+  }
+  // }}
+
   /* terminate context */
   zmq_term(context);
 
@@ -705,16 +741,14 @@ static inline void NetDtor()
 int PrefetchChannelCtor(struct ChannelDesc *channel)
 {
   int sock_type;
-  char url[BIG_ENOUGH_SPACE];  /* debug purposes only */
 
   /* check for the design errors */
   assert(channel != NULL);
   assert(channel->source == NetworkChannel);
 
   /* log parameters and channel internals */
-  MakeURL(url, BIG_ENOUGH_SPACE, channel, GetChannelConnectionInfo(channel));
-  NaClLog(LOG_DEBUG, "%s; %s, %d: alias = %s, url = %s",
-      __FILE__, __func__, __LINE__, channel->alias, url);
+  NaClLog(LOG_DEBUG, "%s; %s, %d: alias = %s",
+      __FILE__, __func__, __LINE__, channel->alias);
 
   /* explicitly reset network regarded fields */
   channel->socket = NULL;
@@ -731,9 +765,17 @@ int PrefetchChannelCtor(struct ChannelDesc *channel)
   channel->socket = zmq_socket(context, sock_type);
   COND_ABORT(channel->socket == NULL, "cannot obtain socket");
 
+  /* allocate memory to hold the message pointer */
+  channel->msg = malloc(sizeof *channel->msg);
+  COND_ABORT(channel->msg == NULL, "cannot allocate memory to hold message");
+
   /* bind or connect the channel */
   if(sock_type == ZMQ_PUSH)
   {
+    /* allocate buffer to hold the message (see WriteSocket) comment */
+    channel->buffer = malloc(NET_BUFFER_SIZE);
+    COND_ABORT(channel->buffer == NULL, "cannot allocate network 'send' buffer");
+
     PrepareConnect(channel);
     ++connects;
   }
@@ -745,27 +787,6 @@ int PrefetchChannelCtor(struct ChannelDesc *channel)
 
   return OK_CODE;
 }
-
-#if 0
-/*
- * ###
- * postponed network channels finalization. 1st in the finalizing raw are
- * "push" channels, "pull" channels are the last.
- * note: does not depend on name service (whether specified or not)
- * todo(d'b): move it up before NetDtor()
- */
-static void PostponedDtor()
-{
-  assert(netlist != NULL);
-
-  /* iterate through netlist and finalize "push" channels (w/o) */
-  g_hash_table_foreach(netlist, PushChannelDtor,
-        parcel + PARCEL_NODE_ID + PARCEL_BINDS);
-
-
-  /* iterate through netlist and finalize "pull" channels (r/o) */
-}
-#endif
 
 /* finalize and deallocate network channel */
 int PrefetchChannelDtor(struct ChannelDesc* channel)
@@ -781,8 +802,6 @@ int PrefetchChannelDtor(struct ChannelDesc* channel)
   NaClLog(LOG_DEBUG, "%s; %s, %d: alias = %s, url = %s",
       __FILE__, __func__, __LINE__, channel->alias, url);
 
-  /* todo(d'b): eof temporary disabled. will be re-enabled after the design change */
-#if 0
   /* send EOF if the channel is writable */
   if(channel->limits[PutsLimit] && channel->limits[PutSizeLimit])
   {
@@ -792,31 +811,44 @@ int PrefetchChannelDtor(struct ChannelDesc* channel)
     if(zmq_msg_init(&msg) == 0)
     {
       result = zmq_msg_init_size(&msg, 0);
+      ZMQ_TEST_STATE(result, NULL);
       result = zmq_send(channel->socket, &msg, ZMQ_NOBLOCK);
-      result = zmq_msg_close(&msg);
+      ZMQ_TEST_STATE(result, NULL);
+
+      /*
+       * see WriteSocket(). when the user data can be sent
+       * synchronously msg allocation and free() should be removed
+       */
+      free(channel->buffer);
     }
   }
-#endif
 
   if(channel->limits[GetsLimit] && channel->limits[GetSizeLimit])
   {
     int linger = 0; /* to drop the rest of the ingoing data */
 
-    /* try to read EOF and detect unread messages */
-    if(zmq_recv(channel->socket, channel->msg, ZMQ_NOBLOCK) != 0)
-      NaClLog(LOG_ERROR, "channel %s wasn't closed", channel->alias);
-    else if(zmq_msg_size(channel->msg) != 0)
+   /* try to read EOF and detect unread messages */
+//    if(zmq_recv(channel->socket, channel->msg, ZMQ_NOBLOCK) != 0)
+//      NaClLog(LOG_ERROR, "channel %s wasn't closed", channel->alias);
+//    else if(zmq_msg_size(channel->msg) != 0)
+//      NaClLog(LOG_ERROR, "channel %s has lost messages", channel->alias);
+    zmq_recv(channel->socket, channel->msg, 0);
+    if(zmq_msg_size(channel->msg) != 0)
       NaClLog(LOG_ERROR, "channel %s has lost messages", channel->alias);
 
     /* make zeromq deallocate used resources */
-    zmq_setsockopt(channel->socket, ZMQ_LINGER, &linger, sizeof linger);
-    zmq_msg_close(channel->msg);
-    free(channel->msg);
+    result = zmq_setsockopt(channel->socket, ZMQ_LINGER, &linger, sizeof linger);
+    ZMQ_TEST_STATE(result, NULL);
+
+    // ### temp added here to make NetDtor loop working
+    zmq_close(channel->socket);
   }
 
-  /* close zmq socket */
-  result = zmq_close(channel->socket);
-  ZMQ_TEST_STATE(result, NULL);
+  /* dispose the message and close zmq socket */
+  zmq_msg_close(channel->msg); /* ZMQ_TEST_STATE can't be used */
+  free(channel->msg);
+//  result = zmq_close(channel->socket); // ### temp disabled to make NetDtor loop working
+//  ZMQ_TEST_STATE(result, NULL);
 
   /* will destroy context and netlist after all network channels closed */
   NetDtor();
@@ -927,7 +959,6 @@ static int32_t WriteSocket(struct ChannelDesc *channel, char *buf, int32_t count
 {
   int result;
   int32_t writerest;
-  zmq_msg_t msg;
   void *hint = NULL;
   char url[BIG_ENOUGH_SPACE];  /* debug purposes only */
 
@@ -940,8 +971,8 @@ static int32_t WriteSocket(struct ChannelDesc *channel, char *buf, int32_t count
       __FILE__, __func__, __LINE__, channel->alias, url);
 
   /* emit the message */
-  result = zmq_msg_init(&msg);
-  ZMQ_TEST_STATE(result, &msg);
+  result = zmq_msg_init(channel->msg);
+  ZMQ_TEST_STATE(result, channel->msg);
 
   /* send a multi-part message */
   for(writerest = count; writerest > 0; writerest -= NET_BUFFER_SIZE)
@@ -961,15 +992,25 @@ static int32_t WriteSocket(struct ChannelDesc *channel, char *buf, int32_t count
       flag = 0;
     }
 
+    /*
+     * for zmq is not able to send the messages synchronously,
+     * "zero copy" cannot be used
+     *
+     * todo(d'b): limit the queue to 1 message, send given data in chunks
+     *   as "zero copy" and copy the remaining chunk to buffer allocated
+     *   by zerovm so it can be sent asynchronously
+     */
+    memcpy(channel->buffer, buf, towrite);
+
     /* do send */
-    result = zmq_msg_init_data(&msg, buf, towrite, ZMQFree, hint);
-    ZMQ_TEST_STATE(result, &msg);
-      result = zmq_send(channel->socket, &msg, flag);
-    ZMQ_TEST_STATE(result, &msg);
+    result = zmq_msg_init_data(channel->msg, channel->buffer, towrite, ZMQFree, hint);
+    ZMQ_TEST_STATE(result, channel->msg);
+    result = zmq_send(channel->socket, channel->msg, flag);
+    ZMQ_TEST_STATE(result, channel->msg);
     buf += towrite;
   }
 
-  zmq_msg_close(&msg);
+  zmq_msg_close(channel->msg);
 
   return count;
 }

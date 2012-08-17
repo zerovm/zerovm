@@ -8,8 +8,18 @@ sequential write-only
 random write-only
 cdr: random read, sequential write
 
+ZMQ PROBLEMS
+============
+- how to block on zmq_send()?
+- how not to block on zmq_term()? if there were non blocking zmq_sends
+
 CHANNELS DESIGN
 ===============
+- when the local file opened for write from more then 1 zerovm
+  file will have a mess in data
+  - solution mention it in the documentation and proxy must not allow to pass
+  to manifests such collisions
+  
 - fix issue with send zero-copy buffer reuse. if is not possible to block on send
   remove zero-copy to prevent overwriting the data from the buffer before its real
   sending. there are 3 possible fixes:
@@ -19,9 +29,10 @@ CHANNELS DESIGN
     message and block on it (after unblock we know that the real message (1st one) has been sent )
     for the long multipart message it is not so cumbersome
   
-- fix issue with zmq_term(). it blocks even if there ar no outgoing messages
++ fix issue with zmq_term(). it blocks even if there ar no outgoing messages
   perhaps the problem lies in the finalization order: PUSH channels should be closed 1st.
-  can be solved with bugfix or with proper order in manifest ("push" channels should be 1st)
+  can be solved with bugfix or 
+  + with proper order in manifest ("push" channels should be 1st)
 - solve problem with send blocking. it doesn't block even with zmq_hwm set to 1!
   . looks like there is a solution: rzmq. but this is not even 3d party, so it is not safe to use it
   . another solution is to use single port to send messages and single port to receive messages
@@ -131,6 +142,13 @@ completed releases:
 
 problems to solve in the future versions:
 -------------------------------------------------------------
+- make user etag calculation: md5 of allocated user memory, user available system space
+  1. 64k..end of setbrk position 
+  2. channels buffers if allocated
+  3. stack
+  (1) and (2) can be get from the memory manager
+- show the help on empty or invalid command line.
+  it is broken now
 - revise nacllog defines (LOG_ERROR, LOG_FATAL, LOG_INFO ..)
   - debug level for manifest validation should be added
   - full debug level
