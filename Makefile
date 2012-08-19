@@ -29,7 +29,7 @@ CXXFLAGS2=-Wl,-z,noexecstack -m64 -Wno-variadic-macros -L/usr/lib64 -pie -Wl,-z,
 CXXFLAGS3=-c -std=c++98 -Wno-variadic-macros -m64 -fPIE -Wall -Wno-long-long -fvisibility=hidden -fstack-protector --param ssp-buffer-size=4 -DNACL_TRUSTED_BUT_NOT_TCB -D_FORTIFY_SOURCE=2 -DNACL_WINDOWS=0 -DNACL_OSX=0 -DNACL_LINUX=1 -D_BSD_SOURCE=1 -D_POSIX_C_SOURCE=199506 -D_XOPEN_SOURCE=600 -D_GNU_SOURCE=1 -D_LARGEFILE64_SOURCE=1 -D__STDC_LIMIT_MACROS=1 -D__STDC_FORMAT_MACROS=1 -DNACL_BLOCK_SHIFT=5 -DNACL_BLOCK_SIZE=32 -DNACL_BUILD_ARCH=x86 -DNACL_BUILD_SUBARCH=64 -DNACL_TARGET_ARCH=x86 -DNACL_TARGET_SUBARCH=64 -DNACL_STANDALONE=1 -DNACL_ENABLE_TMPFS_REDIRECT_VAR=0 -I.
 
 #all: create_dirs zerovm zvm_api ${NETW_MAIN_RULES} tests 
-all: create_dirs zerovm zvm_api ${NETW_MAIN_RULES}
+all: create_dirs zerovm ${NETW_MAIN_RULES}
 
 create_dirs: 
 	@mkdir obj -p
@@ -53,9 +53,6 @@ gcov: clean all
 #	test/manifest_parser_test
 #	test/manifest_setup_test
 #	test/nacl_log_test
-
-zvm_api: api/syscall_manager.S api/zrt.c api/zvm.c
-	@make -Capi
 
 #test_compile: test/x86_validator_tests_halt_trim test/service_runtime_tests test/x86_decoder_tests_nc_inst_state test/x86_validator_tests_nc_inst_bytes test/x86_validator_tests_nc_remaining_memory test/manifest_parser_test test/manifest_setup_test test/nacl_log_test ${NETW_TEST_RULES}
 
