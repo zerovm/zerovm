@@ -1,0 +1,18 @@
+=====================================================================
+== "malloc" example with zrt library usage: zrt_mmap, zrt_munmap, zrt_sysbrk
+== the example tests untrusted code memory manager. new channels design
+=====================================================================
+Channel = /dev/null, /dev/stdin, 0, 999999, 999999, 0, 0
+Channel = CURDIR/stdout.data, /dev/stdout, 0, 0, 0, 999999, 999999
+Channel = /dev/null, /dev/stderr, 0, 0, 0, 999999, 999999
+
+=====================================================================
+== switches for zerovm. some of them used to control nexe, some
+== for the internal zerovm needs
+=====================================================================
+Version = 09082012
+Nexe = malloc.nexe
+NexeMax = 10000000
+SyscallsMax = 3333
+MemMax = 268435456
+

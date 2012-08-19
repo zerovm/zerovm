@@ -1,0 +1,23 @@
+=====================================================================
+== "manifest" example. demo of the new manifest design
+=====================================================================
+Channel = /dev/null, /dev/stdin, 0, 999999, 999999, 0, 0
+Channel = CURDIR/stdout.data, /dev/stdout, 0, 0, 0, 999999, 999999
+Channel = /dev/null, /dev/stderr, 0, 0, 0, 999999, 999999
+
+=====================================================================
+== Environment and command line
+=====================================================================
+CommandLine = lenin stalin hrushev brezhnev andropov chernenko gorbachov
+Environment = TimeStamp, 1337012520, SaveUs, klaato_verada_nikto
+
+=====================================================================
+== switches for zerovm. some of them used to control nexe, some
+== for the internal zerovm needs
+=====================================================================
+Version = 09082012
+Log = zerovm.log
+Nexe = manifest.nexe
+NexeMax = 10000000
+SyscallsMax = 3333
+

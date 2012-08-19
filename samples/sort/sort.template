@@ -1,0 +1,20 @@
+=====================================================================
+== "sort" example with zrt library usage. new channels design
+== following channels stdin, stdout, stderr (4, 5, 6) must be specified
+== read/write: 0 - seq/seq, 1 - rnd/seq, 2 - seq/rnd, 3 - rnd/rnd
+== cdr channel is the mix of type 2 and r/w limits >0, >0, >0, >0
+=====================================================================
+Channel = CURDIR/unsorted.data, /dev/stdin, 0, 99999999, 99999999, 0, 0
+Channel = CURDIR/sorted.data, /dev/stdout, 0, 0, 0, 99999999, 99999999
+Channel = CURDIR/sort.stderr.log, /dev/stderr, 0, 0, 0, 99999999, 99999999
+
+=====================================================================
+== switches for zerovm. some of them used to control nexe, some
+== for the internal zerovm needs
+=====================================================================
+Version = 09082012
+Nexe = sort_uint_proper_with_args.nexe
+NexeMax = 10000000
+SyscallsMax = 3333
+CommandLine = 67108864
+

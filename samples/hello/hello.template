@@ -1,0 +1,30 @@
+=====================================================================
+== "hello world" example with zrt library usage. the new channels design
+== following channels: stdin, stdout, stderr used
+=====================================================================
+Channel = CURDIR/debug, /dev/debug, 0, 0, 0, 999999, 999999
+Channel = /dev/null, /dev/stdin, 0, 999999, 999999, 0, 0
+Channel = CURDIR/stdout.data, /dev/stdout, 0, 0, 0, 999999, 999999
+Channel = CURDIR/stderr.data, /dev/stderr, 0, 0, 0, 999999, 999999
+
+== to use with "samples/eof"
+== Channel = CURDIR/tcp:1:, /dev/stderr, 0, 0, 0, 999999, 999999
+
+=====================================================================
+== switches for zerovm. some of them used to control nexe, some
+== for the internal zerovm needs
+=====================================================================
+Version = 09082012
+Nexe = hello.nexe
+NexeMax = 10000000
+SyscallsMax = 1234
+
+== minimal amount of memory to make the nexe start = 17965169
+== minimal amount of memory to make the nexe start = 18096241
+== to avoid the memory shortage it is recommend to specify at least 32mb
+== some memory used by crt0, zvm api and zrt library
+MemMax = 33554432
+
+NodeName = hello, 2
+NameService = udp:127.0.0.1:54321
+
