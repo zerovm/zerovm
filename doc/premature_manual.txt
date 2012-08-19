@@ -1,0 +1,29 @@
+this document is under construction, don't use it!
+
+zerovm - это минимальная виртуальная машина для запуска nacl nexe modules
+zerovm не поддерживает большую часть nacl syscalls, вместо этого он использует механизм 
+  передачи управления в изолируемый код (syscallback) и позволяет ему сделать всю работу.
+  при этом untrusted код может использовать zerovm api для получения обслуживания 
+  ввода/вывода, выделения памяти, завершения работы и т.д.
+  
+создание приложения для выполнения под управлением zerovm
+  nacl sdk
+  zerovm api
+  zrt library
+  
+описание zerovm api
+
+описание библиотеки zrt
+
+поведение zerovm в случае возникновения неисправимой ошибки (signal) в (un)trusted коде
+
+описание манифеста
+  Channel --
+  CommandLine --
+  Environment --
+  Version -- 
+  Nexe --
+  NexeMax -- 
+  SyscallsMax --
+  NodeName --
+  NameService --  
