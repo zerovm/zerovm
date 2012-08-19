@@ -541,8 +541,3 @@ obj/nacl_imc_unistd.o: src/imc/nacl_imc_unistd.cc
 obj/nacl_imc.o: src/imc/linux/nacl_imc.cc
 	@g++ ${CXXFLAGS} -o obj/nacl_imc.o ${CXXFLAGS1} ${CCFLAGS2} ${CCFLAGS4} src/imc/linux/nacl_imc.cc
 
-install: zerovm
-	install -D -m 0755 zerovm $(DESTDIR)/usr/bin/zerovm
-	
-.PHONY: install
-

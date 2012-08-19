@@ -664,7 +664,7 @@ static inline void NetCtor()
   /* get name service connection string if available */
   memset(&channel, 0, sizeof channel);
   channel.source = NetworkChannel;
-  channel.name = GetValueByKey("NameService");
+  channel.name = GetValueByKey("NameServer");
   if(channel.name == NULL) return;
 
   /* parse the given string and make url (static var) */
@@ -678,6 +678,48 @@ static inline void NetCtor()
 }
 
 /*
+ * close all "push" channels manually after EOF's sent
+ * note: temporary fix for zmq_term(). can be removed after zeromq
+ *   team will fix it.
+ * note: global nap object has been used. but it is ok since the patch
+ *   is temporary
+ */
+static inline void CloseChannels()
+{
+  extern struct NaClApp *gnap;
+  struct ChannelDesc *channels = gnap->system_manifest->channels;
+  int busy;
+
+  do
+  {
+    int i;
+    busy = 0;
+
+    for(i = 0; i < gnap->system_manifest->channels_count; ++i)
+    {
+      struct ChannelDesc *channel = &channels[i];
+      if(channel->source == NetworkChannel && channel->limits[PutsLimit] != 0
+          && channel->limits[PutSizeLimit] != 0)
+      {
+        uint32_t more;
+        size_t more_size = sizeof more;
+        int result;
+
+        if(channel->socket == NULL ) continue;
+
+        result = zmq_getsockopt(channel->socket, ZMQ_EVENTS, &more, &more_size);
+        busy |= more != ZMQ_POLLOUT;
+        if(more == ZMQ_POLLOUT)
+        {
+          zmq_close(channel->socket);
+          channel->socket = NULL;
+        }
+      }
+    }
+  } while(busy);
+}
+
+/*
  * finalize networking (if there are network channels)
  * note: will run only once. should be called from channel destructor
  */
@@ -686,43 +728,8 @@ static inline void NetDtor()
   /* context will be destroyed at the last call */
   if(--channels_cnt) return;
 
-  // ### {{
-  // wait until all eofs are really sent
-  {
-    extern struct NaClApp *gnap;
-    struct ChannelDesc *channels = gnap->system_manifest->channels;
-    int busy;
-
-    do
-    {
-      int i;
-      busy = 0;
-
-      for(i = 0; i < gnap->system_manifest->channels_count; ++i)
-      {
-        struct ChannelDesc *channel = &channels[i];
-        if(channel->source == NetworkChannel
-            && channel->limits[PutsLimit] != 0
-            && channel->limits[PutSizeLimit] != 0)
-        {
-          uint32_t more;
-          size_t more_size = sizeof more;
-          int result;
-
-          if(channel->socket == NULL) continue;
-
-          result = zmq_getsockopt(channel->socket, ZMQ_EVENTS, &more, &more_size);
-          busy |= more != ZMQ_POLLOUT;
-          if(more == ZMQ_POLLOUT)
-          {
-            zmq_close(channel->socket);
-            channel->socket = NULL;
-          }
-        }
-      }
-    } while(busy);
-  }
-  // }}
+  /* temporary fix to make zmq_term() working */
+  CloseChannels();
 
   /* terminate context */
   zmq_term(context);
@@ -788,7 +795,10 @@ int PrefetchChannelCtor(struct ChannelDesc *channel)
   return OK_CODE;
 }
 
-/* finalize and deallocate network channel */
+/*
+ * finalize and deallocate network channel
+ * todo(d'b): rewrite the code after zmq_term will be fixed
+ */
 int PrefetchChannelDtor(struct ChannelDesc* channel)
 {
   int result;
@@ -828,27 +838,21 @@ int PrefetchChannelDtor(struct ChannelDesc* channel)
     int linger = 0; /* to drop the rest of the ingoing data */
 
    /* try to read EOF and detect unread messages */
-//    if(zmq_recv(channel->socket, channel->msg, ZMQ_NOBLOCK) != 0)
-//      NaClLog(LOG_ERROR, "channel %s wasn't closed", channel->alias);
-//    else if(zmq_msg_size(channel->msg) != 0)
-//      NaClLog(LOG_ERROR, "channel %s has lost messages", channel->alias);
-    zmq_recv(channel->socket, channel->msg, 0);
-    if(zmq_msg_size(channel->msg) != 0)
+    if(zmq_recv(channel->socket, channel->msg, ZMQ_NOBLOCK) != 0)
+      NaClLog(LOG_ERROR, "channel %s wasn't closed", channel->alias);
+    else if(zmq_msg_size(channel->msg) != 0)
       NaClLog(LOG_ERROR, "channel %s has lost messages", channel->alias);
 
     /* make zeromq deallocate used resources */
     result = zmq_setsockopt(channel->socket, ZMQ_LINGER, &linger, sizeof linger);
     ZMQ_TEST_STATE(result, NULL);
 
-    // ### temp added here to make NetDtor loop working
     zmq_close(channel->socket);
   }
 
   /* dispose the message and close zmq socket */
   zmq_msg_close(channel->msg); /* ZMQ_TEST_STATE can't be used */
   free(channel->msg);
-//  result = zmq_close(channel->socket); // ### temp disabled to make NetDtor loop working
-//  ZMQ_TEST_STATE(result, NULL);
 
   /* will destroy context and netlist after all network channels closed */
   NetDtor();
