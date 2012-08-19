@@ -102,7 +102,7 @@ int32_t ZVMReadHandle(struct NaClApp *nap,
   /* check buffer and convert address */
   if(buffer == NULL) return -EINVAL;
   sys_buffer = (char*)NaClUserToSys(nap, (uintptr_t) buffer);
-  NaClLog(LOG_INFO, "%s() invoked: desc=%d, buffer=0x%lx, size=%d, offset=%ld\n",
+  NaClLog(LOG_DEBUG, "%s() invoked: desc=%d, buffer=0x%lx, size=%d, offset=%ld\n",
       __func__, ch, (intptr_t)buffer, size, offset);
 
   channel = &nap->system_manifest->channels[ch];
@@ -195,7 +195,7 @@ int32_t ZVMWriteHandle(struct NaClApp *nap,
   /* check buffer and convert address */
   if(buffer == NULL) return -EINVAL;
   sys_buffer = (char*)NaClUserToSys(nap, (uintptr_t) buffer);
-  NaClLog(LOG_INFO, "%s() invoked: desc=%d, buffer=0x%lx, size=%d, offset=%ld\n",
+  NaClLog(LOG_DEBUG, "%s() invoked: desc=%d, buffer=0x%lx, size=%d, offset=%ld\n",
         __func__, ch, (intptr_t)buffer, size, offset);
 
   channel = &nap->system_manifest->channels[ch];
