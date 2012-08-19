@@ -2,7 +2,7 @@
  * tests EOF for the channels
  */
 #include <stdio.h>
-#include "api/zrt.h"
+#include "zrt.h"
 
 #define FILE_NAME "data"
 

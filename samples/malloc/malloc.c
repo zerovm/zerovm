@@ -8,8 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-#include "api/zrt.h"
-#include "api/zvm.h"
+#include "zrt.h"
 
 #define SMALL_AMOUNT 0x1000000
 #define GAP_AMOUNT 0x2000000

@@ -2,7 +2,7 @@
  * this sample demonstrate the manifest keyword timeout work
  */
 #include <stdio.h>
-#include "api/zrt.h"
+#include "zrt.h"
 
 int main(int argc, char **argv)
 {

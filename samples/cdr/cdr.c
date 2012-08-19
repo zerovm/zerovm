@@ -1,11 +1,11 @@
 /*
  * cdr channel demostration. the cdr channel should have data
  *
- * in order to use zrt "api/zrt.h" should be included
+ * in order to use zrt "zrt.h" should be included
  */
 #include <stdio.h>
 #include <string.h>
-#include "api/zrt.h"
+#include "zrt.h"
 
 #define BUF_SIZE 0x1000
 #define APP_STRING "hello, world\n"

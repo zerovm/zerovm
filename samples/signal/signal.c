@@ -4,7 +4,7 @@
 #include <string.h>
 #include <signal.h>
 #ifdef USER_SIDE
-#include "api/zrt.h"
+#include "zrt.h"
 #endif
 
 int main(int argc, char **argv, char **envp)

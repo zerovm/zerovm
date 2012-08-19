@@ -2,7 +2,7 @@
  * demo of the new user custom attributes design
  */
 #include <stdio.h>
-#include "api/zrt.h"
+#include "zrt.h"
 
 int main(int argc, char **argv, char **envp)
 {

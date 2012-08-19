@@ -15,7 +15,7 @@
 #include <sys/stat.h>
 #include <emmintrin.h>
 #include <smmintrin.h>
-#include "api/zrt.h"
+#include "zrt.h"
 
 #if 0
 #        define DEBUG

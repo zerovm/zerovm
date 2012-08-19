@@ -2,13 +2,13 @@
  * this sample demonstrates working with the network channels
  * via file abstraction
  *
- * in order to use zrt "api/zrt.h" should be included
+ * in order to use zrt "zrt.h" should be included
  */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include "api/zrt.h"
+#include "zrt.h"
 
 #define CHUNK_COUNT 0x10
 #define CHUNK_SIZE 0x100000

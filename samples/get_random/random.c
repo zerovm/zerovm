@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <unistd.h>
-#include "api/zrt.h"
+#include "zrt.h"
 
 #define TRAMPOLINE_START (intptr_t)0x10000
 #define SYSCALLS_NUMBER 0x10000/0x20

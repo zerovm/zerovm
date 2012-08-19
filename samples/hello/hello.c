@@ -2,10 +2,10 @@
  * this sample demonstrate zrt library - simple way to use libc
  * from untrusted code.
  *
- * in order to use zrt "api/zrt.h" should be included
+ * in order to use zrt "zrt.h" should be included
  */
 #include <stdio.h>
-#include "api/zrt.h"
+#include "zrt.h"
 #include "api/zvm.h"
 
 int main(int argc, char **argv)

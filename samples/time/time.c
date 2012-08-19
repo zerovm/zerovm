@@ -3,7 +3,7 @@
  */
 #include <stdio.h>
 #include <time.h>
-#include "api/zrt.h"
+#include "zrt.h"
 
 #include <stdint.h>
 #include <unistd.h>
