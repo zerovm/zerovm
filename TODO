@@ -11,7 +11,10 @@ cdr: random read, sequential write
 ZMQ PROBLEMS
 ============
 - how to block on zmq_send()?
-- how not to block on zmq_term()? if there were non blocking zmq_sends
+  - there is a possibility to use freeing function as callback and longjmp. (awfull)
+  - use rep/req instead of push/pull
++ how not to block on zmq_term()? if there were non blocking zmq_sends
+  + manually close all channels (waiting when all messages are sent)
 
 CHANNELS DESIGN
 ===============
@@ -19,8 +22,8 @@ CHANNELS DESIGN
   file will have a mess in data
   - solution mention it in the documentation and proxy must not allow to pass
   to manifests such collisions
-  
-- fix issue with send zero-copy buffer reuse. if is not possible to block on send
+
++ fix issue with send zero-copy buffer reuse. if is not possible to block on send
   remove zero-copy to prevent overwriting the data from the buffer before its real
   sending. there are 3 possible fixes:
   - always block on send (due nexe runtime)
@@ -28,14 +31,12 @@ CHANNELS DESIGN
   - "block on next" if it is impossible to block on 1 message. send empty (or some special)
     message and block on it (after unblock we know that the real message (1st one) has been sent )
     for the long multipart message it is not so cumbersome
-  
+  + an extra copy to an extra buffer
+
 + fix issue with zmq_term(). it blocks even if there ar no outgoing messages
   perhaps the problem lies in the finalization order: PUSH channels should be closed 1st.
   can be solved with bugfix or 
   + with proper order in manifest ("push" channels should be 1st)
-- solve problem with send blocking. it doesn't block even with zmq_hwm set to 1!
-  . looks like there is a solution: rzmq. but this is not even 3d party, so it is not safe to use it
-  . another solution is to use single port to send messages and single port to receive messages
 + add name service
   + prepare 2 structures to hold "bind" and "connect" channels list
   + make hash function to hash channels names to 32-bit values
@@ -44,9 +45,9 @@ CHANNELS DESIGN
   - init / dispose
   - the 2nd pass to connect channels. used from mount_channels.c: KickNetworkChannels()
   - give_url() / get_url()
-- add read and write offsets to channel definition in manifest (9 fields?)
-- ensure that network eof is working
-- write complete test to test network channels (over tcp protocol)
+? add read and write offsets to channel definition in manifest (9 fields?)
++ ensure that network eof is working
++ write complete test to test network channels (over tcp protocol)
 + fix bug in struct ZVMChannel
 + fix bug in cdr
 + fix crash: "malloc(): smallbin double linked list corrupted"
@@ -100,15 +101,17 @@ in the next version:
 - update /readme (use "force" to make the user download nacl sdk zerovm currently uses) 
 
 - add more logs
-+- replace COND_ABORT() macro to something more finished and strict:
++ replace COND_ABORT() macro to something more finished and strict:
   any fail cases which must terminate nacl should be logged to nacl log
   any "impossible fail" must be checked by assert() (main purpose: prevent 
   improper zerovm code changes/usage) any non fatal cases must use something else (not "ABORT")
 - move trap.c to service_runtime/. even better to move the code inside *syscall*.* and remove
   trap.* files
 - put all invocations of manifest initializations to nacl init modules
+  - or remove the init modules and do it from main()
 - make defines (or something else) to hold manifest keywords and use it
   instead of "magic" strings. defines should be put into "manifest_keywords.h"
+  - xmacro looks like a better solution
 - move all error messages and codes to nacl_error_code.* (especially from sel_main.c and manifest/)
   note: except fatal errors
   WARNING: get familiar with UMA first. perhaps it is not so good to update its error codes
@@ -120,7 +123,7 @@ in the next version:
   (and other headers with error/return codes)
 -+ make timeout engine instead of useless ResumeCpuClock() and PauseCpuClock()
 	update: ResumeCpuClock() and PauseCpuClock() removed
-- i need to decide what nacl syscalls will be counted against max_syscall:
+? i need to decide what nacl syscalls will be counted against max_syscall:
   1. all
   2. existing only
   3. trap()
