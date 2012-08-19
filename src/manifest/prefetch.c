@@ -664,7 +664,7 @@ static inline void NetCtor()
   /* get name service connection string if available */
   memset(&channel, 0, sizeof channel);
   channel.source = NetworkChannel;
-  channel.name = GetValueByKey("NameService");
+  channel.name = GetValueByKey("NameServer");
   if(channel.name == NULL) return;
 
   /* parse the given string and make url (static var) */

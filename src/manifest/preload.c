@@ -28,6 +28,17 @@ int PreloadChannelDtor(struct ChannelDesc* channel)
   return OK_CODE;
 }
 
+/* test the channel for validity */
+static void FailOnInvalidFileChannel(const struct ChannelDesc *channel)
+{
+  COND_ABORT(channel->source != LocalFile, "channel isn't LocalFile");
+  COND_ABORT(channel->name[0] != '/', "only absolute path allowed");
+
+  /*
+   * todo(d'b): add more checks
+   */
+}
+
 /*
  * preload given file to channel.
  * return 0 if success, otherwise negative errcode
@@ -38,6 +49,9 @@ int PreloadChannelCtor(struct ChannelDesc* channel)
 
   assert(channel != NULL);
   assert(channel->name != NULL);
+
+  /* check the given channel */
+  FailOnInvalidFileChannel(channel);
 
   /* set start position */
   channel->getpos = 0; /* todo(d'b): add attribute to manifest? */

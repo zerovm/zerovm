@@ -36,6 +36,7 @@
   "SyscallsMax", /* syscalls allowed nexe to invoke */\
   "CommandLine", /* command line for nexe */\
   "NodeName", /* node name. available for user as argv[0] */\
+  "NameServer", /* name server to resolve network channels */\
   "TheEnd" /* used to check if this array is in sync with the enum */\
 };
 
@@ -59,6 +60,7 @@ enum ManifestKeywords
   SyscallsMax, /* syscalls allowed nexe to invoke */
   CommandLine, /* command line for nexe */
   NodeName, /* node name. available for user as argv[0] */
+  NameServer, /* name server to resolve network channels */
   TheEnd /* used to check if this enum is in sync with the string array */
 };
 

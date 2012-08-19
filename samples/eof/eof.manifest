@@ -23,5 +23,5 @@ NexeMax = 10000000
 SyscallsMax = 1234
 MemMax = 33554432
 NodeName = reader, 1
-NameService = udp:127.0.0.1:54321
+NameServer = udp:127.0.0.1:54321
 

@@ -3,7 +3,6 @@
  */
 #include <stdio.h>
 #include "api/zrt.h"
-#include "api/zvm.h"
 
 #define FILE_NAME "data"
 
