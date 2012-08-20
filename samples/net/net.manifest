@@ -2,14 +2,12 @@
 == "network channel" example. the new channels design
 == following channels: stdin, stdout, stderr used
 =====================================================================
-Channel = debug, /dev/debug, 0, 0, 0, 999999, 999999
+Channel = /home/dazo/git/zerovm/samples/net/debug, /dev/debug, 0, 0, 0, 999999, 999999
 Channel = /dev/null, /dev/stdin, 0, 999999999, 999999999, 0, 0
-Channel = stdout.log, /dev/stdout, 0, 0, 0, 999999999, 999999999
-Channel = stderr.log, /dev/stderr, 0, 0, 0, 999999999, 999999999
-==Channel = ipc:///tmp/snake, in, 0, 999999999, 999999999, 0, 0
-==Channel = ipc:///tmp/snake, out, 0, 0, 0, 999999999, 999999999
-Channel = tcp:127.0.0.1:55555, out, 0, 0, 0, 999999999, 999999999
-Channel = tcp:127.0.0.1:55555, in, 0, 999999999, 999999999, 0, 0
+Channel = /home/dazo/git/zerovm/samples/net/stdout.log, /dev/stdout, 0, 0, 0, 99999999, 99999999
+Channel = /home/dazo/git/zerovm/samples/net/stderr.log, /dev/stderr, 0, 0, 0, 99999999, 99999999
+Channel = tcp:127.0.0.1:55555, /dev/out/out, 0, 0, 0, 999999999, 999999999
+Channel = tcp:127.0.0.1:55555, /dev/in/in, 0, 999999999, 999999999, 0, 0
 
 =====================================================================
 == switches for zerovm. some of them used to control nexe, some
