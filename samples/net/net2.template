@@ -1,16 +1,16 @@
 =====================================================================
-== 1st collocutor
+== 2nd collocutor
 == "network channel" example. the new channels design
 == following channels: stdin, stdout, stderr used
 =====================================================================
-Channel = /home/dazo/git/zerovm/samples/net/debug1, /dev/debug, 0, 0, 0, 999999, 999999
+Channel = CURDIR/debug2, /dev/debug, 0, 0, 0, 999999, 999999
 Channel = /dev/null, /dev/stdin, 0, 99999999, 99999999, 0, 0
-Channel = /home/dazo/git/zerovm/samples/net/stdout1.log, /dev/stdout, 0, 0, 0, 99999999, 99999999
-Channel = /home/dazo/git/zerovm/samples/net/stderr1.log, /dev/stderr, 0, 0, 0, 99999999, 99999999
-==Channel = tcp:127.0.0.1:55555, in, 0, 99999999, 99999999, 0, 0
-==Channel = tcp:127.0.0.1:55556, out, 0, 0, 0, 99999999, 99999999
-Channel = tcp:2:, /dev/out/out, 0, 0, 0, 99999999, 99999999
-Channel = tcp:2:, /dev/in/in, 0, 99999999, 99999999, 0, 0
+Channel = CURDIR/stdout2.log, /dev/stdout, 0, 0, 0, 99999999, 99999999
+Channel = CURDIR/stderr2.log, /dev/stderr, 0, 0, 0, 99999999, 99999999
+==Channel = tcp:127.0.0.1:55556, in, 0, 99999999, 99999999, 0, 0
+==Channel = tcp:127.0.0.1:55555, out, 0, 0, 0, 99999999, 99999999
+Channel = tcp:1:, /dev/out/out, 0, 0, 0, 99999999, 99999999
+Channel = tcp:1:, /dev/in/in, 0, 99999999, 99999999, 0, 0
 ==Channel = trashcan, trashcan, 0, 0, 0, 999999, 999999
 
 =====================================================================
@@ -22,7 +22,9 @@ Nexe = net.nexe
 NexeMax = 10000000
 SyscallsMax = 3333
 MaxMem = 99999999
-NodeName = companion1, 1
+NodeName = companion2, 2
+==Environment = TimeStamp, 1337012521
 NameServer = udp:127.0.0.1:54321
-CommandLine = 1
+==TimeOut = 2
+CommandLine = 2
 
