@@ -9,7 +9,7 @@
 #include <assert.h>
 #include <string.h>
 #include <ctype.h>
-#include <sys/resource.h> /* timeout */
+#include <sys/resource.h> /* timeout, process priority */
 #include <sys/time.h> /* timeout */
 #include <unistd.h> /* timeout */
 
@@ -36,6 +36,83 @@ static char* MakeEtag(struct NaClApp *nap)
   return "disabled";
 }
 #endif
+
+/* lower zerovm priority */
+static void LowerOwnPriority()
+{
+  if(setpriority(PRIO_PROCESS, 0, ZEROVM_PRIORITY) != 0)
+    NaClLog(LOG_ERROR, "cannot lower zerovm priority");
+}
+
+/* put zerovm in a "jail" */
+static void ChrootJail()
+{
+  if(chdir(NEW_ROOT) != 0)
+    NaClLog(LOG_ERROR, "cannot 'chdir' zerovm");
+
+  if(chroot(NEW_ROOT) != 0)
+    NaClLog(LOG_ERROR, "cannot 'chroot' zerovm");
+}
+
+/* limit zerovm i/o */
+/* todo(d'b): calculate limit from channels */
+static void LimitOwnIO()
+{
+  struct rlimit rl;
+
+  if(getrlimit(RLIMIT_FSIZE, &rl) != 0)
+    NaClLog(LOG_ERROR, "cannot get i/o limits");
+  rl.rlim_cur = ZEROVM_IO_LIMIT;
+  if(setrlimit(RLIMIT_FSIZE, &rl) != 0)
+    NaClLog(LOG_ERROR, "cannot set i/o limits");
+}
+
+/* limit heap and stack available for zerovm */
+/* todo(d'b): under construction */
+static void LimitOwnMemory()
+{
+#if 0
+  int result;
+
+  if(result != 0)
+    NaClLog(LOG_ERROR, "cannot limit zerovm i/o");
+#endif
+}
+
+/* give up the super user priority */
+/* todo(d'b): under construction */
+static void DisableSuperUser()
+{
+#if 0
+  int result;
+
+  if (getuid() == 0)
+  {
+    /* process is running as root, drop privileges */
+    if (setgid(groupid) != 0)
+        fatal("setgid: Unable to drop group privileges: %s", strerror(errno));
+    if (setuid(userid) != 0)
+        fatal("setuid: Unable to drop user privileges: %S", strerror(errno));
+  }
+
+  // ###
+  if(result != 0)
+    NaClLog(LOG_ERROR, "cannot disable super user");
+#endif
+}
+
+/*
+ * "defense in depth". the last frontier of defense.
+ * zerovm limits itself as much as possible
+ */
+void LastDefenseLine()
+{
+  LowerOwnPriority();
+  LimitOwnIO();
+  LimitOwnMemory();
+  ChrootJail();
+  DisableSuperUser();
+}
 
 /* preallocate memory area of given size. abort if fail */
 static void PreallocateUserMemory(struct NaClApp *nap)
