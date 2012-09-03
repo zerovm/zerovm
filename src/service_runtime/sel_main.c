@@ -278,6 +278,12 @@ int main(int argc, char **argv)
   /* Make sure all the file buffers are flushed before entering the nexe */
   fflush((FILE *) NULL);
 
+  /*
+   * "defence in depth" part
+   * todo(): find a proper place for this call
+   */
+  LastDefenseLine();
+
   /* set user code trap() exit location */
   if(setjmp(user_exit) == 0)
   {

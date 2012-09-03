@@ -3,7 +3,7 @@
 == following channels: stdin, stdout, stderr used
 =====================================================================
 Channel = /dev/null, /dev/stdin, 0, 999999, 999999, 0, 0
-Channel = stdout.data, /dev/stdout, 0, 0, 0, 999999, 999999
+Channel = /dev/null, /dev/stdout, 0, 0, 0, 999999, 999999
 Channel = /dev/null, /dev/stderr, 0, 0, 0, 999999, 999999
 
 =====================================================================

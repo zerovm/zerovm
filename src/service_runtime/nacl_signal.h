@@ -27,21 +27,6 @@ enum NaClSignalResult {
   NACL_SIGNAL_RETURN    /* Skip all other handlers and return */
 };
 
-#ifdef _WIN32
-enum PosixSignals {
-  SIGINT  = 2,
-  SIGQUIT = 3,
-  SIGILL  = 4,
-  SIGTRACE= 5,
-  SIGABRT = 6,
-  SIGBUS  = 7,
-  SIGFPE  = 8,
-  SIGKILL = 9,
-  SIGSEGV = 11,
-  SIGSTKFLT = 16,
-};
-#endif
-
 /*
  * Prototype for a signal handler.  The handler will receive the POSIX
  * signal number and an opaque platform dependent signal object.

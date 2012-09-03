@@ -29,11 +29,16 @@ EXTERN_C_BEGIN
     " -Q disable platform qualification (dangerous!)\n"\
     " -Z use fixed feature x86 CPU mode\n"\
     " -D (switch disabled) enable the UNSTABLE dfa validator\n"
+
+/* todo(d'b): move it to zerovm setup or gather all zvm settings here */
 #define NEXE_PGM_NAME "loner" /* default argv[0] for nexe */
 #define MANIFEST_VERSION "09082012"
 #define ZEROVMLOG_NAME "ZeroVM"
 #define ZEROVMLOG_OPTIONS (LOG_CONS | LOG_PID | LOG_NDELAY)
 #define ZEROVMLOG_PRIORITY LOG_USER
+#define ZEROVM_PRIORITY 19
+#define ZEROVM_IO_LIMIT 0x100000000 /* todo(d'b): remove it */
+#define NEW_ROOT "/"
 
 /*
  * todo(d'b): make a decition: leave it here or move to NaClApp
@@ -66,6 +71,12 @@ struct SystemManifest
   int32_t channels_count; /* count of channels */
   struct ChannelDesc *channels; /* i/o channels */
 };
+
+/*
+ * "defense in depth". the last frontier of defense.
+ * zerovm limits itself as much as possible
+ */
+void LastDefenseLine();
 
 /*
  * construct system_manifest object and initialize from manifest
