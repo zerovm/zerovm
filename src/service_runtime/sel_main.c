@@ -149,6 +149,51 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
   syscallback = 0;
 }
 
+/* set zerovm state by given message */
+/* todo(): move it to "tools.h", zvm_state should not be updated directly */
+static void SetZVMState(struct NaClApp *nap, const char *msg)
+{
+  snprintf(nap->zvm_state, SIGNAL_STRLEN, "%s", msg);
+  nap->zvm_state[SIGNAL_STRLEN] = '\0';
+}
+
+enum ValidationState {
+  NotValidated,
+  ValidationOK,
+  ValidationFailed
+};
+
+/*
+ * set validation state according to zvm command line options
+ * note: updates nap->validation_state
+ */
+static void ValidateNexe(struct NaClApp *nap)
+{
+  int result;
+  char cmd[BIG_ENOUGH_SPACE + 1];
+
+  /* skip validation? */
+  nap->validation_state = NotValidated;
+  if(nap->skip_validator != 0) return;
+
+  /* prepare command line */
+  snprintf(cmd, BIG_ENOUGH_SPACE, VALIDATION_FMT, nap->system_manifest->nexe);
+  cmd[BIG_ENOUGH_SPACE] = '\0';
+
+  /* invoke command and check the result */
+  result = system(cmd);
+  if(result != 0)
+  {
+    SetZVMState(nap, "could not find nacl validator");
+    COND_ABORT(1, nap->zvm_state);
+  }
+
+  /* check validation state */
+  nap->validation_state = WEXITSTATUS(result) == 0 ? ValidationOK : ValidationFailed;
+  if(nap->ignore_validator_result == 0)
+    COND_ABORT(nap->validation_state == ValidationFailed, "validation failed");
+}
+
 int main(int argc, char **argv)
 {
   struct NaClApp state, *nap = &state;
@@ -165,7 +210,7 @@ int main(int argc, char **argv)
   nap->system_manifest = &sys_mft;
   memset(nap->system_manifest, 0, sizeof *nap->system_manifest);
   gnap = nap;
-  sprintf(nap->zvm_state, "nexe didn't start");
+  SetZVMState(nap, "nexe didn't start");
   ZeroVMLogCtor();
   NaClSignalHandlerInit();
 
@@ -195,6 +240,9 @@ int main(int argc, char **argv)
   COND_ABORT(!GioFileRefCtor(&gout, stdout),
              "Could not create general standard output channel");
   ParseCommandLine(nap, argc, argv);
+
+  /* validate given nexe and run/fail/exit */
+  ValidateNexe(nap);
 
   /* todo(d'b): remove it after validator will be removed from the project */
   NaClLogGetGio();

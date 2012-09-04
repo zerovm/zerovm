@@ -136,17 +136,10 @@ NaClErrorCode NaClElfImageValidateElfHeader(struct NaClElfImage *image) {
     return LOAD_BAD_ELF_MAGIC;
   }
 
-#if NACL_TARGET_SUBARCH == 64
   if (ELFCLASS64 != hdr->e_ident[EI_CLASS]) {
     NaClLog(LOG_ERROR, "bad elf class\n");
     return LOAD_NOT_64_BIT;
   }
-#else
-  if (ELFCLASS32 != hdr->e_ident[EI_CLASS]) {
-    NaClLog(LOG_ERROR, "bad elf class\n");
-    return LOAD_NOT_32_BIT;
-  }
-#endif
 
   if (ET_EXEC != hdr->e_type) {
     NaClLog(LOG_ERROR, "non executable\n");

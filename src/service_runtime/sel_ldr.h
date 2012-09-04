@@ -235,7 +235,8 @@ struct NaClApp {
   struct SystemManifest     *system_manifest;
   int32_t                   zvm_code; /* zerovm return code */
   /* nexe exit state. NULL == ok, otherwise terminated by signal/timeout */
-  char                      zvm_state[SIGNAL_STRLEN];
+  char                      zvm_state[SIGNAL_STRLEN + 1];
+  int                       validation_state; /* needs for the report */
   int                       skip_qualification; /* startup time variable */
   int                       fuzzing_quit_after_load; /* startup time variable */
   int                       verbosity; /* startup time variable */

@@ -375,7 +375,13 @@ NaClErrorCode NaClAppLoadFile(struct Gio       *gp,
    */
   NaClFillEndOfTextRegion(nap);
 
-#if 0 == NACL_DANGEROUS_DEBUG_MODE_DISABLE_INNER_SANDBOX
+  /*
+   * d'b:
+   * disabled due to validator extracted from the project
+   * todo(d'b): remove it completely with all validator stuff
+   * {{
+   */
+#if 0
   NaClLog(2, "Validating image\n");
   subret = NaClValidateImage(nap);
   NaClPerfCounterMark(&time_load_file,
@@ -386,6 +392,7 @@ NaClErrorCode NaClAppLoadFile(struct Gio       *gp,
     goto done;
   }
 #endif
+  /* }} */
 
   NaClLog(2, "Initializing arch switcher\n");
   NaClInitSwitchToApp(nap);
