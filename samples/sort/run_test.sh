@@ -1,10 +1,10 @@
 echo ---------------------------------------------------- generating
-../../zerovm -Mgenerator.manifest -v2
+../../zerovm -Mgenerator.uint32_t.manifest
 cat generator.stderr.log
 echo ---------------------------------------------------- sorting
-../../zerovm -Msort.manifest -v2
+../../zerovm -Msort_uint_proper_with_args.manifest
 cat sort.stderr.log
 echo ---------------------------------------------------- testing
-../../zerovm -Mtest.manifest -v2
+../../zerovm -Mtester.uint32_t.manifest
 cat tester.stderr.log
 

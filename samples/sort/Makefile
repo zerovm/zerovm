@@ -4,7 +4,7 @@ NAME_3=tester.uint32_t
 ZVM_ROOT=../..
 INCLUDE_FLAGS=-I $(ZVM_ROOT)
 MACROS_FLAGS=-DUSER_SIDE -DZRT_LIB
-NACL_TOOLCHAIN_PATH=~/nacl_sdk/pepper_19/toolchain/linux_x86_glibc
+NACL_TOOLCHAIN_PATH=$(NACL_SDK_ROOT)/toolchain/linux_x86_glibc
 
 all: $(NAME_1).o $(NAME_2).o $(NAME_3).o
 	$(NACL_TOOLCHAIN_PATH)/bin/x86_64-nacl-gcc -o $(NAME_1).nexe -s -static -T \
@@ -16,7 +16,9 @@ all: $(NAME_1).o $(NAME_2).o $(NAME_3).o
 	$(NACL_TOOLCHAIN_PATH)/bin/x86_64-nacl-gcc -o $(NAME_3).nexe -s -static -T \
 	$(NACL_TOOLCHAIN_PATH)/x86_64-nacl/lib64/ldscripts/elf64_nacl.x.static -melf64_nacl -m64 \
 	$(DEBUG) $(NAME_3).o $(ZVM_ROOT)/api/libzrt.a
-	
+	@sed 's#CURDIR#$(CURDIR)#g' $(NAME_1).template > $(NAME_1).manifest
+	@sed 's#CURDIR#$(CURDIR)#g' $(NAME_2).template > $(NAME_2).manifest
+	@sed 's#CURDIR#$(CURDIR)#g' $(NAME_3).template > $(NAME_3).manifest
 	./run_test.sh
 
 $(NAME_1).o:
@@ -32,4 +34,4 @@ $(NAME_3).o:
 	$(INCLUDE_FLAGS) $(MACROS_FLAGS) $(DEBUG) -c -Wno-long-long -O2 -msse4.1 -m64 $(NAME_3).c
 
 clean:
-	rm -f $(NAME_1).nexe $(NAME_1).o $(NAME_2).nexe $(NAME_2).o $(NAME_3).nexe $(NAME_3).o *.log *.data
+	rm -f $(NAME_1).nexe $(NAME_1).o $(NAME_2).nexe $(NAME_2).o $(NAME_3).nexe $(NAME_3).o *.log *.data *.manifest
