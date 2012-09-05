@@ -78,25 +78,26 @@ struct NaClLogModuleVerbosity {
 
 static struct NaClLogModuleVerbosity *gNaClLogModuleVerbosity = NULL;
 
-static FILE *NaClLogFileIoBufferFromFile(char const *log_file) {
-  int   log_desc;
-  FILE  *log_iob;
-
-  log_desc = open(log_file, O_WRONLY | O_APPEND | O_CREAT, 0777);
-  if (-1 == log_desc) {
-    perror("NaClLogSetFile");
-    fprintf(stderr, "Could not create log file\n");
-    NaClAbort();
-  }
-
-  log_iob = FDOPEN(log_desc, "a");
-  if (NULL == log_iob) {
-    perror("NaClLogSetFile");
-    fprintf(stderr, "Could not fdopen log stream\n");
-    NaClAbort();
-  }
-  return log_iob;
-}
+// ###
+//static FILE *NaClLogFileIoBufferFromFile(char const *log_file) {
+//  int   log_desc;
+//  FILE  *log_iob;
+//
+//  log_desc = open(log_file, O_WRONLY | O_APPEND | O_CREAT, 0777);
+//  if (-1 == log_desc) {
+//    perror("NaClLogSetFile");
+//    fprintf(stderr, "Could not create log file\n");
+//    NaClAbort();
+//  }
+//
+//  log_iob = FDOPEN(log_desc, "a");
+//  if (NULL == log_iob) {
+//    perror("NaClLogSetFile");
+//    fprintf(stderr, "Could not fdopen log stream\n");
+//    NaClAbort();
+//  }
+//  return log_iob;
+//}
 
 /*
  * Setting the log stream buffering to fully buffered, so that the
@@ -143,10 +144,11 @@ static struct Gio *NaClLogGioFromFileIoBuffer(FILE *log_iob) {
   return (struct Gio *) log_gio;
 }
 
-void NaClLogSetFile(char const *log_file) {
-  NaClLogSetGio(NaClLogGioFromFileIoBuffer(
-      NaClLogFileIoBufferFromFile(log_file)));
-}
+// ###
+//void NaClLogSetFile(char const *log_file) {
+//  NaClLogSetGio(NaClLogGioFromFileIoBuffer(
+//      NaClLogFileIoBufferFromFile(log_file)));
+//}
 
 int NaClLogDefaultLogVerbosity() {
   return 0;

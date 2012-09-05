@@ -165,72 +165,22 @@ static const char NSC_CPUID0[kVendorIDLength]     = "Geode by NSC";
 #endif
 
 static int asm_HasCPUID() {
-  volatile int before, after, result;
-#if NACL_BUILD_SUBARCH == 64
   /* Note: If we are running in x86-64, then cpuid must be defined,
    * since CPUID dates from DX2 486, and x86-64 was added after this.
    */
   return 1;
-/* TODO(bradchen): split into separate Windows, etc., files */
-#elif defined(__GNUC__)
-  __asm__ volatile("pushfl                \n\t" /* save EFLAGS to eax */
-                   "pop %%eax             \n\t"
-                   "movl %%eax, %0        \n\t" /* remember EFLAGS in %0 */
-                   "xor $0x00200000, %%eax\n\t" /* toggle bit 21 */
-                   "push %%eax            \n\t" /* write eax to EFLAGS */
-                   "popfl                 \n\t"
-                   "pushfl                \n\t" /* save EFLAGS to %1 */
-                   "pop %1                \n\t"
-                   /*
-                    * We use "r" constraints here, forcing registers,
-                    * because a memory reference using the stack
-                    * pointer wouldn't be safe since we're moving the
-                    * stack pointer around in between the
-                    * instructions.  We need to inform the compiler
-                    * that we're clobbering %eax as a scratch register.
-                    */
-                   : "=r" (before), "=r" (after) : : "eax");
-#elif NACL_WINDOWS
-  __asm {
-    pushfd
-    pop eax
-    mov before, eax
-    xor eax, 0x00200000
-    push eax
-    popfd
-    pushfd
-    pop after
-  }
-#else
-# error Unsupported platform
-#endif
-  result = (before ^ after) & 0x0200000;
-  return result;
 }
 
 static void asm_CPUID(uint32_t op, volatile uint32_t reg[4]) {
-#if defined(__GNUC__)
-#if NACL_BUILD_SUBARCH == 64
- __asm__ volatile("push %%rbx       \n\t" /* save %ebx */
-#else
- __asm__ volatile("pushl %%ebx      \n\t"
-#endif
-                   "cpuid            \n\t"
-                   "movl %%ebx, %1   \n\t"
-                   /* save what cpuid just put in %ebx */
-#if NACL_BUILD_SUBARCH == 64
-                   "pop %%rbx        \n\t"
-#else
-                   "popl %%ebx       \n\t" /* restore the old %ebx */
-#endif
-                   : "=a"(reg[0]), "=S"(reg[1]), "=c"(reg[2]), "=d"(reg[3])
-                   : "a"(op)
-                   : "cc");
-#elif NACL_WINDOWS
-  __cpuid((uint32_t*)reg, op);
-#else
-# error Unsupported platform
-#endif
+  __asm__ volatile("push %%rbx       \n\t" /* save %ebx */
+      "cpuid            \n\t"
+      "movl %%ebx, %1   \n\t"
+
+      /* save what cpuid just put in %ebx */
+      "pop %%rbx        \n\t"
+      : "=a"(reg[0]), "=S"(reg[1]), "=c"(reg[2]), "=d"(reg[3])
+      : "a"(op)
+      : "cc");
 }
 
 static void CacheCPUVersionID(NaClCPUData* data) {
@@ -255,19 +205,6 @@ static void CacheCPUFeatureVector(NaClCPUData* data) {
   asm_CPUID(1, data->_featurev);
   /* this is for AMD CPUs */
   asm_CPUID(0x80000001, &data->_featurev[CFReg_EAX_A]);
-#if 0
-  /* print feature vector */
-  printf("CPUID:  %08x  %08x  %08x  %08x\n",
-         data->_featurev[0],
-         data->_featurev[1],
-         data->_featurev[2],
-         data->_featurev[3]);
-  printf("CPUID:  %08x  %08x  %08x  %08x\n",
-         data->_featurev[4],
-         data->_featurev[5],
-         data->_featurev[6],
-         data->_featurev[7]);
-#endif
 }
 
 /* CacheGetCPUIDString creates an ASCII string that identfies this CPU's */
@@ -282,18 +219,11 @@ static void CacheGetCPUIDString(NaClCPUData* data) {
   SNPRINTF(&(wlid[kVendorIDLength-1]), 9, "%08x", (int)fv[CFReg_EAX_I]);
 }
 
-char *GetCPUIDString(NaClCPUData* data) {
-  return data->_wlid;
-}
-
 /* Returns true if the given feature is defined by the CPUID. */
 static int CheckCPUFeature(NaClCPUData* data, NaClCPUFeatureID fid) {
   const CPUFeature *f = &CPUFeatureDescriptions[fid];
   uint32_t *fv = data->_featurev;
-#if 0
-  printf("%s: %x (%08x & %08x)\n", f->name, (fv[f->reg] & f->mask),
-         fv[f->reg], f->mask);
-#endif
+
   if (fv[f->reg] & f->mask) {
     return 1;
   } else {
@@ -336,34 +266,8 @@ static void CheckNaClArchFeatures(NaClCPUData* data,
   }
 }
 
-int NaClArchSupported(const NaClCPUFeaturesX86 *features) {
-  return (features->arch_features.f_cpuid_supported &&
-          features->arch_features.f_cpu_supported);
-}
-
 void NaClClearCPUFeatures(NaClCPUFeaturesX86 *features) {
   memset(features, 0, sizeof(*features));
-}
-
-void NaClSetAllCPUFeatures(NaClCPUFeaturesX86 *features) {
-  /* Be a little more pedantic than using memset because we don't know exactly
-   * how the structure is laid out.  If we use memset, fields may be initialized
-   * to 0xff instead of 1 ... this isn't the end of the world but it can
-   * create a skew if the structure is hashed, etc.
-   */
-  int id;
-  /* Ensure any padding is zeroed. */
-  NaClClearCPUFeatures(features);
-  features->arch_features.f_cpuid_supported = 1;
-  features->arch_features.f_cpu_supported = 1;
-  for (id = 0; id < NaClCPUFeature_Max; ++id) {
-    NaClSetCPUFeature(features, id, 1);
-  }
-}
-
-void NaClCopyCPUFeatures(NaClCPUFeaturesX86* target,
-                         const NaClCPUFeaturesX86* source) {
-  memcpy(target, source, sizeof(NaClCPUFeaturesX86));
 }
 
 void NaClSetCPUFeature(NaClCPUFeaturesX86 *features, NaClCPUFeatureID id,
@@ -453,26 +357,3 @@ const int kFixedFeatureCPUModel[NaClCPUFeature_Max] = {
   0, /* NaClCPUFeature_LM */
   0, /* NaClCPUFeature_SVM */    /* AMD-specific */
 };
-
-int NaClFixCPUFeatures(NaClCPUFeaturesX86 *cpu_features) {
-  NaClCPUFeatureID fid;
-  int rvalue = 1;
-
-  for (fid = 0; fid < NaClCPUFeature_Max; fid++) {
-    if (kFixedFeatureCPUModel[fid]) {
-      if (!NaClGetCPUFeature(cpu_features, fid)) {
-        /* This CPU is missing a required feature. */
-        NaClLog(LOG_ERROR,
-                "This CPU is missing a feature required by fixed-mode: %s\n",
-                NaClGetCPUFeatureName(fid));
-        rvalue = 0;  /* set return value to indicate failure */
-      }
-    } else {
-      /* Feature is not in the fixed model.
-       * Ensure cpu_features does not have it either.
-       */
-      NaClSetCPUFeature(cpu_features, fid, 0);
-    }
-  }
-  return rvalue;
-}

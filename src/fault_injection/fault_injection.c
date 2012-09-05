@@ -18,15 +18,16 @@
 # include <pthread.h>
 #endif
 
-#if !NACL_HAS_STRNDUP
-static char *strndup(char const *s, size_t n) {
-  char *d = (char *) malloc(n + 1);
-  CHECK(NULL != d);
-  strncpy(d, s, n);
-  d[n] = '\0';
-  return d;
-}
-#endif
+// ###
+//#if !NACL_HAS_STRNDUP
+//static char *strndup(char const *s, size_t n) {
+//  char *d = (char *) malloc(n + 1);
+//  CHECK(NULL != d);
+//  strncpy(d, s, n);
+//  d[n] = '\0';
+//  return d;
+//}
+//#endif
 
 struct NaClFaultExpr {
   int       pass;  /* bool */

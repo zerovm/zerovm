@@ -375,25 +375,6 @@ NaClErrorCode NaClAppLoadFile(struct Gio       *gp,
    */
   NaClFillEndOfTextRegion(nap);
 
-  /*
-   * d'b:
-   * disabled due to validator extracted from the project
-   * todo(d'b): remove it completely with all validator stuff
-   * {{
-   */
-#if 0
-  NaClLog(2, "Validating image\n");
-  subret = NaClValidateImage(nap);
-  NaClPerfCounterMark(&time_load_file,
-                      NACL_PERF_IMPORTANT_PREFIX "ValidateImg");
-  NaClPerfCounterIntervalLast(&time_load_file);
-  if (LOAD_OK != subret) {
-    ret = subret;
-    goto done;
-  }
-#endif
-  /* }} */
-
   NaClLog(2, "Initializing arch switcher\n");
   NaClInitSwitchToApp(nap);
 
@@ -427,20 +408,9 @@ done:
 
 int NaClAddrIsValidEntryPt(struct NaClApp *nap,
                            uintptr_t      addr) {
-#if defined(NACL_TARGET_ARM_THUMB2_MODE)
-  /*
-   * The entry point needs to be aligned 0xe mod 0x10.  But ARM processors need
-   * an odd target address to indicate that the target is in thumb mode.  When
-   * control is actually transferred, it is to the target address minus one.
-   */
-  if (0xf != (addr & (nap->bundle_size - 1))) {
-    return 0;
-  }
-#else
   if (0 != (addr & (nap->bundle_size - 1))) {
     return 0;
   }
-#endif
 
   return addr < nap->static_text_end;
 }

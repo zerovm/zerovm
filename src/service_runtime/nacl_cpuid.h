@@ -113,14 +113,6 @@ typedef struct NaClCPUData {
  */
 void NaClCPUDataGet(NaClCPUData* data);
 
-/* GetCPUIDString creates an ASCII string that identifies this CPU's
- * vendor ID, family, model, and stepping, as per the CPUID instruction
- */
-char *GetCPUIDString(NaClCPUData* data);
-
-/* Set cpu check state fields to all true. */
-void NaClSetAllCPUFeatures(NaClCPUFeaturesX86 *features);
-
 /* Clear cpu check state fields (i.e. set all fields to false). */
 void NaClClearCPUFeatures(NaClCPUFeaturesX86 *features);
 
@@ -134,24 +126,8 @@ static INLINE int NaClGetCPUFeature(const NaClCPUFeaturesX86 *features,
   return features->data[id];
 }
 
-/* Get a short, printable name for the feature. */
-const char* NaClGetCPUFeatureName(NaClCPUFeatureID id);
-
-/* Copy a set of cpu features. */
-void NaClCopyCPUFeatures(NaClCPUFeaturesX86* target,
-                         const NaClCPUFeaturesX86* source);
-
 /* Get the features for the CPU this code is running on. */
 void NaClGetCurrentCPUFeatures(NaClCPUFeaturesX86 *cpu_features);
-
-/* Returns true if CPUID is defined, and the CPU is supported. */
-int NaClArchSupported(const NaClCPUFeaturesX86 *features);
-
-/* Update cpu_features to only include features in the fixed x86 model.
- * Returns 1 if cpu_features includes all features required by the model.
- * Otherwise returns 0.
- */
-int NaClFixCPUFeatures(NaClCPUFeaturesX86 *cpu_features);
 
 EXTERN_C_END
 

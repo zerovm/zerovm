@@ -14,43 +14,49 @@
 #include "src/desc/nacl_desc_effector_trusted_mem.h"
 #include "src/platform/nacl_log.h"
 
-static struct NaClDescEffectorVtbl const NaClDescEffectorTrustedMemVtbl;
+// ###
+//static struct NaClDescEffectorVtbl const NaClDescEffectorTrustedMemVtbl;
 
-int NaClDescEffectorTrustedMemCtor(struct NaClDescEffectorTrustedMem *self) {
-  self->base.vtbl = &NaClDescEffectorTrustedMemVtbl;
-  return 1;
-}
+// ###
+//int NaClDescEffectorTrustedMemCtor(struct NaClDescEffectorTrustedMem *self) {
+//  self->base.vtbl = &NaClDescEffectorTrustedMemVtbl;
+//  return 1;
+//}
 
-static void NaClDescEffTrustedMemDtor(struct NaClDescEffector *vself) {
-  vself->vtbl = (struct NaClDescEffectorVtbl const *) NULL;
-  return;
-}
+// ###
+//static void NaClDescEffTrustedMemDtor(struct NaClDescEffector *vself) {
+//  vself->vtbl = (struct NaClDescEffectorVtbl const *) NULL;
+//  return;
+//}
 
-static int NaClDescEffTrustedMemUnmapMemory(struct NaClDescEffector  *vself,
-                                            uintptr_t                sysaddr,
-                                            size_t                   nbytes) {
-  UNREFERENCED_PARAMETER(vself);
-  UNREFERENCED_PARAMETER(sysaddr);
-  UNREFERENCED_PARAMETER(nbytes);
-  NaClLog(4, "TrustedMem effector's UnmapMemory called, nothing to do\n");
-  return 0;
-}
+// ###
+//static int NaClDescEffTrustedMemUnmapMemory(struct NaClDescEffector  *vself,
+//                                            uintptr_t                sysaddr,
+//                                            size_t                   nbytes) {
+//  UNREFERENCED_PARAMETER(vself);
+//  UNREFERENCED_PARAMETER(sysaddr);
+//  UNREFERENCED_PARAMETER(nbytes);
+//  NaClLog(4, "TrustedMem effector's UnmapMemory called, nothing to do\n");
+//  return 0;
+//}
 
-static uintptr_t NaClDescEffTrustedMemMapAnonMem(
-    struct NaClDescEffector *vself,
-    uintptr_t               sysaddr,
-    size_t                  nbytes,
-    int                     prot) {
-  UNREFERENCED_PARAMETER(vself);
-  UNREFERENCED_PARAMETER(sysaddr);
-  UNREFERENCED_PARAMETER(nbytes);
-  UNREFERENCED_PARAMETER(prot);
-  NaClLog(LOG_FATAL, "TrustedMem effector's MapAnonMem called\n");
-  return 0;
-}
+// ###
+//static uintptr_t NaClDescEffTrustedMemMapAnonMem(
+//    struct NaClDescEffector *vself,
+//    uintptr_t               sysaddr,
+//    size_t                  nbytes,
+//    int                     prot) {
+//  UNREFERENCED_PARAMETER(vself);
+//  UNREFERENCED_PARAMETER(sysaddr);
+//  UNREFERENCED_PARAMETER(nbytes);
+//  UNREFERENCED_PARAMETER(prot);
+//  NaClLog(LOG_FATAL, "TrustedMem effector's MapAnonMem called\n");
+//  return 0;
+//}
 
-static struct NaClDescEffectorVtbl const NaClDescEffectorTrustedMemVtbl = {
-  NaClDescEffTrustedMemDtor,
-  NaClDescEffTrustedMemUnmapMemory,
-  NaClDescEffTrustedMemMapAnonMem,
-};
+// ###
+//static struct NaClDescEffectorVtbl const NaClDescEffectorTrustedMemVtbl = {
+//  NaClDescEffTrustedMemDtor,
+//  NaClDescEffTrustedMemUnmapMemory,
+//  NaClDescEffTrustedMemMapAnonMem,
+//};

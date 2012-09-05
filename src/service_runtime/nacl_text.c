@@ -18,9 +18,6 @@
 #include "src/service_runtime/sel_ldr.h"
 #include "src/service_runtime/sel_memory.h"
 
-/* initial size of the malloced buffer for dynamic regions */
-static const int kMinDynamicRegionsAllocated = 32;
-
 static const int kBitsPerByte = 8;
 
 static uint8_t *BitmapAllocate(uint32_t indexes) {

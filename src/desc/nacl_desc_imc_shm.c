@@ -392,47 +392,48 @@ static struct NaClDescVtbl const kNaClDescImcShmVtbl = {
   NaClDescGetValueNotImplemented,
 };
 
-int NaClDescImcShmInternalize(struct NaClDesc           **out_desc,
-                              struct NaClDescXferState  *xfer) {
-  int                   rv;
-  struct NaClDescImcShm *ndisp;
-  NaClHandle            h;
-  nacl_off64_t          hsize;
-
-  rv = -NACL_ABI_EIO;
-  ndisp = NULL;
-
-  if (xfer->next_handle == xfer->handle_buffer_end) {
-    rv = -NACL_ABI_EIO;
-    goto cleanup;
-  }
-  if (xfer->next_byte + sizeof ndisp->size > xfer->byte_buffer_end) {
-    rv = -NACL_ABI_EIO;
-    goto cleanup;
-  }
-
-  ndisp = malloc(sizeof *ndisp);
-  if (NULL == ndisp) {
-    rv = -NACL_ABI_ENOMEM;
-    goto cleanup;
-  }
-
-  h = *xfer->next_handle;
-  *xfer->next_handle++ = NACL_INVALID_HANDLE;
-  memcpy(&hsize, xfer->next_byte, sizeof hsize);
-  xfer->next_byte += sizeof hsize;
-
-  if (0 == NaClDescImcShmCtor(ndisp, h, hsize)) {
-    rv = -NACL_ABI_EIO;
-    goto cleanup;
-  }
-
-  *out_desc = (struct NaClDesc *) ndisp;
-  rv = 0;
-
-cleanup:
-  if (rv < 0) {
-    free(ndisp);
-  }
-  return rv;
-}
+// ###
+//int NaClDescImcShmInternalize(struct NaClDesc           **out_desc,
+//                              struct NaClDescXferState  *xfer) {
+//  int                   rv;
+//  struct NaClDescImcShm *ndisp;
+//  NaClHandle            h;
+//  nacl_off64_t          hsize;
+//
+//  rv = -NACL_ABI_EIO;
+//  ndisp = NULL;
+//
+//  if (xfer->next_handle == xfer->handle_buffer_end) {
+//    rv = -NACL_ABI_EIO;
+//    goto cleanup;
+//  }
+//  if (xfer->next_byte + sizeof ndisp->size > xfer->byte_buffer_end) {
+//    rv = -NACL_ABI_EIO;
+//    goto cleanup;
+//  }
+//
+//  ndisp = malloc(sizeof *ndisp);
+//  if (NULL == ndisp) {
+//    rv = -NACL_ABI_ENOMEM;
+//    goto cleanup;
+//  }
+//
+//  h = *xfer->next_handle;
+//  *xfer->next_handle++ = NACL_INVALID_HANDLE;
+//  memcpy(&hsize, xfer->next_byte, sizeof hsize);
+//  xfer->next_byte += sizeof hsize;
+//
+//  if (0 == NaClDescImcShmCtor(ndisp, h, hsize)) {
+//    rv = -NACL_ABI_EIO;
+//    goto cleanup;
+//  }
+//
+//  *out_desc = (struct NaClDesc *) ndisp;
+//  rv = 0;
+//
+//cleanup:
+//  if (rv < 0) {
+//    free(ndisp);
+//  }
+//  return rv;
+//}

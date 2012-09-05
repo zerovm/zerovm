@@ -325,47 +325,49 @@ int NaClXlateErrno(int errnum) {
   return NACL_ABI_EINVAL;  /* catch all */
 }
 
-/*
- * If you are using this as a kernel-style return, remember that you
- * should negate its return value.
- */
-int NaClXlateNaClSyncStatus(NaClSyncStatus status) {
-  switch (status) {
-#define MAP(S, E) case S: do { return E; } while (0)
-    MAP(NACL_SYNC_OK, 0);
-    MAP(NACL_SYNC_INTERNAL_ERROR, NACL_ABI_EINVAL); /* generic error */
-    MAP(NACL_SYNC_BUSY, NACL_ABI_EBUSY);
-    MAP(NACL_SYNC_MUTEX_INVALID, NACL_ABI_EBADF);
-    MAP(NACL_SYNC_MUTEX_DEADLOCK, NACL_ABI_EINVAL);
-    MAP(NACL_SYNC_MUTEX_PERMISSION, NACL_ABI_EPERM);
-    MAP(NACL_SYNC_MUTEX_INTERRUPTED, NACL_ABI_EINTR);
-    MAP(NACL_SYNC_CONDVAR_TIMEDOUT, NACL_ABI_ETIMEDOUT);
-    MAP(NACL_SYNC_CONDVAR_INTR, NACL_ABI_EINTR);
-    MAP(NACL_SYNC_SEM_INTERRUPTED, NACL_ABI_EINTR);
-    MAP(NACL_SYNC_SEM_RANGE_ERROR, NACL_ABI_ERANGE);
-#undef MAP
-  }
-  return NACL_ABI_EINVAL;  /* catch all */
-}
+// ###
+///*
+// * If you are using this as a kernel-style return, remember that you
+// * should negate its return value.
+// */
+//int NaClXlateNaClSyncStatus(NaClSyncStatus status) {
+//  switch (status) {
+//#define MAP(S, E) case S: do { return E; } while (0)
+//    MAP(NACL_SYNC_OK, 0);
+//    MAP(NACL_SYNC_INTERNAL_ERROR, NACL_ABI_EINVAL); /* generic error */
+//    MAP(NACL_SYNC_BUSY, NACL_ABI_EBUSY);
+//    MAP(NACL_SYNC_MUTEX_INVALID, NACL_ABI_EBADF);
+//    MAP(NACL_SYNC_MUTEX_DEADLOCK, NACL_ABI_EINVAL);
+//    MAP(NACL_SYNC_MUTEX_PERMISSION, NACL_ABI_EPERM);
+//    MAP(NACL_SYNC_MUTEX_INTERRUPTED, NACL_ABI_EINTR);
+//    MAP(NACL_SYNC_CONDVAR_TIMEDOUT, NACL_ABI_ETIMEDOUT);
+//    MAP(NACL_SYNC_CONDVAR_INTR, NACL_ABI_EINTR);
+//    MAP(NACL_SYNC_SEM_INTERRUPTED, NACL_ABI_EINTR);
+//    MAP(NACL_SYNC_SEM_RANGE_ERROR, NACL_ABI_ERANGE);
+//#undef MAP
+//  }
+//  return NACL_ABI_EINVAL;  /* catch all */
+//}
 
 
-struct NaClHostDesc *NaClHostDescPosixMake(int  posix_d,
-                                           int  flags) {
-  struct NaClHostDesc *nhdp;
-  int                 error;
-
-  nhdp = malloc(sizeof *nhdp);
-  if (NULL == nhdp) {
-    NaClLog(LOG_FATAL, "NaClHostDescPosixMake(%d,0x%x): malloc failed\n",
-            posix_d, flags);
-  }
-  if (0 != (error = NaClHostDescPosixTake(nhdp, posix_d, flags))) {
-    NaClLog(LOG_FATAL,
-            "NaClHostDescPosixMake(%d,0x%x): Take failed, error %da\n",
-            posix_d, flags, error);
-  }
-  return nhdp;
-}
+// ###
+//struct NaClHostDesc *NaClHostDescPosixMake(int  posix_d,
+//                                           int  flags) {
+//  struct NaClHostDesc *nhdp;
+//  int                 error;
+//
+//  nhdp = malloc(sizeof *nhdp);
+//  if (NULL == nhdp) {
+//    NaClLog(LOG_FATAL, "NaClHostDescPosixMake(%d,0x%x): malloc failed\n",
+//            posix_d, flags);
+//  }
+//  if (0 != (error = NaClHostDescPosixTake(nhdp, posix_d, flags))) {
+//    NaClLog(LOG_FATAL,
+//            "NaClHostDescPosixMake(%d,0x%x): Take failed, error %da\n",
+//            posix_d, flags, error);
+//  }
+//  return nhdp;
+//}
 
 
 int NaClProtMap(int abi_prot) {

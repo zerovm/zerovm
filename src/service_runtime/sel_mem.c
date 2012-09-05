@@ -77,12 +77,13 @@ void NaClVmentryPrint(void                  *state,
   fflush(stdout);
 }
 
-void NaClVmmapDebug(struct NaClVmmap *self,
-                    char             *msg) {
-  puts(msg);
-  NaClVmmapVisit(self, NaClVmentryPrint, (void *) 0);
-  fflush(stdout);
-}
+// ###
+//void NaClVmmapDebug(struct NaClVmmap *self,
+//                    char             *msg) {
+//  puts(msg);
+//  NaClVmmapVisit(self, NaClVmentryPrint, (void *) 0);
+//  fflush(stdout);
+//}
 
 int NaClVmmapCtor(struct NaClVmmap *self) {
   self->size = START_ENTRIES;

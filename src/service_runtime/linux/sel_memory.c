@@ -52,31 +52,32 @@ int NaCl_page_alloc_intern_flags(void   **p,
   return (NULL == addr) ? -ENOMEM : 0;
 }
 
-/*
- * Note that NaCl_page_alloc does not allocate pages that satisify
- * NaClIsAllocPageMultiple.  On linux/osx, the system does not impose
- * any such restrictions, and we only need to enforce the restriction
- * on NaCl app code to ensure that the app code is portable across all
- * host OSes.
- */
-static
-int NaCl_page_alloc_intern(void   **p,
-                           size_t size) {
-  int map_flags = 0;
-
-  if (NULL != *p) {
-    map_flags |= MAP_FIXED;
-  }
-
-  /*
-   * Indicate to the kernel that we just want these pages allocated, not
-   * committed.  This is important for systems with relatively little RAM+swap.
-   * See bug 251.
-   */
-  map_flags |= MAP_NORESERVE;
-
-  return NaCl_page_alloc_intern_flags(p, size, map_flags);
-}
+// ###
+///*
+// * Note that NaCl_page_alloc does not allocate pages that satisify
+// * NaClIsAllocPageMultiple.  On linux/osx, the system does not impose
+// * any such restrictions, and we only need to enforce the restriction
+// * on NaCl app code to ensure that the app code is portable across all
+// * host OSes.
+// */
+//static
+//int NaCl_page_alloc_intern(void   **p,
+//                           size_t size) {
+//  int map_flags = 0;
+//
+//  if (NULL != *p) {
+//    map_flags |= MAP_FIXED;
+//  }
+//
+//  /*
+//   * Indicate to the kernel that we just want these pages allocated, not
+//   * committed.  This is important for systems with relatively little RAM+swap.
+//   * See bug 251.
+//   */
+//  map_flags |= MAP_NORESERVE;
+//
+//  return NaCl_page_alloc_intern_flags(p, size, map_flags);
+//}
 
 /*
  * Pick a "hint" address that is random.
@@ -93,17 +94,18 @@ int NaCl_page_alloc_randomized(void **p, size_t size)
   return 0;
 }
 
-int NaCl_page_alloc(void   **p,
-                    size_t size) {
-  void *addr = NULL;
-  int rv;
-
-  if (0 == (rv = NaCl_page_alloc_intern(&addr, size))) {
-    *p = addr;
-  }
-
-  return rv;
-}
+// ###
+//int NaCl_page_alloc(void   **p,
+//                    size_t size) {
+//  void *addr = NULL;
+//  int rv;
+//
+//  if (0 == (rv = NaCl_page_alloc_intern(&addr, size))) {
+//    *p = addr;
+//  }
+//
+//  return rv;
+//}
 
 /*
 * This is critical to make the text region non-writable, and the data

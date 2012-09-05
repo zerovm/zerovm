@@ -28,54 +28,59 @@
  * for host-OS descriptors).
  */
 
-static struct NaClDescVtbl const kNaClDescIoDescVtbl;  /* fwd */
-/*
- * Takes ownership of hd, will close in Dtor.
- */
-int NaClDescIoDescCtor(struct NaClDescIoDesc  *self,
-                       struct NaClHostDesc    *hd) {
-  struct NaClDesc *basep = (struct NaClDesc *) self;
+// ###
+//static struct NaClDescVtbl const kNaClDescIoDescVtbl;  /* fwd */
 
-  basep->base.vtbl = (struct NaClRefCountVtbl const *) NULL;
-  if (!NaClDescCtor(basep)) {
-    return 0;
-  }
-  self->hd = hd;
-  basep->base.vtbl = (struct NaClRefCountVtbl const *) &kNaClDescIoDescVtbl;
-  return 1;
-}
+// ###
+///*
+// * Takes ownership of hd, will close in Dtor.
+// */
+//int NaClDescIoDescCtor(struct NaClDescIoDesc  *self,
+//                       struct NaClHostDesc    *hd) {
+//  struct NaClDesc *basep = (struct NaClDesc *) self;
+//
+//  basep->base.vtbl = (struct NaClRefCountVtbl const *) NULL;
+//  if (!NaClDescCtor(basep)) {
+//    return 0;
+//  }
+//  self->hd = hd;
+//  basep->base.vtbl = (struct NaClRefCountVtbl const *) &kNaClDescIoDescVtbl;
+//  return 1;
+//}
 
-static void NaClDescIoDescDtor(struct NaClRefCount *vself) {
-  struct NaClDescIoDesc *self = (struct NaClDescIoDesc *) vself;
+// ###
+//static void NaClDescIoDescDtor(struct NaClRefCount *vself) {
+//  struct NaClDescIoDesc *self = (struct NaClDescIoDesc *) vself;
+//
+//  NaClLog(4, "NaClDescIoDescDtor(0x%08"NACL_PRIxPTR").\n",
+//          (uintptr_t) vself);
+//  NaClHostDescClose(self->hd);
+//  free(self->hd);
+//  self->hd = NULL;
+//  vself->vtbl = (struct NaClRefCountVtbl const *) &kNaClDescVtbl;
+//  (*vself->vtbl->Dtor)(vself);
+//}
 
-  NaClLog(4, "NaClDescIoDescDtor(0x%08"NACL_PRIxPTR").\n",
-          (uintptr_t) vself);
-  NaClHostDescClose(self->hd);
-  free(self->hd);
-  self->hd = NULL;
-  vself->vtbl = (struct NaClRefCountVtbl const *) &kNaClDescVtbl;
-  (*vself->vtbl->Dtor)(vself);
-}
-
-struct NaClDescIoDesc *NaClDescIoDescMake(struct NaClHostDesc *nhdp) {
-  struct NaClDescIoDesc *ndp;
-
-  ndp = malloc(sizeof *ndp);
-  if (NULL == ndp) {
-    NaClLog(LOG_FATAL,
-            "NaClDescIoDescMake: no memory for 0x%08"NACL_PRIxPTR"\n",
-            (uintptr_t) nhdp);
-  }
-  if (!NaClDescIoDescCtor(ndp, nhdp)) {
-    NaClLog(LOG_FATAL,
-            ("NaClDescIoDescMake:"
-             " NaClDescIoDescCtor(0x%08"NACL_PRIxPTR",0x%08"NACL_PRIxPTR
-             ") failed\n"),
-            (uintptr_t) ndp,
-            (uintptr_t) nhdp);
-  }
-  return ndp;
-}
+// ###
+//struct NaClDescIoDesc *NaClDescIoDescMake(struct NaClHostDesc *nhdp) {
+//  struct NaClDescIoDesc *ndp;
+//
+//  ndp = malloc(sizeof *ndp);
+//  if (NULL == ndp) {
+//    NaClLog(LOG_FATAL,
+//            "NaClDescIoDescMake: no memory for 0x%08"NACL_PRIxPTR"\n",
+//            (uintptr_t) nhdp);
+//  }
+//  if (!NaClDescIoDescCtor(ndp, nhdp)) {
+//    NaClLog(LOG_FATAL,
+//            ("NaClDescIoDescMake:"
+//             " NaClDescIoDescCtor(0x%08"NACL_PRIxPTR",0x%08"NACL_PRIxPTR
+//             ") failed\n"),
+//            (uintptr_t) ndp,
+//            (uintptr_t) nhdp);
+//  }
+//  return ndp;
+//}
 
 static uintptr_t NaClDescIoDescMap(struct NaClDesc         *vself,
                                    struct NaClDescEffector *effp,
@@ -163,197 +168,209 @@ uintptr_t NaClDescIoDescMapAnon(struct NaClDescEffector *effp,
                            prot, flags, offset);
 }
 
-static int NaClDescIoDescUnmapCommon(struct NaClDesc         *vself,
-                                     struct NaClDescEffector *effp,
-                                     void                    *start_addr,
-                                     size_t                  len,
-                                     int                     safe_mode) {
-  int status;
+// ###
+//static int NaClDescIoDescUnmapCommon(struct NaClDesc         *vself,
+//                                     struct NaClDescEffector *effp,
+//                                     void                    *start_addr,
+//                                     size_t                  len,
+//                                     int                     safe_mode) {
+//  int status;
+//
+//  UNREFERENCED_PARAMETER(vself);
+//  UNREFERENCED_PARAMETER(effp);
+//
+//  if (safe_mode) {
+//    status = NaClHostDescUnmap(start_addr, len);
+//  } else {
+//    status = NaClHostDescUnmapUnsafe(start_addr, len);
+//  }
+//
+//  return status;
+//}
 
-  UNREFERENCED_PARAMETER(vself);
-  UNREFERENCED_PARAMETER(effp);
+// ###
+///*
+// * NB: User code should never be able to invoke the Unsafe method.
+// */
+//static int NaClDescIoDescUnmapUnsafe(struct NaClDesc         *vself,
+//                                     struct NaClDescEffector *effp,
+//                                     void                    *start_addr,
+//                                     size_t                  len) {
+//  return NaClDescIoDescUnmapCommon(vself, effp, start_addr, len, 0);
+//}
 
-  if (safe_mode) {
-    status = NaClHostDescUnmap(start_addr, len);
-  } else {
-    status = NaClHostDescUnmapUnsafe(start_addr, len);
-  }
+// ###
+//static int NaClDescIoDescUnmap(struct NaClDesc         *vself,
+//                               struct NaClDescEffector *effp,
+//                               void                    *start_addr,
+//                               size_t                  len) {
+//  return NaClDescIoDescUnmapCommon(vself, effp, start_addr, len, 1);
+//}
 
-  return status;
-}
+// ###
+//static ssize_t NaClDescIoDescRead(struct NaClDesc          *vself,
+//                                  void                     *buf,
+//                                  size_t                   len) {
+//  struct NaClDescIoDesc *self = (struct NaClDescIoDesc *) vself;
+//
+//  return NaClHostDescRead(self->hd, buf, len);
+//}
 
-/*
- * NB: User code should never be able to invoke the Unsafe method.
- */
-static int NaClDescIoDescUnmapUnsafe(struct NaClDesc         *vself,
-                                     struct NaClDescEffector *effp,
-                                     void                    *start_addr,
-                                     size_t                  len) {
-  return NaClDescIoDescUnmapCommon(vself, effp, start_addr, len, 0);
-}
+// ###
+//static ssize_t NaClDescIoDescWrite(struct NaClDesc         *vself,
+//                                   void const              *buf,
+//                                   size_t                  len) {
+//  struct NaClDescIoDesc *self = (struct NaClDescIoDesc *) vself;
+//
+//  return NaClHostDescWrite(self->hd, buf, len);
+//}
 
-static int NaClDescIoDescUnmap(struct NaClDesc         *vself,
-                               struct NaClDescEffector *effp,
-                               void                    *start_addr,
-                               size_t                  len) {
-  return NaClDescIoDescUnmapCommon(vself, effp, start_addr, len, 1);
-}
+// ###
+//static nacl_off64_t NaClDescIoDescSeek(struct NaClDesc          *vself,
+//                                       nacl_off64_t             offset,
+//                                       int                      whence) {
+//  struct NaClDescIoDesc *self = (struct NaClDescIoDesc *) vself;
+//
+//  return NaClHostDescSeek(self->hd, offset, whence);
+//}
 
-static ssize_t NaClDescIoDescRead(struct NaClDesc          *vself,
-                                  void                     *buf,
-                                  size_t                   len) {
-  struct NaClDescIoDesc *self = (struct NaClDescIoDesc *) vself;
+// ###
+//static int NaClDescIoDescIoctl(struct NaClDesc         *vself,
+//                               int                     request,
+//                               void                    *arg) {
+//  struct NaClDescIoDesc *self = (struct NaClDescIoDesc *) vself;
+//
+//  return NaClHostDescIoctl(self->hd, request, arg);
+//}
 
-  return NaClHostDescRead(self->hd, buf, len);
-}
+// ###
+//static int NaClDescIoDescFstat(struct NaClDesc         *vself,
+//                               struct nacl_abi_stat    *statbuf) {
+//  struct NaClDescIoDesc *self = (struct NaClDescIoDesc *) vself;
+//  int                   rv;
+//  nacl_host_stat_t      hstatbuf;
+//
+//  rv = NaClHostDescFstat(self->hd, &hstatbuf);
+//  if (0 != rv) {
+//    return rv;
+//  }
+//  return NaClAbiStatHostDescStatXlateCtor(statbuf, &hstatbuf);
+//}
 
-static ssize_t NaClDescIoDescWrite(struct NaClDesc         *vself,
-                                   void const              *buf,
-                                   size_t                  len) {
-  struct NaClDescIoDesc *self = (struct NaClDescIoDesc *) vself;
+// ###
+//static int NaClDescIoDescExternalizeSize(struct NaClDesc *vself,
+//                                         size_t          *nbytes,
+//                                         size_t          *nhandles) {
+//  UNREFERENCED_PARAMETER(vself);
+//
+//  *nbytes = 0;
+//  *nhandles = 1;
+//  return 0;
+//}
 
-  return NaClHostDescWrite(self->hd, buf, len);
-}
+// ###
+//static int NaClDescIoDescExternalize(struct NaClDesc           *vself,
+//                                     struct NaClDescXferState  *xfer) {
+//  struct NaClDescIoDesc *self = (struct NaClDescIoDesc *) vself;
+//
+//  *xfer->next_handle++ = self->hd->d;
+//  return 0;
+//}
 
-static nacl_off64_t NaClDescIoDescSeek(struct NaClDesc          *vself,
-                                       nacl_off64_t             offset,
-                                       int                      whence) {
-  struct NaClDescIoDesc *self = (struct NaClDescIoDesc *) vself;
+// ###
+//static struct NaClDescVtbl const kNaClDescIoDescVtbl = {
+//  {
+//    NaClDescIoDescDtor,
+//  },
+//  NaClDescIoDescMap,
+//  NaClDescIoDescUnmapUnsafe,
+//  NaClDescIoDescUnmap,
+//  NaClDescIoDescRead,
+//  NaClDescIoDescWrite,
+//  NaClDescIoDescSeek,
+//  NaClDescIoDescIoctl,
+//  NaClDescIoDescFstat,
+//  NaClDescGetdentsNotImplemented,
+//  NACL_DESC_HOST_IO,
+//  NaClDescIoDescExternalizeSize,
+//  NaClDescIoDescExternalize,
+//  NaClDescLockNotImplemented,
+//  NaClDescTryLockNotImplemented,
+//  NaClDescUnlockNotImplemented,
+//  NaClDescWaitNotImplemented,
+//  NaClDescTimedWaitAbsNotImplemented,
+//  NaClDescSignalNotImplemented,
+//  NaClDescBroadcastNotImplemented,
+//  NaClDescSendMsgNotImplemented,
+//  NaClDescRecvMsgNotImplemented,
+//  NaClDescConnectAddrNotImplemented,
+//  NaClDescAcceptConnNotImplemented,
+//  NaClDescPostNotImplemented,
+//  NaClDescSemWaitNotImplemented,
+//  NaClDescGetValueNotImplemented,
+//};
 
-  return NaClHostDescSeek(self->hd, offset, whence);
-}
-
-static int NaClDescIoDescIoctl(struct NaClDesc         *vself,
-                               int                     request,
-                               void                    *arg) {
-  struct NaClDescIoDesc *self = (struct NaClDescIoDesc *) vself;
-
-  return NaClHostDescIoctl(self->hd, request, arg);
-}
-
-static int NaClDescIoDescFstat(struct NaClDesc         *vself,
-                               struct nacl_abi_stat    *statbuf) {
-  struct NaClDescIoDesc *self = (struct NaClDescIoDesc *) vself;
-  int                   rv;
-  nacl_host_stat_t      hstatbuf;
-
-  rv = NaClHostDescFstat(self->hd, &hstatbuf);
-  if (0 != rv) {
-    return rv;
-  }
-  return NaClAbiStatHostDescStatXlateCtor(statbuf, &hstatbuf);
-}
-
-static int NaClDescIoDescExternalizeSize(struct NaClDesc *vself,
-                                         size_t          *nbytes,
-                                         size_t          *nhandles) {
-  UNREFERENCED_PARAMETER(vself);
-
-  *nbytes = 0;
-  *nhandles = 1;
-  return 0;
-}
-
-static int NaClDescIoDescExternalize(struct NaClDesc           *vself,
-                                     struct NaClDescXferState  *xfer) {
-  struct NaClDescIoDesc *self = (struct NaClDescIoDesc *) vself;
-
-  *xfer->next_handle++ = self->hd->d;
-  return 0;
-}
-
-static struct NaClDescVtbl const kNaClDescIoDescVtbl = {
-  {
-    NaClDescIoDescDtor,
-  },
-  NaClDescIoDescMap,
-  NaClDescIoDescUnmapUnsafe,
-  NaClDescIoDescUnmap,
-  NaClDescIoDescRead,
-  NaClDescIoDescWrite,
-  NaClDescIoDescSeek,
-  NaClDescIoDescIoctl,
-  NaClDescIoDescFstat,
-  NaClDescGetdentsNotImplemented,
-  NACL_DESC_HOST_IO,
-  NaClDescIoDescExternalizeSize,
-  NaClDescIoDescExternalize,
-  NaClDescLockNotImplemented,
-  NaClDescTryLockNotImplemented,
-  NaClDescUnlockNotImplemented,
-  NaClDescWaitNotImplemented,
-  NaClDescTimedWaitAbsNotImplemented,
-  NaClDescSignalNotImplemented,
-  NaClDescBroadcastNotImplemented,
-  NaClDescSendMsgNotImplemented,
-  NaClDescRecvMsgNotImplemented,
-  NaClDescConnectAddrNotImplemented,
-  NaClDescAcceptConnNotImplemented,
-  NaClDescPostNotImplemented,
-  NaClDescSemWaitNotImplemented,
-  NaClDescGetValueNotImplemented,
-};
-
-/* set *out_desc to struct NaClDescIo * output */
-int NaClDescIoInternalize(struct NaClDesc           **out_desc,
-                          struct NaClDescXferState  *xfer) {
-  int                   rv;
-  NaClHandle            h;
-  int                   d;
-  struct NaClHostDesc   *nhdp;
-  struct NaClDescIoDesc *ndidp;
-
-  rv = -NACL_ABI_EIO;  /* catch-all */
-  h = NACL_INVALID_HANDLE;
-  nhdp = NULL;
-  ndidp = NULL;
-
-  if (xfer->next_handle == xfer->handle_buffer_end) {
-    rv = -NACL_ABI_EIO;
-    goto cleanup;
-  }
-  nhdp = malloc(sizeof *nhdp);
-  if (NULL == nhdp) {
-    rv = -NACL_ABI_ENOMEM;
-    goto cleanup;
-  }
-  ndidp = malloc(sizeof *ndidp);
-  if (!ndidp) {
-    rv = -NACL_ABI_ENOMEM;
-    goto cleanup;
-  }
-  h = *xfer->next_handle;
-  *xfer->next_handle++ = NACL_INVALID_HANDLE;
-  d = h;
-  /*
-   * We mark it as read/write, but don't really know for sure until we
-   * try to make those syscalls (in which case we'd get EBADF).
-   */
-  if ((rv = NaClHostDescPosixTake(nhdp, d, NACL_ABI_O_RDWR)) < 0) {
-    goto cleanup;
-  }
-  h = NACL_INVALID_HANDLE;  /* nhdp took ownership of h */
-
-  if (!NaClDescIoDescCtor(ndidp, nhdp)) {
-    rv = -NACL_ABI_ENOMEM;
-    goto cleanup_hd_dtor;
-  }
-  /*
-   * ndidp took ownership of nhdp, now give ownership of ndidp to caller.
-   */
-  *out_desc = (struct NaClDesc *) ndidp;
-  rv = 0;
-cleanup_hd_dtor:
-  if (rv < 0) {
-    (void) NaClHostDescClose(nhdp);
-  }
-cleanup:
-  if (rv < 0) {
-    free(nhdp);
-    free(ndidp);
-    if (NACL_INVALID_HANDLE != h) {
-      (void) NaClClose(h);
-    }
-  }
-  return rv;
-}
+// ###
+///* set *out_desc to struct NaClDescIo * output */
+//int NaClDescIoInternalize(struct NaClDesc           **out_desc,
+//                          struct NaClDescXferState  *xfer) {
+//  int                   rv;
+//  NaClHandle            h;
+//  int                   d;
+//  struct NaClHostDesc   *nhdp;
+//  struct NaClDescIoDesc *ndidp;
+//
+//  rv = -NACL_ABI_EIO;  /* catch-all */
+//  h = NACL_INVALID_HANDLE;
+//  nhdp = NULL;
+//  ndidp = NULL;
+//
+//  if (xfer->next_handle == xfer->handle_buffer_end) {
+//    rv = -NACL_ABI_EIO;
+//    goto cleanup;
+//  }
+//  nhdp = malloc(sizeof *nhdp);
+//  if (NULL == nhdp) {
+//    rv = -NACL_ABI_ENOMEM;
+//    goto cleanup;
+//  }
+//  ndidp = malloc(sizeof *ndidp);
+//  if (!ndidp) {
+//    rv = -NACL_ABI_ENOMEM;
+//    goto cleanup;
+//  }
+//  h = *xfer->next_handle;
+//  *xfer->next_handle++ = NACL_INVALID_HANDLE;
+//  d = h;
+//  /*
+//   * We mark it as read/write, but don't really know for sure until we
+//   * try to make those syscalls (in which case we'd get EBADF).
+//   */
+//  if ((rv = NaClHostDescPosixTake(nhdp, d, NACL_ABI_O_RDWR)) < 0) {
+//    goto cleanup;
+//  }
+//  h = NACL_INVALID_HANDLE;  /* nhdp took ownership of h */
+//
+//  if (!NaClDescIoDescCtor(ndidp, nhdp)) {
+//    rv = -NACL_ABI_ENOMEM;
+//    goto cleanup_hd_dtor;
+//  }
+//  /*
+//   * ndidp took ownership of nhdp, now give ownership of ndidp to caller.
+//   */
+//  *out_desc = (struct NaClDesc *) ndidp;
+//  rv = 0;
+//cleanup_hd_dtor:
+//  if (rv < 0) {
+//    (void) NaClHostDescClose(nhdp);
+//  }
+//cleanup:
+//  if (rv < 0) {
+//    free(nhdp);
+//    free(ndidp);
+//    if (NACL_INVALID_HANDLE != h) {
+//      (void) NaClClose(h);
+//    }
+//  }
+//  return rv;
+//}

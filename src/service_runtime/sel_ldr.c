@@ -31,12 +31,6 @@ int NaClAppWithSyscallTableCtor(struct NaClApp               *nap,
   /* These may be adjusted later in sel_main.c for fixed-feature CPU mode. */
   NaClGetCurrentCPUFeatures(&nap->cpu_features);
 
-#if 0
-  /* The validation cache will be injected later, if it exists. */
-  /* will be used in a future. */
-  nap->validation_cache = NULL;
-#endif
-
   nap->enable_dfa_validator = 0;
   nap->fixed_feature_cpu_mode = 0;
 
@@ -384,11 +378,4 @@ struct NaClDesc *NaClGetDesc(struct NaClApp *nap,
   res = NaClGetDescMu(nap, d);
   NaClXMutexUnlock(&nap->desc_mu);
   return res;
-}
-
-int32_t NaClSetAvail(struct NaClApp  *nap,
-                     struct NaClDesc *ndp) {
-  int32_t pos;
-  pos = NaClSetAvailMu(nap, ndp);
-  return pos;
 }

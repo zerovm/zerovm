@@ -77,24 +77,25 @@ void NaClDescSafeUnref(struct NaClDesc *ndp) {
   }
 }
 
-int (*NaClDescInternalize[NACL_DESC_TYPE_MAX])(struct NaClDesc **,
-                                               struct NaClDescXferState *) = {
-  NaClDescInvalidInternalize,
-  NaClDescDirInternalize,
-  NaClDescIoInternalize,
-  NaClDescInternalizeNotImplemented,
-  NaClDescConnCapFdInternalize,
-  NaClDescInternalizeNotImplemented,  /* bound sockets cannot be transferred */
-  NaClDescInternalizeNotImplemented,  /* connected abstract base class */
-  NaClDescImcShmInternalize,
-  NaClDescSysvShmInternalize,
-  NaClDescInternalizeNotImplemented,  /* mutex */
-  NaClDescInternalizeNotImplemented,  /* condvar */
-  NaClDescInternalizeNotImplemented,  /* semaphore */
-  NaClDescSyncSocketInternalize,
-  NaClDescXferableDataDescInternalize,
-  NaClDescInternalizeNotImplemented  /* imc socket */
-};
+// ###
+//int (*NaClDescInternalize[NACL_DESC_TYPE_MAX])(struct NaClDesc **,
+//                                               struct NaClDescXferState *) = {
+//  NaClDescInvalidInternalize,
+//  NaClDescDirInternalize,
+//  NaClDescIoInternalize,
+//  NaClDescInternalizeNotImplemented,
+//  NaClDescConnCapFdInternalize,
+//  NaClDescInternalizeNotImplemented,  /* bound sockets cannot be transferred */
+//  NaClDescInternalizeNotImplemented,  /* connected abstract base class */
+//  NaClDescImcShmInternalize,
+//  NaClDescSysvShmInternalize,
+//  NaClDescInternalizeNotImplemented,  /* mutex */
+//  NaClDescInternalizeNotImplemented,  /* condvar */
+//  NaClDescInternalizeNotImplemented,  /* semaphore */
+//  NaClDescSyncSocketInternalize,
+//  NaClDescXferableDataDescInternalize,
+//  NaClDescInternalizeNotImplemented  /* imc socket */
+//};
 
 char const *NaClDescTypeString(enum NaClDescTypeTag type_tag) {
   /* default functions for the vtable - return NOT_IMPLEMENTED */
@@ -426,12 +427,13 @@ int NaClDescInternalizeNotImplemented(struct NaClDesc           **out_desc,
   return -NACL_ABI_EIO;
 }
 
-int NaClSafeCloseNaClHandle(NaClHandle h) {
-  if (NACL_INVALID_HANDLE != h) {
-    return NaClClose(h);
-  }
-  return 0;
-}
+// ###
+//int NaClSafeCloseNaClHandle(NaClHandle h) {
+//  if (NACL_INVALID_HANDLE != h) {
+//    return NaClClose(h);
+//  }
+//  return 0;
+//}
 
 struct NaClDescVtbl const kNaClDescVtbl = {
   {

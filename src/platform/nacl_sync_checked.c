@@ -38,30 +38,33 @@ void NaClXMutexUnlock(struct NaClMutex *mp) {
   NaClLog(LOG_FATAL, "NaClMutexUnlock returned %d\n", status);
 }
 
-void NaClXCondVarSignal(struct NaClCondVar *cvp) {
-  NaClSyncStatus  status;
+// ###
+//void NaClXCondVarSignal(struct NaClCondVar *cvp) {
+//  NaClSyncStatus  status;
+//
+//  if (NACL_SYNC_OK == (status = NaClCondVarSignal(cvp))) {
+//    return;
+//  }
+//  NaClLog(LOG_FATAL, "NaClCondVarSignal returned %d\n", status);
+//}
 
-  if (NACL_SYNC_OK == (status = NaClCondVarSignal(cvp))) {
-    return;
-  }
-  NaClLog(LOG_FATAL, "NaClCondVarSignal returned %d\n", status);
-}
+// ###
+//void NaClXCondVarBroadcast(struct NaClCondVar *cvp) {
+//  NaClSyncStatus  status;
+//
+//  if (NACL_SYNC_OK == (status = NaClCondVarBroadcast(cvp))) {
+//    return;
+//  }
+//  NaClLog(LOG_FATAL, "NaClCondVarBroadcast returned %d\n", status);
+//}
 
-void NaClXCondVarBroadcast(struct NaClCondVar *cvp) {
-  NaClSyncStatus  status;
-
-  if (NACL_SYNC_OK == (status = NaClCondVarBroadcast(cvp))) {
-    return;
-  }
-  NaClLog(LOG_FATAL, "NaClCondVarBroadcast returned %d\n", status);
-}
-
-void NaClXCondVarWait(struct NaClCondVar *cvp,
-                      struct NaClMutex   *mp) {
-  NaClSyncStatus  status;
-
-  if (NACL_SYNC_OK == (status = NaClCondVarWait(cvp, mp))) {
-    return;
-  }
-  NaClLog(LOG_FATAL, "NaClCondVarWait returned %d\n", status);
-}
+// ###
+//void NaClXCondVarWait(struct NaClCondVar *cvp,
+//                      struct NaClMutex   *mp) {
+//  NaClSyncStatus  status;
+//
+//  if (NACL_SYNC_OK == (status = NaClCondVarWait(cvp, mp))) {
+//    return;
+//  }
+//  NaClLog(LOG_FATAL, "NaClCondVarWait returned %d\n", status);
+//}

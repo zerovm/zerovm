@@ -14,105 +14,113 @@
 #include "src/platform/nacl_log.h"
 #include "src/service_runtime/include/sys/stat.h"
 
-/*
- * This file contains the implementation for the NaClDescMutex subclass
- * of NaClDesc.
- *
- * NaClDescMutex is the subclass that wraps host-OS mutex abstractions
- */
+// ###
+///*
+// * This file contains the implementation for the NaClDescMutex subclass
+// * of NaClDesc.
+// *
+// * NaClDescMutex is the subclass that wraps host-OS mutex abstractions
+// */
+//
+//static struct NaClDescVtbl const kNaClDescMutexVtbl;  /* fwd */
 
-static struct NaClDescVtbl const kNaClDescMutexVtbl;  /* fwd */
+// ###
+///*
+// * Takes ownership of hd, will close in Dtor.
+// */
+//int NaClDescMutexCtor(struct NaClDescMutex  *self) {
+//  struct NaClDesc *basep = (struct NaClDesc *) self;
+//
+//  basep->base.vtbl = (struct NaClRefCountVtbl const *) NULL;
+//  if (!NaClDescCtor(basep)) {
+//    return 0;
+//  }
+//  if (!NaClIntrMutexCtor(&self->mu)) {
+//    (*basep->base.vtbl->Dtor)(&basep->base);
+//    return 0;
+//  }
+//
+//  basep->base.vtbl = (struct NaClRefCountVtbl const *) &kNaClDescMutexVtbl;
+//  return 1;
+//}
 
-/*
- * Takes ownership of hd, will close in Dtor.
- */
-int NaClDescMutexCtor(struct NaClDescMutex  *self) {
-  struct NaClDesc *basep = (struct NaClDesc *) self;
+// ###
+//static void NaClDescMutexDtor(struct NaClRefCount *vself) {
+//  struct NaClDescMutex *self = (struct NaClDescMutex *) vself;
+//
+//  NaClLog(4, "NaClDescMutexDtor(0x%08"NACL_PRIxPTR").\n",
+//          (uintptr_t) vself);
+//  NaClIntrMutexDtor(&self->mu);
+//  vself->vtbl = (struct NaClRefCountVtbl const *) &kNaClDescVtbl;
+//  (*vself->vtbl->Dtor)(vself);
+//}
 
-  basep->base.vtbl = (struct NaClRefCountVtbl const *) NULL;
-  if (!NaClDescCtor(basep)) {
-    return 0;
-  }
-  if (!NaClIntrMutexCtor(&self->mu)) {
-    (*basep->base.vtbl->Dtor)(&basep->base);
-    return 0;
-  }
+// ###
+//static int NaClDescMutexFstat(struct NaClDesc          *vself,
+//                              struct nacl_abi_stat     *statbuf) {
+//  UNREFERENCED_PARAMETER(vself);
+//
+//  memset(statbuf, 0, sizeof *statbuf);
+//  statbuf->nacl_abi_st_mode = NACL_ABI_S_IFMUTEX;
+//  return 0;
+//}
 
-  basep->base.vtbl = (struct NaClRefCountVtbl const *) &kNaClDescMutexVtbl;
-  return 1;
-}
+// ###
+//static int NaClDescMutexLock(struct NaClDesc         *vself) {
+//  struct NaClDescMutex *self = (struct NaClDescMutex *) vself;
+//
+//  NaClSyncStatus status = NaClIntrMutexLock(&self->mu);
+//
+//  return -NaClXlateNaClSyncStatus(status);
+//}
 
-static void NaClDescMutexDtor(struct NaClRefCount *vself) {
-  struct NaClDescMutex *self = (struct NaClDescMutex *) vself;
+// ###
+//static int NaClDescMutexTryLock(struct NaClDesc          *vself) {
+//  struct NaClDescMutex *self = (struct NaClDescMutex *) vself;
+//
+//  NaClSyncStatus status = NaClIntrMutexTryLock(&self->mu);
+//
+//  return -NaClXlateNaClSyncStatus(status);
+//}
 
-  NaClLog(4, "NaClDescMutexDtor(0x%08"NACL_PRIxPTR").\n",
-          (uintptr_t) vself);
-  NaClIntrMutexDtor(&self->mu);
-  vself->vtbl = (struct NaClRefCountVtbl const *) &kNaClDescVtbl;
-  (*vself->vtbl->Dtor)(vself);
-}
+// ###
+//static int NaClDescMutexUnlock(struct NaClDesc         *vself) {
+//  struct NaClDescMutex *self = (struct NaClDescMutex *) vself;
+//
+//  NaClSyncStatus status = NaClIntrMutexUnlock(&self->mu);
+//
+//  return -NaClXlateNaClSyncStatus(status);
+//}
 
-static int NaClDescMutexFstat(struct NaClDesc          *vself,
-                              struct nacl_abi_stat     *statbuf) {
-  UNREFERENCED_PARAMETER(vself);
-
-  memset(statbuf, 0, sizeof *statbuf);
-  statbuf->nacl_abi_st_mode = NACL_ABI_S_IFMUTEX;
-  return 0;
-}
-
-static int NaClDescMutexLock(struct NaClDesc         *vself) {
-  struct NaClDescMutex *self = (struct NaClDescMutex *) vself;
-
-  NaClSyncStatus status = NaClIntrMutexLock(&self->mu);
-
-  return -NaClXlateNaClSyncStatus(status);
-}
-
-static int NaClDescMutexTryLock(struct NaClDesc          *vself) {
-  struct NaClDescMutex *self = (struct NaClDescMutex *) vself;
-
-  NaClSyncStatus status = NaClIntrMutexTryLock(&self->mu);
-
-  return -NaClXlateNaClSyncStatus(status);
-}
-
-static int NaClDescMutexUnlock(struct NaClDesc         *vself) {
-  struct NaClDescMutex *self = (struct NaClDescMutex *) vself;
-
-  NaClSyncStatus status = NaClIntrMutexUnlock(&self->mu);
-
-  return -NaClXlateNaClSyncStatus(status);
-}
-
-static struct NaClDescVtbl const kNaClDescMutexVtbl = {
-  {
-    NaClDescMutexDtor,
-  },
-  NaClDescMapNotImplemented,
-  NaClDescUnmapUnsafeNotImplemented,
-  NaClDescUnmapNotImplemented,
-  NaClDescReadNotImplemented,
-  NaClDescWriteNotImplemented,
-  NaClDescSeekNotImplemented,
-  NaClDescIoctlNotImplemented,
-  NaClDescMutexFstat,
-  NaClDescGetdentsNotImplemented,
-  NACL_DESC_MUTEX,
-  NaClDescExternalizeSizeNotImplemented,
-  NaClDescExternalizeNotImplemented,
-  NaClDescMutexLock,
-  NaClDescMutexTryLock,
-  NaClDescMutexUnlock,
-  NaClDescWaitNotImplemented,
-  NaClDescTimedWaitAbsNotImplemented,
-  NaClDescSignalNotImplemented,
-  NaClDescBroadcastNotImplemented,
-  NaClDescSendMsgNotImplemented,
-  NaClDescRecvMsgNotImplemented,
-  NaClDescConnectAddrNotImplemented,
-  NaClDescAcceptConnNotImplemented,
-  NaClDescPostNotImplemented,
-  NaClDescSemWaitNotImplemented,
-  NaClDescGetValueNotImplemented,
-};
+// ###
+//static struct NaClDescVtbl const kNaClDescMutexVtbl = {
+//  {
+//    NaClDescMutexDtor,
+//  },
+//  NaClDescMapNotImplemented,
+//  NaClDescUnmapUnsafeNotImplemented,
+//  NaClDescUnmapNotImplemented,
+//  NaClDescReadNotImplemented,
+//  NaClDescWriteNotImplemented,
+//  NaClDescSeekNotImplemented,
+//  NaClDescIoctlNotImplemented,
+//  NaClDescMutexFstat,
+//  NaClDescGetdentsNotImplemented,
+//  NACL_DESC_MUTEX,
+//  NaClDescExternalizeSizeNotImplemented,
+//  NaClDescExternalizeNotImplemented,
+//  NaClDescMutexLock,
+//  NaClDescMutexTryLock,
+//  NaClDescMutexUnlock,
+//  NaClDescWaitNotImplemented,
+//  NaClDescTimedWaitAbsNotImplemented,
+//  NaClDescSignalNotImplemented,
+//  NaClDescBroadcastNotImplemented,
+//  NaClDescSendMsgNotImplemented,
+//  NaClDescRecvMsgNotImplemented,
+//  NaClDescConnectAddrNotImplemented,
+//  NaClDescAcceptConnNotImplemented,
+//  NaClDescPostNotImplemented,
+//  NaClDescSemWaitNotImplemented,
+//  NaClDescGetValueNotImplemented,
+//};

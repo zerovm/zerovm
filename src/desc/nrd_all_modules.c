@@ -18,10 +18,12 @@ void NaClNrdAllModulesInit(void) {
    * variables.
    */
   NaClPlatformInit();
-  NaClDescInvalidInit();
+// ###
+//  NaClDescInvalidInit();
 }
 
 void NaClNrdAllModulesFini(void) {
-  NaClDescInvalidFini();
+// ###
+//  NaClDescInvalidFini();
   NaClPlatformFini();
 }

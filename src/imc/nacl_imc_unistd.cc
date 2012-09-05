@@ -38,9 +38,10 @@ const char kShmOpenPrefix[] = "/google-nacl-shm-";
 
 }  // namespace
 
-bool WouldBlock() {
-  return (errno == EAGAIN) ? true : false;
-}
+// ###
+//bool WouldBlock() {
+//  return (errno == EAGAIN) ? true : false;
+//}
 
 static Atomic32 memory_object_count = 0;
 

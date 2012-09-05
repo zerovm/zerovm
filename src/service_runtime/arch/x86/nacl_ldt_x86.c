@@ -10,22 +10,25 @@
 /* for LDT_ENTRIES */
 #include "src/service_runtime/arch/x86/sel_ldr_x86.h"
 
-/* TODO(gregoryd): These need to come from a header file. */
-extern int NaClLdtInitPlatformSpecific();
-extern int NaClLdtFiniPlatformSpecific();
+// ###
+///* TODO(gregoryd): These need to come from a header file. */
+//extern int NaClLdtInitPlatformSpecific();
+//extern int NaClLdtFiniPlatformSpecific();
 
-int NaClLdtInit() {
-  if (!NaClLdtInitPlatformSpecific()) {
-    return 0;
-  }
-  /* Allocate the last LDT entry to force LDT grow to its maximum size */
-  if (!NaClLdtAllocateSelector(LDT_ENTRIES - 1, 0,
-    NACL_LDT_DESCRIPTOR_DATA, 0, 0, 0)) {
-      return 0;
-  }
-  return 1;
-}
+// ###
+//int NaClLdtInit() {
+//  if (!NaClLdtInitPlatformSpecific()) {
+//    return 0;
+//  }
+//  /* Allocate the last LDT entry to force LDT grow to its maximum size */
+//  if (!NaClLdtAllocateSelector(LDT_ENTRIES - 1, 0,
+//    NACL_LDT_DESCRIPTOR_DATA, 0, 0, 0)) {
+//      return 0;
+//  }
+//  return 1;
+//}
 
-void NaClLdtFini() {
-  NaClLdtFiniPlatformSpecific();
-}
+// ###
+//void NaClLdtFini() {
+//  NaClLdtFiniPlatformSpecific();
+//}
