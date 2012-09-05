@@ -17,17 +17,11 @@
 .globl IDENTIFIER(NaClXGETBV)
         HIDDEN(NaClXGETBV)
 IDENTIFIER(NaClXGETBV):
-#if NACL_BUILD_SUBARCH == 32
-        movl 4(%esp), %ecx
-#elif !NACL_WINDOWS
-        movl %edi, %ecx
-#endif
+
         /*
          * This is "xgetbv" (no operands).  Some assemblers don't know it yet.
          */
         .byte 0x0f, 0x01, 0xd0
-#if NACL_BUILD_SUBARCH == 64
         shlq $32, %rdx
         orq %rdx, %rax
-#endif
         ret

@@ -38,11 +38,8 @@
 #include "src/service_runtime/sel_rt.h"
 #include "src/utils/tools.h"
 
-#include "src/validator/cpufeatures.h"
-
-/*YarolavLitvinov*/
-struct zeromq_pool;
-struct db_records_t;
+#include "src/service_runtime/nacl_cpuid.h" /* d'b: taken from validator */
+//#include "src/validator/cpufeatures.h"
 
 EXTERN_C_BEGIN
 

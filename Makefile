@@ -2,6 +2,7 @@
 #GCOV_FLAGS=--coverage -g3 -fprofile-arcs -ftest-coverage
 #ABS_PATH=$(shell pwd)/
 
+# todo(d'b): replace it with build switch
 #RELEASE BUILD
 #CCFLAGS=-DNDEBUG -g ${NETWORKING}
 #CXXFLAGS=-DNDEBUG -g ${NETWORKING}
@@ -10,13 +11,8 @@
 CCFLAGS=-DDEBUG -g ${NETWORKING} ${GCOV_FLAGS}
 CXXFLAGS=-DDEBUG -g ${NETWORKING} ${GCOV_FLAGS}
 
-# For networking support, uncomment variables below 
-#NETWORKING=-DNETWORKING
-#NETW_LIB=-lnetw -lzmq
+# todo(d'b): move it to proper place
 NETW_LIB=-lzmq
-#NETW_MAIN_RULES=zvm_netw.db
-#NETW_RULES=obj/libsqlite3.a obj/libnetw.a
-#NETW_TEST_RULES=test/zmq_netw_test test/zvm_netw_test test/sqluse_srv_test test_config
 
 CCFLAGS0=-c -m64 -fPIC -D_FORTIFY_SOURCE=2 -DNACL_WINDOWS=0 -DNACL_OSX=0 -DNACL_LINUX=1 -D_BSD_SOURCE=1 -D_POSIX_C_SOURCE=199506 -D_XOPEN_SOURCE=600 -D_GNU_SOURCE=1 -D_LARGEFILE64_SOURCE=1 -D__STDC_LIMIT_MACROS=1 -D__STDC_FORMAT_MACROS=1 -DNACL_BLOCK_SHIFT=5 -DNACL_BLOCK_SIZE=32 -DNACL_BUILD_ARCH=x86 -DNACL_BUILD_SUBARCH=64 -DNACL_TARGET_ARCH=x86 -DNACL_TARGET_SUBARCH=64 -DNACL_STANDALONE=1 -DNACL_ENABLE_TMPFS_REDIRECT_VAR=0 -I.
 CCFLAGS1=-std=gnu99 -Wdeclaration-after-statement -fPIE -Wall -pedantic -Wno-long-long -fvisibility=hidden -fstack-protector --param ssp-buffer-size=4
@@ -35,8 +31,8 @@ create_dirs:
 	@mkdir obj -p
 	@mkdir test -p
 
-zerovm: obj/sel_main.o obj/libsel.a obj/libnacl_error_code.a obj/libgio_wrapped_desc.a obj/libnrd_xfer.a obj/libnacl_perf_counter.a obj/libnacl_base.a obj/libimc.a obj/libnacl_fault_inject.a obj/libplatform.a obj/libplatform_qual_lib.a obj/libncvalidate_x86_64.a obj/libncval_reg_sfi_x86_64.a obj/libnccopy_x86_64.a obj/libnc_decoder_x86_64.a obj/libnc_opcode_modeling_x86_64.a obj/libncval_base_x86_64.a obj/libplatform.a obj/libgio.a ${NETW_RULES}
-	@g++ ${CXXFLAGS} -o zerovm ${CXXFLAGS2} obj/sel_main.o -L/usr/lib -lsel -lnacl_error_code -lgio_wrapped_desc -lnrd_xfer -lnacl_perf_counter -lnacl_base -limc -lnacl_fault_inject -lplatform -lplatform_qual_lib -lncvalidate_x86_64 -lncval_reg_sfi_x86_64 -lnccopy_x86_64 -lnc_decoder_x86_64 -lnc_opcode_modeling_x86_64 -lncval_base_x86_64 -lplatform -lgio ${NETW_LIB} -lrt -lpthread -lcrypto -ldl -lglib-2.0 -Lobj -Lgtest  
+zerovm: obj/sel_main.o obj/libsel.a obj/libnacl_error_code.a obj/libgio_wrapped_desc.a obj/libnrd_xfer.a obj/libnacl_perf_counter.a obj/libnacl_base.a obj/libimc.a obj/libnacl_fault_inject.a obj/libplatform.a obj/libplatform_qual_lib.a obj/libplatform.a obj/libgio.a ${NETW_RULES}
+	@g++ ${CXXFLAGS} -o zerovm ${CXXFLAGS2} obj/sel_main.o -L/usr/lib -lsel -lnacl_error_code -lgio_wrapped_desc -lnrd_xfer -lnacl_perf_counter -lnacl_base -limc -lnacl_fault_inject -lplatform -lplatform_qual_lib -lplatform -lgio ${NETW_LIB} -lrt -lpthread -lcrypto -ldl -lglib-2.0 -Lobj -Lgtest  
 
 gcov: clean all
 	@lcov --directory . --base-directory=${ABS_PATH} --capture --output-file app.info
@@ -45,11 +41,8 @@ gcov: clean all
 
 #tests: test_compile 
 #	@echo == unit test =================================================
-#	test/x86_validator_tests_nc_remaining_memory
 #	test/service_runtime_tests
 #	test/x86_decoder_tests_nc_inst_state
-#	test/x86_validator_tests_halt_trim
-#	test/x86_validator_tests_nc_inst_bytes
 #	test/manifest_parser_test
 #	test/manifest_setup_test
 #	test/nacl_log_test
@@ -57,32 +50,22 @@ gcov: clean all
 zvm_api: api/syscall_manager.S api/zrt.c api/zvm.c
 	@make -Capi
 
-#test_compile: test/x86_validator_tests_halt_trim test/service_runtime_tests test/x86_decoder_tests_nc_inst_state test/x86_validator_tests_nc_inst_bytes test/x86_validator_tests_nc_remaining_memory test/manifest_parser_test test/manifest_setup_test test/nacl_log_test ${NETW_TEST_RULES}
-
-#obj/halt_trim_tests.o: src/validator/x86/halt_trim_tests.cc
-#	@g++ ${CXXFLAGS} -o obj/halt_trim_tests.o ${CXXFLAGS1} -Igtest/include src/validator/x86/halt_trim_tests.cc
-#test/x86_validator_tests_halt_trim: obj/halt_trim_tests.o obj/libsel.a obj/libnacl_error_code.a obj/libgio_wrapped_desc.a obj/libnrd_xfer.a obj/libnacl_perf_counter.a obj/libnacl_base.a obj/libimc.a obj/libnacl_fault_inject.a obj/libplatform.a obj/libplatform_qual_lib.a obj/libncvalidate_x86_64.a obj/libncval_reg_sfi_x86_64.a obj/libnccopy_x86_64.a obj/libnc_decoder_x86_64.a obj/libnc_opcode_modeling_x86_64.a obj/libncval_base_x86_64.a obj/libgio.a
-#	@g++ ${CXXFLAGS} -o test/x86_validator_tests_halt_trim ${CXXFLAGS2} obj/halt_trim_tests.o -L/usr/lib -Lobj -Lgtest -lcrypto -lgtest -lrt -lpthread -lsel -lnacl_error_code -lgio_wrapped_desc -lnrd_xfer -lnacl_perf_counter -lnacl_base -limc -lnacl_fault_inject -lplatform -lplatform_qual_lib -lncvalidate_x86_64 -lncval_reg_sfi_x86_64 -lnccopy_x86_64 -lnc_decoder_x86_64 -lnc_opcode_modeling_x86_64 -lncval_base_x86_64 -lgio
-
-#obj/halt_trim_tests.o: src/validator/x86/halt_trim_tests.cc
-#	@g++ ${CXXFLAGS} -o obj/halt_trim_tests.o ${CXXFLAGS1} -Igtest/include src/validator/x86/halt_trim_tests.cc
-#test/x86_validator_tests_halt_trim: obj/halt_trim_tests.o obj/libncvalidate_x86_64.a obj/libncval_reg_sfi_x86_64.a obj/libnccopy_x86_64.a obj/libnc_decoder_x86_64.a obj/libnc_opcode_modeling_x86_64.a obj/libncval_base_x86_64.a obj/libplatform.a obj/libgio.a obj/libsel.a
-#	@g++ ${CXXFLAGS} -o test/x86_validator_tests_halt_trim ${CXXFLAGS2} obj/halt_trim_tests.o -L/usr/lib -Lobj -Lgtest -lgtest -lncvalidate_x86_64 -lncval_reg_sfi_x86_64 -lnccopy_x86_64 -lnc_decoder_x86_64 -lnc_opcode_modeling_x86_64 -lncval_base_x86_64 -lplatform -lgio -lrt -lpthread -lcrypto -lsel
+#test_compile: test/service_runtime_tests test/x86_decoder_tests_nc_inst_state test/manifest_parser_test test/manifest_setup_test test/nacl_log_test ${NETW_TEST_RULES}
 
 obj/manifest_parser_test.o: src/manifest/manifest_parser_test.cc
 	@g++ ${CXXFLAGS} -o obj/manifest_parser_test.o ${CXXFLAGS1} src/manifest/manifest_parser_test.cc
-test/manifest_parser_test: obj/manifest_parser_test.o obj/libsel.a obj/libgio_wrapped_desc.a obj/libnrd_xfer.a obj/libnacl_perf_counter.a obj/libnacl_base.a obj/libimc.a obj/libnacl_fault_inject.a obj/libplatform.a obj/libncvalidate_x86_64.a obj/libncval_reg_sfi_x86_64.a obj/libnccopy_x86_64.a obj/libnc_decoder_x86_64.a obj/libnc_opcode_modeling_x86_64.a obj/libncval_base_x86_64.a obj/libplatform.a obj/libgio.a
-	@g++ ${CXXFLAGS} -o test/manifest_parser_test ${CXXFLAGS2} obj/manifest_parser_test.o -L/usr/lib -Lobj -Lgtest -lgtest -lsel -lgio_wrapped_desc -lnrd_xfer -lnacl_perf_counter -lnacl_base -limc -lnacl_fault_inject -lplatform -lncvalidate_x86_64 -lncval_reg_sfi_x86_64 -lnccopy_x86_64 -lnc_decoder_x86_64 -lnc_opcode_modeling_x86_64 -lncval_base_x86_64 -lplatform -lgio ${NETW_LIB} -lrt -lpthread -lcrypto -ldl
+test/manifest_parser_test: obj/manifest_parser_test.o obj/libsel.a obj/libgio_wrapped_desc.a obj/libnrd_xfer.a obj/libnacl_perf_counter.a obj/libnacl_base.a obj/libimc.a obj/libnacl_fault_inject.a obj/libplatform.a obj/libplatform.a obj/libgio.a
+	@g++ ${CXXFLAGS} -o test/manifest_parser_test ${CXXFLAGS2} obj/manifest_parser_test.o -L/usr/lib -Lobj -Lgtest -lgtest -lsel -lgio_wrapped_desc -lnrd_xfer -lnacl_perf_counter -lnacl_base -limc -lnacl_fault_inject -lplatform -lplatform -lgio ${NETW_LIB} -lrt -lpthread -lcrypto -ldl
 
 obj/manifest_setup_test.o: src/manifest/manifest_setup_test.cc
 	@g++ ${CXXFLAGS} -o obj/manifest_setup_test.o ${CXXFLAGS1} src/manifest/manifest_setup_test.cc
-test/manifest_setup_test: obj/manifest_setup_test.o obj/libsel.a obj/libgio_wrapped_desc.a obj/libnrd_xfer.a obj/libnacl_perf_counter.a obj/libnacl_base.a obj/libimc.a obj/libnacl_fault_inject.a obj/libplatform.a obj/libncvalidate_x86_64.a obj/libncval_reg_sfi_x86_64.a obj/libnccopy_x86_64.a obj/libnc_decoder_x86_64.a obj/libnc_opcode_modeling_x86_64.a obj/libncval_base_x86_64.a obj/libplatform.a obj/libgio.a
-	@g++ ${CXXFLAGS} -o test/manifest_setup_test ${CXXFLAGS2} obj/manifest_setup_test.o -L/usr/lib -Lobj -Lgtest -lgtest -lsel -lgio_wrapped_desc -lnrd_xfer -lnacl_perf_counter -lnacl_base -limc -lnacl_fault_inject -lplatform -lncvalidate_x86_64 -lncval_reg_sfi_x86_64 -lnccopy_x86_64 -lnc_decoder_x86_64 -lnc_opcode_modeling_x86_64 -lncval_base_x86_64 -lplatform -lgio ${NETW_LIB} -lrt -lpthread -lcrypto -ldl
+test/manifest_setup_test: obj/manifest_setup_test.o obj/libsel.a obj/libgio_wrapped_desc.a obj/libnrd_xfer.a obj/libnacl_perf_counter.a obj/libnacl_base.a obj/libimc.a obj/libnacl_fault_inject.a obj/libplatform.a obj/libplatform.a obj/libgio.a
+	@g++ ${CXXFLAGS} -o test/manifest_setup_test ${CXXFLAGS2} obj/manifest_setup_test.o -L/usr/lib -Lobj -Lgtest -lgtest -lsel -lgio_wrapped_desc -lnrd_xfer -lnacl_perf_counter -lnacl_base -limc -lnacl_fault_inject -lplatform -lplatform -lgio ${NETW_LIB} -lrt -lpthread -lcrypto -ldl
 
 obj/nacl_log_test.o: src/platform/nacl_log_test.cc
 	@g++ ${CXXFLAGS} -o obj/nacl_log_test.o ${CXXFLAGS1} src/platform/nacl_log_test.cc
-test/nacl_log_test: obj/nacl_log_test.o obj/libsel.a obj/libgio_wrapped_desc.a obj/libnrd_xfer.a obj/libnacl_perf_counter.a obj/libnacl_base.a obj/libimc.a obj/libnacl_fault_inject.a obj/libplatform.a obj/libncvalidate_x86_64.a obj/libncval_reg_sfi_x86_64.a obj/libnccopy_x86_64.a obj/libnc_decoder_x86_64.a obj/libnc_opcode_modeling_x86_64.a obj/libncval_base_x86_64.a obj/libplatform.a obj/libgio.a
-	@g++ ${CXXFLAGS} -o test/nacl_log_test ${CXXFLAGS2} obj/nacl_log_test.o -L/usr/lib -Lobj -Lgtest -lgtest -lsel -lgio_wrapped_desc -lnrd_xfer -lnacl_perf_counter -lnacl_base -limc -lnacl_fault_inject -lplatform -lncvalidate_x86_64 -lncval_reg_sfi_x86_64 -lnccopy_x86_64 -lnc_decoder_x86_64 -lnc_opcode_modeling_x86_64 -lncval_base_x86_64 -lplatform -lgio ${NETW_LIB} -lrt -lpthread -lcrypto -ldl
+test/nacl_log_test: obj/nacl_log_test.o obj/libsel.a obj/libgio_wrapped_desc.a obj/libnrd_xfer.a obj/libnacl_perf_counter.a obj/libnacl_base.a obj/libimc.a obj/libnacl_fault_inject.a obj/libplatform.a obj/libplatform.a obj/libgio.a
+	@g++ ${CXXFLAGS} -o test/nacl_log_test ${CXXFLAGS2} obj/nacl_log_test.o -L/usr/lib -Lobj -Lgtest -lgtest -lsel -lgio_wrapped_desc -lnrd_xfer -lnacl_perf_counter -lnacl_base -limc -lnacl_fault_inject -lplatform -lplatform -lgio ${NETW_LIB} -lrt -lpthread -lcrypto -ldl
 
 obj/sel_ldr_test.o: src/service_runtime/sel_ldr_test.cc
 	@g++ ${CXXFLAGS} -o obj/sel_ldr_test.o ${CXXFLAGS1} ${CCFLAGS2} ${CCFLAGS4} -Igtest/include src/service_runtime/sel_ldr_test.cc
@@ -96,26 +79,12 @@ obj/sel_memory_unittest.o: src/service_runtime/sel_memory_unittest.cc
 obj/unittest_main.o: src/service_runtime/unittest_main.cc
 	@g++ ${CXXFLAGS} -o obj/unittest_main.o ${CXXFLAGS1} ${CCFLAGS2} ${CCFLAGS4} -Igtest/include src/service_runtime/unittest_main.cc
 
-test/service_runtime_tests: obj/sel_ldr_test.o obj/sel_mem_test.o obj/sel_memory_unittest.o obj/unittest_main.o obj/libsel.a obj/libgio_wrapped_desc.a obj/libnrd_xfer.a obj/libnacl_perf_counter.a obj/libnacl_base.a obj/libimc.a obj/libnacl_fault_inject.a obj/libplatform.a obj/libncvalidate_x86_64.a obj/libncval_reg_sfi_x86_64.a obj/libnccopy_x86_64.a obj/libnc_decoder_x86_64.a obj/libnc_opcode_modeling_x86_64.a obj/libncval_base_x86_64.a obj/libplatform.a obj/libgio.a
-	@g++ ${CXXFLAGS} -o test/service_runtime_tests ${CXXFLAGS2} obj/unittest_main.o obj/sel_memory_unittest.o obj/sel_mem_test.o obj/sel_ldr_test.o -L/usr/lib -lgtest -lsel -lgio_wrapped_desc -lnrd_xfer -lnacl_perf_counter -lnacl_base -limc -lnacl_fault_inject -lplatform -lncvalidate_x86_64 -lncval_reg_sfi_x86_64 -lnccopy_x86_64 -lnc_decoder_x86_64 -lnc_opcode_modeling_x86_64 -lncval_base_x86_64 -lplatform -lgio ${NETW_LIB} -lrt -lpthread -lcrypto -ldl -Lobj -Lgtest
+test/service_runtime_tests: obj/sel_ldr_test.o obj/sel_mem_test.o obj/sel_memory_unittest.o obj/unittest_main.o obj/libsel.a obj/libgio_wrapped_desc.a obj/libnrd_xfer.a obj/libnacl_perf_counter.a obj/libnacl_base.a obj/libimc.a obj/libnacl_fault_inject.a obj/libplatform.a obj/libplatform.a obj/libgio.a
+	@g++ ${CXXFLAGS} -o test/service_runtime_tests ${CXXFLAGS2} obj/unittest_main.o obj/sel_memory_unittest.o obj/sel_mem_test.o obj/sel_ldr_test.o -L/usr/lib -lgtest -lsel -lgio_wrapped_desc -lnrd_xfer -lnacl_perf_counter -lnacl_base -limc -lnacl_fault_inject -lplatform -lplatform -lgio ${NETW_LIB} -lrt -lpthread -lcrypto -ldl -Lobj -Lgtest
 
-obj/nc_inst_state_tests.o: src/validator/x86/decoder/nc_inst_state_tests.cc
-	@g++ ${CXXFLAGS} -o obj/nc_inst_state_tests.o ${CXXFLAGS1} -Igtest/include src/validator/x86/decoder/nc_inst_state_tests.cc
+test/x86_decoder_tests_nc_inst_state: obj/nc_inst_state_tests.o obj/ncval_decode_tables.o obj/libplatform.a obj/libgio.a
+	@g++ ${CXXFLAGS} -o test/x86_decoder_tests_nc_inst_state ${CXXFLAGS2} obj/nc_inst_state_tests.o obj/ncval_decode_tables.o -L/usr/lib -lgtest -lplatform -lgio -lrt -lpthread -lcrypto -Lobj -Lgtest
 
-test/x86_decoder_tests_nc_inst_state: obj/nc_inst_state_tests.o obj/ncval_decode_tables.o obj/libnccopy_x86_64.a obj/libnc_decoder_x86_64.a obj/libnc_opcode_modeling_x86_64.a obj/libncval_base_x86_64.a obj/libplatform.a obj/libgio.a
-	@g++ ${CXXFLAGS} -o test/x86_decoder_tests_nc_inst_state ${CXXFLAGS2} obj/nc_inst_state_tests.o obj/ncval_decode_tables.o -L/usr/lib -lgtest -lnccopy_x86_64 -lnc_decoder_x86_64 -lnc_opcode_modeling_x86_64 -lncval_base_x86_64 -lplatform -lgio -lrt -lpthread -lcrypto -Lobj -Lgtest
-
-obj/nc_inst_bytes_tests.o: src/validator/x86/nc_inst_bytes_tests.cc
-	@g++ ${CXXFLAGS} -o obj/nc_inst_bytes_tests.o ${CXXFLAGS1} -Igtest/include src/validator/x86/nc_inst_bytes_tests.cc
-
-test/x86_validator_tests_nc_inst_bytes: obj/nc_inst_bytes_tests.o obj/libncvalidate_x86_64.a obj/libncval_reg_sfi_x86_64.a obj/libnccopy_x86_64.a obj/libnc_decoder_x86_64.a obj/libnc_opcode_modeling_x86_64.a obj/libncval_base_x86_64.a obj/libplatform.a obj/libgio.a
-	@g++ ${CXXFLAGS} -o test/x86_validator_tests_nc_inst_bytes ${CXXFLAGS2} obj/nc_inst_bytes_tests.o -L/usr/lib -lgtest -lncvalidate_x86_64 -lncval_reg_sfi_x86_64 -lnccopy_x86_64 -lnc_decoder_x86_64 -lnc_opcode_modeling_x86_64 -lncval_base_x86_64 -lplatform -lgio -lrt -lpthread -lcrypto -Lobj -Lgtest
-
-obj/nc_remaining_memory_tests.o: src/validator/x86/nc_remaining_memory_tests.cc
-	@g++ ${CXXFLAGS} -o obj/nc_remaining_memory_tests.o ${CXXFLAGS1} -Igtest/include src/validator/x86/nc_remaining_memory_tests.cc
-
-test/x86_validator_tests_nc_remaining_memory: obj/nc_remaining_memory_tests.o obj/libncvalidate_x86_64.a obj/libncval_reg_sfi_x86_64.a obj/libnccopy_x86_64.a obj/libnc_decoder_x86_64.a obj/libnc_opcode_modeling_x86_64.a obj/libncval_base_x86_64.a obj/libplatform.a obj/libgio.a
-	@g++ ${CXXFLAGS} -o test/x86_validator_tests_nc_remaining_memory ${CXXFLAGS2} obj/nc_remaining_memory_tests.o -L/usr/lib -lgtest -lncvalidate_x86_64 -lncval_reg_sfi_x86_64 -lnccopy_x86_64 -lnc_decoder_x86_64 -lnc_opcode_modeling_x86_64 -lncval_base_x86_64 -lplatform -lgio -lrt -lpthread -lcrypto -Lobj -Lgtest
 
 clean_gcov:
 	@find -name "*.gcda" | xargs rm -f
@@ -138,8 +107,8 @@ clean_api:
 	@make -Capi clean
 	@echo api binaries has been deleted
 
-obj/libsel.a: obj/dyn_array.o obj/elf_util.o obj/nacl_all_modules.o obj/nacl_desc_effector_ldr.o obj/nacl_globals.o obj/nacl_memory_object.o obj/nacl_signal_common.o obj/nacl_syscall_handlers.o obj/nacl_syscall_hook.o obj/nacl_text.o obj/sel_addrspace.o obj/sel_ldr.o obj/sel_ldr_standard.o obj/sel_mem.o obj/sel_qualify.o obj/sel_util-inl.o obj/sel_validate_image.o obj/nacl_ldt_x86.o obj/nacl_switch_64.o obj/nacl_switch_to_app_64.o obj/nacl_syscall_64.o obj/sel_addrspace_x86_64.o obj/sel_ldr_x86_64.o obj/sel_rt_64.o obj/tramp_64.o obj/sel_addrspace_posix_x86_64.o obj/sel_memory.o obj/nacl_ldt.o obj/sel_segments.o obj/nacl_signal.o obj/nacl_signal_64.o obj/manifest_parser.o obj/manifest_setup.o obj/md5.o obj/mount_channel.o obj/prefetch.o obj/preload.o obj/trap.o
-	@ar rc obj/libsel.a obj/dyn_array.o obj/elf_util.o obj/nacl_all_modules.o obj/nacl_desc_effector_ldr.o obj/nacl_globals.o obj/nacl_memory_object.o obj/nacl_signal_common.o obj/nacl_syscall_handlers.o obj/nacl_syscall_hook.o obj/nacl_text.o obj/sel_addrspace.o obj/sel_ldr.o obj/sel_ldr_standard.o obj/sel_mem.o obj/sel_qualify.o obj/sel_util-inl.o obj/sel_validate_image.o obj/nacl_ldt_x86.o obj/nacl_switch_64.o obj/nacl_switch_to_app_64.o obj/nacl_syscall_64.o obj/sel_addrspace_x86_64.o obj/sel_ldr_x86_64.o obj/sel_rt_64.o obj/tramp_64.o obj/sel_addrspace_posix_x86_64.o obj/sel_memory.o obj/nacl_ldt.o obj/sel_segments.o obj/nacl_signal.o obj/nacl_signal_64.o obj/manifest_parser.o obj/manifest_setup.o obj/md5.o obj/mount_channel.o obj/prefetch.o obj/preload.o obj/trap.o
+obj/libsel.a: obj/dyn_array.o obj/elf_util.o obj/nacl_all_modules.o obj/nacl_desc_effector_ldr.o obj/nacl_globals.o obj/nacl_memory_object.o obj/nacl_signal_common.o obj/nacl_syscall_handlers.o obj/nacl_syscall_hook.o obj/nacl_text.o obj/sel_addrspace.o obj/sel_ldr.o obj/sel_ldr_standard.o obj/sel_mem.o obj/sel_qualify.o obj/sel_util-inl.o obj/nacl_ldt_x86.o obj/nacl_switch_64.o obj/nacl_switch_to_app_64.o obj/nacl_syscall_64.o obj/sel_addrspace_x86_64.o obj/sel_ldr_x86_64.o obj/sel_rt_64.o obj/tramp_64.o obj/sel_addrspace_posix_x86_64.o obj/sel_memory.o obj/nacl_ldt.o obj/sel_segments.o obj/nacl_signal.o obj/nacl_signal_64.o obj/manifest_parser.o obj/manifest_setup.o obj/md5.o obj/mount_channel.o obj/prefetch.o obj/preload.o obj/trap.o obj/nacl_cpuid.o obj/nacl_xgetbv.o
+	@ar rc obj/libsel.a obj/dyn_array.o obj/elf_util.o obj/nacl_all_modules.o obj/nacl_desc_effector_ldr.o obj/nacl_globals.o obj/nacl_memory_object.o obj/nacl_signal_common.o obj/nacl_syscall_handlers.o obj/nacl_syscall_hook.o obj/nacl_text.o obj/sel_addrspace.o obj/sel_ldr.o obj/sel_ldr_standard.o obj/sel_mem.o obj/sel_qualify.o obj/sel_util-inl.o obj/nacl_ldt_x86.o obj/nacl_switch_64.o obj/nacl_switch_to_app_64.o obj/nacl_syscall_64.o obj/sel_addrspace_x86_64.o obj/sel_ldr_x86_64.o obj/sel_rt_64.o obj/tramp_64.o obj/sel_addrspace_posix_x86_64.o obj/sel_memory.o obj/nacl_ldt.o obj/sel_segments.o obj/nacl_signal.o obj/nacl_signal_64.o obj/manifest_parser.o obj/manifest_setup.o obj/md5.o obj/mount_channel.o obj/prefetch.o obj/preload.o obj/trap.o obj/nacl_cpuid.o obj/nacl_xgetbv.o
 
 obj/libnacl_error_code.a: obj/nacl_error_code.o
 	@ar rc obj/libnacl_error_code.a obj/nacl_error_code.o
@@ -168,24 +137,6 @@ obj/libplatform.a: obj/nacl_exit.o obj/nacl_find_addrsp.o obj/nacl_host_desc.o o
 obj/libplatform_qual_lib.a: obj/nacl_os_qualify.o obj/sysv_shm_and_mmap.o obj/nacl_dep_qualify.o obj/nacl_dep_qualify_arch.o
 	@ar rc obj/libplatform_qual_lib.a obj/nacl_os_qualify.o obj/sysv_shm_and_mmap.o obj/nacl_dep_qualify.o obj/nacl_dep_qualify_arch.o
 
-obj/libncvalidate_x86_64.a: obj/ncvalidate.o
-	@ar rc obj/libncvalidate_x86_64.a obj/ncvalidate.o
-
-obj/libncval_reg_sfi_x86_64.a: obj/ncvalidate_iter.o obj/ncvalidate_iter_detailed.o obj/nc_cpu_checks.o obj/nc_illegal.o obj/nc_jumps.o obj/address_sets.o obj/nc_jumps_detailed.o obj/nc_opcode_histogram.o obj/nc_protect_base.o obj/nc_memory_protect.o obj/ncvalidate_utils.o obj/ncval_decode_tables.o
-	@ar rc obj/libncval_reg_sfi_x86_64.a obj/ncvalidate_iter.o obj/ncvalidate_iter_detailed.o obj/nc_cpu_checks.o obj/nc_illegal.o obj/nc_jumps.o obj/address_sets.o obj/nc_jumps_detailed.o obj/nc_opcode_histogram.o obj/nc_protect_base.o obj/nc_memory_protect.o obj/ncvalidate_utils.o obj/ncval_decode_tables.o
-
-obj/libnccopy_x86_64.a: obj/nccopycode.o obj/nccopycode_stores.o
-	@ar rc obj/libnccopy_x86_64.a obj/nccopycode.o obj/nccopycode_stores.o
-
-obj/libnc_decoder_x86_64.a: obj/nc_inst_iter.o obj/nc_inst_state.o obj/nc_inst_trans.o obj/ncop_exps.o
-	@ar rc obj/libnc_decoder_x86_64.a obj/nc_inst_iter.o obj/nc_inst_state.o obj/nc_inst_trans.o obj/ncop_exps.o
-
-obj/libnc_opcode_modeling_x86_64.a: obj/ncopcode_desc.o
-	@ar rc obj/libnc_opcode_modeling_x86_64.a obj/ncopcode_desc.o
-
-obj/libncval_base_x86_64.a: obj/error_reporter.o obj/halt_trim.o obj/nacl_cpuid.o obj/nacl_xgetbv.o obj/ncinstbuffer.o obj/x86_insts.o obj/nc_segment.o
-	@ar rc obj/libncval_base_x86_64.a obj/error_reporter.o obj/halt_trim.o obj/nacl_cpuid.o obj/nacl_xgetbv.o obj/ncinstbuffer.o obj/x86_insts.o obj/nc_segment.o
-
 obj/libgio.a: obj/gio.o obj/gio_mem.o obj/gprintf.o obj/gio_mem_snapshot.o
 	@ar rc obj/libgio.a obj/gio.o obj/gio_mem.o obj/gprintf.o obj/gio_mem_snapshot.o
 
@@ -211,9 +162,6 @@ obj/md5.o: src/manifest/md5.c
 obj/manifest_parser.o: src/manifest/manifest_parser.c
 	@gcc ${CCFLAGS} -o obj/manifest_parser.o ${CCFLAGS0} ${CCFLAGS1} src/manifest/manifest_parser.c
 
-obj/ncvalidate.o: src/validator/x86/64/ncvalidate.c
-	@gcc ${CCFLAGS} -o obj/ncvalidate.o ${CCFLAGS0} ${CCFLAGS1} ${CCFLAGS4} src/validator/x86/64/ncvalidate.c
-
 obj/nacl_switch_64.o: src/service_runtime/arch/x86_64/nacl_switch_64.S
 	@gcc ${CCFLAGS} -o obj/nacl_switch_64.o ${CCFLAGS0} ${CCFLAGS2} src/service_runtime/arch/x86_64/nacl_switch_64.S
 
@@ -223,11 +171,11 @@ obj/nacl_syscall_64.o: src/service_runtime/arch/x86_64/nacl_syscall_64.S
 obj/tramp_64.o: src/service_runtime/arch/x86_64/tramp_64.S
 	@gcc ${CCFLAGS} -o obj/tramp_64.o ${CCFLAGS0} ${CCFLAGS2} src/service_runtime/arch/x86_64/tramp_64.S
 
-obj/nccopycode_stores.o: src/validator_x86/nccopycode_stores.S
-	@gcc ${CCFLAGS} -o obj/nccopycode_stores.o ${CCFLAGS0} ${CCFLAGS2} src/validator_x86/nccopycode_stores.S
+obj/nacl_cpuid.o: src/service_runtime/nacl_cpuid.c
+	@gcc ${CCFLAGS} -o obj/nacl_cpuid.o ${CCFLAGS0} ${CCFLAGS1} src/service_runtime/nacl_cpuid.c
 
-obj/nacl_xgetbv.o: src/validator/x86/nacl_xgetbv.S
-	@gcc ${CCFLAGS} -o obj/nacl_xgetbv.o ${CCFLAGS0} ${CCFLAGS2} src/validator/x86/nacl_xgetbv.S
+obj/nacl_xgetbv.o: src/service_runtime/nacl_xgetbv.S
+	@gcc ${CCFLAGS} -o obj/nacl_xgetbv.o ${CCFLAGS0} ${CCFLAGS2} src/service_runtime/nacl_xgetbv.S
 
 obj/sel_main.o: src/service_runtime/sel_main.c
 	@gcc ${CCFLAGS} -o obj/sel_main.o ${CCFLAGS0} ${CCFLAGS1} ${CCFLAGS5} src/service_runtime/sel_main.c
@@ -279,9 +227,6 @@ obj/sel_qualify.o: src/service_runtime/sel_qualify.c
 
 obj/sel_util-inl.o: src/service_runtime/sel_util-inl.c
 	@gcc ${CCFLAGS} -o obj/sel_util-inl.o ${CCFLAGS0} ${CCFLAGS1} src/service_runtime/sel_util-inl.c
-
-obj/sel_validate_image.o: src/service_runtime/sel_validate_image.c
-	@gcc ${CCFLAGS} -o obj/sel_validate_image.o ${CCFLAGS0} ${CCFLAGS1} src/service_runtime/sel_validate_image.c
 
 obj/nacl_ldt_x86.o: src/service_runtime/arch/x86/nacl_ldt_x86.c
 	@gcc ${CCFLAGS} -o obj/nacl_ldt_x86.o ${CCFLAGS0} ${CCFLAGS1} src/service_runtime/arch/x86/nacl_ldt_x86.c
@@ -396,78 +341,6 @@ obj/nacl_dep_qualify.o: src/platform_qualify/posix/nacl_dep_qualify.c
 
 obj/nacl_dep_qualify_arch.o: src/platform_qualify/arch/x86_64/nacl_dep_qualify_arch.c
 	@gcc ${CCFLAGS} -o obj/nacl_dep_qualify_arch.o ${CCFLAGS0} ${CCFLAGS1} src/platform_qualify/arch/x86_64/nacl_dep_qualify_arch.c
-
-obj/ncvalidate_iter.o: src/validator/x86/ncval_reg_sfi/ncvalidate_iter.c
-	@gcc ${CCFLAGS} -o obj/ncvalidate_iter.o ${CCFLAGS0} ${CCFLAGS1} src/validator/x86/ncval_reg_sfi/ncvalidate_iter.c
-
-obj/ncvalidate_iter_detailed.o: src/validator/x86/ncval_reg_sfi/ncvalidate_iter_detailed.c
-	@gcc ${CCFLAGS} -o obj/ncvalidate_iter_detailed.o ${CCFLAGS0} ${CCFLAGS1} src/validator/x86/ncval_reg_sfi/ncvalidate_iter_detailed.c
-
-obj/nc_cpu_checks.o: src/validator/x86/ncval_reg_sfi/nc_cpu_checks.c
-	@gcc ${CCFLAGS} -o obj/nc_cpu_checks.o ${CCFLAGS0} ${CCFLAGS1} src/validator/x86/ncval_reg_sfi/nc_cpu_checks.c
-
-obj/nc_illegal.o: src/validator/x86/ncval_reg_sfi/nc_illegal.c
-	@gcc ${CCFLAGS} -o obj/nc_illegal.o ${CCFLAGS0} ${CCFLAGS1} src/validator/x86/ncval_reg_sfi/nc_illegal.c
-
-obj/nc_jumps.o: src/validator/x86/ncval_reg_sfi/nc_jumps.c
-	@gcc ${CCFLAGS} -o obj/nc_jumps.o ${CCFLAGS0} ${CCFLAGS1} src/validator/x86/ncval_reg_sfi/nc_jumps.c
-
-obj/address_sets.o: src/validator/x86/ncval_reg_sfi/address_sets.c
-	@gcc ${CCFLAGS} -o obj/address_sets.o ${CCFLAGS0} ${CCFLAGS1} src/validator/x86/ncval_reg_sfi/address_sets.c
-
-obj/nc_jumps_detailed.o: src/validator/x86/ncval_reg_sfi/nc_jumps_detailed.c
-	@gcc ${CCFLAGS} -o obj/nc_jumps_detailed.o ${CCFLAGS0} ${CCFLAGS1} src/validator/x86/ncval_reg_sfi/nc_jumps_detailed.c
-
-obj/nc_opcode_histogram.o: src/validator/x86/ncval_reg_sfi/nc_opcode_histogram.c
-	@gcc ${CCFLAGS} -o obj/nc_opcode_histogram.o ${CCFLAGS0} ${CCFLAGS1} src/validator/x86/ncval_reg_sfi/nc_opcode_histogram.c
-
-obj/nc_protect_base.o: src/validator/x86/ncval_reg_sfi/nc_protect_base.c
-	@gcc ${CCFLAGS} -o obj/nc_protect_base.o ${CCFLAGS0} ${CCFLAGS1} src/validator/x86/ncval_reg_sfi/nc_protect_base.c
-
-obj/nc_memory_protect.o: src/validator/x86/ncval_reg_sfi/nc_memory_protect.c
-	@gcc ${CCFLAGS} -o obj/nc_memory_protect.o ${CCFLAGS0} ${CCFLAGS1} src/validator/x86/ncval_reg_sfi/nc_memory_protect.c
-
-obj/ncvalidate_utils.o: src/validator/x86/ncval_reg_sfi/ncvalidate_utils.c
-	@gcc ${CCFLAGS} -o obj/ncvalidate_utils.o ${CCFLAGS0} ${CCFLAGS1} src/validator/x86/ncval_reg_sfi/ncvalidate_utils.c
-
-obj/ncval_decode_tables.o: src/validator/x86/ncval_reg_sfi/ncval_decode_tables.c
-	@gcc ${CCFLAGS} -o obj/ncval_decode_tables.o ${CCFLAGS0} ${CCFLAGS1} src/validator/x86/ncval_reg_sfi/ncval_decode_tables.c
-
-obj/nccopycode.o: src/validator_x86/nccopycode.c
-	@gcc ${CCFLAGS} -o obj/nccopycode.o ${CCFLAGS0} ${CCFLAGS1} src/validator_x86/nccopycode.c
-
-obj/nc_inst_iter.o: src/validator/x86/decoder/nc_inst_iter.c
-	@gcc ${CCFLAGS} -o obj/nc_inst_iter.o ${CCFLAGS0} ${CCFLAGS1} src/validator/x86/decoder/nc_inst_iter.c
-
-obj/nc_inst_state.o: src/validator/x86/decoder/nc_inst_state.c
-	@gcc ${CCFLAGS} -o obj/nc_inst_state.o ${CCFLAGS0} ${CCFLAGS1} src/validator/x86/decoder/nc_inst_state.c
-
-obj/nc_inst_trans.o: src/validator/x86/decoder/nc_inst_trans.c
-	@gcc ${CCFLAGS} -o obj/nc_inst_trans.o ${CCFLAGS0} ${CCFLAGS1} src/validator/x86/decoder/nc_inst_trans.c
-
-obj/ncop_exps.o: src/validator/x86/decoder/ncop_exps.c
-	@gcc ${CCFLAGS} -o obj/ncop_exps.o ${CCFLAGS0} ${CCFLAGS1} src/validator/x86/decoder/ncop_exps.c
-
-obj/ncopcode_desc.o: src/validator/x86/decoder/ncopcode_desc.c
-	@gcc ${CCFLAGS} -o obj/ncopcode_desc.o ${CCFLAGS0} ${CCFLAGS1} src/validator/x86/decoder/ncopcode_desc.c
-
-obj/error_reporter.o: src/validator/x86/error_reporter.c
-	@gcc ${CCFLAGS} -o obj/error_reporter.o ${CCFLAGS0} ${CCFLAGS1} src/validator/x86/error_reporter.c
-
-obj/halt_trim.o: src/validator/x86/halt_trim.c
-	@gcc ${CCFLAGS} -o obj/halt_trim.o ${CCFLAGS0} ${CCFLAGS1} src/validator/x86/halt_trim.c
-
-obj/nacl_cpuid.o: src/validator/x86/nacl_cpuid.c
-	@gcc ${CCFLAGS} -o obj/nacl_cpuid.o ${CCFLAGS0} ${CCFLAGS1} src/validator/x86/nacl_cpuid.c
-
-obj/ncinstbuffer.o: src/validator/x86/ncinstbuffer.c
-	@gcc ${CCFLAGS} -o obj/ncinstbuffer.o ${CCFLAGS0} ${CCFLAGS1} src/validator/x86/ncinstbuffer.c
-
-obj/x86_insts.o: src/validator/x86/x86_insts.c
-	@gcc ${CCFLAGS} -o obj/x86_insts.o ${CCFLAGS0} ${CCFLAGS1} src/validator/x86/x86_insts.c
-
-obj/nc_segment.o: src/validator/x86/nc_segment.c
-	@gcc ${CCFLAGS} -o obj/nc_segment.o ${CCFLAGS0} ${CCFLAGS1} src/validator/x86/nc_segment.c
 
 obj/nacl_exit.o: src/platform/linux/nacl_exit.c
 	@gcc ${CCFLAGS} -o obj/nacl_exit.o ${CCFLAGS0} ${CCFLAGS1} src/platform/linux/nacl_exit.c

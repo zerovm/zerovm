@@ -66,6 +66,8 @@ typedef struct cpu_feature_struct {
   char data[NaClCPUFeature_Max];
 } NaClCPUFeaturesX86;
 
+typedef NaClCPUFeaturesX86 NaClCPUFeatures; /* d'b */
+
 /* Define the maximum length of a CPUID string.
  *
  * Note: If you change this length, fix the static initialization of wlid

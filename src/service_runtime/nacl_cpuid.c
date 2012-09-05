@@ -4,15 +4,12 @@
  * found in the LICENSE file.
  */
 
-#include "src/validator/x86/nacl_cpuid.h"
+#include "src/service_runtime/nacl_cpuid.h"
 
 /*
  * nacl_cpuid.c
  * Retrieve and decode CPU model specific feature mask.
  */
-#if NACL_WINDOWS
-#include <intrin.h>  /* __cpuid intrinsic */
-#endif  /* NACL_WINDOWS  */
 
 #include <stdio.h>
 #include <string.h>

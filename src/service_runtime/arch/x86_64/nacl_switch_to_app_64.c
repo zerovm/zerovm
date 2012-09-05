@@ -10,7 +10,7 @@
 #include "src/service_runtime/sel_ldr.h"
 #include "src/service_runtime/nacl_globals.h"
 #include "src/service_runtime/nacl_switch_to_app.h"
-#include "src/validator/x86/nacl_cpuid.h"
+#include "src/service_runtime/nacl_cpuid.h" /* d'b: taken from validator */
 
 #define NORETURN_PTR NORETURN
 
