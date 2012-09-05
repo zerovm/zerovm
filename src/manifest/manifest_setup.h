@@ -30,7 +30,7 @@ EXTERN_C_BEGIN
     " -Z use fixed feature x86 CPU mode\n"\
     " -D (switch disabled) enable the UNSTABLE dfa validator\n"
 
-/* todo(d'b): move it to zerovm setup or gather all zvm settings here */
+/* todo(d'b): order and move it to zerovm setup or gather all zvm settings here {{ */
 #define NEXE_PGM_NAME "loner" /* default argv[0] for nexe */
 #define MANIFEST_VERSION "09082012"
 #define ZEROVMLOG_NAME "ZeroVM"
@@ -41,6 +41,14 @@ EXTERN_C_BEGIN
 #define NEW_ROOT "/"
 #define VALIDATION_FMT "ncval --fatal %s>/dev/null"
 
+/* extended accounting */
+#define CGROUPS_FOLDER "/cgroups/zerovm"
+#define CGROUPS_TASKS "tasks"
+#define CGROUPS_USER_CPU "cpuacct.usage"
+#define CGROUPS_MEMORY "memory.max_usage_in_bytes"
+#define CGROUPS_SWAP "memory.memsw.max_usage_in_bytes"
+/* }} */
+
 /*
  * todo(d'b): make a decition: leave it here or move to NaClApp
  */
@@ -49,6 +57,7 @@ struct SystemManifest
   /* zerovm control */
   char *version; /* zerovm version */
   int32_t ret_code; /* zerovm return code */
+  char *extended_accounting; /* accounting folder name. NULL if not available */
 
   /* nexe control */
   char *nexe; /* nexe file name */

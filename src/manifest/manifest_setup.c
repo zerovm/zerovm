@@ -11,6 +11,7 @@
 #include <ctype.h>
 #include <sys/resource.h> /* timeout, process priority */
 #include <sys/time.h> /* timeout */
+#include <time.h> /* CLOCKS_PER_SEC */
 #include <unistd.h> /* timeout */
 
 #include "src/utils/tools.h"
@@ -357,6 +358,142 @@ int SystemManifestDtor(struct NaClApp *nap)
   return OK_CODE;
 }
 
+/* read information for the given stat */
+static int64_t ReadExtendedStat(const struct NaClApp *nap, const char *stat)
+{
+  char path[BIG_ENOUGH_SPACE + 1];
+  char buf[BIG_ENOUGH_SPACE + 1];
+  int64_t result;
+  FILE *f;
+
+  assert(nap != NULL);
+  assert(stat != NULL);
+  assert(nap->system_manifest != NULL);
+  assert(nap->system_manifest->extended_accounting != NULL);
+
+  /* construct the stat path to read */
+  snprintf(path, BIG_ENOUGH_SPACE, "%s/%s",
+      nap->system_manifest->extended_accounting, stat);
+
+  /* open, read and close stat file */
+  f = fopen(path, "r");
+  if(f == NULL)
+  {
+    NaClLog(LOG_ERROR, "cannot open %s", path);
+    return ERR_CODE;
+  }
+  result = fread(buf, 1, BIG_ENOUGH_SPACE, f);
+  if(result == 0 || result == BIG_ENOUGH_SPACE)
+  {
+    NaClLog(LOG_ERROR, "error statistics reading for %s", stat);
+    return ERR_CODE;
+  }
+  fclose(f);
+
+  /* convert and return the result */
+  return atoi(buf);
+}
+
+/* populate given string with an extended accounting statistics */
+static void ReadExtendedAccounting(const struct NaClApp *nap, char *buf, int size)
+{
+  int64_t user_cpu = 0;
+  int64_t memory_size = 0;
+  int64_t swap_size = 0;
+
+  assert(nap != NULL);
+  assert(buf != NULL);
+  assert(nap->system_manifest != NULL);
+  assert(size > 0);
+
+  /* get statistics if there is an extended accounting */
+  if(nap->system_manifest->extended_accounting != NULL)
+  {
+    /* get statistics */
+    user_cpu = ReadExtendedStat(nap, CGROUPS_USER_CPU); /* ### cast to ms! */
+    memory_size = ReadExtendedStat(nap, CGROUPS_MEMORY);
+    swap_size = ReadExtendedStat(nap, CGROUPS_SWAP);
+  }
+
+  /* construct and return the result */
+  snprintf(buf, size, "%ld %ld %ld", user_cpu, memory_size, swap_size);
+}
+
+/*
+ * finalize accounting if needed
+ * todo(d'b): under construction
+ */
+static void StopExtendedAccounting(struct NaClApp *nap)
+{
+  int result;
+
+  assert(nap != NULL);
+  assert(nap->system_manifest != NULL);
+
+  /* exit if there is no extended accounting */
+  if(nap->system_manifest->extended_accounting == NULL) return;
+
+  /* ### move itself to another "tasks" */
+
+  /* remove own pid folder from cgroups folder */
+  result = rmdir(nap->system_manifest->extended_accounting);
+  if(result != 0)
+  {
+    NaClLog(LOG_ERROR, "cannot remove %s",
+      nap->system_manifest->extended_accounting);
+    return;
+  }
+
+  /* anything else?.. */
+}
+
+/*
+ * collect accounting statistics about used cpu, memory and storage
+ * and put it to provided buffer. if the buffer size is not big enough
+ * drops the rest.
+ * todo(): under construction
+ */
+static void GatherStatistics(struct NaClApp *nap, char *buf, int size)
+{
+  int i;
+  int64_t network_stats[IOLimitsCount] = {0};
+  int64_t local_stats[IOLimitsCount] = {0};
+  int64_t real_cpu = 0;
+  char external_stats[BIG_ENOUGH_SPACE + 1];
+
+  assert(nap != NULL);
+  assert(buf != NULL);
+  assert(nap->system_manifest != NULL);
+  assert(size != 0);
+
+  /* gather all channels statistics */
+  for(i = 0; i < nap->system_manifest->channels_count; ++i)
+  {
+    struct ChannelDesc *channel = &nap->system_manifest->channels[i];
+    int64_t *stats;
+    int j;
+
+    assert(channel->source == LocalFile || channel->source == NetworkChannel);
+    stats = channel->source == LocalFile ? local_stats : network_stats;
+
+    for(j = 0; j < IOLimitsCount; ++j)
+      stats[j] += channel->counters[j];
+  }
+
+  /* read extended information */
+  ReadExtendedAccounting(nap, external_stats, BIG_ENOUGH_SPACE);
+  StopExtendedAccounting(nap);
+  real_cpu = (int64_t)(clock() / (double)(CLOCKS_PER_SEC / 1000));
+
+  /* construct the accounting statistics string */
+  snprintf(buf, size, "%ld %s %ld %ld %ld %ld %ld %ld %ld %ld",
+      real_cpu, external_stats, /* extended information */
+      local_stats[GetsLimit], local_stats[GetSizeLimit], /* local channels input */
+      local_stats[PutsLimit], local_stats[PutSizeLimit], /* local channels output */
+      network_stats[GetsLimit], network_stats[GetSizeLimit], /* network channels input */
+      network_stats[PutsLimit], network_stats[PutSizeLimit]);  /* network channels output */
+}
+
 /*
  * proxy awaits zerovm report from stdout
  * only signal safe functions should be used (printf is not safe)
@@ -365,19 +502,54 @@ int SystemManifestDtor(struct NaClApp *nap)
  */
 int ProxyReport(struct NaClApp *nap)
 {
-  char buf[BIG_ENOUGH_SPACE + 1], *report = buf;
+  char report[BIG_ENOUGH_SPACE + 1];
+  char accounting[BIG_ENOUGH_SPACE + 1];
+  int length;
+
+  GatherStatistics(nap, accounting, BIG_ENOUGH_SPACE);
 
   /* for debugging purposes it is useful to see more advanced information */
 #ifdef DEBUG
-  snprintf(report, BIG_ENOUGH_SPACE,
-      "user return code = %d\nuser ETag = %s\nZeroVM return code = %d\nuser state = %s\n",
-      nap->system_manifest->user_ret_code, "disabled", nap->zvm_code, nap->zvm_state);
+  length = snprintf(report, BIG_ENOUGH_SPACE,
+      "validator state = %d\nuser return code = %d\nEtag = %s\n"
+      "accounting = %s\nexit state = %s\n", nap->validation_state,
+      nap->system_manifest->user_ret_code, "disabled", accounting, nap->zvm_state);
 #else
   /* .. but for production zvm will switch to more brief output */
-  snprintf(report, BIG_ENOUGH_SPACE, "%d\n%s\n%s\n",
-      nap->system_manifest->user_ret_code, "disabled", nap->zvm_state);
+  length = snprintf(report, BIG_ENOUGH_SPACE, "%d\n%d\n%s\n%s\n%s\n",
+      nap->validation_state, nap->system_manifest->user_ret_code,
+      "disabled", accounting, nap->zvm_state);
 #endif
 
-  write(STDOUT_FILENO, report, strlen(report));
+  report[length] = '\0';
+  write(STDOUT_FILENO, report, length);
   return OK_CODE;
 }
+
+/*
+ * a new report design:
+ * 1. validator state (0 - didn't start, 1 - validated ok, 2 - validation failed)
+ * 2. nexe return code
+ * 3. etag (md5 of user memory), temporary disabled
+ * 4. accounting statistics (one line, space is a delimiter)
+ * 4.1. real time (milliseconds)
+ * 4.2. cpu time (milliseconds)
+ * 4.3. memory used (bytes)
+ * 4.4. swap used (bytes)
+ * 4.5. local channels input summary (bytes)
+ * 4.6. local channels inputs number (times)
+ * 4.7. local channels output summary (bytes)
+ * 4.8. local channels outputs number (times)
+ * 4.9. network channels input summary (bytes)
+ * 4.10. network channels inputs number (times)
+ * 4.11. network channels output summary (bytes)
+ * 4.12. network channels outputs number (times)
+ * 5. zerovm state
+ *
+ * example:
+ * 1
+ * 0
+ * disabled
+ * 302 255 93064476 0 0 0 1 1024 16 65536 16 65536
+ * Signal 24 from untrusted code: Halting at 0x2B2800020280
+ */

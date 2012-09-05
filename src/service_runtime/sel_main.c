@@ -11,6 +11,7 @@
 #include <errno.h>
 #include <assert.h>
 #include <setjmp.h> /* d'b: need for trap() exit */
+#include <sys/types.h> /* d'b: pid */
 
 #include "include/portability_io.h"
 #include "src/utils/tools.h"
@@ -194,6 +195,65 @@ static void ValidateNexe(struct NaClApp *nap)
     COND_ABORT(nap->validation_state == ValidationFailed, "validation failed");
 }
 
+/* create/overwrite file and put integer in it */
+static inline void EchoToFile(const char *path, int code)
+{
+  FILE *f = fopen(path, "w");
+
+  COND_ABORT(f == NULL, "cannot create file");
+  fprintf(f, "%d", code);
+  fclose(f);
+}
+
+/* initialize extended user statistics */
+static void ExternalAccounting(struct NaClApp *nap)
+{
+  struct stat st;
+  char cfolder[BIG_ENOUGH_SPACE + 1];
+  char counter[BIG_ENOUGH_SPACE + 1];
+  int pid = (int32_t)getpid();
+  int length;
+
+  assert(nap != NULL);
+  assert(nap->system_manifest != NULL);
+
+  /* exit if the cgroups folder is missing */
+  nap->system_manifest->extended_accounting = NULL;
+  if(!(stat(CGROUPS_FOLDER, &st) == 0 && S_ISDIR(st.st_mode)))
+    return;
+
+  /* fail if folder of same pid exists and locked */
+  length = snprintf(cfolder, BIG_ENOUGH_SPACE, "%s/%d", CGROUPS_FOLDER, pid);
+  cfolder[BIG_ENOUGH_SPACE] = '\0';
+  if(stat(cfolder, &st) == 0 && S_ISDIR(st.st_mode))
+    COND_ABORT(rmdir(cfolder) != 0, "current pid in cgroups is already taken");
+
+  /* create folder of own pid */
+  COND_ABORT(mkdir(cfolder, 0700) != 0, "cannot create pid folder in cgroups");
+
+  /* store accounting folder to the system manifest */
+  nap->system_manifest->extended_accounting = malloc(length + 1);
+  COND_ABORT(nap->system_manifest->extended_accounting == NULL,
+      "cannot allocate memory to hold accounting folder name");
+  strcpy(nap->system_manifest->extended_accounting, cfolder);
+
+  /* create special file in it with own pid */
+  snprintf(counter, BIG_ENOUGH_SPACE, "%s/%s", cfolder, CGROUPS_TASKS);
+  EchoToFile(counter, pid);
+
+  /* create user cpu accountant */
+  snprintf(counter, BIG_ENOUGH_SPACE, "%s/%s", cfolder, CGROUPS_USER_CPU);
+  EchoToFile(counter, 1);
+
+  /* create memory accountant */
+  snprintf(counter, BIG_ENOUGH_SPACE, "%s/%s", cfolder, CGROUPS_MEMORY);
+  EchoToFile(counter, 1);
+
+  /* create swap accountant */
+  snprintf(counter, BIG_ENOUGH_SPACE, "%s/%s", cfolder, CGROUPS_SWAP);
+  EchoToFile(counter, 1);
+}
+
 int main(int argc, char **argv)
 {
   struct NaClApp state, *nap = &state;
@@ -331,6 +391,9 @@ int main(int argc, char **argv)
    * todo(): find a proper place for this call
    */
   LastDefenseLine();
+
+  /* start external accounting */
+  ExternalAccounting(nap);
 
   /* set user code trap() exit location */
   if(setjmp(user_exit) == 0)
