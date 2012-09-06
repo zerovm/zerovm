@@ -48,33 +48,27 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
   int opt;
   int i;
   char *manifest_name = NULL;
-  int debug_mode_ignore_validator = 0;
-  int enable_debug_stub = 0;
-  int stub_out_mode = 0;
 
-  nap->handle_signals = 0;
+  /* set defaults */
   nap->verbosity = NaClLogGetVerbosity();
   nap->skip_qualification = 0;
   nap->fuzzing_quit_after_load = 0;
   nap->handle_signals = 1;
 
   /* todo(d'b): revise switches and rename them */
-  while((opt = getopt(argc, argv, "+cFgQZsSv:M:")) != -1)
+  while((opt = getopt(argc, argv, "+FQsSv:M:")) != -1)
   {
     switch(opt)
     {
       case 'M':
         manifest_name = optarg;
         break;
-      case 'c':
-        ++debug_mode_ignore_validator;
+      case 's':
+        nap->skip_validator = 1;
+        NaClLog(LOG_WARNING, "validation disabled by -s\n");
         break;
       case 'F':
         nap->fuzzing_quit_after_load = 1;
-        break;
-      case 'g':
-        nap->handle_signals = 1;
-        enable_debug_stub = 1;
         break;
       case 'S':
         /* d'b: disable signals handling */
@@ -88,34 +82,17 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
         break;
         /* case 'w':  with 'h' and 'r' above */
       case 'Q':
+        nap->skip_qualification = 1;
         NaClLog(LOG_WARNING, "PLATFORM QUALIFICATION DISABLED BY -Q - "
                 "Native Client's sandbox will be unreliable!\n");
-        nap->skip_qualification = 1;
         break;
-      case 's':
-        stub_out_mode = 1;
-        break;
-      case 'Z':
-        nap->fixed_feature_cpu_mode = 1;
-        break;
-#if 0 /* d'b: disabled */
-      case 'D':
-        nap->enable_dfa_validator = 1;
-        NaClLog(LOG_WARNING, "DANGER! USING THE UNSTABLE DFA VALIDATOR!\n");
-        break;
-#endif
       default:
         NaClLog(LOG_ERROR, "ERROR: unknown option: [%c]\n\n", opt);
-        COND_ABORT(1, HELP_SCREEN);
+        puts(HELP_SCREEN);
+        exit(1);
         break;
     }
   }
-
-  /* show validator mode */
-  if(debug_mode_ignore_validator == 1)
-    NaClLog(LOG_WARNING, "DEBUG MODE ENABLED (ignore validator)\n");
-  else if(debug_mode_ignore_validator > 1)
-    NaClLog(LOG_WARNING, "DEBUG MODE ENABLED (skip validator)\n");
 
   /* show zerovm command line */
   if(nap->verbosity)
@@ -126,15 +103,15 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
   }
 
   /* parse manifest file specified in cmdline */
-  COND_ABORT(manifest_name == NULL, HELP_SCREEN);
+  if(manifest_name == NULL)
+  {
+    puts(HELP_SCREEN);
+    exit(1);
+  }
   COND_ABORT(ManifestCtor(manifest_name), "Invalid manifest file");
 
   /* set available nap and manifest fields */
   assert(nap->system_manifest != NULL);
-  nap->ignore_validator_result = (debug_mode_ignore_validator > 0);
-  nap->skip_validator = (debug_mode_ignore_validator > 1);
-  nap->validator_stub_out_mode = stub_out_mode;
-  nap->enable_debug_stub = enable_debug_stub;
   nap->user_side_flag = 0; /* we are in the trusted code */
   nap->system_manifest->nexe = GetValueByKey("Nexe");
   syscallback = 0;
@@ -181,8 +158,7 @@ static void ValidateNexe(struct NaClApp *nap)
 
   /* check validation state */
   nap->validation_state = WEXITSTATUS(result) == 0 ? ValidationOK : ValidationFailed;
-  if(nap->ignore_validator_result == 0)
-    COND_ABORT(nap->validation_state == ValidationFailed, "validation failed");
+  COND_ABORT(nap->validation_state == ValidationFailed, "validation failed");
 }
 
 /* create/overwrite file and put integer in it */

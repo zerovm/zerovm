@@ -58,12 +58,6 @@ struct NaClSecureService;
 struct NaClSecureReverseService;
 struct NaClThreadInterface;  /* see sel_ldr_thread_interface.h */
 
-struct NaClDebugCallbacks {
-  void (*thread_create_hook)(struct NaClAppThread *natp);
-  void (*thread_exit_hook)(struct NaClAppThread *natp);
-  void (*process_exit_hook)(int exit_status);
-};
-
 struct NaClApp {
   /*
    * public, user settable prior to app start.
@@ -200,9 +194,7 @@ struct NaClApp {
    */
   int                       dynamic_delete_generation;
 
-  int                       ignore_validator_result;
   int                       skip_validator;
-  int                       validator_stub_out_mode;
 
   uintptr_t                 break_addr;   /* user addr */
   /* data_end <= break_addr is an invariant */
@@ -215,9 +207,6 @@ struct NaClApp {
   struct DynArray           threads;   /* NaClAppThread pointers */ // #12 to remove
 
   struct DynArray           desc_tbl;  /* NaClDesc pointers */
-
-  int                       enable_debug_stub;
-  struct NaClDebugCallbacks *debug_stub_callbacks;
 
   /* d'b: added fields {{ */
   struct SystemManifest     *system_manifest;
@@ -238,12 +227,7 @@ struct NaClApp {
   int                       user_side_flag; /* 0 - trusted syscall, 1 - called from user side */
   int                       trusted_code; /* mark to catch source of signal */
 
-  /*
-   * added for a new validator
-   * disabled. in a future can be re-enabled
-   */
-  int                       enable_dfa_validator;
-  int                       fixed_feature_cpu_mode;
+  /* for validator */
   NaClCPUFeatures           cpu_features;
 
   /* fields taken from the natp */

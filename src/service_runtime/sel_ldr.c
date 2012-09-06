@@ -27,9 +27,6 @@ int NaClAppWithSyscallTableCtor(struct NaClApp               *nap,
   /* These may be adjusted later in sel_main.c for fixed-feature CPU mode. */
   NaClGetCurrentCPUFeatures(&nap->cpu_features);
 
-  nap->enable_dfa_validator = 0;
-  nap->fixed_feature_cpu_mode = 0;
-
   nap->static_text_end = 0;
   nap->dynamic_text_start = 0;
   nap->dynamic_text_end = 0;
@@ -77,12 +74,7 @@ int NaClAppWithSyscallTableCtor(struct NaClApp               *nap,
   nap->module_load_status = LOAD_STATUS_UNKNOWN;
   nap->module_may_start = 0;  /* only when secure_service != NULL */
 
-  nap->ignore_validator_result = 0;
-  nap->skip_validator = 0;
-  nap->validator_stub_out_mode = 0;
-
-  nap->enable_debug_stub = 0;
-  nap->debug_stub_callbacks = NULL;
+//  nap->skip_validator = 0;
 
   return 1;
 

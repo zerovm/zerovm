@@ -16,19 +16,14 @@ EXTERN_C_BEGIN
 
 /* todo(d'b): remove useless switches, find a proper header for it */
 #define HELP_SCREEN /* update command line switches here */\
-    "Usage: ZeroVM [-M manifest_file] [-v d] [-cFSgsQZD]\n\n"\
+    "Usage: ZeroVM [-M manifest_file] [-v d] [-FSsQ]\n\n"\
     " -M <file> load settings from manifest\n"\
     " -v [level] verbosity\n\n"\
     " (testing flags)\n"\
-    " -c ignore validator! dangerous!\n"\
-    "    repeating this option twice skips validation completely\n"\
+    " -s skip validation\n"\
     " -F fuzz testing; quit after loading NaCl app\n"\
     " -S disable signal handling.\n"\
-    " -g enable gdb debug stub.\n"\
-    " -s safely stub out non-validating instructions\n"\
-    " -Q disable platform qualification (dangerous!)\n"\
-    " -Z use fixed feature x86 CPU mode\n"\
-    " -D (switch disabled) enable the UNSTABLE dfa validator\n"
+    " -Q disable platform qualification (dangerous!)\n"
 
 /* todo(d'b): order and move it to zerovm setup or gather all zvm settings here {{ */
 #define NEXE_PGM_NAME "loner" /* default argv[0] for nexe */
