@@ -9,7 +9,6 @@
  * the NRD transfer protocol code here.
  */
 
-#include "src/desc/nacl_desc_invalid.h"
 #include "src/platform/platform_init.h"
 
 void NaClNrdAllModulesInit(void) {
@@ -18,12 +17,8 @@ void NaClNrdAllModulesInit(void) {
    * variables.
    */
   NaClPlatformInit();
-// ###
-//  NaClDescInvalidInit();
 }
 
 void NaClNrdAllModulesFini(void) {
-// ###
-//  NaClDescInvalidFini();
   NaClPlatformFini();
 }

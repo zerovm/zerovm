@@ -12,8 +12,6 @@
 #include "include/nacl_macros.h"
 #include "include/nacl_platform.h"
 #include "src/platform/nacl_log.h"
-//#include "src/platform_qualify/kernel_version.h"
-
 
 struct TestData {
   const char *version;

@@ -77,14 +77,6 @@ void NaClVmentryPrint(void                  *state,
   fflush(stdout);
 }
 
-// ###
-//void NaClVmmapDebug(struct NaClVmmap *self,
-//                    char             *msg) {
-//  puts(msg);
-//  NaClVmmapVisit(self, NaClVmentryPrint, (void *) 0);
-//  fflush(stdout);
-//}
-
 int NaClVmmapCtor(struct NaClVmmap *self) {
   self->size = START_ENTRIES;
   if (SIZE_T_MAX / sizeof *self->vmentry < self->size) {

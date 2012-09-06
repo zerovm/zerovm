@@ -7,7 +7,6 @@
 #include "include/nacl_macros.h"
 #include "src/platform/nacl_sync_checked.h"
 #include "src/desc/nacl_desc_io.h"
-#include "src/desc/nacl_desc_mutex.h"
 #include "src/service_runtime/nacl_globals.h"
 #include "src/service_runtime/nacl_syscall_handlers.h"
 #include "src/service_runtime/sel_memory.h"

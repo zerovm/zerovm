@@ -9,7 +9,6 @@
 
 /* to make LDT_ENTRIES available */
 #include <asm/ldt.h>
-#include "src/service_runtime/arch/x86/nacl_ldt_x86.h"
 
 #define NACL_MAX_ADDR_BITS  (32)
 #define NACL_THREAD_MAX     LDT_ENTRIES  /* can be larger */

@@ -10,14 +10,9 @@
  */
 
 #include "src/platform/nacl_log.h"
-#include "src/desc/linux/nacl_desc_sysv_shm.h"
 #include "src/desc/nacl_desc_conn_cap.h"
-#include "src/desc/nacl_desc_dir.h"
-#include "src/desc/nacl_desc_imc.h"
 #include "src/desc/nacl_desc_imc_shm.h"
-#include "src/desc/nacl_desc_invalid.h"
 #include "src/desc/nacl_desc_io.h"
-#include "src/desc/nacl_desc_sync_socket.h"
 #include "src/service_runtime/include/sys/errno.h"
 
 /*
@@ -76,26 +71,6 @@ void NaClDescSafeUnref(struct NaClDesc *ndp) {
     NaClRefCountUnref(&ndp->base);
   }
 }
-
-// ###
-//int (*NaClDescInternalize[NACL_DESC_TYPE_MAX])(struct NaClDesc **,
-//                                               struct NaClDescXferState *) = {
-//  NaClDescInvalidInternalize,
-//  NaClDescDirInternalize,
-//  NaClDescIoInternalize,
-//  NaClDescInternalizeNotImplemented,
-//  NaClDescConnCapFdInternalize,
-//  NaClDescInternalizeNotImplemented,  /* bound sockets cannot be transferred */
-//  NaClDescInternalizeNotImplemented,  /* connected abstract base class */
-//  NaClDescImcShmInternalize,
-//  NaClDescSysvShmInternalize,
-//  NaClDescInternalizeNotImplemented,  /* mutex */
-//  NaClDescInternalizeNotImplemented,  /* condvar */
-//  NaClDescInternalizeNotImplemented,  /* semaphore */
-//  NaClDescSyncSocketInternalize,
-//  NaClDescXferableDataDescInternalize,
-//  NaClDescInternalizeNotImplemented  /* imc socket */
-//};
 
 char const *NaClDescTypeString(enum NaClDescTypeTag type_tag) {
   /* default functions for the vtable - return NOT_IMPLEMENTED */
@@ -426,14 +401,6 @@ int NaClDescInternalizeNotImplemented(struct NaClDesc           **out_desc,
           "Attempted transfer of non-transferable descriptor\n");
   return -NACL_ABI_EIO;
 }
-
-// ###
-//int NaClSafeCloseNaClHandle(NaClHandle h) {
-//  if (NACL_INVALID_HANDLE != h) {
-//    return NaClClose(h);
-//  }
-//  return 0;
-//}
 
 struct NaClDescVtbl const kNaClDescVtbl = {
   {

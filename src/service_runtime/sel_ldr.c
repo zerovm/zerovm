@@ -11,7 +11,7 @@
  */
 #include "src/platform/nacl_check.h"
 #include "src/platform/nacl_sync_checked.h"
-#include "src/gio/gio_shm.h"
+#include "src/gio/gio.h"
 #include "src/service_runtime/arch/x86/sel_ldr_x86.h"
 #include "src/service_runtime/nacl_globals.h"
 #include "src/service_runtime/nacl_syscall_handlers.h"

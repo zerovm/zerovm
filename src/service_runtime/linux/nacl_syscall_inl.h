@@ -11,7 +11,6 @@
 #ifndef NATIVE_CLIENT_SERVICE_RUNTIME_LINUX_NACL_SYSCALL_INL_H_
 #define NATIVE_CLIENT_SERVICE_RUNTIME_LINUX_NACL_SYSCALL_INL_H_
 
-#include "src/platform/nacl_host_dir.h"
 #include "src/service_runtime/include/sys/errno.h"
 #include "src/service_runtime/sel_ldr.h"
 

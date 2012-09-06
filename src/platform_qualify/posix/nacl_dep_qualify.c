@@ -15,11 +15,7 @@
 
 #include "src/platform_qualify/nacl_dep_qualify.h"
 
-#if NACL_OSX && NACL_BUILD_ARCH == NACL_x86 && NACL_BUILD_SUBARCH == 64
-# define EXPECTED_SIGNAL SIGBUS
-#else
-# define EXPECTED_SIGNAL SIGSEGV
-#endif
+#define EXPECTED_SIGNAL SIGSEGV
 
 static struct sigaction previous_sigaction;
 static struct sigaction try_sigaction;
