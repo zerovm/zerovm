@@ -4,16 +4,11 @@
  * be found in the LICENSE file.
  */
 
-#include <stdlib.h>
-#include <unistd.h>
-
 #include "src/platform/nacl_exit.h"
 #include "src/manifest/manifest_setup.h"
 #include "src/service_runtime/nacl_globals.h"
 #include "src/service_runtime/nacl_signal.h"
 #include "src/service_runtime/nacl_all_modules.h"
-#include "src/service_runtime/sel_mem.h"
-#include "src/platform/nacl_log.h"
 
 static void VmentryPrinter(void *state, struct NaClVmmapEntry *vmep)
 {

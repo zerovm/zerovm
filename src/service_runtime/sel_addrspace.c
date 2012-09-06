@@ -7,7 +7,6 @@
 /*
  * NaCl Simple/secure ELF loader (NaCl SEL).
  */
-#include <errno.h>
 
 #include "include/nacl_platform.h"
 #include "src/service_runtime/sel_addrspace.h"

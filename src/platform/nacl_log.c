@@ -8,7 +8,6 @@
  * NaCl Server Runtime logging code.
  */
 #include "include/portability_io.h"
-#include "include/portability_string.h"
 
 #include <limits.h>
 #include "src/platform/nacl_log.h"
@@ -22,7 +21,6 @@
 
 #include "src/gio/gio.h"
 #include "src/platform/nacl_exit.h"
-#include "src/platform/nacl_timestamp.h"
 
 /*
  * Three implementation strategies for module-specific logging:
@@ -273,6 +271,8 @@ struct Gio  *NaClLogGetGio(void) {
 
 static void NaClLogOutputTag(struct Gio *s) {
   /* d'b(LOG): log should be completely replaced with syslog */
+//  extern char *NaClTimeStampString(char *buffer, size_t buffer_size);
+
 //  char timestamp[128];
 //  int  pid;
 //
@@ -347,7 +347,7 @@ void NaClLogSetModuleVerbosity(char const *module_name,
                 " module record for module: %s, verbosity: %d\n"),
                module_name, verbosity);
   }
-  entry->module_name = STRDUP(module_name);
+  entry->module_name = strdup(module_name);
   if (NULL == entry->module_name) {
     NaClLog(LOG_FATAL,
                ("NaClLogSetModuleVerbosity: Out of memory while duplicating"

@@ -13,18 +13,9 @@
  * system call return interface of small negative numbers as errors.
  */
 
-#include <fcntl.h>
-#include <errno.h>
 #include <sys/mman.h>
-#include <unistd.h>
 #include <assert.h>
-
-#include "src/platform/nacl_host_desc.h"
-#include "src/platform/nacl_log.h"
-#include "src/service_runtime/include/sys/errno.h"
-#include "src/service_runtime/include/sys/fcntl.h"
 #include "src/service_runtime/include/bits/mman.h"
-#include "src/service_runtime/include/sys/stat.h"
 
 /* for global nap and manifest using */
 #include "src/service_runtime/sel_ldr.h"

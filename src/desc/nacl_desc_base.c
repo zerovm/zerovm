@@ -10,8 +10,6 @@
  */
 
 #include "src/platform/nacl_log.h"
-#include "src/desc/nacl_desc_conn_cap.h"
-#include "src/desc/nacl_desc_imc_shm.h"
 #include "src/desc/nacl_desc_io.h"
 #include "src/service_runtime/include/sys/errno.h"
 

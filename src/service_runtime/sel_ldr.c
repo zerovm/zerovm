@@ -4,8 +4,6 @@
  * found in the LICENSE file.
  */
 
-#include <string.h>
-
 /*
  * NaCl Simple/secure ELF loader (NaCl SEL).
  */
@@ -16,7 +14,6 @@
 #include "src/service_runtime/nacl_globals.h"
 #include "src/service_runtime/nacl_syscall_handlers.h"
 #include "src/service_runtime/nacl_desc_effector_ldr.h"
-#include "src/manifest/manifest_setup.h"
 
 int NaClAppWithSyscallTableCtor(struct NaClApp               *nap,
                                 struct NaClSyscallTableEntry *table)

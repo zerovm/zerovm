@@ -5,13 +5,7 @@
  *  Created on: Dec 5, 2011
  *      Author: d'b
  */
-#include <stdio.h>
-#include <fcntl.h>
 #include <assert.h>
-
-#include "api/zvm.h"
-#include "src/utils/tools.h"
-#include "src/service_runtime/sel_ldr.h"
 #include "src/manifest/mount_channel.h"
 #include "src/manifest/preload.h"
 
@@ -28,15 +22,14 @@ int PreloadChannelDtor(struct ChannelDesc* channel)
   return OK_CODE;
 }
 
-/* test the channel for validity */
+/*
+ * test the channel for validity
+ * todo(d'b): add more checks
+ */
 static void FailOnInvalidFileChannel(const struct ChannelDesc *channel)
 {
   COND_ABORT(channel->source != LocalFile, "channel isn't LocalFile");
   COND_ABORT(channel->name[0] != '/', "only absolute path allowed");
-
-  /*
-   * todo(d'b): add more checks
-   */
 }
 
 /*

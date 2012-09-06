@@ -4,7 +4,6 @@
  * found in the LICENSE file.
  */
 
-#include "include/portability_string.h"
 #include "src/platform/nacl_check.h"
 #include "src/platform/nacl_sync_checked.h"
 
@@ -386,7 +385,7 @@ void NaClFaultInjectionModuleInternalInit(void) {
 #endif
 
   /* get a definitely-mutable version that we will free later */
-  config = STRDUP(config);
+  config = strdup(config);
   CHECK(NULL != config);
   for (cur_entry = config; '\0' != *cur_entry; cur_entry = next_entry) {
     sep = strpbrk(cur_entry, ",:");

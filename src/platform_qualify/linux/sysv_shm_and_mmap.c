@@ -9,12 +9,9 @@
  * mapped via shmat, can be mmap'd over in parts.
  */
 
-#include <stdio.h>
-#include <stdint.h>
-#include <fcntl.h>
 #include <sys/shm.h>
 #include <sys/mman.h>
-
+#include <sys/stat.h>
 #include "src/platform_qualify/linux/sysv_shm_and_mmap.h"
 #include "src/platform/nacl_log.h"
 

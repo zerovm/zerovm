@@ -5,28 +5,18 @@
  */
 
 /*
- * ZeroVM main. updated by d'b
+ * ZeroVM main
  */
-#include <string.h>
-#include <errno.h>
-#include <assert.h>
-#include <setjmp.h> /* d'b: need for trap() exit */
-#include <sys/types.h> /* d'b: pid */
 
-#include "include/portability_io.h"
-#include "src/utils/tools.h"
+#include <assert.h>
 #include "src/gio/gio.h"
-#include "src/platform/nacl_exit.h"
 #include "src/fault_injection/fault_injection.h"
 #include "src/perf_counter/nacl_perf_counter.h"
 #include "src/service_runtime/nacl_all_modules.h"
 #include "src/service_runtime/nacl_globals.h"
 #include "src/service_runtime/nacl_signal.h"
-#include "src/service_runtime/include/sys/mman.h" /* d'b */
 #include "src/manifest/manifest_parser.h" /* d'b. todo: move to initializer */
 #include "src/manifest/manifest_setup.h" /* d'b. todo: move to initializer */
-#include "src/manifest/trap.h" /* d'b */
-#include "src/manifest/mount_channel.h" /* d'b. todo: move to manifest_setup */
 #include "src/service_runtime/sel_qualify.h"
 
 /* initialize syslog to put ZeroVm log messages */

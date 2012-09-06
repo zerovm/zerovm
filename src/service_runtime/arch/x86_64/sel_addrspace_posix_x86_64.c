@@ -4,9 +4,6 @@
  * found in the LICENSE file.
  */
 
-#include <stdio.h>
-#include <errno.h>
-
 #include "include/nacl_platform.h"
 #include "src/platform/nacl_check.h"
 #include "src/service_runtime/sel_ldr.h"

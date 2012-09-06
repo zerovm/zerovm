@@ -8,10 +8,8 @@
  * NaCl Service Runtime.  I/O Descriptor / Handle abstraction.  Memory
  * mapping using descriptors.
  */
-#include <errno.h>
 
 #include "include/nacl_platform.h"
-#include "src/platform/nacl_host_desc.h"
 #include "src/platform/nacl_log.h"
 #include "src/service_runtime/include/bits/mman.h"
 #include "src/service_runtime/include/sys/errno.h"

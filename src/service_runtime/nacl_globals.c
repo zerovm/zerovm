@@ -9,7 +9,6 @@
  */
 
 #include "src/platform/nacl_sync_checked.h"
-#include "src/service_runtime/nacl_globals.h"
 
 struct NaClMutex            nacl_thread_mu;
 

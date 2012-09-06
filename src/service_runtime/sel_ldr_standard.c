@@ -7,11 +7,9 @@
 /*
  * NaCl Simple/secure ELF loader (NaCl SEL).
  */
-#include <string.h>
 #include <assert.h>
 
 #include "src/platform/nacl_check.h"
-#include "src/platform/nacl_sync_checked.h"
 #include "src/perf_counter/nacl_perf_counter.h"
 #include "src/service_runtime/include/bits/mman.h"
 #include "src/service_runtime/arch/x86/sel_ldr_x86.h"

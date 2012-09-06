@@ -4,9 +4,6 @@
  * be found in the LICENSE file.
  */
 
-#include <stdint.h>
-#include <sys/mman.h>
-#include <sys/types.h>
 #include "include/nacl_platform.h"
 #include "src/platform/nacl_log.h"
 

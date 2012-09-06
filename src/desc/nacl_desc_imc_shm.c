@@ -14,7 +14,6 @@
 #include "src/desc/nacl_desc_effector.h"
 #include "src/desc/nacl_desc_imc_shm.h"
 #include "src/platform/nacl_find_addrsp.h"
-#include "src/platform/nacl_host_desc.h"
 #include "src/platform/nacl_log.h"
 #include "src/service_runtime/include/sys/errno.h"
 #include "src/service_runtime/include/sys/mman.h"

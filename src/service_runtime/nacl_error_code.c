@@ -6,8 +6,6 @@
 
 #include "src/service_runtime/nacl_error_code.h"
 
-#include "src/platform/nacl_log.h"
-
 char const *NaClErrorString(NaClErrorCode errcode)
 {
   switch(errcode)

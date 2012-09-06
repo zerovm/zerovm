@@ -4,7 +4,6 @@
  * found in the LICENSE file.
  */
 #include "src/platform/nacl_sync.h"
-#include "src/service_runtime/include/sys/time.h"
 
 /* Condition variable C API */
 

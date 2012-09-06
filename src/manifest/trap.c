@@ -7,24 +7,11 @@
  *      Author: d'b
  */
 
-#include <stdio.h>
-#include <stdint.h>
-#include <string.h>
-#include <errno.h>
-#include <sys/time.h>
 #include <assert.h>
-
-#include "src/utils/tools.h"
 #include "src/manifest/trap.h"
-#include "src/manifest/manifest_parser.h"
 #include "src/manifest/manifest_setup.h"
-#include "src/manifest/mount_channel.h"
 #include "src/manifest/prefetch.h"
-#include "src/platform/nacl_log.h"
-#include "api/zvm.h"
-#include "src/service_runtime/sel_ldr.h"
 #include "src/service_runtime/nacl_globals.h"
-#include "src/platform/nacl_exit.h"
 
 /*
  * check number of trap() calls and increment by 1. update

@@ -7,10 +7,8 @@
 /*
  * NaCl Service Runtime memory allocation code
  */
-#include <errno.h>
 #include "include/nacl_platform.h"
 #include "src/platform/nacl_log.h"
-#include "src/service_runtime/nacl_config.h"
 
 #define DISPATCH_THUNK_ADDRESS ((void*)0x5AFECA110000)
 

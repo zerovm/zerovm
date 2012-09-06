@@ -11,8 +11,6 @@
 #include "src/fault_injection/fault_injection.h"
 #include "src/service_runtime/nacl_globals.h"
 #include "src/service_runtime/nacl_syscall_handlers.h"
-#include "src/service_runtime/nacl_all_modules.h"
-#include "src/service_runtime/nacl_tls.h"
 
 void NaClAllModulesInit(void)
 {

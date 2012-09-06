@@ -5,28 +5,13 @@
  *  Created on: Nov 30, 2011
  *      Author: d'b
  */
-#include <stdio.h>
 #include <assert.h>
-#include <string.h>
-#include <ctype.h>
 #include <sys/resource.h> /* timeout, process priority */
-#include <sys/time.h> /* timeout */
-#include <time.h> /* CLOCKS_PER_SEC */
-#include <unistd.h> /* timeout */
-
-#include "src/utils/tools.h"
-#include "src/service_runtime/include/bits/mman.h"
 #include "src/service_runtime/sel_ldr.h"
-#include "src/service_runtime/nacl_config.h"
-#include "src/service_runtime/sel_mem.h"
-#include "src/service_runtime/nacl_memory_object.h"
-#include "src/platform/nacl_log.h"
 #include "src/service_runtime/nacl_syscall_handlers.h"
-
-#include <src/manifest/manifest_keywords.h>
-#include <src/manifest/manifest_parser.h>
-#include <src/manifest/manifest_setup.h>
-#include <src/manifest/mount_channel.h>
+#include "src/manifest/manifest_parser.h"
+#include "src/manifest/manifest_setup.h"
+#include "src/manifest/mount_channel.h"
 
 #if 0 /* disabled until "snapshot" engine will be done */
 /* return md5 hash of mapped _output_ file (or NULL) */

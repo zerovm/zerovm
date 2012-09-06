@@ -11,23 +11,13 @@
  *     Author: d'b
  */
 #include <assert.h>
-#include <stdio.h>
 #include <glib.h> /* hash table */
 #include <byteswap.h> /* for big endian conversion */
 #include <arpa/inet.h> /* convert ip <-> int */
 #include <zmq.h>
-
-#include "api/zvm.h"
-#include "src/service_runtime/sel_ldr.h"
-#include "src/manifest/trap.h"
 #include "src/manifest/manifest_parser.h"
-#include "src/manifest/mount_channel.h"
 #include "src/manifest/manifest_setup.h" /* todo(d'b): remove it. defines SystemManifest */
 #include "src/manifest/prefetch.h"
-#include "src/service_runtime/nacl_config.h"
-#include "src/service_runtime/sel_mem.h"
-#include "src/service_runtime/nacl_memory_object.h"
-#include "src/platform/nacl_log.h"
 
 static uint32_t channels_cnt = 0; /* needs for NetCtor/Dtor */
 static void *context = NULL; /* zeromq context */

@@ -12,9 +12,7 @@
  */
 
 #include <stdio.h>
-#include <string.h>
 #include <assert.h>
-#include <stdlib.h>
 
 #include "include/portability_io.h"
 #include "src/platform/nacl_log.h"

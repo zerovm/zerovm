@@ -3,12 +3,8 @@
  * Use of this source code is governed by a BSD-style license that can be
  * found in the LICENSE file.
  */
-#include <errno.h>
 #include <signal.h>
-#include <string.h>
 #include <sys/mman.h>
-
-#include "src/platform/nacl_exit.h"
 #include "src/service_runtime/nacl_signal.h"
 #include "src/service_runtime/sel_ldr.h"
 

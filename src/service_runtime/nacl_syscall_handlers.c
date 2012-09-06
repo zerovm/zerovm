@@ -4,7 +4,6 @@
  * found in the LICENSE file.
  */
 #include "include/nacl_platform.h"
-#include "include/nacl_macros.h"
 #include "src/platform/nacl_sync_checked.h"
 #include "src/desc/nacl_desc_io.h"
 #include "src/service_runtime/nacl_globals.h"
@@ -13,7 +12,6 @@
 #include "src/service_runtime/include/bits/mman.h"
 #include "src/service_runtime/include/bits/nacl_syscalls.h"
 #include "src/service_runtime/include/sys/stat.h"
-#include "src/service_runtime/linux/nacl_syscall_inl.h"
 #include "src/manifest/trap.h"
 #include "include/nacl_assert.h"
 #include "src/manifest/manifest_setup.h"

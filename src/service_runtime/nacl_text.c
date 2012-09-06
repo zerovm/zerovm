@@ -3,18 +3,9 @@
  * Use of this source code is governed by a BSD-style license that can be
  * found in the LICENSE file.
  */
-#include <string.h>
-
-#include "include/concurrency_ops.h"
-#include "include/nacl_platform.h"
-#include "src/platform/nacl_check.h"
-#include "src/platform/nacl_sync_checked.h"
 #include "src/desc/nacl_desc_effector.h"
 #include "src/desc/nacl_desc_imc_shm.h"
-#include "src/perf_counter/nacl_perf_counter.h"
-#include "src/service_runtime/include/sys/errno.h"
 #include "src/service_runtime/include/sys/mman.h"
-#include "src/service_runtime/nacl_text.h"
 #include "src/service_runtime/sel_ldr.h"
 #include "src/service_runtime/sel_memory.h"
 

@@ -4,15 +4,10 @@
  * found in the LICENSE file.
  */
 
-
 // NaCl inter-module communication primitives.
 
+#include <unistd.h>
 #include "src/imc/nacl_imc.h"
-#include <errno.h>
-#include <sys/socket.h>
-#include <sys/un.h>
-
-#include "src/platform/nacl_log.h"
 
 namespace nacl {
 

@@ -15,7 +15,6 @@
 // goes in the linux directory and is referenced by the mac build but that's a
 // little sloppy.
 
-#include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
 #include <stdio.h>

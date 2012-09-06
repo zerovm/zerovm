@@ -4,17 +4,10 @@
  *  Created on: Dec 5, 2011
  *      Author: d'b
  */
-#include <stdio.h>
 #include <assert.h>
-#include <string.h>
-#include <sys/mman.h>
-
-#include "api/zvm.h"
-#include "src/utils/tools.h"
 #include "src/service_runtime/sel_ldr.h"
 #include "src/manifest/manifest_setup.h"
 #include "src/manifest/manifest_parser.h"
-#include "src/service_runtime/include/sys/errno.h"
 #include "src/manifest/preload.h"
 #include "src/manifest/prefetch.h"
 #include "src/manifest/mount_channel.h"

@@ -14,7 +14,6 @@
 #include "src/platform/nacl_find_addrsp.h"
 #include "src/platform/nacl_log.h"
 #include "src/service_runtime/include/sys/errno.h"
-#include "src/service_runtime/include/sys/fcntl.h"
 #include "src/service_runtime/include/sys/mman.h"
 #include "src/service_runtime/internal_errno.h"
 #include "src/service_runtime/nacl_config.h"

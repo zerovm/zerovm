@@ -11,20 +11,12 @@
  *      Author: d'b
  */
 
-#include <stdio.h>
-#include <string.h>
 #include <ctype.h>
 #include <assert.h>
 
-#include "src/utils/tools.h"
 #include "api/zvm.h" /* error codes */
-#include "src/service_runtime/include/sys/errno.h"
-#include "include/nacl_base.h"
-#include "src/service_runtime/nacl_config.h"
 #include "src/service_runtime/sel_ldr.h"
 #include "src/manifest/manifest_parser.h"
-
-#include "src/manifest/manifest_keywords.h" /* to check keywords sync */
 
 static int32_t mft_count; /* number of found keys */
 static char *mft_data; /* area to hold manifest text */

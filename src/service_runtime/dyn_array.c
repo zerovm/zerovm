@@ -8,12 +8,8 @@
  * Implementation of dynamic arrays.
  */
 
-#include "include/portability.h"
-
-#define DYN_ARRAY_DEBUG 1
-
-#include <stdlib.h>
 #include <string.h>
+#define DYN_ARRAY_DEBUG 0
 
 #if DYN_ARRAY_DEBUG
 # include "src/platform/nacl_log.h"
