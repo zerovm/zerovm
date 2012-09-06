@@ -12,7 +12,6 @@
 #ifndef NATIVE_CLIENT_SRC_TRUSTED_PLATFORM_NACL_HOST_DESC_H__
 #define NATIVE_CLIENT_SRC_TRUSTED_PLATFORM_NACL_HOST_DESC_H__
 
-#include "src/platform/nacl_sync.h"
 #include "src/platform/linux/nacl_host_desc_types.h"
 
 /*
@@ -81,8 +80,6 @@ static INLINE int NaClOff64IsNegErrno(const nacl_off64_t *val) {
 }
 
 extern int NaClXlateErrno(int errnum);
-
-extern int NaClXlateNaClSyncStatus(NaClSyncStatus status);
 
 #ifndef __native_client__ /* these functions are not exposed to NaCl modules
                            * (see TODO comment above)

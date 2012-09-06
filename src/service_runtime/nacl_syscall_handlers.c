@@ -4,7 +4,6 @@
  * found in the LICENSE file.
  */
 #include "include/nacl_platform.h"
-#include "src/platform/nacl_sync_checked.h"
 #include "src/desc/nacl_desc_io.h"
 #include "src/service_runtime/nacl_globals.h"
 #include "src/service_runtime/nacl_syscall_handlers.h"
@@ -111,12 +110,7 @@ int32_t NaClSysSysbrk(struct NaClApp *nap, uintptr_t new_break)
   NaClLog(3, "sys_new_break 0x%08"NACL_PRIxPTR"\n", sys_new_break);
 
   if (kNaClBadAddress == sys_new_break) {
-    goto cleanup_no_lock;
-  }
-  if (NACL_SYNC_OK != NaClMutexLock(&nap->mu)) {
-    NaClLog(LOG_ERROR, "Could not get app lock for 0x%08"NACL_PRIxPTR"\n",
-            (uintptr_t) nap);
-    goto cleanup_no_lock;
+    goto cleanup;
   }
   if (new_break < nap->data_end) {
     NaClLog(4, "new_break before data_end (0x%"NACL_PRIxPTR")\n",
@@ -229,8 +223,6 @@ int32_t NaClSysSysbrk(struct NaClApp *nap, uintptr_t new_break)
   }
 
 cleanup:
-  NaClXMutexUnlock(&nap->mu);
-cleanup_no_lock:
 
   /*
    * This cast is safe because the incoming value (new_break) cannot

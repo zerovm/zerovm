@@ -8,7 +8,6 @@
  * NaCl Simple/secure ELF loader (NaCl SEL).
  */
 #include "src/platform/nacl_check.h"
-#include "src/platform/nacl_sync_checked.h"
 #include "src/gio/gio.h"
 #include "src/service_runtime/arch/x86/sel_ldr_x86.h"
 #include "src/service_runtime/nacl_globals.h"
@@ -62,9 +61,6 @@ int NaClAppWithSyscallTableCtor(struct NaClApp               *nap,
 
   nap->use_shm_for_dynamic_text = 0; /* d'b: permanently disabled */
   nap->text_shm = NULL;
-  if (!NaClMutexCtor(&nap->dynamic_load_mutex)) {
-    goto cleanup_effp_dtor;
-  }
   nap->dynamic_page_bitmap = NULL;
 
   nap->dynamic_regions = NULL;
@@ -76,13 +72,6 @@ int NaClAppWithSyscallTableCtor(struct NaClApp               *nap,
   nap->dynamic_mapcache_size = 0;
   nap->dynamic_mapcache_ret = 0;
 
-  if (!NaClMutexCtor(&nap->mu)) {
-    goto cleanup_dynamic_load_mutex;
-  }
-  if (!NaClCondVarCtor(&nap->cv)) {
-    goto cleanup_mu;
-  }
-
   nap->syscall_table = table;
 
   nap->module_load_status = LOAD_STATUS_UNKNOWN;
@@ -92,33 +81,11 @@ int NaClAppWithSyscallTableCtor(struct NaClApp               *nap,
   nap->skip_validator = 0;
   nap->validator_stub_out_mode = 0;
 
-  if (!NaClMutexCtor(&nap->threads_mu)) {
-    goto cleanup_cv;
-  }
-  if (!NaClCondVarCtor(&nap->threads_cv)) {
-    goto cleanup_threads_mu;
-  }
-  if (!NaClMutexCtor(&nap->desc_mu)) {
-    goto cleanup_threads_cv;
-  }
-
   nap->enable_debug_stub = 0;
   nap->debug_stub_callbacks = NULL;
 
   return 1;
 
- cleanup_threads_cv:
-  NaClCondVarDtor(&nap->threads_cv);
- cleanup_threads_mu:
-  NaClMutexDtor(&nap->threads_mu);
- cleanup_cv:
-  NaClCondVarDtor(&nap->cv);
- cleanup_mu:
-  NaClMutexDtor(&nap->mu);
- cleanup_dynamic_load_mutex:
-  NaClMutexDtor(&nap->dynamic_load_mutex);
- cleanup_effp_dtor:
-  (*nap->effp->vtbl->Dtor)(nap->effp);
  cleanup_effp_free:
   free(nap->effp);
  cleanup_mem_map:
@@ -293,7 +260,6 @@ void  NaClMemRegionPrinter(void                   *state,
 
 void  NaClAppPrintDetails(struct NaClApp  *nap,
                           struct Gio      *gp) {
-  NaClXMutexLock(&nap->mu);
   gprintf(gp,
           "NaClAppPrintDetails((struct NaClApp *) 0x%08"NACL_PRIxPTR","
           "(struct Gio *) 0x%08"NACL_PRIxPTR")\n", (uintptr_t) nap,
@@ -318,7 +284,6 @@ void  NaClAppPrintDetails(struct NaClApp  *nap,
   NaClVmmapVisit(&nap->mem_map,
                  NaClMemRegionPrinter,
                  gp);
-  NaClXMutexUnlock(&nap->mu);
 }
 
 struct NaClDesc *NaClGetDescMu(struct NaClApp *nap,
@@ -367,12 +332,7 @@ int32_t NaClSetAvailMu(struct NaClApp  *nap,
   return (int32_t) pos;
 }
 
-struct NaClDesc *NaClGetDesc(struct NaClApp *nap,
-                             int            d) {
-  struct NaClDesc *res;
-
-  NaClXMutexLock(&nap->desc_mu);
-  res = NaClGetDescMu(nap, d);
-  NaClXMutexUnlock(&nap->desc_mu);
-  return res;
+struct NaClDesc *NaClGetDesc(struct NaClApp *nap, int d)
+{
+  return NaClGetDescMu(nap, d);
 }

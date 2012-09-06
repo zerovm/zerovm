@@ -11,10 +11,6 @@ int NaClRefCountCtor(struct NaClRefCount *self) {
   NaClLog(4, "NaClRefCountCtor(0x%08"NACL_PRIxPTR").\n", (uintptr_t) self);
   self->ref_count = 1;
   self->vtbl = (struct NaClRefCountVtbl *) NULL;
-  if (NaClMutexCtor(&self->mu)) {
-    self->vtbl = &kNaClRefCountVtbl;
-    return 1;
-  }
   return 0;
 }
 
@@ -53,7 +49,6 @@ static void NaClRefCountDtor(struct NaClRefCount  *self) {
               self->ref_count);
   }
 
-  NaClMutexDtor(&self->mu);
   self->vtbl = (struct NaClRefCountVtbl const *) NULL;
 }
 

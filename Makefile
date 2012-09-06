@@ -107,8 +107,8 @@ clean_api:
 	@make -Capi clean
 	@echo api binaries has been deleted
 
-obj/libsel.a: obj/dyn_array.o obj/elf_util.o obj/nacl_all_modules.o obj/nacl_desc_effector_ldr.o obj/nacl_globals.o obj/nacl_memory_object.o obj/nacl_signal_common.o obj/nacl_syscall_handlers.o obj/nacl_syscall_hook.o obj/nacl_text.o obj/sel_addrspace.o obj/sel_ldr.o obj/sel_ldr_standard.o obj/sel_mem.o obj/sel_qualify.o obj/sel_util-inl.o obj/nacl_switch_64.o obj/nacl_switch_to_app_64.o obj/nacl_syscall_64.o obj/sel_addrspace_x86_64.o obj/sel_ldr_x86_64.o obj/sel_rt_64.o obj/tramp_64.o obj/sel_addrspace_posix_x86_64.o obj/sel_memory.o obj/sel_segments.o obj/nacl_signal.o obj/nacl_signal_64.o obj/manifest_parser.o obj/manifest_setup.o obj/md5.o obj/mount_channel.o obj/prefetch.o obj/preload.o obj/trap.o obj/nacl_cpuid.o obj/nacl_xgetbv.o
-	@ar rc obj/libsel.a obj/dyn_array.o obj/elf_util.o obj/nacl_all_modules.o obj/nacl_desc_effector_ldr.o obj/nacl_globals.o obj/nacl_memory_object.o obj/nacl_signal_common.o obj/nacl_syscall_handlers.o obj/nacl_syscall_hook.o obj/nacl_text.o obj/sel_addrspace.o obj/sel_ldr.o obj/sel_ldr_standard.o obj/sel_mem.o obj/sel_qualify.o obj/sel_util-inl.o obj/nacl_switch_64.o obj/nacl_switch_to_app_64.o obj/nacl_syscall_64.o obj/sel_addrspace_x86_64.o obj/sel_ldr_x86_64.o obj/sel_rt_64.o obj/tramp_64.o obj/sel_addrspace_posix_x86_64.o obj/sel_memory.o obj/sel_segments.o obj/nacl_signal.o obj/nacl_signal_64.o obj/manifest_parser.o obj/manifest_setup.o obj/md5.o obj/mount_channel.o obj/prefetch.o obj/preload.o obj/trap.o obj/nacl_cpuid.o obj/nacl_xgetbv.o
+obj/libsel.a: obj/dyn_array.o obj/elf_util.o obj/nacl_all_modules.o obj/nacl_desc_effector_ldr.o obj/nacl_memory_object.o obj/nacl_signal_common.o obj/nacl_syscall_handlers.o obj/nacl_syscall_hook.o obj/nacl_text.o obj/sel_addrspace.o obj/sel_ldr.o obj/sel_ldr_standard.o obj/sel_mem.o obj/sel_qualify.o obj/sel_util-inl.o obj/nacl_switch_64.o obj/nacl_switch_to_app_64.o obj/nacl_syscall_64.o obj/sel_addrspace_x86_64.o obj/sel_ldr_x86_64.o obj/sel_rt_64.o obj/tramp_64.o obj/sel_addrspace_posix_x86_64.o obj/sel_memory.o obj/sel_segments.o obj/nacl_signal.o obj/nacl_signal_64.o obj/manifest_parser.o obj/manifest_setup.o obj/md5.o obj/mount_channel.o obj/prefetch.o obj/preload.o obj/trap.o obj/nacl_cpuid.o obj/nacl_xgetbv.o
+	@ar rc obj/libsel.a obj/dyn_array.o obj/elf_util.o obj/nacl_all_modules.o obj/nacl_desc_effector_ldr.o obj/nacl_memory_object.o obj/nacl_signal_common.o obj/nacl_syscall_handlers.o obj/nacl_syscall_hook.o obj/nacl_text.o obj/sel_addrspace.o obj/sel_ldr.o obj/sel_ldr_standard.o obj/sel_mem.o obj/sel_qualify.o obj/sel_util-inl.o obj/nacl_switch_64.o obj/nacl_switch_to_app_64.o obj/nacl_syscall_64.o obj/sel_addrspace_x86_64.o obj/sel_ldr_x86_64.o obj/sel_rt_64.o obj/tramp_64.o obj/sel_addrspace_posix_x86_64.o obj/sel_memory.o obj/sel_segments.o obj/nacl_signal.o obj/nacl_signal_64.o obj/manifest_parser.o obj/manifest_setup.o obj/md5.o obj/mount_channel.o obj/prefetch.o obj/preload.o obj/trap.o obj/nacl_cpuid.o obj/nacl_xgetbv.o
 
 obj/libnacl_error_code.a: obj/nacl_error_code.o
 	@ar rc obj/libnacl_error_code.a obj/nacl_error_code.o
@@ -128,8 +128,8 @@ obj/libimc.a: obj/nacl_imc_c.o obj/nacl_imc_unistd.o obj/nacl_imc.o
 obj/libnacl_fault_inject.a: obj/fault_injection.o
 	@ar rc obj/libnacl_fault_inject.a obj/fault_injection.o
 
-obj/libplatform.a: obj/nacl_exit.o obj/nacl_find_addrsp.o obj/nacl_host_desc.o obj/nacl_time.o obj/condition_variable.o obj/lock.o obj/nacl_check.o obj/nacl_host_desc_common.o obj/nacl_log.o obj/nacl_sync_checked.o obj/platform_init.o
-	@ar rc obj/libplatform.a obj/nacl_exit.o obj/nacl_find_addrsp.o obj/nacl_host_desc.o obj/nacl_time.o obj/condition_variable.o obj/lock.o obj/nacl_check.o obj/nacl_host_desc_common.o obj/nacl_log.o obj/nacl_sync_checked.o obj/platform_init.o
+obj/libplatform.a: obj/nacl_exit.o obj/nacl_find_addrsp.o obj/nacl_host_desc.o obj/nacl_time.o obj/nacl_check.o obj/nacl_host_desc_common.o obj/nacl_log.o obj/platform_init.o
+	@ar rc obj/libplatform.a obj/nacl_exit.o obj/nacl_find_addrsp.o obj/nacl_host_desc.o obj/nacl_time.o obj/nacl_check.o obj/nacl_host_desc_common.o obj/nacl_log.o obj/platform_init.o
 
 obj/libplatform_qual_lib.a: obj/nacl_os_qualify.o obj/sysv_shm_and_mmap.o obj/nacl_dep_qualify.o obj/nacl_dep_qualify_arch.o
 	@ar rc obj/libplatform_qual_lib.a obj/nacl_os_qualify.o obj/sysv_shm_and_mmap.o obj/nacl_dep_qualify.o obj/nacl_dep_qualify_arch.o
@@ -188,9 +188,6 @@ obj/nacl_all_modules.o: src/service_runtime/nacl_all_modules.c
 
 obj/nacl_desc_effector_ldr.o: src/service_runtime/nacl_desc_effector_ldr.c
 	@gcc ${CCFLAGS} -o obj/nacl_desc_effector_ldr.o ${CCFLAGS0} ${CCFLAGS1} src/service_runtime/nacl_desc_effector_ldr.c
-
-obj/nacl_globals.o: src/service_runtime/nacl_globals.c
-	@gcc ${CCFLAGS} -o obj/nacl_globals.o ${CCFLAGS0} ${CCFLAGS1} src/service_runtime/nacl_globals.c
 
 obj/nacl_memory_object.o: src/service_runtime/nacl_memory_object.c
 	@gcc ${CCFLAGS} -o obj/nacl_memory_object.o ${CCFLAGS0} ${CCFLAGS1} src/service_runtime/nacl_memory_object.c
@@ -300,12 +297,6 @@ obj/nacl_host_desc.o: src/platform/linux/nacl_host_desc.c
 obj/nacl_time.o: src/platform/linux/nacl_time.c
 	@gcc ${CCFLAGS} -o obj/nacl_time.o ${CCFLAGS0} ${CCFLAGS1} src/platform/linux/nacl_time.c
 
-obj/condition_variable.o: src/platform/linux/condition_variable.c
-	@gcc ${CCFLAGS} -o obj/condition_variable.o ${CCFLAGS0} ${CCFLAGS1} src/platform/linux/condition_variable.c
-
-obj/lock.o: src/platform/linux/lock.c
-	@gcc ${CCFLAGS} -o obj/lock.o ${CCFLAGS0} ${CCFLAGS1} src/platform/linux/lock.c
-
 obj/nacl_check.o: src/platform/nacl_check.c
 	@gcc ${CCFLAGS} -o obj/nacl_check.o ${CCFLAGS0} ${CCFLAGS1} src/platform/nacl_check.c
 
@@ -314,9 +305,6 @@ obj/nacl_host_desc_common.o: src/platform/nacl_host_desc_common.c
 
 obj/nacl_log.o: src/platform/nacl_log.c
 	@gcc ${CCFLAGS} -o obj/nacl_log.o ${CCFLAGS0} ${CCFLAGS1} src/platform/nacl_log.c
-
-obj/nacl_sync_checked.o: src/platform/nacl_sync_checked.c
-	@gcc ${CCFLAGS} -o obj/nacl_sync_checked.o ${CCFLAGS0} ${CCFLAGS1} src/platform/nacl_sync_checked.c
 
 obj/platform_init.o: src/platform/platform_init.c
 	@gcc ${CCFLAGS} -o obj/platform_init.o ${CCFLAGS0} ${CCFLAGS1} src/platform/platform_init.c

@@ -6,6 +6,7 @@
  *      Author: d'b
  */
 #include <assert.h>
+#include <time.h>
 #include <sys/resource.h> /* timeout, process priority */
 #include "src/service_runtime/sel_ldr.h"
 #include "src/service_runtime/nacl_syscall_handlers.h"

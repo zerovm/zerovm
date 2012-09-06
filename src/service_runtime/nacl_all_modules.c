@@ -16,12 +16,10 @@ void NaClAllModulesInit(void)
 {
   NaClNrdAllModulesInit();
   NaClFaultInjectionModuleInit();
-  NaClGlobalModuleInit(); /* various global variables */
   NaClSyscallTableInit();
 }
 
 void NaClAllModulesFini(void)
 {
   NaClNrdAllModulesFini();
-  NaClGlobalModuleFini();
 }

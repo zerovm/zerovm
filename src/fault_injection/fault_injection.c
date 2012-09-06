@@ -5,7 +5,6 @@
  */
 
 #include "src/platform/nacl_check.h"
-#include "src/platform/nacl_sync_checked.h"
 
 #define NACL_HAS_TLS     1  /* 1 normally, 0 to test OSX case on linux */
 #define NACL_HAS_TSD     1
@@ -64,8 +63,6 @@ struct NaClFaultInjectCallSiteCount {
  * used in the code base.
  */
 struct NaClFaultInjectCallSiteCount *gNaClFaultInjectCallSites = 0;
-struct NaClMutex                    *gNaClFaultInjectMu = 0;
-/* global counters mu */
 
 
 #if NACL_HAS_TLS
@@ -113,14 +110,9 @@ static void NaClFaultInjectAllocGlobalCounters(void) {
   gNaClFaultInjectCallSites = (struct NaClFaultInjectCallSiteCount *)
       malloc(gNaClNumFaultInjectInfo * sizeof *gNaClFaultInjectCallSites);
   CHECK(NULL != gNaClFaultInjectCallSites);
-  gNaClFaultInjectMu = (struct NaClMutex *) malloc(
-      gNaClNumFaultInjectInfo * sizeof *gNaClFaultInjectMu);
-  CHECK(NULL != gNaClFaultInjectMu);
   for (ix = 0; ix < gNaClNumFaultInjectInfo; ++ix) {
     gNaClFaultInjectCallSites[ix].expr_ix = 0;
     gNaClFaultInjectCallSites[ix].count_in_expr = 0;
-
-    NaClXMutexCtor(&gNaClFaultInjectMu[ix]);
   }
 }
 
@@ -442,7 +434,6 @@ int NaClFaultInjectionFaultP(char const *site_name) {
     counter = NaClFaultInjectFindThreadCounter(ix);
   } else {
     NaClLog(6, "NaClFaultInject: global counter\n");
-    NaClXMutexLock(&gNaClFaultInjectMu[ix]);
     counter = &gNaClFaultInjectCallSites[ix];
   }
   /*
@@ -469,9 +460,6 @@ int NaClFaultInjectionFaultP(char const *site_name) {
       counter->count_in_expr = 0;
       ++counter->expr_ix;
     }
-  }
-  if (!entry->thread_specific_p) {
-    NaClXMutexUnlock(&gNaClFaultInjectMu[ix]);
   }
   return rv;
 }

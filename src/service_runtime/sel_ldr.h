@@ -133,11 +133,6 @@ struct NaClApp {
    */
   int                       bundle_size;
 
-  /* common to both ELF executables and relocatable load images */
-
-  struct NaClMutex          mu; // #2 to remove
-  struct NaClCondVar        cv; // #3 to remove
-
   /*
    * An array of NaCl syscall handlers. The length of the array must be
    * at least NACL_MAX_SYSCALLS.
@@ -175,7 +170,6 @@ struct NaClApp {
    */
   int                       use_shm_for_dynamic_text;
   struct NaClDesc           *text_shm;
-  struct NaClMutex          dynamic_load_mutex; // #7 to remove
   /*
    * This records which pages in text_shm have been allocated.  When a
    * page is allocated, it is filled with halt instructions and then
@@ -218,11 +212,8 @@ struct NaClApp {
    * the thread locks, i.e., threads_mu must be acqured w/o holding
    * any per-thread lock (natp->mu).
    */
-  struct NaClMutex          threads_mu; // #10 to remove
-  struct NaClCondVar        threads_cv; // #11 to remove
   struct DynArray           threads;   /* NaClAppThread pointers */ // #12 to remove
 
-  struct NaClMutex          desc_mu; // #14 to remove
   struct DynArray           desc_tbl;  /* NaClDesc pointers */
 
   int                       enable_debug_stub;
