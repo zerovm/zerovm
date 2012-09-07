@@ -491,6 +491,7 @@ int ProxyReport(struct NaClApp *nap)
   char report[BIG_ENOUGH_SPACE + 1];
   char accounting[BIG_ENOUGH_SPACE + 1];
   int length;
+  int i;
 
   GatherStatistics(nap, accounting, BIG_ENOUGH_SPACE);
 
@@ -508,8 +509,8 @@ int ProxyReport(struct NaClApp *nap)
 #endif
 
   report[length] = '\0';
-  write(STDOUT_FILENO, report, length);
-  return OK_CODE;
+  i = write(STDOUT_FILENO, report, length);
+  return i == length ? OK_CODE : ERR_CODE;
 }
 
 /*

@@ -77,7 +77,7 @@ int32_t ZVMReadHandle(struct NaClApp *nap,
   struct ChannelDesc *channel;
   int64_t tail;
   char *sys_buffer;
-  int32_t retcode;
+  int32_t retcode = ERR_CODE;
 
   assert(nap != NULL);
   assert(nap->system_manifest != NULL);
@@ -171,7 +171,7 @@ int32_t ZVMWriteHandle(struct NaClApp *nap,
   struct ChannelDesc *channel;
   int64_t tail;
   char *sys_buffer;
-  int32_t retcode;
+  int32_t retcode = ERR_CODE;
 
   assert(nap != NULL);
   assert(nap->system_manifest != NULL);

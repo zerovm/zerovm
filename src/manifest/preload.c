@@ -12,14 +12,16 @@
 /* (adjust and) close file associated with the channel */
 int PreloadChannelDtor(struct ChannelDesc* channel)
 {
+  int i = OK_CODE;
+
   assert(channel != NULL);
 
   /* adjust the size of writable channels */
   if(channel->limits[PutSizeLimit] && channel->limits[PutsLimit])
-    ftruncate(channel->handle, channel->putpos);
+    i = ftruncate(channel->handle, channel->putpos);
 
   close(channel->handle);
-  return OK_CODE;
+  return i == 0 ? OK_CODE : ERR_CODE;
 }
 
 /*
@@ -39,6 +41,7 @@ static void FailOnInvalidFileChannel(const struct ChannelDesc *channel)
 int PreloadChannelCtor(struct ChannelDesc* channel)
 {
   uint32_t rw = 0;
+  int i;
 
   assert(channel != NULL);
   assert(channel->name != NULL);
@@ -63,7 +66,8 @@ int PreloadChannelCtor(struct ChannelDesc* channel)
       break;
     case 2: /* write only. existing file will be overwritten */
       channel->handle = open(channel->name, O_WRONLY|O_CREAT|O_TRUNC, S_IRWXU);
-      ftruncate(channel->handle, channel->limits[PutSizeLimit]);
+      i = ftruncate(channel->handle, channel->limits[PutSizeLimit]);
+      COND_ABORT(i != 0, "cannot preallocate w/o channel");
       channel->size = 0;
       break;
     case 3: /* cdr */
@@ -78,7 +82,8 @@ int PreloadChannelCtor(struct ChannelDesc* channel)
       /* file does not exist */
       if(channel->size == 0)
       {
-        ftruncate(channel->handle, channel->limits[PutSizeLimit]);
+        i = ftruncate(channel->handle, channel->limits[PutSizeLimit]);
+        COND_ABORT(i != 0, "cannot preallocate cdr channel");
         break;
       }
 
