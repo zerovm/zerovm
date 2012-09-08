@@ -66,9 +66,10 @@ int PreloadChannelCtor(struct ChannelDesc* channel)
       break;
     case 2: /* write only. existing file will be overwritten */
       channel->handle = open(channel->name, O_WRONLY|O_CREAT|O_TRUNC, S_IRWXU);
+      channel->size = 0;
+      if(STREQ(channel->name, DEV_NULL)) break;
       i = ftruncate(channel->handle, channel->limits[PutSizeLimit]);
       COND_ABORT(i != 0, "cannot preallocate w/o channel");
-      channel->size = 0;
       break;
     case 3: /* cdr */
       COND_ABORT(channel->type != 1, "only cdr channels can have r/w access");
@@ -80,7 +81,7 @@ int PreloadChannelCtor(struct ChannelDesc* channel)
           "cdr channel size is less then specified append position");
 
       /* file does not exist */
-      if(channel->size == 0)
+      if(channel->size == 0 && STRNEQ(channel->name, DEV_NULL))
       {
         i = ftruncate(channel->handle, channel->limits[PutSizeLimit]);
         COND_ABORT(i != 0, "cannot preallocate cdr channel");

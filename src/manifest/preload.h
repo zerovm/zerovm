@@ -10,6 +10,7 @@
 #define PRELOAD_H_
 
 #define CHANNEL_OPEN_FLAGS {O_RDONLY, O_RDWR | O_CREAT, O_RDWR | O_CREAT, -1, -1}
+#define DEV_NULL "/dev/null"
 
 /*
  * preload given file to channel.

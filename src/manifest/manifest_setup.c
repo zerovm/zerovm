@@ -484,7 +484,6 @@ static void GatherStatistics(struct NaClApp *nap, char *buf, int size)
  * proxy awaits zerovm report from stdout
  * only signal safe functions should be used (printf is not safe)
  * but looks like snprintf() is safe
- * todo(d'b): add timeout detection
  */
 int ProxyReport(struct NaClApp *nap)
 {
@@ -512,31 +511,3 @@ int ProxyReport(struct NaClApp *nap)
   i = write(STDOUT_FILENO, report, length);
   return i == length ? OK_CODE : ERR_CODE;
 }
-
-/*
- * a new report design:
- * 1. validator state (0 - didn't start, 1 - validated ok, 2 - validation failed)
- * 2. nexe return code
- * 3. etag (md5 of user memory), temporary disabled
- * 4. accounting statistics (one line, space is a delimiter)
- * 4.1. real time (milliseconds)
- * 4.2. cpu time (milliseconds)
- * 4.3. memory used (bytes)
- * 4.4. swap used (bytes)
- * 4.5. local channels input summary (bytes)
- * 4.6. local channels inputs number (times)
- * 4.7. local channels output summary (bytes)
- * 4.8. local channels outputs number (times)
- * 4.9. network channels input summary (bytes)
- * 4.10. network channels inputs number (times)
- * 4.11. network channels output summary (bytes)
- * 4.12. network channels outputs number (times)
- * 5. zerovm state
- *
- * example:
- * 1
- * 0
- * disabled
- * 302 255 93064476 0 0 0 1 1024 16 65536 16 65536
- * Signal 24 from untrusted code: Halting at 0x2B2800020280
- */
