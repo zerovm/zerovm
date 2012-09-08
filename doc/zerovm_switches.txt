@@ -3,42 +3,30 @@ This document describes ZeroVM command line switches
 
 ZeroVM command line switches:
 
-        Usage: sel_ldr [-h d:D] [-r d:D] [-w d:D] [-i d:D]
-                         [-l log_file] [-v d] [-X d]
-                         [-M manifest_file] [-cFgIsQ]
-*       -h
-*       -r
-*       -w associate a host POSIX descriptor D with app desc d
-           that was opened in O_RDWR, O_RDONLY, and O_WRONLY modes
-           respectively
-*       -i associates an IMC handle D with app desc d
-        -v <level> verbosity
-*       -X create a bound socket and export the address via an
-           IMC message to a corresponding NaCl app descriptor
-           (use -1 to create the bound socket / address descriptor
-           pair, but that no export via IMC should occur)
-           (testing flags)
-        -c ignore validator! dangerous! Repeating this option twice skips
-           validation completely.
-        -F fuzz testing; quit after loading NaCl app
-        -S enable signal handling.
-**      -g enable gdb debug stub.
-        -l <file>  write log output to the given file
-        -s safely stub out non-validating instructions
-        -Q disable platform qualification (dangerous!)
-	      -M <file> load settings from manifest
-
-* these switches will be removed in the nearest future
-** under construction
+    Usage: ZeroVM [-M manifest_file] [-v d] [-FSsQ]
+     -M <file> load settings from manifest
+     -v [level] verbosity
+    
+     (testing flags)
+     -s skip validation
+     -F fuzz testing; quit after loading NaCl app
+     -S disable signal handling
+     -Q disable platform qualification (dangerous!)
 
 
--v -- controls verbosity of information in the ZeroVM log
--c -- if specified once - report valiation status and ignore the validation result
-      if specified twice - skip validation alltogether
--s -- perform 2nd pass of the validator (by default ZeroVM uses one pass only)
--F -- specified NaCl application will be loaded but not run (usefull for validation)
--Q -- will skip data execution test. This switch makes it possible to run ZeroVM application on a platform 
-			with no "data execution" protection.
--M -- specifies the manifest file name. The manifest contains a set of control data for the executable.
-      More details about the manifest file can be found in the appropriate document on github.com/Dazo-org/ZeroVM
-      
+-M -- The manifest contains a set of control data for the executable. Obligatory switch.
+      More details about the manifest file can be found in the appropriate document on 
+      github.com/Dazo-org/ZeroVM
+
+-v -- controls verbosity of information in the ZeroVM log. writes ZeroVM 
+      log to "var/log/syslog". it is not recommended to use values more than 2
+
+-s -- skips validation. used for "prevalidation" engine.
+
+-F -- specified NaCl application will be loaded but not run. used for 
+      "prevalidation" engine.
+
+-S -- will prevent the signals handlers installation. not recommended to use.
+
+-Q -- will skip data execution test. This switch makes it possible to run ZeroVM 
+      application on a platform with no "data execution" protection.

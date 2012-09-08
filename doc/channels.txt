@@ -1,60 +1,56 @@
 this is the premature zerovm channels description
 -------------------------------------------------
 
-ZeroVM has 7 types of channels: 
-4, 5, 6 are reserved for the standard c90 streams (stdin, stdout, stdout)
-The rest are distributed as following: 
+by the type of the access ZeroVM has 4 types of channels: 
 0 - sequential read / sequential write
-1 - sequential read / random write
-2 - random read / sequential write
+1 - random read / sequential write
+2 - sequential read / random write
 3 - random read / random write
 
-Although channels 4, 5, 6 can be described with the combination of 0, 1, 2, 3 types and
-read/write limits zerovm must guarantee existence of standard streams and this
-is the way to control presence of mandatory channels.
+For now ZeroVM supports 5 kinds of the channels:
+- sequential read only channel
+- random read only channel
+- sequential write only channel
+- random write only channel
+- appendable channel. random read, sequential write. if the channel is not empty
+the write position is set next to the last byte 
+
+There are 3 mandatory channels (standard c90 streams): stdin, stdout, stdout.
+The channels has names "/dev/stdin", "/dev/stdout" and "/dev/stderr". The access
+type of the standard channels is 0 - a pure sequential one.
 
 Channel is the file abstraction over the local files and network streams. Local files
 can have random access type, network streams are always sequential. 
 
-Channel fields passed via the manifest:
-name -- local file name or zeromq-type url
-alias -- device name for the user side. Cannot be the same as "name". Must follow the device naming scheme: /dev/device-name
-type -- access type. Can be in 0..6 range
+Channel fields passed via the manifest to ZeroVM:
+name -- local file name or zeromq-type url. local files must use absolute pathes
+alias -- device name for the user side. Cannot be the same as "name". Must follow 
+    the device naming scheme: /dev/device-name
+type -- access type. Can be in 0..3 range
 gets -- the number of gets allowed for this channel
 get_size -- total amount of data to be read from this channel in bytes
 puts -- the number of puts allowed for this channel
 put_size -- total amount of data to be written to this channel in bytes
 
-
-Fields set up by zerovm:
-handle -- local file / network stream number in channels list. This number is the only
-          way to identify a channel. Hidden from user: user gets synthetic number
-          (index in channels array)
-size -- channel size. Only available to user when channel has some sort of random access
-position -- (get position, put position) - channel cursor position. Only available 
-            to user when channel has some sort of random access
-counters -- counters for each I/O limit. Available to user
+Fields available for the untrusted code:
+name -- the channel name (the alias from the manifest)
+type -- type of access
+limits -- 4 limits for the channel
+size -- channel size. only available for random access channels
+handle -- not a real handle, just an index in the "channels" array
+    it is guaranteed that indices 0..2 represents stdin, stdout and stderr
           
-All channels are opened before the nexe starts and closed after nexe ends.
+All channels are opened before the nexe starts and closed after nexe ends. In case of
+the channels i/o error ZeroVM will not start. ZeroVM preallocates specified size
+for the local writable channels.
 
+The network are always synchronized. Which means that the read operation will block until
+the channel will be stuffed with asked number of data. Currently ZeroVM supports only
+tcp protocol. For the multiple instances, in order to properly mount the network channels 
+ZeroVM needs name server (see "name_server.txt"). A network channel name may look like:
+"tcp:1:" which means usage of name server. However it is possible to use another type of
+notation: "tcp:123.1.2.3:123". Such name doesn't need to be resolved and can be mounted
+by ZeroVM "as is".
 
-User channel description (user can get this information through zerovm api)
-1. [secured] channel name
-2. [secured] channel handle
-3. access type
-   sequential read, sequential write 
-   random read, sequential write
-   sequential read, random write
-   random read, random write
-0. [optional] channel size. Only valid for random (or mixed) access channels
-0. [optional] position. Only valid for random (or mixed) access channels
-4. access restrictions
-	 - gets
-	 - get bytes
-	 - puts
-	 - put bytes 
-5. access counters
-	 - gets
-	 - get bytes
-	 - puts
-	 - put bytes
+For now the channels number specified in the manifest limited to 6048
+ 

@@ -16,14 +16,18 @@ arg[1] == reserved (not used)
 arg[2] .. arg[N] = arguments to this function
 
 For now trap() supports the following functions:
-TrapUserSetup,
-TrapRead,
-TrapWrite,
-TrapExit
+  TrapRead
+  TrapWrite
+  TrapSyscallback
+  TrapChannels
+  TrapChannelName
+  TrapAttributes
+  TrapSyscallsCount
+  TrapSyscallsLimit
+  TrapMemSize
+  TrapHeapPtr
+  TrapExit
+  
+for the further information regarding trap functions see "api.txt"
 
 Notice: NaCl syscall NaClSysExit() currently uses TrapExit
-
-trap() allows user to read or update the user part of the manifest. Trap also allows 
-to set or remove the syscallback (see "syscallback.txt"). Further details
-about the manifest can be found in "manifest.txt"
-

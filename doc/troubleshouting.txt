@@ -1,4 +1,5 @@
 This document describes possible zerovm problems
+(the document should be updated or removed)
 -------------------------------------------------
 
 

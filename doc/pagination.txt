@@ -1,4 +1,6 @@
 This document describes pagination engine
+(the document is obsolete. channels.txt should be used instead)
+(left alive until review and, perhaps, join with channels.txt)
 -----------------------------------------
 
 Pagination Engine (PE) is a replacement for input/output syscalls (were removed from zerovm). 

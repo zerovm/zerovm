@@ -1,5 +1,6 @@
 This document describes zerovm runtime library
-----------------------------------------------
+(the document should be reworked and moved to zrt project)
+----------------------------------------------------------
 
 ZRT is an untrusted code library. this is the helper code written over trap() and syscallback.
 With ZRT the user program can use most of standard c functions. ZRT makes available ZeroVM channels:

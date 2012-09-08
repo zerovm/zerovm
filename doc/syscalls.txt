@@ -4,16 +4,20 @@ This document contains a short description of NaCl syscalls
 NaCl application is not allowed to use real system calls, it should use the NaCl syscalls instead. 
 There is however a difference between the original NaCl sel_ldr (NaCl executable loader) and zerovm: 
 zerovm does not support any syscalls except the following ones:
-NACL_sys_sysbrk (20), NACL_sys_mmap (21), NACL_sys_munmap (22), NACL_sys_exit (30),
-NACL_sys_mutex_create (70), NACL_sys_tls_init (82), NACL_sys_tls_get (84). More than that,
-zerovm supports a special syscall called "trap" (0) (see "trap.txt")
+  NACL_sys_sysbrk (20), 
+  NACL_sys_mmap (21), 
+  NACL_sys_munmap (22), 
+  NACL_sys_exit (30),
+  NACL_sys_mutex_create (70), 
+  NACL_sys_tls_init (82), 
+  NACL_sys_tls_get (84). 
+More than that, zerovm supports a special syscall with number 0 called "trap" (see "trap.txt")
 
 When zerovm encounters an unsupported syscall it executes the stub (just returns 0).
 
-For the input/output syscalls zerovm offers a replacement: the pagination engine (see 
-"pagination.txt"). For getting the date/time there is a special keyword
-in the manifest: TimeStamp. User application can read it by using zvm_setup() from
-the zerovm API.
+For the input/output syscalls zerovm offers a replacement: the channels (see 
+"channels.txt"). To pass custom attributes (like a system time) the "Environment"
+manifest keyword can be used (see "environment.txt" and "api.txt").
 
 More detailed information about syscalls can be obtained from the Google NaCl paper.
 

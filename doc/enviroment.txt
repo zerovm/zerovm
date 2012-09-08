@@ -19,6 +19,8 @@ XObjectMetaTag=klaatu_barada_nikto
 User program can access environment via main() arguments:
 int main(int argc, char **argv, char **envp)
 where "envp" is the array of asciiz strings. It is guaranteed that the last string 
-is NULL (just like "argv").
+is NULL (just like "argv"). Also the user program can use ZeroVM API to read 
+an environment (see "api.txt").
 
-Some environment arguments are meant to be used by ZRT (and/or other libraries). For instance "TimeStamp".
+Some environment arguments are meant to be used by ZRT (and/or other libraries). 
+For instance "TimeStamp". ZeroVM, however doesn't control it.

@@ -9,53 +9,67 @@ Manifest samples can be found in "samples" directory.
 
 
 Structure:
-- each valid line must contain exactly only one key and one value separated by exactly one '=' sign
+- each valid line must contain exactly only one key and value(s) separated by exactly one '=' sign
 - both key and value may contain spaces
-- key/value case does matter: "key" and "KeY" are treated as a different keywords
+- key and value case does matter: "key" and "KeY" are treated as a different keywords
 - spaces around key/value will be ignored
 - lines are delimited with EOL (unix or windows style)
 - invalid lines will be ignored
 - lines with unknown keywords (not mentioned below) will be ignored
 - some keywords expects complex values: comma separated values. for example, "Environment"
 
-
-Valid keywords:
-Input/Output
-	Channel -- expects 7 comma separated attributes. The order does matter. Example:
-	  Channel = /home/dazo/git/zerovm/samples/sort/sort.stdout.log, /dev/stdout, 5, 0, 0, 99999999, 99999999
-	  where: [1] trusted channel name (n/a for the user), [2] untrusted channel name, [3] access type, 
-	         [4] gets limit, [5] get size limits, [6] puts limit, [7] put size limits
-See channels.txt for more info.
-
-User space custom attributes
-  Environment -- expects comma separated pairs: key, value. example:
-  Environment = TimeStamp, 1337012520, UserETag, 74ebada55, XObjectMetaTag, klaatu_barada_nikto, ContentType, utf-8
-See environment.txt for more info.
-
-Nexe command line
-  CommandLine -- command line arguments for nexe (will be redesigned soon)
-
-Report request
-  ReportRetCode -- request exit code of ZeroVM executable
-  ReportEtag -- request checksum of the user output
-  ReportUserRetCode -- request exit code of the user program
-  ReportContentType -- reserved
-  ReportXObjectMetaTag -- request custom attributes (set by user)
-
-  perhaps will be replaced by a new design: Report = {comma separated keys}. for example:
-  Report = RetCode, Etag, UserRetCode, ContentType, XObjectMetaTag
-
-ZeroVM control
-  Version -- manifest version. ZeroVM only can parse known version
-  Log -- ZeroVM log file name (will be removed soon)
-  Report -- report file name (will be removed soon)
-  Nexe -- nexe file name
-  NexeMax -- maximum allowed nexe size in bytes
-  NexeEtag -- reserved for "fast validation"
-  Timeout -- total ZeroVM run time 
-  MemMax -- total available memory size for nexe
-  CPUMax -- cpu time allotted to nexe execution
-  SyscallsMax -- number of syscall invocation allowed to nexe
+List of valid keywords:
+Channel
+  (7 comma separated values)
+  Description of a channel. The order does matter. example:
+  Channel = /home/dazo/git/zerovm/samples/sort/sort.stdout.log, /dev/stdout, 5, 0, 0, 99999999, 99999999
+  where: 
+    [1] trusted channel name (n/a for the user), 
+    [2] untrusted channel name, 
+    [3] access type, 
+    [4] gets limit, 
+    [5] get size limits, 
+    [6] puts limit, 
+    [7] put size limits
+Environment
+  (comma separated values)
+  expects comma separated pairs: key, value. example:
+  Environment = TimeStamp, 1337012520, ContentType, utf-8
+Version
+  (single value)
+  currently ZeroVM is not backward compatible with the older manifest versions.
+  working version is 09082012
+Nexe
+  (single value)
+  NaCl module name to isolate and run
+NexeMax
+  (single value)
+  The size limit for the nexe 
+NexeEtag
+  (single value)
+  reserved
+Timeout
+  (single value)
+  time out in seconds. ZeroVM will stop user program and exit after the specified period
+MemMax
+  (single value)
+  Specifies the memory size in bytes available for the user program. If specified
+  ZeroVM will allocate all memory before nexe start and will not use real memory
+  allocation syscalls due nexe runtime. MemMax should take in account that 16mb should be
+  reserved for the user stack, 1mb+ - for nexe code and data, and some memory for system area
+SyscallsMax
+  (single value)
+  maximum allowed syscalls number (both NaCl and trap)
+CommandLine
+  (space separated values)
+  command line arguments for nexe
+NodeName
+  (2 comma separated values)
+  Specifies the node name (available for the untrusted code) and node id (not available 
+  for the untrusted code). The node id should be 32-bit unsigned integer. example:
+  loner, 1
   
 
-Both keywords and values have size limit of 64kb, so far.
+Both keywords and values have size limit of 64kb. The manifest file size limited
+to 0x100000. The limitations can be changed in the future.
+ 

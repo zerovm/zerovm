@@ -22,7 +22,7 @@ EXTERN_C_BEGIN
     " (testing flags)\n"\
     " -s skip validation\n"\
     " -F fuzz testing; quit after loading NaCl app\n"\
-    " -S disable signal handling.\n"\
+    " -S disable signal handling\n"\
     " -Q disable platform qualification (dangerous!)\n"
 
 /* todo(d'b): order and move it to zerovm setup or gather all zvm settings here {{ */
