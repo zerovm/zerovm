@@ -175,7 +175,7 @@ obj/nacl_xgetbv.o: src/service_runtime/nacl_xgetbv.S
 	@gcc ${CCFLAGS} -o obj/nacl_xgetbv.o ${CCFLAGS0} ${CCFLAGS2} src/service_runtime/nacl_xgetbv.S
 
 obj/sel_main.o: src/service_runtime/sel_main.c
-	@gcc ${CCFLAGS} -o obj/sel_main.o ${CCFLAGS0} ${CCFLAGS1} ${CCFLAGS5} src/service_runtime/sel_main.c
+	@gcc ${CCFLAGS} -o obj/sel_main.o ${CCFLAGS0} ${CCFLAGS1} ${CCFLAGS5} `pkg-config --cflags glib-2.0` src/service_runtime/sel_main.c
 
 obj/dyn_array.o: src/service_runtime/dyn_array.c
 	@gcc ${CCFLAGS} -o obj/dyn_array.o ${CCFLAGS0} ${CCFLAGS1} src/service_runtime/dyn_array.c

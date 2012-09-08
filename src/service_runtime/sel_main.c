@@ -9,6 +9,7 @@
  */
 
 #include <assert.h>
+#include <glib.h>
 #include "src/gio/gio.h"
 #include "src/fault_injection/fault_injection.h"
 #include "src/perf_counter/nacl_perf_counter.h"
@@ -125,40 +126,37 @@ static void SetZVMState(struct NaClApp *nap, const char *msg)
   nap->zvm_state[SIGNAL_STRLEN] = '\0';
 }
 
-enum ValidationState {
-  NotValidated,
-  ValidationOK,
-  ValidationFailed
-};
-
 /*
  * set validation state according to zvm command line options
  * note: updates nap->validation_state
  */
 static void ValidateNexe(struct NaClApp *nap)
 {
-  int result;
-  char cmd[BIG_ENOUGH_SPACE + 1];
+  char *args[3] = {VALIDATOR_NAME, NULL, NULL};
+  GError *error = NULL;
+  int exit_status = 0;
+  enum ValidationState {
+    NotValidated,
+    ValidationOK,
+    ValidationFailed
+  };
+
+  assert(nap != NULL);
+  assert(nap->system_manifest != NULL);
 
   /* skip validation? */
   nap->validation_state = NotValidated;
   if(nap->skip_validator != 0) return;
 
-  /* prepare command line */
-  snprintf(cmd, BIG_ENOUGH_SPACE, VALIDATION_FMT, nap->system_manifest->nexe);
-  cmd[BIG_ENOUGH_SPACE] = '\0';
+  /* prepare command line and run it */
+  args[1] = nap->system_manifest->nexe;
+  COND_ABORT(g_spawn_sync(NULL, args, NULL, G_SPAWN_SEARCH_PATH |
+      G_SPAWN_STDOUT_TO_DEV_NULL | G_SPAWN_STDERR_TO_DEV_NULL, NULL, NULL,
+      NULL, NULL, &exit_status, &error) == 0, "cannot start validator");
 
-  /* invoke command and check the result */
-  result = system(cmd);
-  if(result != 0)
-  {
-    SetZVMState(nap, "could not find nacl validator");
-    COND_ABORT(1, nap->zvm_state);
-  }
-
-  /* check validation state */
-  nap->validation_state = WEXITSTATUS(result) == 0 ? ValidationOK : ValidationFailed;
-  COND_ABORT(nap->validation_state == ValidationFailed, "validation failed");
+  /* check the result */
+  nap->validation_state = exit_status == 0 ? ValidationOK : ValidationFailed;
+  COND_ABORT(nap->validation_state != ValidationOK, "validation failed");
 }
 
 /* create/overwrite file and put integer in it */

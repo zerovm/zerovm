@@ -35,6 +35,7 @@ EXTERN_C_BEGIN
 #define ZEROVM_IO_LIMIT 0x100000000 /* todo(d'b): remove it */
 #define NEW_ROOT "/"
 #define VALIDATION_FMT "ncval --fatal %s>/dev/null"
+#define VALIDATOR_NAME "ncval"
 
 /* extended accounting */
 #define CGROUPS_FOLDER "/cgroups/zerovm"
