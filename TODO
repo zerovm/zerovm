@@ -175,34 +175,45 @@ problems to solve in the future versions:
   
 global plan
 -------------------------------------------------------------
-1. remove validator and clean up all project removing needless parts
-   - remove imc
-   - remove (almost all) desc
++1. remove validator and clean up all project removing needless parts
+   -+ remove imc
+   + remove (almost all) desc
    - remove reference counter?
    - remove log
-   - remove fault injection
-   - remove gio (or replace with very tiny version)
+   -+ remove gio (or replace with very tiny version)
    - remove platform
    - remove platform_qualify
 +2. add name service for the network channels
-3. redesign src structure
-   - utils (scrapyard)
-   - manifest (parser)
-   - setup (main and stuff)
-   - loader (elf loader and stuff)
-   - channels (all about channels)
-   - tests (functional, security and unit tests). all "/samples/*" goes there
+15. get rid of the needless platform describing folders: linux, x86, posix e.t.c.
+16. some headers can be joined or even eliminated. same for particular .c files
+17. include/ from zvm root should be distributed between src/ folder
+3. redesign project structure
+   api/
+   doc
+   src/
+     - channels (all about channels)
+     - loader (elf loader, user space, trampoline e.t.c.)
+     - main (main, gio and scrapyard)
+     - manifest (parser, setup, zvm config)
+     - security (signals, platform qualifier, fault injection e.t.c.)
+     - syscalls (nacl syscalls, trap, memory manager)
+     - tests (functional, unit, security tests and samples)
+   thirdparty/
 4. cover all source code with tests: unit, functional and security tests
 5. rewrite project makefile. make it small, clean and clear
+   add building options: debug, release (default), tests
 6. add random read random write channels
-7. add logging for all code
+7. redesign logging, remove nacl log code
 8. allocate all zerovm memory in start of zerovm and remove "NULL checks"
 9. zerovm error codes and states
-10. move all settings (defines, constants e.t.c.) to separate header
-11. reorganize and update the project documentation (and the source code comments)
+10. zerovm setup: move all settings (defines, constants e.t.c.) to separate header
++- 11. reorganize and update the project documentation (and the source code comments)
 12. add "snapshot" engine: memory dump and registers dump (using nacl nanosleep syscall)
 13. write "blob" (the untrusted code loading before nexe start) 
-    and "hot validation" (on-demand loader of untrusted code) engine
-14. the ultimate project source code refactoring
+14. revive etag: md5 of user space. make an extended version with the output channels data
+18. check the memory availability when untrusted code provides area to read/write
+    it will allow get rid of signal SIGSEGV
+997. write as much zerovm api examples as possible
+998. the ultimate project source code refactoring
 999. replace all third party code (so far it is zeromq) to prevent leaks, security holes and misbehaviour
 
