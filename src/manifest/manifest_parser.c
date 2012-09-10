@@ -182,10 +182,6 @@ int ManifestCtor(const char *name)
   int retcode;
   FILE *mft = fopen(name, "r");
 
-//  /* check if manifest keywords are syncronized */
-//  char *keywords[] = MANIFEST_KEYWORDS;
-//  assert(strcmp(keywords[TheEnd], "TheEnd") == 0);
-
   /* get file size and check it for sanity */
   FailIf(mft == NULL, "cannot open manifest file");
   mft_size = GetFileSize(name);

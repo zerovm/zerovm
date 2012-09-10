@@ -353,9 +353,6 @@ static const uintptr_t kNaClBadAddress = (uintptr_t) -1;
 struct NaClDesc *NaClGetDesc(struct NaClApp *nap,
                              int            d);
 
-int32_t NaClSetAvail(struct NaClApp   *nap,
-                     struct NaClDesc  *ndp);
-
 /*
  * Versions that are called while already holding the desc_mu lock
  */

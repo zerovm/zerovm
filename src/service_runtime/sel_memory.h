@@ -29,9 +29,6 @@ extern "C" {
 int   NaCl_find_prereserved_sandbox_memory(void   **p,
                                            size_t num_bytes);
 
-int   NaCl_page_alloc(void    **p,
-                      size_t  num_bytes) NACL_WUR;
-
 int   NaCl_page_alloc_randomized(void   **p,
                                  size_t num_bytes) NACL_WUR;
 

@@ -41,8 +41,6 @@ int NaClDescIoInternalize(struct NaClDesc          **baseptr,
 int NaClDescIoDescCtor(struct NaClDescIoDesc  *self,
                        struct NaClHostDesc    *hd) NACL_WUR;
 
-struct NaClDescIoDesc *NaClDescIoDescMake(struct NaClHostDesc *nhdp);
-
 uintptr_t NaClDescIoDescMapAnon(struct NaClDescEffector *effp,
                                 void                    *start_addr,
                                 size_t                  len,

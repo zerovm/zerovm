@@ -192,11 +192,11 @@ global plan
    doc
    src/
      - channels (all about channels)
-     - loader (elf loader, user space, trampoline e.t.c.)
+     - loader (elf loader, user space, e.t.c.)
      - main (main, gio and scrapyard)
      - manifest (parser, setup, zvm config)
      - security (signals, platform qualifier, fault injection e.t.c.)
-     - syscalls (nacl syscalls, trap, memory manager)
+     - syscalls (nacl syscalls, trap, memory manager, trampoline)
      - tests (functional, unit, security tests and samples)
    thirdparty/
 4. cover all source code with tests: unit, functional and security tests

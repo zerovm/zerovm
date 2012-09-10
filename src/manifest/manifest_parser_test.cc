@@ -1,7 +1,6 @@
 /*
  * manifest_parser_test.c
  * functions to test: ManifestCtor(), ManifestDtor(), GetValuByKey(),
- * the test create temporary file: "manifest_1.txt"
  *
  *  Created on: Nov 12, 2011
  *      Author: d'b
@@ -46,13 +45,6 @@ TEST(ManifestTests, ManifestParserTest)
   EXPECT_STREQ("value02", GetValueByKey((char*)"key02"));
   EXPECT_STREQ("value03", GetValueByKey((char*)"key03"));
   EXPECT_STREQ("value06", GetValueByKey((char*)"key06"));
-
-  // check invalid keys
-  // ### put the death test here
-//  EXPECT_STREQ(NULL, GetValueByKey(NULL));
-//  EXPECT_STREQ(NULL, GetValueByKey((char*)""));
-//  EXPECT_STREQ(NULL, GetValueByKey((char*)"key"));
-//  EXPECT_STREQ(NULL, GetValueByKey((char*)" "));
 
   // free resources
   ManifestDtor();

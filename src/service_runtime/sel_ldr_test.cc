@@ -58,7 +58,7 @@ void SelLdrTest::TearDown() {
 TEST_F(SelLdrTest, DescTable) {
   struct NaClApp app;
   struct NaClHostDesc *host_desc;
-  struct NaClDesc* io_desc;
+//  struct NaClDesc* io_desc;
   struct NaClDesc* ret_desc;
   int ret_code;
 
@@ -71,25 +71,25 @@ TEST_F(SelLdrTest, DescTable) {
   }
   ASSERT_TRUE(NULL != host_desc);
 
-  io_desc = (struct NaClDesc *) NaClDescIoDescMake(host_desc);
+//  io_desc = (struct NaClDesc *) NaClDescIoDescMake(host_desc);
 
   // 1st pos available is 0
-  ret_code = NaClSetAvail(&app, io_desc);
-  ASSERT_EQ(0, ret_code);
+//  ret_code = NaClSetAvailMu(&app, io_desc);
+//  ASSERT_EQ(0, ret_code);
   // valid desc at pos 0
   ret_desc = NaClGetDesc(&app, 0);
   ASSERT_TRUE(NULL != ret_desc);
 
   // next pos available is 1
-  ret_code = NaClSetAvail(&app, NULL);
+  ret_code = NaClSetAvailMu(&app, NULL);
   ASSERT_EQ(1, ret_code);
   // no desc at pos 1
   ret_desc = NaClGetDesc(&app, 1);
   ASSERT_TRUE(NULL == ret_desc);
 
   // no desc at pos 1 -> pos 1 is available
-  ret_code = NaClSetAvail(&app, io_desc);
-  ASSERT_EQ(1, ret_code);
+//  ret_code = NaClSetAvailMu(&app, io_desc);
+//  ASSERT_EQ(1, ret_code);
 
   // valid desc at pos 1
   ret_desc = NaClGetDesc(&app, 1);
