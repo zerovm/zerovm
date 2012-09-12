@@ -40,7 +40,7 @@ struct UserManifest *zvm_init()
   result->heap_ptr = zvm_heap_ptr();
   result->mem_size = zvm_mem_size();
 
-  /* get channels count */
+  /* get channels information */
   result->channels_count = zvm_channels(NULL);
   result->channels = calloc(result->channels_count, sizeof(*result->channels));
   zvm_channels(result->channels);

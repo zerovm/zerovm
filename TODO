@@ -98,8 +98,9 @@ OTHER
 
 in the next version:
 -------------------------------------------------------------
-- update validator
-- extract validator from the zervm code. zerovm will use standalone validator
+- choose a proper switcher when switch to untrusted 1st time
++ update validator
++ extract validator from the zervm code. zerovm will use standalone validator
 + remove dfa validator support. disabled to better times
 - add cpu features detection to sort (or even better - to zrt)
 - update /readme (use "force" to make the user download nacl sdk zerovm currently uses) 
@@ -113,9 +114,6 @@ in the next version:
   trap.* files
 - put all invocations of manifest initializations to nacl init modules
   - or remove the init modules and do it from main()
-- make defines (or something else) to hold manifest keywords and use it
-  instead of "magic" strings. defines should be put into "manifest_keywords.h"
-  - xmacro looks like a better solution
 - move all error messages and codes to nacl_error_code.* (especially from sel_main.c and manifest/)
   note: except fatal errors
   WARNING: get familiar with UMA first. perhaps it is not so good to update its error codes
@@ -125,7 +123,7 @@ in the next version:
 - gather and classify all internal error codes to one enumeration
   perhaps it would be a good idea to include "src/service_runtime/include/sys/errno.h"
   (and other headers with error/return codes)
--+ make timeout engine instead of useless ResumeCpuClock() and PauseCpuClock()
++ make timeout engine instead of useless ResumeCpuClock() and PauseCpuClock()
 	update: ResumeCpuClock() and PauseCpuClock() removed
 ? i need to decide what nacl syscalls will be counted against max_syscall:
   1. all
@@ -217,6 +215,7 @@ global plan
 14. revive etag: md5 of user space. make an extended version with the output channels data
 18. check the memory availability when untrusted code provides area to read/write
     it will allow get rid of signal SIGSEGV
+19. add channel size? now it is coupled with pustsize (getsize) limit
 997. write as much zerovm api examples as possible
 998. the ultimate project source code refactoring
 999. replace all third party code (so far it is zeromq) to prevent leaks, security holes and misbehaviour

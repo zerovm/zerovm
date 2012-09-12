@@ -352,7 +352,7 @@ static int32_t ZVMChannels(struct NaClApp *nap, struct ZVMChannel *buf)
       uchannels[ch].limits[i] = channels[ch].limits[i];
 
     /* channel size/position */
-    switch(channels->type)
+    switch(uchannels[ch].type)
     {
       case SGetSPut:
         /* size/position is not defined */
