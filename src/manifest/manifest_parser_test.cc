@@ -61,21 +61,19 @@ TEST(ManifestTests, ManifestParserTest)
   EXPECT_STREQ("value3,  value4", tokens[1]);
 
   // check the multivalues case
-  tokens[0] = (char*)"value1, value2, value3,value4\n";
-  SHOWID;
-  code = ParseValue((char*)tokens[0], ",", tokens + 1, 5);
-  SHOWID;
-  EXPECT_STREQ(tokens[1], "value1");
-  EXPECT_STREQ(tokens[2], "value2");
-  EXPECT_STREQ(tokens[3], "value3");
-  EXPECT_STREQ(tokens[4], "value4");
+  char str1[] = "value1, value2, value3,value4\n";
+  code = ParseValue(str1, " ,\r\n", tokens, 4);
+  EXPECT_STREQ(tokens[0], "value1");
+  EXPECT_STREQ(tokens[1], "value2");
+  EXPECT_STREQ(tokens[2], "value3");
+  EXPECT_STREQ(tokens[3], "value4");
 
-  tokens[0] = (char*)"value1 value2   value3\tvalue4\n";
-  ParseValue((char*)tokens[0], " \t", tokens + 1, 4);
-  EXPECT_STREQ(tokens[1], "value1");
-  EXPECT_STREQ(tokens[2], "value2");
-  EXPECT_STREQ(tokens[3], "value3");
-  EXPECT_STREQ(tokens[4], "value4");
+  char str2[] = "value1 value2   value3\tvalue4";
+  code = ParseValue(str2, " \t", tokens, 4);
+  EXPECT_STREQ(tokens[0], "value1");
+  EXPECT_STREQ(tokens[1], "value2");
+  EXPECT_STREQ(tokens[2], "value3");
+  EXPECT_STREQ(tokens[3], "value4");
 
   // test manifest destructor
   // todo(d'b): put the death test here
