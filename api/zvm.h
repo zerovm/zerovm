@@ -9,7 +9,12 @@
 #define API_ZVM_MANIFEST_H__ 1
 
 #include <stdint.h>
-#include "zvm_errors.h"
+
+enum ZVM_CODES
+{
+  ERR_CODE = -1, /* general error */
+  OK_CODE = 0 /* must be zero */
+};
 
 /*
  * can be returned by zvm_read for the pure sequential
