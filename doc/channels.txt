@@ -53,4 +53,3 @@ notation: "tcp:123.1.2.3:123". Such name doesn't need to be resolved and can be 
 by ZeroVM "as is".
 
 For now the channels number specified in the manifest limited to 6048
- 
