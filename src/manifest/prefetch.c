@@ -414,8 +414,15 @@ static void NSRecordSerializer(gpointer key, gpointer value, gpointer buffer)
   if(record->mark == OUTSIDER_MARK) return;
 
   /* detect the channel type (bind or connect) and update the counter */
+//  p = (void*)(record->mark == BIND_MARK ?
+//      (char*)buffer + --binds : (char*)connects_index + --connects);
+
+  // ### bugfix. #1 {{
+//  sizeof(struct ChannelNSRecord)
   p = (void*)(record->mark == BIND_MARK ?
-      (char*)buffer + --binds : (char*)connects_index + --connects);
+      (char*)buffer + --binds * sizeof(struct ChannelNSRecord) :
+      (char*)connects_index + --connects * sizeof(struct ChannelNSRecord));
+  // }}
 
   /* store channel information into the buffer */
   p->id = bswap_32(record->host);
