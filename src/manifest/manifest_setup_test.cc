@@ -110,7 +110,7 @@ TEST(ManifestSetupTest, FullCase)
   int code = 1;
   memset(nap, 0, sizeof(*nap));
   code &= DynArrayCtor(&nap->desc_tbl, 2);
-  code &= DynArrayCtor(&nap->threads, 2);
+//  code &= DynArrayCtor(&nap->threads, 2);
   code &= NaClVmmapCtor(&nap->mem_map);
   // todo(d'b): prepare memory: load nexe, allocate stack e.t.c
   if(code == 0) exit(1);

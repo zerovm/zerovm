@@ -24,6 +24,9 @@ int main(int argc, char **argv)
   int i;
   int code;
   
+  /* sleep to let zmq set the connection up */
+  sleep(1);
+  
   in = fopen(INFILE, "r");
   out = fopen(OUTFILE, "w");
 

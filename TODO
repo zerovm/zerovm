@@ -1,27 +1,24 @@
 in the current version:
 -------------------------------------------------------------
-CHANNELS KINDS
-==============
-sequential read-only
-random read-only
-sequential write-only
-random write-only
-cdr: random read, sequential write
-
 ZMQ PROBLEMS
 ============
+- fix the bug with the lost messages
+  zerovm hangs up with messages:
+  - channel has lost messages
+  - channel wasn't closed
 - how to block on zmq_send()?
   - there is a possibility to use freeing function as callback and longjmp. (awfull)
   - use rep/req instead of push/pull
 + how not to block on zmq_term()? if there were non blocking zmq_sends
-  + manually close all channels (waiting when all messages are sent)
+  + manually close all channels (waiting when all messages are sent)  
 
 CHANNELS DESIGN
 ===============
-- when the local file opened for write from more then 1 zerovm
++ when the local file opened for write from more then 1 zerovm
   file will have a mess in data
-  - solution mention it in the documentation and proxy must not allow to pass
+  + solution mention it in the documentation and proxy must not allow to pass
   to manifests such collisions
+  (see synchronized channels). just in case, check the document if i wrote everything right
 
 + fix issue with send zero-copy buffer reuse. if is not possible to block on send
   remove zero-copy to prevent overwriting the data from the buffer before its real
@@ -75,6 +72,13 @@ MANIFEST
 OTHER
 =====
 - fix broken tests
+  +- manifest parser: passes. needs update
+  - manifest setup: compiles. doesn't pass
+  - sel_ldr: compiles. doesn't pass, needs minor fixes
+
+- add new unit tests
+  - channels: mount channels, preload, prefetch, nameservice (how to test network channels?)
+  - trap
 
 + add extended signals handling to zerovm. zerovm must survive any nexe error.
 	+ care about zerovm report

@@ -23,19 +23,19 @@ int ManifestCtor(const char *name);
 void ManifestDtor();
 
 /* get value by key from the manifest. NULL if not found */
-char* GetValueByKey(char *key);
+char* GetValueByKey(const char *key);
 
 /*
  * return number of found values from manifest by given key
  * the values pointers will be stored into provided array
  */
-int GetValuesByKey(char *key, char *values[], int capacity);
+int GetValuesByKey(const char *key, char *values[], int capacity);
 
 /*
  * parse given string with the given delimiter
  * return number of the tokens, populate given array with them
  */
-int ParseValue(char *value, char *delimiter, char *tokens[], int capacity);
+int ParseValue(char *value, const char *delimiter, char *tokens[], int capacity);
 
 /*
  * get integer value by key from the manifest. 0 if not found

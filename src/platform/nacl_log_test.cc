@@ -16,7 +16,7 @@
 #include <limits.h>
 
 #include "gtest/gtest.h"
-#include "src/utils/tools.h"
+#include "src/service_runtime/tools.h"
 #include "include/nacl_macros.h"
 #include "include/nacl_platform.h"
 #include "src/platform/nacl_log.h"

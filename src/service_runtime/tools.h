@@ -28,8 +28,10 @@
 
 #undef MIN /* prevent conflict with glib.h*/
 #undef MAX /* prevent conflict with glib.h*/
+#undef SHOWID
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
+#define SHOWID printf("%s: %d, %s\n", __FILE__, __LINE__, __func__)
 
 /*
  * check condition 'cond' if false aborts zerovm with message 'msg'

@@ -9,14 +9,16 @@
 #include <stdlib.h>
 #include "gtest/gtest.h"
 #include "src/manifest/manifest_parser.h"
+#include "src/service_runtime/tools.h"
 
+#define BIG_ENOUGH 0x10000
 #define MANIFEST_FILE "killme.manifest.txt"
 #define MANIFEST_DATA \
       "-=-=-=-=-=-=-=-=-=-=-=- just a test -=-=-=-=-=-=-=-=-=-=-=-\n"\
       "== this is manifest example\n\n"\
       "key01 = value01\n"\
       "  key02  =  value02\n"\
-      "key03=value03 \n"\
+      "key03=value03 \r"\
       "       key 014=value 014\n"\
       "key05 =value05\n"\
       "      key06= value06\n"\
@@ -24,7 +26,11 @@
       "  = value_a\n"\
       "  =\r"\
       "key value_b\n"\
-      "\t \t key07\t\t\t\t= \t\t\tvalue07   \n"
+      "\t \t key07\t\t\t\t= \t\t\tvalue07   \n"\
+      "key_with_multivalues1 = value1, value2, value3,value4\n"\
+      "key_with_multivalues2 = value1 value2   value3\tvalue4\n"\
+      "multikey = value1, value2\n"\
+      "multikey = value3,  value4 \n"
 
 // test whole manifest processing and get value by key
 TEST(ManifestTests, ManifestParserTest)
@@ -46,12 +52,35 @@ TEST(ManifestTests, ManifestParserTest)
   EXPECT_STREQ("value03", GetValueByKey((char*)"key03"));
   EXPECT_STREQ("value06", GetValueByKey((char*)"key06"));
 
-  // free resources
+  // check the multikey case
+  char buf[BIG_ENOUGH], **tokens = (char**)buf;
+  int code = 0;
+  code = GetValuesByKey("multikey", tokens, BIG_ENOUGH);
+  EXPECT_EQ(2, code);
+  EXPECT_STREQ("value1, value2", tokens[0]);
+  EXPECT_STREQ("value3,  value4", tokens[1]);
+
+  // check the multivalues case
+  tokens[0] = (char*)"value1, value2, value3,value4\n";
+  SHOWID;
+  code = ParseValue((char*)tokens[0], ",", tokens + 1, 5);
+  SHOWID;
+  EXPECT_STREQ(tokens[1], "value1");
+  EXPECT_STREQ(tokens[2], "value2");
+  EXPECT_STREQ(tokens[3], "value3");
+  EXPECT_STREQ(tokens[4], "value4");
+
+  tokens[0] = (char*)"value1 value2   value3\tvalue4\n";
+  ParseValue((char*)tokens[0], " \t", tokens + 1, 4);
+  EXPECT_STREQ(tokens[1], "value1");
+  EXPECT_STREQ(tokens[2], "value2");
+  EXPECT_STREQ(tokens[3], "value3");
+  EXPECT_STREQ(tokens[4], "value4");
+
+  // test manifest destructor
+  // todo(d'b): put the death test here
   ManifestDtor();
   remove(MANIFEST_FILE);
-
-  // check if manifest constructed no more
-  // ### put the death test here
 //  EXPECT_STREQ(NULL, GetValueByKey((char*)"key 014"));
 }
 

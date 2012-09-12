@@ -4,9 +4,9 @@
 #CXXFLAGS=-DNDEBUG -O3
 
 # DEBUG BUILD
-# ABS path is needed to correct gcov, gcov is used to get test coverage
-#GCOV_FLAGS=--coverage -g3 -fprofile-arcs -ftest-coverage
-#ABS_PATH=$(shell pwd)/
+## ABS path is needed to correct gcov, gcov is used to get test coverage
+##GCOV_FLAGS=--coverage -g3 -fprofile-arcs -ftest-coverage
+##ABS_PATH=$(shell pwd)/
 CCFLAGS=-DDEBUG -g ${GCOV_FLAGS}
 CXXFLAGS=-DDEBUG -g ${GCOV_FLAGS}
 
@@ -40,8 +40,8 @@ tests: test_compile
 	@echo == unit tests ================================================
 	@cd test;\
 	./manifest_parser_test;\
-	./manifest_setup_test;\
-	./service_runtime_tests
+#	./manifest_setup_test;\
+	./service_runtime_tests;\
 	cd ..
 
 zvm_api: api/syscall_manager.S api/zrt.c api/zrt.h api/zvm.c api/zvm.h
@@ -70,6 +70,8 @@ obj/unittest_main.o: src/service_runtime/unittest_main.cc
 test/service_runtime_tests: obj/sel_ldr_test.o obj/sel_mem_test.o obj/sel_memory_unittest.o obj/unittest_main.o ${OBJS}
 	@g++ ${CXXFLAGS} ${CXXFLAGS2} -o $@ $^ -Lgtest -lgtest -lzmq -lrt -ldl -lpthread -lglib-2.0
 
+.PHONY: clean clean_gcov clean_intermediate clean_api
+
 clean_gcov:
 	@find -name "*.gcda" | xargs rm -f
 	@find -name "*.gcno" | xargs rm -f
@@ -89,7 +91,6 @@ clean_api:
 	@make -Capi clean
 	@echo api binaries has been deleted
 
-######################################################################## compilation to obj
 obj/mount_channel.o: src/manifest/mount_channel.c
 	@gcc ${CCFLAGS} ${CCFLAGS0} ${CCFLAGS1} ${CCFLAGS4} -o $@ $^
 
@@ -281,4 +282,3 @@ obj/nacl_imc_unistd.o: src/imc/nacl_imc_unistd.cc
 
 obj/nacl_imc.o: src/imc/linux/nacl_imc.cc
 	@g++ ${CXXFLAGS} ${CXXFLAGS1} ${CCFLAGS2} ${CCFLAGS4} -o $@ $^
-

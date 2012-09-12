@@ -37,9 +37,9 @@ int NaClAppWithSyscallTableCtor(struct NaClApp               *nap,
   nap->initial_entry_pt = 0;
   nap->user_entry_pt = 0;
 
-  if (!DynArrayCtor(&nap->threads, 2)) {
-    goto cleanup_none;
-  }
+//  if (!DynArrayCtor(&nap->threads, 2)) {
+//    goto cleanup_none;
+//  }
   if (!DynArrayCtor(&nap->desc_tbl, 2)) {
     goto cleanup_threads;
   }
@@ -85,8 +85,8 @@ int NaClAppWithSyscallTableCtor(struct NaClApp               *nap,
  cleanup_desc_tbl:
   DynArrayDtor(&nap->desc_tbl);
  cleanup_threads:
-  DynArrayDtor(&nap->threads);
- cleanup_none:
+//  DynArrayDtor(&nap->threads);
+// cleanup_none:
   return 0;
 }
 

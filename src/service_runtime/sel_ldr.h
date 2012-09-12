@@ -36,10 +36,8 @@
 #include "src/service_runtime/sel_mem.h"
 #include "src/service_runtime/sel_util.h"
 #include "src/service_runtime/sel_rt.h"
-#include "src/utils/tools.h"
-
+#include "src/service_runtime/tools.h"
 #include "src/service_runtime/nacl_cpuid.h" /* d'b: taken from validator */
-//#include "src/validator/cpufeatures.h"
 
 EXTERN_C_BEGIN
 
@@ -204,9 +202,7 @@ struct NaClApp {
    * the thread locks, i.e., threads_mu must be acqured w/o holding
    * any per-thread lock (natp->mu).
    */
-  struct DynArray           threads;   /* NaClAppThread pointers */ // #12 to remove
-
-  struct DynArray           desc_tbl;  /* NaClDesc pointers */
+  struct DynArray           desc_tbl;  /* NaClDesc pointers */ // ### to remove
 
   /* d'b: added fields {{ */
   struct SystemManifest     *system_manifest;

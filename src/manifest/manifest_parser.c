@@ -27,7 +27,7 @@ static struct
 } *mft_ptr; /* array of pointers to keys/values */
 
 /* return value from manifest by given key */
-char* GetValueByKey(char *key)
+char* GetValueByKey(const char *key)
 {
   int i;
 
@@ -48,7 +48,7 @@ char* GetValueByKey(char *key)
  * return number of found values from manifest by given key
  * the values pointers will be stored into provided array
  */
-int GetValuesByKey(char *key, char *values[], int capacity)
+int GetValuesByKey(const char *key, char *values[], int capacity)
 {
   int count = 0;
   int i;
@@ -73,7 +73,7 @@ int GetValuesByKey(char *key, char *values[], int capacity)
  * returns number of the non NULL tokens, populates given array with ALL tokens
  * note: function is not re-enterable; value will be overwritten
  */
-int ParseValue(char *value, char *delimiter, char *tokens[], int capacity)
+int ParseValue(char *value, const char *delimiter, char *tokens[], int capacity)
 {
   int count;
   int i;
