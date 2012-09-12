@@ -117,6 +117,8 @@ int32_t ZVMReadHandle(struct NaClApp *nap,
   /* check limits */
   if(channel->counters[GetsLimit] >= channel->limits[GetsLimit])
     return -EDQUOT;
+  if(offset >= channel->limits[GetSizeLimit])
+    return -EINVAL;
 
   /* calculate i/o leftovers */
   tail = channel->limits[GetSizeLimit] - channel->counters[GetSizeLimit];
@@ -218,6 +220,8 @@ int32_t ZVMWriteHandle(struct NaClApp *nap,
   /* check limits */
   if(channel->counters[PutsLimit] >= channel->limits[PutsLimit])
     return -EDQUOT;
+  if(offset >= channel->limits[PutSizeLimit])
+    return -EINVAL;
   tail = channel->limits[PutSizeLimit] - channel->counters[PutSizeLimit];
   if(size > tail) size = tail;
   if(size < 1) return -EDQUOT;
