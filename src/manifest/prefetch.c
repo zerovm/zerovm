@@ -414,15 +414,9 @@ static void NSRecordSerializer(gpointer key, gpointer value, gpointer buffer)
   if(record->mark == OUTSIDER_MARK) return;
 
   /* detect the channel type (bind or connect) and update the counter */
-//  p = (void*)(record->mark == BIND_MARK ?
-//      (char*)buffer + --binds : (char*)connects_index + --connects);
-
-  // ### bugfix. #1 {{
-//  sizeof(struct ChannelNSRecord)
   p = (void*)(record->mark == BIND_MARK ?
       (char*)buffer + --binds * sizeof(struct ChannelNSRecord) :
       (char*)connects_index + --connects * sizeof(struct ChannelNSRecord));
-  // }}
 
   /* store channel information into the buffer */
   p->id = bswap_32(record->host);
@@ -602,6 +596,13 @@ void KickPrefetchChannels(struct NaClApp *nap)
     result = DoConnect(channel);
     COND_ABORT(result != 0, "cannot connect socket to address");
   }
+
+  /*
+   * temporary fix to allow 0mq to complete the connection procedure
+   * notice: 1 millisecond should be enough
+   * todo(d'b): replace it with the channels readiness check
+   */
+  usleep(PREPOLL_WAIT);
 }
 
 /*
@@ -834,10 +835,24 @@ int PrefetchChannelDtor(struct ChannelDesc* channel)
   {
     int linger = 0; /* to drop the rest of the ingoing data */
 
-   /* try to read EOF and detect unread messages */
+    /*
+     * try to read EOF and detect unread messages. if channel is not closed
+     * procedure will wait until message will arrive. which means that if
+     * the channel holder (other zerovm) died or unconscious the bellow loop
+     * becomes infinite
+     * todo(d'b): find more neat solution or give up 0mq
+     */
     if(zmq_recv(channel->socket, channel->msg, ZMQ_NOBLOCK) != 0)
+    {
+      int i;
+
       NaClLog(LOG_ERROR, "channel %s wasn't closed", channel->alias);
-    else if(zmq_msg_size(channel->msg) != 0)
+      for(i = 0; zmq_recv(channel->socket, channel->msg, ZMQ_NOBLOCK) != 0; ++i)
+        usleep(POLL_WAIT);
+      NaClLog(LOG_ERROR, "channel %s closed after %d tries", channel->alias, i);
+    }
+
+    if(zmq_msg_size(channel->msg) != 0)
       NaClLog(LOG_ERROR, "channel %s has lost messages", channel->alias);
 
     /* make zeromq deallocate used resources */

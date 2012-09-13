@@ -11,6 +11,8 @@
 #include "src/manifest/mount_channel.h"
 
 #define NET_EOF ZVM_EOF /* mark of the channel end */
+#define POLL_WAIT 100 /* 0.1 milliseconds */
+#define PREPOLL_WAIT 1000 /* 1 millisecond */
 
 /* construct network channel and connect/bind it to specified address */
 int PrefetchChannelCtor(struct ChannelDesc* channel);
