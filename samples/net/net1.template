@@ -1,28 +1,23 @@
 =====================================================================
-== 1st collocutor
-== "network channel" example. the new channels design
-== following channels: stdin, stdout, stderr used
+== 1st collocutor from "network channel" example
 =====================================================================
+Nexe = net.nexe
+CommandLine = 1
+NodeName = companion1, 1
+NameServer = udp:127.0.0.1:54321
+
+== the channels section =============================================
 Channel = CURDIR/debug1, /dev/debug, 0, 0, 0, 999999, 999999
 Channel = /dev/null, /dev/stdin, 0, 99999999, 99999999, 0, 0
 Channel = CURDIR/stdout1.log, /dev/stdout, 0, 0, 0, 99999999, 99999999
 Channel = CURDIR/stderr1.log, /dev/stderr, 0, 0, 0, 99999999, 99999999
-==Channel = tcp:127.0.0.1:55555, in, 0, 99999999, 99999999, 0, 0
-==Channel = tcp:127.0.0.1:55556, out, 0, 0, 0, 99999999, 99999999
-Channel = tcp:2:, /dev/out/out, 0, 0, 0, 99999999, 99999999
+Channel = tcp:3:, /dev/out/out, 0, 0, 0, 99999999, 99999999
 Channel = tcp:2:, /dev/in/in, 0, 99999999, 99999999, 0, 0
-==Channel = trashcan, trashcan, 0, 0, 0, 999999, 999999
 
-=====================================================================
-== switches for zerovm. some of them used to control nexe, some
-== for the internal zerovm needs
-=====================================================================
+== the limits section ===============================================
+NexeMax = 4194304
+SyscallsMax = 8192
+MaxMem = 100663296
+Timeout = 5
 Version = 09082012
-Nexe = net.nexe
-NexeMax = 10000000
-SyscallsMax = 3333
-MaxMem = 99999999
-NodeName = companion1, 1
-NameServer = udp:127.0.0.1:54321
-CommandLine = 1
 

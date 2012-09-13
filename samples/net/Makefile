@@ -10,10 +10,12 @@ all: $(NAME).o
 	$(DEBUG) $(NAME).o $(ZVM_ROOT)/api/libzrt.a
 	@sed 's#CURDIR#$(CURDIR)#g' $(NAME)1.template > $(NAME)1.manifest
 	@sed 's#CURDIR#$(CURDIR)#g' $(NAME)2.template > $(NAME)2.manifest
-	@python $(CURDIR)/ns_server.py 2 54321&
+	@sed 's#CURDIR#$(CURDIR)#g' $(NAME)3.template > $(NAME)3.manifest
+	@python $(CURDIR)/ns_server.py 3 54321&
 	@sleep 1
 	@$(ZVM_ROOT)/zerovm -M$(NAME)1.manifest&
-	@$(ZVM_ROOT)/zerovm -M$(NAME)2.manifest
+	@$(ZVM_ROOT)/zerovm -M$(NAME)2.manifest&
+	@$(ZVM_ROOT)/zerovm -M$(NAME)3.manifest
 
 $(NAME).o:
 	$(NACL_TOOLCHAIN_PATH)/bin/x86_64-nacl-gcc -o $(NAME).o -Wall \
