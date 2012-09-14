@@ -3,18 +3,16 @@ NACLDEFS=-DNACL_LINUX=1 -D_GNU_SOURCE=1 -D_LARGEFILE64_SOURCE=1 -D__STDC_FORMAT_
 FLAGS0=-fPIE -Wall -pedantic -Wno-long-long -fvisibility=hidden -fstack-protector --param ssp-buffer-size=4
 CCFLAGS0=-c -m64 -fPIC $(NACLDEFS) -I.
 CXXFLAGS0=-m64 -Wno-variadic-macros
-TESTFLAGS=-Lgtest -lgtest -lzmq -lrt -ldl -lpthread -lglib-2.0
+TESTFLAGS=-Lgtest -lgtest -lzmq -lrt -ldl -lpthread -lglib-2.0 -lssl -lcrypto
 
 # RELEASE BUILD
 #CCFLAGS=-DNDEBUG -O3 $(CCFLAGS0)
 #CXXFLAGS=-DNDEBUG -O3
 
 # DEBUG BUILD
-## ABS path is needed to correct gcov, gcov is used to get test coverage
-##GCOV_FLAGS=--coverage -g3 -fprofile-arcs -ftest-coverage
-##ABS_PATH=$(shell pwd)/
-CCFLAGS=-DDEBUG -g $(CCFLAGS0) ${GCOV_FLAGS}
-CXXFLAGS=-DDEBUG -g ${GCOV_FLAGS}
+#COVFLAGS=--coverage
+CCFLAGS=-DDEBUG -g $(CCFLAGS0) ${COVFLAGS}
+CXXFLAGS=-DDEBUG -g ${COVFLAGS}
 
 CCFLAGS1=-std=gnu99 -Wdeclaration-after-statement $(FLAGS0) $(CCFLAGS)
 CCFLAGS2=-Wextra -Wswitch-enum -Wsign-compare $(CCFLAGS)
@@ -32,12 +30,12 @@ create_dirs:
 	@mkdir obj test -p
 
 zerovm: obj/sel_main.o $(OBJS)
-	$(CXX) -o $@ ${CXXFLAGS2} $^ -lrt -lglib-2.0 -lzmq
+	$(CXX) -o $@ ${CXXFLAGS2} $^ -lrt -lglib-2.0 -lzmq -lssl -lcrypto
 
 gcov: clean all
-	@lcov --directory . --base-directory=${ABS_PATH} --capture --output-file app.info
+	@lcov --directory . --base-directory=$(ZEROVM_ROOT) --capture --output-file app.info
 	@genhtml --output-directory cov_htmp app.info
-	@echo run ${ABS_PATH}cov_htmp/index.html
+	@echo open $(ZEROVM_ROOT)/cov_htmp/index.html
 
 tests: test_compile
 	@echo == UNIT TESTS ========================================

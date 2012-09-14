@@ -229,7 +229,7 @@ void NaClLog(int         detail_level,
              ...) ATTRIBUTE_FORMAT_PRINTF(2, 3);
 
 /* d'b: log with "LOG_ERROR" if condition is true  */
-void LogIf(int cond, char const *fmt, ...);
+void ErrIf(int cond, char const *fmt, ...);
 
 /* d'b: log with "LOG_FATAL" (aborts zerovm) if condition is true  */
 void FailIf(int cond, char const *fmt, ...);

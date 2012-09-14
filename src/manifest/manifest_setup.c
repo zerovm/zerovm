@@ -8,21 +8,12 @@
 #include <assert.h>
 #include <time.h>
 #include <sys/resource.h> /* timeout, process priority */
+#include <openssl/sha.h>
 #include "src/service_runtime/sel_ldr.h"
 #include "src/service_runtime/nacl_syscall_handlers.h"
 #include "src/manifest/manifest_parser.h"
 #include "src/manifest/manifest_setup.h"
 #include "src/manifest/mount_channel.h"
-
-#if 0 /* disabled until "snapshot" engine will be done */
-/* return md5 hash of mapped _output_ file (or NULL) */
-static char* MakeEtag(struct NaClApp *nap)
-{
-  assert(nap != NULL);
-  assert(nap->system_manifest != NULL);
-  return "disabled";
-}
-#endif
 
 /* lower zerovm priority */
 static void LowerOwnPriority()
@@ -481,6 +472,27 @@ static void GatherStatistics(struct NaClApp *nap, char *buf, int size)
 }
 
 /*
+ * takes the string contaning information about channels hashes
+ * and calculates a new hash value from it
+ * note: updates etag in the system manifest
+ * todo(d'b): add the user memory snapshot hash
+ */
+static char *MakeEtag(struct NaClApp *nap)
+{
+  static char digest[2 * SHA_DIGEST_LENGTH + 1] = {0};
+  unsigned char *p;
+
+  assert(nap->system_manifest->etag != NULL);
+
+  p = nap->system_manifest->etag;
+  sprintf(digest, "%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X"
+      "%02X%02X%02X%02X%02X", p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7], p[8],
+      p[9], p[10], p[11], p[12], p[13], p[14], p[15], p[16], p[17], p[18], p[19]);
+
+  return digest;
+}
+
+/*
  * proxy awaits zerovm report from stdout
  * only signal safe functions should be used (printf is not safe)
  * but looks like snprintf() is safe
@@ -489,22 +501,25 @@ int ProxyReport(struct NaClApp *nap)
 {
   char report[BIG_ENOUGH_SPACE + 1];
   char accounting[BIG_ENOUGH_SPACE + 1];
+  char *etag;
   int length;
   int i;
 
   GatherStatistics(nap, accounting, BIG_ENOUGH_SPACE);
+  etag = MakeEtag(nap);
 
   /* for debugging purposes it is useful to see more advanced information */
 #ifdef DEBUG
   length = snprintf(report, BIG_ENOUGH_SPACE,
       "validator state = %d\nuser return code = %d\nEtag = %s\n"
-      "accounting = %s\nexit state = %s\n", nap->validation_state,
-      nap->system_manifest->user_ret_code, "disabled", accounting, nap->zvm_state);
+      "accounting = %s\nexit state = %s\n",
+      nap->validation_state, nap->system_manifest->user_ret_code,
+      etag, accounting, nap->zvm_state);
 #else
   /* .. but for production zvm will switch to more brief output */
   length = snprintf(report, BIG_ENOUGH_SPACE, "%d\n%d\n%s\n%s\n%s\n",
       nap->validation_state, nap->system_manifest->user_ret_code,
-      "disabled", accounting, nap->zvm_state);
+      etag, accounting, nap->zvm_state);
 #endif
 
   report[length] = '\0';

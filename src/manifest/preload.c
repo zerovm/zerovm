@@ -47,6 +47,8 @@ int PreloadChannelCtor(struct ChannelDesc* channel)
   assert(channel->name != NULL);
 
   /* check the given channel */
+  NaClLog(LOG_INFO, "%s, %d: mounting channel '%s' to '%s'",
+      __func__, __LINE__, channel->name, channel->alias);
   FailOnInvalidFileChannel(channel);
 
   /* set start position */

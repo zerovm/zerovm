@@ -177,6 +177,7 @@ problems to solve in the future versions:
   
 global plan
 -------------------------------------------------------------
+19. read "man 2 flock" and try to make local channel locked
 +1. remove validator and clean up all project removing needless parts
    -+ remove imc
    + remove (almost all) desc
@@ -212,7 +213,7 @@ global plan
 +- 11. reorganize and update the project documentation (and the source code comments)
 12. add "snapshot" engine: memory dump and registers dump (using nacl nanosleep syscall)
 13. write "blob" (the untrusted code loading before nexe start) 
-14. revive etag: md5 of user space. make an extended version with the output channels data
+!14. revive etag: md5 of user space. make an extended version with the output channels data
 18. check the memory availability when untrusted code provides area to read/write
     it will allow get rid of signal SIGSEGV
 19. add channel size? now it is coupled with pustsize (getsize) limit

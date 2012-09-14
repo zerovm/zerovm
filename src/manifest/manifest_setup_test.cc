@@ -31,74 +31,27 @@
 #define INPUT_FILE "full.input.data"
 #define FAKE_DATA "fake data just to extend a file over the zero size"
 #define MANIFEST_DATA \
-  "=====================================================================\n"\
-  "== i/o keywords\n"\
-  "=====================================================================\n"\
-  "Input = full.input.data\n"\
-  "InputMaxGet = 1024000\n"\
-  "InputMaxGetCnt = 1024\n"\
-  "InputMaxPut = 1024000\n"\
-  "InputMaxPutCnt = 1024\n"\
-  "InputMode = 0\n"\
-  "\n"\
-  "Output = full.output.data\n"\
-  "OutputMaxGet = 1024000\n"\
-  "OutputMaxGetCnt = 1024\n"\
-  "OutputMaxPut = 1024000\n"\
-  "OutputMaxPutCnt = 1024\n"\
-  "OutputMode = 1\n"\
-  "\n"\
-  "UserLog = samples/zrt/manifest/full.user.log\n"\
-  "UserLogMaxGet = 0\n"\
-  "UserLogMaxGetCnt = 0\n"\
-  "UserLogMaxPut = 65536\n"\
-  "UserLogMaxPutCnt = 6554\n"\
-  "UserLogMaxMode = 0\n"\
-  "\n"\
-  "NetInput = some_url\n"\
-  "NetInputMaxGet = 1024000\n"\
-  "NetInputMaxGetCnt = 1024\n"\
-  "NetInputMaxPut = 1024000\n"\
-  "NetInputMaxPutCnt = 1024\n"\
-  "NetInputMode = 113\n"\
-  "\n"\
-  "NetOutput = some_another_url\n"\
-  "NetOutputMaxGet = 1024000\n"\
-  "NetOutputMaxGetCnt = 1024\n"\
-  "NetOutputMaxPut = 1024000\n"\
-  "NetOutputMaxPutCnt = 1024\n"\
-  "NetOutputMode = 113\n"\
-  "\n"\
-  "=====================================================================\n"\
-  "== user side keywords\n"\
-  "=====================================================================\n"\
-  "ContentType = type_name\n"\
-  "TimeStamp = 1337012520\n"\
-  "XObjectMetaTag = the tags list will be given to user \"as is\"\n"\
-  "UserETag = reserved\n"\
-  "\n"\
-  "=====================================================================\n"\
-  "== report request keywords\n"\
-  "=====================================================================\n"\
-  "ReportRetCode = bump\n"\
-  "ReportEtag = bump\n"\
-  "ReportUserRetCode = bump\n"\
-  "ReportContentType = bump\n"\
-  "ReportXObjectMetaTag = bump\n"\
-  "\n"\
-  "=====================================================================\n"\
-  "== zerovm control keywords\n"\
-  "=====================================================================\n"\
-  "Version = 11062012\n"\
-  "Log = full.zerovm.log\n"\
-  "Report = samples/zrt/manifest/manifest.report.log\n"\
-  "Nexe = manifest.nexe\n"\
-  "NexeMax = 10000000\n"\
-  "NexeEtag = 123456789\n"\
-  "Timeout = 10\n"\
-  "MemMax = 67108864\n"\
-  "SyscallsMax = 32768\n"\
-  "CommandLine = command line arguments for the user program. will be given as a string array\n"
+    "Nexe = test.nexe"\
+    "NexeEtag = 12345678"\
+    "CommandLine = arg1 arg2 arg3"\
+    "Environment = key1, value1, key2, value2"\
+    "NodeName = test_node, 1"\
+    "NameServer = udp:127.0.0.1:54321"\
+    \
+    "== the channels section ============================================="\
+    "Channel = /folder/debug, /dev/debug, 0, 0, 0, 999999, 999999"\
+    "Channel = /dev/null, /dev/stdin, 0, 99999999, 99999999, 0, 0"\
+    "Channel = /folder/stdout.log, /dev/stdout, 0, 0, 0, 99999999, 99999999"\
+    "Channel = /folder/stderr.log, /dev/stderr, 0, 0, 0, 99999999, 99999999"\
+    "Channel = tcp:2:, /dev/out/out, 0, 0, 0, 99999999, 99999999"\
+    "Channel = tcp:2:, /dev/in/in, 0, 99999999, 99999999, 0, 0"\
+    \
+    "== the limits section ==============================================="\
+    "NexeMax = 4194304"\
+    "SyscallsMax = 8192"\
+    "MaxMem = 100663296"\
+    "Timeout = 5"\
+    "Version = 09082012"
 
 // construct manifest, setup system_manifest and host_manifest
 // todo(d'b): under construction

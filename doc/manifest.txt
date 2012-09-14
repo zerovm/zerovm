@@ -7,6 +7,18 @@ Description:
 The manifest is a text file which must be provided in order to run a NaCl application inside ZeroVM. 
 Manifest samples can be found in "samples" directory.
 
+list of available keywords:
+Channel
+Environment
+Version
+Nexe
+NexeMax
+NexeEtag
+Timeout
+MemMax
+SyscallsMax
+CommandLine
+NodeName
 
 Structure:
 - each valid line must contain exactly only one key and value(s) separated by exactly one '=' sign

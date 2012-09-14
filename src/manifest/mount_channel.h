@@ -8,6 +8,7 @@
 #ifndef MOUNT_CHANNEL_H_
 #define MOUNT_CHANNEL_H_
 
+#include <openssl/sha.h> /* SHA_DIGEST_LENGTH, SHA_CTX */
 #include <zmq.h>
 #include "src/service_runtime/sel_ldr.h"
 #include "api/zvm.h"
@@ -75,12 +76,13 @@ enum ChannelSourceType {
 
 /*
  * zerovm channel descriptor. part of information available for the user side
- * todo(d'b): add "flags" field. will contain EOF, i/o errors, e.t.c.
+ * todo(d'b): replace "closed" with "flags" field. will contain EOF, errors, e.t.c.
  */
 struct ChannelDesc
 {
   char *name; /* real name */
   char *alias; /* name for untrusted */
+  SHA_CTX tag; /* check sum of the channel data (sha1) */
 
   /* group #1.1 */
   int32_t handle; /* file handle */

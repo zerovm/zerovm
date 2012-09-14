@@ -8,6 +8,7 @@
  */
 
 #include <assert.h>
+#include <openssl/sha.h>
 #include "src/manifest/trap.h"
 #include "src/manifest/manifest_setup.h"
 #include "src/manifest/prefetch.h"
@@ -65,6 +66,37 @@ int ChannelIOMask(struct ChannelDesc *channel)
   rw |= (puts_rest && putsize_rest) << 1;
 
   return rw;
+}
+
+/* updates channel tag and log it with i/o results */
+static void UpdateChannelTag(struct ChannelDesc *channel,
+    char *buffer, int32_t size, int64_t offset)
+{
+  unsigned char p[SHA_DIGEST_LENGTH];
+  char hex[2 * SHA_DIGEST_LENGTH + 1] = {0};
+  SHA_CTX tag;
+  int i;
+
+  assert(channel != NULL);
+  assert(buffer != NULL);
+  assert(size != 0);
+
+  /* update channel tag (only with the really read data) */
+  i = SHA1_Update(&channel->tag, buffer, size);
+  ErrIf(i != 1, "cannot update tag for channel '%s'", channel->alias);
+
+  /* copy context aside and finalize it to get digest */
+  memcpy(&tag, &channel->tag, sizeof tag);
+  i = SHA1_Final(p, &tag);
+  ErrIf(i != 1, "cannot finalize tag for channel '%s'", channel->alias);
+
+  /* put hash info to the log */
+  sprintf(hex, "%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X"
+      "%02X%02X%02X%02X%02X", p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7], p[8],
+      p[9], p[10], p[11], p[12], p[13], p[14], p[15], p[16], p[17], p[18], p[19]);
+
+  NaClLog(LOG_DEBUG, "buf = %lX, size = %d, offset = %ld, hash = %s",
+      (uintptr_t)buffer, size, offset, hex);
 }
 
 /*
@@ -147,9 +179,11 @@ int32_t ZVMReadHandle(struct NaClApp *nap,
       break;
   }
 
-  /* update the channel position */
+  /* update the channel position and tag */
   if(retcode > 0)
   {
+    UpdateChannelTag(channel, sys_buffer, retcode, offset);
+
     /*
      * current get cursor. must be updated if channel have seq get
      * but there is nothing wrong to update it even it have random get
@@ -246,9 +280,11 @@ int32_t ZVMWriteHandle(struct NaClApp *nap,
       break;
   }
 
-  /* update the channel position */
+  /* update the channel position and tag */
   if(retcode > 0)
   {
+    UpdateChannelTag(channel, sys_buffer, retcode, offset);
+
     channel->putpos = offset + retcode;
     channel->size = channel->type == 2 ?
         MAX(channel->size, channel->putpos) : channel->putpos;

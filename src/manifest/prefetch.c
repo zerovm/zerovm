@@ -971,7 +971,7 @@ int32_t FetchMessage(struct ChannelDesc *channel, char *buf, int32_t count)
  * write a multi-part message to the channel
  * return number of sent bytes or error code
  */
-static int32_t WriteSocket(struct ChannelDesc *channel, char *buf, int32_t count)
+static int32_t WriteSocket(struct ChannelDesc *channel, const char *buf, int32_t count)
 {
   int result;
   int32_t writerest;
@@ -1035,7 +1035,7 @@ static int32_t WriteSocket(struct ChannelDesc *channel, char *buf, int32_t count
  * send the data to the network channel
  * return number of sent bytes or error code
  */
-int32_t SendMessage(struct ChannelDesc *channel, char *buf, int32_t count)
+int32_t SendMessage(struct ChannelDesc *channel, const char *buf, int32_t count)
 {
   return WriteSocket(channel, buf, count);
 }

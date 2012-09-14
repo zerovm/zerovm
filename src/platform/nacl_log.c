@@ -461,7 +461,7 @@ void NaClLog(int detail_level, char const *fmt, ...)
 }
 
 /* d'b: log with "LOG_ERROR" if condition is true  */
-void LogIf(int cond, char const *fmt, ...)
+void ErrIf(int cond, char const *fmt, ...)
 {
   va_list ap;
 

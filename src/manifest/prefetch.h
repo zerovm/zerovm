@@ -30,7 +30,7 @@ int32_t FetchMessage(struct ChannelDesc *channel, char *buf, int32_t count);
  * send the data to the network channel
  * return number of sent bytes or negative error code
  */
-int32_t SendMessage(struct ChannelDesc *channel, char *buf, int32_t count);
+int32_t SendMessage(struct ChannelDesc *channel, const char *buf, int32_t count);
 
 /*
  * if name service is available then go through all available

@@ -32,7 +32,7 @@ EXTERN_C_BEGIN
 #define ZEROVMLOG_OPTIONS (LOG_CONS | LOG_PID | LOG_NDELAY)
 #define ZEROVMLOG_PRIORITY LOG_USER
 #define ZEROVM_PRIORITY 19
-#define ZEROVM_IO_LIMIT 0x100000000 /* todo(d'b): remove it */
+#define ZEROVM_IO_LIMIT 0x100000000 /* todo(d'b): how much allowed to read/write. remove it */
 #define NEW_ROOT "/"
 #define VALIDATOR_NAME "ncval"
 
@@ -58,7 +58,7 @@ struct SystemManifest
   char *nexe; /* nexe file name */
   int32_t nexe_max; /* max allowed nexe length */
   char *nexe_etag; /* signature. reserved for a future "short" nexe validation */
-  char *etag; /* user output memory digital signature */
+  unsigned char *etag; /* channels and user memory digital signature */
   int32_t timeout; /* time user module allowed to run */
   int32_t user_ret_code; /* nexe return code */
 
