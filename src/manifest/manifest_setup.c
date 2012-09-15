@@ -203,6 +203,10 @@ static void SetNodeName(struct NaClApp *nap)
     nap->node_id = ATOI(tokens[1]);
     COND_ABORT(nap->node_id == 0, "node id must be > 0");
   }
+
+  /* put node name and id to the log */
+  NaClLog(LOG_DEBUG, "node name = %s, node id = %d",
+      nap->system_manifest->cmd_line[0], nap->node_id);
 }
 
 /* helper. sets command line parameters for the user */

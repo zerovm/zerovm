@@ -79,7 +79,7 @@ static void UpdateChannelTag(struct ChannelDesc *channel,
 
   /* update etag and log information */
   hex = (char*)UpdateEtag(&channel->tag, buffer, size);
-  NaClLog(LOG_DEBUG, "buf = %lX, size = %d, offset = %ld, hash = %s",
+  NaClLog(LOG_DEBUG, "buf = %lX, size = %d, offset = %ld, etag = %s",
       (uintptr_t)buffer, size, offset, hex);
 }
 
