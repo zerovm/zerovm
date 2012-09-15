@@ -8,7 +8,7 @@
  */
 
 #include <assert.h>
-#include <openssl/sha.h>
+#include "src/service_runtime/etag.h"
 #include "src/manifest/trap.h"
 #include "src/manifest/manifest_setup.h"
 #include "src/manifest/prefetch.h"
@@ -72,29 +72,13 @@ int ChannelIOMask(struct ChannelDesc *channel)
 static void UpdateChannelTag(struct ChannelDesc *channel,
     char *buffer, int32_t size, int64_t offset)
 {
-  unsigned char p[SHA_DIGEST_LENGTH];
-  char hex[2 * SHA_DIGEST_LENGTH + 1] = {0};
-  SHA_CTX tag;
-  int i;
+  char *hex;
 
   assert(channel != NULL);
   assert(buffer != NULL);
-  assert(size != 0);
 
-  /* update channel tag (only with the really read data) */
-  i = SHA1_Update(&channel->tag, buffer, size);
-  ErrIf(i != 1, "cannot update tag for channel '%s'", channel->alias);
-
-  /* copy context aside and finalize it to get digest */
-  memcpy(&tag, &channel->tag, sizeof tag);
-  i = SHA1_Final(p, &tag);
-  ErrIf(i != 1, "cannot finalize tag for channel '%s'", channel->alias);
-
-  /* put hash info to the log */
-  sprintf(hex, "%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X"
-      "%02X%02X%02X%02X%02X", p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7], p[8],
-      p[9], p[10], p[11], p[12], p[13], p[14], p[15], p[16], p[17], p[18], p[19]);
-
+  /* update etag and log information */
+  hex = (char*)UpdateEtag(&channel->tag, buffer, size);
   NaClLog(LOG_DEBUG, "buf = %lX, size = %d, offset = %ld, hash = %s",
       (uintptr_t)buffer, size, offset, hex);
 }

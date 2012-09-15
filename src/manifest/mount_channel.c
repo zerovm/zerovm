@@ -5,7 +5,7 @@
  *      Author: d'b
  */
 #include <assert.h>
-#include <openssl/sha.h>
+#include "src/service_runtime/etag.h"
 #include "src/service_runtime/sel_ldr.h"
 #include "src/manifest/manifest_setup.h"
 #include "src/manifest/manifest_parser.h"
@@ -114,7 +114,7 @@ static void ChannelCtor(struct NaClApp *nap, char **tokens)
       "invalid channel access type");
   channel->name = tokens[ChannelName];
   channel->alias = tokens[ChannelAlias];
-  COND_ABORT(SHA1_Init(&channel->tag) == 0, "channel tag setup error");
+  COND_ABORT(ConstructCTX(&channel->tag) == ERR_CODE, "channel tag setup error");
   channel->source = GetSourceType((char*)channel->name);
 
   /* limits and counters */
@@ -146,54 +146,13 @@ static void ChannelCtor(struct NaClApp *nap, char **tokens)
   }
 }
 
-/*
- * accumulates hashes of all channels into the one digest
- * returns given string if updated or NULL when failed.
- * if NULL is given finalizes hash and return digest
- */
-static unsigned char *UpdateChannelsHash(const unsigned char *hash)
-{
-  static unsigned char ghash[SHA_DIGEST_LENGTH];
-  static SHA_CTX ctx;
-  static int start = 1;
-  int i;
-
-  /* in the 1st time call initialize sha-1 context */
-  if(start)
-  {
-    SHA1_Init(&ctx);
-    start = 0;
-  }
-
-  /* if NULL specified finalize an set etag in system manifest */
-  if(hash == NULL)
-  {
-    SHA1_Final(ghash, &ctx);
-    return ghash;
-  }
-
-  // update hash with the new value
-  i = SHA1_Update(&ctx, hash, SHA_DIGEST_LENGTH);
-  ErrIf(i == 0, "error updating etag");
-  return i == 0 ? NULL : (unsigned char*)hash;
-}
-
 /* close channel and deallocate its resources */
 static void ChannelDtor(struct ChannelDesc *channel)
 {
-  unsigned char hash[SHA_DIGEST_LENGTH];
-  int i;
-
   assert(channel != NULL);
 
-  /*
-   * update the global channel hash value
-   * note: if there are unsent/unread messages they will be lost
-   *   and not taken into account
-   */
-  i = SHA1_Final(hash, &channel->tag);
-  ErrIf(i != 1, "channel '%s' tag finalization error", channel->alias);
-  UpdateChannelsHash(hash);
+  /* update the global channel hash value */
+  OverallEtag(&channel->tag);
 
   switch(channel->source)
   {
@@ -275,7 +234,4 @@ void ChannelsDtor(struct NaClApp *nap)
     ChannelDtor(&nap->system_manifest->channels[i]);
 
   free(nap->system_manifest->channels);
-
-  /* update etag */
-  nap->system_manifest->etag = UpdateChannelsHash(NULL);
 }

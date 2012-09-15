@@ -8,8 +8,8 @@
 #include <assert.h>
 #include <time.h>
 #include <sys/resource.h> /* timeout, process priority */
-#include <openssl/sha.h>
 #include "src/service_runtime/sel_ldr.h"
+#include "src/service_runtime/etag.h"
 #include "src/service_runtime/nacl_syscall_handlers.h"
 #include "src/manifest/manifest_parser.h"
 #include "src/manifest/manifest_setup.h"
@@ -410,7 +410,7 @@ static void StopExtendedAccounting(struct NaClApp *nap)
   /* exit if there is no extended accounting */
   if(nap->system_manifest->extended_accounting == NULL) return;
 
-  /* ### move itself to another "tasks" */
+  /* todo(d'b): move itself to another "tasks" */
 
   /* remove own pid folder from cgroups folder */
   result = rmdir(nap->system_manifest->extended_accounting);
@@ -471,25 +471,38 @@ static void GatherStatistics(struct NaClApp *nap, char *buf, int size)
       network_stats[PutsLimit], network_stats[PutSizeLimit]);  /* network channels output */
 }
 
-/*
- * takes the string contaning information about channels hashes
- * and calculates a new hash value from it
- * note: updates etag in the system manifest
- * todo(d'b): add the user memory snapshot hash
- */
-static char *MakeEtag(struct NaClApp *nap)
+/* update overall etag with memory chunk */
+static void EtagMemoryChunk(void *state, struct NaClVmmapEntry *vmep)
 {
-  static char digest[2 * SHA_DIGEST_LENGTH + 1] = {0};
-  unsigned char *p;
+  SHA_CTX ctx;
+  uintptr_t addr;
+  int32_t size;
+  struct NaClApp *nap = state;
+  const char *hex; // ### to remove
 
-  assert(nap->system_manifest->etag != NULL);
+  UNREFERENCED_PARAMETER(state);
+  assert(nap != NULL);
 
-  p = nap->system_manifest->etag;
-  sprintf(digest, "%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X"
-      "%02X%02X%02X%02X%02X", p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7], p[8],
-      p[9], p[10], p[11], p[12], p[13], p[14], p[15], p[16], p[17], p[18], p[19]);
+  /* skip inaccessible and removed pages */
+  if(vmep->prot == 0) return;
+  if(vmep->removed) return;
 
-  return digest;
+  /* construct the chunk hash context */
+  if(ConstructCTX(&ctx) == ERR_CODE)
+  {
+    ErrIf(1, "error initializing memory chunk etag");
+    return;
+  }
+
+  /* get etag for the chunk */
+  addr = nap->mem_start + (vmep->page_num << NACL_PAGESHIFT);
+  size = vmep->npages << NACL_PAGESHIFT;
+//  UpdateEtag(&ctx, (const char*)addr, size); // ### uncomment. remove{{
+  hex = UpdateEtag(&ctx, (const char*)addr, size);
+  NaClLog(LOG_DEBUG, "memory chunk etag = %s", hex); // }}
+
+  /* update overall etag with the chunk one */
+  OverallEtag(&ctx);
 }
 
 /*
@@ -501,17 +514,23 @@ int ProxyReport(struct NaClApp *nap)
 {
   char report[BIG_ENOUGH_SPACE + 1];
   char accounting[BIG_ENOUGH_SPACE + 1];
-  char *etag;
+  const char *etag;
   int length;
   int i;
 
+  assert(nap != NULL);
+  assert(nap->system_manifest != NULL);
+
   GatherStatistics(nap, accounting, BIG_ENOUGH_SPACE);
-  etag = MakeEtag(nap);
+
+  /* etag user memory */
+  NaClVmmapVisit(&nap->mem_map, EtagMemoryChunk, nap);
+  etag = EtagToText((unsigned char*)OverallEtag(NULL));
 
   /* for debugging purposes it is useful to see more advanced information */
 #ifdef DEBUG
   length = snprintf(report, BIG_ENOUGH_SPACE,
-      "validator state = %d\nuser return code = %d\nEtag = %s\n"
+      "validator state = %d\nuser return code = %d\netag = %s\n"
       "accounting = %s\nexit state = %s\n",
       nap->validation_state, nap->system_manifest->user_ret_code,
       etag, accounting, nap->zvm_state);

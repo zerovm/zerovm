@@ -16,13 +16,14 @@ EXTERN_C_BEGIN
 
 /* todo(d'b): remove useless switches, find a proper header for it */
 #define HELP_SCREEN /* update command line switches here */\
-    "Usage: ZeroVM [-M manifest_file] [-v d] [-FSsQ]\n\n"\
+    "Usage: ZeroVM [-M manifest_file] [-v d] [-FSseQ]\n\n"\
     " -M <file> load settings from manifest\n"\
     " -v [level] verbosity\n\n"\
     " (testing flags)\n"\
     " -s skip validation\n"\
     " -F fuzz testing; quit after loading NaCl app\n"\
     " -S disable signal handling\n"\
+    " -e enable the data oversight (etag)\n"\
     " -Q disable platform qualification (dangerous!)\n"
 
 /* todo(d'b): order and move it to zerovm setup or gather all zvm settings here {{ */

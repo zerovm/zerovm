@@ -8,7 +8,7 @@ all: $(NAME).o
 	$(NACL_TOOLCHAIN_PATH)/bin/x86_64-nacl-gcc -o $(NAME).nexe -s -static -T \
 	$(NACL_TOOLCHAIN_PATH)/x86_64-nacl/lib64/ldscripts/elf64_nacl.x.static -melf64_nacl -m64 \
 	$(DEBUG) $(NAME).o $(ZVM_ROOT)/api/libzrt.a
-	@$(ZVM_ROOT)/zerovm -M$(NAME).manifest -v4
+	@$(ZVM_ROOT)/zerovm -M$(NAME).manifest -v4 -e
 
 $(NAME).o:
 	$(NACL_TOOLCHAIN_PATH)/bin/x86_64-nacl-gcc -o $(NAME).o -Wall \

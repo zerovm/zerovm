@@ -16,6 +16,7 @@
 #include "src/service_runtime/nacl_all_modules.h"
 #include "src/service_runtime/nacl_globals.h"
 #include "src/service_runtime/nacl_signal.h"
+#include "src/service_runtime/etag.h"
 #include "src/manifest/manifest_parser.h" /* d'b. todo: move to initializer */
 #include "src/manifest/manifest_setup.h" /* d'b. todo: move to initializer */
 #include "src/service_runtime/sel_qualify.h"
@@ -57,7 +58,7 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
   nap->handle_signals = 1;
 
   /* todo(d'b): revise switches and rename them */
-  while((opt = getopt(argc, argv, "+FQsSv:M:")) != -1)
+  while((opt = getopt(argc, argv, "+FeQsSv:M:")) != -1)
   {
     switch(opt)
     {
@@ -70,6 +71,9 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
         break;
       case 'F':
         nap->fuzzing_quit_after_load = 1;
+        break;
+      case 'e':
+        EtagCtor();
         break;
       case 'S':
         /* d'b: disable signals handling */
