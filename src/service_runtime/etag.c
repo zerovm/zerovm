@@ -46,7 +46,7 @@ int ConstructCTX(SHA_CTX *ctx)
     ErrIf(code == 0, "error initializing hash context");
     return code == 0 ? ERR_CODE : OK_CODE;
   }
-  return ERR_CODE;
+  return 1; /* not supported */
 }
 
 /*

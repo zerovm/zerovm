@@ -701,11 +701,10 @@ static inline void CloseChannels()
       {
         uint32_t more;
         size_t more_size = sizeof more;
-        int result;
 
         if(channel->socket == NULL ) continue;
 
-        result = zmq_getsockopt(channel->socket, ZMQ_EVENTS, &more, &more_size);
+        zmq_getsockopt(channel->socket, ZMQ_EVENTS, &more, &more_size);
         busy |= more != ZMQ_POLLOUT;
         if(more == ZMQ_POLLOUT)
         {
