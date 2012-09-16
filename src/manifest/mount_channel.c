@@ -149,16 +149,20 @@ static void ChannelCtor(struct NaClApp *nap, char **tokens)
 /* close channel and deallocate its resources */
 static void ChannelDtor(struct ChannelDesc *channel)
 {
-  unsigned char *hash;
-  const char *etag;
+  const char *etag = ETAG_DISABLED;
 
   assert(channel != NULL);
 
   /* update the global channel hash value */
-  hash = (unsigned char*)OverallEtag(&channel->tag);
-  etag = EtagToText(hash);
-  NaClLog(LOG_DEBUG, "channel %s closed with etag = %s, getsize = %ld, putsize = %ld",
-      channel->alias, etag, channel->counters[GetSizeLimit], channel->counters[PutSizeLimit]);
+  if(EtagEnabled())
+  {
+    unsigned char *hash;
+
+    hash = (unsigned char*)OverallEtag(&channel->tag);
+    etag = EtagToText(hash);
+    NaClLog(LOG_DEBUG, "channel %s closed with etag = %s, getsize = %ld, putsize = %ld",
+        channel->alias, etag, channel->counters[GetSizeLimit], channel->counters[PutSizeLimit]);
+  }
 
   switch(channel->source)
   {

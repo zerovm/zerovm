@@ -486,6 +486,7 @@ static void EtagMemoryChunk(void *state, struct NaClVmmapEntry *vmep)
 
   UNREFERENCED_PARAMETER(state);
   assert(nap != NULL);
+  assert(EtagEnabled() != 0);
 
   /* skip inaccessible and removed pages */
   if(vmep->prot == 0) return;
@@ -518,7 +519,7 @@ int ProxyReport(struct NaClApp *nap)
 {
   char report[BIG_ENOUGH_SPACE + 1];
   char accounting[BIG_ENOUGH_SPACE + 1];
-  const char *etag;
+  const char *etag = ETAG_DISABLED;
   int length;
   int i;
 
@@ -528,8 +529,11 @@ int ProxyReport(struct NaClApp *nap)
   GatherStatistics(nap, accounting, BIG_ENOUGH_SPACE);
 
   /* etag user memory */
-  NaClVmmapVisit(&nap->mem_map, EtagMemoryChunk, nap);
-  etag = EtagToText((unsigned char*)OverallEtag(NULL));
+  if(EtagEnabled())
+  {
+    NaClVmmapVisit(&nap->mem_map, EtagMemoryChunk, nap);
+    etag = EtagToText((unsigned char*)OverallEtag(NULL));
+  }
 
   /* for debugging purposes it is useful to see more advanced information */
 #ifdef DEBUG

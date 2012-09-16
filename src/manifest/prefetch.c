@@ -825,7 +825,8 @@ int PrefetchChannelDtor(struct ChannelDesc* channel, const char *etag)
       ZMQ_TEST_STATE(result, NULL);
 
       /* send etag (must not be "zero copy") */
-      SendMessage(channel, etag, strlen(etag));
+      if(EtagEnabled())
+        SendMessage(channel, etag, strlen(etag));
 
       /*
        * see WriteSocket(). when the user data can be sent
@@ -839,7 +840,6 @@ int PrefetchChannelDtor(struct ChannelDesc* channel, const char *etag)
   if(channel->limits[GetsLimit] && channel->limits[GetSizeLimit])
   {
     int linger = 0; /* to drop the rest of the ingoing data */
-    char control_etag[ETAG_SIZE];
 
     /*
      * try to read EOF and detect unread messages. if channel is not closed
@@ -862,11 +862,16 @@ int PrefetchChannelDtor(struct ChannelDesc* channel, const char *etag)
       NaClLog(LOG_ERROR, "channel %s has lost messages", channel->alias);
 
     /* get control etag and check it */
-    FetchMessage(channel, control_etag, ETAG_SIZE);
-    if(memcmp(etag, control_etag, ETAG_SIZE) != 0)
+    if(EtagEnabled())
     {
-      NaClLog(LOG_ERROR, "channel %s has corrupted messages", channel->alias);
-      NaClLog(LOG_ERROR, "etag = %s, control = %s", etag, control_etag);
+      char control_etag[ETAG_SIZE];
+
+      FetchMessage(channel, control_etag, ETAG_SIZE);
+      if(memcmp(etag, control_etag, ETAG_SIZE) != 0)
+      {
+        NaClLog(LOG_ERROR, "channel %s has corrupted messages", channel->alias);
+        NaClLog(LOG_ERROR, "etag = %s, control = %s", etag, control_etag);
+      }
     }
 
     /* make zeromq deallocate used resources */

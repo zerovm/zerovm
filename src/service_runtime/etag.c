@@ -32,6 +32,12 @@ void EtagCtor()
   COND_ABORT(code != 1, "error initializing etag engine");
 }
 
+/* return the etag_enabled state */
+int EtagEnabled()
+{
+  return etag_enabled;
+}
+
 /*
  * initialize the hash context in provided space
  * return 0 if everything is ok
@@ -91,7 +97,7 @@ const char *EtagToText(unsigned char *p)
   static char hex[2 * SHA_DIGEST_LENGTH + 1] = {0};
 
   /* if etag disabled */
-  if(etag_enabled == 0) return "disabled";
+  if(etag_enabled == 0) return NULL;
 
   assert(p != NULL);
 

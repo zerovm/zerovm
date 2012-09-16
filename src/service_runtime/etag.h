@@ -12,9 +12,13 @@
 #include <openssl/sha.h>
 
 #define ETAG_SIZE SHA_DIGEST_LENGTH * 2
+#define ETAG_DISABLED "disabled"
 
 /* etag engine construction */
 void EtagCtor();
+
+/* return the etag_enabled state */
+int EtagEnabled();
 
 /*
  * initialize the hash context in provided space

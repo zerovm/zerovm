@@ -74,6 +74,9 @@ static void UpdateChannelTag(struct ChannelDesc *channel,
 {
   char *hex;
 
+  /* skip if etag is not enabled */
+  if(!EtagEnabled()) return;
+
   assert(channel != NULL);
   assert(buffer != NULL);
 
