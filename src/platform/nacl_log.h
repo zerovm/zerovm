@@ -292,10 +292,11 @@ void NaClLogDoLogAndUnsetModule(int        detail_level,
 
 #define LOG_SUICIDE (6) /* d'b */
 #define LOG_DEBUG   (4) /* d'b */
-#define LOG_INFO    (-1)
-#define LOG_WARNING (-2)
-#define LOG_ERROR   (-3)
-#define LOG_FATAL   (-4)
+#define LOG_NOTE    (2) /* d'b */
+#define LOG_INFO    (-1) /* doesn't depend on verbosity */
+#define LOG_WARNING (-2) /* doesn't depend on verbosity */
+#define LOG_ERROR   (-3) /* doesn't depend on verbosity */
+#define LOG_FATAL   (-4) /* doesn't depend on verbosity */
 
 /*
  * Low-level logging code that requires manual lock manipulation.

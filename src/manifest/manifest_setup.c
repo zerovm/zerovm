@@ -501,9 +501,9 @@ static void EtagMemoryChunk(void *state, struct NaClVmmapEntry *vmep)
   /* get etag for the chunk */
   addr = nap->mem_start + (vmep->page_num << NACL_PAGESHIFT);
   size = vmep->npages << NACL_PAGESHIFT;
-//  UpdateEtag(&ctx, (const char*)addr, size); // ### uncomment. remove{{
   hex = UpdateEtag(&ctx, (const char*)addr, size);
-  NaClLog(LOG_DEBUG, "memory chunk etag = %s", hex); // }}
+  NaClLog(LOG_DEBUG, "memory chunk addr = %lx, size = %d, etag = %s",
+      addr - nap->mem_start, size, hex);
 
   /* update overall etag with the chunk one */
   OverallEtag(&ctx);
