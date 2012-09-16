@@ -18,6 +18,7 @@
 #include "src/manifest/manifest_parser.h"
 #include "src/manifest/manifest_setup.h" /* todo(d'b): remove it. defines SystemManifest */
 #include "src/manifest/prefetch.h"
+#include "src/service_runtime/etag.h" /* ETAG_SIZE */
 
 static uint32_t channels_cnt = 0; /* needs for NetCtor/Dtor */
 static void *context = NULL; /* zeromq context */
@@ -796,7 +797,7 @@ int PrefetchChannelCtor(struct ChannelDesc *channel)
  * finalize and deallocate network channel
  * todo(d'b): rewrite the code after zmq_term will be fixed
  */
-int PrefetchChannelDtor(struct ChannelDesc* channel)
+int PrefetchChannelDtor(struct ChannelDesc* channel, const char *etag)
 {
   int result;
   char url[BIG_ENOUGH_SPACE];  /* debug purposes only */
@@ -809,7 +810,7 @@ int PrefetchChannelDtor(struct ChannelDesc* channel)
   NaClLog(LOG_DEBUG, "%s; %s, %d: alias = %s, url = %s",
       __FILE__, __func__, __LINE__, channel->alias, url);
 
-  /* send EOF if the channel is writable */
+  /* close "PUT" channel */
   if(channel->limits[PutsLimit] && channel->limits[PutSizeLimit])
   {
     zmq_msg_t msg;
@@ -817,10 +818,14 @@ int PrefetchChannelDtor(struct ChannelDesc* channel)
     /* the last send must be non-blocking or it will never complete */
     if(zmq_msg_init(&msg) == 0)
     {
+      /* send eof */
       result = zmq_msg_init_size(&msg, 0);
       ZMQ_TEST_STATE(result, NULL);
       result = zmq_send(channel->socket, &msg, ZMQ_NOBLOCK);
       ZMQ_TEST_STATE(result, NULL);
+
+      /* send etag (must not be "zero copy") */
+      SendMessage(channel, etag, strlen(etag));
 
       /*
        * see WriteSocket(). when the user data can be sent
@@ -830,9 +835,11 @@ int PrefetchChannelDtor(struct ChannelDesc* channel)
     }
   }
 
+  /* close "GET" channel */
   if(channel->limits[GetsLimit] && channel->limits[GetSizeLimit])
   {
     int linger = 0; /* to drop the rest of the ingoing data */
+    char control_etag[ETAG_SIZE];
 
     /*
      * try to read EOF and detect unread messages. if channel is not closed
@@ -853,6 +860,14 @@ int PrefetchChannelDtor(struct ChannelDesc* channel)
 
     if(zmq_msg_size(channel->msg) != 0)
       NaClLog(LOG_ERROR, "channel %s has lost messages", channel->alias);
+
+    /* get control etag and check it */
+    FetchMessage(channel, control_etag, ETAG_SIZE);
+    if(memcmp(etag, control_etag, ETAG_SIZE) != 0)
+    {
+      NaClLog(LOG_ERROR, "channel %s has corrupted messages", channel->alias);
+      NaClLog(LOG_ERROR, "etag = %s, control = %s", etag, control_etag);
+    }
 
     /* make zeromq deallocate used resources */
     result = zmq_setsockopt(channel->socket, ZMQ_LINGER, &linger, sizeof linger);

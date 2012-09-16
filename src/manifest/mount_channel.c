@@ -166,7 +166,7 @@ static void ChannelDtor(struct ChannelDesc *channel)
       PreloadChannelDtor(channel);
       break;
     case NetworkChannel:
-      PrefetchChannelDtor(channel);
+      PrefetchChannelDtor(channel, etag);
       break;
     default:
       NaClLog(LOG_ERROR, "unknown channel source\n");

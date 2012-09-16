@@ -11,6 +11,8 @@
 #include <stdint.h>
 #include <openssl/sha.h>
 
+#define ETAG_SIZE SHA_DIGEST_LENGTH * 2
+
 /* etag engine construction */
 void EtagCtor();
 

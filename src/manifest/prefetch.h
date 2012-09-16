@@ -18,7 +18,7 @@
 int PrefetchChannelCtor(struct ChannelDesc* channel);
 
 /* finalize and deallocate network channel resources */
-int PrefetchChannelDtor(struct ChannelDesc* channel);
+int PrefetchChannelDtor(struct ChannelDesc* channel, const char *etag);
 
 /*
  * fetch the data from the network channel
