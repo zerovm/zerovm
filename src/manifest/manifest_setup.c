@@ -482,7 +482,7 @@ static void EtagMemoryChunk(void *state, struct NaClVmmapEntry *vmep)
   uintptr_t addr;
   int32_t size;
   struct NaClApp *nap = state;
-  const char *hex; // ### to remove
+  const char *hex;
 
   UNREFERENCED_PARAMETER(state);
   assert(nap != NULL);
