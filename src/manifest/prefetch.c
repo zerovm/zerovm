@@ -18,7 +18,8 @@
 #include "src/manifest/manifest_parser.h"
 #include "src/manifest/manifest_setup.h" /* todo(d'b): remove it. defines SystemManifest */
 #include "src/manifest/prefetch.h"
-#include "src/service_runtime/etag.h" /* ETAG_SIZE */
+#include "src/service_runtime/etag.h" /* ETAG_SIZE. corruption control */
+#include "src/service_runtime/nacl_globals.h" /* gnap */
 
 static uint32_t channels_cnt = 0; /* needs for NetCtor/Dtor */
 static void *context = NULL; /* zeromq context */
@@ -130,13 +131,13 @@ static void FailOnInvalidNetChannel(const struct ChannelDesc *channel)
 inline static uint32_t MakeKey(const struct ChannelConnection *record)
 {
   uint32_t result;
-  NaClLog(LOG_DEBUG, "%s; %s, %d: ", __FILE__, __func__, __LINE__);
+  NaClLog(LOG_SUICIDE, "%s; %s, %d: ", __FILE__, __func__, __LINE__);
   assert(record != NULL);
 
   result = ((uint32_t)record->mark)<<24 ^ record->host;
-  NaClLog(LOG_DEBUG, "%s; %s, %d: mark = %u, host = %u",
+  NaClLog(LOG_SUICIDE, "%s; %s, %d: mark = %u, host = %u",
       __FILE__, __func__, __LINE__, record->mark, record->host);
-  NaClLog(LOG_DEBUG, "%s; %s, %d: result = %u", __FILE__, __func__, __LINE__, result);
+  NaClLog(LOG_SUICIDE, "%s; %s, %d: result = %u", __FILE__, __func__, __LINE__, result);
   return result;
 }
 
@@ -154,7 +155,7 @@ static void ParseURL(const struct ChannelDesc *channel, struct ChannelConnection
   assert(record != NULL);
   assert(channel->source == NetworkChannel);
 
-  NaClLog(LOG_DEBUG, "%s; %s, %d: url = %s", __FILE__, __func__, __LINE__, channel->name);
+  NaClLog(LOG_SUICIDE, "%s; %s, %d: url = %s", __FILE__, __func__, __LINE__, channel->name);
 
   /* copy the channel name aside and parse it */
   strncpy(name, channel->name, BIG_ENOUGH_SPACE);
@@ -223,7 +224,7 @@ static void MakeURL(char *url, const int32_t size,
       StringizeChannelProtocol(record->protocol), host, record->port);
   url[size-1] = '\0';
 
-  NaClLog(LOG_DEBUG, "%s; %s, %d: url = %s", __FILE__, __func__, __LINE__, url);
+  NaClLog(LOG_SUICIDE, "%s; %s, %d: url = %s", __FILE__, __func__, __LINE__, url);
 }
 
 /*
@@ -869,8 +870,13 @@ int PrefetchChannelDtor(struct ChannelDesc* channel, const char *etag)
       FetchMessage(channel, control_etag, ETAG_SIZE);
       if(memcmp(etag, control_etag, ETAG_SIZE) != 0)
       {
-        NaClLog(LOG_ERROR, "channel %s has corrupted messages", channel->alias);
-        NaClLog(LOG_ERROR, "etag = %s, control = %s", etag, control_etag);
+        NaClLog(LOG_ERROR, "channel %s corrupted: etag = %s, control = %s",
+            channel->alias, etag, control_etag);
+
+        /* todo(d'b): should be removed with all EtagEnabled block or rewritten */
+        snprintf(gnap->zvm_state, SIGNAL_STRLEN,
+            "channel [%d]%s has corruption", gnap->node_id, channel->alias);
+        gnap->zvm_code = 1;
       }
     }
 

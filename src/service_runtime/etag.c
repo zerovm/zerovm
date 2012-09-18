@@ -96,16 +96,22 @@ const char *EtagToText(unsigned char *p)
 {
   static char hex[2 * SHA_DIGEST_LENGTH + 1] = {0};
 
-  /* if etag disabled */
-  if(etag_enabled == 0) return NULL;
-
-  assert(p != NULL);
-
+  if(p == NULL) return NULL;
   sprintf(hex, "%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X"
       "%02X%02X%02X%02X%02X", p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7], p[8],
       p[9], p[10], p[11], p[12], p[13], p[14], p[15], p[16], p[17], p[18], p[19]);
 
   return hex;
+}
+
+/* calculate text digest for the data */
+const char *EtagData(void *data, int size)
+{
+  unsigned char hash[SHA_DIGEST_LENGTH];
+
+  if(data == NULL) return NULL;
+  SHA1((unsigned char*)data, size, hash);
+  return EtagToText(hash);
 }
 
 /*

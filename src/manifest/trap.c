@@ -461,7 +461,7 @@ int32_t TrapHandler(struct NaClApp *nap, uint32_t args)
    * note: cannot set "trap error"
    */
   sys_args = (uint64_t*)NaClUserToSys(nap, (uintptr_t) args);
-  NaClLog(4, "Trap arguments address = 0x%lx\n", (intptr_t)sys_args);
+  NaClLog(LOG_SUICIDE, "Trap arguments address = 0x%lx\n", (intptr_t)sys_args);
 
   switch(*sys_args)
   {
@@ -504,6 +504,6 @@ int32_t TrapHandler(struct NaClApp *nap, uint32_t args)
       break;
   }
 
-  NaClLog(4, "leaving Trap with code = 0x%x\n", retcode);
+  NaClLog(LOG_SUICIDE, "leaving Trap with code = 0x%x\n", retcode);
   return retcode;
 }

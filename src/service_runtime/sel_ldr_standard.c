@@ -21,9 +21,7 @@
 #include "src/manifest/manifest_setup.h" /* d'b: system_manifest */
 #include "src/service_runtime/nacl_globals.h" /* d'b: nacl_user */
 #include "src/service_runtime/nacl_signal.h"
-
-#define NORETURN_PTR NORETURN
-extern NORETURN void NaClSwitchSSE(struct NaClThreadContext *context);
+#include "src/service_runtime/nacl_switch_to_app.h" /* d'b: NaClSwitch*() */
 
 /*
  * d'b: alternative mechanism to pass control to user side
@@ -52,10 +50,10 @@ NORETURN void SwitchToApp(struct NaClApp  *nap, uintptr_t stack_ptr)
   /* set state to "ok" just before the nexe start */
   sprintf(nap->zvm_state, "ok");
 
-  /* todo: put here switch to chose proper function: avx or sse */
+  /* pass control to the nexe */
   nap->user_side_flag = 1;
   nap->trusted_code = 0;
-  NaClSwitchSSE(nacl_user);
+  NaClSwitchToApp(nap, nacl_user->new_prog_ctr);
 
   NaClAbort(); /* unreachable */
 }

@@ -39,6 +39,9 @@ const unsigned char *OverallEtag(SHA_CTX *ctx);
  */
 const char *EtagToText(unsigned char *p);
 
+/* calculate text digest for the data */
+const char *EtagData(void *data, int size);
+
 /*
  * update etag with the given buffer. return the asciiz digest or NULL
  * if not available

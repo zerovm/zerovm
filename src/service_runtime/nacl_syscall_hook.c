@@ -26,12 +26,7 @@ NORETURN void NaClSyscallCSegHook()
   uintptr_t                 sp_user;
   uintptr_t                 sp_sys;
 
-  /*
-   * d'b: nexe just invoked some syscall. stop cpu time counting
-   * increase syscalls counter (correction for setup call will be
-   * corrected later). small mallocs and other calls which are
-   * not really "system" will be accounted anyway!
-   */
+  /* d'b: nexe just invoked some syscall. increase syscalls counter */
   nap = gnap; /* restore NaClApp object */
   nap->user_side_flag = 1; /* set "user side call" mark */
   nap->trusted_code = 1; /* we are in the trusted code */
@@ -67,7 +62,7 @@ NORETURN void NaClSyscallCSegHook()
   NaClSetThreadCtxSp(user, sp_user);
 
   /* debug print to log */
-  NaClLog(4, "system call number %"NACL_PRIdS"\n", sysnum);
+  NaClLog(LOG_SUICIDE, "system call number %"NACL_PRIdS"\n", sysnum);
 
   if (sysnum >= NACL_MAX_SYSCALLS) {
     NaClLog(2, "INVALID system call %"NACL_PRIdS"\n", sysnum);
