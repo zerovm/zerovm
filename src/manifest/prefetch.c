@@ -825,7 +825,20 @@ int PrefetchChannelDtor(struct ChannelDesc* channel, const char *etag)
       result = zmq_send(channel->socket, &msg, ZMQ_NOBLOCK);
       ZMQ_TEST_STATE(result, NULL);
 
+#if 0
       /* send etag (must not be "zero copy") */
+      // ### try to fix etag corruption. send using nonblocking mode {{
+      if(EtagEnabled())
+      {
+        void *hint = NULL;
+        result = zmq_msg_init_data(&msg, (void*)etag, strlen(etag), ZMQFree, hint);
+        ZMQ_TEST_STATE(result, NULL);
+        result = zmq_send(channel->socket, &msg, ZMQ_NOBLOCK);
+        ZMQ_TEST_STATE(result, NULL);
+      }
+      // }}
+#endif
+
       if(EtagEnabled())
         SendMessage(channel, etag, strlen(etag));
 
@@ -841,7 +854,13 @@ int PrefetchChannelDtor(struct ChannelDesc* channel, const char *etag)
   if(channel->limits[GetsLimit] && channel->limits[GetSizeLimit])
   {
     int linger = 0; /* to drop the rest of the ingoing data */
+    char phony;
 
+    /* read eof and detect the lost messages */
+    if(FetchMessage(channel, &phony, sizeof phony) != 0)
+      NaClLog(LOG_ERROR, "channel %s has lost messages", channel->alias);
+
+#if 0 /* todo(d'b): remove if the short version above will work */
     /*
      * try to read EOF and detect unread messages. if channel is not closed
      * procedure will wait until message will arrive. which means that if
@@ -861,13 +880,20 @@ int PrefetchChannelDtor(struct ChannelDesc* channel, const char *etag)
 
     if(zmq_msg_size(channel->msg) != 0)
       NaClLog(LOG_ERROR, "channel %s has lost messages", channel->alias);
+#endif
 
     /* get control etag and check it */
     if(EtagEnabled())
     {
-      char control_etag[ETAG_SIZE];
+      char control_etag[ETAG_SIZE] = "etag isn't received";
 
+      // ### patch. rewrite FetchMessage() to return etag when eof reached {{
+      channel->bufpos = 0;
+      channel->bufend = 0;
       FetchMessage(channel, control_etag, ETAG_SIZE);
+      channel->bufpos = ZVM_EOF;
+      // }}
+
       if(memcmp(etag, control_etag, ETAG_SIZE) != 0)
       {
         NaClLog(LOG_ERROR, "channel %s corrupted: etag = %s, control = %s",
@@ -875,7 +901,8 @@ int PrefetchChannelDtor(struct ChannelDesc* channel, const char *etag)
 
         /* todo(d'b): should be removed with all EtagEnabled block or rewritten */
         snprintf(gnap->zvm_state, SIGNAL_STRLEN,
-            "channel [%d]%s has corruption", gnap->node_id, channel->alias);
+            "channel [%d]%s corrupted, %s mismatch %s",
+            gnap->node_id, channel->alias, etag, control_etag);
         gnap->zvm_code = 1;
       }
     }
@@ -958,7 +985,6 @@ int32_t FetchMessage(struct ChannelDesc *channel, char *buf, int32_t count)
 
   assert(channel != NULL);
   assert(buf != NULL);
-  assert(channel->bufpos >= NET_EOF); /* -1 used to mark the end of the data */
   assert(channel->bufpos <= NET_BUFFER_SIZE);
   assert(channel->bufend >= 0);
   assert(channel->bufend <= NET_BUFFER_SIZE);

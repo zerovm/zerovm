@@ -34,13 +34,16 @@ static void ChrootJail()
 
 /* limit zerovm i/o */
 /* todo(d'b): calculate limit from channels */
-static void LimitOwnIO()
+static void LimitOwnIO(struct NaClApp *nap)
 {
   struct rlimit rl;
 
+  assert(nap != NULL);
+  assert(nap->storage_limit > 0);
+
   if(getrlimit(RLIMIT_FSIZE, &rl) != 0)
     NaClLog(LOG_ERROR, "cannot get i/o limits");
-  rl.rlim_cur = ZEROVM_IO_LIMIT;
+  rl.rlim_cur = nap->storage_limit;
   if(setrlimit(RLIMIT_FSIZE, &rl) != 0)
     NaClLog(LOG_ERROR, "cannot set i/o limits");
 }
@@ -83,10 +86,10 @@ static void DisableSuperUser()
  * "defense in depth". the last frontier of defense.
  * zerovm limits itself as much as possible
  */
-void LastDefenseLine()
+void LastDefenseLine(struct NaClApp *nap)
 {
   LowerOwnPriority();
-  LimitOwnIO();
+  LimitOwnIO(nap);
   LimitOwnMemory();
   ChrootJail();
   DisableSuperUser();
@@ -246,10 +249,20 @@ static void SetCommandLine(struct SystemManifest *policy)
     policy->cmd_line[i + 1] = tokens[i];
 }
 
-/*
- * construct system_manifest object and initialize from manifest
- * todo(d'b): everything about 'report' should be moved to HostManifestCtor()
- */
+/* set timeout. by design "Timeout" must be specified in manifest */
+static void SetTimeout(struct SystemManifest *policy)
+{
+  struct rlimit rl;
+
+  assert(policy != NULL);
+
+  GET_INT_BY_KEY(policy->timeout, "Timeout");
+  COND_ABORT(policy->timeout < 1, "invalid or absent timeout");
+  rl.rlim_cur = policy->timeout;
+  setrlimit (RLIMIT_CPU, &rl);
+}
+
+/* construct system_manifest object and initialize it from manifest */
 void SystemManifestCtor(struct NaClApp *nap)
 {
   int32_t size;
@@ -266,7 +279,6 @@ void SystemManifestCtor(struct NaClApp *nap)
   policy->nexe = GetValueByKey("Nexe");
   policy->nexe_etag = GetValueByKey("NexeEtag");
   GET_INT_BY_KEY(policy->nexe_max, "NexeMax");
-  GET_INT_BY_KEY(policy->timeout, "Timeout");
 
   /* check mandatory manifest keys */
   COND_ABORT(nap->system_manifest->version == NULL,
@@ -284,13 +296,7 @@ void SystemManifestCtor(struct NaClApp *nap)
   GET_INT_BY_KEY(policy->max_syscalls, "SyscallsMax");
 
   /* get the timeout an install if specified */
-  GET_INT_BY_KEY(nap->system_manifest->timeout, "Timeout");
-  if(nap->system_manifest->timeout != 0)
-  {
-    struct rlimit rl;
-    rl.rlim_cur = nap->system_manifest->timeout;
-    setrlimit (RLIMIT_CPU, &rl);
-  }
+  SetTimeout(policy);
 
   /* counters */
   policy->cnt_syscalls = 0;
@@ -550,6 +556,7 @@ int ProxyReport(struct NaClApp *nap)
 #endif
 
   report[length] = '\0';
+  NaClLog(LOG_INFO, "%s", report);
   i = write(STDOUT_FILENO, report, length);
   return i == length ? OK_CODE : ERR_CODE;
 }

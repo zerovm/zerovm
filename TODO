@@ -1,12 +1,16 @@
 in the current version:
 -------------------------------------------------------------
+- fix network channel etag issue
++ added a new command line option -l -- specifies storage hard limit
++ "Timeout" now is an obligatory keyword in manifest
+
 ZMQ PROBLEMS
 ============
-- fix the bug with the lost messages
++ fix the bug with the lost messages
   zerovm hangs up with messages:
   - channel has lost messages
   - channel wasn't closed
-- how to block on zmq_send()?
+? how to block on zmq_send()?
   - there is a possibility to use freeing function as callback and longjmp. (awfull)
   - use rep/req instead of push/pull
 + how not to block on zmq_term()? if there were non blocking zmq_sends
@@ -177,7 +181,9 @@ problems to solve in the future versions:
   
 global plan
 -------------------------------------------------------------
-19. read "man 2 flock" and try to make local channel locked
+19. read "man 2 flock" and try to make local channel locked.
+    read only files can be read by multiple zerovms (but any changes to the file should be prohibited)
+    write (r/w) files only can be accessed by 1 zerovm
 +1. remove validator and clean up all project removing needless parts
    -+ remove imc
    + remove (almost all) desc

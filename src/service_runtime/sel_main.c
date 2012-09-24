@@ -47,6 +47,7 @@ static void ZeroVMLogDtor()
 /* parse given command line and initialize NaClApp object */
 static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
 {
+  char cmd[BIG_ENOUGH_SPACE];
   int opt;
   int i;
   char *manifest_name = NULL;
@@ -56,9 +57,10 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
   nap->skip_qualification = 0;
   nap->fuzzing_quit_after_load = 0;
   nap->handle_signals = 1;
+  nap->storage_limit = ZEROVM_IO_LIMIT;
 
   /* todo(d'b): revise switches and rename them */
-  while((opt = getopt(argc, argv, "+FeQsSv:M:")) != -1)
+  while((opt = getopt(argc, argv, "+FeQsSv:M:l:")) != -1)
   {
     switch(opt)
     {
@@ -79,13 +81,16 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
         /* d'b: disable signals handling */
         nap->handle_signals = 0;
         break;
-      case 'v':
-        i = atoi(optarg);
-        i = nap->verbosity = i < 1 ? 0 : i;
-        while(i--)
-          NaClLogIncrVerbosity();
+      case 'l':
+        /* calculate hard limit in Gb and don't allow it less then "big enough" */
+        nap->storage_limit = ATOI(optarg) * ZEROVM_IO_LIMIT_UNIT;
+        FailIf(nap->storage_limit < ZEROVM_IO_LIMIT_UNIT,
+            "invalid storage limit: %d", nap->storage_limit);
         break;
-        /* case 'w':  with 'h' and 'r' above */
+      case 'v':
+        NaClLogSetVerbosity(ATOI(optarg));
+        nap->verbosity = NaClLogGetVerbosity();
+        break;
       case 'Q':
         nap->skip_qualification = 1;
         NaClLog(LOG_WARNING, "PLATFORM QUALIFICATION DISABLED BY -Q - "
@@ -100,12 +105,13 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
   }
 
   /* show zerovm command line */
-  if(nap->verbosity)
+  strcpy(cmd, "zerovm command line:");
+  for(i = 0; i < argc; ++i)
   {
-    NaClLog(LOG_INFO, "zerovm argument list:\n");
-    for(i = 0; i < argc; ++i)
-      NaClLog(LOG_INFO, "%s\n", argv[i]);
+    strncat(cmd, " ", BIG_ENOUGH_SPACE);
+    strncat(cmd, argv[i], BIG_ENOUGH_SPACE);
   }
+  NaClLog(LOG_NOTE, "%s", cmd);
 
   /* parse manifest file specified in cmdline */
   if(manifest_name == NULL)
@@ -163,6 +169,9 @@ static void ValidateNexe(struct NaClApp *nap)
   COND_ABORT(nap->validation_state != ValidationOK, "validation failed");
 }
 
+/*
+ * todo(d'b): move it to accounting. create separate file for it {{
+ */
 /* create/overwrite file and put integer in it */
 static inline void EchoToFile(const char *path, int code)
 {
@@ -221,6 +230,7 @@ static void ExternalAccounting(struct NaClApp *nap)
   snprintf(counter, BIG_ENOUGH_SPACE, "%s/%s", cfolder, CGROUPS_SWAP);
   EchoToFile(counter, 1);
 }
+/* }} */
 
 int main(int argc, char **argv)
 {
@@ -358,7 +368,7 @@ int main(int argc, char **argv)
    * "defence in depth" part
    * todo(): find a proper place for this call
    */
-  LastDefenseLine();
+  LastDefenseLine(nap);
 
   /* start external accounting */
   ExternalAccounting(nap);

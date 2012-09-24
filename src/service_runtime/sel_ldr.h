@@ -28,6 +28,7 @@
 #ifndef NATIVE_CLIENT_SRC_TRUSTED_SERVICE_RUNTIME_SEL_LDR_H_
 #define NATIVE_CLIENT_SRC_TRUSTED_SERVICE_RUNTIME_SEL_LDR_H_ 1
 
+#include <stdint.h>
 #include "include/elf.h"
 #include "src/platform/nacl_log.h"
 #include "src/service_runtime/dyn_array.h"
@@ -207,13 +208,17 @@ struct NaClApp {
   /* d'b: added fields {{ */
   struct SystemManifest     *system_manifest;
   int32_t                   zvm_code; /* zerovm return code */
-  /* nexe exit state. NULL == ok, otherwise terminated by signal/timeout */
+
+  /*
+   * todo(d'b): move zvm_state to separated class
+   */
   char                      zvm_state[SIGNAL_STRLEN + 1];
   int                       validation_state; /* needs for the report */
   int                       skip_qualification; /* startup time variable */
   int                       fuzzing_quit_after_load; /* startup time variable */
   int                       verbosity; /* startup time variable */
   int                       handle_signals; /* startup time variable */
+  int64_t                   storage_limit; /* hard limit for all zerovm i/o */
 
   /* for channels */
   int                       node_id; /* own node id from manifest */

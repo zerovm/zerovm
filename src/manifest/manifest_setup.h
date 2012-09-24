@@ -14,16 +14,16 @@ EXTERN_C_BEGIN
 #include "src/service_runtime/sel_ldr.h"
 #include "stdio.h"
 
-/* todo(d'b): remove useless switches, find a proper header for it */
 #define HELP_SCREEN /* update command line switches here */\
-    "Usage: ZeroVM [-M manifest_file] [-v d] [-FSseQ]\n\n"\
+    "Usage: ZeroVM [-M manifest_file] [-v #] [-l #] [-FSseQ]\n\n"\
     " -M <file> load settings from manifest\n"\
-    " -v [level] verbosity\n\n"\
+    " -e enable the data oversight (etag)\n"\
+    " -l set a new storage limit (in Gb)\n"\
+    " -s skip validation\n\n"\
     " (testing flags)\n"\
-    " -s skip validation\n"\
+    " -v [level] verbosity\n"\
     " -F fuzz testing; quit after loading NaCl app\n"\
     " -S disable signal handling\n"\
-    " -e enable the data oversight (etag)\n"\
     " -Q disable platform qualification (dangerous!)\n"
 
 /* todo(d'b): order and move it to zerovm setup or gather all zvm settings here {{ */
@@ -33,7 +33,8 @@ EXTERN_C_BEGIN
 #define ZEROVMLOG_OPTIONS (LOG_CONS | LOG_PID | LOG_NDELAY)
 #define ZEROVMLOG_PRIORITY LOG_USER
 #define ZEROVM_PRIORITY 19
-#define ZEROVM_IO_LIMIT 0x100000000 /* todo(d'b): how much allowed to read/write. remove it */
+#define ZEROVM_IO_LIMIT_UNIT 0x40000000l
+#define ZEROVM_IO_LIMIT 4*ZEROVM_IO_LIMIT_UNIT
 #define NEW_ROOT "/"
 #define VALIDATOR_NAME "ncval"
 

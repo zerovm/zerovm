@@ -1,14 +1,10 @@
 =====================================================================
 == "hello world" example with zrt library usage. the new channels design
-== following channels: stdin, stdout, stderr used
 =====================================================================
 Channel = /home/dazo/git/zerovm/samples/hello/debug, /dev/debug, 0, 0, 0, 999999, 999999
 Channel = /dev/null, /dev/stdin, 0, 999999, 999999, 0, 0
 Channel = /home/dazo/git/zerovm/samples/hello/stdout.data, /dev/stdout, 0, 0, 0, 999999, 999999
 Channel = /home/dazo/git/zerovm/samples/hello/stderr.data, /dev/stderr, 0, 0, 0, 999999, 999999
-
-== to use with "samples/eof"
-== Channel = tcp:1:, /dev/stderr, 0, 0, 0, 999999, 999999
 
 =====================================================================
 == switches for zerovm. some of them used to control nexe, some
@@ -16,15 +12,16 @@ Channel = /home/dazo/git/zerovm/samples/hello/stderr.data, /dev/stderr, 0, 0, 0,
 =====================================================================
 Version = 09082012
 Nexe = hello.nexe
-NexeMax = 10000000
-SyscallsMax = 1234
+NexeMax = 4121440
+SyscallsMax = 8192
+NodeName = hello, 1
+Timeout = 60
 
 == minimal amount of memory to make the nexe start = 17965169
 == minimal amount of memory to make the nexe start = 18096241
+== minimal amount of memory to make the nexe start = 17965265
 == to avoid the memory shortage it is recommend to specify at least 32mb
-== some memory used by crt0, zvm api and zrt library
+== also 0x20000 bytes should be reserved for crt0, zvm api and zrt library
+== memory amount could change if the channels number is large
 MemMax = 33554432
-
-NodeName = hello, 2
-NameService = udp:127.0.0.1:54321
 
