@@ -93,6 +93,7 @@ static INLINE uintptr_t NaClUserToSysAddrRange(struct NaClApp  *nap,
   return uaddr + nap->mem_start;
 }
 
+/* todo(d'b): check buffer address and size to prevent SYGSEGV */
 static INLINE uintptr_t NaClUserToSys(struct NaClApp  *nap,
                                       uintptr_t       uaddr) {
   if (0 == uaddr || ((uintptr_t) 1U << nap->addr_bits) <= uaddr) {

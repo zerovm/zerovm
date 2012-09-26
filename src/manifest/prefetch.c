@@ -600,8 +600,8 @@ void KickPrefetchChannels(struct NaClApp *nap)
   }
 
   /*
-   * temporary fix to allow 0mq to complete the connection procedure
-   * notice: 1 millisecond should be enough
+   * temporary fix (the lost 1st messsage) to allow 0mq to complete
+   * the connection procedure. 1 millisecond should be enough
    * todo(d'b): replace it with the channels readiness check
    */
   usleep(PREPOLL_WAIT);
@@ -798,7 +798,7 @@ int PrefetchChannelCtor(struct ChannelDesc *channel)
  * finalize and deallocate network channel
  * todo(d'b): rewrite the code after zmq_term will be fixed
  */
-int PrefetchChannelDtor(struct ChannelDesc* channel, const char *etag)
+int PrefetchChannelDtor(struct ChannelDesc *channel, const char *etag)
 {
   int result;
   char url[BIG_ENOUGH_SPACE];  /* debug purposes only */
@@ -860,28 +860,6 @@ int PrefetchChannelDtor(struct ChannelDesc* channel, const char *etag)
     if(FetchMessage(channel, &phony, sizeof phony) != 0)
       NaClLog(LOG_ERROR, "channel %s has lost messages", channel->alias);
 
-#if 0 /* todo(d'b): remove if the short version above will work */
-    /*
-     * try to read EOF and detect unread messages. if channel is not closed
-     * procedure will wait until message will arrive. which means that if
-     * the channel holder (other zerovm) died or unconscious the bellow loop
-     * becomes infinite
-     * todo(d'b): find more neat solution or give up 0mq
-     */
-    if(zmq_recv(channel->socket, channel->msg, ZMQ_NOBLOCK) != 0)
-    {
-      int i;
-
-      NaClLog(LOG_ERROR, "channel %s wasn't closed", channel->alias);
-      for(i = 0; zmq_recv(channel->socket, channel->msg, ZMQ_NOBLOCK) != 0; ++i)
-        usleep(POLL_WAIT);
-      NaClLog(LOG_ERROR, "channel %s closed after %d tries", channel->alias, i);
-    }
-
-    if(zmq_msg_size(channel->msg) != 0)
-      NaClLog(LOG_ERROR, "channel %s has lost messages", channel->alias);
-#endif
-
     /* get control etag and check it */
     if(EtagEnabled())
     {
@@ -942,9 +920,8 @@ static int32_t ReadSocket(struct ChannelDesc *channel)
   NaClLog(LOG_DEBUG, "%s; %s, %d: alias = %s, url = %s",
       __FILE__, __func__, __LINE__, channel->alias, url);
 
-  /* rewind the channel buffer and mark that no data is available */
+  /* rewind the channel buffer */
   channel->bufpos = 0;
-  channel->bufend = 0;
 
   /* Create an empty ZMQ message to hold the message part */
   zmq_msg_close(channel->msg); /* cheat. don't close the message until it empty */
@@ -960,7 +937,6 @@ static int32_t ReadSocket(struct ChannelDesc *channel)
   ZMQ_TEST_STATE(result, channel->msg);
 
   /* store data pointer and size */
-  /* special case: EOF. if zero length message received */
   channel->buffer = zmq_msg_data(channel->msg);
   channel->bufend = zmq_msg_size(channel->msg);
 
@@ -969,7 +945,7 @@ static int32_t ReadSocket(struct ChannelDesc *channel)
    * buffer will be used as the mark of the end since current zmq
    * version socket close don't fit our needs
    */
-  if(channel->bufend == 0) channel->bufpos = NET_EOF;
+  if(channel->bufend == 0) channel->eof = 1;
 
   return channel->bufend;
 }
@@ -990,16 +966,12 @@ int32_t FetchMessage(struct ChannelDesc *channel, char *buf, int32_t count)
   assert(channel->bufend <= NET_BUFFER_SIZE);
 
   /*
-   * buffered multi-part messages engine
-   * the replacement for the "push-pull" engine. a large multi-part messages
-   * and "zero-copy" are used. the "get" channel contain the pointer to zmq buffer
-   * and indices (data start, data end)
-   * note that the buffer size is a hardcoded constant
+   * read message part by part until "count" not reached.
+   * the part size defined as 64kb
    */
   for(readrest = count; readrest > 0; readrest -= toread)
   {
-
-    if(channel->bufpos == NET_EOF) return 0;
+    if(channel->eof) break;
 
     /* calculates available data, if needed update buffer and restart loop */
     toread = MIN(readrest, channel->bufend - channel->bufpos);

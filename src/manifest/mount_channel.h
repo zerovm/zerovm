@@ -106,6 +106,7 @@ struct ChannelDesc
   int64_t limits[IOLimitsCount];
   int64_t counters[IOLimitsCount];
   int8_t closed; /* if not 0 the channel is opened */
+  int8_t eof; /* if not 0 the channel reached eof at the last operation */
 };
 
 /* construct all channels, initialize it and update system_manifest */

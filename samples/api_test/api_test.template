@@ -16,4 +16,5 @@ NexeMax = 4194304
 SyscallsMax = 1024
 MaxMem = 542045771
 Node = nodename, 1
+Timeout = 60
 

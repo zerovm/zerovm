@@ -79,26 +79,24 @@ int32_t zvm_pread(int desc, char *buffer, int32_t size, int64_t offset)
   uint64_t request[] = {TrapRead, 0, desc, (uint32_t)buffer, size, offset};
   code = _trap(request);
 
-  /* eof case */
-  if(code == ZVM_EOF)
-  {
-    zvm_errno_num = code;
-    return 0;
-  }
-
   /* error encountered */
   if(code < 0)
   {
     zvm_errno_num = -code;
     return -1;
   }
+
+  /* eof reached */
+  if(code < size)
+  {
+    zvm_errno_num = ZVM_EOF;
+    return 0;
+  }
+
   return code;
 }
 
-/*
- * wrapper for zerovm "TrapWrite"
- * affects zvm_errno
- */
+/* wrapper for zerovm "TrapWrite". affects zvm_errno */
 int32_t zvm_pwrite(int desc, const char *buffer, int32_t size, int64_t offset)
 {
   int32_t code;
@@ -115,16 +113,12 @@ int32_t zvm_pwrite(int desc, const char *buffer, int32_t size, int64_t offset)
 /*
  * close the channel. make a sence only for a channels with
  * sequential write. uses special form of TrapWrite call
- * return 0 if successful or -1 when error
+ * returns 0 if successful or -1 when error and sets errno to ZVM_EOF
  */
 int32_t zvm_close(int desc)
 {
-  /*
-   * it is safe to give request as buffer - writer will not use
-   * NULL cannot be given as a buffer address because this value
-   * is prohibited and TrapWrite will return an error
-   */
-  uint64_t request[] = {TrapWrite, 0, desc, (uint32_t)request, ZVM_EOF, ZVM_EOF};
+  uint64_t request[] = {TrapWrite, 0, desc, ZVM_EOF, ZVM_EOF, ZVM_EOF};
+  zvm_errno_num = ZVM_EOF;
   return _trap(request);
 }
 
