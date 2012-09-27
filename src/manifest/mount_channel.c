@@ -154,8 +154,8 @@ static void ChannelDtor(struct ChannelDesc *channel)
 
   assert(channel != NULL);
 
-  /* update the global channel hash value */
-  if(EtagEnabled())
+  /* update the global channel hash value excluding special channels */
+  if(EtagEnabled() && STREQ("debug", channel->alias) == 0)
   {
     unsigned char *hash;
 
@@ -171,7 +171,7 @@ static void ChannelDtor(struct ChannelDesc *channel)
       PreloadChannelDtor(channel);
       break;
     case NetworkChannel:
-      PrefetchChannelDtor(channel, etag);
+      PrefetchChannelDtor(channel);
       break;
     default:
       NaClLog(LOG_ERROR, "unknown channel source\n");

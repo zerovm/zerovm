@@ -95,7 +95,6 @@ struct ChannelDesc
   char *buffer; /* fixed size buffer to hold the message leftovers */
   int32_t bufpos; /* index of the 1st available byte in the buffer */
   int32_t bufend; /* index of the 1st unavailable byte in the buffer */
-  zmq_msg_t *msg; /* zeromq message container. should be initialized before usage */
 
   enum AccessType type; /* type of access sequential/random */
   enum ChannelSourceType source; /* network or local file */
