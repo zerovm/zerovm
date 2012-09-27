@@ -795,114 +795,6 @@ int PrefetchChannelCtor(struct ChannelDesc *channel)
 }
 
 /*
- * finalize and deallocate network channel
- * todo(d'b): rewrite the code after zmq_term will be fixed
- */
-int PrefetchChannelDtor(struct ChannelDesc *channel, const char *etag)
-{
-  int result;
-  char url[BIG_ENOUGH_SPACE];  /* debug purposes only */
-
-  assert(channel != NULL);
-  assert(channel->socket != NULL);
-
-  /* log parameters and channel internals */
-  MakeURL(url, BIG_ENOUGH_SPACE, channel, GetChannelConnectionInfo(channel));
-  NaClLog(LOG_DEBUG, "%s; %s, %d: alias = %s, url = %s",
-      __FILE__, __func__, __LINE__, channel->alias, url);
-
-  /* close "PUT" channel */
-  if(channel->limits[PutsLimit] && channel->limits[PutSizeLimit])
-  {
-    zmq_msg_t msg;
-
-    /* the last send must be non-blocking or it will never complete */
-    if(zmq_msg_init(&msg) == 0)
-    {
-      /* send eof */
-      result = zmq_msg_init_size(&msg, 0);
-      ZMQ_TEST_STATE(result, NULL);
-      result = zmq_send(channel->socket, &msg, ZMQ_NOBLOCK);
-      ZMQ_TEST_STATE(result, NULL);
-
-#if 0
-      /* send etag (must not be "zero copy") */
-      // ### try to fix etag corruption. send using nonblocking mode {{
-      if(EtagEnabled())
-      {
-        void *hint = NULL;
-        result = zmq_msg_init_data(&msg, (void*)etag, strlen(etag), ZMQFree, hint);
-        ZMQ_TEST_STATE(result, NULL);
-        result = zmq_send(channel->socket, &msg, ZMQ_NOBLOCK);
-        ZMQ_TEST_STATE(result, NULL);
-      }
-      // }}
-#endif
-
-      if(EtagEnabled())
-        SendMessage(channel, etag, strlen(etag));
-
-      /*
-       * see WriteSocket(). when the user data can be sent
-       * synchronously msg allocation and free() should be removed
-       */
-      free(channel->buffer);
-    }
-  }
-
-  /* close "GET" channel */
-  if(channel->limits[GetsLimit] && channel->limits[GetSizeLimit])
-  {
-    int linger = 0; /* to drop the rest of the ingoing data */
-    char phony;
-
-    /* read eof and detect the lost messages */
-    if(FetchMessage(channel, &phony, sizeof phony) != 0)
-      NaClLog(LOG_ERROR, "channel %s has lost messages", channel->alias);
-
-    /* get control etag and check it */
-    if(EtagEnabled())
-    {
-      char control_etag[ETAG_SIZE] = "etag isn't received";
-
-      // ### patch. rewrite FetchMessage() to return etag when eof reached {{
-      channel->bufpos = 0;
-      channel->bufend = 0;
-      FetchMessage(channel, control_etag, ETAG_SIZE);
-      channel->bufpos = ZVM_EOF;
-      // }}
-
-      if(memcmp(etag, control_etag, ETAG_SIZE) != 0)
-      {
-        NaClLog(LOG_ERROR, "channel %s corrupted: etag = %s, control = %s",
-            channel->alias, etag, control_etag);
-
-        /* todo(d'b): should be removed with all EtagEnabled block or rewritten */
-        snprintf(gnap->zvm_state, SIGNAL_STRLEN,
-            "channel [%d]%s corrupted, %s mismatch %s",
-            gnap->node_id, channel->alias, etag, control_etag);
-        gnap->zvm_code = 1;
-      }
-    }
-
-    /* make zeromq deallocate used resources */
-    result = zmq_setsockopt(channel->socket, ZMQ_LINGER, &linger, sizeof linger);
-    ZMQ_TEST_STATE(result, NULL);
-
-    zmq_close(channel->socket);
-  }
-
-  /* dispose the message and close zmq socket */
-  zmq_msg_close(channel->msg); /* ZMQ_TEST_STATE can't be used */
-  free(channel->msg);
-
-  /* will destroy context and netlist after all network channels closed */
-  NetDtor();
-
-  return OK_CODE;
-}
-
-/*
  * get the next portion to the channel buffer, reset buffer indices
  * return the number of read bytes or negative error code
  */
@@ -934,18 +826,36 @@ static int32_t ReadSocket(struct ChannelDesc *channel)
 
   /* Determine if more message parts are to follow */
   result = zmq_getsockopt(channel->socket, ZMQ_RCVMORE, &more, &more_size);
-  ZMQ_TEST_STATE(result, channel->msg);
 
   /* store data pointer and size */
   channel->buffer = zmq_msg_data(channel->msg);
   channel->bufend = zmq_msg_size(channel->msg);
 
-  /*
-   * detect the end of channel (NET_EOF). zero size of received
-   * buffer will be used as the mark of the end since current zmq
-   * version socket close don't fit our needs
-   */
-  if(channel->bufend == 0) channel->eof = 1;
+  /* detect the end of the channel if etag enabled */
+  if(more != 0 && channel->bufend == ETAG_SIZE && EtagEnabled())
+  {
+    const char *etag = ETAG_DISABLED;
+
+    /* receive the zero part */
+    result = zmq_recv(channel->socket, channel->msg, 0);
+    channel->bufend = zmq_msg_size(channel->msg);
+    if(channel->bufend == 0) channel->eof = 1;
+    else NaClLog(LOG_ERROR, "invalid eof pattern detected");
+
+    /* check the etag */
+    etag = EtagToText((unsigned char*)OverallEtag(&channel->tag));
+    assert(etag != NULL);
+    if(memcmp(channel->buffer, etag, ETAG_SIZE) == 0)
+      NaClLog(LOG_DEBUG, "channel %s is ok", channel->alias);
+    else
+      NaClLog(LOG_ERROR, "channel %s is corrupted", channel->alias);
+  }
+
+  /* detect the end of the channel if etag disabled */
+  if(more == 0 && channel->bufend == 0 && !EtagEnabled())
+  {
+    channel->eof = 1;
+  }
 
   return channel->bufend;
 }
@@ -1004,7 +914,10 @@ static int32_t WriteSocket(struct ChannelDesc *channel, const char *buf, int32_t
   assert(channel != NULL);
   assert(buf != NULL);
 
-  /* log parameters and channel internals */
+  /*
+   * log parameters and channel internals
+   * todo(d'b): remove MakeURL. at least for verbosity < then LOG_DEBUG
+   */
   MakeURL(url, BIG_ENOUGH_SPACE, channel, GetChannelConnectionInfo(channel));
   NaClLog(LOG_DEBUG, "%s; %s, %d: alias = %s, url = %s",
       __FILE__, __func__, __LINE__, channel->alias, url);
@@ -1019,7 +932,7 @@ static int32_t WriteSocket(struct ChannelDesc *channel, const char *buf, int32_t
     int32_t towrite;
     int32_t flag;
 
-    /* calculate the send mode */
+    /* calculate the send mode (considering EOF) */
     if(writerest > NET_BUFFER_SIZE)
     {
       towrite = NET_BUFFER_SIZE;
@@ -1028,11 +941,11 @@ static int32_t WriteSocket(struct ChannelDesc *channel, const char *buf, int32_t
     else
     {
       towrite = writerest;
-      flag = 0;
+      flag = channel->eof ? ZMQ_SNDMORE : 0;
     }
 
     /*
-     * for zmq is not able to send the messages synchronously,
+     * since 0mq is not able to send the messages synchronously,
      * "zero copy" cannot be used
      *
      * todo(d'b): limit the queue to 1 message, send given data in chunks
@@ -1049,6 +962,15 @@ static int32_t WriteSocket(struct ChannelDesc *channel, const char *buf, int32_t
     buf += towrite;
   }
 
+  /* if sending EOF */
+  if(channel->eof)
+  {
+    result = zmq_msg_init_size(channel->msg, 0);
+    ZMQ_TEST_STATE(result, channel->msg);
+    result = zmq_send(channel->socket, channel->msg, 0);
+    ZMQ_TEST_STATE(result, channel->msg);
+  }
+
   zmq_msg_close(channel->msg);
 
   return count;
@@ -1061,4 +983,61 @@ static int32_t WriteSocket(struct ChannelDesc *channel, const char *buf, int32_t
 int32_t SendMessage(struct ChannelDesc *channel, const char *buf, int32_t count)
 {
   return WriteSocket(channel, buf, count);
+}
+
+/*
+ * finalize and deallocate network channel
+ * todo(d'b): rewrite the code after zmq_term will be fixed
+ */
+int PrefetchChannelDtor(struct ChannelDesc *channel, const char *etag)
+{
+  char url[BIG_ENOUGH_SPACE];  /* debug purposes only */
+
+  assert(channel != NULL);
+  assert(channel->socket != NULL);
+
+  /* log parameters and channel internals */
+  MakeURL(url, BIG_ENOUGH_SPACE, channel, GetChannelConnectionInfo(channel));
+  NaClLog(LOG_DEBUG, "%s; %s, %d: alias = %s, url = %s",
+      __FILE__, __func__, __LINE__, channel->alias, url);
+
+  /* close "PUT" channel */
+  if(channel->limits[PutsLimit] && channel->limits[PutSizeLimit])
+  {
+    int etag_size = 0;
+    const char *etag = (const char*)&etag_size; /* to make it not NULL (will not be used) */
+
+    if(EtagEnabled())
+    {
+      etag_size = ETAG_SIZE;
+      etag = EtagToText((unsigned char*)OverallEtag(&channel->tag));
+    }
+    channel->eof = 1;
+    WriteSocket(channel, etag, etag_size);
+
+    /*
+     * todo(d'b): when the user data can be sent synchronously msg allocation
+     * and free() (and allocation) should be removed (see WriteSocket)
+     */
+    free(channel->buffer);
+  }
+
+  /* close "GET" channel */
+  if(channel->limits[GetsLimit] && channel->limits[GetSizeLimit])
+  {
+    /* wind the channel to the end */
+    while(channel->eof == 0)
+      ReadSocket(channel);
+
+    zmq_close(channel->socket);
+  }
+
+  /* dispose the message and close zmq socket */
+  zmq_msg_close(channel->msg); /* ZMQ_TEST_STATE can't be used */
+  free(channel->msg);
+
+  /* will destroy context and netlist after all network channels closed */
+  NetDtor();
+
+  return OK_CODE;
 }

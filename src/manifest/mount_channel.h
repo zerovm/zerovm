@@ -105,7 +105,11 @@ struct ChannelDesc
   /* limits and counters */
   int64_t limits[IOLimitsCount];
   int64_t counters[IOLimitsCount];
+
+  /* todo(d'b): remove it or leave it? looks useless */
   int8_t closed; /* if not 0 the channel is opened */
+
+  /* added to serve sequential channels */
   int8_t eof; /* if not 0 the channel reached eof at the last operation */
 };
 

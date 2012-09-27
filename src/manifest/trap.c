@@ -215,7 +215,6 @@ int32_t ZVMWriteHandle(struct NaClApp *nap,
   NaClLog(LOG_DEBUG, "%s() invoked: desc=%d, buffer=0x%lx, size=%d, offset=%ld\n",
         __func__, ch, (intptr_t)buffer, size, offset);
 
-
   /* prevent writing to the closed channel */
   if(channel->closed) return -EBADF;
 
