@@ -14,9 +14,9 @@ Channel = CURDIR/debug, /dev/debug, 0, 0, 0, 999999, 999999
 Version = 09082012
 Nexe = command_line.nexe
 NexeMax = 10000000
-SyscallsMax = 3333
-CommandLine = argument_number_1 argument_number_2 argument_number_3 argument_number_4 the_last_argument
+SyscallsMax = 1024
+MaxMem = 134217728
+Timeout = 60
 NodeName = master_node, 1
+CommandLine = argument_number_1 argument_number_2 argument_number_3 argument_number_4 the_last_argument
 
-==MemMax = 17965265
-MemMax = 18096337

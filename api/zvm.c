@@ -88,10 +88,7 @@ int32_t zvm_pread(int desc, char *buffer, int32_t size, int64_t offset)
 
   /* eof reached */
   if(code < size)
-  {
     zvm_errno_num = ZVM_EOF;
-    return 0;
-  }
 
   return code;
 }
