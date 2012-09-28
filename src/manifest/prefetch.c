@@ -608,17 +608,6 @@ void KickPrefetchChannels(struct NaClApp *nap)
       return ERR_CODE;\
     }
 
-/* deallocator for the zeromq "zero-copy" send() design */
-static void ZMQFree (void *data, void *hint)
-{
-  /*
-   * doesn't deallocate anything. the given buffer is a user property
-   * and the user will care about freeing it.
-   */
-  UNREFERENCED_PARAMETER(data);
-  UNREFERENCED_PARAMETER(hint);
-}
-
 /*
  * initiate networking (if there are network channels)
  * note: will run only once on the 1st channel construction
@@ -740,7 +729,6 @@ int PrefetchChannelCtor(struct ChannelDesc *channel)
 
   /* explicitly reset network regarded fields */
   channel->socket = NULL;
-  channel->buffer = NULL;
   channel->bufend = 0;
   channel->bufpos = 0;
 
@@ -756,15 +744,13 @@ int PrefetchChannelCtor(struct ChannelDesc *channel)
   /* bind or connect the channel */
   if(sock_type == ZMQ_PUSH)
   {
-    /* allocate buffer to hold the message (see WriteSocket) comment */
-    channel->buffer = malloc(NET_BUFFER_SIZE);
-    COND_ABORT(channel->buffer == NULL, "cannot allocate network 'send' buffer");
-
     PrepareConnect(channel);
     ++connects;
   }
   else
   {
+    int result = zmq_msg_init(&channel->msg);
+    ZMQ_TEST_STATE(result, &channel->msg);
     PrepareBind(channel);
     ++binds;
   }
@@ -772,71 +758,43 @@ int PrefetchChannelCtor(struct ChannelDesc *channel)
   return OK_CODE;
 }
 
-/*
- * get the next portion to the channel buffer, reset buffer indices
- * return the number of read bytes or negative error code
- */
-static int32_t ReadSocket(struct ChannelDesc *channel)
+/* check and update channel EOF state and etag */
+static inline void UpadateChannelState(struct ChannelDesc *channel)
 {
-  int result;
-  zmq_msg_t msg;
   int64_t more = 0;
   size_t more_size = sizeof more;
-  char url[BIG_ENOUGH_SPACE]; /* debug purposes only */
 
-  assert(channel != NULL);
+  zmq_getsockopt(channel->socket, ZMQ_RCVMORE, &more, &more_size);
 
-  /* log parameters and channel internals */
-  MakeURL(url, BIG_ENOUGH_SPACE, channel, GetChannelConnectionInfo(channel));
-  NaClLog(LOG_DEBUG, "%s; %s, %d: alias = %s, url = %s",
-      __FILE__, __func__, __LINE__, channel->alias, url);
-
-  /* initialize message and rewind the channel buffer */
-  result = zmq_msg_init(&msg);
-  ZMQ_TEST_STATE(result, &msg);
-  channel->bufpos = 0;
-
-  /* Block until a message is available to be received from socket */
-  result = zmq_recv(channel->socket, &msg, 0);
-  ZMQ_TEST_STATE(result, &msg);
-
-  /* store data pointer and size */
-  channel->buffer = zmq_msg_data(&msg);
-  channel->bufend = zmq_msg_size(&msg);
-
-  /* Determine if more message parts are to follow */
-  result = zmq_getsockopt(channel->socket, ZMQ_RCVMORE, &more, &more_size);
-
-  /* detect the end of the channel if etag enabled */
+  /* etag enabled */
   if(more != 0 && channel->bufend == ETAG_SIZE && EtagEnabled())
   {
-    const char *etag = ETAG_DISABLED;
+    const char *local_etag = ETAG_DISABLED;
+    char tmp[ETAG_SIZE], *control_etag = tmp;
+
+    /* store control etag */
+    memcpy(control_etag, zmq_msg_data(&channel->msg), ETAG_SIZE);
 
     /* receive the zero part */
-    result = zmq_recv(channel->socket, &msg, 0);
-    channel->bufend = zmq_msg_size(&msg);
+    zmq_recv(channel->socket, &channel->msg, 0);
+    channel->bufend = zmq_msg_size(&channel->msg);
     if(channel->bufend == 0) channel->eof = 1;
     else NaClLog(LOG_ERROR, "invalid eof pattern detected");
 
-    /* check the etag */
-    etag = UpdateEtag(&channel->tag, channel->buffer, 0);
-    assert(etag != NULL);
-    channel->buffer[ETAG_SIZE] = 0; /* debug only */
-    if(memcmp(channel->buffer, etag, ETAG_SIZE) == 0)
-      NaClLog(LOG_DEBUG, "channel %s is ok. etag = %s", channel->alias, etag);
+    /* compare etags */
+    local_etag = UpdateEtag(&channel->tag, local_etag, 0);
+    if(memcmp(local_etag, control_etag, ETAG_SIZE) == 0)
+      NaClLog(LOG_DEBUG, "channel %s is ok. etag = %s", channel->alias, local_etag);
     else
       NaClLog(LOG_ERROR, "channel %s is corrupted. etags = %s : %s",
-          channel->alias, etag, channel->buffer);
+          channel->alias, local_etag, control_etag);
   }
 
-  /* detect the end of the channel if etag disabled */
+  /* etag disabled */
   if(more == 0 && channel->bufend == 0 && !EtagEnabled())
   {
     channel->eof = 1;
   }
-
-  zmq_msg_close(&msg);
-  return channel->bufend;
 }
 
 /*
@@ -846,7 +804,7 @@ static int32_t ReadSocket(struct ChannelDesc *channel)
 int32_t FetchMessage(struct ChannelDesc *channel, char *buf, int32_t count)
 {
   int32_t readrest = count;
-  int32_t toread = 0;;
+  int32_t toread = 0;
 
   assert(channel != NULL);
   assert(buf != NULL);
@@ -860,18 +818,31 @@ int32_t FetchMessage(struct ChannelDesc *channel, char *buf, int32_t count)
    */
   for(readrest = count; readrest > 0; readrest -= toread)
   {
-    if(channel->eof) break;
-
     /* calculates available data, if needed update buffer and restart loop */
     toread = MIN(readrest, channel->bufend - channel->bufpos);
+    if(channel->eof && toread == 0) break;
+
     if(toread == 0)
     {
-      ReadSocket(channel);
+      int result;
+
+      /* re-initialize message and rewind the channel buffer */
+      zmq_msg_close(&channel->msg);
+      channel->bufpos = 0;
+      result = zmq_msg_init(&channel->msg);
+      ZMQ_TEST_STATE(result, &channel->msg);
+
+      /* read the next message */
+      result = zmq_recv(channel->socket, &channel->msg, 0);
+      ZMQ_TEST_STATE(result, &channel->msg);
+      channel->bufend = zmq_msg_size(&channel->msg);
+
+      UpadateChannelState(channel);
       continue;
     }
 
     /* there is the data to take */
-    memcpy(buf, channel->buffer + channel->bufpos, toread);
+    memcpy(buf, (char*)zmq_msg_data(&channel->msg) + channel->bufpos, toread);
     channel->bufpos += toread;
     buf += toread;
   }
@@ -880,16 +851,15 @@ int32_t FetchMessage(struct ChannelDesc *channel, char *buf, int32_t count)
 }
 
 /*
- * write a multi-part message to the channel
+ * send the data to the network channel
  * return number of sent bytes or error code
  */
-static int32_t WriteSocket(struct ChannelDesc *channel, const char *buf, int32_t count)
+int32_t SendMessage(struct ChannelDesc *channel, const char *buf, int32_t count)
 {
   int result;
-  zmq_msg_t msg;
+//  zmq_msg_t msg;
   int32_t writerest;
   int32_t flag;
-  void *hint = NULL;
   char url[BIG_ENOUGH_SPACE];  /* debug purposes only */
 
   assert(channel != NULL);
@@ -909,10 +879,7 @@ static int32_t WriteSocket(struct ChannelDesc *channel, const char *buf, int32_t
   /* send a buffer through the multiple messages */
   for(writerest = count; writerest > 0; writerest -= NET_BUFFER_SIZE)
   {
-    int32_t towrite;
-
-    /* calculate the number of bytes to write */
-    towrite = writerest > NET_BUFFER_SIZE ? NET_BUFFER_SIZE : writerest;
+    int32_t towrite = MIN(writerest, NET_BUFFER_SIZE);
 
     /*
      * since 0mq is not able to send the messages synchronously,
@@ -921,21 +888,19 @@ static int32_t WriteSocket(struct ChannelDesc *channel, const char *buf, int32_t
      *   as "zero copy" and copy the remaining chunk to buffer allocated
      *   by zerovm so it can be sent asynchronously
      */
-    memcpy(channel->buffer, buf, towrite);
 
     /* create the message */
-    result = zmq_msg_init(&msg);
-    ZMQ_TEST_STATE(result, &msg);
+    result = zmq_msg_init_size(&channel->msg, towrite);
+    ZMQ_TEST_STATE(result, &channel->msg);
+    memcpy(zmq_msg_data(&channel->msg), buf, towrite);
 
-    /* do send */
-    result = zmq_msg_init_data(&msg, channel->buffer, towrite, ZMQFree, hint);
-    ZMQ_TEST_STATE(result, &msg);
-    result = zmq_send(channel->socket, &msg, flag);
-    ZMQ_TEST_STATE(result, &msg);
-    buf += towrite;
+    /* send the message */
+    result = zmq_send(channel->socket, &channel->msg, flag);
+    ZMQ_TEST_STATE(result, &channel->msg);
 
     /* destroy the message (caring about EOF) */
-    if(channel->eof == 0) zmq_msg_close(&msg);
+    buf += towrite;
+    if(channel->eof == 0) zmq_msg_close(&channel->msg);
   }
 
   /* if sending EOF */
@@ -944,27 +909,18 @@ static int32_t WriteSocket(struct ChannelDesc *channel, const char *buf, int32_t
     /* create the message if didn't */
     if(count == 0)
     {
-      result = zmq_msg_init(&msg);
-      ZMQ_TEST_STATE(result, &msg);
+      result = zmq_msg_init(&channel->msg);
+      ZMQ_TEST_STATE(result, &channel->msg);
     }
 
-    result = zmq_msg_init_size(&msg, 0);
-    ZMQ_TEST_STATE(result, &msg);
-    result = zmq_send(channel->socket, &msg, 0);
-    ZMQ_TEST_STATE(result, &msg);
-    zmq_msg_close(&msg);
+    result = zmq_msg_init_size(&channel->msg, 0);
+    ZMQ_TEST_STATE(result, &channel->msg);
+    result = zmq_send(channel->socket, &channel->msg, 0);
+    ZMQ_TEST_STATE(result, &channel->msg);
+    zmq_msg_close(&channel->msg);
   }
 
   return count;
-}
-
-/*
- * send the data to the network channel
- * return number of sent bytes or error code
- */
-int32_t SendMessage(struct ChannelDesc *channel, const char *buf, int32_t count)
-{
-  return WriteSocket(channel, buf, count);
 }
 
 /*
@@ -992,16 +948,10 @@ int PrefetchChannelDtor(struct ChannelDesc *channel)
     if(EtagEnabled())
     {
       etag_size = ETAG_SIZE;
-      etag = UpdateEtag(&channel->tag, channel->buffer, 0);
+      etag = UpdateEtag(&channel->tag, etag, 0);
     }
     channel->eof = 1;
-    WriteSocket(channel, etag, etag_size);
-
-    /*
-     * todo(d'b): when the user data can be sent synchronously msg allocation
-     * and free() (and allocation) should be removed (see WriteSocket)
-     */
-    free(channel->buffer);
+    SendMessage(channel, etag, etag_size);
   }
 
   /* close "GET" channel */
@@ -1009,8 +959,12 @@ int PrefetchChannelDtor(struct ChannelDesc *channel)
   {
     /* wind the channel to the end */
     while(channel->eof == 0)
-      ReadSocket(channel);
+    {
+      char buf[NET_BUFFER_SIZE];
+      FetchMessage(channel, buf, NET_BUFFER_SIZE);
+    }
 
+    zmq_msg_close(&channel->msg);
     zmq_close(channel->socket);
   }
 

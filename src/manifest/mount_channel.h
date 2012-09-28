@@ -92,7 +92,7 @@ struct ChannelDesc
   /* group #2.1 */
   int64_t size; /* channel size */
   /* group #2.2 */
-  char *buffer; /* fixed size buffer to hold the message leftovers */
+  zmq_msg_t msg; /* 0mq message container. should be initialized */
   int32_t bufpos; /* index of the 1st available byte in the buffer */
   int32_t bufend; /* index of the 1st unavailable byte in the buffer */
 
