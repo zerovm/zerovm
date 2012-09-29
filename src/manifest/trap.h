@@ -42,11 +42,6 @@ int ChannelIOMask(struct ChannelDesc *channel);
 #define CHANNEL_SEQ_WRITEABLE(channel) (channel->type == 0 || channel->type == 1)
 #define CHANNEL_RND_READABLE(channel) (channel->type == 1 || channel->type == 3)
 #define CHANNEL_RND_WRITEABLE(channel) (channel->type == 2 || channel->type == 3)
-/*
- * check number of trap() calls and increment by 1. update
- * system_manifest. return 0 if success, -1 if over limit
- */
-int UpdateSyscallsCount(struct NaClApp *nap);
 
 EXTERN_C_END
 

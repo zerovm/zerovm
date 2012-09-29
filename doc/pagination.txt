@@ -11,7 +11,6 @@ the memory or reading/writing portions of the data from disk. User have no acces
 to things like file names/attributes/etc. but user can get the data and size of the data
 from the manifest. Here is the list of the PE fields user can access:
 
-max_syscalls -- limits the amount of syscalls allowed. Any PE invocation is treated as a syscall.
 channels[] -- file channels/streams available for the user
 
   0 -- read-only stream (like stdin)

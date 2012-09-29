@@ -63,9 +63,6 @@ struct UserManifest *zvm_init()
     zvm_channel_name(channel, i);
   }
 
-  /* limits, counters */
-  result->syscalls_limit = zvm_syscalls_limit();
-
   return result;
 }
 
@@ -179,13 +176,6 @@ int32_t zvm_channel_name(struct ZVMChannel *channel, int ch)
 int32_t zvm_channels(struct ZVMChannel *channels)
 {
   uint64_t request[] = {TrapChannels, 0, (intptr_t)channels};
-  return _trap(request);
-}
-
-/* return syscalls limit */
-int32_t zvm_syscalls_limit()
-{
-  uint64_t request[] = {TrapSyscallsLimit};
   return _trap(request);
 }
 

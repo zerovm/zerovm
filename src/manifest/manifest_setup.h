@@ -70,8 +70,6 @@ struct SystemManifest
   int cmd_line_size; /* command line size for nexe */
   char **cmd_line; /* command line for nexe */
   char **envp; /* environment variables for user */
-  int32_t max_syscalls; /* max allowed *real* system calls, 0 - no limit */
-  int32_t cnt_syscalls; /* syscalls counter */
   int32_t syscallback; /* untrusted address callback (see "syscallback.txt") */
 
   /* channels */
@@ -99,12 +97,6 @@ int SystemManifestDtor(struct NaClApp *nap);
  * return 0 if success, otherwise - non 0
  */
 int ProxyReport(struct NaClApp *nap);
-
-/*
- * check number of trap() calls and increment by 1. update
- * system_manifest. return 0 if success, -1 if over limit
- */
-int UpdateSyscallsCount(struct NaClApp *nap);
 
 EXTERN_C_END
 

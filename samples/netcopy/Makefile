@@ -20,5 +20,5 @@ $(NAME).o: $(NAME).c
 	-DUSER_SIDE -DZRT_LIB -Wno-long-long -O3 -msse4.1 -m64 -o $@ $^
 
 clean:
-	rm -f $(NAME).nexe $(NAME).o *.log *.data debug *.manifest
+	rm -f $(NAME).nexe $(NAME).o *.log *.data debug* *.manifest
 

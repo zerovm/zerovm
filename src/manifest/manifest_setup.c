@@ -273,6 +273,7 @@ void SystemManifestCtor(struct NaClApp *nap)
   assert(nap->system_manifest != NULL);
 
   policy = nap->system_manifest;
+  policy->syscallback = 0;
 
   /* get zerovm settings from manifest */
   policy->version = GetValueByKey("Version");
@@ -290,26 +291,18 @@ void SystemManifestCtor(struct NaClApp *nap)
   COND_ABORT(nap->system_manifest->nexe == NULL, "nexe name is not provided");
   if(nap->system_manifest->nexe_max) COND_ABORT(
       nap->system_manifest->nexe_max < size, "nexe file is larger then alowed");
-
-  /* limits */
-  GET_INT_BY_KEY(policy->max_mem, "MemMax");
-  GET_INT_BY_KEY(policy->max_syscalls, "SyscallsMax");
-
-  /* get the timeout an install if specified */
   SetTimeout(policy);
 
-  /* counters */
-  policy->cnt_syscalls = 0;
-  policy->syscallback = 0;
+  /*
+   * todo(d'b): command line and environment should be passed to the untrusted
+   * "as is" through the dedicated channel: "/dev/environment"
+   */
 
   /* user data (environment, command line) */
   policy->envp = NULL;
   SetCustomAttributes(policy);
 
-  /*
-   * prepare command line arguments for nexe
-   * todo(d'b): allow passing '=' ',' and ' '
-   */
+  /* prepare command line arguments for nexe */
   policy->cmd_line = NULL;
   policy->cmd_line_size = 0;
   SetCommandLine(policy);
@@ -325,6 +318,7 @@ void SystemManifestCtor(struct NaClApp *nap)
    * in raw because after chunk allocated there will be no free user memory
    * note: will set "heap_ptr"
    */
+  GET_INT_BY_KEY(policy->max_mem, "MemMax");
   PreallocateUserMemory(nap);
 
   /* zerovm return code */

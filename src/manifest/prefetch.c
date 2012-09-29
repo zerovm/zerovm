@@ -857,7 +857,6 @@ int32_t FetchMessage(struct ChannelDesc *channel, char *buf, int32_t count)
 int32_t SendMessage(struct ChannelDesc *channel, const char *buf, int32_t count)
 {
   int result;
-//  zmq_msg_t msg;
   int32_t writerest;
   int32_t flag;
   char url[BIG_ENOUGH_SPACE];  /* debug purposes only */

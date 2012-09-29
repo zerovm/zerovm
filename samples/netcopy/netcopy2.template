@@ -6,14 +6,14 @@ NodeName = copier2, 2
 NameServer = udp:127.0.0.1:54321
 
 == the channels section =============================================
-Channel = tcp:1:, /dev/stdin, 0, 99999999, 99999999, 0, 0
-Channel = tcp:3:, /dev/stdout, 0, 0, 0, 99999999, 99999999
+Channel = tcp:1:, /dev/stdin, 0, 67108864, 67108864, 0, 0
+Channel = tcp:3:, /dev/stdout, 0, 0, 0, 67108864, 67108864
 Channel = CURDIR/stderr2.log, /dev/stderr, 0, 0, 0, 65536, 65536
 
 == the limits section ===============================================
 NexeMax = 4194304
 SyscallsMax = 8192
-MaxMem = 100663296
+MaxMem = 134217728
 Timeout = 5
 Version = 09082012
 

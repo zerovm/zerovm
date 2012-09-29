@@ -1,19 +1,20 @@
 =====================================================================
 == 1st collocutor from "network channel" example
 =====================================================================
-Nexe = netcopy.nexe
+Nexe = CURDIR/netcopy.nexe
 NodeName = copier1, 1
 NameServer = udp:127.0.0.1:54321
 
 == the channels section =============================================
-Channel = CURDIR/netcopy.nexe, /dev/stdin, 0, 99999999, 99999999, 0, 0
-Channel = tcp:2:, /dev/stdout, 0, 0, 0, 99999999, 99999999
+Channel = CURDIR/debug1, /dev/debug, 0, 0, 0, 1048576, 1048576
+Channel = CURDIR/netcopy.nexe, /dev/stdin, 0, 67108864, 67108864, 0, 0
+Channel = tcp:2:, /dev/stdout, 0, 0, 0, 67108864, 67108864
 Channel = CURDIR/stderr1.log, /dev/stderr, 0, 0, 0, 65536, 65536
 
 == the limits section ===============================================
 NexeMax = 4194304
 SyscallsMax = 8192
-MaxMem = 100663296
+MaxMem = 134217728
 Timeout = 5
 Version = 09082012
 

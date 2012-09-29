@@ -22,8 +22,6 @@ For now trap() supports the following functions:
   TrapChannels
   TrapChannelName
   TrapAttributes
-  TrapSyscallsCount
-  TrapSyscallsLimit
   TrapMemSize
   TrapHeapPtr
   TrapExit

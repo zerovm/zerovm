@@ -637,7 +637,6 @@ int main(int argc, char **argv, char **envp)
   zrt_log("DEBUG INFORMATION FOR '%s' NODE", argv[0]);
   zrt_log("user heap pointer address = %d", (intptr_t)setup->heap_ptr);
   zrt_log("user memory size = %d", setup->mem_size);
-  zrt_log("syscall limit = %lld", setup->syscalls_limit);
   zrt_log("%060d", 0);
   zrt_log("sizeof(struct ZVMChannel) = %d", sizeof(struct ZVMChannel));
   zrt_log("channels count = %d", setup->channels_count);

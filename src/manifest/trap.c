@@ -14,26 +14,6 @@
 #include "src/manifest/prefetch.h"
 #include "src/service_runtime/nacl_globals.h"
 
-/*
- * check number of trap() calls and increment by 1. update
- * system_manifest. return 0 if success, -1 if over limit
- */
-int UpdateSyscallsCount(struct NaClApp *nap)
-{
-  int retcode = ERR_CODE;
-
-  assert(nap != NULL);
-  assert(nap->system_manifest != NULL);
-
-  if(nap->system_manifest->cnt_syscalls < nap->system_manifest->max_syscalls)
-  {
-    ++nap->system_manifest->cnt_syscalls;
-    retcode = OK_CODE;
-  }
-
-  return retcode;
-}
-
 /* user exit. invokes long jump to main(). uses global var */
 static int32_t ZVMExitHandle(struct NaClApp *nap, int32_t code)
 {
@@ -292,22 +272,6 @@ static int32_t ZVMMemSize(struct NaClApp *nap)
   return nap->system_manifest->max_mem;
 }
 
-/* accessor: how much syscalls allowed for the user */
-static int32_t ZVMSyscallsLimit(struct NaClApp *nap)
-{
-  assert(nap != NULL);
-  assert(nap->system_manifest != NULL);
-  return nap->system_manifest->max_syscalls;
-}
-
-/* accessor: how much syscalls the user already used */
-static int32_t ZVMSyscallsCount(struct NaClApp *nap)
-{
-  assert(nap != NULL);
-  assert(nap->system_manifest != NULL);
-  return nap->system_manifest->cnt_syscalls;
-}
-
 /*
  * return channel name length + 1 if given pointer is not NULL
  * and "name" field in the given channel descriptor is NULL
@@ -475,12 +439,6 @@ int32_t TrapHandler(struct NaClApp *nap, uint32_t args)
       break;
     case TrapChannelName:
       retcode = ZVMChannelName(nap, (struct ZVMChannel*)sys_args[2], (int32_t)sys_args[3]);
-      break;
-    case TrapSyscallsCount:
-      retcode = ZVMSyscallsCount(nap);
-      break;
-    case TrapSyscallsLimit:
-      retcode = ZVMSyscallsLimit(nap);
       break;
     case TrapMemSize:
       retcode = ZVMMemSize(nap);

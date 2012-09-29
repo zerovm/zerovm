@@ -51,6 +51,7 @@ enum ChannelNetProtocol
 #define STDIN "/dev/stdin" /* c90 stdin */
 #define STDOUT "/dev/stdout" /* c90 stdout */
 #define STDERR "/dev/stderr" /* c90 stderr */
+#define STDDBG "/dev/debug" /* zvm extension */
 
 /* not used so far */
 #define INPUT "/dev/input" /* random access read-only channel */

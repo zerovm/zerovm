@@ -40,9 +40,8 @@ Syscallback:
 This is a special mechanism which can be used to intercept and handle any system call.
 For instance, the user can define her own memory manager or implement a file system
 
+
 Limits:
 - user application is limited by cpu time. The limit can be obtained from the manifest via setup() call
   the counter (currently used cpu time) is not available for user
 - application is limited by RAM size. Limit can be read as above. Counter is available
-- syscalls are limited. Limit and counter is available by setup()
-

@@ -50,8 +50,6 @@ enum TrapCalls {
   TrapChannels,
   TrapChannelName,
   TrapAttributes,
-  TrapSyscallsCount,
-  TrapSyscallsLimit,
   TrapMemSize,
   TrapHeapPtr,
   TrapExit
@@ -89,9 +87,6 @@ struct UserManifest
   /* channels */
   int32_t channels_count;
   struct ZVMChannel *channels;
-
-  /* limits, counters */
-  int64_t syscalls_limit;
 
   /* user custom attributes (environment) */
   char **envp;
@@ -147,9 +142,6 @@ int32_t zvm_channels(struct ZVMChannel *channels);
 
 /* get zerovm error number. standard error codes were used */
 int32_t zvm_errno();
-
-/* return syscalls limit */
-int32_t zvm_syscalls_limit();
 
 #endif /* USER_SIDE */
 

@@ -16,7 +16,6 @@ NexeMax
 NexeEtag
 Timeout
 MemMax
-SyscallsMax
 CommandLine
 NodeName
 
@@ -69,9 +68,6 @@ MemMax
   ZeroVM will allocate all memory before nexe start and will not use real memory
   allocation syscalls due nexe runtime. MemMax should take in account that 16mb should be
   reserved for the user stack, 1mb+ - for nexe code and data, and some memory for system area
-SyscallsMax
-  (single value)
-  maximum allowed syscalls number (both NaCl and trap)
 CommandLine
   (space separated values, will be removed)
   command line arguments for nexe
