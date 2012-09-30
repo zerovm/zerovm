@@ -549,8 +549,16 @@ int ProxyReport(struct NaClApp *nap)
       etag, accounting, nap->zvm_state);
 #endif
 
-  report[length] = '\0';
-  NaClLog(LOG_INFO, "%s", report);
+  /* give the report to proxy */
   i = write(STDOUT_FILENO, report, length);
+
+  /* log the report */
+  length = snprintf(report, BIG_ENOUGH_SPACE,
+      "validator state = %d, user return code = %d, etag = %s, "
+      "accounting = %s, exit state = %s",
+      nap->validation_state, nap->system_manifest->user_ret_code,
+      etag, accounting, nap->zvm_state);
+  NaClLog(LOG_INFO, "%s", report);
+
   return i == length ? OK_CODE : ERR_CODE;
 }

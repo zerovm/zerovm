@@ -85,8 +85,6 @@ int32_t ZVMReadHandle(struct NaClApp *nap,
   /* check buffer and convert address */
   if(buffer == NULL) return -EINVAL;
   sys_buffer = (char*)NaClUserToSys(nap, (uintptr_t) buffer);
-  NaClLog(LOG_DEBUG, "%s() invoked: desc=%d, buffer=0x%lx, size=%d, offset=%ld\n",
-      __func__, ch, (intptr_t)buffer, size, offset);
 
   /* prevent reading from the closed or not readable channel */
   channel = &nap->system_manifest->channels[ch];
@@ -118,10 +116,8 @@ int32_t ZVMReadHandle(struct NaClApp *nap,
   tail = channel->limits[GetSizeLimit] - channel->counters[GetSizeLimit];
   if(size > tail) size = tail;
   if(size < 1) return -EDQUOT;
-
-  /* update counters */
-  ++channel->counters[GetsLimit];
-  channel->counters[GetSizeLimit] += size;
+  NaClLog(LOG_DEBUG, "channel %s, buffer=0x%lx, size=%d, offset=%ld\n",
+      channel->alias, (intptr_t)buffer, size, offset);
 
   /* read data and update position */
   /* todo(d'b): when the reading operation hits channels end return EOF(-1?) */
@@ -141,9 +137,11 @@ int32_t ZVMReadHandle(struct NaClApp *nap,
       break;
   }
 
-  /* update the channel position and tag */
+  /* update the channel counter, size, position and tag */
+  ++channel->counters[GetsLimit];
   if(retcode > 0)
   {
+    channel->counters[GetSizeLimit] += retcode;
     UpdateChannelTag(channel, sys_buffer, retcode, offset);
 
     /*
@@ -192,8 +190,6 @@ int32_t ZVMWriteHandle(struct NaClApp *nap,
   /* check buffer and convert address */
   if(buffer == NULL) return -EINVAL;
   sys_buffer = (char*)NaClUserToSys(nap, (uintptr_t) buffer);
-  NaClLog(LOG_DEBUG, "%s() invoked: desc=%d, buffer=0x%lx, size=%d, offset=%ld\n",
-        __func__, ch, (intptr_t)buffer, size, offset);
 
   /* prevent writing to the closed channel */
   if(channel->closed) return -EBADF;
@@ -217,10 +213,8 @@ int32_t ZVMWriteHandle(struct NaClApp *nap,
   tail = channel->limits[PutSizeLimit] - channel->counters[PutSizeLimit];
   if(size > tail) size = tail;
   if(size < 1) return -EDQUOT;
-
-  /* update counters */
-  ++channel->counters[PutsLimit];
-  channel->counters[PutSizeLimit] += size;
+  NaClLog(LOG_DEBUG, "channel %s, buffer=0x%lx, size=%d, offset=%ld\n",
+      channel->alias, (intptr_t)buffer, size, offset);
 
   /* write data and update position */
   switch(channel->source)
@@ -238,9 +232,11 @@ int32_t ZVMWriteHandle(struct NaClApp *nap,
       break;
   }
 
-  /* update the channel position and tag */
+  /* update the channel counter, size, position and tag */
+  ++channel->counters[PutsLimit];
   if(retcode > 0)
   {
+    channel->counters[PutSizeLimit] += retcode;
     UpdateChannelTag(channel, sys_buffer, retcode, offset);
 
     channel->putpos = offset + retcode;
@@ -397,6 +393,24 @@ static int32_t ZVMSyscallback(struct NaClApp *nap, int32_t addr)
   return nap->system_manifest->syscallback;
 }
 
+/* this function debug only. return function name by id */
+static const char *FunctionNameById(int id)
+{
+  switch(id)
+  {
+    case 17770431: return "TrapRead";
+    case 17770432: return "TrapWrite";
+    case 17770433: return "TrapSyscallback";
+    case 17770434: return "TrapChannels";
+    case 17770435: return "TrapChannelName";
+    case 17770436: return "TrapAttributes";
+    case 17770439: return "TrapMemSize";
+    case 17770440: return "TrapHeapPtr";
+    case 17770441: return "TrapExit";
+  }
+  return "not supported";
+}
+
 /*
  * "One Ring" syscall main routine. the nacl syscalls replacement.
  * "args" is an array of syscall name and its arguments
@@ -416,7 +430,7 @@ int32_t TrapHandler(struct NaClApp *nap, uint32_t args)
    * note: cannot set "trap error"
    */
   sys_args = (uint64_t*)NaClUserToSys(nap, (uintptr_t) args);
-  NaClLog(LOG_SUICIDE, "Trap arguments address = 0x%lx\n", (intptr_t)sys_args);
+  NaClLog(LOG_DEBUG, "%s called", FunctionNameById(sys_args[0]));
 
   switch(*sys_args)
   {
@@ -446,13 +460,12 @@ int32_t TrapHandler(struct NaClApp *nap, uint32_t args)
     case TrapHeapPtr:
       retcode = ZVMHeapPtr(nap);
       break;
-
     default:
       retcode = -EPERM;
       NaClLog(LOG_ERROR, "function %ld is not supported\n", *sys_args);
       break;
   }
 
-  NaClLog(LOG_SUICIDE, "leaving Trap with code = 0x%x\n", retcode);
+  NaClLog(LOG_DEBUG, "%s returned %d", FunctionNameById(sys_args[0]), retcode);
   return retcode;
 }

@@ -45,14 +45,14 @@ enum IOLimits {
  */
 enum TrapCalls {
   TrapRead = 17770431,
-  TrapWrite,
-  TrapSyscallback,
-  TrapChannels,
-  TrapChannelName,
-  TrapAttributes,
-  TrapMemSize,
-  TrapHeapPtr,
-  TrapExit
+  TrapWrite = 17770432,
+  TrapSyscallback = 17770433,
+  TrapChannels = 17770434,
+  TrapChannelName = 17770435,
+  TrapAttributes = 17770436,
+  TrapMemSize = 17770439,
+  TrapHeapPtr = 17770440,
+  TrapExit = 17770441
 };
 
 /*

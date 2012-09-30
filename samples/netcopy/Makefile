@@ -11,9 +11,9 @@ all: $(NAME).o
 	@sed 's#CURDIR#$(CURDIR)#g' $(NAME)3.template > $(NAME)3.manifest
 	@sleep 1
 	@binpatch $(NAME).nexe 4c01fc0f3148c1e2 4c01fc909048c1e2
-	@setarch x86_64 -R $(ZEROVM_ROOT)/zerovm -e -M$(NAME)1.manifest&
-	@setarch x86_64 -R $(ZEROVM_ROOT)/zerovm -e -M$(NAME)2.manifest&
-	@setarch x86_64 -R $(ZEROVM_ROOT)/zerovm -e -M$(NAME)3.manifest
+	@setarch x86_64 -R $(ZEROVM_ROOT)/zerovm -v4 -e -M$(NAME)1.manifest&
+#	@setarch x86_64 -R $(ZEROVM_ROOT)/zerovm -v4 -e -M$(NAME)2.manifest&
+	@setarch x86_64 -R $(ZEROVM_ROOT)/zerovm -v4 -e -M$(NAME)3.manifest
 
 $(NAME).o: $(NAME).c
 	$(NACL_TOOLCHAIN)/bin/x86_64-nacl-gcc -c -Wall -I $(ZEROVM_ROOT) \

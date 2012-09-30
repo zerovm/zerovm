@@ -95,7 +95,7 @@ void  NaClPatchOneTrampoline(struct NaClApp *nap,
 
   call_target_addr = nap->dispatch_thunk;
 
-  NaClLog(4, "call_target_addr = 0x%"NACL_PRIxPTR"\n", call_target_addr);
+  NaClLog(LOG_SUICIDE, "call_target_addr = 0x%"NACL_PRIxPTR"\n", call_target_addr);
   CHECK(0 != call_target_addr);
   call_target.target = (((uintptr_t) &NaCl_trampoline_call_target)
                         - sizeof(uintptr_t));
