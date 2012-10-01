@@ -11,6 +11,7 @@
 #include <openssl/sha.h> /* SHA_DIGEST_LENGTH, SHA_CTX */
 #include <zmq.h>
 #include "src/service_runtime/sel_ldr.h"
+#include "src/service_runtime/etag.h"
 #include "api/zvm.h"
 
 EXTERN_C_BEGIN
@@ -83,7 +84,8 @@ struct ChannelDesc
 {
   char *name; /* real name */
   char *alias; /* name for untrusted */
-  SHA_CTX tag; /* check sum of the channel data (sha1) */
+  char tag[TAG_CONTEXT_SIZE]; /* tag context (currently sha1) */
+  char digest[TAG_DIGEST_SIZE]; /* tag digest (currently sha1) */
 
   /* group #1.1 */
   int32_t handle; /* file handle */

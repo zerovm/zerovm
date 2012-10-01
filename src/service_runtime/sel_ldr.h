@@ -38,6 +38,7 @@
 #include "src/service_runtime/sel_util.h"
 #include "src/service_runtime/sel_rt.h"
 #include "src/service_runtime/tools.h"
+#include "src/service_runtime/etag.h"
 #include "src/service_runtime/nacl_cpuid.h" /* d'b: taken from validator */
 
 EXTERN_C_BEGIN
@@ -219,6 +220,7 @@ struct NaClApp {
   int                       verbosity; /* startup time variable */
   int                       handle_signals; /* startup time variable */
   int64_t                   storage_limit; /* hard limit for all zerovm i/o */
+  char                      user_tag[TAG_CONTEXT_SIZE]; /* tag context for memory and channels */
 
   /* for channels */
   int                       node_id; /* own node id from manifest */

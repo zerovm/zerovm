@@ -759,7 +759,7 @@ int PrefetchChannelCtor(struct ChannelDesc *channel)
 }
 
 /* check and update channel EOF state and etag */
-static inline void UpadateChannelState(struct ChannelDesc *channel)
+static inline void UpdateChannelState(struct ChannelDesc *channel)
 {
   int64_t more = 0;
   size_t more_size = sizeof more;
@@ -767,34 +767,21 @@ static inline void UpadateChannelState(struct ChannelDesc *channel)
   zmq_getsockopt(channel->socket, ZMQ_RCVMORE, &more, &more_size);
 
   /* etag enabled */
-  if(more != 0 && channel->bufend == ETAG_SIZE && EtagEnabled())
+  if(more != 0 && channel->bufend == TAG_DIGEST_SIZE - 1 && TagEngineEnabled())
   {
-    const char *local_etag = ETAG_DISABLED;
-    char tmp[ETAG_SIZE], *control_etag = tmp;
-
-    /* store control etag */
-    memcpy(control_etag, zmq_msg_data(&channel->msg), ETAG_SIZE);
+    /* store received digest */
+    memcpy(channel->digest, zmq_msg_data(&channel->msg), TAG_DIGEST_SIZE);
 
     /* receive the zero part */
     zmq_recv(channel->socket, &channel->msg, 0);
     channel->bufend = zmq_msg_size(&channel->msg);
     if(channel->bufend == 0) channel->eof = 1;
     else NaClLog(LOG_ERROR, "invalid eof pattern detected");
-
-    /* compare etags */
-    local_etag = UpdateEtag(&channel->tag, local_etag, 0);
-    if(memcmp(local_etag, control_etag, ETAG_SIZE) == 0)
-      NaClLog(LOG_DEBUG, "channel %s is ok. etag = %s", channel->alias, local_etag);
-    else
-      NaClLog(LOG_ERROR, "channel %s is corrupted. etags = %s : %s",
-          channel->alias, local_etag, control_etag);
   }
 
   /* etag disabled */
-  if(more == 0 && channel->bufend == 0 && !EtagEnabled())
-  {
+  if(more == 0 && channel->bufend == 0 && !TagEngineEnabled())
     channel->eof = 1;
-  }
 }
 
 /*
@@ -837,7 +824,7 @@ int32_t FetchMessage(struct ChannelDesc *channel, char *buf, int32_t count)
       ZMQ_TEST_STATE(result, &channel->msg);
       channel->bufend = zmq_msg_size(&channel->msg);
 
-      UpadateChannelState(channel);
+      UpdateChannelState(channel);
       continue;
     }
 
@@ -941,16 +928,19 @@ int PrefetchChannelDtor(struct ChannelDesc *channel)
   /* close "PUT" channel */
   if(channel->limits[PutsLimit] && channel->limits[PutSizeLimit])
   {
-    int etag_size = 0;
-    const char *etag = (const char*)&etag_size; /* to make it not NULL (will not be used) */
+    int size = 0;
 
-    if(EtagEnabled())
-    {
-      etag_size = ETAG_SIZE;
-      etag = UpdateEtag(&channel->tag, etag, 0);
-    }
+    /* eof must be set before tag sending */
     channel->eof = 1;
-    SendMessage(channel, etag, etag_size);
+
+    /* send channel etag digest (if enabled) */
+    if(TagEngineEnabled())
+    {
+      size = TAG_DIGEST_SIZE - 1; /* don't send ending '\0' */
+      TagDigest(&channel->tag, channel->digest);
+    }
+    SendMessage(channel, channel->digest, size);
+
   }
 
   /* close "GET" channel */
@@ -961,6 +951,19 @@ int PrefetchChannelDtor(struct ChannelDesc *channel)
     {
       char buf[NET_BUFFER_SIZE];
       FetchMessage(channel, buf, NET_BUFFER_SIZE);
+    }
+
+    /* test integrity (if etag enabled) */
+    if(TagEngineEnabled())
+    {
+      char local_digest[TAG_DIGEST_SIZE];
+
+      TagDigest(channel->tag, local_digest);
+      if(memcmp(local_digest, channel->digest, TAG_DIGEST_SIZE - 1) == 0)
+        NaClLog(LOG_DEBUG, "channel %s is ok. tag = %s", channel->alias, local_digest);
+      else
+        NaClLog(LOG_ERROR, "channel %s is corrupted. tags = %s : %s",
+            channel->alias, local_digest, channel->digest);
     }
 
     zmq_msg_close(&channel->msg);

@@ -321,6 +321,10 @@ void SystemManifestCtor(struct NaClApp *nap)
   GET_INT_BY_KEY(policy->max_mem, "MemMax");
   PreallocateUserMemory(nap);
 
+  /* prepare overall context */
+  COND_ABORT(TagCtor(&nap->user_tag) == ERR_CODE,
+      "cannot construct overall channels tag");
+
   /* zerovm return code */
   nap->system_manifest->ret_code = OK_CODE;
 }
@@ -475,39 +479,43 @@ static void GatherStatistics(struct NaClApp *nap, char *buf, int size)
       network_stats[PutsLimit], network_stats[PutSizeLimit]);  /* network channels output */
 }
 
-/* update overall etag with memory chunk */
+/* updates user_tag (should be constructed) with memory chunk data */
 static void EtagMemoryChunk(void *state, struct NaClVmmapEntry *vmep)
 {
-  SHA_CTX ctx;
   uintptr_t addr;
   int32_t size;
   struct NaClApp *nap = state;
-  const char *hex;
+  int i;
 
-  UNREFERENCED_PARAMETER(state);
   assert(nap != NULL);
-  assert(EtagEnabled() != 0);
+  assert(TagEngineEnabled() != 0);
 
   /* skip inaccessible and removed pages */
   if(vmep->prot == 0) return;
   if(vmep->removed) return;
 
-  /* construct the chunk hash context */
-  if(ConstructCTX(&ctx) == ERR_CODE)
-  {
-    ErrIf(1, "error initializing memory chunk etag");
-    return;
-  }
-
-  /* get etag for the chunk */
+  /* update user_etag with the chunk data */
   addr = nap->mem_start + (vmep->page_num << NACL_PAGESHIFT);
   size = vmep->npages << NACL_PAGESHIFT;
-  hex = UpdateEtag(&ctx, (const char*)addr, size);
-  NaClLog(LOG_DEBUG, "memory chunk addr = %lx, size = %d, etag = %s",
-      addr - nap->mem_start, size, hex);
+  i = TagUpdate(&nap->user_tag, (const char*)addr, size);
+  ErrIf(i == ERR_CODE, "cannot update user_tag");
+}
 
-  /* update overall etag with the chunk one */
-  OverallEtag(&ctx);
+/* updates user_tag (should be constructed) with all channels digests */
+void ChannelsDigest(struct NaClApp *nap)
+{
+  int i;
+  int code;
+
+  assert(nap != NULL);
+
+  /* go through all channels */
+  for(i = 0; i < nap->system_manifest->channels_count; ++i)
+  {
+    code = TagUpdate(&nap->user_tag,
+        (const char*)nap->system_manifest->channels[i].digest, TAG_DIGEST_SIZE);
+    ErrIf(code == ERR_CODE, "cannot update overall channels tag");
+  }
 }
 
 /*
@@ -519,7 +527,7 @@ int ProxyReport(struct NaClApp *nap)
 {
   char report[BIG_ENOUGH_SPACE + 1];
   char accounting[BIG_ENOUGH_SPACE + 1];
-  const char *etag = ETAG_DISABLED;
+  char etag[TAG_DIGEST_SIZE];
   int length;
   int i;
 
@@ -528,11 +536,12 @@ int ProxyReport(struct NaClApp *nap)
 
   GatherStatistics(nap, accounting, BIG_ENOUGH_SPACE);
 
-  /* etag user memory */
-  if(EtagEnabled())
+  /* tag user memory and channels */
+  if(TagEngineEnabled())
   {
+    ChannelsDigest(nap);
     NaClVmmapVisit(&nap->mem_map, EtagMemoryChunk, nap);
-    etag = EtagToText((unsigned char*)OverallEtag(NULL));
+    TagDigest(nap->user_tag, etag);
   }
 
   /* for debugging purposes it is useful to see more advanced information */

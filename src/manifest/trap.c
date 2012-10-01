@@ -48,22 +48,22 @@ int ChannelIOMask(struct ChannelDesc *channel)
   return rw;
 }
 
-/* updates channel tag and log it with i/o results */
+/* updates channel tag */
 static void UpdateChannelTag(struct ChannelDesc *channel,
-    char *buffer, int32_t size, int64_t offset)
+    const char *buffer, int32_t size)
 {
-  char *hex;
+  int i;
 
   /* skip if etag is not enabled */
-  if(!EtagEnabled()) return;
+  if(!TagEngineEnabled()) return;
 
   assert(channel != NULL);
   assert(buffer != NULL);
 
   /* update etag and log information */
-  hex = (char*)UpdateEtag(&channel->tag, buffer, size);
-  NaClLog(LOG_DEBUG, "buf = %lX, size = %d, offset = %ld, etag = %s",
-      (uintptr_t)buffer, size, offset, hex);
+  if(size <= 0) return;
+  i = TagUpdate(&channel->tag, buffer, size);
+  ErrIf(i == ERR_CODE, "cannot update channel tag");
 }
 
 /*
@@ -142,7 +142,7 @@ int32_t ZVMReadHandle(struct NaClApp *nap,
   if(retcode > 0)
   {
     channel->counters[GetSizeLimit] += retcode;
-    UpdateChannelTag(channel, sys_buffer, retcode, offset);
+    UpdateChannelTag(channel, (const char*)sys_buffer, retcode);
 
     /*
      * current get cursor. must be updated if channel have seq get
@@ -162,11 +162,11 @@ int32_t ZVMReadHandle(struct NaClApp *nap,
  * return amount of read bytes or negative error code if call failed
  */
 int32_t ZVMWriteHandle(struct NaClApp *nap,
-    int ch, char *buffer, int32_t size, int64_t offset)
+    int ch, const char *buffer, int32_t size, int64_t offset)
 {
   struct ChannelDesc *channel;
   int64_t tail;
-  char *sys_buffer;
+  const char *sys_buffer;
   int32_t retcode = ERR_CODE;
 
   assert(nap != NULL);
@@ -189,7 +189,7 @@ int32_t ZVMWriteHandle(struct NaClApp *nap,
 
   /* check buffer and convert address */
   if(buffer == NULL) return -EINVAL;
-  sys_buffer = (char*)NaClUserToSys(nap, (uintptr_t) buffer);
+  sys_buffer = (const char*)NaClUserToSys(nap, (uintptr_t) buffer);
 
   /* prevent writing to the closed channel */
   if(channel->closed) return -EBADF;
@@ -237,7 +237,7 @@ int32_t ZVMWriteHandle(struct NaClApp *nap,
   if(retcode > 0)
   {
     channel->counters[PutSizeLimit] += retcode;
-    UpdateChannelTag(channel, sys_buffer, retcode, offset);
+    UpdateChannelTag(channel, (const char*)sys_buffer, retcode);
 
     channel->putpos = offset + retcode;
     channel->size = channel->type == 2 ?

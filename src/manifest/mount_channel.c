@@ -109,12 +109,14 @@ static void ChannelCtor(struct NaClApp *nap, char **tokens)
   channel = SelectNextChannel(nap, tokens[ChannelAlias]);
   COND_ABORT(channel->alias != NULL, "channel is already allocated");
 
+  /* set common general fields */
   channel->type = ATOI(tokens[ChannelAccessType]);
   COND_ABORT(channel->type < SGetSPut || channel->type > RGetRPut,
       "invalid channel access type");
   channel->name = tokens[ChannelName];
   channel->alias = tokens[ChannelAlias];
-  COND_ABORT(ConstructCTX(&channel->tag) == ERR_CODE, "channel tag setup error");
+  COND_ABORT(TagCtor(&channel->tag) == ERR_CODE, "channel tag setup error");
+  channel->digest[0] = 0; /* set to an empty string */
   channel->source = GetSourceType((char*)channel->name);
 
   /* limits and counters */
@@ -150,19 +152,18 @@ static void ChannelCtor(struct NaClApp *nap, char **tokens)
 /* close channel and deallocate its resources */
 static void ChannelDtor(struct ChannelDesc *channel)
 {
-  const char *etag = ETAG_DISABLED;
-
   assert(channel != NULL);
 
-  /* update the global channel hash value excluding special channels */
-  if(EtagEnabled())
+  /* set the tag digests for each channel */
+  if(TagEngineEnabled())
   {
-    unsigned char *hash;
+    /* if not already set */
+    if(channel->digest[0] == 0)
+      TagDigest(channel->tag, channel->digest);
 
-    hash = (unsigned char*)OverallEtag(&channel->tag);
-    etag = EtagToText(hash);
-    NaClLog(LOG_DEBUG, "channel %s closed with etag = %s, getsize = %ld, putsize = %ld",
-        channel->alias, etag, channel->counters[GetSizeLimit], channel->counters[PutSizeLimit]);
+    NaClLog(LOG_DEBUG, "channel %s closed with etag = %s, getsize = %ld, "
+        "putsize = %ld", channel->alias, channel->digest,
+        channel->counters[GetSizeLimit], channel->counters[PutSizeLimit]);
   }
 
   switch(channel->source)

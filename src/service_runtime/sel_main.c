@@ -75,7 +75,7 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
         nap->fuzzing_quit_after_load = 1;
         break;
       case 'e':
-        EtagCtor();
+        TagEngineCtor();
         break;
       case 'S':
         /* d'b: disable signals handling */

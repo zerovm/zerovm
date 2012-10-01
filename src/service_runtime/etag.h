@@ -11,41 +11,33 @@
 #include <stdint.h>
 #include <openssl/sha.h>
 
-#define ETAG_SIZE SHA_DIGEST_LENGTH * 2
-#define ETAG_DISABLED "disabled"
+#define TAG_ENGINE_DISABLED "disabled"
+#define TAG_CONTEXT_SIZE sizeof(SHA_CTX) /* tag size */
+#define TAG_BINARY_SIZE SHA_DIGEST_LENGTH /* tag size */
+#define TAG_DIGEST_SIZE SHA_DIGEST_LENGTH * 2 + 1 /* tag digest size */
 
 /* etag engine construction */
-void EtagCtor();
+void TagEngineCtor();
 
 /* return the etag_enabled state */
-int EtagEnabled();
+int TagEngineEnabled();
 
 /*
  * initialize the hash context in provided space
  * return 0 if everything is ok
  */
-int ConstructCTX(SHA_CTX *ctx);
+int TagCtor(void *ctx);
 
 /*
- * accumulates hashes of all channels into the one digest
- * returns given string if updated or NULL when failed.
- * if NULL is given finalizes hash and return digest
+ * calculates digest from the context. can be used consequently
+ * note: "digest" must have enough space to hold the digest
  */
-const unsigned char *OverallEtag(SHA_CTX *ctx);
+void TagDigest(void *ctx, char *digest);
 
 /*
- * make asciiz digest from the binary digest (must be 20 bytes array)
- * return asciiz digest or NULL if not available
+ * update etag with the given buffer.
+ * returns 0 if all ok or -1 if failed
  */
-const char *EtagToText(unsigned char *p);
-
-/* calculate text digest for the data */
-const char *EtagData(void *data, int size);
-
-/*
- * update etag with the given buffer. return the asciiz digest or NULL
- * if not available
- */
-const char *UpdateEtag(SHA_CTX *etag, const char *buffer, int32_t size);
+int TagUpdate(void *ctx, const char *buffer, int32_t size);
 
 #endif /* ETAG_H_ */
