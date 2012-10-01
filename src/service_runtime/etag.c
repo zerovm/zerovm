@@ -78,7 +78,8 @@ int TagUpdate(void *ctx, const char *buffer, int32_t size)
 
   assert(ctx != NULL);
   assert(buffer != NULL);
-  assert(size > 0);
+  assert(size >= 0);
+  if(size == 0) return OK_CODE;
 
   /* update the context with a new data */
   code = SHA1_Update((SHA_CTX*)ctx, buffer, size);
