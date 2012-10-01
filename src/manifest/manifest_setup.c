@@ -259,7 +259,9 @@ static void SetTimeout(struct SystemManifest *policy)
   GET_INT_BY_KEY(policy->timeout, "Timeout");
   COND_ABORT(policy->timeout < 1, "invalid or absent timeout");
   rl.rlim_cur = policy->timeout;
-  setrlimit (RLIMIT_CPU, &rl);
+  rl.rlim_max = -1;
+  setrlimit(RLIMIT_CPU, &rl);
+  COND_ABORT(setrlimit(RLIMIT_CPU, &rl) != 0, "cannot set timeout");
 }
 
 /* construct system_manifest object and initialize it from manifest */
