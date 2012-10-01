@@ -770,7 +770,7 @@ static inline void UpdateChannelState(struct ChannelDesc *channel)
   if(more != 0 && channel->bufend == TAG_DIGEST_SIZE - 1 && TagEngineEnabled())
   {
     /* store received digest */
-    memcpy(channel->digest, zmq_msg_data(&channel->msg), TAG_DIGEST_SIZE);
+    memcpy(channel->digest, zmq_msg_data(&channel->msg), TAG_DIGEST_SIZE - 1);
 
     /* receive the zero part */
     zmq_recv(channel->socket, &channel->msg, 0);
@@ -950,7 +950,13 @@ int PrefetchChannelDtor(struct ChannelDesc *channel)
     while(channel->eof == 0)
     {
       char buf[NET_BUFFER_SIZE];
-      FetchMessage(channel, buf, NET_BUFFER_SIZE);
+      int32_t size = FetchMessage(channel, buf, NET_BUFFER_SIZE);
+      ++channel->counters[GetsLimit];
+      channel->counters[GetSizeLimit] += size;
+
+      /* update tag if enabled */
+      if(TagEngineEnabled())
+        TagUpdate(channel->tag, buf, size);
     }
 
     /* test integrity (if etag enabled) */
@@ -959,6 +965,7 @@ int PrefetchChannelDtor(struct ChannelDesc *channel)
       char local_digest[TAG_DIGEST_SIZE];
 
       TagDigest(channel->tag, local_digest);
+      channel->digest[TAG_DIGEST_SIZE] = '\0';
       if(memcmp(local_digest, channel->digest, TAG_DIGEST_SIZE - 1) == 0)
         NaClLog(LOG_DEBUG, "channel %s is ok. tag = %s", channel->alias, local_digest);
       else
