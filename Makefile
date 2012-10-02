@@ -19,7 +19,7 @@ CCFLAGS2=-Wextra -Wswitch-enum -Wsign-compare $(CCFLAGS)
 CXXFLAGS1=-c -std=c++98 $(CXXFLAGS0) $(FLAGS0) $(NACLDEFS) $(CXXFLAGS) -I.
 CXXFLAGS2=-Wl,-z,noexecstack $(CXXFLAGS0) $(CXXFLAGS) -Lobj -L/usr/lib64 -pie -Wl,-z,relro -Wl,-z,now -Wl,-rpath=obj
 
-OBJS=obj/dyn_array.o obj/elf_util.o obj/fault_injection.o obj/gio_mem.o obj/gio_mem_snapshot.o obj/gio.o obj/gprintf.o obj/manifest_parser.o obj/manifest_setup.o obj/md5.o obj/mount_channel.o obj/nacl_all_modules.o obj/nacl_check.o obj/nacl_cpuid.o obj/nacl_dep_qualify_arch.o obj/nacl_dep_qualify.o obj/nacl_desc_base.o obj/nacl_desc_effector_ldr.o obj/nacl_desc_imc_shm.o obj/nacl_desc_io.o obj/nacl_error_code.o obj/nacl_exit.o obj/nacl_find_addrsp.o obj/nacl_host_desc_common.o obj/nacl_host_desc.o obj/nacl_imc_c.o obj/nacl_imc.o obj/nacl_imc_unistd.o obj/nacl_log.o obj/nacl_memory_object.o obj/nacl_os_qualify.o obj/nacl_perf_counter.o obj/nacl_refcount.o obj/nacl_signal_64.o obj/nacl_signal_common.o obj/nacl_signal.o obj/nacl_switch_64.o obj/nacl_switch_to_app_64.o obj/nacl_syscall_64.o obj/nacl_syscall_handlers.o obj/nacl_syscall_hook.o obj/nacl_text.o obj/nacl_time.o obj/nacl_xgetbv.o obj/nrd_all_modules.o obj/platform_init.o obj/prefetch.o obj/preload.o obj/sel_addrspace.o obj/sel_addrspace_posix_x86_64.o obj/sel_addrspace_x86_64.o obj/sel_ldr.o obj/sel_ldr_standard.o obj/sel_ldr_x86_64.o obj/sel_mem.o obj/sel_memory.o obj/sel_qualify.o obj/sel_rt_64.o obj/sel_segments.o obj/sel_util-inl.o obj/sysv_shm_and_mmap.o obj/tramp_64.o obj/trap.o obj/etag.o
+OBJS=obj/dyn_array.o obj/elf_util.o obj/fault_injection.o obj/gio_mem.o obj/gio_mem_snapshot.o obj/gio.o obj/gprintf.o obj/manifest_parser.o obj/manifest_setup.o obj/mount_channel.o obj/nacl_all_modules.o obj/nacl_check.o obj/nacl_cpuid.o obj/nacl_dep_qualify_arch.o obj/nacl_dep_qualify.o obj/nacl_desc_base.o obj/nacl_desc_effector_ldr.o obj/nacl_desc_imc_shm.o obj/nacl_desc_io.o obj/nacl_error_code.o obj/nacl_exit.o obj/nacl_find_addrsp.o obj/nacl_host_desc_common.o obj/nacl_host_desc.o obj/nacl_imc_c.o obj/nacl_imc.o obj/nacl_imc_unistd.o obj/nacl_log.o obj/nacl_memory_object.o obj/nacl_os_qualify.o obj/nacl_perf_counter.o obj/nacl_refcount.o obj/nacl_signal_64.o obj/nacl_signal_common.o obj/nacl_signal.o obj/nacl_switch_64.o obj/nacl_switch_to_app_64.o obj/nacl_syscall_64.o obj/nacl_syscall_handlers.o obj/nacl_syscall_hook.o obj/nacl_text.o obj/nacl_time.o obj/nacl_xgetbv.o obj/nrd_all_modules.o obj/platform_init.o obj/prefetch.o obj/preload.o obj/sel_addrspace.o obj/sel_addrspace_posix_x86_64.o obj/sel_addrspace_x86_64.o obj/sel_ldr.o obj/sel_ldr_standard.o obj/sel_ldr_x86_64.o obj/sel_mem.o obj/sel_memory.o obj/sel_qualify.o obj/sel_rt_64.o obj/sel_segments.o obj/sel_util-inl.o obj/sysv_shm_and_mmap.o obj/tramp_64.o obj/trap.o obj/etag.o
 
 CC=@gcc
 CXX=@g++
@@ -102,9 +102,6 @@ obj/trap.o: src/manifest/trap.c
 	$(CC) ${CCFLAGS1} -o $@ $^
 
 obj/manifest_setup.o: src/manifest/manifest_setup.c
-	$(CC) ${CCFLAGS1} -o $@ $^
-
-obj/md5.o: src/manifest/md5.c
 	$(CC) ${CCFLAGS1} -o $@ $^
 
 obj/manifest_parser.o: src/manifest/manifest_parser.c
