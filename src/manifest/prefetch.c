@@ -965,7 +965,7 @@ int PrefetchChannelDtor(struct ChannelDesc *channel)
       char local_digest[TAG_DIGEST_SIZE];
 
       TagDigest(channel->tag, local_digest);
-      channel->digest[TAG_DIGEST_SIZE] = '\0';
+      channel->digest[TAG_DIGEST_SIZE - 1] = '\0';
       if(memcmp(local_digest, channel->digest, TAG_DIGEST_SIZE - 1) == 0)
         NaClLog(LOG_DEBUG, "channel %s is ok. tag = %s", channel->alias, local_digest);
       else

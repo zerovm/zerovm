@@ -12,6 +12,9 @@
 #define GUARDSIZE   (10 * FOURGIG)
 #define ALIGN_BITS  32
 #define MSGWIDTH    "25"
+#define R15_CONST   (void *) 0x7f0000000000 /* d'b: base address to mmap to */
+#define RELATIVE_MMAP (MAP_ANONYMOUS | MAP_NORESERVE | MAP_PRIVATE) /* d'b: mmap at R15_CONST */
+#define ABSOLUTE_MMAP (RELATIVE_MMAP | MAP_FIXED) /* d'b: mmap at any address */
 
 /*
  * NaClAllocatePow2AlignedMemory is for allocating a large amount of
@@ -38,12 +41,24 @@ static void *NaClAllocatePow2AlignedMemory(size_t mem_sz,
           " Ask:",
           request_sz);
 
+  /* d'b: try to get the fixed address r15 (user base register) */
+  /* {{
   mem_ptr = mmap((void *) 0,
            request_sz,
            PROT_NONE,
            MAP_ANONYMOUS | MAP_NORESERVE | MAP_PRIVATE,
            -1,
            (off_t) 0);
+  */
+  mem_ptr = mmap(R15_CONST, request_sz, PROT_NONE, ABSOLUTE_MMAP, -1, (off_t) 0);
+  if (MAP_FAILED == mem_ptr)
+  {
+    NaClLog(LOG_ERROR, "the base register absolute address allocation failed!");
+    NaClLog(LOG_ERROR, "trying to allocate user space in NOT DETERMINISTIC WAY");
+    mem_ptr = mmap(R15_CONST, request_sz, PROT_NONE, RELATIVE_MMAP, -1, (off_t) 0);
+  }
+  /* }} */
+
   if (MAP_FAILED == mem_ptr) {
     return NULL;
   }
