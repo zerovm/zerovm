@@ -5,9 +5,9 @@ all: $(NAME).o
 	$(NACL_TOOLCHAIN)/bin/x86_64-nacl-gcc -o $(NAME).nexe -s -static -T \
 	$(NACL_TOOLCHAIN)/x86_64-nacl/lib64/ldscripts/elf64_nacl.x.static \
 	-melf64_nacl -m64 $(NAME).o $(ZEROVM_ROOT)/api/libzrt.a
-	@sed 's#CURDIR#$(CURDIR)#g' $(NAME).template > $(NAME).manifest # prepare manifest
-	@binpatch $(NAME).nexe 4c01fc0f3148c1e2 4c01fc909048c1e2        # determinism unsafe operation removal
-	@setarch x86_64 -R $(ZEROVM_ROOT)/zerovm -e -v1 -M$(NAME).manifest  # prevent memory allocation randomization
+	@sed 's#CURDIR#$(CURDIR)#g' $(NAME).template > $(NAME).manifest
+	@binpatch $(NAME).nexe 4c01fc0f3148c1e2 4c01fc909048c1e2
+	@$(ZEROVM_ROOT)/zerovm -e -v1 -M$(NAME).manifest
 
 $(NAME).o: $(NAME).c
 	$(NACL_TOOLCHAIN)/bin/x86_64-nacl-gcc -c -Wall -I $(ZEROVM_ROOT) \

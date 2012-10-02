@@ -39,7 +39,6 @@
 #include "src/service_runtime/sel_rt.h"
 #include "src/service_runtime/tools.h"
 #include "src/service_runtime/etag.h"
-#include "src/service_runtime/nacl_cpuid.h" /* d'b: taken from validator */
 
 EXTERN_C_BEGIN
 
@@ -229,9 +228,6 @@ struct NaClApp {
   /* fields required by "whole chunk" user memory management */
   int                       user_side_flag; /* 0 - trusted syscall, 1 - called from user side */
   int                       trusted_code; /* mark to catch source of signal */
-
-  /* for validator */
-  NaClCPUFeatures           cpu_features;
 
   /* fields taken from the natp */
   void                      *signal_stack; /* signal handling, registered with sigaltstack() */

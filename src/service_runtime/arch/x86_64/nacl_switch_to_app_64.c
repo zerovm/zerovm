@@ -15,22 +15,28 @@
 
 static NORETURN_PTR void (*NaClSwitch)(struct NaClThreadContext *context);
 
-void NaClInitSwitchToApp(struct NaClApp *nap) {
-  NaClCPUFeaturesX86 cpu_features;
+/*
+ * d'b: a new cpu detection routine. just differ nosse/sse/avx
+ * returns -1 if cpu has no sse, 0 for sse and 1 for avx spu
+ */
+static int CPUTest()
+{
+  int r[4] = {0};
+
+  __asm("cpuid" : "=a"(r[0]), "=b"(r[1]), "=c"(r[2]), "=d"(r[3]) : "a"(1), "c"(0));
+  if((r[3] & (1 << 25)) == 0) return -1;
+  if((r[2] & (1 << 28)) == 0) return 0;
+  return 1;
+}
+
+void NaClInitSwitchToApp(struct NaClApp *nap)
+{
+  int cpu = CPUTest();
 
   UNREFERENCED_PARAMETER(nap);
-
-  /*
-   * TODO(mcgrathr): This call is repeated in platform qualification and
-   * in every application of the validator.  It would be more efficient
-   * to do it once and then reuse the same data.
-   */
-  NaClGetCurrentCPUFeatures(&cpu_features);
-  if (NaClGetCPUFeature(&cpu_features, NaClCPUFeature_AVX)) {
-    NaClSwitch = NaClSwitchAVX;
-  } else {
-    NaClSwitch = NaClSwitchSSE;
-  }
+  COND_ABORT(cpu == -1, "zerovm needs SSE CPU");
+  NaClSwitch = cpu == 0 ? NaClSwitchSSE : NaClSwitchAVX;
+  NaClLog(LOG_INFO, "%s cpu detected", cpu == 0 ? "SSE" : "AVX");
 }
 
 /*

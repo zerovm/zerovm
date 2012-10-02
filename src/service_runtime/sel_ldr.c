@@ -22,11 +22,6 @@ int NaClAppWithSyscallTableCtor(struct NaClApp               *nap,
   nap->stack_size = NACL_DEFAULT_STACK_MAX;
   nap->mem_start = 0;
   nap->dispatch_thunk = 0;
-
-  /* Get the set of features that the CPU we're running on supports. */
-  /* These may be adjusted later in sel_main.c for fixed-feature CPU mode. */
-  NaClGetCurrentCPUFeatures(&nap->cpu_features);
-
   nap->static_text_end = 0;
   nap->dynamic_text_start = 0;
   nap->dynamic_text_end = 0;
@@ -37,9 +32,6 @@ int NaClAppWithSyscallTableCtor(struct NaClApp               *nap,
   nap->initial_entry_pt = 0;
   nap->user_entry_pt = 0;
 
-//  if (!DynArrayCtor(&nap->threads, 2)) {
-//    goto cleanup_none;
-//  }
   if (!DynArrayCtor(&nap->desc_tbl, 2)) {
     goto cleanup_threads;
   }
@@ -74,8 +66,6 @@ int NaClAppWithSyscallTableCtor(struct NaClApp               *nap,
   nap->module_load_status = LOAD_STATUS_UNKNOWN;
   nap->module_may_start = 0;  /* only when secure_service != NULL */
 
-//  nap->skip_validator = 0;
-
   return 1;
 
  cleanup_effp_free:
@@ -85,8 +75,6 @@ int NaClAppWithSyscallTableCtor(struct NaClApp               *nap,
  cleanup_desc_tbl:
   DynArrayDtor(&nap->desc_tbl);
  cleanup_threads:
-//  DynArrayDtor(&nap->threads);
-// cleanup_none:
   return 0;
 }
 

@@ -9,7 +9,8 @@ all: $(NAME).o
 	$(NACL_TOOLCHAIN_PATH)/x86_64-nacl/lib64/ldscripts/elf64_nacl.x.static -melf64_nacl -m64 \
 	$(DEBUG) $(NAME).o $(ZVM_ROOT)/api/libzrt.a
 	@sed 's#CURDIR#$(CURDIR)#g' $(NAME).template > $(NAME).manifest
-	@$(ZVM_ROOT)/zerovm -e -M$(NAME).manifest -v2
+	@binpatch $(NAME).nexe 4c01fc0f3148c1e2 4c01fc909048c1e2
+	@setarch x86_64 -R $(ZVM_ROOT)/zerovm -e -M$(NAME).manifest
 
 $(NAME).o:
 	$(NACL_TOOLCHAIN_PATH)/bin/x86_64-nacl-gcc -o $(NAME).o -Wall \
