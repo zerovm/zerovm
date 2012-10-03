@@ -4,6 +4,7 @@
  * be found in the LICENSE file.
  */
 #include "src/service_runtime/sel_ldr.h"
+#include "src/service_runtime/include/sys/errno.h" /* d'b */
 
 uintptr_t NaClGetThreadCtxSp(struct NaClThreadContext  *th_ctx) {
   return (uintptr_t) th_ctx->rsp;

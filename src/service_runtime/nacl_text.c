@@ -8,6 +8,7 @@
 #include "src/service_runtime/include/sys/mman.h"
 #include "src/service_runtime/sel_ldr.h"
 #include "src/service_runtime/sel_memory.h"
+#include "src/service_runtime/include/sys/errno.h" /* d'b */
 
 static const int kBitsPerByte = 8;
 

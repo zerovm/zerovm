@@ -16,7 +16,38 @@
 #define STDOUT "/dev/stdout"
 #define STDERR "/dev/stderr"
 
+#define MSGSIZE 0x1000
+#ifndef STDLOG
+#define STDLOG STDERR
+#endif
+
+#ifndef ERRCOUNT
+#define ERRCOUNT errcount
+#endif
+
+/*
+ * if condition is false increase the errors count (ERRCOUNT),
+ * log result to log channel (STDLOG)
+ */
+#define ZTEST(cond) \
+  do {\
+    char msg[MSGSIZE];\
+    int size;\
+    if(cond)\
+    {\
+      size = snprintf(msg, MSGSIZE, "succeed on %3d: %s\n", __LINE__, #cond);\
+      zwrite(STDLOG, msg, size);\
+    }\
+    else\
+    {\
+      size = snprintf(msg, MSGSIZE, "failed on %4d: %s\n", __LINE__, #cond);\
+      zwrite(STDLOG, msg, size);\
+      ++ERRCOUNT;\
+    }\
+  } while(0)
+
 static struct UserManifest *zvm_bulk = NULL;
+static int errcount = 0;
 
 /* get handle by the channel alias. return -1 if failed */
 static inline int zhandle(const char *alias)

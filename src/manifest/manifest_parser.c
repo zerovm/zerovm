@@ -11,11 +11,12 @@
  *      Author: d'b
  */
 
+#include <stdio.h>
 #include <ctype.h>
 #include <assert.h>
 
 #include "api/zvm.h" /* error codes */
-#include "src/service_runtime/sel_ldr.h"
+#include "src/service_runtime/tools.h"
 #include "src/manifest/manifest_parser.h"
 
 static int32_t mft_count; /* number of found keys */

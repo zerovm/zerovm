@@ -18,7 +18,6 @@
 #include <sys/stat.h>
 #include "src/platform/nacl_exit.h"
 #include "src/platform/nacl_log.h"
-#include "src/service_runtime/include/sys/errno.h"
 
 #define MANIFEST_MAX 0x100000 /* limit for the manifest size */
 #define KEYWORD_SIZE_MAX 256
@@ -117,7 +116,7 @@ static inline int64_t GetFileSize(const char *name)
 {
   struct stat fs;
   int handle = open(name, O_RDONLY);
-  return fstat(handle, &fs), close(handle) ? -NACL_ABI_EPERM : fs.st_size;
+  return fstat(handle, &fs), close(handle) ? -1 : fs.st_size;
 }
 
 #endif /* TOOLS_H_ */

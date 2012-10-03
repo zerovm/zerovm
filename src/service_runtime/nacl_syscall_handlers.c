@@ -14,6 +14,7 @@
 #include "src/manifest/trap.h"
 #include "include/nacl_assert.h"
 #include "src/manifest/manifest_setup.h"
+#include "src/service_runtime/include/sys/errno.h" /* d'b */
 
 struct NaClSyscallTableEntry nacl_syscall[NACL_MAX_SYSCALLS] = {{0}};
 static const size_t kMaxUsableFileSize = (SIZE_T_MAX >> 1);
