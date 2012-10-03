@@ -1,0 +1,10 @@
+SECURITY & DETERMINISM TESTS:
+(add nacl security tests if possible)
+get_random -- remove it? the issue has been fixed
+signal -- extend as wide as possible
+timeout - move to signal
+  notice: since signal can be encountered only once per session
+    each signal should be tested by separate program
+
+
+todo: put here short description for each test

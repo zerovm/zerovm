@@ -46,5 +46,10 @@ NORETURN void NaClSwitchToApp(struct NaClApp *nap, nacl_reg_t new_prog_ctr)
 {
   nacl_user->new_prog_ctr = new_prog_ctr;
   nacl_user->sysret = nap->sysret;
+
+  /* d'b(todo): remove one of flags below */
+  nap->user_side_flag = 0; /* remove "user side call" mark */
+  nap->trusted_code = 0; /* we are going to the untrusted code */
+
   NaClSwitch(nacl_user);
 }

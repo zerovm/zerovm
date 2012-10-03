@@ -25,6 +25,7 @@ static void LowerOwnPriority()
 /* put zerovm in a "jail" */
 static void ChrootJail()
 {
+  NaClLog(LOG_DEBUG, "'chrooting' zerovm to %s", NEW_ROOT);
   if(chdir(NEW_ROOT) != 0)
     NaClLog(LOG_ERROR, "cannot 'chdir' zerovm");
 

@@ -1,0 +1,6 @@
+MANIFEST & ENVIRONMENT TESTS:
+environment -- rework, extend
+command_line -- join with environment
+manifest -- remove
+time -- move to environment
+

@@ -1,0 +1,17 @@
+=====================================================================
+== "signal" example. only purpose to test zerovm signal handling
+== following channels: stdin, stdout, stderr used
+=====================================================================
+Channel = /dev/null, /dev/stdin, 0, 999999, 999999, 0, 0
+Channel = CURDIR/stdout.data, /dev/stdout, 0, 0, 0, 999999, 999999
+Channel = /dev/null, /dev/stderr, 0, 0, 0, 999999, 999999
+
+=====================================================================
+== switches for zerovm. some of them used to control nexe, some
+== for the internal zerovm needs
+=====================================================================
+Version = 09082012
+Nexe = signal.nexe
+NexeMax = 10000000
+CommandLine = 8
+Timeout = 2

@@ -1,0 +1,19 @@
+=====================================================================
+== zerovm api test
+=====================================================================
+Channel = /dev/null, /dev/stdin, 0, 256, 16384, 0, 0
+Channel = CURDIR/stdout.data, /dev/stdout, 0, 0, 0, 1024, 65536
+Channel = CURDIR/stderr.data, /dev/stderr, 0, 0, 0, 512, 32768
+Channel = CURDIR/api.manifest, /dev/control, 1, 128, 8192, 0, 0
+
+=====================================================================
+== switches for zerovm. some of them used to control nexe, some
+== for the internal zerovm needs
+=====================================================================
+Version = 09082012
+Nexe = api.nexe
+NexeMax = 4121440
+NodeName = api, 1
+MemMax = 268435456
+Timeout = 1
+

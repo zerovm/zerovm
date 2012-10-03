@@ -87,8 +87,6 @@ NORETURN void NaClSyscallCSegHook()
   user_ret = (nacl_reg_t) NaClSandboxCodeAddr(nap, (uintptr_t)user_ret);
 
   /* d'b: give control to the nexe */
-  nap->user_side_flag = 0; /* remove "user side call" mark */
-  nap->trusted_code = 0; /* we are going to the untrusted code */
   NaClSwitchToApp(nap, user_ret);
 
   /* NOTREACHED */

@@ -1,0 +1,25 @@
+=====================================================================
+== "time and clock" example with zrt library usage
+== the example tests untrusted code memory manager. new channels design
+=====================================================================
+Channel = /dev/null, /dev/stdin, 0, 999999, 999999, 0, 0
+Channel = CURDIR/stdout.data, /dev/stdout, 0, 0, 0, 999999, 999999
+Channel = /dev/null, /dev/stderr, 0, 0, 0, 999999, 999999
+
+=====================================================================
+== Environment
+=====================================================================
+Environment = TimeStamp, 1337012520, Gort, klaato_barada_nikto
+CommandLine = bump
+
+=====================================================================
+== switches for zerovm. some of them used to control nexe, some
+== for the internal zerovm needs
+=====================================================================
+Version = 09082012
+Nexe = time.nexe
+NexeMax = 4194304
+SyscallsMax = 1024
+MaxMem = 542045771
+Node = nodename, 1
+
