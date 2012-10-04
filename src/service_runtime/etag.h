@@ -9,12 +9,13 @@
 #define ETAG_H_
 
 #include <stdint.h>
-#include <openssl/sha.h>
+#include <openssl/evp.h>
 
+#define TAG_ENCRYPTION "sha1"
 #define TAG_ENGINE_DISABLED "disabled"
-#define TAG_CONTEXT_SIZE sizeof(SHA_CTX) /* tag size */
-#define TAG_BINARY_SIZE SHA_DIGEST_LENGTH /* tag size */
-#define TAG_DIGEST_SIZE SHA_DIGEST_LENGTH * 2 + 1 /* tag digest size */
+#define TAG_CONTEXT_SIZE sizeof(EVP_MD_CTX) /* tag size */
+#define TAG_BINARY_SIZE EVP_MAX_MD_SIZE /* tag size */
+#define TAG_DIGEST_SIZE TAG_BINARY_SIZE * 2 + 1 /* tag digest size */
 
 /* etag engine construction */
 void TagEngineCtor();

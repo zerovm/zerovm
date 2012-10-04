@@ -928,19 +928,11 @@ int PrefetchChannelDtor(struct ChannelDesc *channel)
   /* close "PUT" channel */
   if(channel->limits[PutsLimit] && channel->limits[PutSizeLimit])
   {
-    int size = 0;
-
-    /* eof must be set before tag sending */
-    channel->eof = 1;
+    int size = TagEngineEnabled() ? TAG_DIGEST_SIZE - 1 : 0;
 
     /* send channel etag digest (if enabled) */
-    if(TagEngineEnabled())
-    {
-      size = TAG_DIGEST_SIZE - 1; /* don't send ending '\0' */
-      TagDigest(&channel->tag, channel->digest);
-    }
+    channel->eof = 1;
     SendMessage(channel, channel->digest, size);
-
   }
 
   /* close "GET" channel */

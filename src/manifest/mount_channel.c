@@ -116,7 +116,7 @@ static void ChannelCtor(struct NaClApp *nap, char **tokens)
   channel->name = tokens[ChannelName];
   channel->alias = tokens[ChannelAlias];
   COND_ABORT(TagCtor(&channel->tag) == ERR_CODE, "channel tag setup error");
-  channel->digest[0] = 0; /* set to an empty string */
+  memset(channel->digest, 0, TAG_DIGEST_SIZE);
   channel->source = GetSourceType((char*)channel->name);
 
   /* limits and counters */
