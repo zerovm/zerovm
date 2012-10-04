@@ -464,7 +464,7 @@ static void GatherStatistics(struct NaClApp *nap, char *buf, int size)
     assert(channel->source == LocalFile || channel->source == NetworkChannel);
     stats = channel->source == LocalFile ? local_stats : network_stats;
 
-    for(j = 0; j < IOLimitsCount; ++j)
+    for(j = 0; j < PutSizeLimit; ++j)
       stats[j] += channel->counters[j];
   }
 
