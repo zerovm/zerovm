@@ -37,6 +37,8 @@ int TagEngineEnabled()
  */
 int TagCtor(void *ctx)
 {
+  assert(tag_type != NULL);
+
   EVP_DigestInit(ctx, tag_type);
   ErrIf(ctx == NULL, "error initializing hash context");
   return OK_CODE;
@@ -50,7 +52,7 @@ void TagDigest(void *ctx, char *digest)
 {
   unsigned char p[TAG_BINARY_SIZE] = {0};
   EVP_MD_CTX tag;
-  int dsize = -1;
+  unsigned dsize;
   int i;
 
   assert(ctx != NULL);
@@ -59,7 +61,7 @@ void TagDigest(void *ctx, char *digest)
   /* copy context aside and finalize it to get digest */
   i = EVP_MD_CTX_copy(&tag, ctx);
   ErrIf(i != 1, "error copying tag");
-  EVP_DigestFinal(&tag, p, (unsigned*)&dsize);
+  EVP_DigestFinal(&tag, p, &dsize);
   for(i = 0; i < dsize; ++i)
     sprintf(&digest[2*i], "%02X", p[i]);
 }
