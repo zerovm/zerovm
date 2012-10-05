@@ -37,11 +37,14 @@ int TagEngineEnabled()
  */
 int TagCtor(void *ctx)
 {
+  int i;
+
   assert(tag_type != NULL);
 
-  EVP_DigestInit(ctx, tag_type);
-  ErrIf(ctx == NULL, "error initializing hash context");
-  return OK_CODE;
+  EVP_MD_CTX_init(ctx);
+  i = EVP_DigestInit_ex(ctx, tag_type, NULL);
+  ErrIf(i != 1, "error initializing hash context");
+  return i != 1 ? ERR_CODE : OK_CODE;
 }
 
 /*
@@ -59,9 +62,11 @@ void TagDigest(void *ctx, char *digest)
   assert(digest != NULL);
 
   /* copy context aside and finalize it to get digest */
-  i = EVP_MD_CTX_copy(&tag, ctx);
+  EVP_MD_CTX_init(&tag);
+  i = EVP_MD_CTX_copy_ex(&tag, ctx);
   ErrIf(i != 1, "error copying tag");
-  EVP_DigestFinal(&tag, p, &dsize);
+  EVP_DigestFinal_ex(&tag, p, &dsize);
+  ErrIf(i != 1, "error finalizing tag");
   for(i = 0; i < dsize; ++i)
     sprintf(&digest[2*i], "%02X", p[i]);
 }
@@ -72,12 +77,15 @@ void TagDigest(void *ctx, char *digest)
  */
 int TagUpdate(void *ctx, const char *buffer, int32_t size)
 {
+  int i;
+
   assert(ctx != NULL);
   assert(buffer != NULL);
   assert(size >= 0);
   if(size == 0) return OK_CODE;
 
   /* update the context with a new data */
-  EVP_DigestUpdate(ctx, buffer, size);
-  return OK_CODE;
+  i = EVP_DigestUpdate(ctx, buffer, size);
+  ErrIf(i != 1, "error updating tag");
+  return i != 1 ? ERR_CODE : OK_CODE;
 }
