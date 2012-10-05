@@ -11,6 +11,16 @@
 #define CONTROL "/dev/control"
 #define BIG_ENOUGH 0x10000
 #define LOT_ENOUGH 0x100
+#define CHANNEL_ATTRIBUTES_NUMBER 7
+enum ChannelFields {
+  CFieldURI,
+  CFieldAlias,
+  CFieldType,
+  CFieldGetsLimit,
+  CFieldGetSizeLimit,
+  CFieldPutsLimit,
+  CFieldPutSizeLimit
+};
 
 /*
  * get control data and parse it to make part of manifest parser
@@ -37,7 +47,28 @@ static int manifest_ctor()
 /* parse the channel record, find the channel and test its info */
 static void test_channel(char *token)
 {
+  char *tokens[LOT_ENOUGH];
+  int i;
 
+  /* show channel control info */
+  zput(STDLOG, "the testing channel control info: ");
+  zput(STDLOG, token);
+  zput(STDLOG, "\n");
+
+  /* parse token */
+  i = ParseValue(token, ", ", tokens, LOT_ENOUGH);
+  ZTEST(i == CHANNEL_ATTRIBUTES_NUMBER);
+
+  /* find appropriate channel */
+  i = zhandle(tokens[CFieldAlias]);
+
+  /* compare channel attributes with the control ones */
+  ZTEST(strcmp(zvm_bulk->channels[i].name, tokens[CFieldAlias]) == 0);
+  ZTEST(zvm_bulk->channels[i].limits[GetsLimit] == atoi(tokens[CFieldGetsLimit]));
+  ZTEST(zvm_bulk->channels[i].limits[GetSizeLimit] == atoi(tokens[CFieldGetSizeLimit]));
+  ZTEST(zvm_bulk->channels[i].limits[PutsLimit] == atoi(tokens[CFieldPutsLimit]));
+  ZTEST(zvm_bulk->channels[i].limits[PutSizeLimit] == atoi(tokens[CFieldPutSizeLimit]));
+  ZTEST(zvm_bulk->channels[i].type == atoi(tokens[CFieldType]));
 }
 
 int main(int argc, char **argv)
@@ -92,46 +123,13 @@ int main(int argc, char **argv)
   else
     ZTEST(argv[1] == NULL);
 
-  /* channels */
+  /* check channels number */
   number = GetValuesByKey("Channel", tokens, LOT_ENOUGH);
   ZTEST(zvm_bulk->channels_count == number);
 
-  /* check channels one by one */
+  /* test channels one by one */
   for(number = 0; number < zvm_bulk->channels_count; ++number)
     test_channel(tokens[number]);
-
-  /* check stdin information */
-  ZTEST(strcmp(zvm_bulk->channels[0].name, STDIN) == 0);
-  ZTEST(zvm_bulk->channels[0].limits[GetsLimit] == 256);
-  ZTEST(zvm_bulk->channels[0].limits[GetSizeLimit] == 16384);
-  ZTEST(zvm_bulk->channels[0].limits[PutsLimit] == 0);
-  ZTEST(zvm_bulk->channels[0].limits[PutSizeLimit] == 0);
-  ZTEST(zvm_bulk->channels[0].type == 0);
-
-  /* check stdout information */
-  ZTEST(strcmp(zvm_bulk->channels[1].name, STDOUT) == 0);
-  ZTEST(zvm_bulk->channels[1].limits[GetsLimit] == 0);
-  ZTEST(zvm_bulk->channels[1].limits[GetSizeLimit] == 0);
-  ZTEST(zvm_bulk->channels[1].limits[PutsLimit] == 1024);
-  ZTEST(zvm_bulk->channels[1].limits[PutSizeLimit] == 65536);
-  ZTEST(zvm_bulk->channels[1].type == 0);
-
-  /* check stderr information */
-  ZTEST(strcmp(zvm_bulk->channels[2].name, STDERR) == 0);
-  ZTEST(zvm_bulk->channels[2].limits[GetsLimit] == 0);
-  ZTEST(zvm_bulk->channels[2].limits[GetSizeLimit] == 0);
-  ZTEST(zvm_bulk->channels[2].limits[PutsLimit] == 512);
-  ZTEST(zvm_bulk->channels[2].limits[PutSizeLimit] == 32768);
-  ZTEST(zvm_bulk->channels[2].type == 0);
-
-  /* check control channel information */
-  ZTEST(strcmp(zvm_bulk->channels[3].name, CONTROL) == 0);
-  ZTEST(zvm_bulk->channels[3].limits[GetsLimit] == 128);
-  ZTEST(zvm_bulk->channels[3].limits[GetSizeLimit] == 8192);
-  ZTEST(zvm_bulk->channels[3].limits[PutsLimit] == 0);
-  ZTEST(zvm_bulk->channels[3].limits[PutSizeLimit] == 0);
-  ZTEST(zvm_bulk->channels[3].type == 1);
-  ZTEST(zvm_bulk->channels[3].size == 864);
 
   /* exit with code */
   zput(STDLOG, ERRCOUNT ? "\nTEST FAILED\n" : "\nTEST SUCCEED\n");
