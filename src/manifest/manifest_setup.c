@@ -325,8 +325,9 @@ void SystemManifestCtor(struct NaClApp *nap)
   PreallocateUserMemory(nap);
 
   /* prepare overall context */
-  COND_ABORT(TagCtor(&nap->user_tag) == ERR_CODE,
-      "cannot construct overall channels tag");
+  if(TagEngineEnabled())
+    COND_ABORT(TagCtor(&nap->user_tag) == ERR_CODE,
+        "cannot construct overall channels tag");
 
   /* zerovm return code */
   nap->system_manifest->ret_code = OK_CODE;
@@ -530,7 +531,7 @@ int ProxyReport(struct NaClApp *nap)
 {
   char report[BIG_ENOUGH_SPACE + 1];
   char accounting[BIG_ENOUGH_SPACE + 1];
-  char etag[TAG_DIGEST_SIZE];
+  char etag[TAG_DIGEST_SIZE] = TAG_ENGINE_DISABLED;
   int length;
   int i;
 

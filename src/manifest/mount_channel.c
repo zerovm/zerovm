@@ -115,9 +115,13 @@ static void ChannelCtor(struct NaClApp *nap, char **tokens)
       "invalid channel access type");
   channel->name = tokens[ChannelName];
   channel->alias = tokens[ChannelAlias];
-  COND_ABORT(TagCtor(&channel->tag) == ERR_CODE, "channel tag setup error");
-  memset(channel->digest, 0, TAG_DIGEST_SIZE);
   channel->source = GetSourceType((char*)channel->name);
+
+  if(TagEngineEnabled())
+  {
+    COND_ABORT(TagCtor(&channel->tag) == ERR_CODE, "channel tag setup error");
+    memset(channel->digest, 0, TAG_DIGEST_SIZE);
+  }
 
   /* limits and counters */
   channel->limits[GetsLimit] = ATOI(tokens[ChannelGets]);
