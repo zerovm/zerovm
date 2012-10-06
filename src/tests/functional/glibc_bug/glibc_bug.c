@@ -1,59 +1,38 @@
 /*
- * this sample demonstrate zerovm api
+ * this sample demonstrate issue #81 "NULL" problem
+ *
+ * update:
+ * i believe the problem is in function definition pepper's stat.h:
+ * extern int mkdir (const char *path, __mode_t __mode)
+ * __THROW __nonnull ((1));
+ * (see http://ohse.de/uwe/articles/gcc-attributes.html#func-nonnull)
  */
 
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <stdio.h>
-#include <string.h>
-#include <assert.h>
-#include "api/zvm.h"
+#include "../include/api_tools.h"
 
 #define BIG_ENOUGH 0x10000
 
-/* put stack to the channel 'channel_handle' in readable format*/
-void print_stack(int channel_handle, const int* ptr)
+/* We are substitute glibc POSIX function to our defined function */
+int mkdir(const char* pathname, mode_t mode)
 {
-    struct UserManifest *setup;
-    struct ZVMChannel *channels;
+  char msg[BIG_ENOUGH];
 
-    /* initiate api */
-    setup = zvm_init();
-    channels = setup->channels;
+  ZTEST(pathname == NULL);
+  snprintf(msg, BIG_ENOUGH,
+      "pathname = %X, sizeof pathname = %d, sizeof(uintptr_t) = %d\n",
+      (uintptr_t)pathname, sizeof pathname, sizeof(uintptr_t));
+  zput(STDLOG, msg);
 
-    int log_handle=2;
-    char buf[BIG_ENOUGH];
-
-    int i=0;
-    do{
-        const char *c= (const char*)&ptr[i];
-        memset(buf, '\0', BIG_ENOUGH);
-        int size = sprintf(buf, "\n sizeof(NULL)=%d, sizeof(c)=%d, address=%p, value=%08X, %c%c%c%c",
-                (int)sizeof(NULL), (int)sizeof(c), &ptr[i], ptr[i], c[0], c[1], c[2], c[3] );
-        zvm_pwrite(log_handle, buf, size, 0);
-        i++;
-    }while( &ptr[i] >= (int*)0xFFFFFF );
-}
-
-/* We are substitute glibc POSIX function to our defined function.
- * */
-int mkdir(const char* pathname, mode_t mode){
-    int *stack = (void*)&stack;
-    if ( pathname != NULL ){
-        print_stack( 2, stack);
-    }
-    return 0;
+  return 0;
 }
 
 int main(int argc, char **argv)
 {
-    char str[] = {"mkdir"};
-    //print_stack( 2, str);
-    char* s=NULL;
-    mkdir(s, 0xEEEEEE);
-    (void)str;
+  zvm_bulk = zvm_init();
+  mkdir(NULL, 0xEEEEEE);
 
-    /* return 0 */
-    zvm_exit(0);
-    return 0; /* not reachable */
+  zvm_exit(0);
+  return 0; /* not reachable */
 }
