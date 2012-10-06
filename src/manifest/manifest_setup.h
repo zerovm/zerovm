@@ -15,7 +15,7 @@ EXTERN_C_BEGIN
 #include "stdio.h"
 
 #define HELP_SCREEN /* update command line switches here */\
-    "ZeroVM lightweight VM manager, build " __DATE__ " " __TIME__ "\n"\
+    "ZeroVM lightweight VM manager, build Sat Oct 6 10:05:07\n"\
     "Usage: [-M manifest_file] [-v #] [-l #] [-FSseQ]\n\n"\
     " -M <file> load settings from manifest\n"\
     " -e enable the data oversight (etag)\n"\
