@@ -284,6 +284,19 @@ void SystemManifestCtor(struct NaClApp *nap)
   policy->nexe_etag = GetValueByKey("NexeEtag");
   GET_INT_BY_KEY(policy->nexe_max, "NexeMax");
 
+  /*
+   * prepare overall etag context. if failed report will not be shown
+   * todo(d'b): show report
+   */
+  if(TagEngineEnabled())
+  {
+    if(TagCtor(&nap->user_tag) == ERR_CODE)
+    {
+      ErrIf(1, "cannot construct overall channels tag");
+      _exit(1);
+    }
+  }
+
   /* check mandatory manifest keys */
   COND_ABORT(nap->system_manifest->version == NULL,
       "the manifest version is not provided");
@@ -323,11 +336,6 @@ void SystemManifestCtor(struct NaClApp *nap)
    */
   GET_INT_BY_KEY(policy->max_mem, "MemMax");
   PreallocateUserMemory(nap);
-
-  /* prepare overall context */
-  if(TagEngineEnabled())
-    COND_ABORT(TagCtor(&nap->user_tag) == ERR_CODE,
-        "cannot construct overall channels tag");
 
   /* zerovm return code */
   nap->system_manifest->ret_code = OK_CODE;

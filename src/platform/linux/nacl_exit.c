@@ -28,7 +28,7 @@ static void PrintVmmap(struct NaClApp *nap)
 
 static void FinalDump(struct NaClApp *nap)
 {
-  if(nap->verbosity)
+  if(nap->verbosity >= LOG_INSANE)
   {
     NaClLog(LOG_INFO, "exiting -- printing NaClApp details\n");
 
@@ -66,5 +66,5 @@ void NaClAbort(void)
 void NaClExit(int err_code)
 {
   Finalizer();
-  _exit(err_code); /* supposed to be sync to gnap->zvm_code */
+  _exit(err_code); /* supposed to be in sync with gnap->zvm_code */
 }

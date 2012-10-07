@@ -1,2 +1,25 @@
 this folder contains zerovm functional tests
-todo: put here short description for each test
+
+api
+  zerovm api test. trap functions, comparison of the manifest data and information
+  available from zvm api
+
+channels/cdr
+  random read / sequential write channels test. tests correct and incorrect usage
+
+channels/ranro
+  random read only channels (size oriented) test. tests correct and incorrect usage
+
+channels/ranwo
+  random write only channels (size oriented) test. tests correct and incorrect usage
+
+channels/seqro
+  sequential read only channels (eof oriented) test. tests correct and incorrect usage
+
+channels/ranro
+  sequential write only channels (eof oriented) test. tests correct and incorrect usage
+
+demo/hello
+  classic "hello world" example. puts the message to zerovm stdout and stderr channels
+
+

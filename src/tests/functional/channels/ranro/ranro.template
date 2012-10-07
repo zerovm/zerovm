@@ -1,16 +1,18 @@
 =====================================================================
-== "file input/output" example with zrt library usage. the new channels design
-== following channels: stdin, stdout, stderr used
+== the random read only channels test
 =====================================================================
-Channel = /dev/null, /dev/stdin, 0, 999999, 999999, 0, 0
-Channel = stdout.data, /dev/stdout, 0, 0, 0, 999999, 999999
-Channel = /dev/null, /dev/stderr, 0, 0, 0, 999999, 999999
+Channel = /dev/null, /dev/stdin, 0, 16, 256, 0, 0
+Channel = CURDIR/stdout.data, /dev/stdout, 0, 0, 0, 512, 8192
+Channel = /dev/null, /dev/stderr, 0, 0, 0, 16, 256
+Channel = CURDIR/ranro.data, /dev/ranro, 1, 32, 32, 0, 0
 
 =====================================================================
 == switches for zerovm. some of them used to control nexe, some
 == for the internal zerovm needs
 =====================================================================
 Version = 09082012
-Nexe = file_stat.nexe
-NexeMax = 10000000
-SyscallsMax = 3333
+Nexe = ranro.nexe
+NexeMax = 4194304
+MaxMem = 134217728
+Timeout = 5
+
