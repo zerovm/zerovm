@@ -134,10 +134,12 @@ int main(int argc, char **argv)
   for(number = 0; number < zvm_bulk->channels_count; ++number)
     test_channel(tokens[number]);
 
-  /* exit with code */
-  zput(STDLOG, ERRCOUNT ? "\nTEST FAILED\n" : "\nTEST SUCCEED\n");
-  zvm_exit(0);
+  /* count errors and exit with it */
+  if(ERRCOUNT > 0)
+    ZPRINTF(STDLOG, "TEST FAILED with %d errors\n", ERRCOUNT);
+  else
+    zput(STDLOG, "TEST SUCCEED\n\n");
 
-  /* not reached */
+  zvm_exit(ERRCOUNT);
   return 0;
 }

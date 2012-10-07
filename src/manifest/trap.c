@@ -192,6 +192,8 @@ int32_t ZVMWriteHandle(struct NaClApp *nap,
   if(channel->counters[PutsLimit] >= channel->limits[PutsLimit])
     return -EDQUOT;
   tail = channel->limits[PutSizeLimit] - channel->counters[PutSizeLimit];
+  if(offset >= channel->limits[PutSizeLimit] &&
+      !CHANNEL_READABLE(channel)) return -EINVAL;
   if(offset >= channel->size + tail) return -EINVAL;
   if(size > tail) size = tail;
   if(size < 1) return -EDQUOT;
