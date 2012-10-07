@@ -1,18 +1,23 @@
 =====================================================================
-== the random read only channels test
+== "environment" example. demo of the new user custom attributes design
 =====================================================================
 Channel = /dev/null, /dev/stdin, 0, 16, 256, 0, 0
 Channel = CURDIR/stdout.data, /dev/stdout, 0, 0, 0, 512, 8192
 Channel = /dev/null, /dev/stderr, 0, 0, 0, 16, 256
-Channel = CURDIR/ranro.data, /dev/ranro, 1, 32, 32, 0, 0
 
 =====================================================================
 == switches for zerovm. some of them used to control nexe, some
 == for the internal zerovm needs
 =====================================================================
 Version = 09082012
-Nexe = ranro.nexe
+Nexe = environment.nexe
 NexeMax = 4194304
 MemMax = 134217728
 Timeout = 5
+
+=====================================================================
+== Environment and command line
+=====================================================================
+CommandLine = Aktyubinsk Tashkent Chirchiq Rassvet NaberezhnyeChelny Severobaykalsk Kazan TelAviv Giv'atayim RamatGan Pattaya
+Environment = TimeStamp, 1337012520, Gort, klaato_barada_nikto
 

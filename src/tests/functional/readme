@@ -19,7 +19,15 @@ channels/seqro
 channels/ranro
   sequential write only channels (eof oriented) test. tests correct and incorrect usage
 
+channels/netcopy
+  the functional test of network channels. copies data between nodes. unlike other tests
+  additional comparison should be done: "cmp -l netcopy.nexe output.data". test failed
+  if there are differing bytes
+
 demo/hello
   classic "hello world" example. puts the message to zerovm stdout and stderr channels
+
+demo/environment
+  the program puts command line and environment arguments to the stdout channel
 
 
