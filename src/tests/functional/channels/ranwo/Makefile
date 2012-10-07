@@ -14,4 +14,4 @@ $(NAME).o: $(NAME).c
 	-msse4.1 -m64 -I$(ZEROVM_ROOT) -I$(ZEROVM_ROOT)/src/tests/functional -o $@ $^
 
 clean:
-	rm -f $(NAME).nexe $(NAME).o *.log stdout.data *.manifest
+	rm -f $(NAME).nexe $(NAME).o *.log *.data *.manifest

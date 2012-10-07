@@ -1,18 +1,18 @@
 =====================================================================
-== zerovm api test
+== the random read only channels test
 =====================================================================
-Channel = /dev/null, /dev/stdin, 0, 999999, 999999, 0, 0
-Channel = CURDIR/stdout.data, /dev/stdout, 0, 0, 0, 999999, 999999
-Channel = CURDIR/stderr.data, /dev/stderr, 0, 0, 0, 999999, 999999
+Channel = /dev/null, /dev/stdin, 0, 16, 256, 0, 0
+Channel = CURDIR/stdout.data, /dev/stdout, 0, 0, 0, 512, 8192
+Channel = /dev/null, /dev/stderr, 0, 0, 0, 16, 256
+Channel = CURDIR/seqro.data, /dev/seqro, 0, 32, 32, 0, 0
 
 =====================================================================
 == switches for zerovm. some of them used to control nexe, some
 == for the internal zerovm needs
 =====================================================================
 Version = 09082012
-Nexe = api.nexe
-NexeMax = 4121440
-NodeName = api, 1
-MemMax = 268435456
-Timeout = 1
+Nexe = seqro.nexe
+NexeMax = 4194304
+MaxMem = 134217728
+Timeout = 5
 
