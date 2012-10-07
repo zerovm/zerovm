@@ -16,7 +16,6 @@
 #define STDOUT "/dev/stdout"
 #define STDERR "/dev/stderr"
 
-#define MSGSIZE 0x1000
 #ifndef STDLOG
 #define STDLOG STDERR
 #endif
@@ -25,25 +24,40 @@
 #define ERRCOUNT errcount
 #endif
 
+#define BIG_ENOUGH 0x10000
+#define LOT_ENOUGH 0x100
+
 /*
  * if condition is false increase the errors count (ERRCOUNT),
  * log result to log channel (STDLOG)
  */
 #define ZTEST(cond) \
   do {\
-    char msg[MSGSIZE];\
-    int size;\
+    char _msg[BIG_ENOUGH];\
+    int _size;\
     if(cond)\
     {\
-      size = snprintf(msg, MSGSIZE, "succeed on %3d: %s\n", __LINE__, #cond);\
-      zwrite(STDLOG, msg, size);\
+      _size = snprintf(_msg, BIG_ENOUGH, "succeed on %3d: %s\n", __LINE__, #cond);\
+      zwrite(STDLOG, _msg, _size);\
     }\
     else\
     {\
-      size = snprintf(msg, MSGSIZE, "failed on %4d: %s\n", __LINE__, #cond);\
-      zwrite(STDLOG, msg, size);\
+      _size = snprintf(_msg, BIG_ENOUGH, "failed on %4d: %s\n", __LINE__, #cond);\
+      zwrite(STDLOG, _msg, _size);\
       ++ERRCOUNT;\
     }\
+  } while(0)
+
+/*
+ * works similar to fprintf but don't have return code
+ * and cannot output more than BIG_ENOUGH bytes
+ */
+#define ZPRINTF(alias, ...) \
+  do {\
+    char _buf[BIG_ENOUGH];\
+    int _size;\
+    _size = snprintf(_buf, BIG_ENOUGH, __VA_ARGS__);\
+    zwrite(alias, _buf, _size);\
   } while(0)
 
 static struct UserManifest *zvm_bulk = NULL;
@@ -64,34 +78,41 @@ static inline int zhandle(const char *alias)
   return ERR_CODE;
 }
 
-/* put the message to the channel. return the number of written bytes */
+/*
+ * put the ASCIIZ message to the channel. return the number of written bytes
+ * note: work only with sequential channels
+ */
 static inline int zput(const char *alias, const char *msg)
 {
   return zvm_pwrite(zhandle(alias), msg, strlen(msg), 0);
 }
 
-/* put the data to the channel. return the number of written bytes */
+/*
+ * put the data to the channel. return the number of written bytes
+ * note: work only with sequential channels
+ */
 static inline int zwrite(const char *alias, const char *buf, int32_t size)
 {
   return zvm_pwrite(zhandle(alias), buf, size, 0);
 }
 
-/* get the data from the channel. return the number of read bytes */
+/*
+ * get the data from the channel. return the number of read bytes
+ * note: work only with sequential channels
+ */
 static inline int zread(const char *alias, char *buf, int32_t size)
 {
   return zvm_pread(zhandle(alias), buf, size, 0);
 }
 
 /* print the last zerovm error to stderr an return the error code */
-#define MSG_SIZE 0x10000
 static inline int zerror(const char *prefix)
 {
-  char msg[MSG_SIZE];
+  char msg[BIG_ENOUGH];
   int32_t size;
   int32_t code = zvm_errno();
 
-  size = snprintf(msg, MSG_SIZE, "%s: %s\n", prefix, strerror(code));
+  size = snprintf(msg, BIG_ENOUGH, "%s: %s\n", prefix, strerror(code));
   zwrite(STDERR, msg, size);
   return code;
 }
-#undef MSG_SIZE

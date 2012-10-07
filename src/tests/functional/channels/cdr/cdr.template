@@ -1,0 +1,19 @@
+=====================================================================
+== the cdr channels test. assumes existance of cdr_const file
+=====================================================================
+Channel = /dev/null, /dev/stdin, 0, 16, 256, 0, 0
+Channel = CURDIR/stdout.data, /dev/stdout, 0, 0, 0, 512, 8192
+Channel = /dev/null, /dev/stderr, 0, 0, 0, 16, 256
+Channel = CURDIR/cdr_empty.data, /dev/cdr_empty, 1, 512, 8192, 16, 36
+Channel = CURDIR/cdr_stubbed.data, /dev/cdr_stubbed, 1, 512, 8192, 16, 35
+
+=====================================================================
+== switches for zerovm. some of them used to control nexe, some
+== for the internal zerovm needs
+=====================================================================
+Version = 09082012
+Nexe = cdr.nexe
+NexeMax = 4194304
+MaxMem = 134217728
+Timeout = 5
+

@@ -208,9 +208,8 @@ int32_t ZVMWriteHandle(struct NaClApp *nap,
   /* check limits */
   if(channel->counters[PutsLimit] >= channel->limits[PutsLimit])
     return -EDQUOT;
-  if(offset >= channel->limits[PutSizeLimit])
-    return -EINVAL;
   tail = channel->limits[PutSizeLimit] - channel->counters[PutSizeLimit];
+  if(offset >= channel->size + tail) return -EINVAL;
   if(size > tail) size = tail;
   if(size < 1) return -EDQUOT;
   NaClLog(LOG_DEBUG, "channel %s, buffer=0x%lx, size=%d, offset=%ld\n",
@@ -240,7 +239,7 @@ int32_t ZVMWriteHandle(struct NaClApp *nap,
     UpdateChannelTag(channel, (const char*)sys_buffer, retcode);
 
     channel->putpos = offset + retcode;
-    channel->size = channel->type == 2 ?
+    channel->size = channel->type == SGetRPut ?
         MAX(channel->size, channel->putpos) : channel->putpos;
     channel->getpos = channel->putpos;
   }
@@ -398,15 +397,15 @@ static const char *FunctionNameById(int id)
 {
   switch(id)
   {
-    case 17770431: return "TrapRead";
-    case 17770432: return "TrapWrite";
-    case 17770433: return "TrapSyscallback";
-    case 17770434: return "TrapChannels";
-    case 17770435: return "TrapChannelName";
-    case 17770436: return "TrapAttributes";
-    case 17770439: return "TrapMemSize";
-    case 17770440: return "TrapHeapPtr";
-    case 17770441: return "TrapExit";
+    case TrapRead: return "TrapRead";
+    case TrapWrite: return "TrapWrite";
+    case TrapSyscallback: return "TrapSyscallback";
+    case TrapChannels: return "TrapChannels";
+    case TrapChannelName: return "TrapChannelName";
+    case TrapAttributes: return "TrapAttributes";
+    case TrapMemSize: return "TrapMemSize";
+    case TrapHeapPtr: return "TrapHeapPtr";
+    case TrapExit: return "TrapExit";
   }
   return "not supported";
 }

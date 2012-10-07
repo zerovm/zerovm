@@ -1,16 +1,19 @@
 /*
  * the zerovm api test
+ * note: zvm api functions not tested for invalid arguments
+ * since zerovm doesn't have user buffer validation. this issue
+ * will be fixed either if check routine will be added to zvm
+ * or if memory management will be completely moved to untrusted code
+ * (in that case zvm will just need to check if pointer is in range)
  */
 #include <errno.h>
-#include "../include/api_tools.h"
+#include "include/api_tools.h"
 
 /* a cheat to have an access to static members */
 #define FailIf(...) /* disable falling */
 #include <src/manifest/manifest_parser.c>
 
 #define CONTROL "/dev/control"
-#define BIG_ENOUGH 0x10000
-#define LOT_ENOUGH 0x100
 #define CHANNEL_ATTRIBUTES_NUMBER 7
 enum ChannelFields {
   CFieldURI,
