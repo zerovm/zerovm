@@ -16,6 +16,8 @@ int main(int argc, char **argv)
   /* correct requests */
   ERRCOUNT = 0;
   ZPRINTF(STDLOG, "TEST RANDOM READ ONLY CHANNEL\n");
+  ZPRINTF(STDLOG, "channel size = %lld\n", zvm_bulk->channels[zhandle(RANRO)].size);
+  ZTEST(zvm_bulk->channels[zhandle(RANRO)].size != 0);
   ZTEST(zvm_pread(zhandle(RANRO), buf, 0, 0) == 0);
   ZTEST(zvm_pread(zhandle(RANRO), buf, 0, 1) == 0);
   ZTEST(zvm_pread(zhandle(RANRO), buf, 1, 0) == 1);

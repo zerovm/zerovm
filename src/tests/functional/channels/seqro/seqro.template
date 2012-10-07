@@ -1,5 +1,5 @@
 =====================================================================
-== the random read only channels test
+== the sequential read only channels test
 =====================================================================
 Channel = /dev/null, /dev/stdin, 0, 16, 256, 0, 0
 Channel = CURDIR/stdout.data, /dev/stdout, 0, 0, 0, 512, 8192

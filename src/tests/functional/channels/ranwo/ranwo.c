@@ -15,9 +15,9 @@ int main(int argc, char **argv)
 
   /* correct requests */
   ERRCOUNT = 0;
-  ZPRINTF(STDLOG, "TEST RANDOM READ ONLY CHANNEL\n");
+  ZPRINTF(STDLOG, "TEST RANDOM WRITE ONLY CHANNEL\n");
   ZPRINTF(STDLOG, "channel size = %lld\n", zvm_bulk->channels[zhandle(RANWO)].size);
-
+  ZTEST(zvm_bulk->channels[zhandle(RANWO)].size == 0);
   ZTEST(zvm_pwrite(zhandle(RANWO), buf, 0, 0) == 0);
   ZTEST(zvm_pwrite(zhandle(RANWO), buf, 0, 1) == 0);
   ZTEST(zvm_pwrite(zhandle(RANWO), buf, 1, 0) == 1);
@@ -45,7 +45,7 @@ int main(int argc, char **argv)
   /* incorrect requests: read attempt */
   ZTEST(zvm_pread(zhandle(RANWO), buf, 0, 0) == -1);
   ZTEST(zvm_pread(zhandle(RANWO), buf, 1, 0) == -1);
-  ZTEST(zvm_pwrite(zhandle(RANWO), buf, 1,
+  ZTEST(zvm_pread(zhandle(RANWO), buf, 1,
       zvm_bulk->channels[zhandle(RANWO)].limits[PutSizeLimit]) == -1);
 
   /* incorrect requests: exhausted */
