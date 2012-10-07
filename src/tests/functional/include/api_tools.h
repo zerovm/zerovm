@@ -36,16 +36,13 @@
     char _msg[BIG_ENOUGH];\
     int _size;\
     if(cond)\
-    {\
       _size = snprintf(_msg, BIG_ENOUGH, "succeed on %3d: %s\n", __LINE__, #cond);\
-      zwrite(STDLOG, _msg, _size);\
-    }\
     else\
     {\
       _size = snprintf(_msg, BIG_ENOUGH, "failed on %4d: %s\n", __LINE__, #cond);\
-      zwrite(STDLOG, _msg, _size);\
       ++ERRCOUNT;\
     }\
+    zwrite(STDLOG, _msg, _size);\
   } while(0)
 
 /*

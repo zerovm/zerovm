@@ -1,25 +1,6 @@
 /*
- * cdr channel test
- * test plan:
- * 1. test an empty cdr channel (seek/read/append)
- *    1 try to read. EOF expected (0 bytes read, no error)
- *    2 try to write permitted number of bytes. success expected
- *    3 rewind and try to read written number of bytes. success expected
- *    4 rewind and try to write permitted number of bytes. success expected
- *    5 ensure that data were appended after the 1stly written data
- *    6 repeat from (2) until the limit reached
- *    7 ensure that after the write limit reached it is impossible to write
- *    8 reach the read limit
- * 2. test not empty cdr channel (seek/invalid read/invalid write)
- *    1 try to read negative number of bytes. check error code
- *    2 try to read from negative offset. check error code
- *    3 try to read from the offset exceed the channel size. check error code
- *    4 try to read to NULL buffer. check error code
- *    5 try to write to NULL buffer. check error code
- *    6 try to read 0 bytes. success expected
- * 3. test not empty cdr channel (seek/read/write)
- *    1 try to read. success expected
- *    .. same as (1.)
+ * cdr channel test. tests statistics goes to stdout channel.
+ * returns the number of failed tests
  */
 #include "include/api_tools.h"
 
@@ -27,7 +8,7 @@
 #define STDLOG STDOUT
 #define STDCDR_EMPTY "/dev/cdr_empty"
 #define STDCDR_STUBBED "/dev/cdr_stubbed"
-
+#define STDCDR_GOAT "/dev/cdr_scapegoat"
 static int64_t eofpos = 0;
 
 /* put unique bytes to cdr channel. preparing channel for put_and_test() */
@@ -73,12 +54,19 @@ static int put_and_test(const char *alias, const char *buf, int size)
 
 #define MSG_OK(alias, buf) ZTEST(put_and_test((alias), buf, sizeof(buf) - 1) == 0)
 #define MSG_ERR(alias, buf) ZTEST(put_and_test((alias), buf, sizeof(buf) - 1) != 0)
+#define WRITEGOAT(size, offset, result) \
+  ZTEST(zvm_pwrite(zhandle(STDCDR_GOAT), buf, size, offset) == result);
+#define READGOAT(size, offset, result) \
+  ZTEST(zvm_pread(zhandle(STDCDR_GOAT), buf, size, offset) == result);
 int main(int argc, char **argv)
 {
+  int overall_errors = 0;
+  char buf[BIG_ENOUGH];
   zvm_bulk = zvm_init();
 
   /* test an empty cdr channel */
   ERRCOUNT = 0;
+  ZPRINTF(STDLOG, "TEST AN EMPTY CDR\n");
   initial_put(STDCDR_EMPTY);
   MSG_OK(STDCDR_EMPTY, "01234");
   MSG_OK(STDCDR_EMPTY, "567");
@@ -86,10 +74,12 @@ int main(int argc, char **argv)
   MSG_OK(STDCDR_EMPTY, "zyx");
   MSG_OK(STDCDR_EMPTY, "this is the end");
   MSG_ERR(STDCDR_EMPTY, "this write should fail");
+  overall_errors += ERRCOUNT;
   zput(STDLOG, ERRCOUNT ? "TEST FAILED\n\n" : "TEST SUCCEED\n\n");
 
   /* test stubbed cdr channel */
   ERRCOUNT = 0;
+  ZPRINTF(STDLOG, "TEST STUBBED CDR\n");
   eofpos = zvm_bulk->channels[zhandle(STDCDR_STUBBED)].size;
   ZPRINTF(STDLOG, "%s size = %lld\n",
       zvm_bulk->channels[zhandle(STDCDR_STUBBED)].name, eofpos);
@@ -99,9 +89,47 @@ int main(int argc, char **argv)
   MSG_OK(STDCDR_STUBBED, "zyx");
   MSG_OK(STDCDR_STUBBED, "this is the end");
   MSG_ERR(STDCDR_STUBBED, "this write should fail");
+  overall_errors += ERRCOUNT;
+  zput(STDLOG, ERRCOUNT ? "TEST FAILED\n\n" : "TEST SUCCEED\n\n");
+
+  /* test (in)valid write cases */
+  ERRCOUNT = 0;
+  ZPRINTF(STDLOG, "TEST (IN)VALID CDR WRITE CASES\n");
+  WRITEGOAT(0, 0, 0); /* accessing of 0 bytes is always ok */
+  WRITEGOAT(-1, -1, -1); /* invalid size, offset ignored = fail */
+  WRITEGOAT(-1, 0, -1); /* invalid size, offset ignored = fail */
+  WRITEGOAT(-1, 1, -1); /* invalid size, offset ignored = fail */
+  WRITEGOAT(0, -1, 0); /* accessing of 0 bytes is always ok */
+  WRITEGOAT(1, -1, 1); /* size = 1, offset ignored = 1 byte written */
+  WRITEGOAT(0, zvm_bulk->channels[zhandle(STDCDR_GOAT)].limits[PutSizeLimit] + 1, 0);
+  WRITEGOAT(1, zvm_bulk->channels[zhandle(STDCDR_GOAT)].limits[PutSizeLimit] + 1, 1);
+  overall_errors += ERRCOUNT;
+  zput(STDLOG, ERRCOUNT ? "TEST FAILED\n\n" : "TEST SUCCEED\n\n");
+
+  /* test (in)valid write cases */
+  ERRCOUNT = 0;
+  ZPRINTF(STDLOG, "TEST (IN)VALID CDR READ CASES\n");
+  READGOAT(0, 0, 0); /* accessing of 0 bytes is always ok */
+  READGOAT(-1, -1, -1); /* invalid size, invalid offset = fail */
+  READGOAT(-1, 0, -1); /* invalid size, valid offset = fail */
+  READGOAT(-1, 1, -1); /* invalid size, valid offset = fail */
+  READGOAT(0, -1, 0); /* accessing of 0 bytes is always ok */
+  READGOAT(1, -1, -1); /* valid size, invalid offset = fail */
+  READGOAT(0, zvm_bulk->channels[zhandle(STDCDR_GOAT)].limits[PutSizeLimit] + 1, -1);
+  READGOAT(1, zvm_bulk->channels[zhandle(STDCDR_GOAT)].limits[PutSizeLimit] + 1, -1);
+  overall_errors += ERRCOUNT;
+  zput(STDLOG, ERRCOUNT ? "TEST FAILED\n\n" : "TEST SUCCEED\n\n");
+
+  /* test NULL buffer cases */
+  ERRCOUNT = 0;
+  ZPRINTF(STDLOG, "TEST NULL BUFFER CASES\n");
+  ZTEST(zvm_pwrite(zhandle(STDCDR_GOAT), NULL, 1, 0) == -1);
+  ZTEST(zvm_pwrite(zhandle(STDCDR_GOAT), NULL, 0, 0) == -1);
+  overall_errors += ERRCOUNT;
+  zput(STDLOG, ERRCOUNT ? "TEST FAILED\n\n" : "TEST SUCCEED\n\n");
 
   /* exit with code */
-  zput(STDLOG, ERRCOUNT ? "TEST FAILED\n\n" : "TEST SUCCEED\n\n");
-  zvm_exit(0);
+  ZPRINTF(STDLOG, "OVERALL ERRORS COUNT = %d\n", overall_errors);
+  zvm_exit(overall_errors);
   return 0;
 }
