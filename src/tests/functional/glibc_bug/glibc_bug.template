@@ -14,7 +14,8 @@ Version = 09082012
 Nexe = glibc_bug.nexe
 NexeMax = 4194304
 SyscallsMax = 1024
-MaxMem = 542045771
+==4GB-16MB
+MemMax=4278190080
 Node = nodename, 1
 Timeout = 60
 
