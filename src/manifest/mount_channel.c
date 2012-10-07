@@ -132,7 +132,6 @@ static void ChannelCtor(struct NaClApp *nap, char **tokens)
   channel->counters[GetSizeLimit] = 0;
   channel->counters[PutsLimit] = 0;
   channel->counters[PutSizeLimit] = 0;
-  channel->closed = 0;
   channel->eof = 0;
 
   /* mount given channel */

@@ -88,7 +88,6 @@ int32_t ZVMReadHandle(struct NaClApp *nap,
 
   /* prevent reading from the closed or not readable channel */
   channel = &nap->system_manifest->channels[ch];
-  if(channel->closed) return -EBADF;
   if(!CHANNEL_READABLE(channel)) return -EBADF;
 
   /* ignore user offset for sequential access read */
@@ -126,7 +125,6 @@ int32_t ZVMReadHandle(struct NaClApp *nap,
     case LocalFile:
       retcode = pread(channel->handle, sys_buffer, (size_t)size, (off_t)offset);
       if(retcode == -1) retcode = -errno;
-      else if(retcode == 0) retcode = ZVM_EOF;
       break;
     case NetworkChannel:
       retcode = FetchMessage(channel, sys_buffer, size);
@@ -175,24 +173,9 @@ int32_t ZVMWriteHandle(struct NaClApp *nap,
 
   channel = &nap->system_manifest->channels[ch];
 
-  /*
-   * close the channel
-   * note: the channel can have any type of access even read-only
-   * todo(d'b): for a w/o network channel EOF should be send
-   */
-  if(size == ZVM_EOF && offset == ZVM_EOF && buffer == (void*)ZVM_EOF)
-  {
-    if(channel->closed) return -1;
-    channel->closed = 1;
-    return 0;
-  }
-
   /* check buffer and convert address */
   if(buffer == NULL) return -EINVAL;
   sys_buffer = (const char*)NaClUserToSys(nap, (uintptr_t) buffer);
-
-  /* prevent writing to the closed channel */
-  if(channel->closed) return -EBADF;
 
   /* prevent writing to the not writable channel */
   if(CHANNEL_WRITEABLE(channel) == 0) return -EBADF;

@@ -83,9 +83,7 @@ int32_t zvm_pread(int desc, char *buffer, int32_t size, int64_t offset)
     return -1;
   }
 
-  /* eof reached */
-  if(code < size)
-    zvm_errno_num = ZVM_EOF;
+  /* if eof reached (and only if so) user will get 0 */
 
   return code;
 }
@@ -102,18 +100,6 @@ int32_t zvm_pwrite(int desc, const char *buffer, int32_t size, int64_t offset)
     return -1;
   }
   return code;
-}
-
-/*
- * close the channel. make a sence only for a channels with
- * sequential write. uses special form of TrapWrite call
- * returns 0 if successful or -1 when error and sets errno to ZVM_EOF
- */
-int32_t zvm_close(int desc)
-{
-  uint64_t request[] = {TrapWrite, 0, desc, ZVM_EOF, ZVM_EOF, ZVM_EOF};
-  zvm_errno_num = ZVM_EOF;
-  return _trap(request);
 }
 
 /* wrapper for zerovm "TrapExit" */

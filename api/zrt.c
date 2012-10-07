@@ -114,7 +114,6 @@ static int32_t zrt_open(uint32_t *args)
 static int32_t zrt_close(uint32_t *args)
 {
   zrt_log("handle = %d", (int)args[0]);
-  int handle = (int)args[0];
 
   /*
    * todo: did the channel was "opened" with zrt_open() ?
@@ -122,7 +121,7 @@ static int32_t zrt_close(uint32_t *args)
    * otherwise - appropriate error
    */
 
-  return zvm_close(handle);
+  return 0;
 }
 
 /* read the file with the given handle number */

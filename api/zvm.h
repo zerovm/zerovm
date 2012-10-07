@@ -16,12 +16,6 @@ enum ZVM_CODES
   OK_CODE = 0 /* must be zero */
 };
 
-/*
- * can be returned by zvm_read for the pure sequential
- * channels and tested with zvm_errno()
- */
-#define ZVM_EOF -0x2012
-
 /* channels available for user. very 1st channel must be InputChannel */
 enum AccessType {
   SGetSPut, /* sequential read, sequential write */
@@ -105,13 +99,6 @@ int32_t zvm_pread(int desc, char *buffer, int32_t size, int64_t offset);
 
 /* wrapper for zerovm "TrapWrite" */
 int32_t zvm_pwrite(int desc, const char *buffer, int32_t size, int64_t offset);
-
-/*
- * close the channel. make a sence only for a channels with
- * sequential write. uses special form of TrapWrite call
- * return 0 if successful or -1 when error
- */
-int32_t zvm_close(int desc);
 
 /* wrapper for zerovm "TrapExit" */
 int32_t zvm_exit(int32_t code);
