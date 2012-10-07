@@ -11,7 +11,7 @@
 #include <stdint.h>
 #include <openssl/evp.h>
 
-#define TAG_ENCRYPTION "sha1"
+#define TAG_ENCRYPTION "md5"
 #define TAG_ENGINE_DISABLED "disabled"
 #define TAG_CONTEXT_SIZE sizeof(EVP_MD_CTX) /* tag size */
 #define TAG_BINARY_SIZE EVP_MAX_MD_SIZE /* tag size */
