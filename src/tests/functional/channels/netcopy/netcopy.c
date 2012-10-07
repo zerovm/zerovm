@@ -7,12 +7,11 @@
  * note: to simulate the "real" channel work the program reads
  * "random" amount of bytes
  */
-#include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include "api/zrt.h"
+#include "include/api_tools.h"
 
 #define CHUNK_SIZE 0x10000
+#define SETRAND srand((int)argv[0][6])
 
 int main(int argc, char **argv)
 {
@@ -20,29 +19,30 @@ int main(int argc, char **argv)
   int rsize = 0;
   int wsize = 0;
   int count = 0;
+  zvm_bulk = zvm_init();
 
-  srand((int)argv[0][6]);
-  fprintf(stderr, "sranded by %c\n", argv[0][6]);
+  SETRAND;
+  ZPRINTF(STDERR, "sranded by %c\n", argv[0][6]);
 
-  /* copy all data from stdin to stdout */
+  /* copy all data from STDIN to STDOUT */
   for(;;)
   {
     count = rand() % sizeof buffer + 1;
-    count = fread(buffer, sizeof *buffer, count, stdin);
+    count = zread(STDIN, buffer, count);
     rsize += count;
-    fprintf(stderr, "%5d read, ", count);
+    ZPRINTF(STDERR, "%5d read, ", count);
     if(count <= 0) break;
-    count = fwrite(buffer, sizeof *buffer, count, stdout);
-    fprintf(stderr, "%5d written\n", count);
+    count = zwrite(STDOUT, buffer, count);
+    ZPRINTF(STDERR, "%5d written\n", count);
     wsize += count;
   }
 
   /* report results */
-  fprintf(stderr, "\n");
+  ZPRINTF(STDERR, "\n");
   if(count < 0)
-    fprintf(stderr, "%s\n", strerror(zvm_errno()));
-  fprintf(stderr, "%d bytes has been read\n", rsize);
-  fprintf(stderr, "%d bytes has been written\n", wsize);
+    ZPRINTF(STDERR, "%s\n", strerror(zvm_errno()));
+  ZPRINTF(STDERR, "%d bytes has been read\n", rsize);
+  ZPRINTF(STDERR, "%d bytes has been written\n", wsize);
 
   return rsize == wsize ? 0 : 1;
 }

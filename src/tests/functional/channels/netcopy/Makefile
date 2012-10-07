@@ -16,9 +16,8 @@ all: $(NAME).o
 	@$(ZEROVM_ROOT)/zerovm -e -M$(NAME)3.manifest
 
 $(NAME).o: $(NAME).c
-	$(NACL_TOOLCHAIN)/bin/x86_64-nacl-gcc -c -Wall -I $(ZEROVM_ROOT) \
-	-DUSER_SIDE -DZRT_LIB -Wno-long-long -O3 -msse4.1 -m64 -o $@ $^
+	$(NACL_TOOLCHAIN)/bin/x86_64-nacl-gcc -c -Wall -DUSER_SIDE -Wno-long-long -O3 \
+	-msse4.1 -m64 -I$(ZEROVM_ROOT) -I$(ZEROVM_ROOT)/src/tests/functional -o $@ $^
 
 clean:
-	rm -f $(NAME).nexe $(NAME).o *.log *.data debug* *.manifest
-
+	rm -f $(NAME).nexe $(NAME).o *.log *.data *.manifest

@@ -1,0 +1,18 @@
+=====================================================================
+== the sequential write only channels test
+=====================================================================
+Channel = /dev/null, /dev/stdin, 0, 16, 256, 0, 0
+Channel = CURDIR/stdout.data, /dev/stdout, 0, 0, 0, 512, 8192
+Channel = /dev/null, /dev/stderr, 0, 0, 0, 16, 256
+Channel = CURDIR/seqwo.data, /dev/seqwo, 1, 0, 0, 32, 32
+
+=====================================================================
+== switches for zerovm. some of them used to control nexe, some
+== for the internal zerovm needs
+=====================================================================
+Version = 09082012
+Nexe = seqwo.nexe
+NexeMax = 4194304
+MaxMem = 134217728
+Timeout = 5
+

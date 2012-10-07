@@ -1,19 +1,17 @@
 =====================================================================
-== 1st collocutor from "network channel" example
+== net copy functional test. 1st collocutor
 =====================================================================
-Nexe = CURDIR/netcopy.nexe
-NodeName = copier1, 1
-NameServer = udp:127.0.0.1:54321
-
-== the channels section =============================================
-Channel = CURDIR/debug1, /dev/debug, 0, 0, 0, 65536, 1048576
 Channel = CURDIR/netcopy.nexe, /dev/stdin, 0, 65536, 67108864, 0, 0
 Channel = tcp:2:, /dev/stdout, 0, 0, 0, 65536, 67108864
 Channel = CURDIR/stderr1.log, /dev/stderr, 0, 0, 0, 4096, 65536
 
-== the limits section ===============================================
+=====================================================================
+== zerovm settings
+=====================================================================
+Nexe = netcopy.nexe
+NodeName = copier1, 1
+NameServer = udp:127.0.0.1:54321
 NexeMax = 4194304
-MaxMem = 134217728
+MemMax = 134217728
 Timeout = 5
 Version = 09082012
-
