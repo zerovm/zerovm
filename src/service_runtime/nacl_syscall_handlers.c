@@ -18,9 +18,6 @@
 
 struct NaClSyscallTableEntry nacl_syscall[NACL_MAX_SYSCALLS] = {{0}};
 static const size_t kMaxUsableFileSize = (SIZE_T_MAX >> 1);
-static INLINE size_t  size_min(size_t a, size_t b) {
-  return (a < b) ? a : b;
-}
 
 static int AddrRangeContainsExecutablePages(struct NaClApp *nap, uintptr_t usraddr)
 {
@@ -413,8 +410,8 @@ int32_t NaClCommonSysMmapIntern(struct NaClApp        *nap,
    * host-OS allocation size.  it cannot be larger than
    * kMaxUsableFileSize.
    */
-  length = size_min(alloc_rounded_length, (size_t) host_rounded_file_bytes);
-  start_of_inaccessible = size_min(alloc_rounded_length,
+  length = MIN(alloc_rounded_length, (size_t) host_rounded_file_bytes);
+  start_of_inaccessible = MIN(alloc_rounded_length,
                                    alloc_rounded_file_bytes);
 
   /*
@@ -559,7 +556,7 @@ int32_t NaClCommonSysMmapIntern(struct NaClApp        *nap,
        * This is a fix for Windows, where we cannot pass a size that
        * goes beyond the non-page-rounded end of the file.
        */
-      size_t length_to_map = size_min(length, (size_t) file_bytes);
+      size_t length_to_map = MIN(length, (size_t) file_bytes);
 
       NaClLog(4, ("NaClSysMmap: (*ndp->Map)(,,0x%08"NACL_PRIxPTR","
                "0x%08"NACL_PRIxS",0x%x,0x%x,0x%08"NACL_PRIxPTR")\n"),

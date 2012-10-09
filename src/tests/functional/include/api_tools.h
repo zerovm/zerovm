@@ -27,6 +27,8 @@
 #define BIG_ENOUGH 0x10000
 #define LOT_ENOUGH 0x100
 
+#define UNREFERENCED_VAR(a) do { (void)a; } while(0)
+
 /*
  * if condition is false increase the errors count (ERRCOUNT),
  * log result to log channel (STDLOG)

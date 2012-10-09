@@ -8,6 +8,8 @@ int main(int argc, char **argv)
 {
   zvm_bulk = zvm_init();
 
+  UNREFERENCED_VAR(errcount);
+
   /* write to zvm provided stdout */
   zput(STDOUT, "hello, world!\n");
 

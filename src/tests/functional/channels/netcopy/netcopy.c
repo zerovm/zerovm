@@ -21,6 +21,7 @@ int main(int argc, char **argv)
   int count = 0;
   zvm_bulk = zvm_init();
 
+  UNREFERENCED_VAR(errcount);
   SETRAND;
   ZPRINTF(STDERR, "sranded by %c\n", argv[0][6]);
 

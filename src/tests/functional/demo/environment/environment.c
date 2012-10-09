@@ -10,6 +10,8 @@ int main(int argc, char **argv, char **envp)
 {
   zvm_bulk = zvm_init();
 
+  UNREFERENCED_VAR(errcount);
+
   /* show command line */
   ZPRINTF(STDLOG, "COMMAND LINE PARAMETERS:\n");
   while(*argv != NULL)
