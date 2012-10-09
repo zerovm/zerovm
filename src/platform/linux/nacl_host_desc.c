@@ -81,8 +81,9 @@ uintptr_t NaClHostDescMap(struct NaClHostDesc *d,
           host_flags, host_prot);
 
   /*
-   * use "whole chunk" memory manager if set in manifest
+   * d'b: use "whole chunk" memory manager if set in manifest
    * and if this is "user side call"
+   * todo(d'b): use accessor instead of gnap
    */
   assert(gnap != NULL);
   map_addr =

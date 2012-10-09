@@ -199,7 +199,11 @@ int32_t NaClSysSysbrk(struct NaClApp *nap, uintptr_t new_break)
       if(nap->user_side_flag && nap->system_manifest != NULL &&
           nap->system_manifest->max_mem)
       {
-        /* skip real mprotect() syscall. or shell we? */
+        /*
+         * skip real mprotect() syscall but zero the allocated memory
+         * for calloc (we can't know invocation function)
+         */
+        memset((char*)sys_break, 0, region_size);
       }
       else /* proceed real syscall */
       {

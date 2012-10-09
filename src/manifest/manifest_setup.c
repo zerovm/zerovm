@@ -112,10 +112,18 @@ static void PreallocateUserMemory(struct NaClApp *nap)
   if(nap->system_manifest->max_mem == 0) return;
 
   /* user memory chunk must be allocated next to the data end */
-  stump = nap->system_manifest->max_mem - nap->stack_size - nap->data_end;
+//  stump = nap->system_manifest->max_mem - nap->stack_size - nap->data_end;
+//  i = nap->data_end;
+//  /* todo(d'b): make it macro or inline function */
+//  i = (i + NACL_MAP_PAGESIZE - 1) & ~(NACL_MAP_PAGESIZE - 1);
+//  nap->system_manifest->heap_ptr =
+//      NaClCommonSysMmapIntern(nap, (void*)i, stump, 3, 0x22, -1, 0);
+//  COND_ABORT(nap->system_manifest->heap_ptr != i,
+//      "cannot allocate specified user memory chunk");
+
   i = nap->data_end;
-  /* todo(d'b): make it macro or inline function */
   i = (i + NACL_MAP_PAGESIZE - 1) & ~(NACL_MAP_PAGESIZE - 1);
+  stump = nap->system_manifest->max_mem - nap->stack_size - i;
   nap->system_manifest->heap_ptr =
       NaClCommonSysMmapIntern(nap, (void*)i, stump, 3, 0x22, -1, 0);
   COND_ABORT(nap->system_manifest->heap_ptr != i,
