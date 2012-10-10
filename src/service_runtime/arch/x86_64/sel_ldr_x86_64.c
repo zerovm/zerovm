@@ -16,7 +16,7 @@ extern int NaClSyscallSeg(); /* d'b: moved from tiny header file to remove it */
 int NaClMakeDispatchThunk(struct NaClApp *nap) {
   int                   retval = 0;  /* fail */
   int                   error;
-  void                  *thunk_addr = NULL;
+  void                  *thunk_addr = ((void*)0x5AFECA110000); /* d'b */
   struct NaClPatchInfo  patch_info;
   struct NaClPatch      jmp_target;
 
@@ -26,14 +26,17 @@ int NaClMakeDispatchThunk(struct NaClApp *nap) {
     return 1;
   }
 
-  if (0 != (error = NaCl_page_alloc_randomized(&thunk_addr,
-                                               NACL_MAP_PAGESIZE))) {
+  /* d'b: replaced with not randomized version {{ */
+  error = NaCl_page_alloc_intern_flags(&thunk_addr, NACL_MAP_PAGESIZE, 0);
+  if(0 != (error))
+  {
     NaClLog(LOG_INFO,
-            "NaClMakeDispatchThunk::NaCl_page_alloc failed, errno %d\n",
-            -error);
+        "NaClMakeDispatchThunk::NaCl_page_alloc_intern_flags failed, errno %d\n", -error);
     retval = 0;
     goto cleanup;
   }
+  /* }} */
+
   NaClLog(LOG_INFO, "NaClMakeDispatchThunk: got addr 0x%"NACL_PRIxPTR"\n",
           (uintptr_t) thunk_addr);
 

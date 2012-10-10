@@ -34,7 +34,7 @@ TEST_F(SelMemoryBasic, AllocationTests) {
 
   size = 0x2001;  // not power of two - should be supported
 
-  res = NaCl_page_alloc_randomized(&p, size);
+  res = NaCl_page_alloc_intern_flags(&p, size, 0);
   EXPECT_EQ(0, res);
   EXPECT_NE(static_cast<void *>(NULL), p);
 
@@ -44,7 +44,7 @@ TEST_F(SelMemoryBasic, AllocationTests) {
   // Try to allocate large memory block
   size = 256 * 1024 * 1024;  // 256M
 
-  res = NaCl_page_alloc_randomized(&p, size);
+  res = NaCl_page_alloc_intern_flags(&p, size, 0);
   EXPECT_EQ(0, res);
   EXPECT_NE(static_cast<void *>(NULL), p);
 
@@ -59,7 +59,7 @@ TEST_F(SelMemoryBasic, mprotect) {
 
   size = 0x100000;
 
-  res = NaCl_page_alloc_randomized(&p, size);
+  res = NaCl_page_alloc_intern_flags(&p, size, 0);
   EXPECT_EQ(0, res);
   EXPECT_NE(static_cast<void *>(NULL), p);
 

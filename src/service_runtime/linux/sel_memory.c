@@ -10,7 +10,7 @@
 #include "include/nacl_platform.h"
 #include "src/platform/nacl_log.h"
 
-#define DISPATCH_THUNK_ADDRESS ((void*)0x5AFECA110000)
+//#define DISPATCH_THUNK_ADDRESS ((void*)0x5AFECA110000)
 
 /*
  * When we're built into Chromium's "nacl_helper", its main will set this.
@@ -28,41 +28,22 @@ void NaCl_page_free(void     *p,
 
 /*
  * NaCl_page_alloc_intern_flags
+ * d'b: made global function
  */
-static
-int NaCl_page_alloc_intern_flags(void   **p,
-                                 size_t size,
-                                 int    map_flags) {
+int NaCl_page_alloc_intern_flags(void **p, size_t size, int map_flags)
+{
   void *addr;
 
   map_flags |= MAP_PRIVATE | MAP_ANONYMOUS;
 
   /* d'b: syntax error fixed */
-  NaClLog(4, "sel_memory: NaCl_page_alloc_intern: mmap(%p, %lX, %#x, %#x, %d, %d)\n",
-              *p, size, PROT_NONE, map_flags, -1, 0);
-  addr = mmap(*p, size, PROT_NONE, map_flags, -1, (off_t) 0);
-  if (MAP_FAILED == addr) {
-    addr = NULL;
-  }
-  if (NULL != addr) {
-    *p = addr;
-  }
+  NaClLog(LOG_DEBUG, "sel_memory: NaCl_page_alloc_intern: mmap(%p, %lX, %#x, %#x, %d, %d)\n",
+      *p, size, PROT_NONE, map_flags, -1, 0);
+
+  addr = mmap(*p, size, PROT_NONE, map_flags, -1, (off_t)0);
+  if(MAP_FAILED == addr) addr = NULL;
+  if(NULL != addr) *p = addr;
   return (NULL == addr) ? -ENOMEM : 0;
-}
-
-/*
- * Pick a "hint" address that is random.
- * update(d'b): for sake of determenism randomization has been disabled
- */
-int NaCl_page_alloc_randomized(void **p, size_t size)
-{
-  *p = DISPATCH_THUNK_ADDRESS;
-  NaClLog(LOG_INFO, "NaCl_page_alloc_randomized: hint 0x%"NACL_PRIxPTR"\n", (uintptr_t) *p);
-
-  if(NaCl_page_alloc_intern_flags(p, size, 0) != 0)
-    NaClLog(LOG_FATAL, "NaCl_page_alloc_randomized: failed, dropping hints\n");
-
-  return 0;
 }
 
 /*

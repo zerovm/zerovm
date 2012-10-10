@@ -6,8 +6,8 @@ CXXFLAGS0=-m64 -Wno-variadic-macros
 TESTFLAGS=-Lgtest -lgtest -lzmq -lrt -ldl -lpthread -lglib-2.0 -lssl -lcrypto
 
 # RELEASE BUILD
-#CCFLAGS=-DNDEBUG -O3 $(CCFLAGS0)
-#CXXFLAGS=-DNDEBUG -O3
+#CCFLAGS=-DNDEBUG -O3 -s $(CCFLAGS0)
+#CXXFLAGS=-DNDEBUG -O3 -s
 
 # DEBUG BUILD
 #COVFLAGS=--coverage
