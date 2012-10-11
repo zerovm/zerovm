@@ -264,6 +264,7 @@ int NaClVmmapAdd(struct NaClVmmap   *self,
  * flag, since a NULL nmop just means that the memory is backed by the
  * system paging file.
  */
+// ### can be removed since there are no customers for this service
 void NaClVmmapUpdate(struct NaClVmmap   *self,
                      uintptr_t          page_num,
                      size_t             npages,
@@ -370,6 +371,7 @@ struct NaClVmmapEntry const *NaClVmmapFindPage(struct NaClVmmap *self,
   return result_ptr ? *result_ptr : NULL;
 }
 
+// ### can be removed since there are no customers for this service
 struct NaClVmmapIter *NaClVmmapFindPageIter(struct NaClVmmap      *self,
                                             uintptr_t             pnum,
                                             struct NaClVmmapIter  *space) {
@@ -396,6 +398,7 @@ struct NaClVmmapIter *NaClVmmapFindPageIter(struct NaClVmmap      *self,
 }
 
 
+// ### can be removed since there are no customers for this service
 int NaClVmmapIterAtEnd(struct NaClVmmapIter *nvip) {
   return nvip->entry_ix >= nvip->vmmap->nvalid;
 }
@@ -403,10 +406,12 @@ int NaClVmmapIterAtEnd(struct NaClVmmapIter *nvip) {
 /*
  * IterStar only permissible if not AtEnd
  */
+// ### can be removed since there are no customers for this service
 struct NaClVmmapEntry *NaClVmmapIterStar(struct NaClVmmapIter *nvip) {
   return nvip->vmmap->vmentry[nvip->entry_ix];
 }
 
+// ### can be removed since there are no customers for this service
 void NaClVmmapIterIncr(struct NaClVmmapIter *nvip) {
   ++nvip->entry_ix;
 }
@@ -502,6 +507,7 @@ uintptr_t NaClVmmapFindMaxFreeSpace(struct NaClVmmap *self,
  * possible, since the stack size for the main thread is currently
  * fixed, and the heap is the only thing that grows.
  */
+// ### can be removed since there are no customers for this service
 uintptr_t NaClVmmapFindMapSpace(struct NaClVmmap *self,
                                 size_t           num_pages) {
   size_t                i;
@@ -544,6 +550,7 @@ uintptr_t NaClVmmapFindMapSpace(struct NaClVmmap *self,
 /*
  * Linear search, from uaddr up.
  */
+// ### can be removed since there are no customers for this service
 uintptr_t NaClVmmapFindMapSpaceAboveHint(struct NaClVmmap *self,
                                          uintptr_t        uaddr,
                                          size_t           num_pages) {

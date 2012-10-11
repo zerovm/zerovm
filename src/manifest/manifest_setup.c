@@ -8,9 +8,11 @@
 #include <assert.h>
 #include <time.h>
 #include <sys/resource.h> /* timeout, process priority */
+#include <sys/mman.h>
 #include "src/service_runtime/sel_ldr.h"
 #include "src/service_runtime/etag.h"
 #include "src/service_runtime/nacl_syscall_handlers.h"
+#include "src/service_runtime/sel_memory.h"
 #include "src/manifest/manifest_parser.h"
 #include "src/manifest/manifest_setup.h"
 #include "src/manifest/mount_channel.h"
@@ -100,53 +102,26 @@ void LastDefenseLine(struct NaClApp *nap)
 static void PreallocateUserMemory(struct NaClApp *nap)
 {
   uintptr_t i;
-  uint32_t stump;
-  uint32_t dead_space;
-  struct NaClVmmapEntry *user_space;
+  uint32_t heap;
+  void *p;
 
-  /* quit function if max_mem is not specified in manifest */
   assert(nap != NULL);
   assert(nap->system_manifest != NULL);
 
-  nap->system_manifest->heap_ptr = (uint32_t)(intptr_t)NULL;
-  if(nap->system_manifest->max_mem == 0) return;
+  /* quit function if max_mem is not specified in manifest */
+  COND_ABORT(nap->heap_end == 0,
+      "user heap size in not specified in manifest");
 
-  /* user memory chunk must be allocated next to the data end */
-//  stump = nap->system_manifest->max_mem - nap->stack_size - nap->data_end;
-//  i = nap->data_end;
-//  /* todo(d'b): make it macro or inline function */
-//  i = (i + NACL_MAP_PAGESIZE - 1) & ~(NACL_MAP_PAGESIZE - 1);
-//  nap->system_manifest->heap_ptr =
-//      NaClCommonSysMmapIntern(nap, (void*)i, stump, 3, 0x22, -1, 0);
-//  COND_ABORT(nap->system_manifest->heap_ptr != i,
-//      "cannot allocate specified user memory chunk");
+  /* calculate user heap size (must be allocated next to the data_end) */
+  p = (void*)NaClRoundAllocPage(nap->data_end);
+  heap = nap->heap_end - nap->stack_size;
+  heap = NaClRoundAllocPage(heap) - NaClRoundAllocPage(nap->data_end);
 
-  i = nap->data_end;
-  i = (i + NACL_MAP_PAGESIZE - 1) & ~(NACL_MAP_PAGESIZE - 1);
-  stump = nap->system_manifest->max_mem - nap->stack_size - i;
-  nap->system_manifest->heap_ptr =
-      NaClCommonSysMmapIntern(nap, (void*)i, stump, 3, 0x22, -1, 0);
-  COND_ABORT(nap->system_manifest->heap_ptr != i,
-      "cannot allocate specified user memory chunk");
-
-  /*
-   * free "whole chunk" block without real memory deallocation
-   * the map entry we need is the last in raw
-   */
-  user_space = nap->mem_map.vmentry[nap->mem_map.nvalid - 1];
-  assert(nap->system_manifest->heap_ptr / NACL_PAGESIZE == user_space->page_num);
-  assert(nap->mem_map.is_sorted != 1);
-
-  /* protect dead space */
-  dead_space = NaClVmmapFindMaxFreeSpace(&nap->mem_map, 1) * NACL_PAGESIZE;
-  i = (user_space->page_num + user_space->npages) * NACL_PAGESIZE;
-  dead_space = NaClCommonSysMmapIntern(nap, (void*)i, dead_space, 0, 0x22, -1, 0);
-  COND_ABORT(dead_space != i, "cannot protect dead space");
-
-  /* force sort to remove deleted blocks */
-  user_space->removed = 1;
-  nap->mem_map.is_sorted = 0;
-  NaClVmmapMakeSorted(&nap->mem_map);
+  /* since 4gb of user space is already allocated just set protection to the heap */
+  p = (void*)NaClUserToSys(nap, (uintptr_t)p);
+  i = NaCl_mprotect(p, heap, PROT_READ | PROT_WRITE);
+  COND_ABORT(0 != i, "cannot set protection on user heap");
+  nap->heap_end = (uintptr_t)p + heap;
 }
 
 /* helper. sets custom user attributes for user */
@@ -342,7 +317,7 @@ void SystemManifestCtor(struct NaClApp *nap)
    * in raw because after chunk allocated there will be no free user memory
    * note: will set "heap_ptr"
    */
-  GET_INT_BY_KEY(policy->max_mem, "MemMax");
+  GET_INT_BY_KEY(nap->heap_end, "MemMax");
   PreallocateUserMemory(nap);
 
   /* zerovm return code */

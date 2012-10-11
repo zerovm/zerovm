@@ -76,7 +76,7 @@ void DynArrayDtor(struct DynArray *dap) {
   dap->available = NULL;
 }
 
-
+// ### can be removed since there are no customers for this service
 void *DynArrayGet(struct DynArray *dap,
                   size_t          idx) {
   if (idx < dap->num_entries) {

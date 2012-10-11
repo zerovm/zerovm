@@ -10,6 +10,8 @@
 
 #include <stdint.h>
 
+#define STACK_SIZE (16 << 20) /* should be taken from sel_ldr.h*/
+
 enum ZVM_CODES
 {
   ERR_CODE = -1, /* general error */
@@ -44,7 +46,7 @@ enum TrapCalls {
   TrapChannels = 17770434,
   TrapChannelName = 17770435,
   TrapAttributes = 17770436,
-  TrapMemSize = 17770439,
+  TrapHeapEnd = 17770439,
   TrapHeapPtr = 17770440,
   TrapExit = 17770441
 };
@@ -76,7 +78,7 @@ struct UserManifest
 {
   /* system */
   void *heap_ptr;
-  uint32_t mem_size;
+  uint32_t heap_size;
 
   /* channels */
   int32_t channels_count;
@@ -110,7 +112,7 @@ void* zvm_heap_ptr();
  * return user memory size. note that this is not the heap
  * size, but whole memory available for user
  */
-uint32_t zvm_mem_size();
+uint32_t zvm_heap_size();
 
 /* set syscallback address. return active syscallback */
 int32_t zvm_syscallback(intptr_t addr);

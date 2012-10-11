@@ -66,8 +66,12 @@ struct SystemManifest
   int32_t user_ret_code; /* nexe return code */
 
   /* variables and limits for a nexe */
-  uint32_t heap_ptr; /* pointer to the start of available for user ram */
-  uint32_t max_mem; /* memory space available for user program. if 0 = 4gb */
+//  uint32_t heap_ptr; /* pointer to the start of available for user ram */
+//    /* todo(d'b): ### remove it! "data_end" is enough */
+//  uint32_t max_mem; /* memory space available for user program. if 0 = 4gb */
+//    /* todo(d'b): ### rename to heap_size, change the type to uintptr_t */
+//  uintptr_t heap_size; /* user heap size. 1st contain "Memory" value */
+
   int cmd_line_size; /* command line size for nexe */
   char **cmd_line; /* command line for nexe */
   char **envp; /* environment variables for user */

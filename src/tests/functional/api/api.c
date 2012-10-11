@@ -92,7 +92,8 @@ int main(int argc, char **argv)
   /* check general information provided by zerovm */
   /* memory */
   token = GetValueByKey("MemMax");
-  ZTEST(zvm_bulk->mem_size == (token != NULL ? atoi(token) : 0));
+  ZTEST((uintptr_t)zvm_bulk->heap_ptr + zvm_bulk->heap_size + STACK_SIZE
+      == (token != NULL ? atoi(token) : 0));
 
   /* environment. todo(d'b): extend it */
   token = GetValueByKey("Environment");

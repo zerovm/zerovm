@@ -56,6 +56,7 @@ static void NaClDescDtor(struct NaClRefCount *nrcp) {
   (*nrcp->vtbl->Dtor)(nrcp);
 }
 
+// ### can be removed since there are no customers for this service
 struct NaClDesc *NaClDescRef(struct NaClDesc *ndp) {
   return (struct NaClDesc *) NaClRefCountRef(&ndp->base);
 }

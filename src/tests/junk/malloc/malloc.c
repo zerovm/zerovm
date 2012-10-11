@@ -25,7 +25,7 @@ else\
 int main()
 {
   /* first off check manifest */
-  printf("we are using %sTRUSTED memory manager\n", zvm_mem_size() ? "UN" : "");
+  printf("we are using %sTRUSTED memory manager\n", zvm_heap_size() ? "UN" : "");
   TEST_PTR(zvm_heap_ptr());
 
   printf("initial memory allocation\n");

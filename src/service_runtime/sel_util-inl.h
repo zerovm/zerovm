@@ -47,6 +47,7 @@ static INLINE int /* bool */ NaClIsPageMultiple(uintptr_t addr_or_size) {
   return 0 == ((NACL_PAGESIZE - 1) & addr_or_size);
 }
 
+// ### can be removed since there are no customers for this service
 static INLINE int /* bool */ NaClIsAllocPageMultiple(uintptr_t addr_or_size) {
   return 0 == ((NACL_MAP_PAGESIZE - 1) & addr_or_size);
 }
@@ -54,6 +55,7 @@ static INLINE int /* bool */ NaClIsAllocPageMultiple(uintptr_t addr_or_size) {
 /*
  * True host-OS allocation unit.
  */
+// ### can be removed since there are no customers for this service
 static INLINE size_t NaClRoundHostAllocPage(size_t  nbytes) {
   return NaClRoundPage(nbytes);
 }

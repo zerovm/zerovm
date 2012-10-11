@@ -42,7 +42,9 @@ static INLINE int NaClMapFlagMap(int nacl_map_flags) {
 
 /*
  * TODO(bsy): handle the !NACL_ABI_MAP_FIXED case.
+ * ### to remove! only need for nacl mmap syscall (effector also need for that syscall)
  */
+// ### can be removed since there are no customers for this service
 uintptr_t NaClHostDescMap(struct NaClHostDesc *d,
                           void                *start_addr,
                           size_t              len,
@@ -89,7 +91,7 @@ uintptr_t NaClHostDescMap(struct NaClHostDesc *d,
   map_addr =
       gnap->user_side_flag &&
       gnap->system_manifest != NULL &&
-      gnap->system_manifest->max_mem ?
+      gnap->heap_end ?
           start_addr :
           mmap(start_addr, len, host_prot, host_flags, desc, offset);
 

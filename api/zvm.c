@@ -38,7 +38,7 @@ struct UserManifest *zvm_init()
 
   /* system */
   result->heap_ptr = zvm_heap_ptr();
-  result->mem_size = zvm_mem_size();
+  result->heap_size = zvm_heap_size();
 
   /* get channels information */
   result->channels_count = zvm_channels(NULL);
@@ -120,21 +120,18 @@ int32_t zvm_syscallback(intptr_t addr)
   return _trap(request);
 }
 
-/* return user heap starting address */
+/* return address of the 1st available byte in the user heap */
 void* zvm_heap_ptr()
 {
   uint64_t request[] = {TrapHeapPtr};
   return (void*)_trap(request);
 }
 
-/*
- * return user memory size. note that this is not the heap
- * size, but whole memory available for user
- */
-uint32_t zvm_mem_size()
+/* calculate and return user heap size */
+uint32_t zvm_heap_size()
 {
-  uint64_t request[] = {TrapMemSize};
-  return _trap(request);
+  uint64_t request[] = {TrapHeapEnd};
+  return _trap(request) - (uint32_t)zvm_heap_ptr();
 }
 
 /*

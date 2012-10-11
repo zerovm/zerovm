@@ -242,15 +242,14 @@ static int32_t ZVMHeapPtr(struct NaClApp *nap)
 {
   assert(nap != NULL);
   assert(nap->system_manifest != NULL);
-  return nap->system_manifest->heap_ptr;
+  return (int32_t)nap->break_addr;
 }
 
-/* accessor: returns memory size available for user program, 0 means 4gb */
-static int32_t ZVMMemSize(struct NaClApp *nap)
+/* accessor: returns the end of the user heap */
+static int32_t ZVMHeapEnd(struct NaClApp *nap)
 {
   assert(nap != NULL);
-  assert(nap->system_manifest != NULL);
-  return nap->system_manifest->max_mem;
+  return (int32_t)nap->heap_end;
 }
 
 /*
@@ -389,7 +388,7 @@ static const char *FunctionNameById(int id)
     case TrapChannels: return "TrapChannels";
     case TrapChannelName: return "TrapChannelName";
     case TrapAttributes: return "TrapAttributes";
-    case TrapMemSize: return "TrapMemSize";
+    case TrapHeapEnd: return "TrapMemSize";
     case TrapHeapPtr: return "TrapHeapPtr";
     case TrapExit: return "TrapExit";
   }
@@ -439,8 +438,8 @@ int32_t TrapHandler(struct NaClApp *nap, uint32_t args)
     case TrapChannelName:
       retcode = ZVMChannelName(nap, (struct ZVMChannel*)sys_args[2], (int32_t)sys_args[3]);
       break;
-    case TrapMemSize:
-      retcode = ZVMMemSize(nap);
+    case TrapHeapEnd:
+      retcode = ZVMHeapEnd(nap);
       break;
     case TrapHeapPtr:
       retcode = ZVMHeapPtr(nap);

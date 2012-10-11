@@ -266,6 +266,7 @@ void  NaClAppPrintDetails(struct NaClApp  *nap,
                  gp);
 }
 
+// ### can be removed since there are no customers for this service
 struct NaClDesc *NaClGetDescMu(struct NaClApp *nap,
                                int            d) {
   struct NaClDesc *result;
@@ -312,6 +313,7 @@ int32_t NaClSetAvailMu(struct NaClApp  *nap,
   return (int32_t) pos;
 }
 
+// ### can be removed since there are no customers for this service
 struct NaClDesc *NaClGetDesc(struct NaClApp *nap, int d)
 {
   return NaClGetDescMu(nap, d);

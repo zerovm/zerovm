@@ -103,6 +103,7 @@ static uintptr_t NaClDescIoDescMap(struct NaClDesc         *vself,
   return (uintptr_t) start_addr;
 }
 
+// ### can be removed since there are no customers for this service
 uintptr_t NaClDescIoDescMapAnon(struct NaClDescEffector *effp,
                                 void                    *start_addr,
                                 size_t                  len,
