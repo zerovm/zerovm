@@ -124,7 +124,8 @@ struct NaClApp {
    * bundle_size is the bundle alignment boundary for validation (16
    * or 32), so int is okay.  This value must be a power of 2.
    */
-  int                       bundle_size;
+  int                       bundle_size; /* d'b: can be replaced with define.
+                                            only need for NaClSandboxCodeAddr */
 
   /*
    * An array of NaCl syscall handlers. The length of the array must be
@@ -132,8 +133,7 @@ struct NaClApp {
    */
   struct NaClSyscallTableEntry *syscall_table;
 
-  NaClErrorCode             module_load_status;
-  int                       module_may_start;
+  NaClErrorCode             module_load_status; /* d'b: should be coupled with zvm_state */
 
   /*
    * runtime info below, thread state, etc; initialized only when app
@@ -149,14 +149,6 @@ struct NaClApp {
    * memory map is in user addresses.
    */
   struct NaClVmmap          mem_map;
-
-  /*
-   * This is the effector interface object that is used to manipulate
-   * NaCl apps by the objects in the NaClDesc class hierarchy.  This
-   * is used by this NaClApp when making NaClDesc method calls from
-   * syscall handlers.
-   */
-  struct NaClDescEffector   *effp; // #6 to remove
 
   /*
    * may reject nexes that are incompatible w/ dynamic-text in the near future

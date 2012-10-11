@@ -9,15 +9,14 @@
  */
 #include "src/platform/nacl_check.h"
 #include "src/gio/gio.h"
+#include "src/service_runtime/sel_ldr.h"
 #include "src/service_runtime/arch/x86/sel_ldr_x86.h"
 #include "src/service_runtime/nacl_globals.h"
 #include "src/service_runtime/nacl_syscall_handlers.h"
-#include "src/service_runtime/nacl_desc_effector_ldr.h"
 
 int NaClAppWithSyscallTableCtor(struct NaClApp               *nap,
                                 struct NaClSyscallTableEntry *table)
 {
-  struct NaClDescEffectorLdr  *effp;
   nap->addr_bits = NACL_MAX_ADDR_BITS;
   nap->stack_size = NACL_DEFAULT_STACK_MAX;
   nap->mem_start = 0;
@@ -39,15 +38,6 @@ int NaClAppWithSyscallTableCtor(struct NaClApp               *nap,
     goto cleanup_desc_tbl;
   }
 
-  effp = (struct NaClDescEffectorLdr *) malloc(sizeof *effp);
-  if (NULL == effp) {
-    goto cleanup_mem_map;
-  }
-  if (!NaClDescEffectorLdrCtor(effp, nap)) {
-    goto cleanup_effp_free;
-  }
-  nap->effp = (struct NaClDescEffector *) effp;
-
   nap->use_shm_for_dynamic_text = 0; /* d'b: permanently disabled */
   nap->text_shm = NULL;
   nap->dynamic_page_bitmap = NULL;
@@ -64,14 +54,9 @@ int NaClAppWithSyscallTableCtor(struct NaClApp               *nap,
   nap->syscall_table = table;
 
   nap->module_load_status = LOAD_STATUS_UNKNOWN;
-  nap->module_may_start = 0;  /* only when secure_service != NULL */
 
   return 1;
 
- cleanup_effp_free:
-  free(nap->effp);
- cleanup_mem_map:
-  NaClVmmapDtor(&nap->mem_map);
  cleanup_desc_tbl:
   DynArrayDtor(&nap->desc_tbl);
  cleanup_threads:
