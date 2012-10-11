@@ -11,7 +11,7 @@
 
 #ifndef NATIVE_CLIENT_SRC_TRUSTED_PLATFORM_NACL_HOST_DESC_H__
 #define NATIVE_CLIENT_SRC_TRUSTED_PLATFORM_NACL_HOST_DESC_H__
-
+#include <stdint.h>
 #include "src/platform/linux/nacl_host_desc_types.h"
 
 /*
