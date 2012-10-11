@@ -14,19 +14,6 @@
 
 EXTERN_C_BEGIN
 
-/*
- * Yields an lvalue of the vtable pointer, when given a subclass of
- * NaClRefCount and a pointer to an instance -- with the convention
- * that the vtable pointer is at the first word.
- *
- * Since we have the naming convention that struct Type contains an
- * element of type struct TypeVtbl *, we make it so that less typing
- * is required for the use of the macro and automatically constructing
- * the vtable type name from the subclass name.
- */
-#define NACL_VTBL(type, ptr) \
-  (*(struct type ## Vtbl const **) (void *) ptr)
-
 struct NaClRefCountVtbl;
 
 struct NaClRefCount {
@@ -39,20 +26,10 @@ struct NaClRefCountVtbl {
   void (*Dtor)(struct NaClRefCount  *vself);
 };
 
-///*
-// * Placement new style ctor; creates w/ ref_count of 1.
-// *
-// * The subclasses' ctor must call this base class ctor during their
-// * contruction.
-// */
-//int NaClRefCountCtor(struct NaClRefCount *nrcp) NACL_WUR;
-
 struct NaClRefCount *NaClRefCountRef(struct NaClRefCount *nrcp);
 
 /* when ref_count reaches zero, will call dtor and free */
 void NaClRefCountUnref(struct NaClRefCount *nrcp);
-
-extern struct NaClRefCountVtbl const kNaClRefCountVtbl;
 
 EXTERN_C_END
 
