@@ -92,11 +92,11 @@ struct NaClMemObj *NaClMemObjMake(struct NaClDesc *ndp,
                                   nacl_off64_t    nbytes,
                                   nacl_off64_t    offset) NACL_WUR;
 
-struct NaClMemObj *NaClMemObjSplit(struct NaClMemObj  *nmop,
-                                   nacl_off64_t       additional) NACL_WUR;
+//struct NaClMemObj *NaClMemObjSplit(struct NaClMemObj  *nmop,
+//                                   nacl_off64_t       additional) NACL_WUR;
 
-void NaClMemObjIncOffset(struct NaClMemObj  *nmop,
-                         nacl_off64_t       additional);
+//void NaClMemObjIncOffset(struct NaClMemObj  *nmop,
+//                         nacl_off64_t       additional);
 
 EXTERN_C_END
 

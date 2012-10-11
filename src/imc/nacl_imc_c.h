@@ -89,15 +89,15 @@ typedef struct NaClMessageHeader {
  */
 int NaClSocketPair(NaClHandle pair[2]);
 
-/*
- * Closes a NaCl descriptor created by NaCl primitives.
- *
- * NaClClose() returns 0 on success, and -1 on failure. Note NaCl
- * descriptors must be explicitly closed by NaClClose(). Otherwise,
- * the resources of the underlining operating system will not be
- * released correctly.
- */
-int NaClClose(NaClHandle handle);
+///*
+// * Closes a NaCl descriptor created by NaCl primitives.
+// *
+// * NaClClose() returns 0 on success, and -1 on failure. Note NaCl
+// * descriptors must be explicitly closed by NaClClose(). Otherwise,
+// * the resources of the underlining operating system will not be
+// * released correctly.
+// */
+//int NaClClose(NaClHandle handle);
 
 /*
  * NaClSendDatagram()/NaClReceiveDatagram() flags

@@ -27,19 +27,6 @@ int NaClMemObjCtor(struct NaClMemObj  *nmop,
   return 1;
 }
 
-/*
- * Placement new copy ctor.
- */
-int NaClMemObjCopyCtorOff(struct NaClMemObj *nmop,
-                          struct NaClMemObj *src,
-                          nacl_off64_t      additional) {
-  nmop->ndp = src->ndp;
-  NaClDescRef(nmop->ndp);
-  nmop->nbytes = src->nbytes;
-  nmop->offset = src->offset + additional;
-  return 1;
-}
-
 void NaClMemObjDtor(struct NaClMemObj *nmop) {
   NaClDescUnref(nmop->ndp);
   nmop->ndp = NULL;
@@ -73,30 +60,4 @@ struct NaClMemObj *NaClMemObjMake(struct NaClDesc *ndp,
     NaClLog(LOG_FATAL, "NaClMemObjMake: NaClMemObjCtor failed!\n");
   }
   return nmop;
-}
-
-struct NaClMemObj *NaClMemObjSplit(struct NaClMemObj *orig,
-                                   nacl_off64_t      additional) {
-  struct NaClMemObj *nmop;
-
-  if (NULL == orig)
-    return NULL;
-
-  if (NULL == (nmop = malloc(sizeof *nmop))) {
-    NaClLog(LOG_FATAL, ("NaClMemObjSplit: out of memory creating object"
-                        " (NaClMemObj = 0x%08"NACL_PRIxPTR","
-                        " additional = 0x%"NACL_PRIx64")\n"),
-            (uintptr_t) orig, additional);
-  }
-  if (!NaClMemObjCopyCtorOff(nmop, orig, additional)) {
-    NaClLog(LOG_FATAL, "NaClMemObjSplit: NaClMemObjCopyCtorOff failed\n");
-  }
-  return nmop;
-}
-
-void NaClMemObjIncOffset(struct NaClMemObj *nmop,
-                         nacl_off64_t      additional) {
-  if (NULL != nmop) {
-    nmop->offset += additional;
-  }
 }

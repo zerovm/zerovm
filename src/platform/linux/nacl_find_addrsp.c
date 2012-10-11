@@ -8,6 +8,7 @@
 #include "src/platform/nacl_log.h"
 
 /* bool */
+// ### can be removed
 int NaClFindAddressSpace(uintptr_t *addr, size_t memory_size) {
   void *map_addr;
 

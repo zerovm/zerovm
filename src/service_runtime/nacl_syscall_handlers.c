@@ -6,7 +6,6 @@
 
 /* todo(d'b): revise the headers */
 #include "include/nacl_platform.h"
-#include "src/desc/nacl_desc_io.h"
 #include "src/service_runtime/nacl_globals.h"
 #include "src/service_runtime/nacl_syscall_handlers.h"
 #include "src/service_runtime/sel_memory.h"

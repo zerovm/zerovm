@@ -18,15 +18,18 @@ int NaClClose(NaClHandle handle) {
   return nacl::Close(handle);
 }
 
+// ### can be removed
 NaClHandle NaClCreateMemoryObject(size_t length, int executable) {
   return nacl::CreateMemoryObject(length, executable ? true : false);
 }
 
+// ### can be removed
 void* NaClMap(void* start, size_t length, int prot, int flags,
               NaClHandle memory, off_t offset) {
   return nacl::Map(start, length, prot, flags, memory, offset);
 }
 
+// ### can be removed
 int NaClUnmap(void* start, size_t length) {
   return nacl::Unmap(start, length);
 }

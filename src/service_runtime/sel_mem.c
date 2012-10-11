@@ -265,76 +265,76 @@ int NaClVmmapAdd(struct NaClVmmap   *self,
  * system paging file.
  */
 // ### can be removed since there are no customers for this service
-void NaClVmmapUpdate(struct NaClVmmap   *self,
-                     uintptr_t          page_num,
-                     size_t             npages,
-                     int                prot,
-                     struct NaClMemObj  *nmop,
-                     int                remove) {
-  /* update existing entries or create new entry as needed */
-  size_t                i;
-  uintptr_t             new_region_end_page = page_num + npages;
-
-  NaClLog(2,
-          ("NaClVmmapUpdate(0x%08"NACL_PRIxPTR", "
-           "0x%"NACL_PRIxPTR", 0x%"NACL_PRIxS", "
-           "0x%x, 0x%08"NACL_PRIxPTR", %d)\n"),
-          (uintptr_t) self, page_num, npages, prot, (uintptr_t) nmop,
-          remove);
-  NaClVmmapMakeSorted(self);
-
-  CHECK(npages > 0);
-
-  for (i = 0; i < self->nvalid; i++) {
-    struct NaClVmmapEntry *ent = self->vmentry[i];
-    uintptr_t             ent_end_page = ent->page_num + ent->npages;
-    nacl_off64_t          additional_offset =
-        (new_region_end_page - ent->page_num) << NACL_PAGESHIFT;
-
-    if (ent->page_num < page_num && new_region_end_page < ent_end_page) {
-      /*
-       * Split existing mapping into two parts, with new mapping in
-       * the middle.
-       */
-      if (!NaClVmmapAdd(self,
-                        new_region_end_page,
-                        ent_end_page - new_region_end_page,
-                        ent->prot,
-                        NaClMemObjSplit(ent->nmop, additional_offset))) {
-        NaClLog(LOG_FATAL, "NaClVmmapUpdate: could not split entry\n");
-      }
-      ent->npages = page_num - ent->page_num;
-      break;
-    } else if (ent->page_num < page_num && page_num < ent_end_page) {
-      /* New mapping overlaps end of existing mapping. */
-      ent->npages = page_num - ent->page_num;
-    } else if (ent->page_num < new_region_end_page &&
-               new_region_end_page < ent_end_page) {
-      /* New mapping overlaps start of existing mapping. */
-
-      NaClMemObjIncOffset(ent->nmop, additional_offset);
-
-      ent->page_num = new_region_end_page;
-      ent->npages = ent_end_page - new_region_end_page;
-      break;
-    } else if (page_num <= ent->page_num &&
-               ent_end_page <= new_region_end_page) {
-      /* New mapping covers all of the existing mapping. */
-      ent->removed = 1;
-    } else {
-      /* No overlap */
-      assert(new_region_end_page <= ent->page_num || ent_end_page <= page_num);
-    }
-  }
-
-  if (!remove) {
-    if (!NaClVmmapAdd(self, page_num, npages, prot, nmop)) {
-      NaClLog(LOG_FATAL, "NaClVmmapUpdate: could not add entry\n");
-    }
-  }
-
-  NaClVmmapRemoveMarked(self);
-}
+//void NaClVmmapUpdate(struct NaClVmmap   *self,
+//                     uintptr_t          page_num,
+//                     size_t             npages,
+//                     int                prot,
+//                     struct NaClMemObj  *nmop,
+//                     int                remove) {
+//  /* update existing entries or create new entry as needed */
+//  size_t                i;
+//  uintptr_t             new_region_end_page = page_num + npages;
+//
+//  NaClLog(2,
+//          ("NaClVmmapUpdate(0x%08"NACL_PRIxPTR", "
+//           "0x%"NACL_PRIxPTR", 0x%"NACL_PRIxS", "
+//           "0x%x, 0x%08"NACL_PRIxPTR", %d)\n"),
+//          (uintptr_t) self, page_num, npages, prot, (uintptr_t) nmop,
+//          remove);
+//  NaClVmmapMakeSorted(self);
+//
+//  CHECK(npages > 0);
+//
+//  for (i = 0; i < self->nvalid; i++) {
+//    struct NaClVmmapEntry *ent = self->vmentry[i];
+//    uintptr_t             ent_end_page = ent->page_num + ent->npages;
+//    nacl_off64_t          additional_offset =
+//        (new_region_end_page - ent->page_num) << NACL_PAGESHIFT;
+//
+//    if (ent->page_num < page_num && new_region_end_page < ent_end_page) {
+//      /*
+//       * Split existing mapping into two parts, with new mapping in
+//       * the middle.
+//       */
+//      if (!NaClVmmapAdd(self,
+//                        new_region_end_page,
+//                        ent_end_page - new_region_end_page,
+//                        ent->prot,
+//                        NaClMemObjSplit(ent->nmop, additional_offset))) {
+//        NaClLog(LOG_FATAL, "NaClVmmapUpdate: could not split entry\n");
+//      }
+//      ent->npages = page_num - ent->page_num;
+//      break;
+//    } else if (ent->page_num < page_num && page_num < ent_end_page) {
+//      /* New mapping overlaps end of existing mapping. */
+//      ent->npages = page_num - ent->page_num;
+//    } else if (ent->page_num < new_region_end_page &&
+//               new_region_end_page < ent_end_page) {
+//      /* New mapping overlaps start of existing mapping. */
+//
+//      NaClMemObjIncOffset(ent->nmop, additional_offset);
+//
+//      ent->page_num = new_region_end_page;
+//      ent->npages = ent_end_page - new_region_end_page;
+//      break;
+//    } else if (page_num <= ent->page_num &&
+//               ent_end_page <= new_region_end_page) {
+//      /* New mapping covers all of the existing mapping. */
+//      ent->removed = 1;
+//    } else {
+//      /* No overlap */
+//      assert(new_region_end_page <= ent->page_num || ent_end_page <= page_num);
+//    }
+//  }
+//
+//  if (!remove) {
+//    if (!NaClVmmapAdd(self, page_num, npages, prot, nmop)) {
+//      NaClLog(LOG_FATAL, "NaClVmmapUpdate: could not add entry\n");
+//    }
+//  }
+//
+//  NaClVmmapRemoveMarked(self);
+//}
 
 static int NaClVmmapContainCmpEntries(void const *vkey,
                                       void const *vent) {

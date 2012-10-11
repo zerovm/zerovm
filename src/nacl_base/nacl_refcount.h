@@ -39,13 +39,13 @@ struct NaClRefCountVtbl {
   void (*Dtor)(struct NaClRefCount  *vself);
 };
 
-/*
- * Placement new style ctor; creates w/ ref_count of 1.
- *
- * The subclasses' ctor must call this base class ctor during their
- * contruction.
- */
-int NaClRefCountCtor(struct NaClRefCount *nrcp) NACL_WUR;
+///*
+// * Placement new style ctor; creates w/ ref_count of 1.
+// *
+// * The subclasses' ctor must call this base class ctor during their
+// * contruction.
+// */
+//int NaClRefCountCtor(struct NaClRefCount *nrcp) NACL_WUR;
 
 struct NaClRefCount *NaClRefCountRef(struct NaClRefCount *nrcp);
 

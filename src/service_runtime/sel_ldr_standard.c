@@ -15,7 +15,6 @@
 #include "src/service_runtime/arch/x86/sel_ldr_x86.h"
 #include "src/service_runtime/elf_util.h"
 #include "src/service_runtime/nacl_switch_to_app.h"
-#include "src/service_runtime/nacl_text.h"
 #include "src/service_runtime/sel_memory.h"
 #include "src/service_runtime/sel_addrspace.h"
 #include "src/manifest/manifest_setup.h" /* d'b: system_manifest */
@@ -335,29 +334,9 @@ NaClErrorCode NaClAppLoadFile(struct Gio       *gp,
     goto done;
   }
 
-  /*
-   * NB: mem_map object has been initialized, but is empty.
-   * NaClMakeDynamicTextShared does not touch it.
-   *
-   * NaClMakeDynamicTextShared also fills the dynamic memory region
-   * with the architecture-specific halt instruction.  If/when we use
-   * memory mapping to save paging space for the dynamic region and
-   * lazily halt fill the memory as the pages become
-   * readable/executable, we must make sure that the *last*
-   * NACL_MAP_PAGESIZE chunk is nonetheless mapped and written with
-   * halts.
-   */
-  NaClLog(2,
-          ("Replacing gap between static text and"
-           " (ro)data with shareable memory\n"));
-  subret = NaClMakeDynamicTextShared(nap);
-  NaClPerfCounterMark(&time_load_file,
-                      NACL_PERF_IMPORTANT_PREFIX "MakeDynText");
-  NaClPerfCounterIntervalLast(&time_load_file);
-  if (LOAD_OK != subret) {
-    ret = subret;
-    goto done;
-  }
+  /* d'b: shared memory for the dynamic text disabled */
+  nap->dynamic_text_start = NaClRoundAllocPage(NaClEndOfStaticText(nap));
+  nap->dynamic_text_end = nap->dynamic_text_start;
 
   /*
    * NaClFillEndOfTextRegion will fill with halt instructions the

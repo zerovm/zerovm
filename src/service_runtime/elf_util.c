@@ -16,7 +16,6 @@
 #include "src/gio/gio.h"
 #include "src/service_runtime/elf_util.h"
 #include "src/service_runtime/include/bits/mman.h"
-#include "src/service_runtime/nacl_text.h"
 #include "src/service_runtime/sel_memory.h"
 #include "src/service_runtime/nacl_syscall_handlers.h"
 

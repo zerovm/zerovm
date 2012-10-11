@@ -78,6 +78,7 @@ static int TryShmOrTempOpen(size_t length, const char* prefix, bool use_temp) {
 
 static CreateMemoryObjectFunc g_create_memory_object_func = NULL;
 
+// ### can be removed
 Handle CreateMemoryObject(size_t length, bool executable) {
   if (0 == length) {
     return -1;
@@ -121,6 +122,7 @@ Handle CreateMemoryObject(size_t length, bool executable) {
   return TryShmOrTempOpen(length, kShmOpenPrefix, false);
 }
 
+// ### can be removed
 void* Map(void* start, size_t length, int prot, int flags,
           Handle memory, off_t offset) {
   static const int kPosixProt[] = {
@@ -147,6 +149,7 @@ void* Map(void* start, size_t length, int prot, int flags,
   return mmap(start, length, kPosixProt[prot & 7], adjusted, memory, offset);
 }
 
+// ### can be removed
 int Unmap(void* start, size_t length) {
   return munmap(start, length);
 }

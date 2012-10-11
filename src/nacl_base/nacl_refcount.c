@@ -7,12 +7,13 @@
 #include "src/nacl_base/nacl_refcount.h"
 #include "src/platform/nacl_log.h"
 
-int NaClRefCountCtor(struct NaClRefCount *self) {
-  NaClLog(4, "NaClRefCountCtor(0x%08"NACL_PRIxPTR").\n", (uintptr_t) self);
-  self->ref_count = 1;
-  self->vtbl = (struct NaClRefCountVtbl *) NULL;
-  return 0;
-}
+// ### can be removed
+//int NaClRefCountCtor(struct NaClRefCount *self) {
+//  NaClLog(4, "NaClRefCountCtor(0x%08"NACL_PRIxPTR").\n", (uintptr_t) self);
+//  self->ref_count = 1;
+//  self->vtbl = (struct NaClRefCountVtbl *) NULL;
+//  return 0;
+//}
 
 static void NaClRefCountDtor(struct NaClRefCount  *self) {
   NaClLog(4, "NaClRefCountDtor(0x%08"NACL_PRIxPTR"), refcount %"NACL_PRIdS

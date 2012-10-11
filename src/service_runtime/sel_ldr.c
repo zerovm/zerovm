@@ -252,54 +252,54 @@ void  NaClAppPrintDetails(struct NaClApp  *nap,
 }
 
 // ### can be removed since there are no customers for this service
-struct NaClDesc *NaClGetDescMu(struct NaClApp *nap,
-                               int            d) {
-  struct NaClDesc *result;
+//struct NaClDesc *NaClGetDescMu(struct NaClApp *nap,
+//                               int            d) {
+//  struct NaClDesc *result;
+//
+//  result = (struct NaClDesc *) DynArrayGet(&nap->desc_tbl, d);
+//  if (NULL != result) {
+//    NaClDescRef(result);
+//  }
+//
+//  return result;
+//}
 
-  result = (struct NaClDesc *) DynArrayGet(&nap->desc_tbl, d);
-  if (NULL != result) {
-    NaClDescRef(result);
-  }
+//void NaClSetDescMu(struct NaClApp   *nap,
+//                   int              d,
+//                   struct NaClDesc  *ndp) {
+//  struct NaClDesc *result;
+//
+//  result = (struct NaClDesc *) DynArrayGet(&nap->desc_tbl, d);
+//  NaClDescSafeUnref(result);
+//
+//  if (!DynArraySet(&nap->desc_tbl, d, ndp)) {
+//    NaClLog(LOG_FATAL,
+//            "NaClSetDesc: could not set descriptor %d to 0x%08"
+//            NACL_PRIxPTR"\n",
+//            d,
+//            (uintptr_t) ndp);
+//  }
+//}
 
-  return result;
-}
-
-void NaClSetDescMu(struct NaClApp   *nap,
-                   int              d,
-                   struct NaClDesc  *ndp) {
-  struct NaClDesc *result;
-
-  result = (struct NaClDesc *) DynArrayGet(&nap->desc_tbl, d);
-  NaClDescSafeUnref(result);
-
-  if (!DynArraySet(&nap->desc_tbl, d, ndp)) {
-    NaClLog(LOG_FATAL,
-            "NaClSetDesc: could not set descriptor %d to 0x%08"
-            NACL_PRIxPTR"\n",
-            d,
-            (uintptr_t) ndp);
-  }
-}
-
-int32_t NaClSetAvailMu(struct NaClApp  *nap,
-                       struct NaClDesc *ndp) {
-  size_t pos;
-
-  pos = DynArrayFirstAvail(&nap->desc_tbl);
-
-  if (pos > INT32_MAX) {
-    NaClLog(LOG_FATAL,
-            ("NaClSetAvailMu: DynArrayFirstAvail returned a value"
-             " that is greather than 2**31-1.\n"));
-  }
-
-  NaClSetDescMu(nap, (int) pos, ndp);
-
-  return (int32_t) pos;
-}
+//int32_t NaClSetAvailMu(struct NaClApp  *nap,
+//                       struct NaClDesc *ndp) {
+//  size_t pos;
+//
+//  pos = DynArrayFirstAvail(&nap->desc_tbl);
+//
+//  if (pos > INT32_MAX) {
+//    NaClLog(LOG_FATAL,
+//            ("NaClSetAvailMu: DynArrayFirstAvail returned a value"
+//             " that is greather than 2**31-1.\n"));
+//  }
+//
+//  NaClSetDescMu(nap, (int) pos, ndp);
+//
+//  return (int32_t) pos;
+//}
 
 // ### can be removed since there are no customers for this service
-struct NaClDesc *NaClGetDesc(struct NaClApp *nap, int d)
-{
-  return NaClGetDescMu(nap, d);
-}
+//struct NaClDesc *NaClGetDesc(struct NaClApp *nap, int d)
+//{
+//  return NaClGetDescMu(nap, d);
+//}
