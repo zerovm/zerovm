@@ -10,7 +10,7 @@
  * NaCl performance counter/instrumentation code.
  */
 
-#include "include/nacl_base.h"
+#include "src/include/nacl_base.h"
 #include "src/service_runtime/include/sys/time.h"
 
 EXTERN_C_BEGIN

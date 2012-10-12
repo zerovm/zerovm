@@ -10,7 +10,7 @@
 
 #include "src/platform/nacl_log.h"
 #include "src/platform/nacl_time.h"
-#include "include/nacl_macros.h"
+#include "src/include/nacl_macros.h"
 #include "src/perf_counter/nacl_perf_counter.h"
 
 #define LAST_IDX(X) (NACL_ARRAY_SIZE(X)-1)

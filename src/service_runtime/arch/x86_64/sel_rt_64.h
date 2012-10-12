@@ -11,7 +11,7 @@
 #ifndef __NATIVE_CLIENT_SERVICE_RUNTIME_ARCH_X86_64_SEL_RT_64_H__
 #define __NATIVE_CLIENT_SERVICE_RUNTIME_ARCH_X86_64_SEL_RT_64_H__ 1
 
-#include "include/portability.h"
+#include "src/include/portability.h"
 
 typedef uint64_t  nacl_reg_t;  /* general purpose register type */
 

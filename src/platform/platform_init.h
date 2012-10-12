@@ -7,7 +7,7 @@
 #ifndef NATIVE_CLIENT_SRC_SHARED_PLATFORM_PLATFORM_INIT_H_
 #define NATIVE_CLIENT_SRC_SHARED_PLATFORM_PLATFORM_INIT_H_
 
-#include "include/nacl_base.h"
+#include "src/include/nacl_base.h"
 
 EXTERN_C_BEGIN
 

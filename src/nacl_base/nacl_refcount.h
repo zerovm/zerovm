@@ -7,8 +7,8 @@
 #ifndef NATIVE_CLIENT_SRC_TRUSTED_NACL_BASE_NACL_REFCOUNT_H_
 #define NATIVE_CLIENT_SRC_TRUSTED_NACL_BASE_NACL_REFCOUNT_H_
 
-#include "include/nacl_base.h"
-#include "include/portability.h"
+#include "src/include/nacl_base.h"
+#include "src/include/portability.h"
 
 #define NACL_IS_REFCOUNT_SUBCLASS
 

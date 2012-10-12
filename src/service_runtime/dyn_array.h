@@ -34,7 +34,7 @@
 #ifndef SERVICE_RUNTIME_DYN_ARRAY_H__
 #define SERVICE_RUNTIME_DYN_ARRAY_H__ 1
 
-#include "include/portability.h"
+#include "src/include/portability.h"
 
 EXTERN_C_BEGIN
 

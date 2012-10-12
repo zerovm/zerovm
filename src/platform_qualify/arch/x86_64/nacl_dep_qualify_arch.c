@@ -5,7 +5,7 @@
  */
 #include <stdint.h>
 #include "src/platform_qualify/nacl_dep_qualify.h"
-#include "include/nacl_macros.h"
+#include "src/include/nacl_macros.h"
 
 /* Assembled equivalent of "ret" */
 #define INST_RET 0xC3

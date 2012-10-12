@@ -9,7 +9,7 @@
 
 /*
  * Definition of the POSIX ucontext_t for Linux can be found in:
- * /usr/include/sys/ucontext.h
+ * /usr/src/include/sys/ucontext.h
  */
 
 /*

@@ -104,7 +104,7 @@
 #endif /* DOXYGEN_SHOULD_SKIP_THIS */
 
 #else
-# include "include/portability.h"
+# include "src/include/portability.h"
 # if NACL_LINUX
 #  define NACL_PLATFORM_HAS_TLS 1
 #  define NACL_PLATFORM_HAS_TSD 1

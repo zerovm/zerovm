@@ -5,7 +5,7 @@
  */
 
 // Testing NativeClient cross-platfom memory management functions
-#include "include/nacl_platform.h"
+#include "src/include/nacl_platform.h"
 #include "src/platform/nacl_log.h"
 #include "src/service_runtime/sel_memory.h"
 

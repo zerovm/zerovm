@@ -7,7 +7,7 @@
 #ifndef NATIVE_CLIENT_SRC_TRUSTED_SERVICE_RUNTIME_ELF_UTIL_H__
 #define NATIVE_CLIENT_SRC_TRUSTED_SERVICE_RUNTIME_ELF_UTIL_H__ 1
 
-#include "include/portability.h"
+#include "src/include/portability.h"
 #include "src/service_runtime/nacl_error_code.h"
 #include "src/service_runtime/sel_ldr.h"
 

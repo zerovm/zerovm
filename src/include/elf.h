@@ -51,8 +51,8 @@
 #ifndef NATIVE_CLIENT_SRC_INCLUDE_ELF_H_
 #define NATIVE_CLIENT_SRC_INCLUDE_ELF_H_ 1
 
-#include "include/portability.h"
-#include "include/elf64.h"
+#include "src/include/portability.h"
+#include "src/include/elf64.h"
 
 EXTERN_C_BEGIN
 

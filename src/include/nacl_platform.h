@@ -10,7 +10,7 @@
 /* elf stuff */
 /* ... */
 
-#include "include/elf.h"
+#include "src/include/elf.h"
 
 /* mmap enums, e.g.  PROT_READ, PROT_WRITE*/
 #include <sys/mman.h>

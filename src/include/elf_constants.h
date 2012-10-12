@@ -44,7 +44,7 @@
 #ifndef NATIVE_CLIENT_SRC_INCLUDE_ELF_CONSTANTS_H_
 #define NATIVE_CLIENT_SRC_INCLUDE_ELF_CONSTANTS_H_
 
-#include "include/nacl_base.h"
+#include "src/include/nacl_base.h"
 
 EXTERN_C_BEGIN
 

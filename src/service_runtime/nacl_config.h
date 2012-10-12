@@ -13,11 +13,21 @@
 #ifndef NATIVE_CLIENT_SERVICE_RUNTIME_NACL_CONFIG_H_
 #define NATIVE_CLIENT_SERVICE_RUNTIME_NACL_CONFIG_H_
 
-#include "include/nacl_base.h"
-#include "include/nacl_asm.h"
+#include "src/include/nacl_base.h"
 
 /* maximum number of elf program headers allowed. */
 #define NACL_MAX_PROGRAM_HEADERS  128
+
+/*
+ * d'b: taken from "src/include/nacl_asm.h"
+ * macros to provide uniform access to identifiers from assembly due
+ * to different C -> asm name mangling conventions and other platform-specific
+ * requirements
+ */
+#define IDENTIFIER(n)  n
+#define HIDDEN(n)  .hidden IDENTIFIER(n)
+#define DEFINE_GLOBAL_HIDDEN_IDENTIFIER(n) \
+  .globl IDENTIFIER(n); HIDDEN(n); IDENTIFIER(n)
 
 /*
  * this value must be consistent with NaCl compiler flags

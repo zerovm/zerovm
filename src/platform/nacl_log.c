@@ -9,7 +9,7 @@
  * todo(d'b): replace the whole thing with small syslog routine. can
  * be joined with nacl_check.* and all debugging stuff
  */
-#include "include/portability_io.h"
+#include "src/include/portability_io.h"
 
 #include <limits.h>
 #include "src/platform/nacl_log.h"

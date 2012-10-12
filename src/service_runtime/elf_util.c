@@ -11,8 +11,8 @@
 
 #define NACL_LOG_MODULE_NAME  "elf_util"
 
-#include "include/nacl_macros.h"
-#include "include/nacl_platform.h"
+#include "src/include/nacl_macros.h"
+#include "src/include/nacl_platform.h"
 #include "src/gio/gio.h"
 #include "src/service_runtime/elf_util.h"
 #include "src/service_runtime/include/bits/mman.h"

@@ -14,7 +14,7 @@
  * specific error codes and this translation.
  */
 
-#include "include/nacl_platform.h"
+#include "src/include/nacl_platform.h"
 #include "src/platform/nacl_log.h"
 #include "src/service_runtime/include/bits/mman.h"
 #include "src/service_runtime/include/sys/errno.h"

@@ -8,7 +8,7 @@
 #ifndef NATIVE_CLIENT_SRC_TRUSTED_PLATFORM_QUALIFY_NACL_OS_QUALIFY_H_
 #define NATIVE_CLIENT_SRC_TRUSTED_PLATFORM_QUALIFY_NACL_OS_QUALIFY_H_
 
-#include "include/nacl_base.h"
+#include "src/include/nacl_base.h"
 
 EXTERN_C_BEGIN
 

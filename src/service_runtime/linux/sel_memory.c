@@ -7,7 +7,7 @@
 /*
  * NaCl Service Runtime memory allocation code
  */
-#include "include/nacl_platform.h"
+#include "src/include/nacl_platform.h"
 #include "src/platform/nacl_log.h"
 
 /*

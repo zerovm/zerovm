@@ -20,8 +20,8 @@
 #include <unistd.h>
 #include <sys/time.h>
 
-#include "include/nacl_base.h"
-#include "include/nacl_compiler_annotations.h"
+#include "src/include/nacl_base.h"
+#include "src/include/nacl_compiler_annotations.h"
 
 /*
  * Per C99 7.8.14, define __STDC_CONSTANT_MACROS before including <stdint.h>

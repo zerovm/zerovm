@@ -9,7 +9,7 @@
  * This is the host-OS-dependent implementation.
  */
 
-#include "include/nacl_macros.h"
+#include "src/include/nacl_macros.h"
 #include "src/platform/nacl_time.h"
 #include "src/platform/linux/nacl_time_types.h"
 #include "src/service_runtime/sel_ldr.h"

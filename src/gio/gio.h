@@ -12,7 +12,7 @@
 #define NATIVE_CLIENT_SRC_SHARED_GIO_GIO_H_
 
 /* is this needed? - maybe for size_t */
-#include "include/portability.h"
+#include "src/include/portability.h"
 
 #include <stdarg.h>
 #include <stdio.h>

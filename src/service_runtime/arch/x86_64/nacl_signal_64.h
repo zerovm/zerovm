@@ -11,7 +11,7 @@
 #ifndef __NATIVE_CLIENT_SERVICE_RUNTIME_ARCH_X86_64_NACL_SIGNAL_64_H__
 #define __NATIVE_CLIENT_SERVICE_RUNTIME_ARCH_X86_64_NACL_SIGNAL_64_H__ 1
 
-#include "include/portability.h"
+#include "src/include/portability.h"
 
 /*
  * Architecture specific context object.  Register order matches that

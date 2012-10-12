@@ -4,7 +4,7 @@
  * found in the LICENSE file.
  */
 
-#include "include/portability_io.h"
+#include "src/include/portability_io.h"
 #include "src/platform/nacl_check.h"
 #include "src/service_runtime/nacl_signal.h"
 #include "src/manifest/manifest_setup.h"

@@ -17,8 +17,8 @@
 
 #include "gtest/gtest.h"
 #include "src/service_runtime/tools.h"
-#include "include/nacl_macros.h"
-#include "include/nacl_platform.h"
+#include "src/include/nacl_macros.h"
+#include "src/include/nacl_platform.h"
 #include "src/platform/nacl_log.h"
 #include "src/gio/gio.h"
 

@@ -7,7 +7,7 @@
 #ifndef SERVICE_RUNTIME_MANIFEST_PARSER_H__
 #define SERVICE_RUNTIME_MANIFEST_PARSER_H__ 1
 
-#include "include/nacl_base.h"
+#include "src/include/nacl_base.h"
 
 EXTERN_C_BEGIN
 

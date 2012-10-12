@@ -76,8 +76,8 @@
 #ifndef NATIVE_CLIENT_SRC_TRUSTED_FAULT_INJECTION_FAULT_INJECTION_H_
 #define NATIVE_CLIENT_SRC_TRUSTED_FAULT_INJECTION_FAULT_INJECTION_H_
 
-#include "include/nacl_base.h"
-#include "include/portability.h"
+#include "src/include/nacl_base.h"
+#include "src/include/portability.h"
 
 EXTERN_C_BEGIN
 

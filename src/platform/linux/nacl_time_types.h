@@ -8,7 +8,7 @@
 #define NATIVE_CLIENT_SRC_SHARED_PLATFORM_LINUX_NACL_TIME_TYPES_H_
 
 #include <stdint.h>
-#include "include/nacl_base.h"
+#include "src/include/nacl_base.h"
 
 EXTERN_C_BEGIN
 

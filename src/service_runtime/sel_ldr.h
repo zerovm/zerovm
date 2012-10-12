@@ -29,7 +29,15 @@
 #define NATIVE_CLIENT_SRC_TRUSTED_SERVICE_RUNTIME_SEL_LDR_H_ 1
 
 #include <stdint.h>
-#include "include/elf.h"
+
+//#include "src/include/elf.h" // ### decide kill it or let it live
+/* Keys for auxiliary vector (auxv). */
+#define AT_NULL         0   /* Terminating item in auxv array */
+#define AT_ENTRY        9   /* Entry point of the executable */
+#define AT_SYSINFO      32  /* System call entry point */
+
+
+
 #include "src/platform/nacl_log.h"
 #include "src/service_runtime/dyn_array.h"
 #include "src/service_runtime/nacl_error_code.h"

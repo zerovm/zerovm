@@ -14,7 +14,7 @@
  * interface to the Platform Qualification tests for this very purpose.
  */
 
-#include "include/nacl_base.h"
+#include "src/include/nacl_base.h"
 #include "src/service_runtime/nacl_error_code.h"
 
 EXTERN_C_BEGIN
