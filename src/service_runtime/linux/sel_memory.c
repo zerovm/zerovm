@@ -10,8 +10,6 @@
 #include "include/nacl_platform.h"
 #include "src/platform/nacl_log.h"
 
-//#define DISPATCH_THUNK_ADDRESS ((void*)0x5AFECA110000)
-
 /*
  * When we're built into Chromium's "nacl_helper", its main will set this.
  */

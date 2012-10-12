@@ -11,25 +11,20 @@
 #ifndef NATIVE_CLIENT_SRC_TRUSTED_SERVICE_RUNTIME_INCLUDE_SYS_TIME_H_
 #define NATIVE_CLIENT_SRC_TRUSTED_SERVICE_RUNTIME_INCLUDE_SYS_TIME_H_
 
-#include "src/service_runtime/include/machine/_types.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#ifdef __native_client__
-#ifndef nacl_abi___susecond_t_defined
-#define nacl_abi___susecond_t_defined
-typedef long int  nacl_abi_suseconds_t;
-#endif
-#else
 typedef int32_t   nacl_abi_suseconds_t;
-#endif
 
 #ifndef nacl_abi___clock_t_defined
 #define nacl_abi___clock_t_defined
 typedef long int  nacl_abi_clock_t;  /* to be deprecated */
 #endif
+
+/* d'b: from _types.h {{ */
+typedef int64_t       nacl_abi___time_t;
+typedef nacl_abi___time_t nacl_abi_time_t; /* }} */
 
 struct nacl_abi_timeval {
   nacl_abi_time_t      nacl_abi_tv_sec;
@@ -38,11 +33,7 @@ struct nacl_abi_timeval {
 
 struct nacl_abi_timespec {
   nacl_abi_time_t    tv_sec;
-#ifdef __native_client__
-  long int           tv_nsec;
-#else
   int32_t            tv_nsec;
-#endif
 };
 
 /* obsolete.  should not be used */

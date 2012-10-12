@@ -59,15 +59,6 @@ int DynArrayCtor(struct DynArray  *dap,
 
 void DynArrayDtor(struct DynArray *dap);
 
-void *DynArrayGet(struct DynArray *dap,
-                  size_t          idx);
-
-int DynArraySet(struct DynArray *dap,
-                size_t          idx,
-                void            *ptr);
-
-size_t DynArrayFirstAvail(struct DynArray *dap);
-
 EXTERN_C_END
 
 #endif

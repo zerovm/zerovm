@@ -11,7 +11,6 @@
 #include "src/service_runtime/sel_memory.h"
 #include "src/service_runtime/include/bits/mman.h"
 #include "src/service_runtime/include/bits/nacl_syscalls.h"
-#include "src/service_runtime/include/sys/stat.h"
 #include "src/manifest/trap.h"
 #include "include/nacl_assert.h"
 #include "src/manifest/manifest_setup.h"
