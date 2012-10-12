@@ -11,12 +11,9 @@
 #ifndef NATIVE_CLIENT_SRC_TRUSTED_SERVICE_RUNTIME_INCLUDE_BITS_NACL_SYSCALLS_H_
 #define NATIVE_CLIENT_SRC_TRUSTED_SERVICE_RUNTIME_INCLUDE_BITS_NACL_SYSCALLS_H_
 
-/* intentionally not using zero */
-
-#define Trap                             0 /* "one ring" syscall. future replacement for other syscalls */
+/* d'b: Trap is a zerovm service syscall. not "maskable" with syscallback */
+#define Trap                             0
 #define NACL_sys_sysbrk                 20
-#define NACL_sys_mmap                   21 /* to remove */
-#define NACL_sys_munmap                 22 /* to remove */
 #define NACL_sys_exit                   30
 #define NACL_sys_mutex_create           70
 #define NACL_sys_tls_init               82

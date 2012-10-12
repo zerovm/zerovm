@@ -26,7 +26,7 @@ int NaClMakeDispatchThunk(struct NaClApp *nap) {
     return 1;
   }
 
-  /* d'b: replaced with not randomized version {{ */
+  /* d'b: replaced with not randomized version */
   error = NaCl_page_alloc_intern_flags(&thunk_addr, NACL_MAP_PAGESIZE, 0);
   if(0 != (error))
   {
@@ -35,7 +35,6 @@ int NaClMakeDispatchThunk(struct NaClApp *nap) {
     retval = 0;
     goto cleanup;
   }
-  /* }} */
 
   NaClLog(LOG_INFO, "NaClMakeDispatchThunk: got addr 0x%"NACL_PRIxPTR"\n",
           (uintptr_t) thunk_addr);

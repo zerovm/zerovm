@@ -41,7 +41,7 @@ static void *NaClAllocatePow2AlignedMemory(size_t mem_sz,
           " Ask:",
           request_sz);
 
-  /* d'b: try to get the fixed address r15 (user base register) {{ */
+  /* d'b: try to get the fixed address r15 (user base register) */
   mem_ptr = mmap(R15_CONST, request_sz, PROT_NONE, ABSOLUTE_MMAP, -1, (off_t) 0);
   if (MAP_FAILED == mem_ptr)
   {
@@ -49,7 +49,6 @@ static void *NaClAllocatePow2AlignedMemory(size_t mem_sz,
     NaClLog(LOG_ERROR, "trying to allocate user space in NOT DETERMINISTIC WAY");
     mem_ptr = mmap(NULL, request_sz, PROT_NONE, RELATIVE_MMAP, -1, (off_t) 0);
   }
-  /* }} */
 
   if (MAP_FAILED == mem_ptr) {
     return NULL;

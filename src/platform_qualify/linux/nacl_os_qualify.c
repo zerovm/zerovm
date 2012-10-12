@@ -3,12 +3,12 @@
  * Use of this source code is governed by a BSD-style license that can be
  * found in the LICENSE file.
  */
-#include "src/platform_qualify/linux/sysv_shm_and_mmap.h"
 
 /*
  * Returns 1 if the operating system can run Native Client modules.
+ * d'b: since zerovm doesn't need shared memory support it always true
  */
 int NaClOsIsSupported()
 {
-  return !NaClPlatformQualifySysVShmAndMmapHasProblems();
+  return 1;
 }

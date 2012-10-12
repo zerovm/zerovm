@@ -10,12 +10,6 @@
 
 #include "src/platform/nacl_check.h"
 
-#if _DEBUG
-int nacl_check_debug_mode = 1;
-#else
-int nacl_check_debug_mode = 0;
-#endif
-
 void NaClCheckIntern(const char *fmt, ...) {
   va_list ap;
 

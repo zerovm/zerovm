@@ -9,6 +9,11 @@
  * mapping using descriptors.
  */
 
+/*
+ * todo(d'b): we only have 1 os to work with - linux. get rid of nacl
+ * specific error codes and this translation.
+ */
+
 #include "include/nacl_platform.h"
 #include "src/platform/nacl_log.h"
 #include "src/service_runtime/include/bits/mman.h"
@@ -26,7 +31,7 @@ int NaClXlateErrno(int errnum) {
      * TODO(bsy): All host-OS conditional errnos should map into a
      * generic errno.
      */
-#define MAP(E) case E: do { return NACL_ABI_ ## E; } while (0)
+#define MAP(E) case E: do { return NACL_ABI_ ## E; } while (0); break
     MAP(EPERM);
     MAP(ENOENT);
     MAP(ESRCH);
@@ -321,23 +326,4 @@ int NaClXlateErrno(int errnum) {
 #undef MAP
   }
   return NACL_ABI_EINVAL;  /* catch all */
-}
-
-int NaClProtMap(int abi_prot) {
-  int host_os_prot;
-
-  host_os_prot = 0;
-#define M(H) do { \
-    if (0 != (abi_prot & NACL_ABI_ ## H)) { \
-      host_os_prot |= H; \
-    } \
-  } while (0)
-  M(PROT_READ);
-  M(PROT_WRITE);
-  M(PROT_EXEC);
-#if PROT_NONE != 0
-# error "NaClProtMap:  PROT_NONE is not zero -- are mprotect flags bit values?"
-#endif
-  return host_os_prot;
-#undef M
 }

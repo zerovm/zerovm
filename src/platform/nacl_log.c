@@ -6,6 +6,8 @@
 
 /*
  * NaCl Server Runtime logging code.
+ * todo(d'b): replace the whole thing with small syslog routine. can
+ * be joined with nacl_check.* and all debugging stuff
  */
 #include "include/portability_io.h"
 

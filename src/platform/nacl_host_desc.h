@@ -37,19 +37,6 @@ typedef struct stat64 nacl_host_stat_t;
 
 extern int NaClXlateErrno(int errnum);
 
-#ifndef __native_client__ /* these functions are not exposed to NaCl modules
-                           * (see TODO comment above)
-                           */
-
-/*
- * Maps NACI_ABI_ versions of the mmap prot argument to host ABI versions
- * of the bit values
- */
-
-extern int NaClProtMap(int abi_prot);
-
 EXTERN_C_END
-
-#endif  /* defined __native_client__ */
 
 #endif  /* NATIVE_CLIENT_SRC_TRUSTED_PLATFORM_NACL_HOST_DESC_H__ */

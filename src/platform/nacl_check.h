@@ -11,26 +11,7 @@
 #ifndef NATIVE_CLIENT_SRC_SHARED_PLATFORM_NACL_CHECK_H_
 #define NATIVE_CLIENT_SRC_SHARED_PLATFORM_NACL_CHECK_H_
 
-#if defined( __native_client__)
-# include "nacl/nacl_log.h"
-
-/* TODO(sehr): move these defs to a common header */
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-/*
- * Avoid emacs' penchant for auto-indenting extern "C" blocks.
- */
-#  ifdef __cplusplus
-#    define EXTERN_C_BEGIN extern "C" {
-#    define EXTERN_C_END   }
-#  else
-#    define EXTERN_C_BEGIN
-#    define EXTERN_C_END
-#  endif  /* __cplusplus */
-#endif /* DOXYGEN_SHOULD_SKIP_THIS */
-
-#else
 # include "src/platform/nacl_log.h"
-#endif
 
 EXTERN_C_BEGIN
 
@@ -59,13 +40,6 @@ EXTERN_C_BEGIN
     }                                                                \
   } while (0)
 
-#define DCHECK(bool_expr) do {                                       \
-    if (nacl_check_debug_mode && !(bool_expr)) {                     \
-      NaClLog(LOG_FATAL, "Fatal error in file %s, line %d: !(%s)\n", \
-              __FILE__, __LINE__, #bool_expr);                       \
-    }                                                                \
-  } while (0)
-
 #define VCHECK(bool_expr, fn_arg) do {                               \
     if   (!(bool_expr)) {                                            \
       NaClLog(LOG_ERROR, "Fatal error in file %s, line %d: !(%s)\n", \
@@ -73,20 +47,6 @@ EXTERN_C_BEGIN
       NaClCheckIntern fn_arg;                                        \
     }                                                                \
   } while (0)
-
-#define DVCHECK(bool_expr, fn_arg) do {                              \
-    if (nacl_check_debug_mode && !(bool_expr)) {                     \
-      NaClLog(LOG_ERROR, "Fatal error in file %s, line %d: !(%s)\n", \
-              __FILE__, __LINE__, #bool_expr);                       \
-      NaClCheckIntern fn_arg;                                        \
-    }                                                                \
-  } while (0)
-
-/*
- * This is a private variable, needed for the macro.  Do not reference
- * directly.
- */
-extern int nacl_check_debug_mode;
 
 /*
  * This is a private function, used by the macros above.  Do not
