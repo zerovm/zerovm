@@ -1,0 +1,3 @@
+todo:
+  trace the scons and generate a makefile
+  (the nexe generated with scons is less then with mknexe.sh to 3 times!)

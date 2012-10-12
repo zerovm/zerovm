@@ -27,7 +27,7 @@ CXX=@g++
 all: create_dirs zerovm zvm_api tests
 
 create_dirs:
-	@mkdir obj test -p
+	@mkdir obj -p
 
 zerovm: obj/sel_main.o $(OBJS)
 	$(CXX) -o $@ ${CXXFLAGS2} $^ -lrt -lglib-2.0 -lzmq -lssl -lcrypto
@@ -39,7 +39,7 @@ gcov: clean all
 
 tests: test_compile
 	@echo == UNIT TESTS ========================================
-	@cd test;\
+	@cd tests/unit;\
 	./manifest_parser_test;\
 	./service_runtime_tests;\
 #	./manifest_setup_test;\
@@ -48,27 +48,27 @@ tests: test_compile
 zvm_api: api/syscall_manager.S api/zrt.c api/zrt.h api/zvm.c api/zvm.h
 	@make -Capi
 
-test_compile: test/manifest_parser_test test/manifest_setup_test test/service_runtime_tests
+test_compile: tests/unit/manifest_parser_test tests/unit/manifest_setup_test tests/unit/service_runtime_tests
 
-obj/manifest_parser_test.o: src/tests/unit/manifest_parser_test.cc
+obj/manifest_parser_test.o: tests/unit/manifest_parser_test.cc
 	$(CXX) ${CXXFLAGS1} -o $@ $^
-test/manifest_parser_test: obj/manifest_parser_test.o $(OBJS)
+tests/unit/manifest_parser_test: obj/manifest_parser_test.o $(OBJS)
 	$(CXX) ${CXXFLAGS2} -o $@ $^ ${TESTFLAGS}
 
-obj/manifest_setup_test.o: src/tests/unit/manifest_setup_test.cc
+obj/manifest_setup_test.o: tests/unit/manifest_setup_test.cc
 	$(CXX) ${CXXFLAGS1} -o $@ $^
-test/manifest_setup_test: obj/manifest_setup_test.o $(OBJS)
+tests/unit/manifest_setup_test: obj/manifest_setup_test.o $(OBJS)
 	$(CXX) ${CXXFLAGS2} -o $@ $^ ${TESTFLAGS}
 
-obj/sel_ldr_test.o: src/tests/unit/sel_ldr_test.cc
+obj/sel_ldr_test.o: tests/unit/sel_ldr_test.cc
 	$(CXX) ${CXXFLAGS1} -o $@ $^
-obj/sel_mem_test.o: src/tests/unit/sel_mem_test.cc
+obj/sel_mem_test.o: tests/unit/sel_mem_test.cc
 	$(CXX) ${CXXFLAGS1} -o $@ $^
-obj/sel_memory_unittest.o: src/tests/unit/sel_memory_unittest.cc
+obj/sel_memory_unittest.o: tests/unit/sel_memory_unittest.cc
 	$(CXX) ${CXXFLAGS1} -o $@ $^
-obj/unittest_main.o: src/tests/unit/unittest_main.cc
+obj/unittest_main.o: tests/unit/unittest_main.cc
 	$(CXX) ${CXXFLAGS1} -o $@ $^
-test/service_runtime_tests: obj/sel_ldr_test.o obj/sel_mem_test.o obj/sel_memory_unittest.o obj/unittest_main.o $(OBJS)
+tests/unit/service_runtime_tests: obj/sel_ldr_test.o obj/sel_mem_test.o obj/sel_memory_unittest.o obj/unittest_main.o $(OBJS)
 	$(CXX) ${CXXFLAGS2} -o $@ $^ ${TESTFLAGS}
 
 .PHONY: clean clean_gcov clean_intermediate clean_api
@@ -82,7 +82,7 @@ clean: clean_gcov clean_intermediate clean_api
 	@echo ZeroVM has been deleted
 
 clean_intermediate:
-	@rm -f test/* obj/*
+	@rm -f tests/unit/manifest_parser_test tests/unit/manifest_setup_test tests/unit/service_runtime_tests obj/*
 	@echo intermediate files has been deleted
 	@echo unit tests has been deleted
 
