@@ -6,6 +6,7 @@
 
 /*
  * NaCl Simple/secure ELF loader (NaCl SEL) memory map.
+ * todo(d'b): replace this functionality or even remove
  */
 #include <assert.h>
 #include <stdio.h>
@@ -64,19 +65,6 @@ void  NaClVmmapEntryFree(struct NaClVmmapEntry *entry) {
   free(entry);
 }
 
-/*
- * Print debug.
- */
-void NaClVmentryPrint(void                  *state,
-                      struct NaClVmmapEntry *vmep) {
-  UNREFERENCED_PARAMETER(state);
-
-  NaClLog(LOG_INFO, "page num 0x%06x\n", (uint32_t)vmep->page_num);
-  NaClLog(LOG_INFO, "num pages %d\n", (uint32_t)vmep->npages);
-  NaClLog(LOG_INFO, "prot bits %x\n", vmep->prot);
-  fflush(stdout);
-}
-
 int NaClVmmapCtor(struct NaClVmmap *self) {
   self->size = START_ENTRIES;
   if (SIZE_T_MAX / sizeof *self->vmentry < self->size) {
@@ -91,6 +79,10 @@ int NaClVmmapCtor(struct NaClVmmap *self) {
   return 1;
 }
 
+/*
+ * d'b: useless. kept because of unit test. should be removed
+ * together with the rest of sel_mem functions
+ */
 void NaClVmmapDtor(struct NaClVmmap *self) {
   size_t i;
 
@@ -259,101 +251,6 @@ int NaClVmmapAdd(struct NaClVmmap   *self,
   return 1;
 }
 
-static int NaClVmmapContainCmpEntries(void const *vkey,
-                                      void const *vent) {
-  struct NaClVmmapEntry const *const *key =
-      (struct NaClVmmapEntry const *const *) vkey;
-  struct NaClVmmapEntry const *const *ent =
-      (struct NaClVmmapEntry const *const *) vent;
-
-  NaClLog(5, "key->page_num   = 0x%05"NACL_PRIxPTR"\n", (*key)->page_num);
-
-  NaClLog(5, "entry->page_num = 0x%05"NACL_PRIxPTR"\n", (*ent)->page_num);
-  NaClLog(5, "entry->npages   = 0x%"NACL_PRIxS"\n", (*ent)->npages);
-
-  if ((*key)->page_num < (*ent)->page_num) return -1;
-  if ((*key)->page_num < (*ent)->page_num + (*ent)->npages) return 0;
-  return 1;
-}
-
-struct NaClVmmapEntry const *NaClVmmapFindPage(struct NaClVmmap *self,
-                                               uintptr_t        pnum) {
-  struct NaClVmmapEntry key;
-  struct NaClVmmapEntry *kptr;
-  struct NaClVmmapEntry *const *result_ptr;
-
-  NaClVmmapMakeSorted(self);
-  key.page_num = pnum;
-  kptr = &key;
-  result_ptr = ((struct NaClVmmapEntry *const *)
-                bsearch(&kptr,
-                        self->vmentry,
-                        self->nvalid,
-                        sizeof self->vmentry[0],
-                        NaClVmmapContainCmpEntries));
-  return result_ptr ? *result_ptr : NULL;
-}
-
-// ### can be removed since there are no customers for this service
-struct NaClVmmapIter *NaClVmmapFindPageIter(struct NaClVmmap      *self,
-                                            uintptr_t             pnum,
-                                            struct NaClVmmapIter  *space) {
-  struct NaClVmmapEntry key;
-  struct NaClVmmapEntry *kptr;
-  struct NaClVmmapEntry **result_ptr;
-
-  NaClVmmapMakeSorted(self);
-  key.page_num = pnum;
-  kptr = &key;
-  result_ptr = ((struct NaClVmmapEntry **)
-                bsearch(&kptr,
-                        self->vmentry,
-                        self->nvalid,
-                        sizeof self->vmentry[0],
-                        NaClVmmapContainCmpEntries));
-  space->vmmap = self;
-  if (NULL == result_ptr) {
-    space->entry_ix = self->nvalid;
-  } else {
-    space->entry_ix = result_ptr - self->vmentry;
-  }
-  return space;
-}
-
-
-// ### can be removed since there are no customers for this service
-int NaClVmmapIterAtEnd(struct NaClVmmapIter *nvip) {
-  return nvip->entry_ix >= nvip->vmmap->nvalid;
-}
-
-/*
- * IterStar only permissible if not AtEnd
- */
-// ### can be removed since there are no customers for this service
-struct NaClVmmapEntry *NaClVmmapIterStar(struct NaClVmmapIter *nvip) {
-  return nvip->vmmap->vmentry[nvip->entry_ix];
-}
-
-// ### can be removed since there are no customers for this service
-void NaClVmmapIterIncr(struct NaClVmmapIter *nvip) {
-  ++nvip->entry_ix;
-}
-
-/*
- * Iterator becomes invalid after Erase.  We could have a version that
- * keep the iterator valid by copying forward, but it is unclear
- * whether that is needed.
- */
-void NaClVmmapIterErase(struct NaClVmmapIter *nvip) {
-  struct NaClVmmap  *nvp;
-
-  nvp = nvip->vmmap;
-  free(nvp->vmentry[nvip->entry_ix]);
-  nvp->vmentry[nvip->entry_ix] = nvp->vmentry[--nvp->nvalid];
-  nvp->is_sorted = 0;
-}
-
-
 void  NaClVmmapVisit(struct NaClVmmap *self,
                      void             (*fn)(void                  *state,
                                             struct NaClVmmapEntry *entry),
@@ -365,153 +262,4 @@ void  NaClVmmapVisit(struct NaClVmmap *self,
   for (i = 0, nentries = self->nvalid; i < nentries; ++i) {
     (*fn)(state, self->vmentry[i]);
   }
-}
-
-/*
- * Linear search, from high addresses down.
- */
-uintptr_t NaClVmmapFindSpace(struct NaClVmmap *self,
-                             size_t           num_pages) {
-  size_t                i;
-  struct NaClVmmapEntry *vmep;
-  uintptr_t             end_page;
-  uintptr_t             start_page;
-
-  if (0 == self->nvalid)
-    return 0;
-  NaClVmmapMakeSorted(self);
-  for (i = self->nvalid; --i > 0; ) {
-    vmep = self->vmentry[i-1];
-    end_page = vmep->page_num + vmep->npages;  /* end page from previous */
-    start_page = self->vmentry[i]->page_num;  /* start page from current */
-    if (start_page - end_page >= num_pages) {
-      return start_page - num_pages;
-    }
-  }
-  return 0;
-  /*
-   * in user addresses, page 0 is always trampoline, and user
-   * addresses are contained in system addresses, so returning a
-   * system page number of 0 can serve as error indicator: it is at
-   * worst the trampoline page, and likely to be below it.
-   */
-}
-
-/*
- * return max available space bigger then "num_pages"
- * note: will not work if memory map is sparsed
- */
-uintptr_t NaClVmmapFindMaxFreeSpace(struct NaClVmmap *self,
-                             size_t           num_pages) {
-  size_t                i;
-  struct NaClVmmapEntry *vmep;
-  uintptr_t             end_page;
-  uintptr_t             start_page;
-
-  if (0 == self->nvalid)
-    return 0;
-  NaClVmmapMakeSorted(self);
-  for (i = self->nvalid; --i > 0; ) {
-    vmep = self->vmentry[i-1];
-    end_page = vmep->page_num + vmep->npages;  /* end page from previous */
-    start_page = self->vmentry[i]->page_num;  /* start page from current */
-    if (start_page - end_page >= num_pages) {
-      return start_page - end_page;
-    }
-  }
-  return 0; /* no space has been found */
-}
-
-/*
- * Linear search, from high addresses down.  For mmap, so the starting
- * address of the region found must be NACL_MAP_PAGESIZE aligned.
- *
- * For general mmap it is better to use as high an address as
- * possible, since the stack size for the main thread is currently
- * fixed, and the heap is the only thing that grows.
- */
-// ### can be removed since there are no customers for this service
-uintptr_t NaClVmmapFindMapSpace(struct NaClVmmap *self,
-                                size_t           num_pages) {
-  size_t                i;
-  struct NaClVmmapEntry *vmep;
-  uintptr_t             end_page;
-  uintptr_t             start_page;
-
-  if (0 == self->nvalid)
-    return 0;
-  NaClVmmapMakeSorted(self);
-  num_pages = NaClRoundPageNumUpToMapMultiple(num_pages);
-
-  for (i = self->nvalid; --i > 0; ) {
-    vmep = self->vmentry[i-1];
-    end_page = vmep->page_num + vmep->npages;  /* end page from previous */
-    end_page = NaClRoundPageNumUpToMapMultiple(end_page);
-
-    start_page = self->vmentry[i]->page_num;  /* start page from current */
-    if (NACL_MAP_PAGESHIFT > NACL_PAGESHIFT) {
-
-      start_page = NaClTruncPageNumDownToMapMultiple(start_page);
-
-      if (start_page <= end_page) {
-        continue;
-      }
-    }
-    if (start_page - end_page >= num_pages) {
-      return start_page - num_pages;
-    }
-  }
-  return 0;
-  /*
-   * in user addresses, page 0 is always trampoline, and user
-   * addresses are contained in system addresses, so returning a
-   * system page number of 0 can serve as error indicator: it is at
-   * worst the trampoline page, and likely to be below it.
-   */
-}
-
-/*
- * Linear search, from uaddr up.
- */
-// ### can be removed since there are no customers for this service
-uintptr_t NaClVmmapFindMapSpaceAboveHint(struct NaClVmmap *self,
-                                         uintptr_t        uaddr,
-                                         size_t           num_pages) {
-  size_t                nvalid;
-  size_t                i;
-  struct NaClVmmapEntry *vmep;
-  uintptr_t             usr_page;
-  uintptr_t             start_page;
-  uintptr_t             end_page;
-
-  NaClVmmapMakeSorted(self);
-
-  usr_page = uaddr >> NACL_PAGESHIFT;
-  num_pages = NaClRoundPageNumUpToMapMultiple(num_pages);
-
-  nvalid = self->nvalid;
-
-  for (i = 1; i < nvalid; ++i) {
-    vmep = self->vmentry[i-1];
-    end_page = vmep->page_num + vmep->npages;
-    end_page = NaClRoundPageNumUpToMapMultiple(end_page);
-
-    start_page = self->vmentry[i]->page_num;
-    if (NACL_MAP_PAGESHIFT > NACL_PAGESHIFT) {
-
-      start_page = NaClTruncPageNumDownToMapMultiple(start_page);
-
-      if (start_page <= end_page) {
-        continue;
-      }
-    }
-    if (end_page <= usr_page && usr_page < start_page) {
-      end_page = usr_page;
-    }
-    if (usr_page <= end_page && (start_page - end_page) >= num_pages) {
-      /* found a gap at or after uaddr that's big enough */
-      return end_page;
-    }
-  }
-  return 0;
 }

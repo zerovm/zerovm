@@ -26,9 +26,6 @@ extern "C" {
 */
 #define MAX_RETRIES     1024
 
-int   NaCl_find_prereserved_sandbox_memory(void   **p,
-                                           size_t num_bytes);
-
 int NaCl_page_alloc_intern_flags(void   **p,
                                  size_t size,
                                  int    map_flags);

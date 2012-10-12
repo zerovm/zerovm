@@ -45,22 +45,6 @@ struct NaClVmmap {
   int                   is_sorted;
 };
 
-void NaClVmmapDebug(struct NaClVmmap  *self,
-                    char              *msg);
-
-/*
- * iterators methods are final for now.
- */
-struct NaClVmmapIter {
-  struct NaClVmmap      *vmmap;
-  size_t                 entry_ix;
-};
-
-int                   NaClVmmapIterAtEnd(struct NaClVmmapIter *nvip);
-struct NaClVmmapEntry *NaClVmmapIterStar(struct NaClVmmapIter *nvip);
-void                  NaClVmmapIterIncr(struct NaClVmmapIter *nvip);
-void                  NaClVmmapIterErase(struct NaClVmmapIter *nvip);
-
 int   NaClVmmapCtor(struct NaClVmmap  *self) NACL_WUR;
 
 void  NaClVmmapDtor(struct NaClVmmap  *self);
@@ -71,24 +55,6 @@ int   NaClVmmapAdd(struct NaClVmmap   *self,
                    int                prot,
                    struct NaClMemObj  *nmop) NACL_WUR;
 
-void NaClVmmapUpdate(struct NaClVmmap   *self,
-                     uintptr_t          page_num,
-                     size_t             npages,
-                     int                prot,
-                     struct NaClMemObj  *nmop,
-                     int                remove);
-
-/*
- * NaClVmmapFindPage and NaClVmmapFindPageIter only works if pnum is
- * in the NaClVmmap.  If not, NULL and an AtEnd iterator is returned.
- */
-struct NaClVmmapEntry const *NaClVmmapFindPage(struct NaClVmmap *self,
-                                               uintptr_t        pnum);
-
-struct NaClVmmapIter *NaClVmmapFindPageIter(struct NaClVmmap      *self,
-                                            uintptr_t             pnum,
-                                            struct NaClVmmapIter  *space);
-
 /*
  * Visitor pattern, call fn on every entry.
  */
@@ -96,32 +62,6 @@ void  NaClVmmapVisit(struct NaClVmmap   *self,
                      void               (*fn)(void                  *state,
                                               struct NaClVmmapEntry *entry),
                      void               *state);
-
-/*
- * Returns page number starting at which there is a hole of at least
- * num_pages in size.  Linear search from high addresses on down.
- */
-uintptr_t NaClVmmapFindSpace(struct NaClVmmap *self,
-                             size_t           num_pages);
-
-/*
- * return max available space bigger then "num_pages"
- * note: will not work if memory map is sparsed
- */
-uintptr_t NaClVmmapFindMaxFreeSpace(struct NaClVmmap *self,
-                             size_t           num_pages);
-
-/*
- * Just lke NaClVmmapFindSpace, except usage is intended for
- * NaClHostDescMap, so the starting address of the region found must
- * be NACL_MAP_PAGESIZE aligned.
- */
-uintptr_t NaClVmmapFindMapSpace(struct NaClVmmap *self,
-                                size_t           num_pages);
-
-uintptr_t NaClVmmapFindMapSpaceAboveHint(struct NaClVmmap *self,
-                                         uintptr_t        uaddr,
-                                         size_t           num_pages);
 
 void NaClVmmapMakeSorted(struct NaClVmmap  *self);
 
