@@ -50,23 +50,23 @@ zvm_api: api/syscall_manager.S api/zrt.c api/zrt.h api/zvm.c api/zvm.h
 
 test_compile: test/manifest_parser_test test/manifest_setup_test test/service_runtime_tests
 
-obj/manifest_parser_test.o: src/manifest/manifest_parser_test.cc
+obj/manifest_parser_test.o: src/tests/unit/manifest_parser_test.cc
 	$(CXX) ${CXXFLAGS1} -o $@ $^
 test/manifest_parser_test: obj/manifest_parser_test.o $(OBJS)
 	$(CXX) ${CXXFLAGS2} -o $@ $^ ${TESTFLAGS}
 
-obj/manifest_setup_test.o: src/manifest/manifest_setup_test.cc
+obj/manifest_setup_test.o: src/tests/unit/manifest_setup_test.cc
 	$(CXX) ${CXXFLAGS1} -o $@ $^
 test/manifest_setup_test: obj/manifest_setup_test.o $(OBJS)
 	$(CXX) ${CXXFLAGS2} -o $@ $^ ${TESTFLAGS}
 
-obj/sel_ldr_test.o: src/service_runtime/sel_ldr_test.cc
+obj/sel_ldr_test.o: src/tests/unit/sel_ldr_test.cc
 	$(CXX) ${CXXFLAGS1} -o $@ $^
-obj/sel_mem_test.o: src/service_runtime/sel_mem_test.cc
+obj/sel_mem_test.o: src/tests/unit/sel_mem_test.cc
 	$(CXX) ${CXXFLAGS1} -o $@ $^
-obj/sel_memory_unittest.o: src/service_runtime/sel_memory_unittest.cc
+obj/sel_memory_unittest.o: src/tests/unit/sel_memory_unittest.cc
 	$(CXX) ${CXXFLAGS1} -o $@ $^
-obj/unittest_main.o: src/service_runtime/unittest_main.cc
+obj/unittest_main.o: src/tests/unit/unittest_main.cc
 	$(CXX) ${CXXFLAGS1} -o $@ $^
 test/service_runtime_tests: obj/sel_ldr_test.o obj/sel_mem_test.o obj/sel_memory_unittest.o obj/unittest_main.o $(OBJS)
 	$(CXX) ${CXXFLAGS2} -o $@ $^ ${TESTFLAGS}

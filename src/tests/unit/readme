@@ -1,2 +1,17 @@
 this folder contain zerovm unit tests
-todo: put here short description for each test
+
+manifest_parser_test.cc
+  unit test for manifest parser
+  
+nacl_log_test.cc
+  nacl log engine test -- to remove. immidiatelly after a new log engine will be developed
+  
+manifest_setup_test.cc
+  zerovm setup test - to remove. replaced by functional tests
+
+sel_ldr_test.cc
+sel_memory_unittest.cc
+sel_mem_test.cc
+unittest_main.cc
+  nexe loader test. memory test will be removed as soon as the memory manager last parts 
+  will be removed

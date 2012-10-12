@@ -1,17 +1,18 @@
 =====================================================================
-== "timeout" example. only purpose to test zerovm signal handling
-== following channels: stdin, stdout, stderr used
+== memory management test (zerovm support all 3 malloc's nacl_syscalls)
 =====================================================================
-Channel = /dev/null, /dev/stdin, 0, 999999, 999999, 0, 0
-Channel = /dev/null, /dev/stdout, 0, 0, 0, 999999, 999999
-Channel = /dev/null, /dev/stderr, 0, 0, 0, 999999, 999999
+Channel = /dev/null, /dev/stdin, 0, 16, 256, 0, 0
+Channel = CURDIR/stdout.data, /dev/stdout, 0, 0, 0, 1048576, 4194304
+Channel = /dev/null, /dev/stderr, 0, 0, 0, 16, 256
 
 =====================================================================
 == switches for zerovm. some of them used to control nexe, some
 == for the internal zerovm needs
 =====================================================================
 Version = 09082012
-Nexe = timeout.nexe
-NexeMax = 10000000
-CommandLine = 8
-Timeout = 2
+Nexe = memory.nexe
+NexeMax = 4194304
+MemMax = 268435456
+NodeName = test, 1
+Timeout = 60
+
