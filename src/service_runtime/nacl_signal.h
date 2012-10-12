@@ -70,13 +70,6 @@ ssize_t NaClSignalErrorMessage(const char *str);
 int NaClSignalHandlerAdd(NaClSignalHandler func);
 
 /*
- * Remove a signal handler based on the ID provided, and
- * return 1 on success or zero on failure.  This function
- * is not thread-safe and should only be called at startup.
- */
-int NaClSignalHandlerRemove(int id);
-
-/*
  * Fill a signal context structure from the raw platform dependent
  * signal information.
  */
@@ -88,12 +81,6 @@ void NaClSignalContextFromHandler(struct NaClSignalContext *sigCtx,
  * untrusted environment.
  */
 int NaClSignalContextIsUntrusted(const struct NaClSignalContext *sigCtx);
-
-/*
- * A basic handler which will do nothing, passing the
- * error to the OS.
- */
-enum NaClSignalResult NaClSignalHandleNone(int signal_number, void *ctx);
 
 /*
  * A basic handler which will exit with -signal_number when

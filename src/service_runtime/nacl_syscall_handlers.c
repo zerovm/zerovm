@@ -37,7 +37,6 @@ static void NaClAddSyscall(int num, int32_t(*fn)(struct NaClApp *))
  * syscalls main routines.
  * note that we only need 1 syscall trap() other syscalls are only used
  * for nexe prolog in a future all syscalls except trap can be removed.
- * update: nacl mmap, munmap and most part of sysbrk rip
  */
 int32_t NaClSysSysbrk(struct NaClApp *nap, uintptr_t new_break)
 {

@@ -51,14 +51,6 @@ int NaClSignalContextIsUntrusted(const struct NaClSignalContext *sigCtx)
   return !gnap->trusted_code;
 }
 
-enum NaClSignalResult NaClSignalHandleNone(int signal, void *ctx) {
-  UNREFERENCED_PARAMETER(signal);
-  UNREFERENCED_PARAMETER(ctx);
-
-  /* Don't do anything, just pass it to the OS. */
-  return NACL_SIGNAL_SKIP;
-}
-
 /* d'b(REPORT): updated */
 enum NaClSignalResult NaClSignalHandleAll(int signal, void *ctx) {
   struct NaClSignalContext sigCtx;
@@ -99,31 +91,6 @@ int NaClSignalHandlerAdd(NaClSignalHandler func) {
   }
 
   return id;
-}
-
-int NaClSignalHandlerRemove(int id) {
-  /* The first node pointer is the first "next" pointer. */
-  struct NaClSignalNode **ppNode = &s_FirstHandler;
-
-  /* While the "next" pointer is valid, process what it points to. */
-  while (*ppNode) {
-    /* If the next item has a matching ID */
-    if ((*ppNode)->id == id) {
-      /* then we will free that item. */
-      struct NaClSignalNode *freeNode = *ppNode;
-
-      /* First, skip past it. */
-      *ppNode = (*ppNode)->next;
-
-      /* Then add this node to the head of the free list. */
-      freeNode->next = s_FreeList;
-      s_FreeList = freeNode;
-      return 1;
-    }
-    ppNode = &(*ppNode)->next;
-  }
-
-  return 0;
 }
 
 enum NaClSignalResult NaClSignalHandlerFind(int signal, void *ctx) {

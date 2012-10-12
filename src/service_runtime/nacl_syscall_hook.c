@@ -13,6 +13,7 @@
 #include "src/service_runtime/nacl_globals.h" /* d'b */
 #include "src/manifest/manifest_setup.h" /* d'b */
 #include "src/service_runtime/include/sys/errno.h" /* d'b */
+
 /*
  * d'b: make syscall invoked from the untrusted code
  */

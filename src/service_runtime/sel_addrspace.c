@@ -154,11 +154,14 @@ NaClErrorCode NaClMemoryProtection(struct NaClApp *nap) {
      * Page protections for this region have already been set up by
      * nacl_text.c.
      *
+     * todo(d'b): since text.c exists no more, protection should be set here
+     *
      * We record the mapping for consistency with other fixed
      * mappings, but the record is not actually used.  Overmapping is
      * prevented by a separate range check, which is done by
      * NaClSysCommonAddrRangeContainsExecutablePages_mu().
      */
+    NaClLog(LOG_FATAL, "dynamic text detected. the protection should be set!");
     if (!NaClVmmapAdd(&nap->mem_map,
                       NaClSysToUser(nap, start_addr) >> NACL_PAGESHIFT,
                       region_size >> NACL_PAGESHIFT,

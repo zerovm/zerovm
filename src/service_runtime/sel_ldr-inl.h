@@ -68,6 +68,7 @@ static INLINE uintptr_t NaClUserToSysAddr(struct NaClApp  *nap,
   return uaddr + nap->mem_start;
 }
 
+/* todo(d'b): rewrite it to use in trap and setbreak */
 static INLINE int NaClIsUserAddr(struct NaClApp  *nap,
                                  uintptr_t       sysaddr) {
   return nap->mem_start <= sysaddr &&
@@ -118,7 +119,6 @@ static INLINE uintptr_t NaClSysToUser(struct NaClApp  *nap,
   return sysaddr - nap->mem_start;
 }
 
-#if NACL_ARCH(NACL_BUILD_ARCH) == NACL_x86 && NACL_BUILD_SUBARCH == 64
 /*
  * For x86-64 sandboxing, %rsp and %rbp are system addresses already.
  */
@@ -134,54 +134,13 @@ static INLINE uintptr_t NaClSysToUserStackAddr(struct NaClApp *nap,
   return stackaddr;
 }
 
-#else
-
-static INLINE uintptr_t NaClUserToSysStackAddr(struct NaClApp *nap,
-                                               uintptr_t      stackaddr) {
-  return NaClUserToSys(nap, stackaddr);
-}
-
-static INLINE uintptr_t NaClSysToUserStackAddr(struct NaClApp *nap,
-                                               uintptr_t      stackaddr) {
-  return NaClSysToUser(nap, stackaddr);
-}
-
-#endif
-
 static INLINE uintptr_t NaClEndOfStaticText(struct NaClApp *nap) {
   return nap->static_text_end;
 }
 
 static INLINE uintptr_t NaClSandboxCodeAddr(struct NaClApp *nap,
                                             uintptr_t addr) {
-#if NACL_DANGEROUS_DEBUG_ONLY_NO_SANDBOX_RETURNS
-  UNREFERENCED_PARAMETER(nap);
-  return addr;
-#else
-# if NACL_ARCH(NACL_BUILD_ARCH) == NACL_x86
-#  if NACL_BUILD_SUBARCH == 32
-  return addr & ~(((uintptr_t) nap->bundle_size) - 1);
-#  elif NACL_BUILD_SUBARCH == 64
   return (((addr & ~(((uintptr_t) nap->bundle_size) - 1))
            & ((((uintptr_t) 1) << 32) - 1))
           + nap->mem_start);
-#  else
-#   error "What kind of x86 are we on anyway?!?"
-#  endif
-# elif NACL_ARCH(NACL_BUILD_ARCH) == NACL_arm
-#  if defined(NACL_TARGET_ARM_THUMB2_MODE)
-  return ((addr & ~(((uintptr_t) nap->bundle_size) - 1)) & ~0xF0000000) | 0xF;
-#  else
-  /*
-   * TODO(cbiffle): this hardcodes the size of code memory, and needs to become
-   * a parameter in NaClApp.  The simplest way to do this is with the change
-   * suggested in issue 244.  Then we could fold ARM and x86 impls together.
-   */
-
-  return (addr & ~(((uintptr_t) nap->bundle_size) - 1)) & ~0xF0000000;
-#  endif  /* defined(NACL_TARGET_ARM_THUMB2_MODE) */
-# else
-#  error "What architecture are we on?!?"
-# endif
-#endif
 }

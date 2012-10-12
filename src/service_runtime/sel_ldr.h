@@ -153,7 +153,6 @@ struct NaClApp {
   /*
    * may reject nexes that are incompatible w/ dynamic-text in the near future
    */
-  int                       use_shm_for_dynamic_text;
   struct NaClDesc           *text_shm;
   /*
    * This records which pages in text_shm have been allocated.  When a
@@ -179,23 +178,10 @@ struct NaClApp {
   uint32_t                  dynamic_mapcache_size;
   uintptr_t                 dynamic_mapcache_ret;
 
-  /*
-   * Monotonically increasing generation number used for deletion
-   * Accesses must be protected by dynamic_load_mutex
-   */
-  int                       dynamic_delete_generation;
-
   int                       skip_validator;
 
   uintptr_t                 break_addr;   /* user addr */
   /* data_end <= break_addr is an invariant */
-
-  /*
-   * Thread table lock threads_mu is higher in the locking order than
-   * the thread locks, i.e., threads_mu must be acqured w/o holding
-   * any per-thread lock (natp->mu).
-   */
-  struct DynArray           desc_tbl;  /* NaClDesc pointers */ // ### to remove
 
   /* d'b: added fields {{ */
   struct SystemManifest     *system_manifest;
