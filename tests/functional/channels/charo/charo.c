@@ -15,7 +15,7 @@ int main(int argc, char **argv)
 
   /* correct requests */
   ERRCOUNT = 0;
-  ZPRINTF(STDLOG, "TEST SEQUENTIAL READ ONLY CHANNEL\n");
+  ZPRINTF(STDLOG, "TEST SEQUENTIAL (CHARACTER DEVICE) READ ONLY CHANNEL\n");
   ZPRINTF(STDLOG, "channel size = %lld\n", zvm_bulk->channels[zhandle(CHARO)].size);
   ZTEST(zvm_bulk->channels[zhandle(CHARO)].size == 0);
   ZTEST(zvm_pread(zhandle(CHARO), buf, 0, 0) == 0);
@@ -23,6 +23,11 @@ int main(int argc, char **argv)
   ZTEST(zvm_pread(zhandle(CHARO), buf, 1, 0) == 1);
   ZTEST(zvm_pread(zhandle(CHARO), buf, 1, zvm_bulk->channels[zhandle(CHARO)].size - 1) == 1);
   ZTEST(zvm_pread(zhandle(CHARO), buf, 0, -1) == 0);
+
+  /* incorrect handle */
+  ZTEST(zvm_pread(-1, buf, 1, 0) == -1);
+  ZTEST(zvm_pread(0xffff, buf, 1, 0) == -1);
+  ZTEST(zvm_pread(zvm_bulk->channels_count, buf, 1, 0) == -1);
 
   /* incorrect requests: NULL buffer */
   ZTEST(zvm_pread(zhandle(CHARO), NULL, 0, 0) == -1);

@@ -158,6 +158,14 @@ int32_t ZVMReadHandle(struct NaClApp *nap,
     if(CHANNEL_RND_WRITEABLE(channel)) channel->putpos = offset + retcode;
   }
 
+  /*
+   * set eof if 0 bytes has been read. it is safe because
+   * 1. if user asked for a 0 bytes control will not reach this code
+   * 2. if user asked more then 0 bytes and got 0 that means end of data
+   * 3. if quota exceeded user will get an error before an actual read
+   */
+  if(retcode == 0) channel->eof = 1;
+
   return retcode;
 }
 

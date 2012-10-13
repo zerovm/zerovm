@@ -450,7 +450,7 @@ static void GatherStatistics(struct NaClApp *nap, char *buf, int size)
   for(i = 0; i < nap->system_manifest->channels_count; ++i)
   {
     struct ChannelDesc *channel = &nap->system_manifest->channels[i];
-    int64_t *stats;
+    int64_t *stats = NULL;
     int j;
 
     /* select proper stats array */
@@ -465,7 +465,7 @@ static void GatherStatistics(struct NaClApp *nap, char *buf, int size)
         break;
       default:
         ErrIf(1, "internal error. channel source type not supported");
-        break;
+        return;
     }
 
     for(j = 0; j < PutSizeLimit; ++j)
