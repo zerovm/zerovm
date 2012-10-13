@@ -12,6 +12,9 @@
 
 #define PREPOLL_WAIT 1000 /* 1 millisecond */
 
+/* return ChannelSourceType for network channels */
+enum ChannelSourceType GetChannelProtocol(const char *url);
+
 /* construct network channel and connect/bind it to specified address */
 int PrefetchChannelCtor(struct ChannelDesc* channel);
 

@@ -84,6 +84,7 @@ int32_t ZVMReadHandle(struct NaClApp *nap,
 
   /* check buffer and convert address */
   if(buffer == NULL) return -EINVAL;
+  if(ch > nap->system_manifest->channels_count) return -EINVAL;
   sys_buffer = (char*)NaClUserToSys(nap, (uintptr_t) buffer);
 
   /* prevent reading from the closed or not readable channel */
@@ -123,11 +124,15 @@ int32_t ZVMReadHandle(struct NaClApp *nap,
   /* todo(d'b): when the reading operation hits channels end return EOF(-1?) */
   switch(channel->source)
   {
-    case LocalFile:
+    case ChannelRegular:
       retcode = pread(channel->handle, sys_buffer, (size_t)size, (off_t)offset);
       if(retcode == -1) retcode = -errno;
       break;
-    case NetworkChannel:
+    case ChannelCharacter:
+      retcode = fread(sys_buffer, 1, (size_t)size, (FILE*)channel->socket);
+      if(retcode == -1) retcode = -errno;
+      break;
+    case ChannelTCP:
       retcode = FetchMessage(channel, sys_buffer, size);
       if(retcode == -1) retcode = -EIO;
       break;
@@ -176,6 +181,7 @@ int32_t ZVMWriteHandle(struct NaClApp *nap,
 
   /* check buffer and convert address */
   if(buffer == NULL) return -EINVAL;
+  if(ch > nap->system_manifest->channels_count) return -EINVAL;
   sys_buffer = (const char*)NaClUserToSys(nap, (uintptr_t) buffer);
 
   /* prevent writing to the not writable channel */
@@ -204,11 +210,15 @@ int32_t ZVMWriteHandle(struct NaClApp *nap,
   /* write data and update position */
   switch(channel->source)
   {
-    case LocalFile:
+    case ChannelRegular:
       retcode = pwrite(channel->handle, sys_buffer, (size_t)size, (off_t)offset);
       if(retcode == -1) retcode = -errno;
       break;
-    case NetworkChannel:
+    case ChannelCharacter:
+      retcode = fwrite(sys_buffer, 1, (size_t)size, (FILE*)channel->socket);
+      if(retcode == -1) retcode = -errno;
+      break;
+    case ChannelTCP:
       retcode = SendMessage(channel, sys_buffer, size);
       if(retcode == -1) retcode = -EIO;
       break;

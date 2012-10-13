@@ -9,6 +9,36 @@
 #include "src/manifest/mount_channel.h"
 #include "src/manifest/preload.h"
 
+/* return the file source type or ChannelSourceTypeNumber */
+enum ChannelSourceType GetChannelSource(const char *name)
+{
+  struct stat fs;
+  int desc;
+  int code;
+
+  assert(name != NULL);
+
+  /* get the file statistics (try both open modes r/o and w/o) */
+  desc = open(name, O_RDONLY);
+  if(desc < 0) desc = open(name, O_WRONLY);
+  if(desc < 0) desc = open(name, O_WRONLY|O_CREAT|O_TRUNC, S_IRWXU);
+  if(desc < 0) return ChannelSourceTypeNumber;
+  code = fstat(desc, &fs);
+  close(desc);
+  if(code < 0) return ChannelSourceTypeNumber;
+
+  /* calculate the file source type */
+  if(S_ISREG(fs.st_mode)) return ChannelRegular;
+  if(S_ISDIR(fs.st_mode)) return ChannelDirectory;
+  if(S_ISCHR(fs.st_mode)) return ChannelCharacter;
+  if(S_ISBLK(fs.st_mode)) return ChannelBlock;
+  if(S_ISFIFO(fs.st_mode)) return ChannelFIFO;
+  if(S_ISLNK(fs.st_mode)) return ChannelLink;
+  if(S_ISSOCK(fs.st_mode)) return ChannelSocket;
+
+  return ChannelSourceTypeNumber;
+}
+
 /* (adjust and) close file associated with the channel */
 int PreloadChannelDtor(struct ChannelDesc* channel)
 {
@@ -30,15 +60,35 @@ int PreloadChannelDtor(struct ChannelDesc* channel)
  */
 static void FailOnInvalidFileChannel(const struct ChannelDesc *channel)
 {
-  COND_ABORT(channel->source != LocalFile, "channel isn't LocalFile");
+  COND_ABORT(channel->source < ChannelRegular || channel->source > ChannelSocket,
+      "channel isn't local file");
   COND_ABORT(channel->name[0] != '/', "only absolute path allowed");
+  COND_ABORT(channel->source == ChannelCharacter
+      && (channel->limits[PutsLimit] && channel->limits[GetsLimit]),
+      "invalid channel limits");
 }
 
-/*
- * preload given file to channel.
- * return 0 if success, otherwise negative errcode
- */
-int PreloadChannelCtor(struct ChannelDesc* channel)
+/* preload given character device to channel */
+static void CharacterChannel(struct ChannelDesc* channel)
+{
+  char *mode = NULL;
+
+  assert(channel != NULL);
+  assert(channel->source == ChannelCharacter);
+
+  /* calculate open mode */
+  mode = channel->limits[PutsLimit] == 0 ? "rb" : "wb";
+
+  /* open file */
+  channel->socket = fopen(channel->name, mode);
+  FailIf(channel->socket == NULL, "cannot open channel %s", channel->name);
+
+  /* set channel attributes */
+  channel->size = 0;
+}
+
+/* preload given regular device to channel */
+static void RegularChannel(struct ChannelDesc* channel)
 {
   uint32_t rw = 0;
   int i;
@@ -46,22 +96,11 @@ int PreloadChannelCtor(struct ChannelDesc* channel)
   assert(channel != NULL);
   assert(channel->name != NULL);
 
-  /* check the given channel */
-  NaClLog(LOG_INFO, "%s, %d: mounting channel '%s' to '%s'",
-      __func__, __LINE__, channel->name, channel->alias);
-  FailOnInvalidFileChannel(channel);
-
-  /* set start position */
-  channel->getpos = 0; /* todo(d'b): add attribute to manifest? */
-  channel->putpos = 0; /* todo(d'b): add attribute to manifest? */
-
   /* calculate the read/write type */
   rw |= channel->limits[GetsLimit] && channel->limits[GetSizeLimit];
   rw |= (channel->limits[PutsLimit] && channel->limits[PutSizeLimit]) << 1;
   switch(rw)
   {
-    case 0: /* inaccessible */
-      return ERR_CODE;
     case 1: /* read only */
       channel->handle = open(channel->name, O_RDONLY, S_IRWXU);
       channel->size = GetFileSize((char*)channel->name);
@@ -94,11 +133,44 @@ int PreloadChannelCtor(struct ChannelDesc* channel)
       if(channel->putpos == 0) channel->putpos = channel->size;
       break;
 
+    case 0: /* inaccessible */
     default: /* unreachable */
-      return ERR_CODE;
+      COND_ABORT(1, "the channel not supported");
+      break;
   }
 
   COND_ABORT(channel->handle < 0, "preloaded file open error");
+}
 
+/*
+ * preload given file to channel.
+ * return 0 if success, otherwise negative errcode
+ */
+int PreloadChannelCtor(struct ChannelDesc* channel)
+{
+  assert(channel != NULL);
+  assert(channel->name != NULL);
+
+  /* check the given channel */
+  NaClLog(LOG_INFO, "%s, %d: mounting channel '%s' to '%s'",
+      __func__, __LINE__, channel->name, channel->alias);
+  FailOnInvalidFileChannel(channel);
+
+  /* set start position */
+  channel->getpos = 0;
+  channel->putpos = 0;
+
+  switch(channel->source)
+  {
+    case ChannelRegular:
+      RegularChannel(channel);
+      break;
+    case ChannelCharacter:
+      CharacterChannel(channel);
+      break;
+    default:
+      COND_ABORT(1, "the channel not supported");
+      break;
+  }
   return OK_CODE;
 }

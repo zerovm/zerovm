@@ -117,7 +117,7 @@ static struct ChannelConnection *nameservice = NULL;
  */
 static void FailOnInvalidNetChannel(const struct ChannelDesc *channel)
 {
-  COND_ABORT(channel->source != NetworkChannel, "channel isn't NetworkChannel");
+  COND_ABORT(channel->source != ChannelTCP, "protocol not supported");
   COND_ABORT(channel->type != SGetSPut, "network channel must be sequential");
   COND_ABORT(channel->limits[GetsLimit] && channel->limits[PutsLimit] != 0,
       "network channel must be read-only or write-only");
@@ -153,7 +153,7 @@ static void ParseURL(const struct ChannelDesc *channel, struct ChannelConnection
   assert(channel != NULL);
   assert(channel->name != NULL);
   assert(record != NULL);
-  assert(channel->source == NetworkChannel);
+  assert(channel->source == ChannelTCP);
 
   NaClLog(LOG_SUICIDE, "%s; %s, %d: url = %s", __FILE__, __func__, __LINE__, channel->name);
 
@@ -172,8 +172,6 @@ static void ParseURL(const struct ChannelDesc *channel, struct ChannelConnection
    * note: case 3 needs special MakeURL() branch. so far isn't supported
    */
   record->protocol = GetChannelProtocol(tokens[0]);
-  assert(record->protocol != ChannelProtoNumber);
-
   record->port = ATOI(tokens[2]);
   record->host = record->port == 0 ? ATOI(tokens[1]) : bswap_32(inet_addr(tokens[1]));
   COND_ABORT(record->host == 0 && record->port == 0, "invalid channel url");
@@ -221,7 +219,7 @@ static void MakeURL(char *url, const int32_t size,
   /* construct url */
   host[BIG_ENOUGH_SPACE - 1] = '\0';
   snprintf(url, size, "%s://%s:%u",
-      StringizeChannelProtocol(record->protocol), host, record->port);
+      StringizeChannelSourceType(record->protocol), host, record->port);
   url[size-1] = '\0';
 
   NaClLog(LOG_SUICIDE, "%s; %s, %d: url = %s", __FILE__, __func__, __LINE__, url);
@@ -567,7 +565,7 @@ void KickPrefetchChannels(struct NaClApp *nap)
     assert(channel != NULL);
 
     /* skip all channels except the network "connect" ones */
-    if(channel->source != NetworkChannel) continue;
+    if(channel->source != ChannelTCP) continue;
 
     /* get the channel connection information */
     record = GetChannelConnectionInfo(channel);
@@ -608,6 +606,24 @@ void KickPrefetchChannels(struct NaClApp *nap)
       return ERR_CODE;\
     }
 
+/* return ChannelSourceType for network channels */
+#define CHECK_TRANSPORT(proto) \
+  if(strncmp(url, prefix[proto], strlen(prefix[proto])) == 0) return proto;
+enum ChannelSourceType GetChannelProtocol(const char *url)
+{
+  char *prefix[] = CHANNEL_SOURCE_PREFIXES;
+  assert(url != NULL);
+
+  CHECK_TRANSPORT(ChannelIPC);
+  CHECK_TRANSPORT(ChannelTCP);
+  CHECK_TRANSPORT(ChannelINPROC);
+  CHECK_TRANSPORT(ChannelPGM);
+  CHECK_TRANSPORT(ChannelEPGM);
+  CHECK_TRANSPORT(ChannelUDP);
+  return ChannelSourceTypeNumber;
+}
+#undef CHECK_TRANSPORT
+
 /*
  * initiate networking (if there are network channels)
  * note: will run only once on the 1st channel construction
@@ -634,7 +650,7 @@ static inline void NetCtor()
 
   /* get name service connection string if available */
   memset(&channel, 0, sizeof channel);
-  channel.source = NetworkChannel;
+  channel.source = ChannelTCP;
   channel.name = GetValueByKey("NameServer");
   if(channel.name == NULL) return;
 
@@ -669,7 +685,7 @@ static inline void CloseChannels()
     for(i = 0; i < gnap->system_manifest->channels_count; ++i)
     {
       struct ChannelDesc *channel = &channels[i];
-      if(channel->source == NetworkChannel && channel->limits[PutsLimit] != 0
+      if(channel->source == ChannelTCP && channel->limits[PutsLimit] != 0
           && channel->limits[PutSizeLimit] != 0)
       {
         uint32_t more;
@@ -721,7 +737,7 @@ int PrefetchChannelCtor(struct ChannelDesc *channel)
 
   /* check for the design errors */
   assert(channel != NULL);
-  assert(channel->source == NetworkChannel);
+  assert(channel->source == ChannelTCP);
 
   /* log parameters and channel internals */
   NaClLog(LOG_DEBUG, "%s; %s, %d: alias = %s",

@@ -13,61 +13,48 @@
 #include "src/manifest/prefetch.h"
 #include "src/manifest/mount_channel.h"
 
-/*
- * returns protocol or ChannelProtoNumber if protocol isn't supported
- * note: can be used globally
- * todo(d'b): use x-macro
- */
-enum ChannelNetProtocol GetChannelProtocol(const char *url)
+/* get string contain protocol name by channel source type */
+#define SOURCE_PREFIX(type) case type: return prefix[type]
+char *StringizeChannelSourceType(enum ChannelSourceType type)
 {
-  assert(url != NULL);
+  char *prefix[] = CHANNEL_SOURCE_PREFIXES;
 
-#define IS_TRANSPORT(prefix, proto) \
-  if(strncmp(url, prefix, sizeof(prefix) - 1) == 0) return proto;
-  IS_TRANSPORT(IPC_PREFIX, ChannelIPC);
-  IS_TRANSPORT(TCP_PREFIX, ChannelTCP);
-  IS_TRANSPORT(INPROC_PREFIX, ChannelINPROC);
-  IS_TRANSPORT(PGM_PREFIX, ChannelPGM);
-  IS_TRANSPORT(EPGM_PREFIX, ChannelEPGM);
-  IS_TRANSPORT(UDP_PREFIX, ChannelUDP);
-#undef IS_TRANSPORT
-
-  return ChannelProtoNumber;
-}
-
-/* get string contain protocol name by protocol id */
-/* todo(d'b): use x-macro */
-char *StringizeChannelProtocol(enum ChannelNetProtocol id)
-{
-  switch(id)
+  switch(type)
   {
-    case ChannelIPC: return IPC_PREFIX;
-    case ChannelTCP: return TCP_PREFIX;
-    case ChannelINPROC: return INPROC_PREFIX;
-    case ChannelPGM: return PGM_PREFIX;
-    case ChannelEPGM: return EPGM_PREFIX;
-    case ChannelUDP: return UDP_PREFIX;
-    case ChannelProtoNumber: return NULL; /* to prevent compiler warning */
+    SOURCE_PREFIX(ChannelRegular);
+    SOURCE_PREFIX(ChannelDirectory);
+    SOURCE_PREFIX(ChannelCharacter);
+    SOURCE_PREFIX(ChannelBlock);
+    SOURCE_PREFIX(ChannelFIFO);
+    SOURCE_PREFIX(ChannelLink);
+    SOURCE_PREFIX(ChannelSocket);
+    SOURCE_PREFIX(ChannelIPC);
+    SOURCE_PREFIX(ChannelTCP);
+    SOURCE_PREFIX(ChannelINPROC);
+    SOURCE_PREFIX(ChannelPGM);
+    SOURCE_PREFIX(ChannelEPGM);
+    SOURCE_PREFIX(ChannelUDP);
+    case ChannelSourceTypeNumber: break; /* prevent warning */
   }
   return NULL;
 }
+#undef SOURCE_PREFIX
 
-/*
- * return source type inferred from the channel name. also checks
- * protocol validity for the network channels
- */
-static int GetSourceType(char *name)
+/* return source type inferred from the source file (or url) */
+static enum ChannelSourceType GetSourceType(char *name)
 {
-  /* check for design errors */
+  enum ChannelSourceType type;
+
   assert(name != NULL);
 
   /* network channel always contain ':'s */
-  if(strchr(name, ':') == NULL) return LocalFile;
+  if(strchr(name, ':') == NULL)
+    type = GetChannelSource(name); // ###
+  else
+    type = GetChannelProtocol(name);
 
-  COND_ABORT(GetChannelProtocol(name) == ChannelProtoNumber,
-      "the specified protocol isn't supported for channels");
-
-  return NetworkChannel;
+  COND_ABORT(type == ChannelSourceTypeNumber, "protocol isn't supported");
+  return type;
 }
 
 /* return the channel by channel type */
@@ -138,16 +125,30 @@ static void ChannelCtor(struct NaClApp *nap, char **tokens)
   switch(channel->source)
   {
     int code;
-    case LocalFile:
+    case ChannelRegular:
+    case ChannelCharacter:
       code = PreloadChannelCtor(channel);
       COND_ABORT(code, "cannot allocate local file channel");
       break;
-    case NetworkChannel:
+    case ChannelTCP:
       code = PrefetchChannelCtor(channel);
       COND_ABORT(code, "cannot allocate network channel");
       break;
+    case ChannelDirectory:
+    case ChannelBlock:
+    case ChannelFIFO:
+    case ChannelLink:
+    case ChannelSocket:
+    case ChannelIPC:
+    case ChannelINPROC:
+    case ChannelPGM:
+    case ChannelEPGM:
+    case ChannelUDP:
+      NaClLog(LOG_FATAL, "'%s' isn't supported",
+          StringizeChannelSourceType(channel->source));
+      break;
     default:
-      NaClLog(LOG_FATAL, "invalid channel source type\n");
+      NaClLog(LOG_FATAL, "invalid channel source. internal error!");
       break;
   }
 }
@@ -171,14 +172,28 @@ static void ChannelDtor(struct ChannelDesc *channel)
 
   switch(channel->source)
   {
-    case LocalFile:
+    case ChannelRegular:
+    case ChannelCharacter:
       PreloadChannelDtor(channel);
       break;
-    case NetworkChannel:
+    case ChannelTCP:
       PrefetchChannelDtor(channel);
       break;
+    case ChannelDirectory:
+    case ChannelBlock:
+    case ChannelFIFO:
+    case ChannelLink:
+    case ChannelSocket:
+    case ChannelIPC:
+    case ChannelINPROC:
+    case ChannelPGM:
+    case ChannelEPGM:
+    case ChannelUDP:
+      NaClLog(LOG_FATAL, "'%s' isn't supported. internal error!",
+          StringizeChannelSourceType(channel->source));
+      break;
     default:
-      NaClLog(LOG_ERROR, "unknown channel source\n");
+      NaClLog(LOG_FATAL, "invalid channel source. internal error!");
       break;
   }
 }

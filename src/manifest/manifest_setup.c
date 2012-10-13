@@ -453,8 +453,20 @@ static void GatherStatistics(struct NaClApp *nap, char *buf, int size)
     int64_t *stats;
     int j;
 
-    assert(channel->source == LocalFile || channel->source == NetworkChannel);
-    stats = channel->source == LocalFile ? local_stats : network_stats;
+    /* select proper stats array */
+    switch(channel->source)
+    {
+      case ChannelRegular:
+      case ChannelCharacter:
+        stats = local_stats;
+        break;
+      case ChannelTCP:
+        stats = network_stats;
+        break;
+      default:
+        ErrIf(1, "internal error. channel source type not supported");
+        break;
+    }
 
     for(j = 0; j < PutSizeLimit; ++j)
       stats[j] += channel->counters[j];

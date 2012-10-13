@@ -25,26 +25,6 @@ EXTERN_C_BEGIN
 #define RESERVED_CHANNELS 3
 #define NET_BUFFER_SIZE 0x10000
 
-/* allowed network prefixes */
-#define IPC_PREFIX "ipc"
-#define TCP_PREFIX "tcp"
-#define INPROC_PREFIX "inproc"
-#define PGM_PREFIX "pgm"
-#define EPGM_PREFIX "epgm"
-#define UDP_PREFIX "udp"
-
-/* list of protocols supported for zvm channels */
-enum ChannelNetProtocol
-{
-  ChannelIPC, /* not fully: socket should already exist */
-  ChannelTCP,
-  ChannelINPROC, /* not tested */
-  ChannelPGM, /* not tested */
-  ChannelEPGM, /* not tested */
-  ChannelUDP, /* going to be supported in the future */
-  ChannelProtoNumber /* number of supported protocols yet means protocol isn't supported */
-};
-
 /* reserved zerovm channels names */
 #define STDIN "/dev/stdin" /* c90 stdin */
 #define STDOUT "/dev/stdout" /* c90 stdout */
@@ -67,11 +47,41 @@ enum ChannelAttributes {
   ChannelAttributesNumber
 };
 
+/* source file types */
 enum ChannelSourceType {
-  LocalFile,
-  NetworkChannel,
+  ChannelRegular, /* supported */
+  ChannelDirectory, /* not supported */
+  ChannelCharacter, /* supported. under construction */
+  ChannelBlock, /* not tested */
+  ChannelFIFO, /* not tested */
+  ChannelLink, /* not tested */
+  ChannelSocket, /* not tested (ChannelIPC replacement) */
+  ChannelIPC, /* to remove */
+  ChannelTCP, /* supported */
+  ChannelINPROC, /* not supported */
+  ChannelPGM, /* not supported */
+  ChannelEPGM, /* not supported */
+  ChannelUDP, /* going to be supported in the future */
   ChannelSourceTypeNumber
 };
+
+/* source file prefixes */
+#define CHANNEL_SOURCE_PREFIXES { \
+  "file", /* ChannelRegular */\
+  "file", /* ChannelDirectory */\
+  "file", /*ChannelCharacter*/\
+  "file", /* ChannelBlock */\
+  "file", /* ChannelFIFO */\
+  "file", /* ChannelLink */ \
+  "file", /* ChannelSocket */\
+  "ipc", /* ChannelIPC */\
+  "tcp", /* ChannelTCP */\
+  "inproc", /* ChannelINPROC */\
+  "pgm", /* ChannelPGM */\
+  "epgm", /* ChannelEPGM */\
+  "udp", /* ChannelUDP */\
+  "invalid"\
+}
 
 /*
  * zerovm channel descriptor. part of information available for the user side
@@ -84,10 +94,8 @@ struct ChannelDesc
   char tag[TAG_CONTEXT_SIZE]; /* tag context (currently sha1) */
   char digest[TAG_DIGEST_SIZE]; /* tag digest (currently sha1) */
 
-  /* group #1.1 */
-  int32_t handle; /* file handle */
-  /* group #1.2 */
-  void *socket; /* zmq socket */
+  int32_t handle; /* file handle. fit only for regular files. ### replace it with socket? */
+  void *socket; /* can be used both by network and local channel */
 
   /* group #2.1 */
   int64_t size; /* channel size */
@@ -115,11 +123,8 @@ void ChannelsCtor(struct NaClApp *nap);
 /* close all channels, initialize it and update system_manifest */
 void ChannelsDtor(struct NaClApp *nap);
 
-/* returns protocol or ChannelProtoNumber if protocol isn't supported */
-enum ChannelNetProtocol GetChannelProtocol(const char *url);
-
-/* get string with the protocol name by protocol id */
-char *StringizeChannelProtocol(enum ChannelNetProtocol id);
+/* get string contain protocol name by channel source type */
+char *StringizeChannelSourceType(enum ChannelSourceType type);
 
 EXTERN_C_END
 

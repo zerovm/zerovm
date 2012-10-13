@@ -9,6 +9,8 @@
 #ifndef PRELOAD_H_
 #define PRELOAD_H_
 
+#include "src/manifest/mount_channel.h"
+
 #define CHANNEL_OPEN_FLAGS {O_RDONLY, O_RDWR | O_CREAT, O_RDWR | O_CREAT, -1, -1}
 #define DEV_NULL "/dev/null"
 
@@ -20,5 +22,8 @@ int PreloadChannelCtor(struct ChannelDesc* channel);
 
 /* todo(d'b): under construction */
 int PreloadChannelDtor(struct ChannelDesc* channel);
+
+/* return the file source type or ChannelSourceTypeNumber */
+enum ChannelSourceType GetChannelSource(const char *name);
 
 #endif /* PRELOAD_H_ */
