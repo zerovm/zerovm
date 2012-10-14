@@ -20,6 +20,7 @@
 #include "src/manifest/manifest_parser.h" /* d'b. todo: move to initializer */
 #include "src/manifest/manifest_setup.h" /* d'b. todo: move to initializer */
 #include "src/service_runtime/sel_qualify.h"
+#include "src/service_runtime/accounting.h"
 
 /* initialize syslog to put ZeroVm log messages */
 static void ZeroVMLogCtor()
@@ -37,7 +38,7 @@ static void ZeroVMLogCtor()
   openlog(ZEROVMLOG_NAME, ZEROVMLOG_OPTIONS, ZEROVMLOG_PRIORITY);
 }
 
-/* close log. ### optional? */
+/* close the log. ### optional? */
 static void ZeroVMLogDtor()
 {
   extern void closelog (void); /* to avoid redefinition LOG_* */
@@ -169,69 +170,6 @@ static void ValidateNexe(struct NaClApp *nap)
   COND_ABORT(nap->validation_state != ValidationOK, "validation failed");
 }
 
-/*
- * todo(d'b): move it to accounting. create separate file for it {{
- */
-/* create/overwrite file and put integer in it */
-static inline void EchoToFile(const char *path, int code)
-{
-  FILE *f = fopen(path, "w");
-
-  COND_ABORT(f == NULL, "cannot create file");
-  fprintf(f, "%d", code);
-  fclose(f);
-}
-
-/* initialize extended user statistics */
-static void ExternalAccounting(struct NaClApp *nap)
-{
-  struct stat st;
-  char cfolder[BIG_ENOUGH_SPACE + 1];
-  char counter[BIG_ENOUGH_SPACE + 1];
-  int pid = (int32_t)getpid();
-  int length;
-
-  assert(nap != NULL);
-  assert(nap->system_manifest != NULL);
-
-  /* exit if the cgroups folder is missing */
-  nap->system_manifest->extended_accounting = NULL;
-  if(!(stat(CGROUPS_FOLDER, &st) == 0 && S_ISDIR(st.st_mode)))
-    return;
-
-  /* fail if folder of same pid exists and locked */
-  length = snprintf(cfolder, BIG_ENOUGH_SPACE, "%s/%d", CGROUPS_FOLDER, pid);
-  cfolder[BIG_ENOUGH_SPACE] = '\0';
-  if(stat(cfolder, &st) == 0 && S_ISDIR(st.st_mode))
-    COND_ABORT(rmdir(cfolder) != 0, "current pid in cgroups is already taken");
-
-  /* create folder of own pid */
-  COND_ABORT(mkdir(cfolder, 0700) != 0, "cannot create pid folder in cgroups");
-
-  /* store accounting folder to the system manifest */
-  nap->system_manifest->extended_accounting = malloc(length + 1);
-  COND_ABORT(nap->system_manifest->extended_accounting == NULL,
-      "cannot allocate memory to hold accounting folder name");
-  strcpy(nap->system_manifest->extended_accounting, cfolder);
-
-  /* create special file in it with own pid */
-  snprintf(counter, BIG_ENOUGH_SPACE, "%s/%s", cfolder, CGROUPS_TASKS);
-  EchoToFile(counter, pid);
-
-  /* create user cpu accountant */
-  snprintf(counter, BIG_ENOUGH_SPACE, "%s/%s", cfolder, CGROUPS_USER_CPU);
-  EchoToFile(counter, 1);
-
-  /* create memory accountant */
-  snprintf(counter, BIG_ENOUGH_SPACE, "%s/%s", cfolder, CGROUPS_MEMORY);
-  EchoToFile(counter, 1);
-
-  /* create swap accountant */
-  snprintf(counter, BIG_ENOUGH_SPACE, "%s/%s", cfolder, CGROUPS_SWAP);
-  EchoToFile(counter, 1);
-}
-/* }} */
-
 int main(int argc, char **argv)
 {
   struct NaClApp state, *nap = &state;
@@ -242,7 +180,7 @@ int main(int argc, char **argv)
   struct NaClPerfCounter time_all_main;
 
   /* d'b: initial settings */
-  /* todo(d'b): move to inline function {{ */
+  /* todo(d'b): move to inline function and implicitly set all fields */
   memset(nap, 0, sizeof *nap);
   nap->trusted_code = 1;
   nap->system_manifest = &sys_mft;
@@ -252,31 +190,11 @@ int main(int argc, char **argv)
   ZeroVMLogCtor();
   NaClSignalHandlerInit();
 
-  /* @IGNORE_LINES_FOR_CODE_HYGIENE[1] */
-  /*
-   * Set malloc not to use mmap even for large allocations.  This is currently
-   * necessary when we must use a specific area of RAM for the sandbox.
-   *
-   * During startup, before the sandbox is set up, the sel_ldr allocates a chunk
-   * of memory to store the untrusted code.  Normally such an allocation would
-   * go into the sel_ldr's heap area, but the allocation is typically large --
-   * at least hundreds of KiB.  The default malloc configuration on Linux (at
-   * least) switches to mmap for such allocations, and mmap will select
-   * essentially any unoccupied section of the address space.  The result: the
-   * nexe is allocated in the region we use for the sandbox, we protect the
-   * address space, and then the memcpy into the sandbox (of course) fails.
-   *
-   * This is at best a temporary fix.  The proper fix is to reserve the
-   * sandbox region early enough that this isn't a problem.  Possible methods
-   * are discussed in this bug:
-   *   http://code.google.com/p/nativeclient/issues/detail?id=232
-   */
-
   NaClAllModulesInit();
   NaClPerfCounterCtor(&time_all_main, "SelMain");
-  fflush((FILE *) NULL);
   COND_ABORT(!GioFileRefCtor(&gout, stdout),
              "Could not create general standard output channel");
+
   ParseCommandLine(nap, argc, argv);
 
   /* validate given nexe and run/fail/exit */
@@ -370,8 +288,8 @@ int main(int argc, char **argv)
    */
   LastDefenseLine(nap);
 
-  /* start external accounting */
-  ExternalAccounting(nap);
+  /* start accounting */
+  AccountingCtor(nap);
 
   /* set user code trap() exit location */
   if(setjmp(user_exit) == 0)
@@ -382,6 +300,9 @@ int main(int argc, char **argv)
   }
   PERF_CNT("WaitForMainThread");
   PERF_CNT("SelMainEnd");
+
+  /* stop accounting and harvest info */
+  AccountingDtor(nap);
 
   /* report to host. call destructors. exit */
   ZeroVMLogDtor();

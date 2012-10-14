@@ -38,13 +38,7 @@ EXTERN_C_BEGIN
 #define ZEROVM_IO_LIMIT 4*ZEROVM_IO_LIMIT_UNIT
 #define NEW_ROOT "/"
 #define VALIDATOR_NAME "ncval"
-
-/* extended accounting */
-#define CGROUPS_FOLDER "/cgroups/zerovm"
-#define CGROUPS_TASKS "tasks"
-#define CGROUPS_USER_CPU "cpuacct.usage"
-#define CGROUPS_MEMORY "memory.max_usage_in_bytes"
-#define CGROUPS_SWAP "memory.memsw.max_usage_in_bytes"
+#define IOSTATS_SIZE 0X100
 /* }} */
 
 /*
@@ -55,7 +49,6 @@ struct SystemManifest
   /* zerovm control */
   char *version; /* zerovm version */
   int32_t ret_code; /* zerovm return code */
-  char *extended_accounting; /* accounting folder name. NULL if not available */
 
   /* nexe control */
   char *nexe; /* nexe file name */

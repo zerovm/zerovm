@@ -338,154 +338,6 @@ int SystemManifestDtor(struct NaClApp *nap)
   return OK_CODE;
 }
 
-/* read information for the given stat */
-static int64_t ReadExtendedStat(const struct NaClApp *nap, const char *stat)
-{
-  char path[BIG_ENOUGH_SPACE + 1];
-  char buf[BIG_ENOUGH_SPACE + 1];
-  int64_t result;
-  FILE *f;
-
-  assert(nap != NULL);
-  assert(stat != NULL);
-  assert(nap->system_manifest != NULL);
-  assert(nap->system_manifest->extended_accounting != NULL);
-
-  /* construct the stat path to read */
-  snprintf(path, BIG_ENOUGH_SPACE, "%s/%s",
-      nap->system_manifest->extended_accounting, stat);
-
-  /* open, read and close stat file */
-  f = fopen(path, "r");
-  if(f == NULL)
-  {
-    NaClLog(LOG_ERROR, "cannot open %s", path);
-    return ERR_CODE;
-  }
-  result = fread(buf, 1, BIG_ENOUGH_SPACE, f);
-  if(result == 0 || result == BIG_ENOUGH_SPACE)
-  {
-    NaClLog(LOG_ERROR, "error statistics reading for %s", stat);
-    return ERR_CODE;
-  }
-  fclose(f);
-
-  /* convert and return the result */
-  return atoi(buf);
-}
-
-/* populate given string with an extended accounting statistics */
-static void ReadExtendedAccounting(const struct NaClApp *nap, char *buf, int size)
-{
-  int64_t user_cpu = 0;
-  int64_t memory_size = 0;
-  int64_t swap_size = 0;
-
-  assert(nap != NULL);
-  assert(buf != NULL);
-  assert(nap->system_manifest != NULL);
-  assert(size > 0);
-
-  /* get statistics if there is an extended accounting */
-  if(nap->system_manifest->extended_accounting != NULL)
-  {
-    /* get statistics */
-    user_cpu = ReadExtendedStat(nap, CGROUPS_USER_CPU); /* ### cast to ms! */
-    memory_size = ReadExtendedStat(nap, CGROUPS_MEMORY);
-    swap_size = ReadExtendedStat(nap, CGROUPS_SWAP);
-  }
-
-  /* construct and return the result */
-  snprintf(buf, size, "%ld %ld %ld", user_cpu, memory_size, swap_size);
-}
-
-/*
- * finalize accounting if needed
- * todo(d'b): under construction
- */
-static void StopExtendedAccounting(struct NaClApp *nap)
-{
-  int result;
-
-  assert(nap != NULL);
-  assert(nap->system_manifest != NULL);
-
-  /* exit if there is no extended accounting */
-  if(nap->system_manifest->extended_accounting == NULL) return;
-
-  /* todo(d'b): move itself to another "tasks" */
-
-  /* remove own pid folder from cgroups folder */
-  result = rmdir(nap->system_manifest->extended_accounting);
-  if(result != 0)
-  {
-    NaClLog(LOG_ERROR, "cannot remove %s",
-      nap->system_manifest->extended_accounting);
-    return;
-  }
-
-  /* anything else?.. */
-}
-
-/*
- * collect accounting statistics about used cpu, memory and storage
- * and put it to provided buffer. if the buffer size is not big enough
- * drops the rest.
- * todo(): under construction
- */
-static void GatherStatistics(struct NaClApp *nap, char *buf, int size)
-{
-  int i;
-  int64_t network_stats[IOLimitsCount] = {0};
-  int64_t local_stats[IOLimitsCount] = {0};
-  int64_t real_cpu = 0;
-  char external_stats[BIG_ENOUGH_SPACE + 1];
-
-  assert(nap != NULL);
-  assert(buf != NULL);
-  assert(nap->system_manifest != NULL);
-  assert(size != 0);
-
-  /* gather all channels statistics */
-  for(i = 0; i < nap->system_manifest->channels_count; ++i)
-  {
-    struct ChannelDesc *channel = &nap->system_manifest->channels[i];
-    int64_t *stats = NULL;
-    int j;
-
-    /* select proper stats array */
-    switch(channel->source)
-    {
-      case ChannelRegular:
-      case ChannelCharacter:
-        stats = local_stats;
-        break;
-      case ChannelTCP:
-        stats = network_stats;
-        break;
-      default:
-        ErrIf(1, "internal error. channel source type not supported");
-        return;
-    }
-
-    for(j = 0; j < PutSizeLimit; ++j)
-      stats[j] += channel->counters[j];
-  }
-
-  /* read extended information */
-  ReadExtendedAccounting(nap, external_stats, BIG_ENOUGH_SPACE);
-  StopExtendedAccounting(nap);
-  real_cpu = (int64_t)(clock() / (double)(CLOCKS_PER_SEC / 1000));
-
-  /* construct the accounting statistics string */
-  snprintf(buf, size, "%ld %s %ld %ld %ld %ld %ld %ld %ld %ld",
-      real_cpu, external_stats, /* extended information */
-      local_stats[GetsLimit], local_stats[GetSizeLimit], /* local channels input */
-      local_stats[PutsLimit], local_stats[PutSizeLimit], /* local channels output */
-      network_stats[GetsLimit], network_stats[GetSizeLimit], /* network channels input */
-      network_stats[PutsLimit], network_stats[PutSizeLimit]);  /* network channels output */
-}
-
 /* updates user_tag (should be constructed) with memory chunk data */
 static void EtagMemoryChunk(void *state, struct NaClVmmapEntry *vmep)
 {
@@ -533,15 +385,12 @@ void ChannelsDigest(struct NaClApp *nap)
 int ProxyReport(struct NaClApp *nap)
 {
   char report[BIG_ENOUGH_SPACE + 1];
-  char accounting[BIG_ENOUGH_SPACE + 1];
   char etag[TAG_DIGEST_SIZE] = TAG_ENGINE_DISABLED;
   int length;
   int i;
 
   assert(nap != NULL);
   assert(nap->system_manifest != NULL);
-
-  GatherStatistics(nap, accounting, BIG_ENOUGH_SPACE);
 
   /* tag user memory and channels */
   if(TagEngineEnabled())
@@ -554,15 +403,14 @@ int ProxyReport(struct NaClApp *nap)
   /* for debugging purposes it is useful to see more advanced information */
 #ifdef DEBUG
   length = snprintf(report, BIG_ENOUGH_SPACE,
-      "validator state = %d\nuser return code = %d\netag = %s\n"
-      "accounting = %s\nexit state = %s\n",
-      nap->validation_state, nap->system_manifest->user_ret_code,
-      etag, accounting, nap->zvm_state);
+      "validator state = %d\nuser return code = %d\netag = %s\naccounting = %s\n"
+      "exit state = %s\n", nap->validation_state,
+      nap->system_manifest->user_ret_code, etag, nap->accounting, nap->zvm_state);
 #else
   /* .. but for production zvm will switch to more brief output */
   length = snprintf(report, BIG_ENOUGH_SPACE, "%d\n%d\n%s\n%s\n%s\n",
       nap->validation_state, nap->system_manifest->user_ret_code,
-      etag, accounting, nap->zvm_state);
+      etag, nap->accounting, nap->zvm_state);
 #endif
 
   /* give the report to proxy */
@@ -570,10 +418,9 @@ int ProxyReport(struct NaClApp *nap)
 
   /* log the report */
   length = snprintf(report, BIG_ENOUGH_SPACE,
-      "validator state = %d, user return code = %d, etag = %s, "
-      "accounting = %s, exit state = %s",
-      nap->validation_state, nap->system_manifest->user_ret_code,
-      etag, accounting, nap->zvm_state);
+      "validator state = %d, user return code = %d, etag = %s, accounting = %s, "
+      "exit state = %s", nap->validation_state,
+      nap->system_manifest->user_ret_code, etag, nap->accounting, nap->zvm_state);
   NaClLog(LOG_INFO, "%s", report);
 
   return i == length ? OK_CODE : ERR_CODE;
