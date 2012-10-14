@@ -42,22 +42,16 @@ tests: test_compile
 	@cd tests/unit;\
 	./manifest_parser_test;\
 	./service_runtime_tests;\
-#	./manifest_setup_test;\
 	cd ..
 
 zvm_api: api/syscall_manager.S api/zrt.c api/zrt.h api/zvm.c api/zvm.h
 	@make -Capi
 
-test_compile: tests/unit/manifest_parser_test tests/unit/manifest_setup_test tests/unit/service_runtime_tests
+test_compile: tests/unit/manifest_parser_test tests/unit/service_runtime_tests
 
 obj/manifest_parser_test.o: tests/unit/manifest_parser_test.cc
 	$(CXX) ${CXXFLAGS1} -o $@ $^
 tests/unit/manifest_parser_test: obj/manifest_parser_test.o $(OBJS)
-	$(CXX) ${CXXFLAGS2} -o $@ $^ ${TESTFLAGS}
-
-obj/manifest_setup_test.o: tests/unit/manifest_setup_test.cc
-	$(CXX) ${CXXFLAGS1} -o $@ $^
-tests/unit/manifest_setup_test: obj/manifest_setup_test.o $(OBJS)
 	$(CXX) ${CXXFLAGS2} -o $@ $^ ${TESTFLAGS}
 
 obj/sel_ldr_test.o: tests/unit/sel_ldr_test.cc
@@ -82,7 +76,7 @@ clean: clean_gcov clean_intermediate clean_api
 	@echo ZeroVM has been deleted
 
 clean_intermediate:
-	@rm -f tests/unit/manifest_parser_test tests/unit/manifest_setup_test tests/unit/service_runtime_tests obj/*
+	@rm -f tests/unit/manifest_parser_test tests/unit/service_runtime_tests obj/*
 	@echo intermediate files has been deleted
 	@echo unit tests has been deleted
 
