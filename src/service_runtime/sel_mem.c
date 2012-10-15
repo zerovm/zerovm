@@ -225,11 +225,9 @@ int NaClVmmapAdd(struct NaClVmmap   *self,
                  struct NaClMemObj  *nmop) {
   struct NaClVmmapEntry *entry;
 
-  NaClLog(2,
-          ("NaClVmmapAdd(0x%08"NACL_PRIxPTR", 0x%"NACL_PRIxPTR", "
-           "0x%"NACL_PRIxS", 0x%x, "
-           "0x%08"NACL_PRIxPTR")\n"),
-          (uintptr_t) self, page_num, npages, prot, (uintptr_t) nmop);
+  ZLOG(LOG_DEBUG, "NaClVmmapAdd(0x%08lx, 0x%lx, 0x%lx, 0x%x, 0x%08lx)",
+      (uintptr_t)self, page_num, npages, prot, (uintptr_t)nmop);
+
   if (self->nvalid == self->size) {
     size_t                    new_size = 2 * self->size;
     struct NaClVmmapEntry     **new_map;

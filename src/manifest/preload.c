@@ -60,10 +60,10 @@ int PreloadChannelDtor(struct ChannelDesc* channel)
  */
 static void FailOnInvalidFileChannel(const struct ChannelDesc *channel)
 {
-  COND_ABORT(channel->source < ChannelRegular || channel->source > ChannelSocket,
-      "channel isn't local file");
-  COND_ABORT(channel->name[0] != '/', "only absolute path allowed");
-  COND_ABORT(channel->source == ChannelCharacter
+  FailIf(channel->source < ChannelRegular || channel->source > ChannelSocket,
+      "'%s' isn't local file", channel->alias);
+  FailIf(channel->name[0] != '/', "only absolute path allowed");
+  FailIf(channel->source == ChannelCharacter
       && (channel->limits[PutsLimit] && channel->limits[GetsLimit]),
       "invalid channel limits");
 }
@@ -110,16 +110,16 @@ static void RegularChannel(struct ChannelDesc* channel)
       channel->size = 0;
       if(STREQ(channel->name, DEV_NULL)) break;
       i = ftruncate(channel->handle, channel->limits[PutSizeLimit]);
-      COND_ABORT(i != 0, "cannot preallocate w/o channel");
+      FailIf(i != 0, "cannot preallocate '%s' channel", channel->alias);
       break;
     case 3: /* cdr */
-      COND_ABORT(channel->type != 1, "only cdr channels can have r/w access");
+      FailIf(channel->type != 1, "only cdr channels can have r/w access");
 
       /* open the file and ensure that putpos is not greater than the file size */
       channel->handle = open(channel->name, O_RDWR|O_CREAT, S_IRWXU);
       channel->size = GetFileSize(channel->name);
-      COND_ABORT(channel->putpos > channel->size,
-          "cdr channel size is less then specified append position");
+      FailIf(channel->putpos > channel->size,
+          "'%s' size is less then specified append position", channel->alias);
 
       /* file does not exist */
       if(channel->size == 0 && STRNEQ(channel->name, DEV_NULL))
@@ -135,11 +135,11 @@ static void RegularChannel(struct ChannelDesc* channel)
 
     case 0: /* inaccessible */
     default: /* unreachable */
-      COND_ABORT(1, "the channel not supported");
+      ZLOG(LOG_FATAL, "the channel '%s' not supported", channel->alias);
       break;
   }
 
-  COND_ABORT(channel->handle < 0, "preloaded file open error");
+  FailIf(channel->handle < 0, "preloaded file open error");
 }
 
 /*
@@ -152,8 +152,7 @@ int PreloadChannelCtor(struct ChannelDesc* channel)
   assert(channel->name != NULL);
 
   /* check the given channel */
-  NaClLog(LOG_INFO, "%s, %d: mounting channel '%s' to '%s'",
-      __func__, __LINE__, channel->name, channel->alias);
+  ZLOG(LOG_DEBUG, "mounting channel '%s' to '%s'", channel->name, channel->alias);
   FailOnInvalidFileChannel(channel);
 
   /* set start position */
@@ -169,7 +168,7 @@ int PreloadChannelCtor(struct ChannelDesc* channel)
       CharacterChannel(channel);
       break;
     default:
-      COND_ABORT(1, "the channel not supported");
+      ZLOG(LOG_FATAL, "the channel not supported");
       break;
   }
   return OK_CODE;

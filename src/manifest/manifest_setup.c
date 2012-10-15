@@ -109,8 +109,7 @@ static void PreallocateUserMemory(struct NaClApp *nap)
   assert(nap->system_manifest != NULL);
 
   /* quit function if max_mem is not specified in manifest */
-  COND_ABORT(nap->heap_end == 0,
-      "user heap size in not specified in manifest");
+  FailIf(nap->heap_end == 0, "user heap size in not specified in manifest");
 
   /* calculate user heap size (must be allocated next to the data_end) */
   p = (void*)NaClRoundAllocPage(nap->data_end);
@@ -120,7 +119,7 @@ static void PreallocateUserMemory(struct NaClApp *nap)
   /* since 4gb of user space is already allocated just set protection to the heap */
   p = (void*)NaClUserToSys(nap, (uintptr_t)p);
   i = NaCl_mprotect(p, heap, PROT_READ | PROT_WRITE);
-  COND_ABORT(0 != i, "cannot set protection on user heap");
+  FailIf(0 != i, "cannot set protection on user heap");
   nap->heap_end = (uintptr_t)p + heap;
 }
 
@@ -141,9 +140,9 @@ static void SetCustomAttributes(struct SystemManifest *policy)
 
   /* parse and check count of attributes */
   count = ParseValue(environment, ", \t", tokens, BIG_ENOUGH_SPACE);
-  COND_ABORT(count % 2 != 0, "odd number of user environment variables");
-  COND_ABORT(count == 0, "invalid user environment");
-  COND_ABORT(count == BIG_ENOUGH_SPACE, "user environment exceeded the limit");
+  FailIf(count % 2 != 0, "odd number of user environment variables");
+  FailIf(count == 0, "invalid user environment");
+  FailIf(count == BIG_ENOUGH_SPACE, "user environment exceeded the limit");
 
   /* allocate space to hold string pointers */
   count >>= 1;
@@ -157,7 +156,7 @@ static void SetCustomAttributes(struct SystemManifest *policy)
     int length = strlen(key) + strlen(value) + 1 + 1; /* + '=' + '\0' */
 
     policy->envp[i] = calloc(length + 1, sizeof(*policy->envp[0]));
-    COND_ABORT(policy->envp[i] == NULL, "cannot allocate memory for custom attribute");
+    FailIf(policy->envp[i] == NULL, "cannot allocate memory for custom attribute");
     sprintf(policy->envp[i], "%s=%s", key, value);
   }
 }
@@ -183,12 +182,12 @@ static void SetNodeName(struct NaClApp *nap)
   else
   {
     i = ParseValue(pgm_name, ",", tokens, BIG_ENOUGH_SPACE);
-    COND_ABORT(i != 2, "invalid NodeName specified");
-    COND_ABORT(tokens[0] == NULL, "invalid node name");
-    COND_ABORT(tokens[1] == NULL, "invalid node id");
+    FailIf(i != 2, "invalid NodeName specified");
+    FailIf(tokens[0] == NULL, "invalid node name");
+    FailIf(tokens[1] == NULL, "invalid node id");
     nap->system_manifest->cmd_line[0] = tokens[0];
     nap->node_id = ATOI(tokens[1]);
-    COND_ABORT(nap->node_id == 0, "node id must be > 0");
+    FailIf(nap->node_id == 0, "node id must be > 0");
   }
 
   /* put node name and id to the log */
@@ -214,9 +213,8 @@ static void SetCommandLine(struct SystemManifest *policy)
   if(parameters != NULL)
   {
     policy->cmd_line_size = ParseValue(parameters, " \t", tokens, BIG_ENOUGH_SPACE);
-    COND_ABORT(policy->cmd_line_size == 0, "invalid user parameters");
-    COND_ABORT(policy->cmd_line_size == BIG_ENOUGH_SPACE,
-        "user command line parameters exceeded the limit");
+    FailIf(policy->cmd_line_size == 0, "invalid user parameters");
+    FailIf(policy->cmd_line_size == BIG_ENOUGH_SPACE, "too long user command line");
   }
 
   /*
@@ -225,8 +223,8 @@ static void SetCommandLine(struct SystemManifest *policy)
    */
   ++policy->cmd_line_size;
   policy->cmd_line = calloc(policy->cmd_line_size + 1, sizeof *policy->cmd_line);
-  COND_ABORT(policy->cmd_line == NULL,
-      "cannot allocate memory to hold user command line parameters");
+  FailIf(policy->cmd_line == NULL,
+      "cannot allocate memory for user command line parameters");
 
   /* populate command line arguments array with pointers */
   for(i = 0; i < policy->cmd_line_size - 1; ++i)
@@ -241,11 +239,11 @@ static void SetTimeout(struct SystemManifest *policy)
   assert(policy != NULL);
 
   GET_INT_BY_KEY(policy->timeout, "Timeout");
-  COND_ABORT(policy->timeout < 1, "invalid or absent timeout");
+  FailIf(policy->timeout < 1, "invalid or absent timeout");
   rl.rlim_cur = policy->timeout;
   rl.rlim_max = -1;
   setrlimit(RLIMIT_CPU, &rl);
-  COND_ABORT(setrlimit(RLIMIT_CPU, &rl) != 0, "cannot set timeout");
+  FailIf(setrlimit(RLIMIT_CPU, &rl) != 0, "cannot set timeout");
 }
 
 /* construct system_manifest object and initialize it from manifest */
@@ -281,15 +279,15 @@ void SystemManifestCtor(struct NaClApp *nap)
   }
 
   /* check mandatory manifest keys */
-  COND_ABORT(nap->system_manifest->version == NULL,
+  FailIf(nap->system_manifest->version == NULL,
       "the manifest version is not provided");
-  COND_ABORT(STRCMP(nap->system_manifest->version, MANIFEST_VERSION),
-      "not supported manifest version");
+  FailIf(STRCMP(nap->system_manifest->version, MANIFEST_VERSION),
+      "manifest version not supported");
+  FailIf(nap->system_manifest->nexe == NULL, "nexe name not provided");
   size = GetFileSize(nap->system_manifest->nexe);
-  COND_ABORT(size < 0, "invalid nexe");
-  COND_ABORT(nap->system_manifest->nexe == NULL, "nexe name is not provided");
-  if(nap->system_manifest->nexe_max) COND_ABORT(
-      nap->system_manifest->nexe_max < size, "nexe file is larger then alowed");
+  FailIf(size < 0, "invalid nexe");
+  if(nap->system_manifest->nexe_max)
+    FailIf(nap->system_manifest->nexe_max < size, "nexe size = %d", size);
   SetTimeout(policy);
 
   /*

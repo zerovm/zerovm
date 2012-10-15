@@ -184,7 +184,7 @@ int ManifestCtor(const char *name)
   FILE *mft = fopen(name, "r");
 
   /* get file size and check it for sanity */
-  FailIf(mft == NULL, "cannot open manifest file");
+  FailIf(mft == NULL, "cannot open manifest file %s", name);
   mft_size = GetFileSize(name);
   FailIf(mft_size > MANIFEST_MAX, "manifest file exceeded the limit %d", mft_size);
 

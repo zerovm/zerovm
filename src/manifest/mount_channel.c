@@ -49,11 +49,11 @@ static enum ChannelSourceType GetSourceType(char *name)
 
   /* network channel always contain ':'s */
   if(strchr(name, ':') == NULL)
-    type = GetChannelSource(name); // ###
+    type = GetChannelSource(name);
   else
     type = GetChannelProtocol(name);
 
-  COND_ABORT(type == ChannelSourceTypeNumber, "protocol isn't supported");
+  FailIf(type == ChannelSourceTypeNumber, "protocol isn't supported");
   return type;
 }
 
@@ -94,19 +94,19 @@ static void ChannelCtor(struct NaClApp *nap, char **tokens)
    * channels must not have duplicate aliases
    */
   channel = SelectNextChannel(nap, tokens[ChannelAlias]);
-  COND_ABORT(channel->alias != NULL, "channel is already allocated");
+  FailIf(channel->alias != NULL, "%s is already allocated", channel->alias);
 
   /* set common general fields */
   channel->type = ATOI(tokens[ChannelAccessType]);
-  COND_ABORT(channel->type < SGetSPut || channel->type > RGetRPut,
-      "invalid channel access type");
+  FailIf(channel->type < SGetSPut || channel->type > RGetRPut,
+      "invalid channel access type %d", channel->type);
   channel->name = tokens[ChannelName];
   channel->alias = tokens[ChannelAlias];
   channel->source = GetSourceType((char*)channel->name);
 
   if(TagEngineEnabled())
   {
-    COND_ABORT(TagCtor(&channel->tag) == ERR_CODE, "channel tag setup error");
+    FailIf(TagCtor(&channel->tag) == ERR_CODE, "channel tag setup error");
     memset(channel->digest, 0, TAG_DIGEST_SIZE);
   }
 
@@ -128,11 +128,11 @@ static void ChannelCtor(struct NaClApp *nap, char **tokens)
     case ChannelRegular:
     case ChannelCharacter:
       code = PreloadChannelCtor(channel);
-      COND_ABORT(code, "cannot allocate local file channel");
+      FailIf(code, "cannot allocate channel %s", channel->alias);
       break;
     case ChannelTCP:
       code = PrefetchChannelCtor(channel);
-      COND_ABORT(code, "cannot allocate network channel");
+      FailIf(code, "cannot allocate channel %s", channel->alias);
       break;
     case ChannelDirectory:
     case ChannelBlock:
@@ -144,11 +144,11 @@ static void ChannelCtor(struct NaClApp *nap, char **tokens)
     case ChannelPGM:
     case ChannelEPGM:
     case ChannelUDP:
-      NaClLog(LOG_FATAL, "'%s' isn't supported",
+      ZLOG(LOG_FATAL, "'%s' isn't supported",
           StringizeChannelSourceType(channel->source));
       break;
     default:
-      NaClLog(LOG_FATAL, "invalid channel source. internal error!");
+      ZLOG(LOG_FATAL, "invalid channel source. internal error!");
       break;
   }
 }
@@ -165,7 +165,7 @@ static void ChannelDtor(struct ChannelDesc *channel)
     if(channel->digest[0] == 0)
       TagDigest(channel->tag, channel->digest);
 
-    NaClLog(LOG_DEBUG, "channel %s closed with etag = %s, getsize = %ld, "
+    ZLOGS(LOG_DEBUG, "channel %s closed with etag = %s, getsize = %ld, "
         "putsize = %ld", channel->alias, channel->digest,
         channel->counters[GetSizeLimit], channel->counters[PutSizeLimit]);
   }
@@ -189,11 +189,11 @@ static void ChannelDtor(struct ChannelDesc *channel)
     case ChannelPGM:
     case ChannelEPGM:
     case ChannelUDP:
-      NaClLog(LOG_FATAL, "'%s' isn't supported. internal error!",
+      ZLOG(LOG_FATAL, "'%s' isn't supported. internal error!",
           StringizeChannelSourceType(channel->source));
       break;
     default:
-      NaClLog(LOG_FATAL, "invalid channel source. internal error!");
+      ZLOG(LOG_FATAL, "invalid channel source. internal error!");
       break;
   }
 }
@@ -218,21 +218,21 @@ void ChannelsCtor(struct NaClApp *nap)
   mft = nap->system_manifest;
   mft->channels_count =
       GetValuesByKey("Channel", values, MAX_CHANNELS_NUMBER);
-  COND_ABORT(mft->channels_count >= MAX_CHANNELS_NUMBER,
+  FailIf(mft->channels_count >= MAX_CHANNELS_NUMBER,
       "channels number reached maximum");
-  COND_ABORT(mft->channels_count < RESERVED_CHANNELS,
+  FailIf(mft->channels_count < RESERVED_CHANNELS,
       "not all standard channels are provided");
 
   /* allocate memory for channels */
   mft->channels = calloc(mft->channels_count, sizeof(*mft->channels));
-  COND_ABORT(mft->channels == NULL, "cannot allocate memory for channels");
+  FailIf(mft->channels == NULL, "cannot allocate memory for channels");
 
   /* parse channels. 0..2 reserved for stdin/stdout/stderr */
   for(i = 0; i < mft->channels_count; ++i)
   {
     char *tokens[CHANNEL_ATTRIBUTES + 1]; /* to detect wrong attributes number */
     int count = ParseValue(values[i], ", \t", tokens, CHANNEL_ATTRIBUTES + 1);
-    COND_ABORT(count != CHANNEL_ATTRIBUTES, "wrong number of the channel attributes");
+    FailIf(count != CHANNEL_ATTRIBUTES, "invalid specification '%s'", values[i]);
 
     /* construct and initialize channel */
     ChannelCtor(nap, tokens);
@@ -240,10 +240,11 @@ void ChannelsCtor(struct NaClApp *nap)
 
   /* channels array validation */
   for(i = 0; i < nap->system_manifest->channels_count; ++i)
-    COND_ABORT(nap->system_manifest->channels[i].name == NULL,
-               "the channels array must not have uninitialized elements");
-  COND_ABORT(nap->system_manifest->channels_count < RESERVED_CHANNELS,
-      "some of the standard channels weren't initialized");
+    FailIf(nap->system_manifest->channels[i].name == NULL,
+        "the channels array must not have uninitialized elements");
+
+  FailIf(nap->system_manifest->channels_count < RESERVED_CHANNELS,
+      "there were uninitialized standard channels");
 
   /* 2nd pass for the network channels if name service specified */
   KickPrefetchChannels(nap);

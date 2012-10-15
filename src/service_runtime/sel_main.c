@@ -208,7 +208,7 @@ int main(int argc, char **argv)
     NaClSignalAssertNoHandlers(); /* Sanity check. */
   }
 
-#define PERF_CNT(str)\
+#define PERF_CNT(str) \
   NaClPerfCounterMark(&time_all_main, str);\
   NaClPerfCounterIntervalLast(&time_all_main);
 
@@ -243,12 +243,7 @@ int main(int argc, char **argv)
   (*((struct Gio *) &main_file)->vtbl->Dtor)((struct Gio *) &main_file);
   if(nap->fuzzing_quit_after_load) NaClExit(0);
 
-  /*
-   * construct system and host manifests
-   * todo(d'b): move it to "src/platform/platform_init.c" chain. problems to solve:
-   * - channels construction needs initialized nacl descriptors (it is dyn_array)
-   * - "memory chunk" needs initialized memory manager (user stack, text, data e.t.c)
-   */
+  /* setup zerovm from manifest */
   SystemManifestCtor(nap); /* needs dyn_array initialized */
 
   /* error reporting done; can quit now if there was an error earlier */
