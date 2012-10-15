@@ -5,7 +5,7 @@
  */
 
 #include "src/include/nacl_platform.h"
-#include "src/platform/nacl_check.h"
+#include "src/service_runtime/zlog.h"
 #include "src/service_runtime/sel_ldr.h"
 #include "src/service_runtime/sel_memory.h"
 #include "src/service_runtime/arch/x86/sel_ldr_x86.h"

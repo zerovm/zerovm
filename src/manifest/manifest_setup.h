@@ -30,9 +30,6 @@ EXTERN_C_BEGIN
 /* todo(d'b): order and move it to zerovm setup or gather all zvm settings here {{ */
 #define NEXE_PGM_NAME "loner" /* default argv[0] for nexe */
 #define MANIFEST_VERSION "09082012"
-#define ZEROVMLOG_NAME "ZeroVM"
-#define ZEROVMLOG_OPTIONS (LOG_CONS | LOG_PID | LOG_NDELAY)
-#define ZEROVMLOG_PRIORITY LOG_USER
 #define ZEROVM_PRIORITY 19
 #define ZEROVM_IO_LIMIT_UNIT 0x40000000l
 #define ZEROVM_IO_LIMIT 4*ZEROVM_IO_LIMIT_UNIT

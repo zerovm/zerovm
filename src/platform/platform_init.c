@@ -4,15 +4,12 @@
  * be found in the LICENSE file.
  */
 
-#include "src/platform/nacl_log.h"
 #include "src/platform/nacl_time.h"
 
 void NaClPlatformInit(void) {
-  NaClLogModuleInit();
   NaClTimeInit();
 }
 
 void NaClPlatformFini(void) {
   NaClTimeFini();
-  NaClLogModuleFini();
 }

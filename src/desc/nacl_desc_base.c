@@ -10,7 +10,7 @@
  */
 
 #include "src/desc/nacl_desc_base.h"
-#include "src/platform/nacl_log.h"
+#include "src/service_runtime/zlog.h"
 #include "src/nacl_base/nacl_refcount.h"
 #include "src/service_runtime/include/sys/errno.h"
 

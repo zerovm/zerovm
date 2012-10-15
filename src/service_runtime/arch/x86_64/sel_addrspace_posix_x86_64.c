@@ -3,9 +3,9 @@
  * Use of this source code is governed by a BSD-style license that can be
  * found in the LICENSE file.
  */
-
+#include <errno.h>
 #include "src/include/nacl_platform.h"
-#include "src/platform/nacl_check.h"
+#include "src/service_runtime/zlog.h"
 #include "src/service_runtime/sel_ldr.h"
 
 #define FOURGIG     (((size_t) 1) << 32)

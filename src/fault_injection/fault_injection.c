@@ -3,8 +3,11 @@
  * Use of this source code is governed by a BSD-style license that can be
  * found in the LICENSE file.
  */
-
-#include "src/platform/nacl_check.h"
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
+#include "src/service_runtime/zlog.h"
+#include "src/include/nacl_compiler_annotations.h"
 
 #define NACL_HAS_TLS     1  /* 1 normally, 0 to test OSX case on linux */
 #define NACL_HAS_TSD     1
@@ -223,11 +226,8 @@ static void NaClFaultInjectionParseHelperAddFaultExpr(
     out_info->expr = new_exprs;
     out_info->size_expr = new_count;
   }
-  NaClLog(6,
-          "NaClFaultInject: adding %c(%"NACL_PRIdPTR
-          ",%"NACL_PRIuPTR") at %"NACL_PRIdS"\n",
-          expr->pass ? 'P' : 'F', expr->fault_value, expr->count,
-          out_info->num_expr);
+  NaClLog(LOG_INSANE, "NaClFaultInject: adding %c(%d,%u) at %ld\n",
+      expr->pass ? 'P' : 'F', expr->fault_value, expr->count, out_info->num_expr);
   out_info->expr[out_info->num_expr++] = *expr;
 }
 
@@ -441,7 +441,7 @@ int NaClFaultInjectionFaultP(char const *site_name) {
    * set Value for NaClFaultInjectionValue and set return value to
    * true; otherwise set return value false.  bump counter.
    */
-  NaClLog(6, "NaClFaultInject: counter(%"NACL_PRIxS",%"NACL_PRIxS")\n",
+  NaClLog(LOG_INSANE, "NaClFaultInject: counter(%lx,%lx)\n",
           counter->expr_ix, counter->count_in_expr);
   if (counter->expr_ix >= entry->num_expr) {
     rv = 0;
@@ -450,7 +450,7 @@ int NaClFaultInjectionFaultP(char const *site_name) {
     if (expr->pass) {
       rv = 0;
     } else {
-      NaClLog(6, "NaClFaultInject: should fail, value %"NACL_PRIxPTR"\n",
+      NaClLog(LOG_INSANE, "NaClFaultInject: should fail, value %lx\n",
               expr->fault_value);
       rv = 1;
       NaClFaultInjectionSetValue(expr->fault_value);

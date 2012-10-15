@@ -9,7 +9,6 @@
  */
 #include <assert.h>
 
-#include "src/platform/nacl_check.h"
 #include "src/perf_counter/nacl_perf_counter.h"
 #include "src/service_runtime/include/bits/mman.h"
 #include "src/service_runtime/arch/x86/sel_ldr_x86.h"
@@ -17,10 +16,12 @@
 #include "src/service_runtime/nacl_switch_to_app.h"
 #include "src/service_runtime/sel_memory.h"
 #include "src/service_runtime/sel_addrspace.h"
-#include "src/manifest/manifest_setup.h" /* d'b: system_manifest */
-#include "src/service_runtime/nacl_globals.h" /* d'b: nacl_user */
+#include "src/manifest/manifest_setup.h"
+#include "src/service_runtime/nacl_globals.h"
 #include "src/service_runtime/nacl_signal.h"
-#include "src/service_runtime/nacl_switch_to_app.h" /* d'b: NaClSwitch*() */
+#include "src/service_runtime/nacl_switch_to_app.h"
+#include "src/service_runtime/zlog.h"
+#include "src/service_runtime/nacl_config.h"
 
 /*
  * d'b: alternative mechanism to pass control to user side
@@ -517,8 +518,8 @@ int NaClCreateMainThread(struct NaClApp *nap)
 
   NaClLog(2, "setting stack to : %016"NACL_PRIxPTR"\n", stack_ptr);
 
-  VCHECK(0 == (stack_ptr & NACL_STACK_ALIGN_MASK),
-         ("stack_ptr not aligned: %016"NACL_PRIxPTR"\n", stack_ptr));
+  FailIf(0 != (stack_ptr & NACL_STACK_ALIGN_MASK),
+      "stack_ptr not aligned: %016x\n", stack_ptr);
 
   p = (uint32_t *) stack_ptr;
   strp = (char *) stack_ptr + ptr_tbl_size;

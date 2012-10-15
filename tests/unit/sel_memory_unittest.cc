@@ -6,7 +6,7 @@
 
 // Testing NativeClient cross-platfom memory management functions
 #include "src/include/nacl_platform.h"
-#include "src/platform/nacl_log.h"
+#include "src/service_runtime/zlog.h"
 #include "src/service_runtime/sel_memory.h"
 
 #include "gtest/gtest.h"
@@ -19,11 +19,11 @@ class SelMemoryBasic : public testing::Test {
 };
 
 void SelMemoryBasic::SetUp() {
-  NaClLogModuleInit();
+  ZLogCtor(LOG_DEBUG);
 }
 
 void SelMemoryBasic::TearDown() {
-  NaClLogModuleFini();
+  ZLogDtor();
 }
 
 

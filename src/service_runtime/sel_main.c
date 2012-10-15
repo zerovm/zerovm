@@ -9,6 +9,7 @@
  */
 
 #include <assert.h>
+#include <errno.h>
 #include <glib.h>
 #include "src/gio/gio.h"
 #include "src/fault_injection/fault_injection.h"
@@ -17,33 +18,10 @@
 #include "src/service_runtime/nacl_globals.h"
 #include "src/service_runtime/nacl_signal.h"
 #include "src/service_runtime/etag.h"
-#include "src/manifest/manifest_parser.h" /* d'b. todo: move to initializer */
-#include "src/manifest/manifest_setup.h" /* d'b. todo: move to initializer */
+#include "src/manifest/manifest_parser.h"
+#include "src/manifest/manifest_setup.h"
 #include "src/service_runtime/sel_qualify.h"
 #include "src/service_runtime/accounting.h"
-
-/* initialize syslog to put ZeroVm log messages */
-static void ZeroVMLogCtor()
-{
-  /*
-   * are here to avoid redefinition LOG_* used in "nacl_log.h"
-   * todo(d'b): remove this ugliness
-   */
-#define LOG_PID   0x01  /* log the pid with each message */
-#define LOG_CONS  0x02  /* log on the console if errors in sending */
-#define LOG_NDELAY  0x08  /* don't delay open */
-#define LOG_USER  (1<<3)  /* random user-level messages */
-  extern void openlog (const char *ident, int option, int facility);
-
-  openlog(ZEROVMLOG_NAME, ZEROVMLOG_OPTIONS, ZEROVMLOG_PRIORITY);
-}
-
-/* close the log. ### optional? */
-static void ZeroVMLogDtor()
-{
-  extern void closelog (void); /* to avoid redefinition LOG_* */
-  closelog();
-}
 
 /* parse given command line and initialize NaClApp object */
 static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
@@ -52,9 +30,9 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
   int opt;
   int i;
   char *manifest_name = NULL;
+  int verbosity = 0;
 
   /* set defaults */
-  nap->verbosity = NaClLogGetVerbosity();
   nap->skip_qualification = 0;
   nap->fuzzing_quit_after_load = 0;
   nap->handle_signals = 1;
@@ -70,7 +48,7 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
         break;
       case 's':
         nap->skip_validator = 1;
-        NaClLog(LOG_WARNING, "validation disabled by -s\n");
+        NaClLog(LOG_ERROR, "validation disabled by -s\n");
         break;
       case 'F':
         nap->fuzzing_quit_after_load = 1;
@@ -89,12 +67,11 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
             "invalid storage limit: %d", nap->storage_limit);
         break;
       case 'v':
-        NaClLogSetVerbosity(ATOI(optarg));
-        nap->verbosity = NaClLogGetVerbosity();
+        verbosity = ATOI(optarg);
         break;
       case 'Q':
         nap->skip_qualification = 1;
-        NaClLog(LOG_WARNING, "PLATFORM QUALIFICATION DISABLED BY -Q - "
+        NaClLog(LOG_ERROR, "PLATFORM QUALIFICATION DISABLED BY -Q - "
                 "Native Client's sandbox will be unreliable!\n");
         break;
       default:
@@ -105,6 +82,9 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
     }
   }
 
+  /* construct zlog */
+  ZLogCtor(verbosity);
+
   /* show zerovm command line */
   strcpy(cmd, "zerovm command line:");
   for(i = 0; i < argc; ++i)
@@ -112,7 +92,7 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
     strncat(cmd, " ", BIG_ENOUGH_SPACE);
     strncat(cmd, argv[i], BIG_ENOUGH_SPACE);
   }
-  NaClLog(LOG_NOTE, "%s", cmd);
+  ZLOG(LOG_DEBUG, "%s", cmd);
 
   /* parse manifest file specified in cmdline */
   if(manifest_name == NULL)
@@ -120,7 +100,7 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
     puts(HELP_SCREEN);
     exit(1);
   }
-  COND_ABORT(ManifestCtor(manifest_name), "Invalid manifest file");
+  FailIf(ManifestCtor(manifest_name), "Invalid manifest '%s'", manifest_name);
 
   /* set available nap and manifest fields */
   assert(nap->system_manifest != NULL);
@@ -161,13 +141,13 @@ static void ValidateNexe(struct NaClApp *nap)
 
   /* prepare command line and run it */
   args[1] = nap->system_manifest->nexe;
-  COND_ABORT(g_spawn_sync(NULL, args, NULL, G_SPAWN_SEARCH_PATH |
+  FailIf(g_spawn_sync(NULL, args, NULL, G_SPAWN_SEARCH_PATH |
       G_SPAWN_STDOUT_TO_DEV_NULL | G_SPAWN_STDERR_TO_DEV_NULL, NULL, NULL,
       NULL, NULL, &exit_status, &error) == 0, "cannot start validator");
 
   /* check the result */
   nap->validation_state = exit_status == 0 ? ValidationOK : ValidationFailed;
-  COND_ABORT(nap->validation_state != ValidationOK, "validation failed");
+  FailIf(nap->validation_state != ValidationOK, "validation failed");
 }
 
 int main(int argc, char **argv)
@@ -186,25 +166,24 @@ int main(int argc, char **argv)
   nap->system_manifest = &sys_mft;
   memset(nap->system_manifest, 0, sizeof *nap->system_manifest);
   gnap = nap;
+  ZLogCtor(0); /* ### initial setting to make log working */
   SetZVMState(nap, "nexe didn't start");
-  ZeroVMLogCtor();
   NaClSignalHandlerInit();
 
   NaClAllModulesInit();
   NaClPerfCounterCtor(&time_all_main, "SelMain");
-  COND_ABORT(!GioFileRefCtor(&gout, stdout),
-             "Could not create general standard output channel");
 
   ParseCommandLine(nap, argc, argv);
+
+  /* todo(d'b): does zerovm needs it? */
+  FailIf(!GioFileRefCtor(&gout, stdout),
+             "Could not create general standard output channel");
 
   /* validate given nexe and run/fail/exit */
   ValidateNexe(nap);
 
-  /* todo(d'b): remove it after validator will be removed from the project */
-  NaClLogGetGio();
-
   /* the dyn_array constructor 1st call */
-  COND_ABORT(NaClAppCtor(nap) == 0, "Error while constructing app state");
+  FailIf(NaClAppCtor(nap) == 0, "Error while constructing app state");
   errcode = LOAD_OK;
 
   /* We use the signal handler to verify a signal took place. */
@@ -305,7 +284,7 @@ int main(int argc, char **argv)
   AccountingDtor(nap);
 
   /* report to host. call destructors. exit */
-  ZeroVMLogDtor();
+  ZLogDtor();
   NaClExit(0);
 
   /* Unreachable, but having the return prevents a compiler error. */

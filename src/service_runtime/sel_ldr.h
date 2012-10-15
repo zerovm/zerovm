@@ -38,10 +38,10 @@
 
 
 
-#include "src/platform/nacl_log.h"
+#include "src/service_runtime/zlog.h"
 #include "src/service_runtime/dyn_array.h"
 #include "src/service_runtime/nacl_error_code.h"
-
+#include "src/gio/gio.h"
 #include "src/service_runtime/sel_mem.h"
 #include "src/service_runtime/sel_util.h"
 #include "src/service_runtime/sel_rt.h"
@@ -203,7 +203,6 @@ struct NaClApp {
   int                       validation_state; /* needs for the report */
   int                       skip_qualification; /* startup time variable */
   int                       fuzzing_quit_after_load; /* startup time variable */
-  int                       verbosity; /* startup time variable */
   int                       handle_signals; /* startup time variable */
   int64_t                   storage_limit; /* hard limit for all zerovm i/o */
   char                      user_tag[TAG_CONTEXT_SIZE]; /* tag context for memory and channels */
@@ -272,7 +271,7 @@ NaClErrorCode NaClAppLoadFileDynamically(struct NaClApp *nap,
                                          struct Gio     *gio_file) NACL_WUR;
 
 void  NaClAppPrintDetails(struct NaClApp  *nap,
-                          struct Gio      *gp);
+                          struct Gio      *gp, int verbosity);
 
 int NaClValidateCode(struct NaClApp *nap,
                      uintptr_t      guest_addr,

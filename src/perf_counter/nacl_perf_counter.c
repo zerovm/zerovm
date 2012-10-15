@@ -7,8 +7,8 @@
 /*
  * Simple Perf Counter Layer to be used by the rest of the service run time
  */
-
-#include "src/platform/nacl_log.h"
+#include <string.h>
+#include "src/service_runtime/zlog.h"
 #include "src/platform/nacl_time.h"
 #include "src/include/nacl_macros.h"
 #include "src/perf_counter/nacl_perf_counter.h"
@@ -91,7 +91,7 @@ int64_t NaClPerfCounterInterval(struct NaClPerfCounter *sv,
                     sv->sample_list[lo].nacl_abi_tv_usec);
     int64_t rtn = seconds * NACL_MICROS_PER_UNIT + usec;
 
-    NaClLog(1, "NaClPerfCounterInterval(%s %s:%s): %"NACL_PRId64" microsecs\n",
+    NaClLog(1, "NaClPerfCounterInterval(%s %s:%s): %d microsecs\n",
             sv->app_name, sv->sample_names[lo], sv->sample_names[hi], rtn);
 
     return rtn;

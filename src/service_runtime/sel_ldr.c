@@ -7,7 +7,7 @@
 /*
  * NaCl Simple/secure ELF loader (NaCl SEL).
  */
-#include "src/platform/nacl_check.h"
+#include "src/service_runtime/zlog.h"
 #include "src/gio/gio.h"
 #include "src/service_runtime/sel_ldr.h"
 #include "src/service_runtime/arch/x86/sel_ldr_x86.h"
@@ -199,47 +199,38 @@ void  NaClLoadTrampoline(struct NaClApp *nap) {
   }
 }
 
-void  NaClMemRegionPrinter(void                   *state,
-                           struct NaClVmmapEntry  *entry) {
-  struct Gio *gp = (struct Gio *) state;
-
-  gprintf(gp, "\nPage   %"NACL_PRIdPTR" (0x%"NACL_PRIxPTR")\n",
-          entry->page_num, entry->page_num);
-  gprintf(gp,   "npages %"NACL_PRIdS" (0x%"NACL_PRIxS")\n", entry->npages,
-          entry->npages);
-  gprintf(gp,   "start vaddr 0x%"NACL_PRIxPTR"\n",
-          entry->page_num << NACL_PAGESHIFT);
-  gprintf(gp,   "end vaddr   0x%"NACL_PRIxPTR"\n",
-          (entry->page_num + entry->npages) << NACL_PAGESHIFT);
-  gprintf(gp,   "prot   0x%08x\n", entry->prot);
-  gprintf(gp,   "%ssrc/backed by a file\n",
-          (NULL == entry->nmop) ? "not " : "");
+static int verb = LOG_INSANE;
+void NaClMemRegionPrinter(void *state, struct NaClVmmapEntry *entry)
+{
+  ZLOGS(verb, "Page   %"NACL_PRIdPTR" (0x%"NACL_PRIxPTR")", entry->page_num,
+      entry->page_num);
+  ZLOGS(verb, "npages %"NACL_PRIdS" (0x%"NACL_PRIxS")", entry->npages, entry->npages);
+  ZLOGS(verb, "start vaddr 0x%"NACL_PRIxPTR, entry->page_num << NACL_PAGESHIFT);
+  ZLOGS(verb, "end vaddr   0x%"NACL_PRIxPTR,
+      (entry->page_num + entry->npages) << NACL_PAGESHIFT);
+  ZLOGS(verb, "prot   0x%08x", entry->prot);
+  ZLOGS(verb, "%ssrc/backed by a file", (NULL == entry->nmop) ? "not " : "");
 }
 
-void  NaClAppPrintDetails(struct NaClApp  *nap,
-                          struct Gio      *gp) {
-  gprintf(gp,
-          "NaClAppPrintDetails((struct NaClApp *) 0x%08"NACL_PRIxPTR","
-          "(struct Gio *) 0x%08"NACL_PRIxPTR")\n", (uintptr_t) nap,
-          (uintptr_t) gp);
-  gprintf(gp, "addr space size:  2**%"NACL_PRId32"\n", nap->addr_bits);
-  gprintf(gp, "stack size:       0x%08"NACL_PRIx32"\n", nap->stack_size);
-
-  gprintf(gp, "mem start addr:   0x%08"NACL_PRIxPTR"\n", nap->mem_start);
+void NaClAppPrintDetails(struct NaClApp *nap, struct Gio *gp, int verbosity)
+{
+  verb = verbosity;
+  ZLOGS(verbosity, "NaClAppPrintDetails((struct NaClApp *) 0x%08"NACL_PRIxPTR","
+  "(struct Gio *) 0x%08"NACL_PRIxPTR")", (uintptr_t)nap, (uintptr_t)gp);
+  ZLOGS(verbosity, "addr space size:  2**%"NACL_PRId32, nap->addr_bits);
+  ZLOGS(verbosity, "stack size:       0x%08"NACL_PRIx32, nap->stack_size);
+  ZLOGS(verbosity, "mem start addr:   0x%08"NACL_PRIxPTR, nap->mem_start);
   /*           123456789012345678901234567890 */
 
-  gprintf(gp, "static_text_end:   0x%08"NACL_PRIxPTR"\n", nap->static_text_end);
-  gprintf(gp, "end-of-text:       0x%08"NACL_PRIxPTR"\n",
-          NaClEndOfStaticText(nap));
-  gprintf(gp, "rodata:            0x%08"NACL_PRIxPTR"\n", nap->rodata_start);
-  gprintf(gp, "data:              0x%08"NACL_PRIxPTR"\n", nap->data_start);
-  gprintf(gp, "data_end:          0x%08"NACL_PRIxPTR"\n", nap->data_end);
-  gprintf(gp, "break_addr:        0x%08"NACL_PRIxPTR"\n", nap->break_addr);
+  ZLOGS(verbosity, "static_text_end:   0x%08"NACL_PRIxPTR, nap->static_text_end);
+  ZLOGS(verbosity, "end-of-text:       0x%08"NACL_PRIxPTR, NaClEndOfStaticText(nap));
+  ZLOGS(verbosity, "rodata:            0x%08"NACL_PRIxPTR, nap->rodata_start);
+  ZLOGS(verbosity, "data:              0x%08"NACL_PRIxPTR, nap->data_start);
+  ZLOGS(verbosity, "data_end:          0x%08"NACL_PRIxPTR, nap->data_end);
+  ZLOGS(verbosity, "break_addr:        0x%08"NACL_PRIxPTR, nap->break_addr);
 
-  gprintf(gp, "ELF initial entry point:  0x%08x\n", nap->initial_entry_pt);
-  gprintf(gp, "ELF user entry point:  0x%08x\n", nap->user_entry_pt);
-  gprintf(gp, "memory map:\n");
-  NaClVmmapVisit(&nap->mem_map,
-                 NaClMemRegionPrinter,
-                 gp);
+  ZLOGS(verbosity, "ELF initial entry point:  0x%08x", nap->initial_entry_pt);
+  ZLOGS(verbosity, "ELF user entry point:  0x%08x", nap->user_entry_pt);
+  ZLOGS(verbosity, "memory map:");
+  NaClVmmapVisit(&nap->mem_map, NaClMemRegionPrinter, gp);
 }

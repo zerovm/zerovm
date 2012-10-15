@@ -13,9 +13,8 @@
  * todo(d'b): we only have 1 os to work with - linux. get rid of nacl
  * specific error codes and this translation.
  */
-
+#include <errno.h>
 #include "src/include/nacl_platform.h"
-#include "src/platform/nacl_log.h"
 #include "src/service_runtime/include/bits/mman.h"
 #include "src/service_runtime/include/sys/errno.h"
 

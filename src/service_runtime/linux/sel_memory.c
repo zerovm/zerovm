@@ -7,8 +7,9 @@
 /*
  * NaCl Service Runtime memory allocation code
  */
+#include <errno.h>
 #include "src/include/nacl_platform.h"
-#include "src/platform/nacl_log.h"
+#include "src/service_runtime/zlog.h"
 
 /*
  * When we're built into Chromium's "nacl_helper", its main will set this.

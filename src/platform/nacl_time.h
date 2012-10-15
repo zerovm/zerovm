@@ -11,8 +11,8 @@
 #ifndef NATIVE_CLIENT_SRC_TRUSTED_PLATFORM_NACL_TIME_H_
 #define NATIVE_CLIENT_SRC_TRUSTED_PLATFORM_NACL_TIME_H_
 
-#include "src/include/nacl_base.h"
 #include "src/service_runtime/include/sys/time.h"
+#include "src/include/nacl_base.h"
 
 EXTERN_C_BEGIN
 

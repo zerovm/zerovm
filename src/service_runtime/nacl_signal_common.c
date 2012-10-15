@@ -5,10 +5,10 @@
  */
 
 #include "src/include/portability_io.h"
-#include "src/platform/nacl_check.h"
 #include "src/service_runtime/nacl_signal.h"
 #include "src/manifest/manifest_setup.h"
 #include "src/service_runtime/nacl_globals.h"
+#include "src/service_runtime/zlog.h"
 
 #define MAX_NACL_HANDLERS 16
 

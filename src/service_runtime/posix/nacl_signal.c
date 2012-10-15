@@ -3,6 +3,7 @@
  * Use of this source code is governed by a BSD-style license that can be
  * found in the LICENSE file.
  */
+#include <errno.h>
 #include <signal.h>
 #include <sys/mman.h>
 #include "src/service_runtime/nacl_signal.h"

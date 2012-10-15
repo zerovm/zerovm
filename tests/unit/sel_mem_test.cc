@@ -6,7 +6,7 @@
 
 #include "src/include/nacl_platform.h"
 #include "src/service_runtime/sel_mem.h"
-#include "src/platform/nacl_log.h"
+#include "src/service_runtime/zlog.h"
 #include "gtest/gtest.h"
 
 class SelMemTest : public testing::Test {
@@ -16,11 +16,11 @@ class SelMemTest : public testing::Test {
 };
 
 void SelMemTest::SetUp() {
-  NaClLogModuleInit();
+  ZLogCtor(LOG_DEBUG);
 }
 
 void SelMemTest::TearDown() {
-  NaClLogModuleFini();
+  ZLogDtor();
 }
 
 TEST_F(SelMemTest, AddTest) {

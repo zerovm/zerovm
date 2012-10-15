@@ -5,7 +5,7 @@
  */
 
 #include "src/nacl_base/nacl_refcount.h"
-#include "src/platform/nacl_log.h"
+#include "src/service_runtime/zlog.h"
 
 struct NaClRefCount *NaClRefCountRef(struct NaClRefCount *nrcp) {
   NaClLog(4, "NaClRefCountRef(0x%08"NACL_PRIxPTR").\n",

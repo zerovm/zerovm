@@ -12,7 +12,7 @@
 #define DYN_ARRAY_DEBUG 0
 
 #if DYN_ARRAY_DEBUG
-# include "src/platform/nacl_log.h"
+# include "src/service_runtime/zlog.h"
 #endif
 
 #include "src/service_runtime/dyn_array.h"

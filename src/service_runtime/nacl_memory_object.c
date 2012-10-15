@@ -7,7 +7,7 @@
 /*
  * NaCl Simple/secure ELF loader (NaCl SEL) memory object.
  */
-#include "src/platform/nacl_log.h"
+#include "src/service_runtime/zlog.h"
 #include "src/service_runtime/nacl_memory_object.h"
 
 /*

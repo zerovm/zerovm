@@ -10,34 +10,34 @@
 #include "src/service_runtime/nacl_signal.h"
 #include "src/service_runtime/nacl_all_modules.h"
 
+static int verb = LOG_INSANE;
+
 static void VmentryPrinter(void *state, struct NaClVmmapEntry *vmep)
 {
   UNREFERENCED_PARAMETER(state);
-  NaClLog(LOG_INFO, "page num 0x%06x\n", (uint32_t) vmep->page_num);
-  NaClLog(LOG_INFO, "num pages %d\n", (uint32_t) vmep->npages);
-  NaClLog(LOG_INFO, "prot bits %x\n", vmep->prot);
+  NaClLog(verb, "page num 0x%06x\n", (uint32_t) vmep->page_num);
+  NaClLog(verb, "num pages %d\n", (uint32_t) vmep->npages);
+  NaClLog(verb, "prot bits %x\n", vmep->prot);
   fflush(stdout);
 }
 
-static void PrintVmmap(struct NaClApp *nap)
+static void PrintVmmap(struct NaClApp *nap, int verbosity)
 {
-  NaClLog(LOG_INFO, "In PrintVmmap\n");
+  NaClLog(verbosity, "In PrintVmmap");
   fflush(stdout);
+  verb = verbosity;
   NaClVmmapVisit(&nap->mem_map, VmentryPrinter, NULL);
 }
 
 static void FinalDump(struct NaClApp *nap)
 {
-  if(nap->verbosity >= LOG_INSANE)
-  {
-    NaClLog(LOG_INFO, "exiting -- printing NaClApp details\n");
+  ZLOGS(LOG_INSANE, "exiting -- printing NaClApp details\n");
 
-    /* NULL can be used because syslog used for nacl log */
-    NaClAppPrintDetails(nap, (struct Gio *) NULL);
-    NaClLog(LOG_INFO, "Dumping vmmap.\n");
-    PrintVmmap(nap);
-    NaClLog(LOG_INFO, "Done.\n");
-  }
+  /* NULL can be used because syslog used for nacl log */
+  NaClAppPrintDetails(nap, (struct Gio *) NULL, LOG_INSANE);
+  ZLOGS(LOG_INSANE, "Dumping vmmap");
+  PrintVmmap(nap, LOG_INSANE);
+  ZLOGS(LOG_INSANE, "Done");
 
   if(nap->handle_signals) NaClSignalHandlerFini();
   NaClAllModulesFini();

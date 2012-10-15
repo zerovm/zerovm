@@ -10,7 +10,7 @@
  */
 #include <assert.h>
 #include <stdio.h>
-#include "src/platform/nacl_check.h"
+#include "src/service_runtime/zlog.h"
 #include "src/service_runtime/sel_mem.h"
 #include "src/service_runtime/sel_util.h"
 
