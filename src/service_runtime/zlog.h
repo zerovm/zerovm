@@ -13,16 +13,25 @@
 
 EXTERN_C_BEGIN
 
+/*
+ * ZLOG - add file and line info to given message and put it to syslog
+ * ZLOGS - put given message to syslog
+ * ZLOGIF - check condition and, if true, ZLOG it
+ * ZLOGFAIL - check condition, if true, ZLOG it and abort
+ */
 #define ZLOG ZLogTag(__FILE__, __LINE__), ZLog
-#define ZLOGS ZLogTag("", 0), ZLog
-#define LOG_MSG_LIMIT 0x1000
-#define TAG_FORMAT "%s %d:"
-#define FILENAME_LIMIT 0x100
-#define FILELINES_LIMIT 10
-#define TAG_LIMIT FILENAME_LIMIT + FILELINES_LIMIT + sizeof TAG_FORMAT
+#define ZLOGIF ZLogTag(__FILE__, __LINE__), LogIf
+#define ZLOGFAIL ZLogTag(__FILE__, __LINE__), FailIf
+#define ZLOGS ZLogTag(NULL, -1), ZLog
+
 #define ZLOG_NAME "ZeroVM"
 #define ZLOG_OPTIONS (LOG_CONS | LOG_PID | LOG_NDELAY)
 #define ZLOG_PRIORITY LOG_USER
+#define TAG_FORMAT "%s %d: "
+#define LOG_MSG_LIMIT 0x1000
+#define FILENAME_LIMIT 0x100
+#define FILELINES_LIMIT 10
+#define TAG_LIMIT FILENAME_LIMIT + FILELINES_LIMIT + sizeof TAG_FORMAT
 #define LOWEST_VERBOSITY 1
 
 /* develop fix for verbosity level names */
@@ -67,7 +76,7 @@ void ZLog(int priority, char *fmt, ...);
 /* if condition is true, log and abort */
 void FailIf(int cond, char const *fmt, ...);
 
-/* if condition is true, log and continue */
+/* if condition is true, log and continue. should be used from ZLOGIF */
 void LogIf(int cond, char const *fmt, ...);
 
 EXTERN_C_END

@@ -36,7 +36,7 @@
 static inline void *my_malloc(size_t size, const char *msg)
 {
   void *ptr = malloc(size);
-  FailIf(ptr == NULL, msg);
+  ZLOGFAIL(ptr == NULL, msg);
   return ptr;
 }
 #define MALLOC(size, msg) my_malloc((size), (msg))

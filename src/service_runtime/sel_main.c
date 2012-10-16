@@ -63,7 +63,7 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
       case 'l':
         /* calculate hard limit in Gb and don't allow it less then "big enough" */
         nap->storage_limit = ATOI(optarg) * ZEROVM_IO_LIMIT_UNIT;
-        FailIf(nap->storage_limit < ZEROVM_IO_LIMIT_UNIT,
+        ZLOGFAIL(nap->storage_limit < ZEROVM_IO_LIMIT_UNIT,
             "invalid storage limit: %d", nap->storage_limit);
         break;
       case 'v':
@@ -92,7 +92,7 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
     strncat(cmd, " ", BIG_ENOUGH_SPACE);
     strncat(cmd, argv[i], BIG_ENOUGH_SPACE);
   }
-  ZLOG(LOG_DEBUG, "%s", cmd);
+  ZLOGS(LOG_DEBUG, "%s", cmd);
 
   /* parse manifest file specified in cmdline */
   if(manifest_name == NULL)
@@ -100,7 +100,7 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
     puts(HELP_SCREEN);
     exit(1);
   }
-  FailIf(ManifestCtor(manifest_name), "Invalid manifest '%s'", manifest_name);
+  ZLOGFAIL(ManifestCtor(manifest_name), "Invalid manifest '%s'", manifest_name);
 
   /* set available nap and manifest fields */
   assert(nap->system_manifest != NULL);
@@ -141,13 +141,13 @@ static void ValidateNexe(struct NaClApp *nap)
 
   /* prepare command line and run it */
   args[1] = nap->system_manifest->nexe;
-  FailIf(g_spawn_sync(NULL, args, NULL, G_SPAWN_SEARCH_PATH |
+  ZLOGFAIL(g_spawn_sync(NULL, args, NULL, G_SPAWN_SEARCH_PATH |
       G_SPAWN_STDOUT_TO_DEV_NULL | G_SPAWN_STDERR_TO_DEV_NULL, NULL, NULL,
       NULL, NULL, &exit_status, &error) == 0, "cannot start validator");
 
   /* check the result */
   nap->validation_state = exit_status == 0 ? ValidationOK : ValidationFailed;
-  FailIf(nap->validation_state != ValidationOK, "validation failed");
+  ZLOGFAIL(nap->validation_state != ValidationOK, "validation failed");
 }
 
 int main(int argc, char **argv)
@@ -176,14 +176,14 @@ int main(int argc, char **argv)
   ParseCommandLine(nap, argc, argv);
 
   /* todo(d'b): does zerovm needs it? */
-  FailIf(!GioFileRefCtor(&gout, stdout),
+  ZLOGFAIL(!GioFileRefCtor(&gout, stdout),
              "Could not create general standard output channel");
 
   /* validate given nexe and run/fail/exit */
   ValidateNexe(nap);
 
   /* the dyn_array constructor 1st call */
-  FailIf(NaClAppCtor(nap) == 0, "Error while constructing app state");
+  ZLOGFAIL(NaClAppCtor(nap) == 0, "Error while constructing app state");
   errcode = LOAD_OK;
 
   /* We use the signal handler to verify a signal took place. */

@@ -15,11 +15,11 @@ int main()
   UNREFERENCED_VAR(errcount);
 
   /* memory map */
-  ZPRINTF(STDERR, "%16s = 0x%09X\n", "trampoline start", TRAMPOLINE_START);
-  ZPRINTF(STDERR, "%16s = 0x%09X\n", "heap start", (uintptr_t)zvm_bulk->heap_ptr);
-  ZPRINTF(STDERR, "%16s = 0x%09X\n", "heap end", HEAP_END);
-  ZPRINTF(STDERR, "%16s = 0x%09X\n", "stack end", STACK_END);
-  ZPRINTF(STDERR, "%16s = 0x%09llX\n", "stack start", STACK_END + (uint64_t)STACK_SIZE);
+  ZPRINTF(STDERR, "%-16s = 0x%09X\n", "trampoline start", TRAMPOLINE_START);
+  ZPRINTF(STDERR, "%-16s = 0x%09X\n", "heap start", (uintptr_t)zvm_bulk->heap_ptr);
+  ZPRINTF(STDERR, "%-16s = 0x%09X\n", "heap end", HEAP_END);
+  ZPRINTF(STDERR, "%-16s = 0x%09X\n", "stack end", STACK_END);
+  ZPRINTF(STDERR, "%-16s = 0x%09llX\n", "stack start", STACK_END + (uint64_t)STACK_SIZE);
 
   /* dump memory from the trampoline start to the heap end */
   zwrite(STDOUT, (void*)TRAMPOLINE_START, HEAP_END - TRAMPOLINE_START);

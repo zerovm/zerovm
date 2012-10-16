@@ -112,7 +112,7 @@ static inline void EchoToFile(const char *path, int code)
 {
   FILE *f = fopen(path, "w");
 
-  FailIf(f == NULL, "cannot create file '%s'", path);
+  ZLOGFAIL(f == NULL, "cannot create file '%s'", path);
   fprintf(f, "%d", code);
   fclose(f);
 }
@@ -137,14 +137,14 @@ void AccountingCtor(struct NaClApp *nap)
   length = snprintf(cfolder, BIG_ENOUGH_SPACE, "%s/%d", CGROUPS_FOLDER, pid);
   cfolder[BIG_ENOUGH_SPACE] = '\0';
   if(stat(cfolder, &st) == 0 && S_ISDIR(st.st_mode))
-    FailIf(rmdir(cfolder) != 0, "'%s' in cgroups is already taken", cfolder);
+    ZLOGFAIL(rmdir(cfolder) != 0, "'%s' in cgroups is already taken", cfolder);
 
   /* create folder of own pid */
-  FailIf(mkdir(cfolder, 0700) != 0, "cannot create '%s' in cgroups", cfolder);
+  ZLOGFAIL(mkdir(cfolder, 0700) != 0, "cannot create '%s' in cgroups", cfolder);
 
   /* store accounting folder to the system manifest */
   acc_folder = malloc(length + 1);
-  FailIf(acc_folder == NULL,
+  ZLOGFAIL(acc_folder == NULL,
       "cannot allocate memory to hold accounting folder name");
   strcpy(acc_folder, cfolder);
 

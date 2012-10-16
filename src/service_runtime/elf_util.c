@@ -73,52 +73,61 @@ static const struct NaClPhdrChecks nacl_phdr_check_data[] = {
 
 static void NaClDumpElfHeader(int loglevel, Elf_Ehdr *elf_hdr) {
 
-#define DUMP(m,f)    do { NaClLog(loglevel,                     \
-                                  #m " = %" f "\n",             \
+#define DUMP(m,f)    do { ZLOGS(loglevel,                     \
+                                  #m " = %" f "",             \
                                   elf_hdr->m); } while (0)
 
-  NaClLog(loglevel, "=================================================\n");
-  NaClLog(loglevel, "Elf header\n");
-  NaClLog(loglevel, "==================================================\n");
+  ZLOGS(loglevel, "=================================================");
+  ZLOGS(loglevel, "Elf header");
+  ZLOGS(loglevel, "==================================================");
 
   DUMP(e_ident+1, ".3s");
   DUMP(e_type, "#x");
   DUMP(e_machine, "#x");
   DUMP(e_version, "#x");
-  DUMP(e_entry, "#"NACL_PRIxElf_Addr);
-  DUMP(e_phoff, "#"NACL_PRIxElf_Off);
-  DUMP(e_shoff, "#"NACL_PRIxElf_Off);
-  DUMP(e_flags, "#"NACL_PRIxElf_Word);
-  DUMP(e_ehsize, "#"NACL_PRIxElf_Half);
-  DUMP(e_phentsize, "#"NACL_PRIxElf_Half);
-  DUMP(e_phnum, "#"NACL_PRIxElf_Half);
-  DUMP(e_shentsize, "#"NACL_PRIxElf_Half);
-  DUMP(e_shnum, "#"NACL_PRIxElf_Half);
-  DUMP(e_shstrndx, "#"NACL_PRIxElf_Half);
+  DUMP(e_entry, "#x");
+  DUMP(e_phoff, "#x");
+  DUMP(e_shoff, "#x");
+  DUMP(e_flags, "#x");
+  DUMP(e_ehsize, "#x");
+  DUMP(e_phentsize, "#x");
+  DUMP(e_phnum, "#x");
+  DUMP(e_shentsize, "#x");
+  DUMP(e_shnum, "#x");
+  DUMP(e_shstrndx, "#x");
 #undef DUMP
- NaClLog(loglevel, "sizeof(Elf32_Ehdr) = 0x%x\n", (int) sizeof *elf_hdr);
+ ZLOGS(loglevel, "sizeof(Elf32_Ehdr) = 0x%x\n", (int) sizeof *elf_hdr);
 }
 
 static void NaClDumpElfProgramHeader(int     loglevel,
                                     Elf_Phdr *phdr) {
 #define DUMP(mem, f) do {                                \
-    NaClLog(loglevel, "%s: %" f "\n", #mem, phdr->mem);  \
+    ZLOGS(loglevel, "%s: %" f "\n", #mem, phdr->mem);  \
   } while (0)
 
-  DUMP(p_type, NACL_PRIxElf_Word);
-  DUMP(p_offset, NACL_PRIxElf_Off);
-  DUMP(p_vaddr, NACL_PRIxElf_Addr);
-  DUMP(p_paddr, NACL_PRIxElf_Addr);
-  DUMP(p_filesz, NACL_PRIxElf_Xword);
-  DUMP(p_memsz, NACL_PRIxElf_Xword);
-  DUMP(p_flags, NACL_PRIxElf_Word);
-  NaClLog(2, " (%s %s %s)\n",
+//  DUMP(p_type, NACL_PRIxElf_Word);
+//  DUMP(p_offset, NACL_PRIxElf_Off);
+//  DUMP(p_vaddr, NACL_PRIxElf_Addr);
+//  DUMP(p_paddr, NACL_PRIxElf_Addr);
+//  DUMP(p_filesz, NACL_PRIxElf_Xword);
+//  DUMP(p_memsz, NACL_PRIxElf_Xword);
+//  DUMP(p_flags, NACL_PRIxElf_Word);
+
+  DUMP(p_type, "x");
+  DUMP(p_offset, "x");
+  DUMP(p_vaddr, "x");
+  DUMP(p_paddr, "x");
+  DUMP(p_filesz, "x");
+  DUMP(p_memsz, "x");
+  DUMP(p_flags, "x");
+  ZLOGS(loglevel, " (%s %s %s)\n",
           (phdr->p_flags & PF_R) ? "PF_R" : "",
           (phdr->p_flags & PF_W) ? "PF_W" : "",
           (phdr->p_flags & PF_X) ? "PF_X" : "");
-  DUMP(p_align, NACL_PRIxElf_Xword);
+//  DUMP(p_align, NACL_PRIxElf_Xword);
+  DUMP(p_align, "x");
 #undef  DUMP
-  NaClLog(loglevel, "\n");
+//  NaClLog(loglevel, "\n");
 }
 
 NaClErrorCode NaClElfImageValidateElfHeader(struct NaClElfImage *image) {

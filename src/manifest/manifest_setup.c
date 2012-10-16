@@ -109,7 +109,7 @@ static void PreallocateUserMemory(struct NaClApp *nap)
   assert(nap->system_manifest != NULL);
 
   /* quit function if max_mem is not specified in manifest */
-  FailIf(nap->heap_end == 0, "user heap size in not specified in manifest");
+  ZLOGFAIL(nap->heap_end == 0, "user heap size in not specified in manifest");
 
   /* calculate user heap size (must be allocated next to the data_end) */
   p = (void*)NaClRoundAllocPage(nap->data_end);
@@ -119,7 +119,7 @@ static void PreallocateUserMemory(struct NaClApp *nap)
   /* since 4gb of user space is already allocated just set protection to the heap */
   p = (void*)NaClUserToSys(nap, (uintptr_t)p);
   i = NaCl_mprotect(p, heap, PROT_READ | PROT_WRITE);
-  FailIf(0 != i, "cannot set protection on user heap");
+  ZLOGFAIL(0 != i, "cannot set protection on user heap");
   nap->heap_end = (uintptr_t)p + heap;
 }
 
@@ -140,9 +140,9 @@ static void SetCustomAttributes(struct SystemManifest *policy)
 
   /* parse and check count of attributes */
   count = ParseValue(environment, ", \t", tokens, BIG_ENOUGH_SPACE);
-  FailIf(count % 2 != 0, "odd number of user environment variables");
-  FailIf(count == 0, "invalid user environment");
-  FailIf(count == BIG_ENOUGH_SPACE, "user environment exceeded the limit");
+  ZLOGFAIL(count % 2 != 0, "odd number of user environment variables");
+  ZLOGFAIL(count == 0, "invalid user environment");
+  ZLOGFAIL(count == BIG_ENOUGH_SPACE, "user environment exceeded the limit");
 
   /* allocate space to hold string pointers */
   count >>= 1;
@@ -156,7 +156,7 @@ static void SetCustomAttributes(struct SystemManifest *policy)
     int length = strlen(key) + strlen(value) + 1 + 1; /* + '=' + '\0' */
 
     policy->envp[i] = calloc(length + 1, sizeof(*policy->envp[0]));
-    FailIf(policy->envp[i] == NULL, "cannot allocate memory for custom attribute");
+    ZLOGFAIL(policy->envp[i] == NULL, "cannot allocate memory for custom attribute");
     sprintf(policy->envp[i], "%s=%s", key, value);
   }
 }
@@ -182,12 +182,12 @@ static void SetNodeName(struct NaClApp *nap)
   else
   {
     i = ParseValue(pgm_name, ",", tokens, BIG_ENOUGH_SPACE);
-    FailIf(i != 2, "invalid NodeName specified");
-    FailIf(tokens[0] == NULL, "invalid node name");
-    FailIf(tokens[1] == NULL, "invalid node id");
+    ZLOGFAIL(i != 2, "invalid NodeName specified");
+    ZLOGFAIL(tokens[0] == NULL, "invalid node name");
+    ZLOGFAIL(tokens[1] == NULL, "invalid node id");
     nap->system_manifest->cmd_line[0] = tokens[0];
     nap->node_id = ATOI(tokens[1]);
-    FailIf(nap->node_id == 0, "node id must be > 0");
+    ZLOGFAIL(nap->node_id == 0, "node id must be > 0");
   }
 
   /* put node name and id to the log */
@@ -213,8 +213,8 @@ static void SetCommandLine(struct SystemManifest *policy)
   if(parameters != NULL)
   {
     policy->cmd_line_size = ParseValue(parameters, " \t", tokens, BIG_ENOUGH_SPACE);
-    FailIf(policy->cmd_line_size == 0, "invalid user parameters");
-    FailIf(policy->cmd_line_size == BIG_ENOUGH_SPACE, "too long user command line");
+    ZLOGFAIL(policy->cmd_line_size == 0, "invalid user parameters");
+    ZLOGFAIL(policy->cmd_line_size == BIG_ENOUGH_SPACE, "too long user command line");
   }
 
   /*
@@ -223,7 +223,7 @@ static void SetCommandLine(struct SystemManifest *policy)
    */
   ++policy->cmd_line_size;
   policy->cmd_line = calloc(policy->cmd_line_size + 1, sizeof *policy->cmd_line);
-  FailIf(policy->cmd_line == NULL,
+  ZLOGFAIL(policy->cmd_line == NULL,
       "cannot allocate memory for user command line parameters");
 
   /* populate command line arguments array with pointers */
@@ -239,11 +239,11 @@ static void SetTimeout(struct SystemManifest *policy)
   assert(policy != NULL);
 
   GET_INT_BY_KEY(policy->timeout, "Timeout");
-  FailIf(policy->timeout < 1, "invalid or absent timeout");
+  ZLOGFAIL(policy->timeout < 1, "invalid or absent timeout");
   rl.rlim_cur = policy->timeout;
   rl.rlim_max = -1;
   setrlimit(RLIMIT_CPU, &rl);
-  FailIf(setrlimit(RLIMIT_CPU, &rl) != 0, "cannot set timeout");
+  ZLOGFAIL(setrlimit(RLIMIT_CPU, &rl) != 0, "cannot set timeout");
 }
 
 /* construct system_manifest object and initialize it from manifest */
@@ -273,21 +273,21 @@ void SystemManifestCtor(struct NaClApp *nap)
   {
     if(TagCtor(&nap->user_tag) == ERR_CODE)
     {
-      ErrIf(1, "cannot construct overall channels tag");
+      ZLOG(LOG_ERROR, "cannot construct overall channels tag");
       _exit(1);
     }
   }
 
   /* check mandatory manifest keys */
-  FailIf(nap->system_manifest->version == NULL,
+  ZLOGFAIL(nap->system_manifest->version == NULL,
       "the manifest version is not provided");
-  FailIf(STRCMP(nap->system_manifest->version, MANIFEST_VERSION),
+  ZLOGFAIL(STRCMP(nap->system_manifest->version, MANIFEST_VERSION),
       "manifest version not supported");
-  FailIf(nap->system_manifest->nexe == NULL, "nexe name not provided");
+  ZLOGFAIL(nap->system_manifest->nexe == NULL, "nexe name not provided");
   size = GetFileSize(nap->system_manifest->nexe);
-  FailIf(size < 0, "invalid nexe");
+  ZLOGFAIL(size < 0, "invalid nexe");
   if(nap->system_manifest->nexe_max)
-    FailIf(nap->system_manifest->nexe_max < size, "nexe size = %d", size);
+    ZLOGFAIL(nap->system_manifest->nexe_max < size, "nexe size = %d", size);
   SetTimeout(policy);
 
   /*
@@ -355,7 +355,7 @@ static void EtagMemoryChunk(void *state, struct NaClVmmapEntry *vmep)
   addr = nap->mem_start + (vmep->page_num << NACL_PAGESHIFT);
   size = vmep->npages << NACL_PAGESHIFT;
   i = TagUpdate(&nap->user_tag, (const char*)addr, size);
-  ErrIf(i == ERR_CODE, "cannot update user_tag");
+  ZLOGIF(i == ERR_CODE, "cannot update user_tag");
 }
 
 /* updates user_tag (should be constructed) with all channels digests */
@@ -371,7 +371,7 @@ void ChannelsDigest(struct NaClApp *nap)
   {
     code = TagUpdate(&nap->user_tag,
         (const char*)nap->system_manifest->channels[i].digest, TAG_DIGEST_SIZE);
-    ErrIf(code == ERR_CODE, "cannot update overall channels tag");
+    ZLOGIF(code == ERR_CODE, "cannot update overall channels tag");
   }
 }
 

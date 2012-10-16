@@ -97,7 +97,7 @@ static INLINE uintptr_t NaClUserToSysAddrRange(struct NaClApp  *nap,
 /* todo(d'b): check buffer address and size to prevent SYGSEGV */
 static INLINE uintptr_t NaClUserToSys(struct NaClApp *nap, uintptr_t uaddr)
 {
-  FailIf(0 == uaddr || ((uintptr_t) 1U << nap->addr_bits) <= uaddr,
+  ZLOGFAIL(0 == uaddr || ((uintptr_t) 1U << nap->addr_bits) <= uaddr,
       "NaClUserToSys: uaddr 0x%08lx, addr space %d bits\n", uaddr, nap->addr_bits);
 
   return uaddr + nap->mem_start;
@@ -105,7 +105,7 @@ static INLINE uintptr_t NaClUserToSys(struct NaClApp *nap, uintptr_t uaddr)
 
 static INLINE uintptr_t NaClSysToUser(struct NaClApp *nap, uintptr_t sysaddr)
 {
-  FailIf(sysaddr < nap->mem_start || nap->mem_start + ((uintptr_t) 1U << nap->addr_bits)
+  ZLOGFAIL(sysaddr < nap->mem_start || nap->mem_start + ((uintptr_t) 1U << nap->addr_bits)
       <= sysaddr, "NaclSysToUser: sysaddr 0x%08lx, mem_start 0x%08lx, addr space %d bits\n",
       sysaddr, nap->mem_start, nap->addr_bits);
   return sysaddr - nap->mem_start;

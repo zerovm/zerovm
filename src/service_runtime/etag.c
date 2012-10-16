@@ -22,7 +22,7 @@ void TagEngineCtor()
   tag_engine_enabled = 1;
   OpenSSL_add_all_digests();
   tag_type = EVP_get_digestbyname(TAG_ENCRYPTION);
-  FailIf(tag_type == NULL, "cannot initialize tag type");
+  ZLOGFAIL(tag_type == NULL, "cannot initialize tag type");
 }
 
 /* return the etag_enabled state */
@@ -43,7 +43,7 @@ int TagCtor(void *ctx)
 
   EVP_MD_CTX_init(ctx);
   i = EVP_DigestInit_ex(ctx, tag_type, NULL);
-  ErrIf(i != 1, "error initializing hash context");
+  ZLOGIF(i != 1, "error initializing hash context");
   return i != 1 ? ERR_CODE : OK_CODE;
 }
 
@@ -64,9 +64,9 @@ void TagDigest(void *ctx, char *digest)
   /* copy context aside and finalize it to get digest */
   EVP_MD_CTX_init(&tag);
   i = EVP_MD_CTX_copy_ex(&tag, ctx);
-  ErrIf(i != 1, "error copying tag");
+  ZLOGIF(i != 1, "error copying tag");
   EVP_DigestFinal_ex(&tag, p, &dsize);
-  ErrIf(i != 1, "error finalizing tag");
+  ZLOGIF(i != 1, "error finalizing tag");
   for(i = 0; i < dsize; ++i)
     sprintf(&digest[2*i], "%02X", p[i]);
 }
@@ -86,6 +86,6 @@ int TagUpdate(void *ctx, const char *buffer, int32_t size)
 
   /* update the context with a new data */
   i = EVP_DigestUpdate(ctx, buffer, size);
-  ErrIf(i != 1, "error updating tag");
+  ZLOGIF(i != 1, "error updating tag");
   return i != 1 ? ERR_CODE : OK_CODE;
 }

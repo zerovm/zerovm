@@ -10,7 +10,6 @@
 #include "include/api_tools.h"
 
 /* a cheat to have an access to static members */
-#define FailIf(...) /* disable falling */
 #include "src/manifest/manifest_parser.c"
 
 #define CONTROL "/dev/control"
@@ -24,6 +23,13 @@ enum ChannelFields {
   CFieldPutsLimit,
   CFieldPutSizeLimit
 };
+
+/* disable falling */
+#undef ZLOGFAIL
+#define ZLOGFAIL(...)
+char *ZLogTag(const char *file, int line) {return NULL;}
+void FailIf(int cond, char const *fmt, ...) {}
+
 
 /*
  * get control data and parse it to make part of manifest parser

@@ -180,28 +180,22 @@ NaClErrorCode NaClCheckAddressSpaceLayoutSanity(struct NaClApp *nap,
   return LOAD_OK;
 }
 
-void NaClLogAddressSpaceLayout(struct NaClApp *nap) {
-  NaClLog(2, "NaClApp addr space layout:\n");
-  NaClLog(2, "nap->static_text_end    = 0x%016"NACL_PRIxPTR"\n",
-          nap->static_text_end);
-  NaClLog(2, "nap->dynamic_text_start = 0x%016"NACL_PRIxPTR"\n",
-          nap->dynamic_text_start);
-  NaClLog(2, "nap->dynamic_text_end   = 0x%016"NACL_PRIxPTR"\n",
-          nap->dynamic_text_end);
-  NaClLog(2, "nap->rodata_start       = 0x%016"NACL_PRIxPTR"\n",
-          nap->rodata_start);
-  NaClLog(2, "nap->data_start         = 0x%016"NACL_PRIxPTR"\n",
-          nap->data_start);
-  NaClLog(2, "nap->data_end           = 0x%016"NACL_PRIxPTR"\n",
-          nap->data_end);
-  NaClLog(2, "nap->break_addr         = 0x%016"NACL_PRIxPTR"\n",
-          nap->break_addr);
-  NaClLog(2, "nap->initial_entry_pt   = 0x%016"NACL_PRIxPTR"\n",
-          nap->initial_entry_pt);
-  NaClLog(2, "nap->user_entry_pt      = 0x%016"NACL_PRIxPTR"\n",
-          nap->user_entry_pt);
-  NaClLog(2, "nap->bundle_size        = 0x%x\n", nap->bundle_size);
+#define DUMP(a) ZLOGS(LOG_DEBUG, "%-24s = 0x%016x", #a, a)
+void NaClLogAddressSpaceLayout(struct NaClApp *nap)
+{
+  ZLOGS(LOG_DEBUG, "NaClApp addr space layout:");
+  DUMP(nap->static_text_end);
+  DUMP(nap->dynamic_text_start);
+  DUMP(nap->dynamic_text_end);
+  DUMP(nap->rodata_start);
+  DUMP(nap->data_start);
+  DUMP(nap->data_end);
+  DUMP(nap->break_addr);
+  DUMP(nap->initial_entry_pt);
+  DUMP(nap->user_entry_pt);
+  DUMP(nap->bundle_size);
 }
+#undef DUMP
 
 NaClErrorCode NaClAppLoadFile(struct Gio       *gp,
                               struct NaClApp   *nap) {
@@ -518,7 +512,7 @@ int NaClCreateMainThread(struct NaClApp *nap)
 
   NaClLog(2, "setting stack to : %016"NACL_PRIxPTR"\n", stack_ptr);
 
-  FailIf(0 != (stack_ptr & NACL_STACK_ALIGN_MASK),
+  ZLOGFAIL(0 != (stack_ptr & NACL_STACK_ALIGN_MASK),
       "stack_ptr not aligned: %016x\n", stack_ptr);
 
   p = (uint32_t *) stack_ptr;

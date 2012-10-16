@@ -184,25 +184,25 @@ int ManifestCtor(const char *name)
   FILE *mft = fopen(name, "r");
 
   /* get file size and check it for sanity */
-  FailIf(mft == NULL, "cannot open manifest file %s", name);
+  ZLOGFAIL(mft == NULL, "cannot open manifest file %s", name);
   mft_size = GetFileSize(name);
-  FailIf(mft_size > MANIFEST_MAX, "manifest file exceeded the limit %d", mft_size);
+  ZLOGFAIL(mft_size > MANIFEST_MAX, "manifest file exceeded the limit %d", mft_size);
 
   /* allocate memory to hold manifest data */
   mft_data = malloc(mft_size + 1);
   mft_ptr =  calloc(mft_size, sizeof *mft_ptr);
   mft_count = 0;
-  FailIf(mft_data == NULL, "cannot allocate memory to hold manifest data");
-  FailIf(mft_ptr == NULL, "cannot allocate memory to hold manifest tokens");
+  ZLOGFAIL(mft_data == NULL, "cannot allocate memory to hold manifest data");
+  ZLOGFAIL(mft_ptr == NULL, "cannot allocate memory to hold manifest tokens");
   mft_data[mft_size] = '\0';
 
   /* read data from manifest into the memory */
   retcode = fread(mft_data, 1, mft_size, mft);
-  FailIf(retcode != mft_size, "cannot read manifest");
+  ZLOGFAIL(retcode != mft_size, "cannot read manifest");
 
   /* parse manifest */
   retcode = ParseManifest();
-  FailIf(retcode, "cannot parse manifest");
+  ZLOGFAIL(retcode, "cannot parse manifest");
 
   /* close file and return */
   fclose(mft);

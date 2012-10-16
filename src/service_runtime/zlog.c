@@ -33,22 +33,25 @@ void ZLogDtor()
 /*
  * store file and line information to the log tag
  * note: if NULL given as "file" return previous tag
+ *       if -1 given as "line" reset tag
  * note: should only be used from ZLOG macro
+ * todo(d'b): find replacement for snprintf()
  */
 char *ZLogTag(const char *file, int line)
 {
   static char msg[TAG_LIMIT];
 
-  /* return empty tag */
-  if(line == 0 && file != NULL) return "";
+  /* reset tag */
+  if(line == -1) msg[0] = '\0';
 
-  /* todo(d'b): find replacement for snprintf() */
+  /* construct tag */
   if(file != NULL)
   {
     char *name = strrchr(file, '/');
     name = name == NULL ? (char*)file : name + 1;
     sprintf(msg, TAG_FORMAT, name, line);
   }
+
   return msg;
 }
 
@@ -72,7 +75,7 @@ void ZLog(int priority, char *fmt, ...)
   va_start(ap, fmt);
   vsprintf(msg, fmt, ap);
   va_end(ap);
-  syslog(ZLOG_PRIORITY, "%s %s", ZLogTag(NULL, 0), msg);
+  syslog(ZLOG_PRIORITY, "%s%s", ZLogTag(NULL, 0), msg);
 
   /* abort if fail occurred */
   if(priority == LOG_FATAL) NaClAbort();

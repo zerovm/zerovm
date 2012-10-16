@@ -60,10 +60,10 @@ int PreloadChannelDtor(struct ChannelDesc* channel)
  */
 static void FailOnInvalidFileChannel(const struct ChannelDesc *channel)
 {
-  FailIf(channel->source < ChannelRegular || channel->source > ChannelSocket,
+  ZLOGFAIL(channel->source < ChannelRegular || channel->source > ChannelSocket,
       "'%s' isn't local file", channel->alias);
-  FailIf(channel->name[0] != '/', "only absolute path allowed");
-  FailIf(channel->source == ChannelCharacter
+  ZLOGFAIL(channel->name[0] != '/', "only absolute path allowed");
+  ZLOGFAIL(channel->source == ChannelCharacter
       && (channel->limits[PutsLimit] && channel->limits[GetsLimit]),
       "invalid channel limits");
 }
@@ -81,7 +81,7 @@ static void CharacterChannel(struct ChannelDesc* channel)
 
   /* open file */
   channel->socket = fopen(channel->name, mode);
-  FailIf(channel->socket == NULL, "cannot open channel %s", channel->name);
+  ZLOGFAIL(channel->socket == NULL, "cannot open channel %s", channel->name);
 
   /* set channel attributes */
   channel->size = 0;
@@ -110,22 +110,22 @@ static void RegularChannel(struct ChannelDesc* channel)
       channel->size = 0;
       if(STREQ(channel->name, DEV_NULL)) break;
       i = ftruncate(channel->handle, channel->limits[PutSizeLimit]);
-      FailIf(i != 0, "cannot preallocate '%s' channel", channel->alias);
+      ZLOGFAIL(i != 0, "cannot preallocate '%s' channel", channel->alias);
       break;
     case 3: /* cdr */
-      FailIf(channel->type != 1, "only cdr channels can have r/w access");
+      ZLOGFAIL(channel->type != 1, "only cdr channels can have r/w access");
 
       /* open the file and ensure that putpos is not greater than the file size */
       channel->handle = open(channel->name, O_RDWR|O_CREAT, S_IRWXU);
       channel->size = GetFileSize(channel->name);
-      FailIf(channel->putpos > channel->size,
+      ZLOGFAIL(channel->putpos > channel->size,
           "'%s' size is less then specified append position", channel->alias);
 
       /* file does not exist */
       if(channel->size == 0 && STRNEQ(channel->name, DEV_NULL))
       {
         i = ftruncate(channel->handle, channel->limits[PutSizeLimit]);
-        FailIf(i != 0, "cannot preallocate cdr channel");
+        ZLOGFAIL(i != 0, "cannot preallocate cdr channel");
         break;
       }
 
@@ -139,7 +139,7 @@ static void RegularChannel(struct ChannelDesc* channel)
       break;
   }
 
-  FailIf(channel->handle < 0, "preloaded file open error");
+  ZLOGFAIL(channel->handle < 0, "preloaded file open error");
 }
 
 /*
