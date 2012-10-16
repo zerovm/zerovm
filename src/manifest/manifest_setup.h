@@ -1,6 +1,5 @@
 /*
  * manifest setup API, zerovm help screen, useful defines
- * todo: move COND_ABORT() to appropriate space
  *
  *  Created on: Nov 30, 2011
  *      Author: d'b

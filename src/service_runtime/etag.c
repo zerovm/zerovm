@@ -22,7 +22,7 @@ void TagEngineCtor()
   tag_engine_enabled = 1;
   OpenSSL_add_all_digests();
   tag_type = EVP_get_digestbyname(TAG_ENCRYPTION);
-  COND_ABORT(tag_type == NULL, "cannot initialize tag type");
+  FailIf(tag_type == NULL, "cannot initialize tag type");
 }
 
 /* return the etag_enabled state */

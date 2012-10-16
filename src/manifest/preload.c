@@ -125,7 +125,7 @@ static void RegularChannel(struct ChannelDesc* channel)
       if(channel->size == 0 && STRNEQ(channel->name, DEV_NULL))
       {
         i = ftruncate(channel->handle, channel->limits[PutSizeLimit]);
-        COND_ABORT(i != 0, "cannot preallocate cdr channel");
+        FailIf(i != 0, "cannot preallocate cdr channel");
         break;
       }
 

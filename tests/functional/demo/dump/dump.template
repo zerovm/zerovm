@@ -1,18 +1,17 @@
 =====================================================================
-== "hello world" is not a test. just a demo.
+== dumps whole available user memory
 =====================================================================
-Channel = /dev/null, /dev/stdin, 0, 999999, 999999, 0, 0
-Channel = /dev/stdout, /dev/stdout, 0, 0, 0, 999999, 999999
-Channel = CURDIR/stderr.data, /dev/stderr, 0, 0, 0, 999999, 999999
+Channel = /dev/null, /dev/stdin, 0, 65536, 4194304, 0, 0
+Channel = CURDIR/stdout.data, /dev/stdout, 0, 0, 0, 134217728, 134217728
+Channel = /dev/null, /dev/stderr, 0, 0, 0, 65536, 4194304
 
 =====================================================================
 == switches for zerovm. some of them used to control nexe, some
 == for the internal zerovm needs
 =====================================================================
 Version = 09082012
-Nexe = hello.nexe
-NexeMax = 4121440
-NodeName = hello, 1
-MemMax = 268435456
-Timeout = 1
+Nexe = dump.nexe
+NexeMax = 4194304
+MemMax = 134217728
+Timeout = 5
 

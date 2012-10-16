@@ -50,15 +50,6 @@ EXTERN_C_BEGIN
         __FILE__, __LINE__, #bool_expr);\
       }\
     } while (0)
-/*
- * check condition 'cond' if false aborts zerovm with message 'msg'
- * WARNING: must not be defined as an empty macro! it used to run functions
- */
-#define COND_ABORT(cond, msg) \
-    if(cond) {\
-      NaClLog(LOG_ERROR, "%s:%d: %s\n", __FILE__, __LINE__, msg);\
-      NaClExit(1);\
-    }
 /* }} */
 
 /* initialize syslog with verbosity */
