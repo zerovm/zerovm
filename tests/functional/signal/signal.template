@@ -1,17 +1,17 @@
 =====================================================================
-== "determinism hole". the new channels design
-== following channels: stdin, stdout, stderr used
+== provokes signal
 =====================================================================
-Channel = /dev/null, /dev/stdin, 0, 999999, 999999, 0, 0
-Channel = stdout.data, /dev/stdout, 0, 0, 0, 999999, 999999
-Channel = /dev/null, /dev/stderr, 0, 0, 0, 999999, 999999
+Channel = /dev/null, /dev/stdin, 0, 65536, 4194304, 0, 0
+Channel = CURDIR/stdout.data, /dev/stdout, 0, 0, 0, 65536, 4194304
+Channel = /dev/null, /dev/stderr, 0, 0, 0, 65536, 4194304
 
 =====================================================================
 == switches for zerovm. some of them used to control nexe, some
 == for the internal zerovm needs
 =====================================================================
 Version = 09082012
-Nexe = random.nexe
-NexeMax = 10000000
-SyscallsMax = 3333
+Nexe = signal.nexe
+NexeMax = 4194304
+MemMax = 134217728
+Timeout = 5
 
