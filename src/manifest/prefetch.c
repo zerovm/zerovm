@@ -117,9 +117,9 @@ static struct ChannelConnection *nameservice = NULL;
  */
 static void FailOnInvalidNetChannel(const struct ChannelDesc *channel)
 {
-  COND_ABORT(channel->source != ChannelTCP, "protocol not supported");
-  COND_ABORT(channel->type != SGetSPut, "network channel must be sequential");
-  COND_ABORT(channel->limits[GetsLimit] && channel->limits[PutsLimit] != 0,
+  FailIf(channel->source != ChannelTCP, "protocol not supported");
+  FailIf(channel->type != SGetSPut, "network channel must be sequential");
+  FailIf(channel->limits[GetsLimit] && channel->limits[PutsLimit] != 0,
       "network channel must be read-only or write-only");
 }
 
@@ -131,13 +131,12 @@ static void FailOnInvalidNetChannel(const struct ChannelDesc *channel)
 inline static uint32_t MakeKey(const struct ChannelConnection *record)
 {
   uint32_t result;
-  NaClLog(LOG_SUICIDE, "%s; %s, %d: ", __FILE__, __func__, __LINE__);
+  ZLOG(LOG_INSANE, "MakeKey");
   assert(record != NULL);
 
   result = ((uint32_t)record->mark)<<24 ^ record->host;
-  NaClLog(LOG_SUICIDE, "%s; %s, %d: mark = %u, host = %u",
-      __FILE__, __func__, __LINE__, record->mark, record->host);
-  NaClLog(LOG_SUICIDE, "%s; %s, %d: result = %u", __FILE__, __func__, __LINE__, result);
+  ZLOG(LOG_INSANE, "mark = %u, host = %u", record->mark, record->host);
+  ZLOG(LOG_INSANE, "result = %u", result);
   return result;
 }
 
@@ -155,7 +154,7 @@ static void ParseURL(const struct ChannelDesc *channel, struct ChannelConnection
   assert(record != NULL);
   assert(channel->source == ChannelTCP);
 
-  NaClLog(LOG_SUICIDE, "%s; %s, %d: url = %s", __FILE__, __func__, __LINE__, channel->name);
+  ZLOG(LOG_INSANE, "url = %s", channel->name);
 
   /* copy the channel name aside and parse it */
   strncpy(name, channel->name, BIG_ENOUGH_SPACE);
@@ -174,7 +173,7 @@ static void ParseURL(const struct ChannelDesc *channel, struct ChannelConnection
   record->protocol = GetChannelProtocol(tokens[0]);
   record->port = ATOI(tokens[2]);
   record->host = record->port == 0 ? ATOI(tokens[1]) : bswap_32(inet_addr(tokens[1]));
-  COND_ABORT(record->host == 0 && record->port == 0, "invalid channel url");
+  FailIf(record->host == 0 && record->port == 0, "invalid channel url");
 
   /* mark the channel as "bind", "connect" or "outsider" */
   if(record->port != 0) record->mark = OUTSIDER_MARK;
@@ -193,9 +192,8 @@ static void MakeURL(char *url, const int32_t size,
   assert(channel != NULL);
   assert(channel->name != NULL);
 
-  COND_ABORT(record->host == 0 && record->port != 0,
-      "named host isn't supporting yet");
-  COND_ABORT(size < 6, "too short url buffer");
+  FailIf(record->host == 0 && record->port != 0, "named host isn't supporting yet");
+  FailIf(size < 6, "too short url buffer");
 
   /* create string containing ip or id as the host name */
   switch(record->mark)
@@ -204,15 +202,13 @@ static void MakeURL(char *url, const int32_t size,
     case BIND_MARK:
       snprintf(host, BIG_ENOUGH_SPACE, "*");
       break;
-
     case CONNECT_MARK:
     case OUTSIDER_MARK:
       ip.s_addr = bswap_32(record->host);
       snprintf(host, BIG_ENOUGH_SPACE, "%s", inet_ntoa(ip));
       break;
-
     default:
-      COND_ABORT(1, "unknown channel mark");
+      ZLOG(LOG_FATAL, "unknown channel mark");
       break;
   }
 
@@ -238,7 +234,7 @@ static void StoreChannelConnectionInfo(const struct ChannelDesc *channel)
 
   /* initiate the hash table if not yet */
   record = malloc(sizeof *record);
-  COND_ABORT(record == NULL, "cannot allocate memory to hold connection info");
+  FailIf(record == NULL, "cannot allocate memory to hold connection info");
 
   /* prepare and store the channel connection record */
   NaClLog(LOG_INFO, "validating channel with alias '%s'", channel->alias);
@@ -298,7 +294,7 @@ static void PrepareBind(struct ChannelDesc *channel)
   if(nameservice == NULL)
   {
     result = DoBind(channel);
-    COND_ABORT(result != 0, "cannot bind the channel");
+    FailIf(result != 0, "cannot bind the channel");
     return;
   }
 
@@ -310,7 +306,7 @@ static void PrepareBind(struct ChannelDesc *channel)
   if(record->port != 0)
   {
     result = DoBind(channel);
-    COND_ABORT(result != 0, "cannot bind the channel");
+    FailIf(result != 0, "cannot bind the channel");
     return;
   }
 
@@ -326,7 +322,7 @@ static void PrepareBind(struct ChannelDesc *channel)
     if(result == OK_CODE) break;
   }
 
-  COND_ABORT(result != OK_CODE, "cannot get the port to bind the channel");
+  FailIf(result != OK_CODE, "cannot get the port to bind the channel");
   NaClLog(LOG_DEBUG, "%s; %s, %d: host = %u, port = %u",
       __FILE__, __func__, __LINE__, record->host, record->port);
 }
@@ -367,10 +363,10 @@ static void PrepareConnect(struct ChannelDesc* channel)
     uint64_t hwm = 1; /* high water mark for PUSH socket to block on sending */
 
     result = zmq_setsockopt(channel->socket, ZMQ_HWM, &hwm, sizeof hwm);
-    COND_ABORT(result != 0, "cannot set high water mark");
+    FailIf(result != 0, "cannot set high water mark");
 
     result = DoConnect(channel);
-    COND_ABORT(result != 0, "cannot bind the channel");
+    FailIf(result != 0, "cannot bind the channel");
   }
 }
 
@@ -473,11 +469,11 @@ static int32_t SendParcel(char *parcel, const uint32_t size)
 
   /* send the parcel to the name server */
   result = sendto(ns_socket, parcel, size, 0, (void*)&ns, sizeof ns);
-  COND_ABORT(result == -1, "failed to send the parcel to the name server");
+  FailIf(result == -1, "failed to send the parcel to the name server");
 
   /* receive the parcel back */
   result = recvfrom(ns_socket, parcel, size, 0, (void*)&ns, &ns_len);
-  COND_ABORT(result == -1, "failed to receive the parcel from the name server");
+  FailIf(result == -1, "failed to receive the parcel from the name server");
   close(ns_socket);
 
   return result;
@@ -576,7 +572,7 @@ void KickPrefetchChannels(struct NaClApp *nap)
 
     /* bind or connect the channel and look at result */
     result = DoConnect(channel);
-    COND_ABORT(result != 0, "cannot connect socket to address");
+    FailIf(result != 0, "cannot connect socket to address");
   }
 
   /*
@@ -595,12 +591,12 @@ void KickPrefetchChannels(struct NaClApp *nap)
 /*
  * check for an error. if encountered put it to log and
  * exit from the current function with standard error code
- * should be used in the nexe runtime instead of COND_ABORT()
+ * should be used in the nexe runtime instead of FailIf()
  */
 #define ZMQ_TEST_STATE(code, msg_ptr) \
     if((code) != 0)\
     {\
-      NaClLog(LOG_ERROR, "zmq: error %d, %s\n",\
+      ZLOG(LOG_ERROR, "zmq: error %d, %s",\
               zmq_errno(), zmq_strerror(zmq_errno()));\
       zmq_msg_close(msg_ptr);\
       return ERR_CODE;\
@@ -637,7 +633,7 @@ static inline void NetCtor()
 
   /* get zmq context */
   context = zmq_init(1);
-  COND_ABORT(context == NULL, "cannot initialize zeromq context");
+  FailIf(context == NULL, "cannot initialize zeromq context");
 
   /*
    * initialize the name service table even if name service is not
@@ -646,7 +642,7 @@ static inline void NetCtor()
    * used the allocation can be removed
    */
   netlist = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, free);
-  COND_ABORT(netlist == NULL, "cannot allocate netlist");
+  FailIf(netlist == NULL, "cannot allocate netlist");
 
   /* get name service connection string if available */
   memset(&channel, 0, sizeof channel);
@@ -656,12 +652,12 @@ static inline void NetCtor()
 
   /* parse the given string and make url (static var) */
   nameservice = malloc(sizeof *nameservice);
-  COND_ABORT(nameservice == NULL, "cannot allocate memory to hold name server url");
+  FailIf(nameservice == NULL, "cannot allocate memory to hold name server url");
   ParseURL(&channel, nameservice);
-  COND_ABORT(nameservice->mark != OUTSIDER_MARK, "invalid name server type");
-  COND_ABORT(nameservice->host == 0, "invalid name server host");
-  COND_ABORT(nameservice->port == 0, "invalid name server port");
-  COND_ABORT(nameservice->protocol != ChannelUDP, "only udp supported for name server");
+  FailIf(nameservice->mark != OUTSIDER_MARK, "invalid name server type");
+  FailIf(nameservice->host == 0, "invalid name server host");
+  FailIf(nameservice->port == 0, "invalid name server port");
+  FailIf(nameservice->protocol != ChannelUDP, "only udp supported for name server");
 }
 
 /*
@@ -755,7 +751,7 @@ int PrefetchChannelCtor(struct ChannelDesc *channel)
   sock_type = channel->limits[GetsLimit]
       && channel->limits[GetSizeLimit] ? ZMQ_PULL : ZMQ_PUSH;
   channel->socket = zmq_socket(context, sock_type);
-  COND_ABORT(channel->socket == NULL, "cannot obtain socket");
+  FailIf(channel->socket == NULL, "cannot obtain socket");
 
   /* bind or connect the channel */
   if(sock_type == ZMQ_PUSH)

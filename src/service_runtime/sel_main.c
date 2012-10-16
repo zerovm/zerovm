@@ -48,7 +48,7 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
         break;
       case 's':
         nap->skip_validator = 1;
-        NaClLog(LOG_ERROR, "validation disabled by -s\n");
+        ZLOG(LOG_ERROR, "validation disabled by -s");
         break;
       case 'F':
         nap->fuzzing_quit_after_load = 1;
@@ -71,11 +71,11 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
         break;
       case 'Q':
         nap->skip_qualification = 1;
-        NaClLog(LOG_ERROR, "PLATFORM QUALIFICATION DISABLED BY -Q - "
-                "Native Client's sandbox will be unreliable!\n");
+        ZLOG(LOG_ERROR, "PLATFORM QUALIFICATION DISABLED BY -Q - "
+            "Native Client's sandbox will be unreliable!");
         break;
       default:
-        NaClLog(LOG_ERROR, "ERROR: unknown option: [%c]\n\n", opt);
+        ZLOG(LOG_ERROR, "ERROR: unknown option: [%c]", opt);
         puts(HELP_SCREEN);
         exit(1);
         break;
@@ -194,7 +194,7 @@ int main(int argc, char **argv)
     {
       errcode = pq_error;
       nap->module_load_status = pq_error;
-      NaClLog(LOG_ERROR, "Error while loading \"%s\": %s\n",
+      ZLOG(LOG_ERROR, "Error while loading \"%s\": %s",
           NULL != nap->system_manifest->nexe ?
               nap->system_manifest->nexe : "(no file, to-be-supplied-via-RPC)",
           NaClErrorString(errcode));
@@ -214,31 +214,30 @@ int main(int argc, char **argv)
 
   if(0 == GioMemoryFileSnapshotCtor(&main_file, nap->system_manifest->nexe))
   {
-    NaClLog(LOG_ERROR, "%s", strerror(errno));
-    NaClLog(LOG_FATAL, "Cannot open \"%s\".\n", nap->system_manifest->nexe);
+    ZLOG(LOG_ERROR, "%s", strerror(errno));
+    ZLOG(LOG_FATAL, "Cannot open '%s'", nap->system_manifest->nexe);
   }
   PERF_CNT("SnapshotNaclFile");
 
   /* validate untrusted code (nexe) */
   if(LOAD_OK == errcode)
   {
-    NaClLog(2, "Loading nacl file %s (non-RPC)\n", nap->system_manifest->nexe);
+    ZLOG(LOG_DEBUG, "Loading nacl file %s (non-RPC)\n", nap->system_manifest->nexe);
     errcode = NaClAppLoadFile((struct Gio *) &main_file, nap);
     if (LOAD_OK != errcode)
     {
-      NaClLog(LOG_ERROR, "Error while loading \"%s\": %s\n",
-              nap->system_manifest->nexe, NaClErrorString(errcode));
-      NaClLog(LOG_ERROR, ("Using the wrong type of nexe (nacl-x86-32"
-          " on an x86-64 or vice versa)\nor a corrupt nexe file may be"
-          " responsible for this error.\n"));
+      ZLOG(LOG_ERROR, "Error while loading '%s': %s", nap->system_manifest->nexe,
+          NaClErrorString(errcode));
+      ZLOG(LOG_ERROR, "Using the wrong type of nexe (nacl-x86-32 on an x86-64)");
+      ZLOG(LOG_ERROR, "or a corrupt nexe file may be responsible for this error");
     }
 
     PERF_CNT("AppLoadEnd");
     nap->module_load_status = errcode;
   }
 
-  if(-1 == (*((struct Gio *) &main_file)->vtbl->Close)((struct Gio *) &main_file))
-    NaClLog(LOG_ERROR, "Error while closing \"%s\".\n", nap->system_manifest->nexe);
+  if(-1 == (*((struct Gio *)&main_file)->vtbl->Close)((struct Gio *)&main_file))
+    ZLOG(LOG_ERROR, "Error while closing '%s'", nap->system_manifest->nexe);
 
   (*((struct Gio *) &main_file)->vtbl->Dtor)((struct Gio *) &main_file);
   if(nap->fuzzing_quit_after_load) NaClExit(0);
@@ -248,19 +247,19 @@ int main(int argc, char **argv)
 
   /* error reporting done; can quit now if there was an error earlier */
   if(LOAD_OK != errcode)
-    NaClLog(LOG_FATAL, "Not running app code since errcode is %s (%d)\n",
+    ZLOG(LOG_FATAL, "Not running app code since errcode is %s (%d)",
             NaClErrorString(errcode), errcode);
 
   PERF_CNT("CreateMainThread");
-
-  /* Make sure all the file buffers are flushed before entering the nexe */
-  fflush((FILE *) NULL);
 
   /*
    * "defence in depth" part
    * todo(): find a proper place for this call
    */
   LastDefenseLine(nap);
+
+  /* Make sure all the file buffers are flushed before entering the nexe */
+  fflush((FILE *) NULL);
 
   /* start accounting */
   AccountingCtor(nap);
@@ -270,7 +269,7 @@ int main(int argc, char **argv)
   {
     /* pass control to the user code */
     if(!NaClCreateMainThread(nap))
-      NaClLog(LOG_FATAL, "creating main thread failed\n");
+      ZLOG(LOG_FATAL, "switching to nexe failed");
   }
   PERF_CNT("WaitForMainThread");
   PERF_CNT("SelMainEnd");
