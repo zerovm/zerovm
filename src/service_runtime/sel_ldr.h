@@ -202,7 +202,7 @@ struct NaClApp {
   char                      zvm_state[SIGNAL_STRLEN + 1];
   int                       validation_state; /* needs for the report */
   int                       skip_qualification; /* startup time variable */
-  int                       fuzzing_quit_after_load; /* startup time variable */
+  int                       quit_after_load; /* startup time variable */
   int                       handle_signals; /* startup time variable */
   int64_t                   storage_limit; /* hard limit for all zerovm i/o */
   char                      user_tag[TAG_CONTEXT_SIZE]; /* tag context for memory and channels */

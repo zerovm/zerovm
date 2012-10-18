@@ -22,18 +22,30 @@
 #include "src/service_runtime/sel_qualify.h"
 #include "src/service_runtime/accounting.h"
 
+/* log zerovm command line */
+static void ZVMCommandLine(int argc, char **argv)
+{
+  char cmd[BIG_ENOUGH_SPACE];
+  int offset = 0;
+  int i;
+
+  offset += sprintf(cmd, "zerovm command line:");
+  for(i = 0; i < argc; ++i)
+    offset += snprintf(cmd + offset, BIG_ENOUGH_SPACE - offset, " %s", argv[i]);
+
+  ZLOGS(LOG_DEBUG, "%s", cmd);
+}
+
 /* parse given command line and initialize NaClApp object */
 static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
 {
-  char cmd[BIG_ENOUGH_SPACE];
   int opt;
-  int i;
   char *manifest_name = NULL;
   int verbosity = 0;
 
   /* set defaults */
   nap->skip_qualification = 0;
-  nap->fuzzing_quit_after_load = 0;
+  nap->quit_after_load = 0;
   nap->handle_signals = 1;
   nap->storage_limit = ZEROVM_IO_LIMIT;
 
@@ -50,7 +62,7 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
         ZLOG(LOG_ERROR, "validation disabled by -s");
         break;
       case 'F':
-        nap->fuzzing_quit_after_load = 1;
+        nap->quit_after_load = 1;
         break;
       case 'e':
         TagEngineCtor();
@@ -86,13 +98,7 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
   ZLogCtor(verbosity);
 
   /* show zerovm command line */
-  strcpy(cmd, "zerovm command line:");
-  for(i = 0; i < argc; ++i)
-  {
-    strncat(cmd, " ", BIG_ENOUGH_SPACE);
-    strncat(cmd, argv[i], BIG_ENOUGH_SPACE);
-  }
-  ZLOGS(LOG_DEBUG, "%s", cmd);
+  ZVMCommandLine(argc, argv);
 
   /* parse manifest file specified in cmdline */
   if(manifest_name == NULL)
@@ -240,7 +246,7 @@ int main(int argc, char **argv)
     ZLOG(LOG_ERROR, "Error while closing '%s'", nap->system_manifest->nexe);
 
   (*((struct Gio *) &main_file)->vtbl->Dtor)((struct Gio *) &main_file);
-  if(nap->fuzzing_quit_after_load) NaClExit(0);
+  if(nap->quit_after_load) NaClExit(0);
 
   /* setup zerovm from manifest */
   SystemManifestCtor(nap); /* needs dyn_array initialized */
@@ -249,8 +255,6 @@ int main(int argc, char **argv)
   if(LOAD_OK != errcode)
     ZLOG(LOG_FATAL, "Not running app code since errcode is %s (%d)",
             NaClErrorString(errcode), errcode);
-
-  PERF_CNT("CreateMainThread");
 
   /*
    * "defence in depth" part
@@ -265,6 +269,7 @@ int main(int argc, char **argv)
   AccountingCtor(nap);
 
   /* set user code trap() exit location */
+  PERF_CNT("CreateMainThread");
   if(setjmp(user_exit) == 0)
   {
     /* pass control to the user code */
