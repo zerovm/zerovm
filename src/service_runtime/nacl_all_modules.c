@@ -8,14 +8,12 @@
  * Gather ye all module initializations and finalizations here.
  */
 #include "src/desc/nrd_all_modules.h"
-#include "src/fault_injection/fault_injection.h"
 #include "src/service_runtime/nacl_globals.h"
 #include "src/service_runtime/nacl_syscall_handlers.h"
 
 void NaClAllModulesInit(void)
 {
   NaClNrdAllModulesInit();
-  NaClFaultInjectionModuleInit();
   NaClSyscallTableInit();
 }
 

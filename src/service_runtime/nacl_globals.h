@@ -11,7 +11,8 @@
 #ifndef NATIVE_CLIENT_SRC_TRUSTED_SERVICE_RUNTIME_NACL_GLOBALS_H__
 #define NATIVE_CLIENT_SRC_TRUSTED_SERVICE_RUNTIME_NACL_GLOBALS_H__
 
-#include <setjmp.h> /* d'b: need for trap() exit */
+#include <stdint.h>
+#include <setjmp.h>
 
 EXTERN_C_BEGIN
 

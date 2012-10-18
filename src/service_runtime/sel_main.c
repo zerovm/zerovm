@@ -12,7 +12,6 @@
 #include <errno.h>
 #include <glib.h>
 #include "src/gio/gio.h"
-#include "src/fault_injection/fault_injection.h"
 #include "src/perf_counter/nacl_perf_counter.h"
 #include "src/service_runtime/nacl_all_modules.h"
 #include "src/service_runtime/nacl_globals.h"
@@ -190,7 +189,7 @@ int main(int argc, char **argv)
   /* We use the signal handler to verify a signal took place. */
   if(nap->skip_qualification == 0)
   {
-    NaClErrorCode pq_error = NACL_FI_VAL("pq", NaClErrorCode, NaClRunSelQualificationTests());
+    NaClErrorCode pq_error = NaClRunSelQualificationTests();
     if(LOAD_OK != pq_error)
     {
       errcode = pq_error;
