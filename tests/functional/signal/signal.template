@@ -13,5 +13,5 @@ Version = 09082012
 Nexe = signal.nexe
 NexeMax = 4194304
 MemMax = 134217728
-Timeout = 5
+Timeout = 1
 

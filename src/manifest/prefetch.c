@@ -218,7 +218,7 @@ static void MakeURL(char *url, const int32_t size,
       StringizeChannelSourceType(record->protocol), host, record->port);
   url[size-1] = '\0';
 
-  NaClLog(LOG_SUICIDE, "%s; %s, %d: url = %s", __FILE__, __func__, __LINE__, url);
+  ZLOG(LOG_SUICIDE, "url = %s", url);
 }
 
 /*
@@ -237,7 +237,7 @@ static void StoreChannelConnectionInfo(const struct ChannelDesc *channel)
   ZLOGFAIL(record == NULL, "cannot allocate memory to hold connection info");
 
   /* prepare and store the channel connection record */
-  NaClLog(LOG_INFO, "validating channel with alias '%s'", channel->alias);
+  ZLOG(LOG_INFO, "validating channel with alias '%s'", channel->alias);
   FailOnInvalidNetChannel(channel);
   ParseURL(channel, record);
   g_hash_table_insert(netlist, GUINT_TO_POINTER(MakeKey(record)), record);
@@ -323,8 +323,7 @@ static void PrepareBind(struct ChannelDesc *channel)
   }
 
   ZLOGFAIL(result != OK_CODE, "cannot get the port to bind the channel");
-  NaClLog(LOG_DEBUG, "%s; %s, %d: host = %u, port = %u",
-      __FILE__, __func__, __LINE__, record->host, record->port);
+  ZLOG(LOG_DEBUG, "host = %u, port = %u", record->host, record->port);
 }
 
 /*
@@ -341,7 +340,7 @@ static int DoConnect(struct ChannelDesc* channel)
   assert(record != NULL);
 
   MakeURL(url, BIG_ENOUGH_SPACE, channel, record);
-  NaClLog(LOG_DEBUG, "%s; %s, %d: url = %s", __FILE__, __func__, __LINE__, url);
+  ZLOG(LOG_DEBUG, "url = %s", url);
   return zmq_connect(channel->socket, url);
 }
 
@@ -736,8 +735,7 @@ int PrefetchChannelCtor(struct ChannelDesc *channel)
   assert(channel->source == ChannelTCP);
 
   /* log parameters and channel internals */
-  NaClLog(LOG_DEBUG, "%s; %s, %d: alias = %s",
-      __FILE__, __func__, __LINE__, channel->alias);
+  ZLOG(LOG_DEBUG, "alias = %s", channel->alias);
 
   /* explicitly reset network regarded fields */
   channel->socket = NULL;
@@ -788,7 +786,7 @@ static inline void UpdateChannelState(struct ChannelDesc *channel)
     zmq_recv(channel->socket, &channel->msg, 0);
     channel->bufend = zmq_msg_size(&channel->msg);
     if(channel->bufend == 0) channel->eof = 1;
-    else NaClLog(LOG_ERROR, "invalid eof pattern detected");
+    else ZLOG(LOG_ERROR, "invalid eof pattern detected");
   }
 
   /* etag disabled */
@@ -868,8 +866,7 @@ int32_t SendMessage(struct ChannelDesc *channel, const char *buf, int32_t count)
    * todo(d'b): remove MakeURL. at least for verbosity < then LOG_DEBUG
    */
   MakeURL(url, BIG_ENOUGH_SPACE, channel, GetChannelConnectionInfo(channel));
-  NaClLog(LOG_DEBUG, "%s; %s, %d: alias = %s, url = %s",
-      __FILE__, __func__, __LINE__, channel->alias, url);
+  ZLOG(LOG_DEBUG, "alias = %s, url = %s", channel->alias, url);
 
   /* write EOF as a multi-part message if etag enabled */
   flag = channel->eof ? ZMQ_SNDMORE : 0;
@@ -934,8 +931,7 @@ int PrefetchChannelDtor(struct ChannelDesc *channel)
 
   /* log parameters and channel internals */
   MakeURL(url, BIG_ENOUGH_SPACE, channel, GetChannelConnectionInfo(channel));
-  NaClLog(LOG_DEBUG, "%s; %s, %d: alias = %s, url = %s",
-      __FILE__, __func__, __LINE__, channel->alias, url);
+  ZLOG(LOG_DEBUG, "alias = %s, url = %s", channel->alias, url);
 
   /* close "PUT" channel */
   if(channel->limits[PutsLimit] && channel->limits[PutSizeLimit])
@@ -971,9 +967,9 @@ int PrefetchChannelDtor(struct ChannelDesc *channel)
       TagDigest(channel->tag, local_digest);
       channel->digest[TAG_DIGEST_SIZE - 1] = '\0';
       if(memcmp(local_digest, channel->digest, TAG_DIGEST_SIZE - 1) == 0)
-        NaClLog(LOG_DEBUG, "channel %s is ok. tag = %s", channel->alias, local_digest);
+        ZLOG(LOG_DEBUG, "channel %s is ok. tag = %s", channel->alias, local_digest);
       else
-        NaClLog(LOG_ERROR, "channel %s is corrupted. tags = %s : %s",
+        ZLOG(LOG_ERROR, "channel %s is corrupted. tags = %s : %s",
             channel->alias, local_digest, channel->digest);
     }
 

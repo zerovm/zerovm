@@ -61,7 +61,7 @@ enum NaClSignalResult NaClSignalHandleAll(int signal, void *ctx) {
    */
   NaClSignalContextFromHandler(&sigCtx, ctx);
 
-  /* todo(d'b): restore registers to make it work */
+  /* set zvm state */
   SNPRINTF(gnap->zvm_state, SIGNAL_STRLEN,
       "Signal %d from %strusted code: Halting at 0x%lX", signal,
       NaClSignalContextIsUntrusted(&sigCtx) ? "un" : "", sigCtx.prog_ctr);

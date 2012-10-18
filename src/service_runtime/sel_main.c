@@ -68,6 +68,7 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
         break;
       case 'v':
         verbosity = ATOI(optarg);
+        verbosity = MAX(verbosity, 0);
         break;
       case 'Q':
         nap->skip_qualification = 1;
@@ -160,13 +161,13 @@ int main(int argc, char **argv)
   struct NaClPerfCounter time_all_main;
 
   /* d'b: initial settings */
-  /* todo(d'b): move to inline function and implicitly set all fields */
+  /* todo(d'b): move to inline function and explicitly set all fields */
   memset(nap, 0, sizeof *nap);
   nap->trusted_code = 1;
   nap->system_manifest = &sys_mft;
   memset(nap->system_manifest, 0, sizeof *nap->system_manifest);
   gnap = nap;
-  ZLogCtor(0); /* ### initial setting to make log working */
+  ZLogCtor(0); /* make log working */
   SetZVMState(nap, "nexe didn't start");
   NaClSignalHandlerInit();
 

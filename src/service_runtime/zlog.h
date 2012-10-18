@@ -22,16 +22,13 @@ EXTERN_C_BEGIN
 #define ZLOG ZLogTag(__FILE__, __LINE__), ZLog
 #define ZLOGIF ZLogTag(__FILE__, __LINE__), LogIf
 #define ZLOGFAIL ZLogTag(__FILE__, __LINE__), FailIf
-#define ZLOGS ZLogTag(NULL, -1), ZLog
+#define ZLOGS ZLogTag(NULL, 0), ZLog
 
 #define ZLOG_NAME "ZeroVM"
 #define ZLOG_OPTIONS (LOG_CONS | LOG_PID | LOG_NDELAY)
 #define ZLOG_PRIORITY LOG_USER
 #define TAG_FORMAT "%s %d: "
 #define LOG_MSG_LIMIT 0x1000
-#define FILENAME_LIMIT 0x100
-#define FILELINES_LIMIT 10
-#define TAG_LIMIT FILENAME_LIMIT + FILELINES_LIMIT + sizeof TAG_FORMAT
 #define LOWEST_VERBOSITY 1
 
 /* develop fix for verbosity level names */
@@ -50,7 +47,8 @@ EXTERN_C_BEGIN
 #define LOG_INFO    (2)
 #define LOG_WARNING (2)
 #define NaClLog ZLogTag(__FILE__, __LINE__), ZLog
-#define ErrIf LogIf
+
+/* assert with output to log */
 #define CHECK(bool_expr) \
   do {\
     if (!(bool_expr))\
@@ -67,13 +65,19 @@ void ZLogCtor(int v);
 /* close the log, reset verbosity level */
 void ZLogDtor();
 
-/* store file and line information to the log tag */
-char *ZLogTag(const char *file, int line);
+/*
+ * store file and line information to the log tag
+ * should be used from ZLOG, ZLOGS, ZLOGIF, ZLOGFAIL
+ */
+void ZLogTag(const char *file, int line);
 
-/* append stored debug information and log given message */
+/*
+ * append stored debug information and log given message
+ * should be used from ZLOG, ZLOGS
+ */
 void ZLog(int priority, char *fmt, ...);
 
-/* if condition is true, log and abort */
+/* if condition is true, log and abort. should be used from ZLOGFAIL */
 void FailIf(int cond, char const *fmt, ...);
 
 /* if condition is true, log and continue. should be used from ZLOGIF */

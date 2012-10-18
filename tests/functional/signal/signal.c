@@ -4,7 +4,7 @@
 #include <signal.h>
 #include "include/api_tools.h"
 
-#define SIGNALS_NUMBER
+#define SIGNALS_NUMBER 64
 #define RAISER 8
 
 void signal_na()
@@ -25,17 +25,29 @@ void signal_11()
   ZPRINTF(STDOUT, "falling.. %d\n", *(char*)NULL);
 }
 
+void signal_24()
+{
+  ZPRINTF(STDOUT, "invocation of signal #11\n");
+  for(;;);
+}
+
 /* initialize array of pointers to signal raisers */
 void signals_ctor(void (*raisers[])())
 {
+  int i;
+
+  for(i = 0; i < SIGNALS_NUMBER; ++i)
+    raisers[i] = signal_na;
+
   raisers[8] = signal_8;
   raisers[11] = signal_11;
+  raisers[24] = signal_24;
 }
 
 int main()
 {
   zvm_bulk = zvm_init();
-  void (*raisers[])()  = {signal_na};
+  void (*raisers[SIGNALS_NUMBER])();
 
   UNREFERENCED_VAR(errcount);
 

@@ -7,18 +7,17 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <assert.h>
 #include <stdarg.h>
 #include "src/platform/nacl_exit.h"
 #include "src/service_runtime/zlog.h"
 
 static int verbosity = LOWEST_VERBOSITY;
+static int zline = 0;
+static const char *zfile = NULL;
 
 /* initialize syslog */
 void ZLogCtor(int v)
 {
-  assert(v >= 0);
-
   verbosity = v + LOWEST_VERBOSITY;
   openlog(ZLOG_NAME, ZLOG_OPTIONS, ZLOG_PRIORITY);
 }
@@ -32,82 +31,54 @@ void ZLogDtor()
 
 /*
  * store file and line information to the log tag
- * note: if NULL given as "file" return previous tag
- *       if -1 given as "line" reset tag
  * note: should only be used from ZLOG macro
  * todo(d'b): find replacement for snprintf()
  */
-char *ZLogTag(const char *file, int line)
+void ZLogTag(const char *file, int line)
 {
-  static char msg[TAG_LIMIT];
-
-  /* reset tag */
-  if(line == -1) msg[0] = '\0';
-
-  /* construct tag */
-  if(file != NULL)
-  {
-    char *name = strrchr(file, '/');
-    name = name == NULL ? (char*)file : name + 1;
-    sprintf(msg, TAG_FORMAT, name, line);
-  }
-
-  return msg;
+  zline = line;
+  zfile = file;
 }
 
-/*
- * todo(d'b): ZLog(), FailIf() and LogIf consist almost of the same
- * code find the solution how to reduce/remove the code doubling
- */
+#define ZLO(cond, final) \
+  do {\
+    char msg[LOG_MSG_LIMIT];\
+    int offset = 0;\
+    va_list ap;\
+\
+    if(cond) return;\
+\
+   /* construct log message */\
+    va_start(ap, fmt);\
+    if(zfile != NULL)\
+      offset = sprintf(msg, TAG_FORMAT, zfile, zline);\
+    vsprintf(msg + offset, fmt, ap);\
+    va_end(ap);\
+\
+    /* log the message */\
+    syslog(ZLOG_PRIORITY, "%s", msg);\
+\
+    /* finalizing action */\
+    final;\
+  } while(0)
 
 /*
- * append tag and put given message to syslog
+ * append tag (if data is available) and put the message to syslog
  * note: should only be used from ZLOG macro
  */
 void ZLog(int priority, char *fmt, ...)
 {
-  char msg[LOG_MSG_LIMIT];
-  va_list ap;
-
-  /* skip insignificant messages */
-  if(priority >= verbosity) return;
-
-  va_start(ap, fmt);
-  vsprintf(msg, fmt, ap);
-  va_end(ap);
-  syslog(ZLOG_PRIORITY, "%s%s", ZLogTag(NULL, 0), msg);
-
-  /* abort if fail occurred */
-  if(priority == LOG_FATAL) NaClAbort();
+  ZLO(priority >= verbosity, if(priority == LOG_FATAL) NaClAbort());
 }
 
 /* if condition is true, log and abort */
 void FailIf(int cond, char const *fmt, ...)
 {
-  char msg[LOG_MSG_LIMIT];
-  va_list ap;
-
-  /* skip false conditions */
-  if(!cond) return;
-
-  va_start(ap, fmt);
-  vsprintf(msg, fmt, ap);
-  va_end(ap);
-  syslog(ZLOG_PRIORITY, "%s %s", ZLogTag(NULL, 0), msg);
-  NaClAbort();
+  ZLO(!cond, NaClAbort());
 }
 
 /* if condition is true, log and continue */
 void LogIf(int cond, char const *fmt, ...)
 {
-  char msg[LOG_MSG_LIMIT];
-  va_list ap;
-
-  /* skip false conditions */
-  if(!cond) return;
-
-  va_start(ap, fmt);
-  vsprintf(msg, fmt, ap);
-  va_end(ap);
-  syslog(ZLOG_PRIORITY, "%s %s", ZLogTag(NULL, 0), msg);
+  ZLO(!cond, return);
 }

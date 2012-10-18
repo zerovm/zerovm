@@ -20,23 +20,19 @@
 /* lower zerovm priority */
 static void LowerOwnPriority()
 {
-  if(setpriority(PRIO_PROCESS, 0, ZEROVM_PRIORITY) != 0)
-    NaClLog(LOG_ERROR, "cannot lower zerovm priority");
+  ZLOGIF(setpriority(PRIO_PROCESS, 0, ZEROVM_PRIORITY) != 0,
+      "cannot lower zerovm priority");
 }
 
 /* put zerovm in a "jail" */
 static void ChrootJail()
 {
-  NaClLog(LOG_DEBUG, "'chrooting' zerovm to %s", NEW_ROOT);
-  if(chdir(NEW_ROOT) != 0)
-    NaClLog(LOG_ERROR, "cannot 'chdir' zerovm");
-
-  if(chroot(NEW_ROOT) != 0)
-    NaClLog(LOG_ERROR, "cannot 'chroot' zerovm");
+  ZLOG(LOG_DEBUG, "'chrooting' zerovm to %s", NEW_ROOT);
+  ZLOGIF(chdir(NEW_ROOT) != 0, "cannot 'chdir' zerovm");
+  ZLOGIF(chroot(NEW_ROOT) != 0, "cannot 'chroot' zerovm");
 }
 
 /* limit zerovm i/o */
-/* todo(d'b): calculate limit from channels */
 static void LimitOwnIO(struct NaClApp *nap)
 {
   struct rlimit rl;
@@ -44,11 +40,9 @@ static void LimitOwnIO(struct NaClApp *nap)
   assert(nap != NULL);
   assert(nap->storage_limit > 0);
 
-  if(getrlimit(RLIMIT_FSIZE, &rl) != 0)
-    NaClLog(LOG_ERROR, "cannot get i/o limits");
+  ZLOGIF(getrlimit(RLIMIT_FSIZE, &rl) != 0, "cannot get i/o limits");
   rl.rlim_cur = nap->storage_limit;
-  if(setrlimit(RLIMIT_FSIZE, &rl) != 0)
-    NaClLog(LOG_ERROR, "cannot set i/o limits");
+  ZLOGIF(setrlimit(RLIMIT_FSIZE, &rl) != 0, "cannot set i/o limits");
 }
 
 /* limit heap and stack available for zerovm */
@@ -58,8 +52,7 @@ static void LimitOwnMemory()
 #if 0
   int result;
 
-  if(result != 0)
-    NaClLog(LOG_ERROR, "cannot limit zerovm i/o");
+  ZLOGIF(result != 0, "cannot limit zerovm i/o");
 #endif
 }
 
@@ -80,8 +73,7 @@ static void DisableSuperUser()
   }
 
   // ###
-  if(result != 0)
-    NaClLog(LOG_ERROR, "cannot disable super user");
+  ZLOGIF(result != 0, "cannot disable super user");
 #endif
 }
 
@@ -191,7 +183,7 @@ static void SetNodeName(struct NaClApp *nap)
   }
 
   /* put node name and id to the log */
-  NaClLog(LOG_DEBUG, "node name = %s, node id = %d",
+  ZLOG(LOG_DEBUG, "node name = %s, node id = %d",
       nap->system_manifest->cmd_line[0], nap->node_id);
 }
 
@@ -391,6 +383,7 @@ int ProxyReport(struct NaClApp *nap)
   assert(nap->system_manifest != NULL);
 
   /* tag user memory and channels */
+  /* bug: if user memory is not set up zvm crashes */
   if(TagEngineEnabled())
   {
     ChannelsDigest(nap);
@@ -419,7 +412,7 @@ int ProxyReport(struct NaClApp *nap)
       "validator state = %d, user return code = %d, etag = %s, accounting = %s, "
       "exit state = %s", nap->validation_state,
       nap->system_manifest->user_ret_code, etag, nap->accounting, nap->zvm_state);
-  NaClLog(LOG_INFO, "%s", report);
+  ZLOG(LOG_INFO, "%s", report);
 
   return i == length ? OK_CODE : ERR_CODE;
 }
