@@ -27,7 +27,7 @@ static void LowerOwnPriority()
 /* put zerovm in a "jail" */
 static void ChrootJail()
 {
-  ZLOG(LOG_DEBUG, "'chrooting' zerovm to %s", NEW_ROOT);
+  ZLOGS(LOG_DEBUG, "'chrooting' zerovm to %s", NEW_ROOT);
   ZLOGIF(chdir(NEW_ROOT) != 0, "cannot 'chdir' zerovm");
   ZLOGIF(chroot(NEW_ROOT) != 0, "cannot 'chroot' zerovm");
 }
@@ -101,7 +101,7 @@ static void PreallocateUserMemory(struct NaClApp *nap)
   assert(nap->system_manifest != NULL);
 
   /* quit function if max_mem is not specified in manifest */
-  ZLOGFAIL(nap->heap_end == 0, "user heap size in not specified in manifest");
+  ZLOGFAIL(nap->heap_end == 0, EFAULT, "user heap size in not specified in manifest");
 
   /* calculate user heap size (must be allocated next to the data_end) */
   p = (void*)NaClRoundAllocPage(nap->data_end);
@@ -111,7 +111,7 @@ static void PreallocateUserMemory(struct NaClApp *nap)
   /* since 4gb of user space is already allocated just set protection to the heap */
   p = (void*)NaClUserToSys(nap, (uintptr_t)p);
   i = NaCl_mprotect(p, heap, PROT_READ | PROT_WRITE);
-  ZLOGFAIL(0 != i, "cannot set protection on user heap");
+  ZLOGFAIL(0 != i, -i, "cannot set protection on user heap");
   nap->heap_end = (uintptr_t)p + heap;
 }
 
@@ -132,9 +132,9 @@ static void SetCustomAttributes(struct SystemManifest *policy)
 
   /* parse and check count of attributes */
   count = ParseValue(environment, ", \t", tokens, BIG_ENOUGH_SPACE);
-  ZLOGFAIL(count % 2 != 0, "odd number of user environment variables");
-  ZLOGFAIL(count == 0, "invalid user environment");
-  ZLOGFAIL(count == BIG_ENOUGH_SPACE, "user environment exceeded the limit");
+  ZLOGFAIL(count % 2 != 0, EFAULT, "odd number of user environment variables");
+  ZLOGFAIL(count == 0, EFAULT, "invalid user environment");
+  ZLOGFAIL(count == BIG_ENOUGH_SPACE, EFAULT, "user environment exceeded the limit");
 
   /* allocate space to hold string pointers */
   count >>= 1;
@@ -148,7 +148,7 @@ static void SetCustomAttributes(struct SystemManifest *policy)
     int length = strlen(key) + strlen(value) + 1 + 1; /* + '=' + '\0' */
 
     policy->envp[i] = calloc(length + 1, sizeof(*policy->envp[0]));
-    ZLOGFAIL(policy->envp[i] == NULL, "cannot allocate memory for custom attribute");
+    ZLOGFAIL(policy->envp[i] == NULL, ENOMEM, "cannot allocate memory for custom attribute");
     sprintf(policy->envp[i], "%s=%s", key, value);
   }
 }
@@ -174,16 +174,16 @@ static void SetNodeName(struct NaClApp *nap)
   else
   {
     i = ParseValue(pgm_name, ",", tokens, BIG_ENOUGH_SPACE);
-    ZLOGFAIL(i != 2, "invalid NodeName specified");
-    ZLOGFAIL(tokens[0] == NULL, "invalid node name");
-    ZLOGFAIL(tokens[1] == NULL, "invalid node id");
+    ZLOGFAIL(i != 2, EFAULT, "invalid NodeName specified");
+    ZLOGFAIL(tokens[0] == NULL, EFAULT, "invalid node name");
+    ZLOGFAIL(tokens[1] == NULL, EFAULT, "invalid node id");
     nap->system_manifest->cmd_line[0] = tokens[0];
     nap->node_id = ATOI(tokens[1]);
-    ZLOGFAIL(nap->node_id == 0, "node id must be > 0");
+    ZLOGFAIL(nap->node_id == 0, EFAULT, "node id must be > 0");
   }
 
   /* put node name and id to the log */
-  ZLOG(LOG_DEBUG, "node name = %s, node id = %d",
+  ZLOGS(LOG_DEBUG, "node name = %s, node id = %d",
       nap->system_manifest->cmd_line[0], nap->node_id);
 }
 
@@ -205,8 +205,8 @@ static void SetCommandLine(struct SystemManifest *policy)
   if(parameters != NULL)
   {
     policy->cmd_line_size = ParseValue(parameters, " \t", tokens, BIG_ENOUGH_SPACE);
-    ZLOGFAIL(policy->cmd_line_size == 0, "invalid user parameters");
-    ZLOGFAIL(policy->cmd_line_size == BIG_ENOUGH_SPACE, "too long user command line");
+    ZLOGFAIL(policy->cmd_line_size == 0, EFAULT, "invalid user parameters");
+    ZLOGFAIL(policy->cmd_line_size == BIG_ENOUGH_SPACE, EFAULT, "too long user command line");
   }
 
   /*
@@ -215,7 +215,7 @@ static void SetCommandLine(struct SystemManifest *policy)
    */
   ++policy->cmd_line_size;
   policy->cmd_line = calloc(policy->cmd_line_size + 1, sizeof *policy->cmd_line);
-  ZLOGFAIL(policy->cmd_line == NULL,
+  ZLOGFAIL(policy->cmd_line == NULL, ENOMEM,
       "cannot allocate memory for user command line parameters");
 
   /* populate command line arguments array with pointers */
@@ -231,11 +231,11 @@ static void SetTimeout(struct SystemManifest *policy)
   assert(policy != NULL);
 
   GET_INT_BY_KEY(policy->timeout, "Timeout");
-  ZLOGFAIL(policy->timeout < 1, "invalid or absent timeout");
+  ZLOGFAIL(policy->timeout < 1, EFAULT, "invalid or absent timeout");
   rl.rlim_cur = policy->timeout;
   rl.rlim_max = -1;
   setrlimit(RLIMIT_CPU, &rl);
-  ZLOGFAIL(setrlimit(RLIMIT_CPU, &rl) != 0, "cannot set timeout");
+  ZLOGFAIL(setrlimit(RLIMIT_CPU, &rl) != 0, errno, "cannot set timeout");
 }
 
 /* construct system_manifest object and initialize it from manifest */
@@ -271,15 +271,15 @@ void SystemManifestCtor(struct NaClApp *nap)
   }
 
   /* check mandatory manifest keys */
-  ZLOGFAIL(nap->system_manifest->version == NULL,
+  ZLOGFAIL(nap->system_manifest->version == NULL, EFAULT,
       "the manifest version is not provided");
   ZLOGFAIL(STRCMP(nap->system_manifest->version, MANIFEST_VERSION),
-      "manifest version not supported");
-  ZLOGFAIL(nap->system_manifest->nexe == NULL, "nexe name not provided");
+      EFAULT, "manifest version not supported");
+  ZLOGFAIL(nap->system_manifest->nexe == NULL, EFAULT, "nexe name not provided");
   size = GetFileSize(nap->system_manifest->nexe);
-  ZLOGFAIL(size < 0, "invalid nexe");
+  ZLOGFAIL(size < 0, EIO, "invalid nexe");
   if(nap->system_manifest->nexe_max)
-    ZLOGFAIL(nap->system_manifest->nexe_max < size, "nexe size = %d", size);
+    ZLOGFAIL(nap->system_manifest->nexe_max < size, EFBIG, "nexe size = %d", size);
   SetTimeout(policy);
 
   /*
@@ -412,7 +412,7 @@ int ProxyReport(struct NaClApp *nap)
       "validator state = %d, user return code = %d, etag = %s, accounting = %s, "
       "exit state = %s", nap->validation_state,
       nap->system_manifest->user_ret_code, etag, nap->accounting, nap->zvm_state);
-  ZLOG(LOG_INFO, "%s", report);
+  ZLOGS(LOG_DEBUG, "%s", report);
 
   return i == length ? OK_CODE : ERR_CODE;
 }

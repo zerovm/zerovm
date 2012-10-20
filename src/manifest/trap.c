@@ -19,7 +19,7 @@ static int32_t ZVMExitHandle(struct NaClApp *nap, int32_t code)
 {
   assert(nap != NULL);
   nap->system_manifest->user_ret_code = code;
-  ZLOG(LOG_DEBUG, "Exit syscall handler: %d\n", code);
+  ZLOGS(LOG_DEBUG, "Exit syscall handler: %d\n", code);
   longjmp(user_exit, code);
 
   return code; /* prevent compiler warning. not reached */
@@ -117,7 +117,7 @@ int32_t ZVMReadHandle(struct NaClApp *nap,
   tail = channel->limits[GetSizeLimit] - channel->counters[GetSizeLimit];
   if(size > tail) size = tail;
   if(size < 1) return -EDQUOT;
-  ZLOG(LOG_DEBUG, "channel %s, buffer=0x%lx, size=%d, offset=%ld\n",
+  ZLOGS(LOG_DEBUG, "channel %s, buffer=0x%lx, size=%d, offset=%ld\n",
       channel->alias, (intptr_t)buffer, size, offset);
 
   /* read data and update position */
@@ -137,7 +137,7 @@ int32_t ZVMReadHandle(struct NaClApp *nap,
       if(retcode == -1) retcode = -EIO;
       break;
     default: /* design error */
-      ZLOGFAIL(1, "invalid channel source");
+      ZLOGFAIL(1, EFAULT, "invalid channel source");
       break;
   }
 
@@ -212,7 +212,7 @@ int32_t ZVMWriteHandle(struct NaClApp *nap,
   if(offset >= channel->size + tail) return -EINVAL;
   if(size > tail) size = tail;
   if(size < 1) return -EDQUOT;
-  ZLOG(LOG_DEBUG, "channel %s, buffer=0x%lx, size=%d, offset=%ld\n",
+  ZLOGS(LOG_DEBUG, "channel %s, buffer=0x%lx, size=%d, offset=%ld\n",
       channel->alias, (intptr_t)buffer, size, offset);
 
   /* write data and update position */
@@ -231,7 +231,7 @@ int32_t ZVMWriteHandle(struct NaClApp *nap,
       if(retcode == -1) retcode = -EIO;
       break;
     default: /* design error */
-      ZLOG(LOG_FATAL, "invalid channel source");
+      ZLOGFAIL(1, EFAULT, "invalid channel source");
       break;
   }
 
@@ -432,7 +432,7 @@ int32_t TrapHandler(struct NaClApp *nap, uint32_t args)
    * note: cannot set "trap error"
    */
   sys_args = (uint64_t*)NaClUserToSys(nap, (uintptr_t) args);
-  ZLOG(LOG_DEBUG, "%s called", FunctionNameById(sys_args[0]));
+  ZLOGS(LOG_DEBUG, "%s called", FunctionNameById(sys_args[0]));
 
   switch(*sys_args)
   {
@@ -468,6 +468,6 @@ int32_t TrapHandler(struct NaClApp *nap, uint32_t args)
       break;
   }
 
-  ZLOG(LOG_DEBUG, "%s returned %d", FunctionNameById(sys_args[0]), retcode);
+  ZLOGS(LOG_DEBUG, "%s returned %d", FunctionNameById(sys_args[0]), retcode);
   return retcode;
 }

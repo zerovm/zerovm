@@ -40,7 +40,7 @@ void ZLogTag(const char *file, int line)
   zfile = file;
 }
 
-#define ZLO(cond, final) \
+#define ZLO(cond) \
   do {\
     char msg[LOG_MSG_LIMIT];\
     int offset = 0;\
@@ -57,9 +57,6 @@ void ZLogTag(const char *file, int line)
 \
     /* log the message */\
     syslog(ZLOG_PRIORITY, "%s", msg);\
-\
-    /* finalizing action */\
-    final;\
   } while(0)
 
 /*
@@ -68,17 +65,19 @@ void ZLogTag(const char *file, int line)
  */
 void ZLog(int priority, char *fmt, ...)
 {
-  ZLO(priority >= verbosity, if(priority == LOG_FATAL) NaClAbort());
+  ZLO(priority >= verbosity);
+  if(priority == LOG_FATAL) NaClAbort();
 }
 
 /* if condition is true, log and abort */
-void FailIf(int cond, char const *fmt, ...)
+void FailIf(int cond, int err, char const *fmt, ...)
 {
-  ZLO(!cond, NaClAbort());
+  ZLO(!cond);
+  NaClExit(err);
 }
 
 /* if condition is true, log and continue */
 void LogIf(int cond, char const *fmt, ...)
 {
-  ZLO(!cond, return);
+  ZLO(!cond);
 }

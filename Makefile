@@ -6,13 +6,13 @@ CXXFLAGS0=-m64 -Wno-variadic-macros
 TESTFLAGS=-Llib/gtest -lgtest -lzmq -lrt -ldl -lpthread -lglib-2.0 -lssl -lcrypto
 
 # RELEASE BUILD
-CCFLAGS=-DNDEBUG -O3 -s $(CCFLAGS0)
-CXXFLAGS=-DNDEBUG -O3 -s
+#CCFLAGS=-DNDEBUG -O3 -s $(CCFLAGS0)
+#CXXFLAGS=-DNDEBUG -O3 -s
 
 # DEBUG BUILD
 #COVFLAGS=--coverage
-#CCFLAGS=-DDEBUG -g $(CCFLAGS0) ${COVFLAGS}
-#CXXFLAGS=-DDEBUG -g ${COVFLAGS}
+CCFLAGS=-DDEBUG -g $(CCFLAGS0) ${COVFLAGS}
+CXXFLAGS=-DDEBUG -g ${COVFLAGS}
 
 CCFLAGS1=-std=gnu99 -Wdeclaration-after-statement $(FLAGS0) $(CCFLAGS)
 CCFLAGS2=-Wextra -Wswitch-enum -Wsign-compare $(CCFLAGS)

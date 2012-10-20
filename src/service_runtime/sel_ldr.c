@@ -64,16 +64,18 @@ int NaClAppCtor(struct NaClApp *nap) {
  * unaligned little-endian load.  precondition: nbytes should never be
  * more than 8.
  */
-static uint64_t NaClLoadMem(uintptr_t addr,
-                            size_t    user_nbytes) {
-  uint64_t      value = 0;
+static uint64_t NaClLoadMem(uintptr_t addr, size_t user_nbytes)
+{
+  uint64_t value = 0;
 
-  CHECK(0 != user_nbytes && user_nbytes <= 8);
+  ZLOGFAIL(0 == user_nbytes || user_nbytes > 8, EFAULT, FAILED_MSG);
 
-  do {
+  do
+  {
     value = value << 8;
-    value |= ((uint8_t *) addr)[--user_nbytes];
-  } while (user_nbytes > 0);
+    value |= ((uint8_t *)addr)[--user_nbytes];
+  } while(user_nbytes > 0);
+
   return value;
 }
 
@@ -86,18 +88,16 @@ GENERIC_LOAD(64)
 
 #undef GENERIC_LOAD
 
-/*
- * unaligned little-endian store
- */
-static void NaClStoreMem(uintptr_t  addr,
-                         size_t     nbytes,
-                         uint64_t   value) {
+/* unaligned little-endian store */
+static void NaClStoreMem(uintptr_t addr, size_t nbytes, uint64_t value)
+{
   size_t i;
 
-  CHECK(nbytes <= 8);
+  ZLOGFAIL(nbytes > 8, EFAULT, FAILED_MSG);
 
-  for (i = 0; i < nbytes; ++i) {
-    ((uint8_t *) addr)[i] = (uint8_t) value;
+  for(i = 0; i < nbytes; ++i)
+  {
+    ((uint8_t *)addr)[i] = (uint8_t)value;
     value = value >> 8;
   }
 }
@@ -172,11 +172,7 @@ void  NaClLoadTrampoline(struct NaClApp *nap) {
   int         i;
   uintptr_t   addr;
 
-#if NACL_ARCH(NACL_BUILD_ARCH) == NACL_x86 && NACL_BUILD_SUBARCH == 64
-  if (!NaClMakeDispatchThunk(nap)) {
-    NaClLog(LOG_FATAL, "NaClMakeDispatchThunk failed!\n");
-  }
-#endif
+  ZLOGFAIL(!NaClMakeDispatchThunk(nap), EFAULT, "NaClMakeDispatchThunk failed!\n");
   NaClFillTrampolineRegion(nap);
 
   /*
@@ -190,7 +186,7 @@ void  NaClLoadTrampoline(struct NaClApp *nap) {
   num_syscalls = ((NACL_TRAMPOLINE_END - NACL_SYSCALL_START_ADDR)
                   / NACL_SYSCALL_BLOCK_SIZE) - 1;
 
-  NaClLog(2, "num_syscalls = %d (0x%x)\n", num_syscalls, num_syscalls);
+  ZLOGS(LOG_DEBUG, "num_syscalls = %d (0x%x)", num_syscalls, num_syscalls);
 
   for (i = 0, addr = nap->mem_start + NACL_SYSCALL_START_ADDR;
        i < num_syscalls;

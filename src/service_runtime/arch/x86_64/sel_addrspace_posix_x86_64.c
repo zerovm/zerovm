@@ -23,79 +23,48 @@
  *
  * Returns the aligned region on success, or NULL on failure.
  */
-static void *NaClAllocatePow2AlignedMemory(size_t mem_sz,
-                                           size_t log_alignment) {
+static void *NaClAllocatePow2AlignedMemory(size_t mem_sz, size_t log_alignment)
+{
   uintptr_t pow2align;
-  size_t    request_sz;
-  void      *mem_ptr;
+  size_t request_sz;
+  void *mem_ptr;
   uintptr_t orig_addr;
   uintptr_t rounded_addr;
-  size_t    extra;
+  size_t extra;
 
-  pow2align = ((uintptr_t) 1) << log_alignment;
-
+  pow2align = ((uintptr_t)1) << log_alignment;
   request_sz = mem_sz + pow2align;
-
-  NaClLog(4,
-          "%"MSGWIDTH"s %016"NACL_PRIxS"\n",
-          " Ask:",
-          request_sz);
+  ZLOG(LOG_INSANE, "%25s %016lx", " Ask:", request_sz);
 
   /* d'b: try to get the fixed address r15 (user base register) */
-  mem_ptr = mmap(R15_CONST, request_sz, PROT_NONE, ABSOLUTE_MMAP, -1, (off_t) 0);
-  if (MAP_FAILED == mem_ptr)
+  mem_ptr = mmap(R15_CONST, request_sz, PROT_NONE, ABSOLUTE_MMAP, -1, (off_t)0);
+  if(MAP_FAILED == mem_ptr)
   {
-    NaClLog(LOG_ERROR, "the base register absolute address allocation failed!");
-    NaClLog(LOG_ERROR, "trying to allocate user space in NOT DETERMINISTIC WAY");
-    mem_ptr = mmap(NULL, request_sz, PROT_NONE, RELATIVE_MMAP, -1, (off_t) 0);
+    ZLOG(LOG_ERROR, "the base register absolute address allocation failed!"
+        " trying to allocate user space in NOT DETERMINISTIC WAY");
+    mem_ptr = mmap(NULL, request_sz, PROT_NONE, RELATIVE_MMAP, -1, (off_t)0);
+    if(MAP_FAILED == mem_ptr) return NULL;
   }
 
-  if (MAP_FAILED == mem_ptr) {
-    return NULL;
-  }
-  orig_addr = (uintptr_t) mem_ptr;
-
-  NaClLog(4,
-          "%"MSGWIDTH"s %016"NACL_PRIxPTR"\n",
-          "orig memory at",
-          orig_addr);
+  orig_addr = (uintptr_t)mem_ptr;
+  ZLOG(LOG_INSANE, "%25s %016lx", "orig memory at", orig_addr);
 
   rounded_addr = (orig_addr + (pow2align - 1)) & ~(pow2align - 1);
   extra = rounded_addr - orig_addr;
-
-  if (0 != extra) {
-    NaClLog(4,
-            "%"MSGWIDTH"s %016"NACL_PRIxPTR", %016"NACL_PRIxS"\n",
-            "Freeing front:",
-            orig_addr,
-            extra);
-    if (-1 == munmap((void *) orig_addr, extra)) {
-      NaClLog(LOG_ERROR, "munmap (front)");
-      NaClLog(LOG_ERROR, "%s", strerror(errno));
-      NaClLog(LOG_FATAL,
-              "NaClAllocatePow2AlignedMemory: munmap front failed\n");
-    }
+  if(0 != extra)
+  {
+    ZLOG(LOG_INSANE, "%25s %016lx, %016lx", "Freeing front:", orig_addr, extra);
+    ZLOGFAIL(-1 == munmap((void *)orig_addr, extra), errno, "munmap front failed");
   }
 
   extra = pow2align - extra;
-  if (0 != extra) {
-    NaClLog(4,
-            "%"MSGWIDTH"s %016"NACL_PRIxPTR", %016"NACL_PRIxS"\n",
-            "Freeing tail:",
-            rounded_addr + mem_sz,
-            extra);
-    if (-1 == munmap((void *) (rounded_addr + mem_sz),
-         extra)) {
-      NaClLog(LOG_ERROR, "munmap (end)");
-      NaClLog(LOG_ERROR, "%s", strerror(errno));
-      NaClLog(LOG_FATAL,
-              "NaClAllocatePow2AlignedMemory: munmap tail failed\n");
-    }
+  if(0 != extra)
+  {
+    ZLOG(LOG_INSANE, "%25s %016lx, %016lx", "Freeing tail:", rounded_addr + mem_sz, extra);
+    ZLOGFAIL(-1 == munmap((void *)(rounded_addr + mem_sz), extra), errno, "munmap tail failed");
   }
-  NaClLog(4,
-          "%"MSGWIDTH"s %016"NACL_PRIxPTR"\n",
-          "Aligned memory:",
-          rounded_addr);
+
+  ZLOG(LOG_INSANE, "%25s %016lx", "Aligned memory:", rounded_addr);
 
   /*
    * we could also mmap again at rounded_addr w/o MAP_NORESERVE etc to
@@ -104,38 +73,34 @@ static void *NaClAllocatePow2AlignedMemory(size_t mem_sz,
    * reserved, as in Windows MEM_RESERVE without MEM_COMMIT.
    */
 
-  return (void *) rounded_addr;
+  return (void *)rounded_addr;
 }
 
-NaClErrorCode NaClAllocateSpace(void **mem, size_t addrsp_size) {
-  size_t        mem_sz = 2 * GUARDSIZE + FOURGIG;  /* 40G guard on each side */
-  size_t        log_align = ALIGN_BITS;
-  void          *mem_ptr;
+NaClErrorCode NaClAllocateSpace(void **mem, size_t addrsp_size)
+{
+  size_t mem_sz = 2 * GUARDSIZE + FOURGIG; /* 40G guard on each side */
+  size_t log_align = ALIGN_BITS;
+  void *mem_ptr;
 
-  NaClLog(4, "NaClAllocateSpace(*, 0x%016"NACL_PRIxS" bytes).\n",
-          addrsp_size);
-
-  CHECK(addrsp_size == FOURGIG);
+  ZLOG(LOG_INSANE, "NaClAllocateSpace(*, 0x%016lx bytes)", addrsp_size);
+  ZLOGFAIL(addrsp_size != FOURGIG, EFAULT, "addrsp_size != FOURGIG");
 
   errno = 0;
   mem_ptr = NaClAllocatePow2AlignedMemory(mem_sz, log_align);
-  if (NULL == mem_ptr) {
-    if (0 != errno) {
-      NaClLog(LOG_ERROR, "NaClAllocatePow2AlignedMemory");
-      NaClLog(LOG_ERROR, "%s", strerror(errno));
-    }
-    NaClLog(LOG_WARNING, "Memory allocation failed\n");
+  if(NULL == mem_ptr)
+  {
+    ZLOGIF(0 != errno, "NaClAllocatePow2AlignedMemory errno = %d", errno);
+    ZLOG(LOG_ERROR, "Memory allocation failed");
 
     return LOAD_NO_MEMORY;
   }
+
   /*
    * The module lives in the middle FOURGIG of the allocated region --
    * we skip over an initial 40G guard.
    */
-  *mem = (void *) (((char *) mem_ptr) + GUARDSIZE);
-  NaClLog(4,
-          "NaClAllocateSpace: addr space at 0x%016"NACL_PRIxPTR"\n",
-          (uintptr_t) *mem);
+  *mem = (void *)(((char *)mem_ptr) + GUARDSIZE);
+  ZLOG(LOG_INSANE, "addr space at 0x%016lx", (uintptr_t)*mem);
 
   return LOAD_OK;
 }

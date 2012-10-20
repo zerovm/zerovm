@@ -3,32 +3,28 @@
  * Use of this source code is governed by a BSD-style license that can be
  * found in the LICENSE file.
  */
-
+#include <errno.h>
 #include "src/nacl_base/nacl_refcount.h"
 #include "src/service_runtime/zlog.h"
 
-struct NaClRefCount *NaClRefCountRef(struct NaClRefCount *nrcp) {
-  NaClLog(4, "NaClRefCountRef(0x%08"NACL_PRIxPTR").\n",
-          (uintptr_t) nrcp);
-  if (0 == ++nrcp->ref_count) {
-    NaClLog(LOG_FATAL, "NaClRefCountRef integer overflow\n");
-  }
+struct NaClRefCount *NaClRefCountRef(struct NaClRefCount *nrcp)
+{
+  ZLOG(LOG_INSANE, "NaClRefCountRef(0x%08lx)", (uintptr_t)nrcp);
+  ZLOGFAIL(0 == ++nrcp->ref_count, EFAULT, "NaClRefCountRef integer overflow");
   return nrcp;
 }
 
-void NaClRefCountUnref(struct NaClRefCount *nrcp) {
+void NaClRefCountUnref(struct NaClRefCount *nrcp)
+{
   int destroy;
 
-  NaClLog(4, "NaClRefCountUnref(0x%08"NACL_PRIxPTR").\n",
-          (uintptr_t) nrcp);
-  if (0 == nrcp->ref_count) {
-    NaClLog(LOG_FATAL,
-            ("NaClRefCountUnref on 0x%08"NACL_PRIxPTR
-             ", refcount already zero!\n"),
-            (uintptr_t) nrcp);
-  }
+  ZLOG(LOG_INSANE, "NaClRefCountUnref(0x%08lx).\n", (uintptr_t)nrcp);
+  ZLOGFAIL(0 == nrcp->ref_count, EFAULT,
+      "NaClRefCountUnref on 0x%08ld, refcount already zero!", (uintptr_t)nrcp);
+
   destroy = (0 == --nrcp->ref_count);
-  if (destroy) {
+  if(destroy)
+  {
     (*nrcp->vtbl->Dtor)(nrcp);
     free(nrcp);
   }

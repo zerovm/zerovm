@@ -24,6 +24,7 @@ EXTERN_C_BEGIN
 #define ZLOGFAIL ZLogTag(__FILE__, __LINE__), FailIf
 #define ZLOGS ZLogTag(NULL, 0), ZLog
 
+#define FAILED_MSG "check failed"
 #define ZLOG_NAME "ZeroVM"
 #define ZLOG_OPTIONS (LOG_CONS | LOG_PID | LOG_NDELAY)
 #define ZLOG_PRIORITY LOG_USER
@@ -33,31 +34,11 @@ EXTERN_C_BEGIN
 
 /* develop fix for verbosity level names */
 #undef LOG_DEBUG
-#undef LOG_INFO
-#undef LOG_WARNING
 
-#define LOG_INSANE  (3) /* slow down logging */
+#define LOG_INSANE  (3) /* slows down logging */
 #define LOG_DEBUG   (2)
 #define LOG_ERROR   (1) /* mandatory message */
 #define LOG_FATAL   (0) /* mandatory message */
-
-/* todo(d'b): should be removed as soon as all logs will be revised {{ */
-#define LOG_SUICIDE (3)
-#define LOG_NOTE    (2)
-#define LOG_INFO    (2)
-#define LOG_WARNING (2)
-#define NaClLog ZLogTag(__FILE__, __LINE__), ZLog
-
-/* assert with output to log */
-#define CHECK(bool_expr) \
-  do {\
-    if (!(bool_expr))\
-    {\
-      NaClLog(LOG_FATAL, "Fatal error in file %s, line %d: !(%s)\n",\
-        __FILE__, __LINE__, #bool_expr);\
-      }\
-    } while (0)
-/* }} */
 
 /* initialize syslog with verbosity */
 void ZLogCtor(int v);
@@ -78,7 +59,7 @@ void ZLogTag(const char *file, int line);
 void ZLog(int priority, char *fmt, ...);
 
 /* if condition is true, log and abort. should be used from ZLOGFAIL */
-void FailIf(int cond, char const *fmt, ...);
+void FailIf(int cond, int err, char const *fmt, ...);
 
 /* if condition is true, log and continue. should be used from ZLOGIF */
 void LogIf(int cond, char const *fmt, ...);

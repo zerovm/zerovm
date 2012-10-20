@@ -22,7 +22,8 @@ static struct NaClSignalNode *s_FirstHandler = NULL;
 static struct NaClSignalNode *s_FreeList = NULL;
 static struct NaClSignalNode s_SignalNodes[MAX_NACL_HANDLERS];
 
-ssize_t NaClSignalErrorMessage(const char *msg) {
+ssize_t NaClSignalErrorMessage(const char *msg)
+{
   /*
    * We cannot use NaClLog() in the context of a signal handler: it is
    * too complex.  However, write() is signal-safe.
@@ -34,9 +35,8 @@ ssize_t NaClSignalErrorMessage(const char *msg) {
    * Write uses int not size_t, so we may wrap the length and/or
    * generate a negative value.  Only print if it matches.
    */
-  if ((len > 0) && (len_t == (size_t) len)) {
+  if ((len > 0) && (len_t == (size_t) len))
     return (ssize_t) write(STDOUT_FILENO, msg, len);
-  }
 
   return 0;
 }
@@ -73,7 +73,7 @@ enum NaClSignalResult NaClSignalHandleAll(int signal, void *ctx) {
 int NaClSignalHandlerAdd(NaClSignalHandler func) {
   int id = 0;
 
-  CHECK(func != NULL);
+  ZLOGFAIL(func == NULL, EFAULT, FAILED_MSG);
 
   /* If we have room... */
   if (s_FreeList) {

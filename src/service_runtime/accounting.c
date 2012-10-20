@@ -8,6 +8,7 @@
  *      Author: d'b
  */
 #include <assert.h>
+#include <errno.h>
 #include "src/service_runtime/sel_ldr.h"
 #include "src/service_runtime/accounting.h"
 
@@ -34,13 +35,13 @@ static int64_t ReadExtendedStat(const struct NaClApp *nap, const char *stat)
   f = fopen(path, "r");
   if(f == NULL)
   {
-    NaClLog(LOG_ERROR, "cannot open %s", path);
+    ZLOG(LOG_ERROR, "cannot open %s", path);
     return -1;
   }
   result = fread(buf, 1, BIG_ENOUGH_SPACE, f);
   if(result == 0 || result == BIG_ENOUGH_SPACE)
   {
-    NaClLog(LOG_ERROR, "error statistics reading for %s", stat);
+    ZLOG(LOG_ERROR, "error statistics reading for %s", stat);
     return -1;
   }
   fclose(f);
@@ -99,7 +100,7 @@ static void StopExtendedAccounting(struct NaClApp *nap)
   result = rmdir(acc_folder);
   if(result != 0)
   {
-    NaClLog(LOG_ERROR, "cannot remove %s", acc_folder);
+    ZLOG(LOG_ERROR, "cannot remove %s", acc_folder);
     return;
   }
 
@@ -112,7 +113,7 @@ static inline void EchoToFile(const char *path, int code)
 {
   FILE *f = fopen(path, "w");
 
-  ZLOGFAIL(f == NULL, "cannot create file '%s'", path);
+  ZLOGFAIL(f == NULL, errno, "cannot create file '%s'", path);
   fprintf(f, "%d", code);
   fclose(f);
 }
@@ -137,14 +138,14 @@ void AccountingCtor(struct NaClApp *nap)
   length = snprintf(cfolder, BIG_ENOUGH_SPACE, "%s/%d", CGROUPS_FOLDER, pid);
   cfolder[BIG_ENOUGH_SPACE] = '\0';
   if(stat(cfolder, &st) == 0 && S_ISDIR(st.st_mode))
-    ZLOGFAIL(rmdir(cfolder) != 0, "'%s' in cgroups is already taken", cfolder);
+    ZLOGFAIL(rmdir(cfolder) == -1, errno, "'%s' in cgroups is already taken", cfolder);
 
   /* create folder of own pid */
-  ZLOGFAIL(mkdir(cfolder, 0700) != 0, "cannot create '%s' in cgroups", cfolder);
+  ZLOGFAIL(mkdir(cfolder, 0700) == -1, errno, "cannot create '%s' in cgroups", cfolder);
 
   /* store accounting folder to the system manifest */
   acc_folder = malloc(length + 1);
-  ZLOGFAIL(acc_folder == NULL,
+  ZLOGFAIL(acc_folder == NULL, ENOMEM,
       "cannot allocate memory to hold accounting folder name");
   strcpy(acc_folder, cfolder);
 

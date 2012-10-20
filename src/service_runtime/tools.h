@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/stat.h>
@@ -36,7 +37,7 @@
 static inline void *my_malloc(size_t size, const char *msg)
 {
   void *ptr = malloc(size);
-  ZLOGFAIL(ptr == NULL, msg);
+  ZLOGFAIL(ptr == NULL, ENOMEM, msg);
   return ptr;
 }
 #define MALLOC(size, msg) my_malloc((size), (msg))

@@ -25,10 +25,8 @@ static int32_t NotImplementedDecoder(struct NaClApp *nap)
 
 static void NaClAddSyscall(int num, int32_t(*fn)(struct NaClApp *))
 {
-  if(nacl_syscall[num].handler != &NotImplementedDecoder)
-  {
-    NaClLog(LOG_FATAL, "Duplicate syscall number %d\n", num);
-  }
+  ZLOGFAIL(nacl_syscall[num].handler != &NotImplementedDecoder,
+      EFAULT, "Duplicate syscall number %d\n", num);
   nacl_syscall[num].handler = fn;
 }
 
@@ -48,7 +46,7 @@ int32_t NaClSysSysbrk(struct NaClApp *nap, uintptr_t new_break)
 /* d'b: duplicate of trap() exit. remove it when trap() replace syscalls */
 int32_t NaClSysExit(struct NaClApp *nap, int status)
 {
-  NaClLog(1, "Exit syscall handler: %d\n", status);
+  ZLOGS(LOG_DEBUG, "Exit syscall handler: %d", status);
   nap->system_manifest->user_ret_code = status;
   longjmp(user_exit, status);
 
@@ -63,15 +61,14 @@ int32_t NaClSysTls_Init(struct NaClApp *nap, void *thread_ptr)
   int32_t   retval = -NACL_ABI_EINVAL;
   uintptr_t sys_tls;
 
-  NaClLog(3, ("Entered NaClCommonSysTls_Init(0x%08"NACL_PRIxPTR
-      ", 0x%08"NACL_PRIxPTR")\n"), (uintptr_t) nap, (uintptr_t) thread_ptr);
+  ZLOG(LOG_DEBUG, "Entered with 0x%08lx, 0x%08lx", (uintptr_t)nap, (uintptr_t)thread_ptr);
 
-  /* Verify that the address in the app's range and translated from
+  /*
+   * Verify that the address in the app's range and translated from
    * nacl module address to service runtime address - a nop on ARM
    */
   sys_tls = NaClUserToSysAddrRange(nap, (uintptr_t) thread_ptr, 4);
-  NaClLog(4, "NaClCommonSysTls_Init: thread_ptr 0x%p, sys_tls 0x%"NACL_PRIxPTR"\n",
-          thread_ptr, sys_tls);
+  ZLOGS(LOG_INSANE, "thread_ptr 0x%p, sys_tls 0x%lx", thread_ptr, sys_tls);
 
   CLEANUP(kNaClBadAddress == sys_tls, -NACL_ABI_EFAULT);
   nap->sys_tls = sys_tls;

@@ -34,9 +34,9 @@ void NaClInitSwitchToApp(struct NaClApp *nap)
   int cpu = CPUTest();
 
   UNREFERENCED_PARAMETER(nap);
-  ZLOGFAIL(cpu == -1, "zerovm needs SSE CPU");
+  ZLOGFAIL(cpu == -1, EFAULT, "zerovm needs SSE CPU");
   NaClSwitch = cpu == 0 ? NaClSwitchSSE : NaClSwitchAVX;
-  NaClLog(LOG_INFO, "%s cpu detected", cpu == 0 ? "SSE" : "AVX");
+  ZLOGS(LOG_DEBUG, "%s cpu detected", cpu == 0 ? "SSE" : "AVX");
 }
 
 /*

@@ -28,7 +28,7 @@ enum ChannelFields {
 #undef ZLOGFAIL
 #define ZLOGFAIL(...)
 void ZLogTag(const char *file, int line) {}
-void FailIf(int cond, char const *fmt, ...) {}
+void FailIf(int cond, int err, char const *fmt, ...) {}
 
 /*
  * get control data and parse it to make part of manifest parser

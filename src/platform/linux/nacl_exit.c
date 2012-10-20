@@ -3,7 +3,7 @@
  * Use of this source code is governed by a BSD-style license that can
  * be found in the LICENSE file.
  */
-
+#include <errno.h>
 #include "src/platform/nacl_exit.h"
 #include "src/manifest/manifest_setup.h"
 #include "src/service_runtime/nacl_globals.h"
@@ -15,15 +15,15 @@ static int verb = LOG_INSANE;
 static void VmentryPrinter(void *state, struct NaClVmmapEntry *vmep)
 {
   UNREFERENCED_PARAMETER(state);
-  NaClLog(verb, "page num 0x%06x\n", (uint32_t) vmep->page_num);
-  NaClLog(verb, "num pages %d\n", (uint32_t) vmep->npages);
-  NaClLog(verb, "prot bits %x\n", vmep->prot);
+  ZLOG(verb, "page num 0x%06x", (uint32_t) vmep->page_num);
+  ZLOG(verb, "num pages %d", (uint32_t) vmep->npages);
+  ZLOG(verb, "prot bits %x", vmep->prot);
   fflush(stdout);
 }
 
 static void PrintVmmap(struct NaClApp *nap, int verbosity)
 {
-  NaClLog(verbosity, "In PrintVmmap");
+  ZLOG(verbosity, "In PrintVmmap");
   fflush(stdout);
   verb = verbosity;
   NaClVmmapVisit(&nap->mem_map, VmentryPrinter, NULL);
@@ -60,11 +60,13 @@ static void Finalizer(void)
 void NaClAbort(void)
 {
   Finalizer();
-  _exit(gnap->zvm_code);
+  ZLOGIF(1, "zerovm aborted with no specific error code");
+  _exit(EFAULT);
 }
 
 void NaClExit(int err_code)
 {
   Finalizer();
+  ZLOGIF(err_code != 0, "zerovm exited with error '%s'", strerror(err_code));
   _exit(err_code); /* supposed to be in sync with gnap->zvm_code */
 }

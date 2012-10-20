@@ -40,9 +40,6 @@ int   NaCl_madvise(void           *start,
                    size_t         length,
                    int            advice) NACL_WUR;
 
-
-extern void *g_nacl_prereserved_sandbox_addr;
-
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

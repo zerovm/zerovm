@@ -15,16 +15,18 @@
 
 #define LAST_IDX(X) (NACL_ARRAY_SIZE(X)-1)
 
-void NaClPerfCounterCtor(struct NaClPerfCounter *sv,
-                         const char *app_name) {
-  if (NULL == sv) {
-    NaClLog(LOG_ERROR, "NaClPerfCounterStart received null pointer\n");
+void NaClPerfCounterCtor(struct NaClPerfCounter *sv, const char *app_name)
+{
+  if(NULL == sv)
+  {
+    ZLOG(LOG_ERROR, "NaClPerfCounterStart received null pointer");
     return;
   };
 
   memset(sv, 0, sizeof(struct NaClPerfCounter));
 
-  if (NULL == app_name) {
+  if(NULL == app_name)
+  {
     app_name = "__unknown_app__";
   }
 
@@ -36,8 +38,8 @@ void NaClPerfCounterCtor(struct NaClPerfCounter *sv,
 
   strncpy(sv->sample_names[0], "__start__", LAST_IDX(sv->sample_names[0]));
 
-
-  while (0 != NaClGetTimeOfDay(&sv->sample_list[sv->samples])) {
+  while(0 != NaClGetTimeOfDay(&sv->sample_list[sv->samples]))
+  {
     /* repeat until we get a sample */
   }
 
@@ -50,17 +52,21 @@ void NaClPerfCounterCtor(struct NaClPerfCounter *sv,
  * constructed via NaClPerfCounterCtor(), it will return 1, but that
  * is actually the SECOND sample.
  */
-int NaClPerfCounterMark(struct NaClPerfCounter *sv, const char *ev_name) {
-  if ((NULL == sv) || (NULL == ev_name)) {
-    NaClLog(LOG_ERROR, "NaClPerfCounterMark received null args\n");
+int NaClPerfCounterMark(struct NaClPerfCounter *sv, const char *ev_name)
+{
+  if((NULL == sv) || (NULL == ev_name))
+  {
+    ZLOG(LOG_ERROR, "NaClPerfCounterMark received null args");
     return -1;
   }
-  if (sv->samples >= NACL_MAX_PERF_COUNTER_SAMPLES) {
-    NaClLog(LOG_ERROR, "NaClPerfCounterMark going beyond buffer size\n");
+  if(sv->samples >= NACL_MAX_PERF_COUNTER_SAMPLES)
+  {
+    ZLOG(LOG_ERROR, "NaClPerfCounterMark going beyond buffer size");
     return -1;
   }
   /* busy loop until we succeed, damn it */
-  while (0 != NaClGetTimeOfDay(&(sv->sample_list[sv->samples])));
+  while(0 != NaClGetTimeOfDay(&(sv->sample_list[sv->samples])))
+    ;
 
   /*
    * This relies upon memset() inside NaClPerfCounterCtor() for
@@ -69,45 +75,47 @@ int NaClPerfCounterMark(struct NaClPerfCounter *sv, const char *ev_name) {
 
   NACL_ASSERT_IS_ARRAY(sv->sample_names[sv->samples]);
 
-  strncpy(sv->sample_names[sv->samples], ev_name,
-          LAST_IDX(sv->sample_names[sv->samples]));
+  strncpy(sv->sample_names[sv->samples], ev_name, LAST_IDX(sv->sample_names[sv->samples]));
   /* Being explicit about string termination */
-  sv->sample_names[sv->samples][LAST_IDX(sv->sample_names[sv->samples])] =
-    '\0';
+  sv->sample_names[sv->samples][LAST_IDX(sv->sample_names[sv->samples])] = '\0';
 
   return (sv->samples)++;
 }
 
-int64_t NaClPerfCounterInterval(struct NaClPerfCounter *sv,
-                                uint32_t a, uint32_t b) {
-  if ((NULL != sv) && (a < ((unsigned)sv->samples)) &&
-      (b < ((unsigned)sv->samples)) &&
-      (sv->samples <= NACL_MAX_PERF_COUNTER_SAMPLES)) {
-    uint32_t lo = (a < b)? a : b;
-    uint32_t hi = (b < a)? a : b;
-    int64_t seconds = (sv->sample_list[hi].nacl_abi_tv_sec -
-                       sv->sample_list[lo].nacl_abi_tv_sec);
-    int64_t usec = (sv->sample_list[hi].nacl_abi_tv_usec -
-                    sv->sample_list[lo].nacl_abi_tv_usec);
+int64_t NaClPerfCounterInterval(struct NaClPerfCounter *sv, uint32_t a, uint32_t b)
+{
+  if((NULL != sv) && (a < ((unsigned)sv->samples)) && (b < ((unsigned)sv->samples))
+      && (sv->samples <= NACL_MAX_PERF_COUNTER_SAMPLES))
+  {
+    uint32_t lo = (a < b) ? a : b;
+    uint32_t hi = (b < a) ? a : b;
+    int64_t seconds = (sv->sample_list[hi].nacl_abi_tv_sec
+        - sv->sample_list[lo].nacl_abi_tv_sec);
+    int64_t usec = (sv->sample_list[hi].nacl_abi_tv_usec
+        - sv->sample_list[lo].nacl_abi_tv_usec);
     int64_t rtn = seconds * NACL_MICROS_PER_UNIT + usec;
 
-    NaClLog(1, "NaClPerfCounterInterval(%s %s:%s): %d microsecs\n",
-            sv->app_name, sv->sample_names[lo], sv->sample_names[hi], rtn);
+    ZLOGS(LOG_DEBUG, "%s %s:%s: %d microsecs", sv->app_name,
+        sv->sample_names[lo], sv->sample_names[hi], rtn);
 
     return rtn;
   }
   return -1;
 }
 
-int64_t NaClPerfCounterIntervalLast(struct NaClPerfCounter *sv) {
-  if (NULL != sv) {
+int64_t NaClPerfCounterIntervalLast(struct NaClPerfCounter *sv)
+{
+  if(NULL != sv)
+  {
     return NaClPerfCounterInterval(sv, sv->samples - 2, sv->samples - 1);
   }
   return -1;
 }
 
-int64_t NaClPerfCounterIntervalTotal(struct NaClPerfCounter *sv) {
-  if (NULL != sv) {
+int64_t NaClPerfCounterIntervalTotal(struct NaClPerfCounter *sv)
+{
+  if(NULL != sv)
+  {
     return NaClPerfCounterInterval(sv, 0, sv->samples - 1);
   }
   return -1;

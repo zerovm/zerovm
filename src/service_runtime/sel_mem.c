@@ -10,6 +10,7 @@
  */
 #include <assert.h>
 #include <stdio.h>
+#include <errno.h>
 #include "src/service_runtime/zlog.h"
 #include "src/service_runtime/sel_mem.h"
 #include "src/service_runtime/sel_util.h"
@@ -34,15 +35,12 @@ struct NaClVmmapEntry *NaClVmmapEntryMake(uintptr_t             page_num,
                                           struct NaClMemObj     *nmop) {
   struct NaClVmmapEntry *entry;
 
-  NaClLog(4,
-          "NaClVmmapEntryMake(0x%"NACL_PRIxPTR",0x%"NACL_PRIxS","
-          "0x%x,0x%"NACL_PRIxPTR")\n",
-          page_num, npages, prot, (uintptr_t) nmop);
+  ZLOG(LOG_INSANE, "NaClVmmapEntryMake(0x%lx, 0x%lx, 0x%x, 0x%lx)",
+      page_num, npages, prot, (uintptr_t)nmop);
   entry = (struct NaClVmmapEntry *) malloc(sizeof *entry);
-  if (NULL == entry) {
-    return 0;
-  }
-  NaClLog(4, "entry: 0x%"NACL_PRIxPTR"\n", (uintptr_t) entry);
+  if (NULL == entry) return 0;
+
+  ZLOG(LOG_INSANE, "entry: 0x%lx", (uintptr_t) entry);
   entry->page_num = page_num;
   entry->npages = npages;
   entry->prot = prot;
@@ -51,13 +49,10 @@ struct NaClVmmapEntry *NaClVmmapEntryMake(uintptr_t             page_num,
   return entry;
 }
 
-void  NaClVmmapEntryFree(struct NaClVmmapEntry *entry) {
-  NaClLog(4,
-          ("NaClVmmapEntryFree(0x%08"NACL_PRIxPTR
-           "): (0x%"NACL_PRIxPTR",0x%"NACL_PRIxS","
-           "0x%x,0x%"NACL_PRIxPTR")\n"),
-          (uintptr_t) entry,
-          entry->page_num, entry->npages, entry->prot, (uintptr_t) entry->nmop);
+void NaClVmmapEntryFree(struct NaClVmmapEntry *entry)
+{
+  ZLOG(LOG_INSANE, "NaClVmmapEntryFree(0x%08lx): (0x%lx, 0x%lx, 0x%x, 0x%lx)",
+      (uintptr_t)entry, entry->page_num, entry->npages, entry->prot, (uintptr_t)entry->nmop);
 
   NaClMemObjSafeDtor(entry->nmop);
   free(entry->nmop);
@@ -65,15 +60,20 @@ void  NaClVmmapEntryFree(struct NaClVmmapEntry *entry) {
   free(entry);
 }
 
-int NaClVmmapCtor(struct NaClVmmap *self) {
+int NaClVmmapCtor(struct NaClVmmap *self)
+{
   self->size = START_ENTRIES;
-  if (SIZE_T_MAX / sizeof *self->vmentry < self->size) {
+  if(SIZE_T_MAX / sizeof *self->vmentry < self->size)
+  {
     return 0;
   }
+
   self->vmentry = calloc(self->size, sizeof *self->vmentry);
-  if (!self->vmentry) {
+  if(!self->vmentry)
+  {
     return 0;
   }
+
   self->nvalid = 0;
   self->is_sorted = 1;
   return 1;
@@ -132,9 +132,7 @@ static void NaClVmmapRemoveMarked(struct NaClVmmap *self) {
     NaClVmmapEntryFree(self->vmentry[last]);
     self->vmentry[last] = NULL;
   }
-  if (last == 0 && self->vmentry[0]->removed) {
-    NaClLog(LOG_FATAL, "No valid entries in VM map\n");
-  }
+  ZLOGFAIL(last == 0 && self->vmentry[0]->removed, EFAULT, "No valid entries in VM map");
 
   /*
    * Post condition of above loop:
@@ -143,8 +141,8 @@ static void NaClVmmapRemoveMarked(struct NaClVmmap *self) {
    *
    * 0 <= last < self->nvalid && !self->vmentry[last]->removed
    */
-  CHECK(last < self->nvalid);
-  CHECK(!self->vmentry[last]->removed);
+  ZLOGFAIL(last >= self->nvalid, EFAULT, FAILED_MSG);
+  ZLOGFAIL(self->vmentry[last]->removed, EFAULT, FAILED_MSG);
   /*
    * and,
    *
@@ -225,7 +223,7 @@ int NaClVmmapAdd(struct NaClVmmap   *self,
                  struct NaClMemObj  *nmop) {
   struct NaClVmmapEntry *entry;
 
-  ZLOG(LOG_DEBUG, "NaClVmmapAdd(0x%08lx, 0x%lx, 0x%lx, 0x%x, 0x%08lx)",
+  ZLOG(LOG_DEBUG, "0x%08lx, 0x%lx, 0x%lx, 0x%x, 0x%08lx",
       (uintptr_t)self, page_num, npages, prot, (uintptr_t)nmop);
 
   if (self->nvalid == self->size) {

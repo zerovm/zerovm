@@ -16,16 +16,15 @@
 
 /*
  * d'b: make syscall invoked from the untrusted code
- */
-NORETURN void NaClSyscallCSegHook()
+ */NORETURN void NaClSyscallCSegHook()
 {
-  struct NaClApp            *nap;
-  struct NaClThreadContext  *user;
-  uintptr_t                 tramp_ret;
-  nacl_reg_t                user_ret;
-  size_t                    sysnum;
-  uintptr_t                 sp_user;
-  uintptr_t                 sp_sys;
+  struct NaClApp *nap;
+  struct NaClThreadContext *user;
+  uintptr_t tramp_ret;
+  nacl_reg_t user_ret;
+  size_t sysnum;
+  uintptr_t sp_user;
+  uintptr_t sp_sys;
 
   /* d'b: nexe just invoked some syscall. increase syscalls counter */
   nap = gnap; /* restore NaClApp object */
@@ -33,7 +32,6 @@ NORETURN void NaClSyscallCSegHook()
   nap->trusted_code = 1; /* we are in the trusted code */
   user = nacl_user; /* restore from global */
   sp_user = NaClGetThreadCtxSp(user);
-
   sp_sys = NaClUserToSysStackAddr(nap, sp_user);
 
   /*
@@ -42,15 +40,13 @@ NORETURN void NaClSyscallCSegHook()
    */
   tramp_ret = *(uintptr_t *)sp_sys;
   tramp_ret = NaClUserToSysStackAddr(nap, tramp_ret);
-
-  sysnum = (tramp_ret - (nap->mem_start + NACL_SYSCALL_START_ADDR))
-      >> NACL_SYSCALL_BLOCK_SHIFT;
+  sysnum = (tramp_ret - (nap->mem_start + NACL_SYSCALL_START_ADDR)) >> NACL_SYSCALL_BLOCK_SHIFT;
 
   /*
    * getting user return address (the address where we need to return after
    * system call) from the user stack. (see stack layout above)
    */
-  user_ret = *(uintptr_t *) (sp_sys + NACL_USERRET_FIX);
+  user_ret = *(uintptr_t *)(sp_sys + NACL_USERRET_FIX);
 
   /*
    * Fix the user stack, throw away return addresses from the top of the stack.
@@ -62,12 +58,15 @@ NORETURN void NaClSyscallCSegHook()
   NaClSetThreadCtxSp(user, sp_user);
 
   /* debug print to log */
-  NaClLog(LOG_SUICIDE, "system call number %"NACL_PRIdS"\n", sysnum);
+  ZLOG(LOG_INSANE, "system call number %ld", sysnum);
 
-  if (sysnum >= NACL_MAX_SYSCALLS) {
-    NaClLog(2, "INVALID system call %"NACL_PRIdS"\n", sysnum);
+  if(sysnum >= NACL_MAX_SYSCALLS)
+  {
+    ZLOG(LOG_ERROR, "INVALID system call %ld", sysnum);
     nap->sysret = -NACL_ABI_EINVAL;
-  } else {
+  }
+  else
+  {
     /*
      * syscall_args is used by Decoder functions in
      * nacl_syscall_handlers.c which is automatically generated file
@@ -77,7 +76,7 @@ NORETURN void NaClSyscallCSegHook()
      * system call. System call arguments are placed on the untrusted
      * user stack.
      */
-    nap->syscall_args = (uintptr_t *) sp_sys;
+    nap->syscall_args = (uintptr_t *)sp_sys;
     nap->sysret = (*(nap->syscall_table[sysnum].handler))(nap);
   }
 
@@ -85,11 +84,11 @@ NORETURN void NaClSyscallCSegHook()
    * before switching back to user module, we need to make sure that the
    * user_ret is properly sandboxed.
    */
-  user_ret = (nacl_reg_t) NaClSandboxCodeAddr(nap, (uintptr_t)user_ret);
+  user_ret = (nacl_reg_t)NaClSandboxCodeAddr(nap, (uintptr_t)user_ret);
 
   /* d'b: give control to the nexe */
   NaClSwitchToApp(nap, user_ret);
 
   /* NOTREACHED */
-  NaClLog(LOG_FATAL, "NORETURN NaClSwitchToApp returned!?!");
+  ZLOGFAIL(1, EFAULT, "NORETURN NaClSwitchToApp returned!?!");
 }

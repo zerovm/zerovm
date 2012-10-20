@@ -8,6 +8,7 @@
  * NaCl Simple/secure ELF loader (NaCl SEL).
  */
 #include <assert.h>
+#include <errno.h>
 
 #include "src/perf_counter/nacl_perf_counter.h"
 #include "src/service_runtime/include/bits/mman.h"
@@ -81,25 +82,24 @@ void NaClFillEndOfTextRegion(struct NaClApp *nap) {
    * toolchain's responsibility to ensure that a NACL_HALT_SLED_SIZE
    * gap exists.
    */
-  if (0 != nap->data_start &&
-      nap->static_text_end + NACL_HALT_SLED_SIZE > nap->data_start) {
-    NaClLog(LOG_FATAL, "Missing gap between text and data for halt_sled\n");
-  }
-  if (0 != nap->rodata_start &&
-      nap->static_text_end + NACL_HALT_SLED_SIZE > nap->rodata_start) {
-    NaClLog(LOG_FATAL, "Missing gap between text and rodata for halt_sled\n");
-  }
+  ZLOGFAIL(0 != nap->data_start && nap->static_text_end
+      + NACL_HALT_SLED_SIZE > nap->data_start, EFAULT,
+      "Missing gap between text and data for halt_sled");
 
-  if (NULL == nap->text_shm) {
-    /*
-     * No dynamic text exists.  Space for NACL_HALT_SLED_SIZE must
-     * exist.
-     */
-    page_pad = (NaClRoundAllocPage(nap->static_text_end + NACL_HALT_SLED_SIZE)
-                - nap->static_text_end);
-    CHECK(page_pad >= NACL_HALT_SLED_SIZE);
-    CHECK(page_pad < NACL_MAP_PAGESIZE + NACL_HALT_SLED_SIZE);
-  } else {
+  ZLOGFAIL(0 != nap->rodata_start && nap->static_text_end
+      + NACL_HALT_SLED_SIZE > nap->rodata_start, EFAULT,
+      "Missing gap between text and rodata for halt_sled");
+
+  if(NULL == nap->text_shm)
+  {
+    /* No dynamic text exists.  Space for NACL_HALT_SLED_SIZE must exist */
+    page_pad = NaClRoundAllocPage(nap->static_text_end + NACL_HALT_SLED_SIZE)
+        - nap->static_text_end;
+    ZLOGFAIL(page_pad < NACL_HALT_SLED_SIZE, EFAULT, FAILED_MSG);
+    ZLOGFAIL(page_pad >= NACL_MAP_PAGESIZE + NACL_HALT_SLED_SIZE, EFAULT, FAILED_MSG);
+  }
+  else
+  {
     /*
      * Dynamic text exists; the halt sled resides in the dynamic text
      * region, so all we need to do here is to round out the last
@@ -111,31 +111,29 @@ void NaClFillEndOfTextRegion(struct NaClApp *nap) {
     page_pad = NaClRoundAllocPage(nap->static_text_end) - nap->static_text_end;
   }
 
-  NaClLog(4,
-          "Filling with halts: %08"NACL_PRIxPTR", %08"NACL_PRIxS" bytes\n",
-          nap->mem_start + nap->static_text_end,
-          page_pad);
+  ZLOGS(LOG_DEBUG, "Filling with halts: %08lx, %08lx bytes",
+          nap->mem_start + nap->static_text_end, page_pad);
 
-  NaClFillMemoryRegionWithHalt((void *)(nap->mem_start + nap->static_text_end),
-                               page_pad);
-
+  NaClFillMemoryRegionWithHalt((void*)(nap->mem_start + nap->static_text_end), page_pad);
   nap->static_text_end += page_pad;
 }
 
-/*
- * Basic address space layout sanity check.
- */
+/* Basic address space layout sanity check */
 NaClErrorCode NaClCheckAddressSpaceLayoutSanity(struct NaClApp *nap,
-                                                uintptr_t rodata_end,
-                                                uintptr_t data_end,
-                                                uintptr_t max_vaddr) {
-  if (0 != nap->data_start) {
-    if (data_end != max_vaddr) {
-      NaClLog(LOG_INFO, "data segment is not last\n");
+    uintptr_t rodata_end, uintptr_t data_end, uintptr_t max_vaddr)
+{
+  if(0 != nap->data_start)
+  {
+    if(data_end != max_vaddr)
+    {
+      ZLOG(LOG_DEBUG, "data segment is not last");
       return LOAD_DATA_NOT_LAST_SEGMENT;
     }
-  } else if (0 != nap->rodata_start) {
-    if (NaClRoundAllocPage(rodata_end) != max_vaddr) {
+  }
+  else if(0 != nap->rodata_start)
+  {
+    if(NaClRoundAllocPage(rodata_end) != max_vaddr)
+    {
       /*
        * This should be unreachable, but we include it just for
        * completeness.
@@ -148,35 +146,43 @@ NaClErrorCode NaClCheckAddressSpaceLayoutSanity(struct NaClApp *nap,
        * be after the text.  And NaClElfImageValidateProgramHeaders
        * ensures that all segments start after the trampoline region.
        */
-      NaClLog(LOG_INFO, "no data segment, but rodata segment is not last\n");
+      ZLOG(LOG_DEBUG, "no data segment, but rodata segment is not last");
       return LOAD_NO_DATA_BUT_RODATA_NOT_LAST_SEGMENT;
     }
   }
-  if (0 != nap->rodata_start && 0 != nap->data_start) {
-    if (rodata_end > nap->data_start) {
-      NaClLog(LOG_INFO, "rodata_overlaps data.\n");
+
+  if(0 != nap->rodata_start && 0 != nap->data_start)
+  {
+    if(rodata_end > nap->data_start)
+    {
+      ZLOG(LOG_DEBUG, "rodata_overlaps data");
       return LOAD_RODATA_OVERLAPS_DATA;
     }
   }
-  if (0 != nap->rodata_start) {
-    if (NaClRoundAllocPage(NaClEndOfStaticText(nap)) > nap->rodata_start) {
+
+  if(0 != nap->rodata_start)
+  {
+    if(NaClRoundAllocPage(NaClEndOfStaticText(nap)) > nap->rodata_start)
       return LOAD_TEXT_OVERLAPS_RODATA;
-    }
-  } else if (0 != nap->data_start) {
-    if (NaClRoundAllocPage(NaClEndOfStaticText(nap)) > nap->data_start) {
-      return LOAD_TEXT_OVERLAPS_DATA;
-    }
   }
-  if (0 != nap->rodata_start &&
-      NaClRoundAllocPage(nap->rodata_start) != nap->rodata_start) {
-    NaClLog(LOG_INFO, "rodata_start not a multiple of allocation size\n");
+  else if(0 != nap->data_start)
+  {
+    if(NaClRoundAllocPage(NaClEndOfStaticText(nap)) > nap->data_start)
+      return LOAD_TEXT_OVERLAPS_DATA;
+  }
+
+  if(0 != nap->rodata_start && NaClRoundAllocPage(nap->rodata_start) != nap->rodata_start)
+  {
+    ZLOG(LOG_DEBUG, "rodata_start not a multiple of allocation size");
     return LOAD_BAD_RODATA_ALIGNMENT;
   }
-  if (0 != nap->data_start &&
-      NaClRoundAllocPage(nap->data_start) != nap->data_start) {
-    NaClLog(LOG_INFO, "data_start not a multiple of allocation size\n");
+
+  if(0 != nap->data_start && NaClRoundAllocPage(nap->data_start) != nap->data_start)
+  {
+    ZLOG(LOG_DEBUG, "data_start not a multiple of allocation size");
     return LOAD_BAD_DATA_ALIGNMENT;
   }
+
   return LOAD_OK;
 }
 
@@ -195,22 +201,22 @@ void NaClLogAddressSpaceLayout(struct NaClApp *nap)
   DUMP(nap->user_entry_pt);
   DUMP(nap->bundle_size);
 }
-#undef DUMP
 
-NaClErrorCode NaClAppLoadFile(struct Gio       *gp,
-                              struct NaClApp   *nap) {
-  NaClErrorCode       ret = LOAD_INTERNAL;
-  NaClErrorCode       subret;
-  uintptr_t           rodata_end;
-  uintptr_t           data_end;
-  uintptr_t           max_vaddr;
+NaClErrorCode NaClAppLoadFile(struct Gio *gp, struct NaClApp *nap)
+{
+  NaClErrorCode ret = LOAD_INTERNAL;
+  NaClErrorCode subret;
+  uintptr_t rodata_end;
+  uintptr_t data_end;
+  uintptr_t max_vaddr;
   struct NaClElfImage *image = NULL;
-  struct NaClPerfCounter  time_load_file;
+  struct NaClPerfCounter time_load_file;
 
   NaClPerfCounterCtor(&time_load_file, "NaClAppLoadFile");
 
   /* NACL_MAX_ADDR_BITS < 32 */
-  if (nap->addr_bits > NACL_MAX_ADDR_BITS) {
+  if(nap->addr_bits > NACL_MAX_ADDR_BITS)
+  {
     ret = LOAD_ADDR_SPACE_TOO_BIG;
     goto done;
   }
@@ -219,40 +225,42 @@ NaClErrorCode NaClAppLoadFile(struct Gio       *gp,
 
   /* temporay object will be deleted at end of function */
   image = NaClElfImageNew(gp, &subret);
-  if (NULL == image) {
+  if(NULL == image)
+  {
     ret = subret;
     goto done;
   }
 
   subret = NaClElfImageValidateElfHeader(image);
-  if (LOAD_OK != subret) {
+  if(LOAD_OK != subret)
+  {
     ret = subret;
     goto done;
   }
 
-  subret = NaClElfImageValidateProgramHeaders(image,
-                                              nap->addr_bits,
-                                              &nap->static_text_end,
-                                              &nap->rodata_start,
-                                              &rodata_end,
-                                              &nap->data_start,
-                                              &data_end,
-                                              &max_vaddr);
-  if (LOAD_OK != subret) {
+  subret = NaClElfImageValidateProgramHeaders(image, nap->addr_bits, &nap->static_text_end,
+      &nap->rodata_start, &rodata_end, &nap->data_start, &data_end, &max_vaddr);
+  if(LOAD_OK != subret)
+  {
     ret = subret;
     goto done;
   }
 
-  if (0 == nap->data_start) {
-    if (0 == nap->rodata_start) {
-      if (NaClRoundAllocPage(max_vaddr) - max_vaddr < NACL_HALT_SLED_SIZE) {
+  if(0 == nap->data_start)
+  {
+    if(0 == nap->rodata_start)
+    {
+      if(NaClRoundAllocPage(max_vaddr) - max_vaddr < NACL_HALT_SLED_SIZE)
+      {
         /*
          * if no rodata and no data, we make sure that there is space for
          * the halt sled.
          */
         max_vaddr += NACL_MAP_PAGESIZE;
       }
-    } else {
+    }
+    else
+    {
       /*
        * no data, but there is rodata.  this means max_vaddr is just
        * where rodata ends.  this might not be at an allocation
@@ -264,6 +272,7 @@ NaClErrorCode NaClAppLoadFile(struct Gio       *gp,
     }
     max_vaddr = NaClRoundAllocPage(max_vaddr);
   }
+
   /*
    * max_vaddr -- the break or the boundary between data (initialized
    * and bss) and the address space hole -- does not have to be at a
@@ -272,12 +281,12 @@ NaClErrorCode NaClAppLoadFile(struct Gio       *gp,
   nap->break_addr = max_vaddr;
   nap->data_end = max_vaddr;
 
-  NaClLog(4, "Values from NaClElfImageValidateProgramHeaders:\n");
-  NaClLog(4, "rodata_start = 0x%08"NACL_PRIxPTR"\n", nap->rodata_start);
-  NaClLog(4, "rodata_end   = 0x%08"NACL_PRIxPTR"\n", rodata_end);
-  NaClLog(4, "data_start   = 0x%08"NACL_PRIxPTR"\n", nap->data_start);
-  NaClLog(4, "data_end     = 0x%08"NACL_PRIxPTR"\n", data_end);
-  NaClLog(4, "max_vaddr    = 0x%08"NACL_PRIxPTR"\n", max_vaddr);
+  ZLOGS(LOG_DEBUG, "Values from NaClElfImageValidateProgramHeaders:");
+  DUMP(nap->rodata_start);
+  DUMP(rodata_end);
+  DUMP(nap->data_start);
+  DUMP(data_end);
+  DUMP(max_vaddr);
 
   /* We now support only one bundle size.  */
   nap->bundle_size = NACL_INSTR_BLOCK_SIZE;
@@ -285,26 +294,27 @@ NaClErrorCode NaClAppLoadFile(struct Gio       *gp,
   nap->initial_entry_pt = NaClElfImageGetEntryPoint(image);
   NaClLogAddressSpaceLayout(nap);
 
-  if (!NaClAddrIsValidEntryPt(nap, nap->initial_entry_pt)) {
+  if(!NaClAddrIsValidEntryPt(nap, nap->initial_entry_pt))
+  {
     ret = LOAD_BAD_ENTRY;
     goto done;
   }
 
-  subret = NaClCheckAddressSpaceLayoutSanity(nap, rodata_end, data_end,
-                                             max_vaddr);
-  if (LOAD_OK != subret) {
+  subret = NaClCheckAddressSpaceLayoutSanity(nap, rodata_end, data_end, max_vaddr);
+  if(LOAD_OK != subret)
+  {
     ret = subret;
     goto done;
   }
 
-  NaClLog(2, "Allocating address space\n");
+  ZLOGS(LOG_DEBUG, "Allocating address space");
   NaClPerfCounterMark(&time_load_file, "PreAllocAddrSpace");
   NaClPerfCounterIntervalLast(&time_load_file);
   subret = NaClAllocAddrSpace(nap);
-  NaClPerfCounterMark(&time_load_file,
-                      NACL_PERF_IMPORTANT_PREFIX "AllocAddrSpace");
+  NaClPerfCounterMark(&time_load_file, NACL_PERF_IMPORTANT_PREFIX "AllocAddrSpace");
   NaClPerfCounterIntervalLast(&time_load_file);
-  if (LOAD_OK != subret) {
+  if(LOAD_OK != subret)
+  {
     ret = subret;
     goto done;
   }
@@ -313,18 +323,16 @@ NaClErrorCode NaClAppLoadFile(struct Gio       *gp,
    * Make sure the static image pages are marked writable before we try
    * to write them.
    */
-  NaClLog(2, "Loading into memory\n");
-  ret = NaCl_mprotect((void *) (nap->mem_start + NACL_TRAMPOLINE_START),
-                      NaClRoundAllocPage(nap->data_end) - NACL_TRAMPOLINE_START,
-                      NACL_ABI_PROT_READ | NACL_ABI_PROT_WRITE);
-  if (0 != ret) {
-    NaClLog(LOG_FATAL,
-            "NaClAppLoadFile: Failed to make image pages writable. "
-            "Error code 0x%x\n",
-            ret);
-  }
+  ZLOG(LOG_DEBUG, "Loading into memory");
+  ret = NaCl_mprotect((void *)(nap->mem_start + NACL_TRAMPOLINE_START),
+      NaClRoundAllocPage(nap->data_end) - NACL_TRAMPOLINE_START,
+      NACL_ABI_PROT_READ | NACL_ABI_PROT_WRITE);
+  ZLOGFAIL(0 != ret, EFAULT, "NaClAppLoadFile: Failed to make image "
+      "pages writable. Error code 0x%x", ret);
+
   subret = NaClElfImageLoad(image, gp, nap->addr_bits, nap->mem_start);
-  if (LOAD_OK != subret) {
+  if(LOAD_OK != subret)
+  {
     ret = subret;
     goto done;
   }
@@ -345,10 +353,10 @@ NaClErrorCode NaClAppLoadFile(struct Gio       *gp,
    */
   NaClFillEndOfTextRegion(nap);
 
-  NaClLog(2, "Initializing arch switcher\n");
+  ZLOGS(LOG_DEBUG, "Initializing arch switcher");
   NaClInitSwitchToApp(nap);
 
-  NaClLog(2, "Installing trampoline\n");
+  ZLOGS(LOG_DEBUG, "Installing trampoline");
   NaClLoadTrampoline(nap);
 
   /*
@@ -358,30 +366,29 @@ NaClErrorCode NaClAppLoadFile(struct Gio       *gp,
    * The contents of the dynamic text region will get remapped as
    * non-writable.
    */
-  NaClLog(2, "Applying memory protection\n");
+  ZLOGS(LOG_DEBUG, "Applying memory protection");
   subret = NaClMemoryProtection(nap);
-  if (LOAD_OK != subret) {
+  if(LOAD_OK != subret)
+  {
     ret = subret;
     goto done;
   }
 
-  NaClLog(2, "NaClAppLoadFile done; ");
+  ZLOGS(LOG_DEBUG, "NaClAppLoadFile done; ");
   NaClLogAddressSpaceLayout(nap);
   ret = LOAD_OK;
-done:
-  NaClElfImageDelete(image);
 
+  done:
+  NaClElfImageDelete(image);
   NaClPerfCounterMark(&time_load_file, "EndLoadFile");
   NaClPerfCounterIntervalTotal(&time_load_file);
   return ret;
 }
+#undef DUMP
 
-int NaClAddrIsValidEntryPt(struct NaClApp *nap,
-                           uintptr_t      addr) {
-  if (0 != (addr & (nap->bundle_size - 1))) {
-    return 0;
-  }
-
+int NaClAddrIsValidEntryPt(struct NaClApp *nap, uintptr_t addr)
+{
+  if(0 != (addr & (nap->bundle_size - 1))) return 0;
   return addr < nap->static_text_end;
 }
 
@@ -393,9 +400,7 @@ int NaClAddrIsValidEntryPt(struct NaClApp *nap,
  */
 int NaClCreateMainThread(struct NaClApp *nap)
 {
-  /*
-   * Compute size of string tables for argv and envv
-   */
+  /* Compute size of string tables for argv and envv */
   int                   retval;
   int                   envc;
   size_t                size;
@@ -422,25 +427,24 @@ int NaClCreateMainThread(struct NaClApp *nap)
   /* }} */
 
   retval = 0;  /* fail */
-  CHECK(argc > 0);
-  CHECK(NULL != argv);
+  ZLOGFAIL(argc <= 0, EFAULT, FAILED_MSG);
+  ZLOGFAIL(NULL == argv, EFAULT, FAILED_MSG);
 
   envc = 0;
-  if (NULL != envv) {
-    char const *const *pp;
-    for (pp = envv; NULL != *pp; ++pp) {
+  if(NULL != envv)
+  {
+    char const * const *pp;
+    for(pp = envv; NULL != *pp; ++pp)
       ++envc;
-    }
   }
+
   envv_len = 0;
   argv_len = malloc(argc * sizeof argv_len[0]);
   envv_len = malloc(envc * sizeof envv_len[0]);
-  if (NULL == argv_len) {
+  if(NULL == argv_len)
     goto cleanup;
-  }
-  if (NULL == envv_len && 0 != envc) {
+  if(NULL == envv_len && 0 != envc)
     goto cleanup;
-  }
 
   size = 0;
 
@@ -456,11 +460,14 @@ int NaClCreateMainThread(struct NaClApp *nap)
    * code does not look like string data....
    */
 
-  for (i = 0; i < argc; ++i) {
+  for(i = 0; i < argc; ++i)
+  {
     argv_len[i] = strlen(argv[i]) + 1;
     size += argv_len[i];
   }
-  for (i = 0; i < envc; ++i) {
+
+  for(i = 0; i < envc; ++i)
+  {
     envv_len[i] = strlen(envv[i]) + 1;
     size += envv_len[i];
   }
@@ -484,17 +491,16 @@ int NaClCreateMainThread(struct NaClApp *nap)
    * for correctness.
    */
   auxv_entries = 1;
-  if (0 != nap->user_entry_pt) {
+  if(0 != nap->user_entry_pt)
     auxv_entries++;
-  }
-  ptr_tbl_size = (((NACL_STACK_GETS_ARG ? 1 : 0) +
-                   (3 + argc + 1 + envc + 1 + auxv_entries * 2)) *
-                  sizeof(uint32_t));
 
-  if (SIZE_T_MAX - size < ptr_tbl_size) {
-    NaClLog(LOG_WARNING,
-            "NaClCreateMainThread: ptr_tbl_size cause size of"
-            " argv / environment copy to overflow!?!\n");
+  ptr_tbl_size = (sizeof(uint32_t) *
+      ((NACL_STACK_GETS_ARG ? 1 : 0) + (3 + argc + 1 + envc + 1 + auxv_entries * 2)));
+
+  if(SIZE_T_MAX - size < ptr_tbl_size)
+  {
+    ZLOG(LOG_ERROR, "NaClCreateMainThread: ptr_tbl_size cause size of"
+        " argv / environment copy to overflow!?!");
     retval = 0;
     goto cleanup;
   }
@@ -502,7 +508,8 @@ int NaClCreateMainThread(struct NaClApp *nap)
 
   size = (size + NACL_STACK_ALIGN_MASK) & ~NACL_STACK_ALIGN_MASK;
 
-  if (size > nap->stack_size) {
+  if(size > nap->stack_size)
+  {
     retval = 0;
     goto cleanup;
   }
@@ -510,9 +517,9 @@ int NaClCreateMainThread(struct NaClApp *nap)
   /* write strings and char * arrays to stack */
   stack_ptr = (nap->mem_start + ((uintptr_t) 1U << nap->addr_bits) - size);
 
-  NaClLog(2, "setting stack to : %016"NACL_PRIxPTR"\n", stack_ptr);
+  ZLOGS(LOG_DEBUG, "setting stack to : %016lx", stack_ptr);
 
-  ZLOGFAIL(0 != (stack_ptr & NACL_STACK_ALIGN_MASK),
+  ZLOGFAIL(0 != (stack_ptr & NACL_STACK_ALIGN_MASK), EFAULT,
       "stack_ptr not aligned: %016x\n", stack_ptr);
 
   p = (uint32_t *) stack_ptr;
@@ -532,33 +539,34 @@ int NaClCreateMainThread(struct NaClApp *nap)
   *p++ = envc;
   *p++ = argc;
 
-  for (i = 0; i < argc; ++i) {
-    *p++ = (uint32_t) NaClSysToUser(nap, (uintptr_t) strp);
-    NaClLog(2, "copying arg %d  %p -> %p\n",
-            i, argv[i], strp);
+  for(i = 0; i < argc; ++i)
+  {
+    *p++ = (uint32_t)NaClSysToUser(nap, (uintptr_t)strp);
+    ZLOGS(LOG_DEBUG, "copying arg %d %p -> %p", i, argv[i], strp);
     strcpy(strp, argv[i]);
     strp += argv_len[i];
   }
   *p++ = 0;  /* argv[argc] is NULL.  */
 
-  for (i = 0; i < envc; ++i) {
-    *p++ = (uint32_t) NaClSysToUser(nap, (uintptr_t) strp);
-    NaClLog(2, "copying env %d  %p -> %p\n",
-            i, envv[i], strp);
+  for(i = 0; i < envc; ++i)
+  {
+    *p++ = (uint32_t)NaClSysToUser(nap, (uintptr_t)strp);
+    ZLOGS(LOG_DEBUG, "copying env %d %p -> %p", i, envv[i], strp);
     strcpy(strp, envv[i]);
     strp += envv_len[i];
   }
-  *p++ = 0;  /* envp[envc] is NULL.  */
+  *p++ = 0; /* envp[envc] is NULL.  */
 
   /* Push an auxv */
-  if (0 != nap->user_entry_pt) {
+  if(0 != nap->user_entry_pt)
+  {
     *p++ = AT_ENTRY;
-    *p++ = (uint32_t) nap->user_entry_pt;
+    *p++ = (uint32_t)nap->user_entry_pt;
   }
   *p++ = AT_NULL;
   *p++ = 0;
 
-  CHECK((char *) p == (char *) stack_ptr + ptr_tbl_size);
+  ZLOGFAIL((char*)p != (char*)stack_ptr + ptr_tbl_size, EFAULT, FAILED_MSG);
 
   /*
    * For x86, we adjust the stack pointer down to push a dummy return
@@ -567,9 +575,8 @@ int NaClCreateMainThread(struct NaClApp *nap)
   stack_ptr -= NACL_STACK_PAD_BELOW_ALIGN;
   memset((void *) stack_ptr, 0, NACL_STACK_PAD_BELOW_ALIGN);
 
-  NaClLog(2, "system stack ptr : %016"NACL_PRIxPTR"\n", stack_ptr);
-  NaClLog(2, "  user stack ptr : %016"NACL_PRIxPTR"\n",
-          NaClSysToUserStackAddr(nap, stack_ptr));
+  ZLOGS(LOG_DEBUG, "system stack ptr: %016lx", stack_ptr);
+  ZLOGS(LOG_DEBUG, "user stack ptr: %016lx", NaClSysToUserStackAddr(nap, stack_ptr));
 
   /* d'b: jump directly to user code instead of using thread launching */
   SwitchToApp(nap, stack_ptr);

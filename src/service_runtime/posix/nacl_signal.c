@@ -41,7 +41,8 @@ static int s_Signals[SIGNAL_COUNT] = {
 
 static struct sigaction s_OldActions[SIGNAL_COUNT];
 
-int NaClSignalStackAllocate(void **result) {
+int NaClSignalStackAllocate(void **result)
+{
   /*
    * We use mmap() to allocate the signal stack for two reasons:
    *
@@ -55,16 +56,13 @@ int NaClSignalStackAllocate(void **result) {
    * an exploitable way.
    */
   uint8_t *stack = mmap(NULL, SIGNAL_STACK_SIZE + STACK_GUARD_SIZE,
-                        PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS,
-                        -1, 0);
-  if (stack == MAP_FAILED) {
-    return 0;
-  }
-  /* We assume that the stack grows downwards. */
-  if (mprotect(stack, STACK_GUARD_SIZE, PROT_NONE) != 0) {
-    NaClLog(LOG_FATAL, "Failed to mprotect() the stack guard page:\n\t%s\n",
-      strerror(errno));
-  }
+      PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+  if(stack == MAP_FAILED) return 0;
+
+  /* We assume that the stack grows downwards. */ZLOGFAIL(
+      -1 == mprotect(stack, STACK_GUARD_SIZE, PROT_NONE), errno,
+      "Failed to mprotect() the stack guard page");
+
   *result = stack;
   return 1;
 }
@@ -102,13 +100,15 @@ static void FindAndRunHandler(int sig, siginfo_t *info, void *uc) {
   }
 }
 
-static void SignalCatch(int sig, siginfo_t *info, void *uc) {
+static void SignalCatch(int sig, siginfo_t *info, void *uc)
+{
   FindAndRunHandler(sig, info, uc);
 }
 
-void NaClSignalHandlerInitPlatform() {
+void NaClSignalHandlerInitPlatform()
+{
   struct sigaction sa;
-  int a;
+  int i;
 
   memset(&sa, 0, sizeof(sa));
   sigemptyset(&sa.sa_mask);
@@ -116,29 +116,23 @@ void NaClSignalHandlerInitPlatform() {
   sa.sa_flags = SA_ONSTACK | SA_SIGINFO;
 
   /* Mask all exceptions we catch to prevent re-entry */
-  for (a = 0; a < SIGNAL_COUNT; a++) {
-    sigaddset(&sa.sa_mask, s_Signals[a]);
-  }
+  for(i = 0; i < SIGNAL_COUNT; i++)
+    sigaddset(&sa.sa_mask, s_Signals[i]);
 
   /* Install all handlers */
-  for (a = 0; a < SIGNAL_COUNT; a++) {
-    if (sigaction(s_Signals[a], &sa, &s_OldActions[a]) != 0) {
-      NaClLog(LOG_FATAL, "Failed to install handler for %d.\n\tERR:%s\n",
-                          s_Signals[a], strerror(errno));
-    }
-  }
+  for(i = 0; i < SIGNAL_COUNT; i++)
+    ZLOGFAIL(-1 == sigaction(s_Signals[i], &sa, &s_OldActions[i]),
+        errno, "Failed to install handler for %d", s_Signals[i]);
 }
 
-void NaClSignalHandlerFiniPlatform() {
-  int a;
+void NaClSignalHandlerFiniPlatform()
+{
+  int i;
 
   /* Remove all handlers */
-  for (a = 0; a < SIGNAL_COUNT; a++) {
-    if (sigaction(s_Signals[a], &s_OldActions[a], NULL) != 0) {
-      NaClLog(LOG_FATAL, "Failed to unregister handler for %d.\n\tERR:%s\n",
-                          s_Signals[a], strerror(errno));
-    }
-  }
+  for(i = 0; i < SIGNAL_COUNT; i++)
+    ZLOGFAIL(-1 == sigaction(s_Signals[i], &s_OldActions[i], NULL),
+        errno, "Failed to unregister handler for %d", s_Signals[i]);
 }
 
 /*
@@ -148,21 +142,20 @@ void NaClSignalHandlerFiniPlatform() {
  * triggered from untrusted code.  For background, see:
  * http://code.google.com/p/nativeclient/issues/detail?id=1607
  */
-void NaClSignalAssertNoHandlers() {
-  int index;
-  for (index = 0; index < SIGNAL_COUNT; index++) {
-    int signum = s_Signals[index];
+void NaClSignalAssertNoHandlers()
+{
+  int i;
+
+  for(i = 0; i < SIGNAL_COUNT; i++)
+  {
+    int signum = s_Signals[i];
     struct sigaction sa;
-    if (sigaction(signum, NULL, &sa) != 0) {
-      NaClLog(LOG_FATAL, "NaClSignalAssertNoHandlers: "
-              "sigaction() call failed\n");
-    }
-    if ((sa.sa_flags & SA_SIGINFO) != 0
-        ? sa.sa_sigaction != NULL
-        : (sa.sa_handler != SIG_DFL && sa.sa_handler != SIG_IGN)) {
-      NaClLog(LOG_FATAL, "NaClSignalAssertNoHandlers: "
-              "A signal handler is registered for signal %d.  "
-              "Did Breakpad register this?\n", signum);
-    }
+
+    ZLOGFAIL(-1 == sigaction(signum, NULL, &sa), errno, "sigaction() call failed");
+
+    ZLOGFAIL((sa.sa_flags & SA_SIGINFO) != 0 ? sa.sa_sigaction != NULL
+        : (sa.sa_handler != SIG_DFL && sa.sa_handler != SIG_IGN), EFAULT,
+        "A signal handler is registered for signal %d. "
+        "Did Breakpad register this?\n", signum);
   }
 }

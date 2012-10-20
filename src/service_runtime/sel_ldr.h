@@ -193,7 +193,6 @@ struct NaClApp {
 
   /* d'b: added fields {{ */
   struct SystemManifest     *system_manifest;
-  int32_t                   zvm_code; /* zerovm return code */
   uintptr_t                 heap_end; /* end of user heap */
 
   /*

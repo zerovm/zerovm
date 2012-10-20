@@ -74,7 +74,7 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
       case 'l':
         /* calculate hard limit in Gb and don't allow it less then "big enough" */
         nap->storage_limit = ATOI(optarg) * ZEROVM_IO_LIMIT_UNIT;
-        ZLOGFAIL(nap->storage_limit < ZEROVM_IO_LIMIT_UNIT,
+        ZLOGFAIL(nap->storage_limit < ZEROVM_IO_LIMIT_UNIT, EFAULT,
             "invalid storage limit: %d", nap->storage_limit);
         break;
       case 'v':
@@ -89,7 +89,7 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
       default:
         ZLOG(LOG_ERROR, "ERROR: unknown option: [%c]", opt);
         puts(HELP_SCREEN);
-        exit(1);
+        exit(EINVAL);
         break;
     }
   }
@@ -104,9 +104,9 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
   if(manifest_name == NULL)
   {
     puts(HELP_SCREEN);
-    exit(1);
+    exit(EINVAL);
   }
-  ZLOGFAIL(ManifestCtor(manifest_name), "Invalid manifest '%s'", manifest_name);
+  ZLOGFAIL(ManifestCtor(manifest_name), EFAULT, "Invalid manifest '%s'", manifest_name);
 
   /* set available nap and manifest fields */
   assert(nap->system_manifest != NULL);
@@ -149,11 +149,11 @@ static void ValidateNexe(struct NaClApp *nap)
   args[1] = nap->system_manifest->nexe;
   ZLOGFAIL(g_spawn_sync(NULL, args, NULL, G_SPAWN_SEARCH_PATH |
       G_SPAWN_STDOUT_TO_DEV_NULL | G_SPAWN_STDERR_TO_DEV_NULL, NULL, NULL,
-      NULL, NULL, &exit_status, &error) == 0, "cannot start validator");
+      NULL, NULL, &exit_status, &error) == 0, EPERM, "cannot start validator");
 
   /* check the result */
   nap->validation_state = exit_status == 0 ? ValidationOK : ValidationFailed;
-  ZLOGFAIL(nap->validation_state != ValidationOK, "validation failed");
+  ZLOGFAIL(nap->validation_state != ValidationOK, ENOEXEC, "validation failed");
 }
 
 int main(int argc, char **argv)
@@ -181,15 +181,15 @@ int main(int argc, char **argv)
 
   ParseCommandLine(nap, argc, argv);
 
-  /* todo(d'b): does zerovm needs it? */
-  ZLOGFAIL(!GioFileRefCtor(&gout, stdout),
-             "Could not create general standard output channel");
+  /* todo(d'b): ### does zerovm needs it? */
+  ZLOGFAIL(!GioFileRefCtor(&gout, stdout), EIO,
+      "Could not create general standard output channel");
 
   /* validate given nexe and run/fail/exit */
   ValidateNexe(nap);
 
   /* the dyn_array constructor 1st call */
-  ZLOGFAIL(NaClAppCtor(nap) == 0, "Error while constructing app state");
+  ZLOGFAIL(NaClAppCtor(nap) == 0, EFAULT, "Error while constructing app state");
   errcode = LOAD_OK;
 
   /* We use the signal handler to verify a signal took place. */
@@ -218,17 +218,15 @@ int main(int argc, char **argv)
   NaClPerfCounterMark(&time_all_main, str);\
   NaClPerfCounterIntervalLast(&time_all_main);
 
-  if(0 == GioMemoryFileSnapshotCtor(&main_file, nap->system_manifest->nexe))
-  {
-    ZLOG(LOG_ERROR, "%s", strerror(errno));
-    ZLOG(LOG_FATAL, "Cannot open '%s'", nap->system_manifest->nexe);
-  }
+  ZLOGFAIL(0 == GioMemoryFileSnapshotCtor(&main_file, nap->system_manifest->nexe),
+      ENOENT, "Cannot open '%s'. %s", nap->system_manifest->nexe, strerror(errno));
+
   PERF_CNT("SnapshotNaclFile");
 
   /* validate untrusted code (nexe) */
   if(LOAD_OK == errcode)
   {
-    ZLOG(LOG_DEBUG, "Loading nacl file %s (non-RPC)\n", nap->system_manifest->nexe);
+    ZLOGS(LOG_DEBUG, "Loading nacl file %s", nap->system_manifest->nexe);
     errcode = NaClAppLoadFile((struct Gio *) &main_file, nap);
     if (LOAD_OK != errcode)
     {
@@ -252,9 +250,11 @@ int main(int argc, char **argv)
   SystemManifestCtor(nap); /* needs dyn_array initialized */
 
   /* error reporting done; can quit now if there was an error earlier */
-  if(LOAD_OK != errcode)
-    ZLOG(LOG_FATAL, "Not running app code since errcode is %s (%d)",
-            NaClErrorString(errcode), errcode);
+  /* remove it with nacl error */
+  ZLOGFAIL(LOAD_OK != errcode, EFAULT, "Not running app, errcode is %d", errcode);
+//  if(LOAD_OK != errcode)
+//    ZLOG(LOG_FATAL, "Not running app code since errcode is %s (%d)",
+//            NaClErrorString(errcode), errcode);
 
   /*
    * "defence in depth" part
@@ -268,14 +268,10 @@ int main(int argc, char **argv)
   /* start accounting */
   AccountingCtor(nap);
 
-  /* set user code trap() exit location */
+  /* set user code trap() exit location and switch to the user code */
   PERF_CNT("CreateMainThread");
   if(setjmp(user_exit) == 0)
-  {
-    /* pass control to the user code */
-    if(!NaClCreateMainThread(nap))
-      ZLOG(LOG_FATAL, "switching to nexe failed");
-  }
+    ZLOGFAIL(!NaClCreateMainThread(nap), EFAULT, "switching to nexe failed");
   PERF_CNT("WaitForMainThread");
   PERF_CNT("SelMainEnd");
 
