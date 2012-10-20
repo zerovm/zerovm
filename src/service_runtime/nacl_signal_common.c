@@ -66,7 +66,7 @@ enum NaClSignalResult NaClSignalHandleAll(int signal, void *ctx) {
       "Signal %d from %strusted code: Halting at 0x%lX", signal,
       NaClSignalContextIsUntrusted(&sigCtx) ? "un" : "", sigCtx.prog_ctr);
 
-  NaClExit((-signal) & 0xFF);
+  NaClExit(EINTR);
   return NACL_SIGNAL_RETURN; /* unreachable */
 }
 

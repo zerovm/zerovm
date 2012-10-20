@@ -145,6 +145,9 @@ static void ValidateNexe(struct NaClApp *nap)
   nap->validation_state = NotValidated;
   if(nap->skip_validator != 0) return;
 
+  /* check nexe */
+  ZLOGFAIL(GetFileSize(nap->system_manifest->nexe) < 0, ENOENT, "nexe open error");
+
   /* prepare command line and run it */
   args[1] = nap->system_manifest->nexe;
   ZLOGFAIL(g_spawn_sync(NULL, args, NULL, G_SPAWN_SEARCH_PATH |
