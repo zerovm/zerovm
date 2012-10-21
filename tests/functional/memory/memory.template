@@ -15,4 +15,3 @@ NexeMax = 4194304
 MemMax = 268435456
 NodeName = test, 1
 Timeout = 60
-

@@ -98,6 +98,11 @@ int main()
 {
   zvm_bulk = zvm_init();
 
+  /* try to get more memory then available */
+  char *p = malloc(268435456);
+  ZTEST(p == NULL);
+  free(p);
+
   /*
    * new plan
    * 1. get the heap start via nacl setbreak. compare with malloc() returning

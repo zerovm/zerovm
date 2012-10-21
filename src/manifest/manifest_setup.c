@@ -112,7 +112,7 @@ static void PreallocateUserMemory(struct NaClApp *nap)
   p = (void*)NaClUserToSys(nap, (uintptr_t)p);
   i = NaCl_mprotect(p, heap, PROT_READ | PROT_WRITE);
   ZLOGFAIL(0 != i, -i, "cannot set protection on user heap");
-  nap->heap_end = (uintptr_t)p + heap;
+  nap->heap_end = NaClSysToUser(nap, (uintptr_t)p + heap);
 }
 
 /* helper. sets custom user attributes for user */
