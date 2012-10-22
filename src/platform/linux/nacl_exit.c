@@ -4,6 +4,7 @@
  * be found in the LICENSE file.
  */
 #include <errno.h>
+#include <assert.h>
 #include "src/platform/nacl_exit.h"
 #include "src/manifest/manifest_setup.h"
 #include "src/service_runtime/nacl_globals.h"
@@ -11,6 +12,7 @@
 #include "src/service_runtime/nacl_all_modules.h"
 
 static int verb = LOG_INSANE;
+static const char *zvm_state = "unknown error, see syslog";
 
 static void VmentryPrinter(void *state, struct NaClVmmapEntry *vmep)
 {
@@ -50,11 +52,24 @@ static void FinalDump(struct NaClApp *nap)
 static void Finalizer(void)
 {
   /* todo(d'b): get rid of hardcoded "ok" */
-  if(!STREQ(gnap->zvm_state, "ok"))
-    FinalDump(gnap);
+  if(!STREQ(zvm_state, OK_STATE)) FinalDump(gnap);
 
   SystemManifestDtor(gnap);
   ProxyReport(gnap);
+}
+
+/* set the text for "exit state" in report */
+void SetExitState(const char *state)
+{
+  assert(state != NULL);
+  zvm_state = state;
+}
+
+/* get the "exit state" message */
+const char *GetExitState()
+{
+  assert(zvm_state != NULL);
+  return zvm_state;
 }
 
 void NaClAbort(void)

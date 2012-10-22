@@ -36,7 +36,7 @@ NORETURN void SwitchToApp(struct NaClApp  *nap, uintptr_t stack_ptr)
 
   /* construct "nacl_user" global */
   NaClThreadContextCtor(nacl_user, nap, nap->initial_entry_pt,
-                        NaClSysToUserStackAddr(nap, stack_ptr), 0);
+      NaClSysToUserStackAddr(nap, stack_ptr), 0);
   nacl_user->sysret = nap->break_addr;
   nacl_user->prog_ctr = NaClUserToSys(nap, nap->initial_entry_pt);
   nacl_user->new_prog_ctr = NaClUserToSys(nap, nap->initial_entry_pt);
@@ -46,9 +46,6 @@ NORETURN void SwitchToApp(struct NaClApp  *nap, uintptr_t stack_ptr)
   assert(nacl_sys != NULL);
   nacl_sys->rbp = NaClGetStackPtr();
   nacl_sys->rsp = NaClGetStackPtr();
-
-  /* set state to "ok" just before the nexe start */
-  sprintf(nap->zvm_state, "ok");
 
   /* pass control to the nexe */
   NaClSwitchToApp(nap, nacl_user->new_prog_ctr);

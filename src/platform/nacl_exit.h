@@ -13,10 +13,19 @@
 
 #include "src/include/nacl_base.h"
 
+#define UNKNOWN_STATE "unknown error, see syslog"
+#define OK_STATE "ok"
+
 EXTERN_C_BEGIN
 
 void NaClExit(int code);
 void NaClAbort(void);
+
+/* set the text for "exit state" in report */
+void SetExitState(const char *state);
+
+/* get the "exit state" message */
+const char *GetExitState();
 
 EXTERN_C_END
 

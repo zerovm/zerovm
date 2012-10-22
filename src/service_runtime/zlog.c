@@ -41,23 +41,21 @@ void ZLogTag(const char *file, int line)
 }
 
 #define ZLO(cond) \
-  do {\
-    char msg[LOG_MSG_LIMIT];\
-    int offset = 0;\
-    va_list ap;\
+  char msg[LOG_MSG_LIMIT];\
+  int offset = 0;\
+  va_list ap;\
 \
-    if(cond) return;\
+  if(cond) return;\
 \
-   /* construct log message */\
-    va_start(ap, fmt);\
-    if(zfile != NULL)\
-      offset = sprintf(msg, TAG_FORMAT, zfile, zline);\
-    vsprintf(msg + offset, fmt, ap);\
-    va_end(ap);\
+ /* construct log message */\
+  va_start(ap, fmt);\
+  if(zfile != NULL)\
+    offset = sprintf(msg, TAG_FORMAT, zfile, zline);\
+  vsprintf(msg + offset, fmt, ap);\
+  va_end(ap);\
 \
-    /* log the message */\
-    syslog(ZLOG_PRIORITY, "%s", msg);\
-  } while(0)
+  /* log the message */\
+  syslog(ZLOG_PRIORITY, "%s", msg);
 
 /*
  * append tag (if data is available) and put the message to syslog
@@ -69,15 +67,16 @@ void ZLog(int priority, char *fmt, ...)
   if(priority == LOG_FATAL) NaClAbort();
 }
 
-/* if condition is true, log and abort */
-void FailIf(int cond, int err, char const *fmt, ...)
-{
-  ZLO(!cond);
-  NaClExit(err);
-}
-
 /* if condition is true, log and continue */
 void LogIf(int cond, char const *fmt, ...)
 {
   ZLO(!cond);
+}
+
+/* if condition is true, log and abort */
+void FailIf(int cond, int err, char const *fmt, ...)
+{
+  ZLO(!cond);
+  SetExitState(msg);
+  NaClExit(err);
 }

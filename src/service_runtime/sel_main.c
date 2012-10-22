@@ -114,14 +114,6 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
   syscallback = 0;
 }
 
-/* set zerovm state by given message */
-/* todo(): move it to "tools.h", zvm_state should not be updated directly */
-static void SetZVMState(struct NaClApp *nap, const char *msg)
-{
-  snprintf(nap->zvm_state, SIGNAL_STRLEN, "%s", msg);
-  nap->zvm_state[SIGNAL_STRLEN] = '\0';
-}
-
 /*
  * set validation state according to zvm command line options
  * note: updates nap->validation_state
@@ -174,7 +166,6 @@ int main(int argc, char **argv)
   memset(nap->system_manifest, 0, sizeof *nap->system_manifest);
   gnap = nap;
   ZLogCtor(0); /* make log working */
-  SetZVMState(nap, "nexe didn't start");
   NaClSignalHandlerInit();
 
   NaClAllModulesInit();
@@ -270,6 +261,7 @@ int main(int argc, char **argv)
   PERF_CNT("CreateMainThread");
   if(setjmp(user_exit) == 0)
     ZLOGFAIL(!NaClCreateMainThread(nap), EFAULT, "switching to nexe failed");
+  SetExitState(OK_STATE);
   PERF_CNT("WaitForMainThread");
   PERF_CNT("SelMainEnd");
 

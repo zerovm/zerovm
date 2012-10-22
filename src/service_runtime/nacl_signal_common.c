@@ -58,8 +58,10 @@ int NaClSignalContextIsUntrusted(const struct NaClSignalContext *sigCtx)
 }
 
 /* d'b(REPORT): updated */
-enum NaClSignalResult NaClSignalHandleAll(int signum, void *ctx) {
+enum NaClSignalResult NaClSignalHandleAll(int signum, void *ctx)
+{
   struct NaClSignalContext sigCtx;
+  static char msg[SIGNAL_STRLEN]; /* stack cannot be used */
 
   /*
    * Return an 8 bit error code which is -signal to
@@ -92,9 +94,9 @@ enum NaClSignalResult NaClSignalHandleAll(int signum, void *ctx) {
 #endif
 
   /* set zvm state */
-  SNPRINTF(gnap->zvm_state, SIGNAL_STRLEN,
-      "Signal %d from %strusted code: Halting at 0x%lX", signum,
-      NaClSignalContextIsUntrusted(&sigCtx) ? "un" : "", sigCtx.prog_ctr);
+  SNPRINTF(msg, SIGNAL_STRLEN, "Signal %d from %strusted code: Halting at 0x%012lX",
+      signum, NaClSignalContextIsUntrusted(&sigCtx) ? "un" : "", sigCtx.prog_ctr);
+  SetExitState(msg);
 
   NaClExit(EINTR);
   return NACL_SIGNAL_RETURN; /* unreachable */

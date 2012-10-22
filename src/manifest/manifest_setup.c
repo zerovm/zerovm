@@ -72,7 +72,6 @@ static void DisableSuperUser()
         fatal("setuid: Unable to drop user privileges: %S", strerror(errno));
   }
 
-  // ###
   ZLOGIF(result != 0, "cannot disable super user");
 #endif
 }
@@ -94,19 +93,21 @@ void LastDefenseLine(struct NaClApp *nap)
 static void PreallocateUserMemory(struct NaClApp *nap)
 {
   uintptr_t i;
-  uint32_t heap;
+  int64_t heap;
   void *p;
 
   assert(nap != NULL);
   assert(nap->system_manifest != NULL);
 
-  /* quit function if max_mem is not specified in manifest */
-  ZLOGFAIL(nap->heap_end == 0, EFAULT, "user heap size in not specified in manifest");
+  /* quit function if max_mem is not specified or invalid */
+  ZLOGFAIL(nap->heap_end == 0, ENOMEM, "user memory size invalid or not specified");
+  ZLOGFAIL(nap->heap_end > FOURGIG, ENOMEM, "user memory size is too large");
 
   /* calculate user heap size (must be allocated next to the data_end) */
   p = (void*)NaClRoundAllocPage(nap->data_end);
   heap = nap->heap_end - nap->stack_size;
   heap = NaClRoundAllocPage(heap) - NaClRoundAllocPage(nap->data_end);
+  ZLOGFAIL(heap <= LEAST_USER_HEAP_SIZE, ENOMEM, "user heap size is too small");
 
   /* since 4gb of user space is already allocated just set protection to the heap */
   p = (void*)NaClUserToSys(nap, (uintptr_t)p);
@@ -396,12 +397,12 @@ int ProxyReport(struct NaClApp *nap)
   length = snprintf(report, BIG_ENOUGH_SPACE,
       "validator state = %d\nuser return code = %d\netag = %s\naccounting = %s\n"
       "exit state = %s\n", nap->validation_state,
-      nap->system_manifest->user_ret_code, etag, nap->accounting, nap->zvm_state);
+      nap->system_manifest->user_ret_code, etag, nap->accounting, GetExitState());
 #else
   /* .. but for production zvm will switch to more brief output */
   length = snprintf(report, BIG_ENOUGH_SPACE, "%d\n%d\n%s\n%s\n%s\n",
       nap->validation_state, nap->system_manifest->user_ret_code,
-      etag, nap->accounting, nap->zvm_state);
+      etag, nap->accounting, GetExitState());
 #endif
 
   /* give the report to proxy */
@@ -411,7 +412,7 @@ int ProxyReport(struct NaClApp *nap)
   length = snprintf(report, BIG_ENOUGH_SPACE,
       "validator state = %d, user return code = %d, etag = %s, accounting = %s, "
       "exit state = %s", nap->validation_state,
-      nap->system_manifest->user_ret_code, etag, nap->accounting, nap->zvm_state);
+      nap->system_manifest->user_ret_code, etag, nap->accounting, GetExitState());
   ZLOGS(LOG_DEBUG, "%s", report);
 
   return i == length ? OK_CODE : ERR_CODE;
