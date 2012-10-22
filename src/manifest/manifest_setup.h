@@ -49,7 +49,6 @@ struct SystemManifest
 
   /* nexe control */
   char *nexe; /* nexe file name */
-  int32_t nexe_max; /* max allowed nexe length */
   char *nexe_etag; /* signature. reserved for a future "short" nexe validation */
   unsigned char *etag; /* channels and user memory digital signature */
   int32_t timeout; /* time user module allowed to run */

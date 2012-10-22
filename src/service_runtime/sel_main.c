@@ -111,6 +111,7 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
   /* set available nap and manifest fields */
   assert(nap->system_manifest != NULL);
   nap->system_manifest->nexe = GetValueByKey("Nexe");
+  ZLOGFAIL(GetFileSize(nap->system_manifest->nexe) < 0, ENOENT, "nexe open error");
   syscallback = 0;
 }
 
@@ -135,9 +136,6 @@ static void ValidateNexe(struct NaClApp *nap)
   /* skip validation? */
   nap->validation_state = NotValidated;
   if(nap->skip_validator != 0) return;
-
-  /* check nexe */
-  ZLOGFAIL(GetFileSize(nap->system_manifest->nexe) < 0, ENOENT, "nexe open error");
 
   /* prepare command line and run it */
   args[1] = nap->system_manifest->nexe;
@@ -188,15 +186,7 @@ int main(int argc, char **argv)
   if(nap->skip_qualification == 0)
   {
     NaClErrorCode pq_error = NaClRunSelQualificationTests();
-    if(LOAD_OK != pq_error)
-    {
-      errcode = pq_error;
-      nap->module_load_status = pq_error;
-      ZLOG(LOG_ERROR, "Error while loading \"%s\": %s",
-          NULL != nap->system_manifest->nexe ?
-              nap->system_manifest->nexe : "(no file, to-be-supplied-via-RPC)",
-          NaClErrorString(errcode));
-    }
+    ZLOGFAIL(LOAD_OK != pq_error, EFAULT, "platfrom qualification failed");
   }
 
   /* Remove the signal handler if we are not using it. */

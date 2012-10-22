@@ -242,7 +242,6 @@ static void SetTimeout(struct SystemManifest *policy)
 /* construct system_manifest object and initialize it from manifest */
 void SystemManifestCtor(struct NaClApp *nap)
 {
-  int32_t size;
   struct SystemManifest *policy;
 
   /* check for design errors */
@@ -254,21 +253,16 @@ void SystemManifestCtor(struct NaClApp *nap)
 
   /* get zerovm settings from manifest */
   policy->version = GetValueByKey("Version");
-  policy->nexe = GetValueByKey("Nexe");
   policy->nexe_etag = GetValueByKey("NexeEtag");
-  GET_INT_BY_KEY(policy->nexe_max, "NexeMax");
 
   /*
    * prepare overall etag context. if failed report will not be shown
    * todo(d'b): show report
    */
-  if(TagEngineEnabled())
+  if(TagEngineEnabled() && TagCtor(&nap->user_tag) == ERR_CODE)
   {
-    if(TagCtor(&nap->user_tag) == ERR_CODE)
-    {
-      ZLOG(LOG_ERROR, "cannot construct overall channels tag");
-      _exit(1);
-    }
+    ZLOG(LOG_ERROR, "cannot construct overall channels tag");
+    _exit(1);
   }
 
   /* check mandatory manifest keys */
@@ -276,17 +270,7 @@ void SystemManifestCtor(struct NaClApp *nap)
       "the manifest version is not provided");
   ZLOGFAIL(STRCMP(nap->system_manifest->version, MANIFEST_VERSION),
       EFAULT, "manifest version not supported");
-  ZLOGFAIL(nap->system_manifest->nexe == NULL, EFAULT, "nexe name not provided");
-  size = GetFileSize(nap->system_manifest->nexe);
-  ZLOGFAIL(size < 0, EIO, "invalid nexe");
-  if(nap->system_manifest->nexe_max)
-    ZLOGFAIL(nap->system_manifest->nexe_max < size, EFBIG, "nexe size = %d", size);
   SetTimeout(policy);
-
-  /*
-   * todo(d'b): command line and environment should be passed to the untrusted
-   * "as is" through the dedicated channel: "/dev/environment"
-   */
 
   /* user data (environment, command line) */
   policy->envp = NULL;
@@ -384,7 +368,7 @@ int ProxyReport(struct NaClApp *nap)
   assert(nap->system_manifest != NULL);
 
   /* tag user memory and channels */
-  /* bug: if user memory is not set up zvm crashes */
+  /* todo(d'b)#97: if user memory is not set up zvm crashes */
   if(TagEngineEnabled())
   {
     ChannelsDigest(nap);
