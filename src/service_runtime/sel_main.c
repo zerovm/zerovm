@@ -153,7 +153,6 @@ int main(int argc, char **argv)
   struct NaClApp state, *nap = &state;
   struct SystemManifest sys_mft;
   NaClErrorCode errcode = LOAD_INTERNAL;
-  struct GioFile gout;
   struct GioMemoryFileSnapshot main_file;
   struct NaClPerfCounter time_all_main;
 
@@ -170,10 +169,6 @@ int main(int argc, char **argv)
   NaClPerfCounterCtor(&time_all_main, "SelMain");
 
   ParseCommandLine(nap, argc, argv);
-
-  /* todo(d'b): ### does zerovm needs it? */
-  ZLOGFAIL(!GioFileRefCtor(&gout, stdout), EIO,
-      "Could not create general standard output channel");
 
   /* validate given nexe and run/fail/exit */
   ValidateNexe(nap);

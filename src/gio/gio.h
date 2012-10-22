@@ -99,27 +99,6 @@ struct GioFile {
   FILE        *iop;
 };
 
-ssize_t GioFileRead(struct Gio  *vself,
-                    void        *buf,
-                    size_t      count);
-
-ssize_t GioFileWrite(struct Gio *vself,
-                     const void *buf,
-                     size_t     count);
-
-off_t GioFileSeek(struct Gio  *vself,
-                  off_t       offset,
-                  int         whence);
-
-int GioFileFlush(struct Gio *vself);
-
-int GioFileClose(struct Gio *vself);
-
-void  GioFileDtor(struct Gio  *vself);
-
-int GioFileRefCtor(struct GioFile *self,
-                   FILE           *iop);
-
 struct GioMemoryFile {
   struct Gio  base;
   char        *buffer;

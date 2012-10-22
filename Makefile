@@ -19,7 +19,7 @@ CCFLAGS2=-Wextra -Wswitch-enum -Wsign-compare $(CCFLAGS)
 CXXFLAGS1=-c -std=c++98 $(CXXFLAGS0) $(FLAGS0) $(NACLDEFS) $(CXXFLAGS) -I. -Ilib
 CXXFLAGS2=-Wl,-z,noexecstack $(CXXFLAGS0) $(CXXFLAGS) -Lobj -L/usr/lib64 -pie -Wl,-z,relro -Wl,-z,now
 
-OBJS=obj/dyn_array.o obj/elf_util.o obj/gio_mem.o obj/gio_mem_snapshot.o obj/gio.o obj/manifest_parser.o obj/manifest_setup.o obj/mount_channel.o obj/nacl_all_modules.o obj/nacl_dep_qualify_arch.o obj/nacl_dep_qualify.o obj/nacl_desc_base.o obj/nacl_error_code.o obj/nacl_exit.o obj/nacl_host_desc_common.o obj/zlog.o obj/nacl_memory_object.o obj/nacl_os_qualify.o obj/nacl_perf_counter.o obj/nacl_refcount.o obj/nacl_signal_64.o obj/nacl_signal_common.o obj/nacl_signal.o obj/nacl_switch_64.o obj/nacl_switch_to_app_64.o obj/nacl_syscall_64.o obj/nacl_syscall_handlers.o obj/nacl_syscall_hook.o obj/nacl_time.o obj/nrd_all_modules.o obj/platform_init.o obj/prefetch.o obj/preload.o obj/sel_addrspace.o obj/sel_addrspace_posix_x86_64.o obj/sel_addrspace_x86_64.o obj/sel_ldr.o obj/sel_ldr_standard.o obj/sel_ldr_x86_64.o obj/sel_mem.o obj/sel_memory.o obj/sel_qualify.o obj/sel_rt_64.o obj/sel_segments.o obj/tramp_64.o obj/trap.o obj/etag.o obj/accounting.o
+OBJS=obj/dyn_array.o obj/elf_util.o obj/gio_mem.o obj/gio_mem_snapshot.o obj/manifest_parser.o obj/manifest_setup.o obj/mount_channel.o obj/nacl_all_modules.o obj/nacl_dep_qualify_arch.o obj/nacl_dep_qualify.o obj/nacl_desc_base.o obj/nacl_error_code.o obj/nacl_exit.o obj/nacl_host_desc_common.o obj/zlog.o obj/nacl_memory_object.o obj/nacl_os_qualify.o obj/nacl_perf_counter.o obj/nacl_refcount.o obj/nacl_signal_64.o obj/nacl_signal_common.o obj/nacl_signal.o obj/nacl_switch_64.o obj/nacl_switch_to_app_64.o obj/nacl_syscall_64.o obj/nacl_syscall_handlers.o obj/nacl_syscall_hook.o obj/nacl_time.o obj/nrd_all_modules.o obj/platform_init.o obj/prefetch.o obj/preload.o obj/sel_addrspace.o obj/sel_addrspace_posix_x86_64.o obj/sel_addrspace_x86_64.o obj/sel_ldr.o obj/sel_ldr_standard.o obj/sel_ldr_x86_64.o obj/sel_mem.o obj/sel_memory.o obj/sel_qualify.o obj/sel_rt_64.o obj/sel_segments.o obj/tramp_64.o obj/trap.o obj/etag.o obj/accounting.o
 
 CC=@gcc
 CXX=@g++
@@ -213,9 +213,6 @@ obj/zlog.o: src/service_runtime/zlog.c
 	$(CC) ${CCFLAGS1} -o $@ $^
 
 obj/platform_init.o: src/platform/platform_init.c
-	$(CC) ${CCFLAGS1} -o $@ $^
-
-obj/gio.o: src/gio/gio.c
 	$(CC) ${CCFLAGS1} -o $@ $^
 
 obj/gio_mem.o: src/gio/gio_mem.c
