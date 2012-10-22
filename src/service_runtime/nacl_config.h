@@ -82,21 +82,12 @@
 #define NACL_MAX_FD                   4096
 
 /*
- * Macro for the start address of the trampolines.
- */
-#if defined(NACL_TARGET_ARM_THUMB2_MODE)
-/*
- * Defining the start of the trampolines to something less than 64k allows
- * better representation with thumb2 immediates.
- */
-#define NACL_SYSCALL_START_ADDR       0x8000
-#else
-/*
+ * Macro for the start address of the trampolines
  * The first 64KB (16 pages) are inaccessible.  On x86, this is to prevent
  * addr16/data16 attacks.
  */
 #define NACL_SYSCALL_START_ADDR       (16 << NACL_PAGESHIFT)
-#endif
+
 /* Macro for the start address of a specific trampoline.  */
 #define NACL_SYSCALL_ADDR(syscall_number) \
     (NACL_SYSCALL_START_ADDR + (syscall_number << NACL_SYSCALL_BLOCK_SHIFT))
@@ -126,15 +117,10 @@
  * NACL_TRAMPOLINE_END gives the address of the first byte after the
  * trampolines.
  */
-#if defined(NACL_TARGET_ARM_THUMB2_MODE)
-#define NACL_TRAMPOLINE_START 0x8000
-#define NACL_TRAMPOLINE_SIZE 0x8000
-#else
 #define NACL_NULL_REGION_SHIFT  16
 #define NACL_TRAMPOLINE_START   (1 << NACL_NULL_REGION_SHIFT)
 #define NACL_TRAMPOLINE_SHIFT   16
 #define NACL_TRAMPOLINE_SIZE    (1 << NACL_TRAMPOLINE_SHIFT)
-#endif  /* defined(NACL_TARGET_ARM_THUMB2_MODE) */
 #define NACL_TRAMPOLINE_END     (NACL_TRAMPOLINE_START + NACL_TRAMPOLINE_SIZE)
 
 /*
@@ -174,24 +160,6 @@
 # define NACL_FAKE_INODE_NUM     0x6c43614e
 #endif
 
-#if NACL_ARCH(NACL_BUILD_ARCH) == NACL_x86
-
-# if NACL_BUILD_SUBARCH == 32
-#  define NACL_USERRET_FIX        (0x8)
-#  define NACL_SYSARGS_FIX        (NACL_USERRET_FIX + 0x4)
-#  define NACL_SYSCALLRET_FIX     (NACL_USERRET_FIX + 0x4)
-/*
- * System V Application Binary Interface, Intel386 Architcture
- * Processor Supplement, section 3-10, says stack alignment is
- * 4-bytes, but gcc-generated code can require 16-byte alignment
- * (depending on compiler flags in force) for SSE instructions, so we
- * must do so here as well.
- */
-#  define NACL_STACK_ALIGN_MASK   (0xf)
-#  define NACL_STACK_GETS_ARG     (1)
-#  define NACL_STACK_PAD_BELOW_ALIGN (4)
-
-# elif NACL_BUILD_SUBARCH == 64
 #  define NACL_USERRET_FIX        (0x8)
 #  define NACL_SYSARGS_FIX        (-0x18)
 #  define NACL_SYSCALLRET_FIX     (0x10)
@@ -203,48 +171,17 @@
 #  define NACL_STACK_ALIGN_MASK   (0xf)
 #  define NACL_STACK_GETS_ARG     (0)
 #  define NACL_STACK_PAD_BELOW_ALIGN (8)
-# else /* NACL_BUILD_SUBARCH */
-#  error Unknown platform!
-# endif /* NACL_BUILD_SUBARCH */
 
-#elif NACL_ARCH(NACL_BUILD_ARCH) == NACL_arm
+/* d'b: macro definitions for the user space allocation */
+#define FOURGIG     (((size_t) 1) << 32)
+#define GUARDSIZE   (10 * FOURGIG)
+#define ALIGN_BITS  (32)
+#define R15_CONST   ((void*)0x7f0000000000) /* d'b: base address to mmap to */
+#define RELATIVE_MMAP (MAP_ANONYMOUS | MAP_NORESERVE | MAP_PRIVATE) /* d'b */
+#define ABSOLUTE_MMAP (RELATIVE_MMAP | MAP_FIXED) /* d'b */
+#define START_OF_USER_SPACE ((uintptr_t)R15_CONST)
+#define END_OF_USER_SPACE (START_OF_USER_SPACE + FOURGIG + 2 * GUARDSIZE)
 
-# if defined(NACL_TARGET_ARM_THUMB2_MODE)
-#  define NACL_HALT         bkpt
-# else
-#  define NACL_HALT         mov pc, #0
-# endif  /* defined(NACL_TARGET_ARM_THUMB2_MODE) */
-
-/* 16-byte bundles, 256MB code segment*/
-# define NACL_CONTROL_FLOW_MASK      0xF000000F
-
-# define NACL_DATA_FLOW_MASK      0xC0000000
-
-# define NACL_USERRET_FIX         (0x4)
-# define NACL_SYSARGS_FIX         (NACL_USERRET_FIX + 0x4)
-# define NACL_SYSCALLRET_FIX      (NACL_USERRET_FIX + 0x4)
-/*
- * See ARM Procedure Call Standard, ARM IHI 0042D, section 5.2.1.2.
- * http://infocenter.arm.com/help/topic/com.arm.doc.ihi0042a/IHI0042A_aapcs.pdf
- * -- the "public" stack alignment is required to be 8 bytes,
- */
-# define NACL_STACK_ALIGN_MASK    (0x7)
-# define NACL_STACK_GETS_ARG      (0)
-# define NACL_STACK_PAD_BELOW_ALIGN (0)
-
-/*
- * NOTE: Used by various assembler files, needs to be
- *       synchronized with NaClThreadContext
- */
-# define NACL_CALLEE_SAVE_LIST {r4, r5, r6, r7, r8, r9, r10, fp, sp}
-
-
-
-#else /* NACL_ARCH(NACL_BUILD_ARCH) */
-
-# error Unknown platform!
-
-#endif /* NACL_ARCH(NACL_BUILD_ARCH) */
 
 
 #endif  /* NATIVE_CLIENT_SERVICE_RUNTIME_NACL_CONFIG_H_ */

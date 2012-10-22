@@ -110,7 +110,6 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
 
   /* set available nap and manifest fields */
   assert(nap->system_manifest != NULL);
-  nap->user_side_flag = 0; /* we are in the trusted code */
   nap->system_manifest->nexe = GetValueByKey("Nexe");
   syscallback = 0;
 }
@@ -171,7 +170,6 @@ int main(int argc, char **argv)
   /* d'b: initial settings */
   /* todo(d'b): move to inline function and explicitly set all fields */
   memset(nap, 0, sizeof *nap);
-  nap->trusted_code = 1;
   nap->system_manifest = &sys_mft;
   memset(nap->system_manifest, 0, sizeof *nap->system_manifest);
   gnap = nap;
@@ -255,9 +253,6 @@ int main(int argc, char **argv)
   /* error reporting done; can quit now if there was an error earlier */
   /* remove it with nacl error */
   ZLOGFAIL(LOAD_OK != errcode, EFAULT, "Not running app, errcode is %d", errcode);
-//  if(LOAD_OK != errcode)
-//    ZLOG(LOG_FATAL, "Not running app code since errcode is %s (%d)",
-//            NaClErrorString(errcode), errcode);
 
   /*
    * "defence in depth" part

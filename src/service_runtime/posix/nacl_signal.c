@@ -4,9 +4,11 @@
  * found in the LICENSE file.
  */
 #include <errno.h>
+#include <assert.h>
 #include <signal.h>
 #include <sys/mman.h>
 #include "src/service_runtime/nacl_signal.h"
+#include "src/service_runtime/nacl_globals.h"
 #include "src/service_runtime/sel_ldr.h"
 
 /*
@@ -41,6 +43,36 @@ static int s_Signals[SIGNAL_COUNT] = {
 
 static struct sigaction s_OldActions[SIGNAL_COUNT];
 
+void NaClSignalStackRegister(void *stack) {
+  /*
+   * If we set up signal handlers, we must ensure that any thread that
+   * runs untrusted code has an alternate signal stack set up.  The
+   * default for a new thread is to use the stack pointer from the
+   * point at which the fault occurs, but it would not be safe to use
+   * untrusted code's %esp/%rsp value.
+   */
+  stack_t st;
+  st.ss_size = SIGNAL_STACK_SIZE;
+  st.ss_sp = ((uint8_t *) stack) + STACK_GUARD_SIZE;
+  st.ss_flags = 0;
+  ZLOGFAIL(sigaltstack(&st, NULL) == -1, errno, "Failed to register signal stack");
+}
+
+void NaClSignalStackUnregister(void)
+{
+  /*
+   * Unregister the signal stack in case a fault occurs between the
+   * thread deallocating the signal stack and exiting.  Such a fault
+   * could be unsafe if the address space were reallocated before the
+   * fault, although that is unlikely.
+   */
+  stack_t st;
+  st.ss_size = 0;
+  st.ss_sp = NULL;
+  st.ss_flags = SS_DISABLE;
+  ZLOGFAIL(sigaltstack(&st, NULL) == -1, errno, "Failed to unregister signal stack");
+}
+
 int NaClSignalStackAllocate(void **result)
 {
   /*
@@ -59,12 +91,19 @@ int NaClSignalStackAllocate(void **result)
       PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
   if(stack == MAP_FAILED) return 0;
 
-  /* We assume that the stack grows downwards. */ZLOGFAIL(
-      -1 == mprotect(stack, STACK_GUARD_SIZE, PROT_NONE), errno,
-      "Failed to mprotect() the stack guard page");
+  /* We assume that the stack grows downwards. */
+  ZLOGFAIL(-1 == mprotect(stack, STACK_GUARD_SIZE, PROT_NONE),
+      errno, "Failed to mprotect() the stack guard page");
 
   *result = stack;
   return 1;
+}
+
+void NaClSignalStackFree(void *stack)
+{
+  assert(stack != NULL);
+  ZLOGFAIL(munmap(stack, SIGNAL_STACK_SIZE + STACK_GUARD_SIZE) == -1,
+      errno, "Failed to munmap() signal stack");
 }
 
 static void FindAndRunHandler(int sig, siginfo_t *info, void *uc) {
@@ -113,7 +152,7 @@ void NaClSignalHandlerInitPlatform()
   memset(&sa, 0, sizeof(sa));
   sigemptyset(&sa.sa_mask);
   sa.sa_sigaction = SignalCatch;
-  sa.sa_flags = SA_ONSTACK | SA_SIGINFO;
+  sa.sa_flags = SA_ONSTACK | SA_SIGINFO ;
 
   /* Mask all exceptions we catch to prevent re-entry */
   for(i = 0; i < SIGNAL_COUNT; i++)
@@ -133,6 +172,12 @@ void NaClSignalHandlerFiniPlatform()
   for(i = 0; i < SIGNAL_COUNT; i++)
     ZLOGFAIL(-1 == sigaction(s_Signals[i], &s_OldActions[i], NULL),
         errno, "Failed to unregister handler for %d", s_Signals[i]);
+
+  /* release signal stack */
+  /* todo(d'b): it fails. fix it ###
+  NaClSignalStackUnregister();
+  NaClSignalStackFree(&gnap->signal_stack);
+  */
 }
 
 /*
@@ -155,7 +200,6 @@ void NaClSignalAssertNoHandlers()
 
     ZLOGFAIL((sa.sa_flags & SA_SIGINFO) != 0 ? sa.sa_sigaction != NULL
         : (sa.sa_handler != SIG_DFL && sa.sa_handler != SIG_IGN), EFAULT,
-        "A signal handler is registered for signal %d. "
-        "Did Breakpad register this?\n", signum);
+        "A signal handler is registered for signal %d. Did Breakpad register this?", signum);
   }
 }

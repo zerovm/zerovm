@@ -16,6 +16,7 @@
  */
 
 #include "src/service_runtime/arch/x86_64/nacl_signal_64.h"
+#include "src/service_runtime/arch/x86_64/sel_rt_64.h"
 
 EXTERN_C_BEGIN
 
@@ -40,6 +41,8 @@ typedef enum NaClSignalResult (*NaClSignalHandler)(int sig_num, void *ctx);
  * Stores the result in *result; returns 1 on success, 0 on failure.
  */
 int NaClSignalStackAllocate(void **result);
+
+void NaClSignalStackRegister(void *stack);
 
 /*
  * Register process-wide signal handlers.
@@ -75,6 +78,11 @@ int NaClSignalHandlerAdd(NaClSignalHandler func);
  */
 void NaClSignalContextFromHandler(struct NaClSignalContext *sigCtx,
                                   const void *rawCtx);
+
+#ifdef DISABLE_RDTSC
+/* d'b: store the signal context into the thread context */
+void NaClThreadContextFromHandler(struct NaClThreadContext *thread_ctx, const void *rawCtx);
+#endif
 
 /*
  * Return non-zero if the signal context is currently executing in an

@@ -3,12 +3,17 @@
  * Use of this source code is governed by a BSD-style license that can be
  * found in the LICENSE file.
  */
-
+#include <signal.h>
 #include "src/include/portability_io.h"
 #include "src/service_runtime/nacl_signal.h"
 #include "src/manifest/manifest_setup.h"
 #include "src/service_runtime/nacl_globals.h"
 #include "src/service_runtime/zlog.h"
+
+#ifdef DISABLE_RDTSC
+#include "src/service_runtime/arch/x86_64/sel_rt_64.h"
+#include "src/service_runtime/nacl_switch_to_app.h"
+#endif
 
 #define MAX_NACL_HANDLERS 16
 
@@ -47,12 +52,13 @@ ssize_t NaClSignalErrorMessage(const char *msg)
  */
 int NaClSignalContextIsUntrusted(const struct NaClSignalContext *sigCtx)
 {
-  /* d'b(REPORT) */
-  return !gnap->trusted_code;
+  if(sigCtx->prog_ctr >= START_OF_USER_SPACE
+      && sigCtx->prog_ctr < END_OF_USER_SPACE) return 1;
+  return 0;
 }
 
 /* d'b(REPORT): updated */
-enum NaClSignalResult NaClSignalHandleAll(int signal, void *ctx) {
+enum NaClSignalResult NaClSignalHandleAll(int signum, void *ctx) {
   struct NaClSignalContext sigCtx;
 
   /*
@@ -61,9 +67,33 @@ enum NaClSignalResult NaClSignalHandleAll(int signal, void *ctx) {
    */
   NaClSignalContextFromHandler(&sigCtx, ctx);
 
+#ifdef DISABLE_RDTSC
+  /*
+   * d'b: fix for rdtsc indeterminism. should be removed after nacl sdk
+   * will blacklist rdtsc.
+   * update: disabled since i don't able to understand how to make it
+   * work for consequent signals
+   */
+#define RDTSC_OPCODE ((uint16_t)0x310f)
+  if(signum == SIGSEGV)
+  {
+    NaClThreadContextFromHandler(nacl_user, ctx);
+    if(*(uint16_t*)nacl_user->prog_ctr == RDTSC_OPCODE)
+    {
+      nacl_user->prog_ctr += sizeof RDTSC_OPCODE;
+      nacl_user->new_prog_ctr += sizeof RDTSC_OPCODE;
+      nacl_user->rax = 0;
+      nacl_user->rdx = 0;
+
+      /* switch to user application */
+      NaClSwitchToAppAfterSignal(gnap);
+    }
+  }
+#endif
+
   /* set zvm state */
   SNPRINTF(gnap->zvm_state, SIGNAL_STRLEN,
-      "Signal %d from %strusted code: Halting at 0x%lX", signal,
+      "Signal %d from %strusted code: Halting at 0x%lX", signum,
       NaClSignalContextIsUntrusted(&sigCtx) ? "un" : "", sigCtx.prog_ctr);
 
   NaClExit(EINTR);
@@ -120,6 +150,13 @@ void NaClSignalHandlerInit() {
     s_SignalNodes[a].id = a + 1;
     s_FreeList = &s_SignalNodes[a];
   }
+
+#ifdef DISABLE_RDTSC
+  /* allocate signal stack */
+  ZLOGFAIL(NaClSignalStackAllocate(&gnap->signal_stack) == 0,
+      ENOMEM, "cannot allocate signal stack");
+  NaClSignalStackRegister(gnap->signal_stack);
+#endif
 
   NaClSignalHandlerInitPlatform();
 

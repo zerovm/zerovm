@@ -8,14 +8,6 @@
 #include "src/service_runtime/zlog.h"
 #include "src/service_runtime/sel_ldr.h"
 
-#define FOURGIG     (((size_t) 1) << 32)
-#define GUARDSIZE   (10 * FOURGIG)
-#define ALIGN_BITS  32
-#define MSGWIDTH    "25"
-#define R15_CONST   (void*)0x7f0000000000 /* d'b: base address to mmap to */
-#define RELATIVE_MMAP (MAP_ANONYMOUS | MAP_NORESERVE | MAP_PRIVATE) /* d'b */
-#define ABSOLUTE_MMAP (RELATIVE_MMAP | MAP_FIXED) /* d'b */
-
 /*
  * NaClAllocatePow2AlignedMemory is for allocating a large amount of
  * memory of mem_sz bytes that must be address aligned, so that

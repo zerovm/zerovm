@@ -31,6 +31,10 @@ NORETURN void NaClStartThreadInApp(struct NaClAppThread *natp,
 
 NORETURN void NaClSwitchToApp(struct NaClApp *nap, nacl_reg_t new_prog_ctr);
 
+/* switch to the nacl module (untrusted content) after signal */
+NORETURN void NaClSwitchToAppAfterSignal(struct NaClApp *nap);
+
+
 EXTERN_C_END
 
 #endif

@@ -30,7 +30,6 @@
 
 #include <stdint.h>
 
-//#include "src/include/elf.h" // ### decide kill it or let it live
 /* Keys for auxiliary vector (auxv). */
 #define AT_NULL         0   /* Terminating item in auxv array */
 #define AT_ENTRY        9   /* Entry point of the executable */
@@ -210,10 +209,6 @@ struct NaClApp {
   int                       node_id; /* own node id from manifest */
   char                      *node_name; /* own node name from manifest. available for user */
   char                      *accounting; /* contains accounting info after AccountingDtor */
-
-  /* fields required by "whole chunk" user memory management */
-  int                       user_side_flag; /* 0 - trusted syscall, 1 - called from user side */
-  int                       trusted_code; /* mark to catch source of signal */
 
   /* fields taken from the natp */
   void                      *signal_stack; /* signal handling, registered with sigaltstack() */

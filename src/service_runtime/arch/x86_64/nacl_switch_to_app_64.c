@@ -11,12 +11,19 @@
 #include "src/service_runtime/nacl_globals.h"
 #include "src/service_runtime/nacl_switch_to_app.h"
 
+#ifdef DISABLE_RDTSC
+#include <signal.h>
+#include <inttypes.h>
+#include <sys/prctl.h>
+#include <linux/prctl.h>
+#endif
+
 #define NORETURN_PTR NORETURN
 
 static NORETURN_PTR void (*NaClSwitch)(struct NaClThreadContext *context);
 
 /*
- * d'b: a new cpu detection routine. just differ nosse/sse/avx
+ * d'b: a new cpu detection routine. just distinguish nosse/sse/avx
  * returns -1 if cpu has no sse, 0 for sse and 1 for avx spu
  */
 static int CPUTest()
@@ -39,17 +46,29 @@ void NaClInitSwitchToApp(struct NaClApp *nap)
   ZLOGS(LOG_DEBUG, "%s cpu detected", cpu == 0 ? "SSE" : "AVX");
 }
 
-/*
- * switch to the nacl module (untrusted content)
- */
+/* switch to the nacl module (untrusted content) */
 NORETURN void NaClSwitchToApp(struct NaClApp *nap, nacl_reg_t new_prog_ctr)
 {
   nacl_user->new_prog_ctr = new_prog_ctr;
   nacl_user->sysret = nap->sysret;
 
-  /* d'b(todo): remove one of flags below */
-  nap->user_side_flag = 0; /* remove "user side call" mark */
-  nap->trusted_code = 0; /* we are going to the untrusted code */
+#ifdef DISABLE_RDTSC
+  /* prevent rdtsc execution */
+  ZLOGFAIL(prctl(PR_SET_TSC, PR_TSC_SIGSEGV) == -1,
+      errno, "cannot prevent rdtsc execution");
+#endif
 
   NaClSwitch(nacl_user);
 }
+
+#ifdef DISABLE_RDTSC
+/* switch to the nacl module (untrusted content) after signal */
+NORETURN void NaClSwitchToAppAfterSignal(struct NaClApp *nap)
+{
+  /* prevent rdtsc execution */
+  ZLOGFAIL(prctl(PR_SET_TSC, PR_TSC_SIGSEGV) == -1,
+      errno, "cannot prevent rdtsc execution");
+
+  NaClSwitch(nacl_user);
+}
+#endif

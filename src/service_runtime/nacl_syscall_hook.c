@@ -14,6 +14,13 @@
 #include "src/manifest/manifest_setup.h" /* d'b */
 #include "src/service_runtime/include/sys/errno.h" /* d'b */
 
+#ifdef DISABLE_RDTSC
+#include <signal.h>
+#include <inttypes.h>
+#include <sys/prctl.h>
+#include <linux/prctl.h>
+#endif
+
 /*
  * d'b: make syscall invoked from the untrusted code
  */NORETURN void NaClSyscallCSegHook()
@@ -28,11 +35,15 @@
 
   /* d'b: nexe just invoked some syscall. increase syscalls counter */
   nap = gnap; /* restore NaClApp object */
-  nap->user_side_flag = 1; /* set "user side call" mark */
-  nap->trusted_code = 1; /* we are in the trusted code */
   user = nacl_user; /* restore from global */
   sp_user = NaClGetThreadCtxSp(user);
   sp_sys = NaClUserToSysStackAddr(nap, sp_user);
+
+#ifdef DISABLE_RDTSC
+  /* prevent rdtsc execution */
+  ZLOGFAIL(prctl(PR_SET_TSC, PR_TSC_ENABLE) == -1,
+      errno, "cannot allow rdtsc execution");
+#endif
 
   /*
    * sp_sys points to the top of user stack where there is a retaddr to

@@ -19,6 +19,7 @@
  * abi context (GDB ordered context), and a signal context interchangably.
  * In addition, we use common names for the stack and program counter to
  * allow functions which use them to avoid conditional compilation.
+ * todo(d'b): it almost the duplicate of struct NaClThreadContext. there can be only one.
  */
 struct NaClSignalContext {
   uint64_t rax;
