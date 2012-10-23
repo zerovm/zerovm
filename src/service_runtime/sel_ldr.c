@@ -48,8 +48,6 @@ int NaClAppWithSyscallTableCtor(struct NaClApp               *nap,
 
   nap->syscall_table = table;
 
-  nap->module_load_status = LOAD_STATUS_UNKNOWN;
-
   return 1;
 
  cleanup:

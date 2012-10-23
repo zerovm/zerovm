@@ -27,7 +27,7 @@ int NaCl_page_alloc_intern_flags(void **p, size_t size, int map_flags)
 
   map_flags |= MAP_PRIVATE | MAP_ANONYMOUS;
 
-  ZLOG(LOG_DEBUG, "mmap(%p, %lX, %#x, %#x, %d, %d)", *p, size, PROT_NONE, map_flags, -1, 0);
+  ZLOGS(LOG_DEBUG, "mmap(%p, %lX, %#x, %#x, %d, %d)", *p, size, PROT_NONE, map_flags, -1, 0);
 
   addr = mmap(*p, size, PROT_NONE, map_flags, -1, (off_t)0);
   if(MAP_FAILED == addr) addr = NULL;

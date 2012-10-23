@@ -3,19 +3,17 @@
  * Use of this source code is governed by a BSD-style license that can be
  * found in the LICENSE file.
  */
-
+#include <errno.h>
 #include "src/service_runtime/sel_qualify.h"
+#include "src/service_runtime/zlog.h"
 #include "src/platform_qualify/nacl_dep_qualify.h"
 #include "src/platform_qualify/nacl_os_qualify.h"
 
-NaClErrorCode NaClRunSelQualificationTests() {
-  if (!NaClOsIsSupported()) {
-    return LOAD_UNSUPPORTED_OS_PLATFORM;
-  }
+void NaClRunSelQualificationTests()
+{
+  /* fail if Operating system platform is not supported */
+  ZLOGFAIL(!NaClOsIsSupported(), EFAULT, "os not supported");
 
-  if (!NaClCheckDEP()) {
-    return LOAD_DEP_UNSUPPORTED;
-  }
-
-  return LOAD_OK;
+  /* fail if Data Execution Prevention is required but is not supported */
+  ZLOGFAIL(!NaClCheckDEP(), EFAULT, "dep not supported");
 }

@@ -68,7 +68,7 @@ static void *NaClAllocatePow2AlignedMemory(size_t mem_sz, size_t log_alignment)
   return (void *)rounded_addr;
 }
 
-NaClErrorCode NaClAllocateSpace(void **mem, size_t addrsp_size)
+void NaClAllocateSpace(void **mem, size_t addrsp_size)
 {
   size_t mem_sz = 2 * GUARDSIZE + FOURGIG; /* 40G guard on each side */
   size_t log_align = ALIGN_BITS;
@@ -79,13 +79,7 @@ NaClErrorCode NaClAllocateSpace(void **mem, size_t addrsp_size)
 
   errno = 0;
   mem_ptr = NaClAllocatePow2AlignedMemory(mem_sz, log_align);
-  if(NULL == mem_ptr)
-  {
-    ZLOGIF(0 != errno, "NaClAllocatePow2AlignedMemory errno = %d", errno);
-    ZLOG(LOG_ERROR, "Memory allocation failed");
-
-    return LOAD_NO_MEMORY;
-  }
+  ZLOGFAIL(NULL == mem_ptr, errno, "NaClAllocatePow2AlignedMemory failed");
 
   /*
    * The module lives in the middle FOURGIG of the allocated region --
@@ -93,6 +87,4 @@ NaClErrorCode NaClAllocateSpace(void **mem, size_t addrsp_size)
    */
   *mem = (void *)(((char *)mem_ptr) + GUARDSIZE);
   ZLOG(LOG_INSANE, "addr space at 0x%016lx", (uintptr_t)*mem);
-
-  return LOAD_OK;
 }

@@ -223,7 +223,7 @@ int NaClVmmapAdd(struct NaClVmmap   *self,
                  struct NaClMemObj  *nmop) {
   struct NaClVmmapEntry *entry;
 
-  ZLOG(LOG_DEBUG, "0x%08lx, 0x%lx, 0x%lx, 0x%x, 0x%08lx",
+  ZLOGS(LOG_DEBUG, "NaClVmmapAdd(0x%08lx, 0x%lx, 0x%lx, 0x%x, 0x%08lx)",
       (uintptr_t)self, page_num, npages, prot, (uintptr_t)nmop);
 
   if (self->nvalid == self->size) {

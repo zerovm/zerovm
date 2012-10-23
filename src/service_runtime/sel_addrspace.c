@@ -13,18 +13,15 @@
 #include "src/service_runtime/sel_ldr.h"
 #include "src/service_runtime/sel_memory.h"
 
-NaClErrorCode NaClAllocAddrSpace(struct NaClApp *nap) {
+void NaClAllocAddrSpace(struct NaClApp *nap)
+{
   void        *mem;
-  int         rv;
   uintptr_t   hole_start;
   size_t      hole_size;
   uintptr_t   stack_start;
 
-  ZLOGS(LOG_DEBUG, "NaClAllocAddrSpace: calling NaClAllocateSpace(*,0x%016x)",
-      ((size_t)1 << nap->addr_bits));
-
-  rv = NaClAllocateSpace(&mem, (uintptr_t) 1U << nap->addr_bits);
-  if (LOAD_OK != rv) return rv;
+  ZLOGS(LOG_DEBUG, "calling NaClAllocateSpace(*,0x%016x)", ((size_t)1 << nap->addr_bits));
+  NaClAllocateSpace(&mem, (uintptr_t) 1U << nap->addr_bits);
 
   nap->mem_start = (uintptr_t) mem;
   ZLOGS(LOG_DEBUG, "allocated memory at 0x%08x", nap->mem_start);
@@ -36,7 +33,8 @@ NaClErrorCode NaClAllocAddrSpace(struct NaClApp *nap) {
   stack_start = (((uintptr_t) 1U) << nap->addr_bits) - nap->stack_size;
   stack_start = NaClTruncAllocPage(stack_start);
 
-  if (stack_start < hole_start) return LOAD_DATA_OVERLAPS_STACK_SECTION;
+  ZLOGFAIL(stack_start < hole_start, EFAULT,
+      "Memory 'hole' between end of BSS and start of stack is negative in size");
 
   hole_size = stack_start - hole_start;
   hole_size = NaClTruncAllocPage(hole_size);
@@ -51,31 +49,24 @@ NaClErrorCode NaClAllocAddrSpace(struct NaClApp *nap) {
     ZLOGS(LOG_DEBUG, "madvising 0x%08x, 0x%08x, MADV_DONTNEED",
         nap->mem_start + hole_start, hole_size);
 
-    if(0 != NaCl_madvise((void*)(nap->mem_start + hole_start), hole_size,  MADV_DONTNEED))
-    {
-      ZLOG(LOG_ERROR, "madvise, errno %d", errno);
-      return LOAD_MADVISE_FAIL;
-    }
+    ZLOGFAIL(0 != NaCl_madvise((void*)(nap->mem_start + hole_start), hole_size,
+        MADV_DONTNEED), errno, "madvise failed. cannot release unused data segment");
+
     ZLOGS(LOG_DEBUG, "mprotecting 0x%08x, 0x%08x, PROT_NONE",
         nap->mem_start + hole_start, hole_size);
 
-    if(0 != NaCl_mprotect((void *)(nap->mem_start + hole_start), hole_size, PROT_NONE))
-    {
-      ZLOG(LOG_ERROR, "mprotect, errno %d", errno);
-      return LOAD_MPROTECT_FAIL;
-    }
+    ZLOGFAIL(0 != NaCl_mprotect((void *)(nap->mem_start + hole_start), hole_size,
+        PROT_NONE), errno, "mprotect failed. cannot protect pages");
   }
   else
-    ZLOGS(LOG_DEBUG,
-      "NaClAllocAddrSpace: hole between end of data and the beginning of stack is zero size");
-
-  return LOAD_OK;
+    ZLOGS(LOG_DEBUG, "there is no hole between end of data and the beginning of stack");
 }
 
 /*
  * Apply memory protection to memory regions.
  */
-NaClErrorCode NaClMemoryProtection(struct NaClApp *nap) {
+void NaClMemoryProtection(struct NaClApp *nap)
+{
   uintptr_t start_addr;
   size_t    region_size;
   int       err;
@@ -95,8 +86,7 @@ NaClErrorCode NaClMemoryProtection(struct NaClApp *nap) {
    */
 
   ZLOGS(LOG_DEBUG, "Protecting guard pages for 0x%08x", nap->mem_start);
-  err = NaClMprotectGuards(nap);
-  if (err != LOAD_OK) return err;
+  NaClMprotectGuards(nap);
 
   start_addr = nap->mem_start + NACL_SYSCALL_START_ADDR;
   /*
@@ -109,19 +99,11 @@ NaClErrorCode NaClMemoryProtection(struct NaClApp *nap) {
           start_addr, region_size, start_addr + region_size);
 
   err = NaCl_mprotect((void *)start_addr, region_size, PROT_READ | PROT_EXEC);
-  if(0 != err)
-  {
-    ZLOG(LOG_ERROR, "NaClMemoryProtection: NaCl_mprotect(0x%08x, 0x%08x, 0x%x) failed, "
-        "error %d (trampoline)", start_addr, region_size, PROT_READ | PROT_EXEC, err);
-    return LOAD_MPROTECT_FAIL;
-  }
+  ZLOGFAIL(0 != err, err, FAILED_MSG);
 
-  if(!NaClVmmapAdd(&nap->mem_map, NaClSysToUser(nap, start_addr) >> NACL_PAGESHIFT,
-      region_size >> NACL_PAGESHIFT,  PROT_READ | PROT_EXEC, NULL))
-  {
-    ZLOG(LOG_ERROR, "NaClMemoryProtection: NaClVmmapAdd failed (trampoline)");
-    return LOAD_MPROTECT_FAIL;
-  }
+  err = NaClVmmapAdd(&nap->mem_map, NaClSysToUser(nap, start_addr) >> NACL_PAGESHIFT,
+      region_size >> NACL_PAGESHIFT,  PROT_READ | PROT_EXEC, NULL);
+  ZLOGFAIL(0 == err, EFAULT, FAILED_MSG);
 
   start_addr = NaClUserToSys(nap, nap->dynamic_text_start);
   region_size = nap->dynamic_text_end - nap->dynamic_text_start;
@@ -142,15 +124,12 @@ NaClErrorCode NaClMemoryProtection(struct NaClApp *nap) {
      * NaClSysCommonAddrRangeContainsExecutablePages_mu().
      */
     /* the log bellow added to prevent dynamic nexe loading w/o dynamic text support */
-    ZLOGFAIL(1, EFAULT, "dynamic text detected. the protection should be set!");
+    ZLOGFAIL(1, EFAULT, "dynamic text detected. the logic not written!");
 
-    if(!NaClVmmapAdd(&nap->mem_map, NaClSysToUser(nap, start_addr) >> NACL_PAGESHIFT,
+    err = NaClVmmapAdd(&nap->mem_map, NaClSysToUser(nap, start_addr) >> NACL_PAGESHIFT,
         region_size >> NACL_PAGESHIFT, PROT_READ | PROT_EXEC,
-        NaClMemObjMake(nap->text_shm, region_size, 0)))
-    {
-      ZLOG(LOG_ERROR, "NaClMemoryProtection: NaClVmmapAdd failed (data)");
-      return LOAD_MPROTECT_FAIL;
-    }
+        NaClMemObjMake(nap->text_shm, region_size, 0));
+    ZLOGFAIL(0 != err, err, FAILED_MSG);
   }
 
   if(0 != nap->rodata_start)
@@ -173,19 +152,11 @@ NaClErrorCode NaClMemoryProtection(struct NaClApp *nap) {
         start_addr, region_size, start_addr + region_size);
 
     err = NaCl_mprotect((void *)start_addr, region_size, PROT_READ);
-    if(0 != err)
-    {
-      ZLOG(LOG_ERROR, "NaClMemoryProtection: NaCl_mprotect(0x%08x, 0x%08x, 0x%x) "
-          "failed, error %d (data)", start_addr, region_size, PROT_READ, err);
-      return LOAD_MPROTECT_FAIL;
-    }
+    ZLOGFAIL(0 != err, err, FAILED_MSG);
 
-    if(!NaClVmmapAdd(&nap->mem_map, NaClSysToUser(nap, start_addr) >> NACL_PAGESHIFT,
-        region_size >> NACL_PAGESHIFT, PROT_READ, (struct NaClMemObj *)NULL))
-    {
-      ZLOG(LOG_ERROR, "NaClMemoryProtection: NaClVmmapAdd failed (data)");
-      return LOAD_MPROTECT_FAIL;
-    }
+    err = NaClVmmapAdd(&nap->mem_map, NaClSysToUser(nap, start_addr) >> NACL_PAGESHIFT,
+        region_size >> NACL_PAGESHIFT, PROT_READ, (struct NaClMemObj *)NULL);
+    ZLOGFAIL(0 == err, err, FAILED_MSG);
   }
 
   /*
@@ -195,25 +166,17 @@ NaClErrorCode NaClMemoryProtection(struct NaClApp *nap) {
   if(0 != nap->data_start)
   {
     start_addr = NaClUserToSys(nap, nap->data_start);
-    region_size = NaClRoundPage(
-        NaClRoundAllocPage(nap->data_end) - NaClSysToUser(nap, start_addr));
+    region_size = NaClRoundPage(NaClRoundAllocPage(nap->data_end)
+        - NaClSysToUser(nap, start_addr));
     ZLOGS(LOG_DEBUG, "RW data region start 0x%08x, size 0x%08x, end 0x%08x",
         start_addr, region_size, start_addr + region_size);
 
-    if(0 != (err = NaCl_mprotect((void *)start_addr, region_size, PROT_READ | PROT_WRITE)))
-    {
-      ZLOG(LOG_ERROR, "NaClMemoryProtection: "
-          "NaCl_mprotect(0x%08x, 0x%08lx, 0x%x) failed, error %d (data)",
-          start_addr, region_size, PROT_READ | PROT_WRITE, err);
-      return LOAD_MPROTECT_FAIL;
-    }
+    err = NaCl_mprotect((void *)start_addr, region_size, PROT_READ | PROT_WRITE);
+    ZLOGFAIL(0 != err, err, FAILED_MSG);
 
-    if(!NaClVmmapAdd(&nap->mem_map, NaClSysToUser(nap, start_addr) >> NACL_PAGESHIFT,
-        region_size >> NACL_PAGESHIFT, PROT_READ | PROT_WRITE, (struct NaClMemObj *)NULL))
-    {
-      ZLOG(LOG_ERROR, "NaClMemoryProtection: NaClVmmapAdd failed (data)");
-      return LOAD_MPROTECT_FAIL;
-    }
+    err = NaClVmmapAdd(&nap->mem_map, NaClSysToUser(nap, start_addr) >> NACL_PAGESHIFT,
+        region_size >> NACL_PAGESHIFT, PROT_READ | PROT_WRITE, (struct NaClMemObj *)NULL);
+    ZLOGFAIL(0 == err, err, FAILED_MSG);
   }
 
   /* stack is read/write but not execute */
@@ -223,20 +186,11 @@ NaClErrorCode NaClMemoryProtection(struct NaClApp *nap) {
   ZLOGS(LOG_DEBUG, "RW stack region start 0x%08x, size 0x%08lx, end 0x%08x",
           start_addr, region_size, start_addr + region_size);
 
-  err = NaCl_mprotect((void *)start_addr,
-      NaClRoundAllocPage(nap->stack_size), PROT_READ | PROT_WRITE);
-  if(0 != err)
-  {
-    ZLOG(LOG_ERROR, "NaClMemoryProtection: NaCl_mprotect(0x%08lx, ""0x%08lx, 0x%x) "
-        "failed, error %d (stack)", start_addr, region_size, PROT_READ | PROT_WRITE, err);
-    return LOAD_MPROTECT_FAIL;
-  }
+  err = NaCl_mprotect((void *)start_addr, NaClRoundAllocPage(nap->stack_size),
+      PROT_READ | PROT_WRITE);
+  ZLOGFAIL(0 != err, err, FAILED_MSG);
 
-  if(!NaClVmmapAdd(&nap->mem_map, NaClSysToUser(nap, start_addr) >> NACL_PAGESHIFT,
-      nap->stack_size >> NACL_PAGESHIFT, PROT_READ | PROT_WRITE, (struct NaClMemObj *)NULL))
-  {
-    ZLOG(LOG_ERROR, "NaClMemoryProtection: NaClVmmapAdd failed (stack)");
-    return LOAD_MPROTECT_FAIL;
-  }
-  return LOAD_OK;
+  err = NaClVmmapAdd(&nap->mem_map, NaClSysToUser(nap, start_addr) >> NACL_PAGESHIFT,
+      nap->stack_size >> NACL_PAGESHIFT, PROT_READ | PROT_WRITE, (struct NaClMemObj *)NULL);
+  ZLOGFAIL(0 == err, err, FAILED_MSG);
 }

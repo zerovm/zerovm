@@ -19,7 +19,7 @@ static int32_t ZVMExitHandle(struct NaClApp *nap, int32_t code)
 {
   assert(nap != NULL);
   nap->system_manifest->user_ret_code = code;
-  ZLOGS(LOG_DEBUG, "Exit syscall handler: %d\n", code);
+  ZLOGS(LOG_DEBUG, "Exit syscall handler: %d", code);
   longjmp(user_exit, code);
 
   return code; /* prevent compiler warning. not reached */
@@ -117,7 +117,7 @@ int32_t ZVMReadHandle(struct NaClApp *nap,
   tail = channel->limits[GetSizeLimit] - channel->counters[GetSizeLimit];
   if(size > tail) size = tail;
   if(size < 1) return -EDQUOT;
-  ZLOGS(LOG_DEBUG, "channel %s, buffer=0x%lx, size=%d, offset=%ld\n",
+  ZLOGS(LOG_DEBUG, "channel %s, buffer=0x%lx, size=%d, offset=%ld",
       channel->alias, (intptr_t)buffer, size, offset);
 
   /* read data and update position */
@@ -212,7 +212,7 @@ int32_t ZVMWriteHandle(struct NaClApp *nap,
   if(offset >= channel->size + tail) return -EINVAL;
   if(size > tail) size = tail;
   if(size < 1) return -EDQUOT;
-  ZLOGS(LOG_DEBUG, "channel %s, buffer=0x%lx, size=%d, offset=%ld\n",
+  ZLOGS(LOG_DEBUG, "channel %s, buffer=0x%lx, size=%d, offset=%ld",
       channel->alias, (intptr_t)buffer, size, offset);
 
   /* write data and update position */
@@ -464,7 +464,7 @@ int32_t TrapHandler(struct NaClApp *nap, uint32_t args)
       break;
     default:
       retcode = -EPERM;
-      ZLOG(LOG_ERROR, "function %ld is not supported\n", *sys_args);
+      ZLOG(LOG_ERROR, "function %ld is not supported", *sys_args);
       break;
   }
 

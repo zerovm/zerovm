@@ -39,7 +39,6 @@
 
 #include "src/service_runtime/zlog.h"
 #include "src/service_runtime/dyn_array.h"
-#include "src/service_runtime/nacl_error_code.h"
 #include "src/gio/gio.h"
 #include "src/service_runtime/sel_mem.h"
 #include "src/service_runtime/sel_util.h"
@@ -139,8 +138,6 @@ struct NaClApp {
    * at least NACL_MAX_SYSCALLS.
    */
   struct NaClSyscallTableEntry *syscall_table;
-
-  NaClErrorCode             module_load_status; /* d'b: should be coupled with zvm_state */
 
   /*
    * runtime info below, thread state, etc; initialized only when app
@@ -258,11 +255,7 @@ int   NaClAppCtor(struct NaClApp  *nap) NACL_WUR;
  * self-modifying code / data writes and automatically invalidate the
  * cache lines.
  */
-NaClErrorCode NaClAppLoadFile(struct Gio      *gp,
-                              struct NaClApp  *nap) NACL_WUR;
-
-NaClErrorCode NaClAppLoadFileDynamically(struct NaClApp *nap,
-                                         struct Gio     *gio_file) NACL_WUR;
+void NaClAppLoadFile(struct Gio *gp, struct NaClApp *nap);
 
 void  NaClAppPrintDetails(struct NaClApp  *nap,
                           struct Gio      *gp, int verbosity);
@@ -288,8 +281,6 @@ int NaClValidateCodeReplacement(struct    NaClApp *nap,
 int NaClCopyCode(struct NaClApp *nap, uintptr_t guest_addr,
                  uint8_t *data_old, uint8_t *data_new,
                  size_t size);
-
-NaClErrorCode NaClValidateImage(struct NaClApp  *nap) NACL_WUR;
 
 int NaClAddrIsValidEntryPt(struct NaClApp *nap,
                            uintptr_t      addr);

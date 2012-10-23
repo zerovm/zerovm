@@ -28,4 +28,4 @@ void NaClDescUnref(struct NaClDesc *ndp);
 
 EXTERN_C_END
 
-#endif  // NATIVE_CLIENT_SRC_TRUSTED_DESC_NACL_DESC_BASE_H_
+#endif  /* NATIVE_CLIENT_SRC_TRUSTED_DESC_NACL_DESC_BASE_H_ */

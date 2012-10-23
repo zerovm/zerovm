@@ -113,71 +113,49 @@ void NaClFillEndOfTextRegion(struct NaClApp *nap) {
 }
 
 /* Basic address space layout sanity check */
-NaClErrorCode NaClCheckAddressSpaceLayoutSanity(struct NaClApp *nap,
+static void NaClCheckAddressSpaceLayoutSanity(struct NaClApp *nap,
     uintptr_t rodata_end, uintptr_t data_end, uintptr_t max_vaddr)
 {
+  /* fail if Data segment exists, but is not last segment */
   if(0 != nap->data_start)
-  {
-    if(data_end != max_vaddr)
-    {
-      ZLOG(LOG_DEBUG, "data segment is not last");
-      return LOAD_DATA_NOT_LAST_SEGMENT;
-    }
-  }
+    ZLOGFAIL(data_end != max_vaddr, ENOEXEC, FAILED_MSG);
+  /*
+   * This should be unreachable, but we include it just for completeness
+   *
+   * Here is why it is unreachable:
+   *
+   * NaClPhdrChecks checks the test segment starting address.  The
+   * only allowed loaded segments are text, data, and rodata.
+   * Thus unless the rodata is in the trampoline region, it must
+   * be after the text.  And NaClElfImageValidateProgramHeaders
+   * ensures that all segments start after the trampoline region.
+   *
+   * d'b: fail if no data segment. read-only data segment exists
+   * but is not last segment
+   */
   else if(0 != nap->rodata_start)
-  {
-    if(NaClRoundAllocPage(rodata_end) != max_vaddr)
-    {
-      /*
-       * This should be unreachable, but we include it just for
-       * completeness.
-       *
-       * Here is why it is unreachable:
-       *
-       * NaClPhdrChecks checks the test segment starting address.  The
-       * only allowed loaded segments are text, data, and rodata.
-       * Thus unless the rodata is in the trampoline region, it must
-       * be after the text.  And NaClElfImageValidateProgramHeaders
-       * ensures that all segments start after the trampoline region.
-       */
-      ZLOG(LOG_DEBUG, "no data segment, but rodata segment is not last");
-      return LOAD_NO_DATA_BUT_RODATA_NOT_LAST_SEGMENT;
-    }
-  }
+    ZLOGFAIL(NaClRoundAllocPage(rodata_end) != max_vaddr, ENOEXEC, FAILED_MSG);
 
+  /* fail if Read-only data segment overlaps data segment */
   if(0 != nap->rodata_start && 0 != nap->data_start)
-  {
-    if(rodata_end > nap->data_start)
-    {
-      ZLOG(LOG_DEBUG, "rodata_overlaps data");
-      return LOAD_RODATA_OVERLAPS_DATA;
-    }
-  }
+    ZLOGFAIL(rodata_end > nap->data_start, ENOEXEC, FAILED_MSG);
 
+  /* fail if Text segment overlaps rodata segment */
   if(0 != nap->rodata_start)
-  {
-    if(NaClRoundAllocPage(NaClEndOfStaticText(nap)) > nap->rodata_start)
-      return LOAD_TEXT_OVERLAPS_RODATA;
-  }
+    ZLOGFAIL(NaClRoundAllocPage(NaClEndOfStaticText(nap)) > nap->rodata_start,
+        ENOEXEC, FAILED_MSG);
+  /* fail if No rodata segment, and text segment overlaps data segment */
   else if(0 != nap->data_start)
-  {
-    if(NaClRoundAllocPage(NaClEndOfStaticText(nap)) > nap->data_start)
-      return LOAD_TEXT_OVERLAPS_DATA;
-  }
+    ZLOGFAIL(NaClRoundAllocPage(NaClEndOfStaticText(nap)) > nap->data_start,
+        ENOEXEC, FAILED_MSG);
 
-  if(0 != nap->rodata_start && NaClRoundAllocPage(nap->rodata_start) != nap->rodata_start)
-  {
-    ZLOG(LOG_DEBUG, "rodata_start not a multiple of allocation size");
-    return LOAD_BAD_RODATA_ALIGNMENT;
-  }
+  /* fail if rodata_start not a multiple of allocation size */
+  ZLOGFAIL(0 != nap->rodata_start && NaClRoundAllocPage(nap->rodata_start)
+    != nap->rodata_start, ENOEXEC, FAILED_MSG);
 
-  if(0 != nap->data_start && NaClRoundAllocPage(nap->data_start) != nap->data_start)
-  {
-    ZLOG(LOG_DEBUG, "data_start not a multiple of allocation size");
-    return LOAD_BAD_DATA_ALIGNMENT;
-  }
-
-  return LOAD_OK;
+  /* fail if data_start not a multiple of allocation size */
+  ZLOGFAIL(0 != nap->data_start && NaClRoundAllocPage(nap->data_start)
+    != nap->data_start, ENOEXEC, FAILED_MSG);
 }
 
 #define DUMP(a) ZLOGS(LOG_DEBUG, "%-24s = 0x%016x", #a, a)
@@ -196,73 +174,45 @@ void NaClLogAddressSpaceLayout(struct NaClApp *nap)
   DUMP(nap->bundle_size);
 }
 
-NaClErrorCode NaClAppLoadFile(struct Gio *gp, struct NaClApp *nap)
+void NaClAppLoadFile(struct Gio *gp, struct NaClApp *nap)
 {
-  NaClErrorCode ret = LOAD_INTERNAL;
-  NaClErrorCode subret;
   uintptr_t rodata_end;
   uintptr_t data_end;
   uintptr_t max_vaddr;
   struct NaClElfImage *image = NULL;
   struct NaClPerfCounter time_load_file;
+  int err;
 
   NaClPerfCounterCtor(&time_load_file, "NaClAppLoadFile");
 
-  /* NACL_MAX_ADDR_BITS < 32 */
-  if(nap->addr_bits > NACL_MAX_ADDR_BITS)
-  {
-    ret = LOAD_ADDR_SPACE_TOO_BIG;
-    goto done;
-  }
+  /* fail if Address space too big */
+  ZLOGFAIL(nap->addr_bits > NACL_MAX_ADDR_BITS, EFAULT, FAILED_MSG);
 
   nap->stack_size = NaClRoundAllocPage(nap->stack_size);
 
   /* temporay object will be deleted at end of function */
-  image = NaClElfImageNew(gp, &subret);
-  if(NULL == image)
-  {
-    ret = subret;
-    goto done;
-  }
+  image = NaClElfImageNew(gp);
+  NaClElfImageValidateElfHeader(image);
 
-  subret = NaClElfImageValidateElfHeader(image);
-  if(LOAD_OK != subret)
-  {
-    ret = subret;
-    goto done;
-  }
-
-  subret = NaClElfImageValidateProgramHeaders(image, nap->addr_bits, &nap->static_text_end,
+  NaClElfImageValidateProgramHeaders(image, nap->addr_bits, &nap->static_text_end,
       &nap->rodata_start, &rodata_end, &nap->data_start, &data_end, &max_vaddr);
-  if(LOAD_OK != subret)
-  {
-    ret = subret;
-    goto done;
-  }
 
+  /*
+   * if no rodata and no data, we make sure that there is space for
+   * the halt sled. else if no data, but there is rodata.  this means
+   * max_vaddr is just where rodata ends.  this might not be at an
+   * allocation boundary, and in this the page would not be writable.
+   * round max_vaddr up to the next allocation boundary so that bss
+   * will be at the next writable region.
+   */
   if(0 == nap->data_start)
   {
     if(0 == nap->rodata_start)
     {
       if(NaClRoundAllocPage(max_vaddr) - max_vaddr < NACL_HALT_SLED_SIZE)
       {
-        /*
-         * if no rodata and no data, we make sure that there is space for
-         * the halt sled.
-         */
         max_vaddr += NACL_MAP_PAGESIZE;
       }
-    }
-    else
-    {
-      /*
-       * no data, but there is rodata.  this means max_vaddr is just
-       * where rodata ends.  this might not be at an allocation
-       * boundary, and in this the page would not be writable.  round
-       * max_vaddr up to the next allocation boundary so that bss will
-       * be at the next writable region.
-       */
-      ;
     }
     max_vaddr = NaClRoundAllocPage(max_vaddr);
   }
@@ -288,48 +238,29 @@ NaClErrorCode NaClAppLoadFile(struct Gio *gp, struct NaClApp *nap)
   nap->initial_entry_pt = NaClElfImageGetEntryPoint(image);
   NaClLogAddressSpaceLayout(nap);
 
-  if(!NaClAddrIsValidEntryPt(nap, nap->initial_entry_pt))
-  {
-    ret = LOAD_BAD_ENTRY;
-    goto done;
-  }
+  /* Bad program entry point address */
+  ZLOGFAIL(!NaClAddrIsValidEntryPt(nap, nap->initial_entry_pt), ENOEXEC, FAILED_MSG);
 
-  subret = NaClCheckAddressSpaceLayoutSanity(nap, rodata_end, data_end, max_vaddr);
-  if(LOAD_OK != subret)
-  {
-    ret = subret;
-    goto done;
-  }
+  NaClCheckAddressSpaceLayoutSanity(nap, rodata_end, data_end, max_vaddr);
 
   ZLOGS(LOG_DEBUG, "Allocating address space");
   NaClPerfCounterMark(&time_load_file, "PreAllocAddrSpace");
   NaClPerfCounterIntervalLast(&time_load_file);
-  subret = NaClAllocAddrSpace(nap);
+  NaClAllocAddrSpace(nap);
   NaClPerfCounterMark(&time_load_file, NACL_PERF_IMPORTANT_PREFIX "AllocAddrSpace");
   NaClPerfCounterIntervalLast(&time_load_file);
-  if(LOAD_OK != subret)
-  {
-    ret = subret;
-    goto done;
-  }
 
   /*
    * Make sure the static image pages are marked writable before we try
    * to write them.
    */
-  ZLOG(LOG_DEBUG, "Loading into memory");
-  ret = NaCl_mprotect((void *)(nap->mem_start + NACL_TRAMPOLINE_START),
+  ZLOGS(LOG_DEBUG, "Loading into memory");
+  err = NaCl_mprotect((void *)(nap->mem_start + NACL_TRAMPOLINE_START),
       NaClRoundAllocPage(nap->data_end) - NACL_TRAMPOLINE_START,
       NACL_ABI_PROT_READ | NACL_ABI_PROT_WRITE);
-  ZLOGFAIL(0 != ret, EFAULT, "NaClAppLoadFile: Failed to make image "
-      "pages writable. Error code 0x%x", ret);
+  ZLOGFAIL(0 != err, EFAULT, "Failed to make image pages writable. code 0x%x", err);
 
-  subret = NaClElfImageLoad(image, gp, nap->addr_bits, nap->mem_start);
-  if(LOAD_OK != subret)
-  {
-    ret = subret;
-    goto done;
-  }
+  NaClElfImageLoad(image, gp, nap->addr_bits, nap->mem_start);
 
   /* d'b: shared memory for the dynamic text disabled */
   nap->dynamic_text_start = NaClRoundAllocPage(NaClEndOfStaticText(nap));
@@ -361,22 +292,14 @@ NaClErrorCode NaClAppLoadFile(struct Gio *gp, struct NaClApp *nap)
    * non-writable.
    */
   ZLOGS(LOG_DEBUG, "Applying memory protection");
-  subret = NaClMemoryProtection(nap);
-  if(LOAD_OK != subret)
-  {
-    ret = subret;
-    goto done;
-  }
+  NaClMemoryProtection(nap);
 
   ZLOGS(LOG_DEBUG, "NaClAppLoadFile done; ");
   NaClLogAddressSpaceLayout(nap);
-  ret = LOAD_OK;
 
-  done:
   NaClElfImageDelete(image);
   NaClPerfCounterMark(&time_load_file, "EndLoadFile");
   NaClPerfCounterIntervalTotal(&time_load_file);
-  return ret;
 }
 #undef DUMP
 
@@ -514,7 +437,7 @@ int NaClCreateMainThread(struct NaClApp *nap)
   ZLOGS(LOG_DEBUG, "setting stack to : %016lx", stack_ptr);
 
   ZLOGFAIL(0 != (stack_ptr & NACL_STACK_ALIGN_MASK), EFAULT,
-      "stack_ptr not aligned: %016x\n", stack_ptr);
+      "stack_ptr not aligned: %016x", stack_ptr);
 
   p = (uint32_t *) stack_ptr;
   strp = (char *) stack_ptr + ptr_tbl_size;

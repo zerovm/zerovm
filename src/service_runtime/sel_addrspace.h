@@ -11,16 +11,14 @@
 #ifndef __SEL_ADDRSPACE_H__
 #define __SEL_ADDRSPACE_H__ 1
 
-#include "src/service_runtime/nacl_error_code.h"
-
 struct NaClApp; /* fwd */
 
-NaClErrorCode NaClAllocAddrSpace(struct NaClApp *nap) NACL_WUR;
+void NaClAllocAddrSpace(struct NaClApp *nap);
 
 /*
  * Apply memory protection to memory regions.
  */
-NaClErrorCode NaClMemoryProtection(struct NaClApp *nap) NACL_WUR;
+void NaClMemoryProtection(struct NaClApp *nap);
 
 /*
  * Platform-specific routine to allocate memory space for the NaCl
@@ -37,9 +35,9 @@ NaClErrorCode NaClMemoryProtection(struct NaClApp *nap) NACL_WUR;
  * function NaClMprotectGuards must be called for the guard pages to
  * be active.
  *
- * Returns LOAD_OK on success.
+ * update: abort zvm if failed
  */
-NaClErrorCode NaClAllocateSpace(void **mem, size_t addrsp_size) NACL_WUR;
+void NaClAllocateSpace(void **mem, size_t addrsp_size);
 
-NaClErrorCode NaClMprotectGuards(struct NaClApp *nap);
+void NaClMprotectGuards(struct NaClApp *nap);
 #endif

@@ -21,7 +21,6 @@ int NaClMakeDispatchThunk(struct NaClApp *nap)
   struct NaClPatchInfo  patch_info;
   struct NaClPatch      jmp_target;
 
-  ZLOG(LOG_DEBUG, "Entered");
   if(0 != nap->dispatch_thunk)
   {
     ZLOG(LOG_ERROR, "dispatch_thunk already initialized!");
@@ -37,7 +36,7 @@ int NaClMakeDispatchThunk(struct NaClApp *nap)
     goto cleanup;
   }
 
-  ZLOG(LOG_DEBUG, "got addr 0x%lx", (uintptr_t) thunk_addr);
+  ZLOGS(LOG_DEBUG, "got addr 0x%lx", (uintptr_t) thunk_addr);
   if(0 != (error = NaCl_mprotect(thunk_addr, NACL_MAP_PAGESIZE, PROT_READ | PROT_WRITE)))
   {
     ZLOG(LOG_ERROR, "NaCl_mprotect r/w failed, errno %d", -error);

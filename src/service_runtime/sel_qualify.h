@@ -15,7 +15,6 @@
  */
 
 #include "src/include/nacl_base.h"
-#include "src/service_runtime/nacl_error_code.h"
 
 EXTERN_C_BEGIN
 
@@ -24,8 +23,9 @@ EXTERN_C_BEGIN
  * may be a subset of the full set of PQ tests: it includes the tests that are
  * important enough to check at every startup, and tests that check aspects of
  * the system that may be subject to change.
+ * d'b: abort zvm if failed
  */
-NaClErrorCode NaClRunSelQualificationTests();
+void NaClRunSelQualificationTests();
 
 EXTERN_C_END
 

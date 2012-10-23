@@ -152,7 +152,6 @@ int main(int argc, char **argv)
 {
   struct NaClApp state, *nap = &state;
   struct SystemManifest sys_mft;
-  NaClErrorCode errcode = LOAD_INTERNAL;
   struct GioMemoryFileSnapshot main_file;
   struct NaClPerfCounter time_all_main;
 
@@ -175,14 +174,9 @@ int main(int argc, char **argv)
 
   /* the dyn_array constructor 1st call */
   ZLOGFAIL(NaClAppCtor(nap) == 0, EFAULT, "Error while constructing app state");
-  errcode = LOAD_OK;
 
   /* We use the signal handler to verify a signal took place. */
-  if(nap->skip_qualification == 0)
-  {
-    NaClErrorCode pq_error = NaClRunSelQualificationTests();
-    ZLOGFAIL(LOAD_OK != pq_error, EFAULT, "platfrom qualification failed");
-  }
+  if(nap->skip_qualification == 0) NaClRunSelQualificationTests();
 
   /* Remove the signal handler if we are not using it. */
   if(nap->handle_signals == 0)
@@ -201,21 +195,9 @@ int main(int argc, char **argv)
   PERF_CNT("SnapshotNaclFile");
 
   /* validate untrusted code (nexe) */
-  if(LOAD_OK == errcode)
-  {
-    ZLOGS(LOG_DEBUG, "Loading nacl file %s", nap->system_manifest->nexe);
-    errcode = NaClAppLoadFile((struct Gio *) &main_file, nap);
-    if (LOAD_OK != errcode)
-    {
-      ZLOG(LOG_ERROR, "Error while loading '%s': %s", nap->system_manifest->nexe,
-          NaClErrorString(errcode));
-      ZLOG(LOG_ERROR, "Using the wrong type of nexe (nacl-x86-32 on an x86-64)");
-      ZLOG(LOG_ERROR, "or a corrupt nexe file may be responsible for this error");
-    }
-
-    PERF_CNT("AppLoadEnd");
-    nap->module_load_status = errcode;
-  }
+  ZLOGS(LOG_DEBUG, "Loading nacl file %s", nap->system_manifest->nexe);
+  NaClAppLoadFile((struct Gio *) &main_file, nap);
+  PERF_CNT("AppLoadEnd");
 
   if(-1 == (*((struct Gio *)&main_file)->vtbl->Close)((struct Gio *)&main_file))
     ZLOG(LOG_ERROR, "Error while closing '%s'", nap->system_manifest->nexe);
@@ -226,14 +208,7 @@ int main(int argc, char **argv)
   /* setup zerovm from manifest */
   SystemManifestCtor(nap); /* needs dyn_array initialized */
 
-  /* error reporting done; can quit now if there was an error earlier */
-  /* remove it with nacl error */
-  ZLOGFAIL(LOAD_OK != errcode, EFAULT, "Not running app, errcode is %d", errcode);
-
-  /*
-   * "defence in depth" part
-   * todo(): find a proper place for this call
-   */
+  /* "defence in depth" call */
   LastDefenseLine(nap);
 
   /* Make sure all the file buffers are flushed before entering the nexe */

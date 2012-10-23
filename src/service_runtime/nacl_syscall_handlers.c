@@ -61,7 +61,7 @@ int32_t NaClSysTls_Init(struct NaClApp *nap, void *thread_ptr)
   int32_t   retval = -NACL_ABI_EINVAL;
   uintptr_t sys_tls;
 
-  ZLOG(LOG_DEBUG, "Entered with 0x%08lx, 0x%08lx", (uintptr_t)nap, (uintptr_t)thread_ptr);
+  ZLOGS(LOG_DEBUG, "tls init with 0x%08lx", (uintptr_t)thread_ptr);
 
   /*
    * Verify that the address in the app's range and translated from

@@ -9,8 +9,6 @@
  */
 #include <string.h>
 
-#define NACL_LOG_MODULE_NAME  "elf_util"
-
 #include "src/include/nacl_macros.h"
 #include "src/include/nacl_platform.h"
 #include "src/gio/gio.h"
@@ -74,9 +72,6 @@ static const struct NaClPhdrChecks nacl_phdr_check_data[] = {
 #define DUMP(m, f) do { ZLOGS(loglevel, #m " = %" f, elf_hdr->m); } while (0)
 static void NaClDumpElfHeader(int loglevel, Elf_Ehdr *elf_hdr)
 {
-//  ZLOGS(loglevel, "=================================================");
-//  ZLOGS(loglevel, "Elf header");
-//  ZLOGS(loglevel, "==================================================");
   ZLOGS(LOG_DEBUG, "%020o (Elf header) %020o", 0, 0);
 
   DUMP(e_ident+1, ".3s");
@@ -115,36 +110,16 @@ static void NaClDumpElfProgramHeader(int loglevel, Elf_Phdr *phdr)
 }
 #undef  DUMP
 
-NaClErrorCode NaClElfImageValidateElfHeader(struct NaClElfImage *image)
+void NaClElfImageValidateElfHeader(struct NaClElfImage *image)
 {
   const Elf_Ehdr *hdr = &image->ehdr;
 
-  if (memcmp(hdr->e_ident, ELFMAG, SELFMAG)) {
-    ZLOG(LOG_ERROR, "bad elf magic");
-    return LOAD_BAD_ELF_MAGIC;
-  }
-
-  if (ELFCLASS64 != hdr->e_ident[EI_CLASS]) {
-    ZLOG(LOG_ERROR, "bad elf class");
-    return LOAD_NOT_64_BIT;
-  }
-
-  if (ET_EXEC != hdr->e_type) {
-    ZLOG(LOG_ERROR, "non executable");
-    return LOAD_NOT_EXEC;
-  }
-
-  if (EM_EXPECTED_BY_NACL != hdr->e_machine) {
-    ZLOG(LOG_ERROR, "bad machine: %x", hdr->e_machine);
-    return LOAD_BAD_MACHINE;
-  }
-
-  if (EV_CURRENT != hdr->e_version) {
-    ZLOG(LOG_ERROR, "bad elf version: %x", hdr->e_version);
-    return LOAD_BAD_ELF_VERS;
-  }
-
-  return LOAD_OK;
+  ZLOGFAIL(memcmp(hdr->e_ident, ELFMAG, SELFMAG), ENOEXEC, "bad elf magic");
+  ZLOGFAIL(ELFCLASS64 != hdr->e_ident[EI_CLASS], ENOEXEC, "bad elf class");
+  ZLOGFAIL(ET_EXEC != hdr->e_type, ENOEXEC, "non executable");
+  ZLOGFAIL(EM_EXPECTED_BY_NACL != hdr->e_machine, ENOEXEC,
+      "bad machine: %x", hdr->e_machine);
+  ZLOGFAIL(EV_CURRENT != hdr->e_version, ENOEXEC, "bad elf version: %x", hdr->e_version);
 }
 
 /*
@@ -152,7 +127,7 @@ NaClErrorCode NaClElfImageValidateElfHeader(struct NaClElfImage *image)
  * and max_vaddr
  * todo(d'b): the function is too large, rewrite it
  */
-NaClErrorCode NaClElfImageValidateProgramHeaders(
+void NaClElfImageValidateProgramHeaders(
   struct NaClElfImage *image,
   uint8_t             addr_bits,
   uintptr_t           *static_text_end,
@@ -203,20 +178,11 @@ NaClErrorCode NaClElfImageValidateProgramHeaders(
           && php->p_flags == nacl_phdr_check_data[j].p_flags) break;
     }
 
-    if(j == NACL_ARRAY_SIZE(nacl_phdr_check_data))
-    {
-      /* segment not in nacl_phdr_check_data */
-      ZLOGS(LOG_DEBUG, "Segment %d is of unexpected type 0x%x, flag 0x%x",
-          segnum, php->p_type, php->p_flags);
-      return LOAD_BAD_SEGMENT;
-    }
+    ZLOGFAIL(j == NACL_ARRAY_SIZE(nacl_phdr_check_data), ENOEXEC, "Segment %d "
+        "is of unexpected type 0x%x, flag 0x%x", segnum, php->p_type, php->p_flags);
 
     ZLOGS(LOG_DEBUG, "Matched nacl_phdr_check_data[%d]", j);
-    if(seen_seg[j])
-    {
-      ZLOGS(LOG_DEBUG, "Segment %d is a type that has been seen", segnum);
-      return LOAD_DUP_SEGMENT;
-    }
+    ZLOGFAIL(seen_seg[j], ENOEXEC, "Segment %d is a type that has been seen", segnum);
     seen_seg[j] = 1;
 
     if(PCA_IGNORE == nacl_phdr_check_data[j].action)
@@ -226,43 +192,25 @@ NaClErrorCode NaClElfImageValidateProgramHeaders(
     }
 
     /* We will load this segment later. Do the sanity checks. */
-    if (0 != nacl_phdr_check_data[j].p_vaddr
-        && (nacl_phdr_check_data[j].p_vaddr != php->p_vaddr))
-    {
-      ZLOGS(LOG_DEBUG, "Segment %d: bad virtual address: 0x%08x, expected 0x%08x",
-              segnum, php->p_vaddr, nacl_phdr_check_data[j].p_vaddr);
-      return LOAD_SEGMENT_BAD_LOC;
-    }
+    ZLOGFAIL(0 != nacl_phdr_check_data[j].p_vaddr && (nacl_phdr_check_data[j].p_vaddr
+        != php->p_vaddr), ENOEXEC, "Segment %d: bad virtual address: 0x%08x, "
+        "expected 0x%08x", segnum, php->p_vaddr, nacl_phdr_check_data[j].p_vaddr);
 
-    if (php->p_vaddr < NACL_TRAMPOLINE_END)
-    {
-      ZLOGS(LOG_DEBUG, "Segment %d: virtual address 0x%08x too low", segnum, php->p_vaddr);
-      return LOAD_SEGMENT_OUTSIDE_ADDRSPACE;
-    }
+    ZLOGFAIL(php->p_vaddr < NACL_TRAMPOLINE_END, ENOEXEC,
+        "Segment %d: virtual address 0x%08x too low", segnum, php->p_vaddr);
 
     /*
      * integer overflow?  Elf_Addr and Elf_Word are uint32_t or
      * uint64_t, so the addition/comparison is well defined.
      */
-    if(php->p_vaddr + php->p_memsz < php->p_vaddr)
-    {
-      ZLOGS(LOG_DEBUG, "Segment %d: p_memsz caused integer overflow", segnum);
-      return LOAD_SEGMENT_OUTSIDE_ADDRSPACE;
-    }
+    ZLOGFAIL(php->p_vaddr + php->p_memsz < php->p_vaddr, ENOEXEC,
+        "Segment %d: p_memsz caused integer overflow", segnum);
 
-    if(php->p_vaddr + php->p_memsz >= ((Elf_Addr)1U << addr_bits))
-    {
-      ZLOGS(LOG_DEBUG, "Segment %d: too large, ends at 0x%08x",
-          segnum, php->p_vaddr + php->p_memsz);
-      return LOAD_SEGMENT_OUTSIDE_ADDRSPACE;
-    }
+    ZLOGFAIL(php->p_vaddr + php->p_memsz >= ((Elf_Addr)1U << addr_bits), ENOEXEC,
+        "Segment %d: too large, ends at 0x%08x", segnum, php->p_vaddr + php->p_memsz);
 
-    if(php->p_filesz > php->p_memsz)
-    {
-      ZLOGS(LOG_DEBUG, "Segment %d: file size 0x%08x larger than memory size 0x%08x",
-          segnum, php->p_filesz, php->p_memsz);
-      return LOAD_SEGMENT_BAD_PARAM;
-    }
+    ZLOGFAIL(php->p_filesz > php->p_memsz, ENOEXEC, "Segment %d: file size 0x%08x "
+        "larger than memory size 0x%08x", segnum, php->p_filesz, php->p_memsz);
 
     /* record our decision that we will load this segment */
     image->loadable[segnum] = 1;
@@ -280,8 +228,7 @@ NaClErrorCode NaClElfImageValidateProgramHeaders(
       case PCA_NONE:
         break;
       case PCA_TEXT_CHECK:
-        if(0 == php->p_memsz)
-          return LOAD_BAD_ELF_TEXT;
+        ZLOGFAIL(0 == php->p_memsz, ENOEXEC, FAILED_MSG);
         *static_text_end = NACL_TRAMPOLINE_END + php->p_filesz;
         break;
       case PCA_RODATA:
@@ -297,9 +244,9 @@ NaClErrorCode NaClElfImageValidateProgramHeaders(
     }
   }
 
+  /* check if ELF executable missing a required segment (text) */
   for(j = 0; j < NACL_ARRAY_SIZE(nacl_phdr_check_data); ++j)
-    if(nacl_phdr_check_data[j].required && !seen_seg[j])
-      return LOAD_REQUIRED_SEG_MISSING;
+    ZLOGFAIL(nacl_phdr_check_data[j].required && !seen_seg[j], ENOEXEC, FAILED_MSG);
 
   /*
    * Memory allocation will use NaClRoundPage(nap->break_addr), but
@@ -308,92 +255,62 @@ NaClErrorCode NaClElfImageValidateProgramHeaders(
    * the linux-style brk system call (which returns current break on
    * failure) permits an arbitrarily aligned address as argument.
    */
-
-  return LOAD_OK;
 }
 
-struct NaClElfImage *NaClElfImageNew(struct Gio *gp, NaClErrorCode *err_code)
+struct NaClElfImage *NaClElfImageNew(struct Gio *gp)
 {
   struct NaClElfImage *result;
   struct NaClElfImage image;
   int                 cur_ph;
 
   memset(image.loadable, 0, sizeof image.loadable);
-  if(-1 == (*gp->vtbl->Seek)(gp, 0, 0))
-  {
-    ZLOGS(LOG_DEBUG, "could not seek to beginning of Gio object containing nexe");
-    if(NULL != err_code) *err_code = LOAD_READ_ERROR;
-    return 0;
-  }
 
-  if((*gp->vtbl->Read)(gp, &image.ehdr, sizeof image.ehdr) != sizeof image.ehdr)
-  {
-    if(NULL != err_code) *err_code = LOAD_READ_ERROR;
-    ZLOGS(LOG_DEBUG, "could not load elf headers");
-    return 0;
-  }
+  /* fail if could not seek to beginning of Gio object containing nexe */
+  ZLOGFAIL(-1 == (*gp->vtbl->Seek)(gp, 0, 0), EIO, FAILED_MSG);
+
+  /* fail if could not load elf headers*/
+  ZLOGFAIL((*gp->vtbl->Read)(gp, &image.ehdr, sizeof image.ehdr) != sizeof image.ehdr,
+      EIO, FAILED_MSG);
 
   NaClDumpElfHeader(LOG_DEBUG, &image.ehdr);
 
-  /* read program headers */
-  if(image.ehdr.e_phnum > NACL_MAX_PROGRAM_HEADERS)
-  {
-    if(NULL != err_code) *err_code = LOAD_TOO_MANY_PROG_HDRS;
-    ZLOGS(LOG_DEBUG, "too many prog headers");
-    return 0;
-  }
+  /* read program headers. fail if too many prog headers */
+  ZLOGFAIL(image.ehdr.e_phnum > NACL_MAX_PROGRAM_HEADERS, ENOEXEC, FAILED_MSG);
 
-  if(image.ehdr.e_phentsize < sizeof image.phdrs[0])
-  {
-    if(NULL != err_code) *err_code = LOAD_PROG_HDR_SIZE_TOO_SMALL;
-    ZLOGS(LOG_DEBUG, "bad prog headers size. image.ehdr.e_phentsize = 0x%x, sizeof"
-        " image.phdrs[0] = 0x%x", image.ehdr.e_phentsize, sizeof image.phdrs[0]);
-    return 0;
-  }
+  /* fail if ELF program header size too small */
+  ZLOGFAIL(image.ehdr.e_phentsize < sizeof image.phdrs[0], ENOEXEC,
+      "bad prog headers size. image.ehdr.e_phentsize = 0x%x, sizeof "
+      "image.phdrs[0] = 0x%x", image.ehdr.e_phentsize, sizeof image.phdrs[0]);
 
   /*
    * NB: cast from e_phoff to off_t may not be valid, since off_t can be
    * smaller than Elf64_off, but since invalid values will be rejected
    * by Seek() the cast is safe (cf bsy)
+   * d'b: fail if cannot seek tp prog headers
    */
-  if((*gp->vtbl->Seek)(gp, (off_t)image.ehdr.e_phoff, SEEK_SET) == (off_t)-1)
-  {
-    if(NULL != err_code) *err_code = LOAD_READ_ERROR;
-    ZLOGS(LOG_DEBUG, "cannot seek tp prog headers");
-    return 0;
-  }
+  ZLOGFAIL((*gp->vtbl->Seek)(gp, (off_t)image.ehdr.e_phoff, SEEK_SET) == (off_t)-1,
+      EIO, FAILED_MSG);
 
-  if((size_t)(*gp->vtbl->Read)(gp, &image.phdrs[0], image.ehdr.e_phnum * sizeof image.phdrs[0])
-      != (image.ehdr.e_phnum * sizeof image.phdrs[0]))
-  {
-    if(NULL != err_code) *err_code = LOAD_READ_ERROR;
-    ZLOGS(LOG_DEBUG, "cannot load tp prog headers");
-    return 0;
-  }
+  /* fail if cannot load tp prog headers */
+  ZLOGFAIL((size_t)(*gp->vtbl->Read)(gp, &image.phdrs[0], image.ehdr.e_phnum * sizeof
+      image.phdrs[0]) != (image.ehdr.e_phnum * sizeof image.phdrs[0]), EIO, FAILED_MSG);
 
-//  ZLOGS(LOG_DEBUG, "=================================================");
-//  ZLOGS(LOG_DEBUG, "Elf Program headers");
-//  ZLOGS(LOG_DEBUG, "==================================================");
-  ZLOGS(LOG_DEBUG, "%020o Elf Program headers %020o", 0, 0);
+  ZLOGS(LOG_DEBUG, "%020o (elf segments) %020o", 0, 0);
   for(cur_ph = 0; cur_ph < image.ehdr.e_phnum; ++cur_ph)
     NaClDumpElfProgramHeader(LOG_DEBUG, &image.phdrs[cur_ph]);
 
   /* we delay allocating till the end to avoid cleanup code */
+  /* fail if not enough memory for image meta data */
   result = malloc(sizeof image);
-  if(result == 0)
-  {
-    if(NULL != err_code) *err_code = LOAD_NO_MEMORY;
-    ZLOGFAIL(1, ENOMEM, "not enough memory for image meta data");
-//    return 0;
-  }
+  ZLOGFAIL(result == NULL, ENOMEM, FAILED_MSG);
+
   memcpy(result, &image, sizeof image);
   return result;
 }
 
-NaClErrorCode NaClElfImageLoad(struct NaClElfImage *image,
-                               struct Gio          *gp,
-                               uint8_t             addr_bits,
-                               uintptr_t           mem_start) {
+void NaClElfImageLoad(struct NaClElfImage *image,
+    struct Gio *gp, uint8_t addr_bits, uintptr_t mem_start)
+{
   int               segnum;
   uintptr_t         paddr;
   uintptr_t         end_vaddr;
@@ -412,8 +329,8 @@ NaClErrorCode NaClElfImageLoad(struct NaClElfImage *image,
       ZLOGS(LOG_DEBUG, "zero-sized segment.  ignoring...");
       continue;
     }
-
     end_vaddr = php->p_vaddr + php->p_filesz;
+
     /* integer overflow? */
     ZLOGFAIL(end_vaddr < php->p_vaddr, EFAULT,
         "parameter error should have been detected already");
@@ -433,32 +350,24 @@ NaClErrorCode NaClElfImageLoad(struct NaClElfImage *image,
     /*
      * NB: php->p_offset may not be a valid off_t on 64-bit systems, but
      * in that case Seek() will error out.
+     * d'b: fail if ELF executable segment header parameter error
      */
-    if((*gp->vtbl->Seek)(gp, (off_t)php->p_offset, SEEK_SET) == (off_t)-1)
-    {
-      ZLOG(LOG_ERROR, "seek failure segment %d", segnum);
-      return LOAD_SEGMENT_BAD_PARAM;
-    }
+    ZLOGFAIL((*gp->vtbl->Seek)(gp, (off_t)php->p_offset, SEEK_SET) == (off_t)-1,
+        ENOEXEC, "seek failure segment %d", segnum);
 
     ZLOGS(LOG_DEBUG, "Reading %d (0x%x) bytes to address 0x%x",
         php->p_filesz, php->p_filesz, paddr);
 
     /*
-     * Tell valgrind that this memory is accessible and undefined. For more
-     * details see
+     * Tell valgrind that this memory is accessible and undefined. For more details see
      * http://code.google.com/p/nativeclient/wiki/ValgrindMemcheck#Implementation_details
      */
     NACL_MAKE_MEM_UNDEFINED((void *) paddr, php->p_filesz);
 
-    if((Elf_Word)(*gp->vtbl->Read)(gp, (void *)paddr, php->p_filesz) != php->p_filesz)
-    {
-      ZLOG(LOG_ERROR, "load failure segment %d", segnum);
-      return LOAD_SEGMENT_BAD_PARAM;
-    }
+    ZLOGFAIL((Elf_Word)(*gp->vtbl->Read)(gp, (void *)paddr, php->p_filesz) != php->p_filesz,
+        ENOEXEC, "load failure segment %d", segnum);
     /* region from p_filesz to p_memsz should already be zero filled */
   }
-
-  return LOAD_OK;
 }
 
 void NaClElfImageDelete(struct NaClElfImage *image) {
