@@ -1,4 +1,5 @@
 /*
+ * under construction
  * test accounting. measure both network and local mounted channels
  * returns the number of failed tests
  *

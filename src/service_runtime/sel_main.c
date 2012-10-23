@@ -171,14 +171,11 @@ int main(int argc, char **argv)
   memset(nap->system_manifest, 0, sizeof *nap->system_manifest);
   gnap = nap;
 
+  /* get the task, setup log, etag, intercept signals */
   ParseCommandLine(nap, argc, argv);
   NaClSignalHandlerInit();
   NaClAllModulesInit();
   NaClPerfCounterCtor(&time_all_main, "SelMain");
-
-
-  /* validate given nexe and run/fail/exit */
-  ValidateNexe(nap);
 
   /* the dyn_array constructor 1st call */
   ZLOGFAIL(NaClAppCtor(nap) == 0, EFAULT, "Error while constructing app state");
@@ -202,7 +199,10 @@ int main(int argc, char **argv)
 
   PERF_CNT("SnapshotNaclFile");
 
-  /* validate untrusted code (nexe) */
+  /* validate given nexe (ensure that text segment is safe) */
+  ValidateNexe(nap);
+
+  /* validate nexe structure (check elf header and segments) */
   ZLOGS(LOG_DEBUG, "Loading nacl file %s", nap->system_manifest->nexe);
   NaClAppLoadFile((struct Gio *) &main_file, nap);
   PERF_CNT("AppLoadEnd");

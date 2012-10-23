@@ -28,6 +28,7 @@ enum ChannelFields {
 #undef ZLOGFAIL
 #define ZLOGFAIL(...)
 void ZLogTag(const char *file, int line) {}
+void ZLog(int priority, char *fmt, ...) {}
 void FailIf(int cond, int err, char const *fmt, ...) {}
 
 /*

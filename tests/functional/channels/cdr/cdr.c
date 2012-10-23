@@ -129,7 +129,11 @@ int main(int argc, char **argv)
   zput(STDLOG, ERRCOUNT ? "TEST FAILED\n\n" : "TEST SUCCEED\n\n");
 
   /* exit with code */
-  ZPRINTF(STDLOG, "OVERALL ERRORS COUNT = %d\n", overall_errors);
+  if(overall_errors > 0)
+    ZPRINTF(STDLOG, "OVERALL TEST FAILED with %d errors\n", overall_errors);
+  else
+    zput(STDLOG, "OVERALL TEST SUCCEED\n\n");
+
   zvm_exit(overall_errors);
   return 0;
 }

@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
+#include <assert.h>
 #include "src/service_runtime/tools.h"
 #include "src/platform/nacl_exit.h"
 #include "src/service_runtime/zlog.h"
@@ -33,7 +34,6 @@ void ZLogDtor()
 /*
  * store file and line information to the log tag
  * note: should only be used from ZLOG macro
- * todo(d'b): find replacement for snprintf()
  */
 void ZLogTag(const char *file, int line)
 {
@@ -48,11 +48,11 @@ void ZLogTag(const char *file, int line)
 \
   if(cond) return;\
 \
- /* construct log message */\
+  /* construct log message */\
   va_start(ap, fmt);\
   if(zfile != NULL)\
-    offset = sprintf(msg, TAG_FORMAT, zfile, zline);\
-  vsprintf(msg + offset, fmt, ap);\
+    offset = snprintf(msg, LOG_MSG_LIMIT, TAG_FORMAT, zfile, zline);\
+  vsnprintf(msg + offset, LOG_MSG_LIMIT - offset, fmt, ap);\
   va_end(ap);\
 \
   /* log the message */\
@@ -65,7 +65,7 @@ void ZLogTag(const char *file, int line)
 void ZLog(int priority, char *fmt, ...)
 {
   ZLO(priority > verbosity);
-  if(priority == LOG_FATAL) NaClAbort();
+  assert(priority != LOG_FATAL);
 }
 
 /* if condition is true, log and continue */
