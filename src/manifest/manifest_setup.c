@@ -259,16 +259,6 @@ void SystemManifestCtor(struct NaClApp *nap)
   policy->version = GetValueByKey("Version");
   policy->nexe_etag = GetValueByKey("NexeEtag");
 
-  /*
-   * prepare overall etag context. if failed report will not be shown
-   * todo(d'b): show report
-   */
-  if(TagEngineEnabled() && TagCtor(&nap->user_tag) == ERR_CODE)
-  {
-    ZLOG(LOG_ERROR, "cannot construct overall channels tag");
-    _exit(1);
-  }
-
   /* check mandatory manifest keys */
   ZLOGFAIL(nap->system_manifest->version == NULL, EFAULT,
       "the manifest version is not provided");

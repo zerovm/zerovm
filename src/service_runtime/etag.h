@@ -20,6 +20,9 @@
 /* etag engine construction */
 void TagEngineCtor();
 
+/* disable etag */
+void TagEngineDtor();
+
 /* return the etag_enabled state */
 int TagEngineEnabled();
 

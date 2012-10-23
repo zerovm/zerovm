@@ -25,6 +25,13 @@ void TagEngineCtor()
   ZLOGFAIL(tag_type == NULL, EFAULT, "cannot initialize tag type");
 }
 
+/* disable etag */
+void TagEngineDtor()
+{
+  tag_engine_enabled = 0;
+  tag_type = NULL;
+}
+
 /* return the etag_enabled state */
 int TagEngineEnabled()
 {

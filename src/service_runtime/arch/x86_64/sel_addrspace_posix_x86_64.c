@@ -30,18 +30,11 @@ static void *NaClAllocatePow2AlignedMemory(size_t mem_sz, size_t log_alignment)
   ZLOGS(LOG_INSANE, "%25s %016lx", " Ask:", request_sz);
 
   /* d'b: try to get the fixed address r15 (user base register) */
-  /* ###
-   * fixing bug with sigsegv on mmap with MAP_FIXED. try to mmap with hint
-   * if failed try again {{
-   *
+  /*
+   * WARNING: mmap can overwrite the zerovm dynamically linked code.
+   * to prevent it the code should be linked statically
    */
   mem_ptr = mmap(R15_CONST, request_sz, PROT_NONE, ABSOLUTE_MMAP, -1, (off_t)0);
-//  do {
-//    mem_ptr = mmap(R15_CONST, request_sz, PROT_NONE, RELATIVE_MMAP, -1, (off_t)0);
-//    ZLOGIF(R15_CONST != mem_ptr, "can't mmap on R15_CONST (%p). trying again", mem_ptr);
-//  } while(R15_CONST != mem_ptr);
-  /* }} */
-
   if(MAP_FAILED == mem_ptr)
   {
     ZLOG(LOG_ERROR, "the base register absolute address allocation failed!"

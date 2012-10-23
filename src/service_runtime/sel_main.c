@@ -68,7 +68,13 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
         nap->quit_after_load = 1;
         break;
       case 'e':
+        /* todo(d'b): if etag construction failed, zerovm must fail too */
         TagEngineCtor();
+        if(TagCtor(&nap->user_tag) == ERR_CODE)
+        {
+          TagEngineDtor();
+          ZLOG(LOG_ERROR, "cannot construct overall channels tag");
+        }
         break;
       case 'S':
         /* d'b: disable signals handling */
@@ -86,11 +92,11 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
         break;
       case 'Q':
         nap->skip_qualification = 1;
-        ZLOG(LOG_ERROR, "PLATFORM QUALIFICATION DISABLED BY -Q - "
+        ZLOGS(LOG_ERROR, "PLATFORM QUALIFICATION DISABLED BY -Q - "
             "Native Client's sandbox will be unreliable!");
         break;
       default:
-        ZLOG(LOG_ERROR, "ERROR: unknown option: [%c]", opt);
+        ZLOGS(LOG_ERROR, "ERROR: unknown option: [%c]", opt);
         puts(HELP_SCREEN);
         exit(EINVAL);
         break;

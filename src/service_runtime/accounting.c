@@ -238,6 +238,7 @@ void AccountingDtor(struct NaClApp *nap)
 
   offset = ReadSystemAccounting(nap, accounting, BIG_ENOUGH_STRING);
   strncat(accounting, " ", 1);
+  ++offset;
   GetChannelsAccounting(nap, accounting + offset, BIG_ENOUGH_STRING - offset);
 }
 
