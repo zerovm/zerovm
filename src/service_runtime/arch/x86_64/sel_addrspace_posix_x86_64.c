@@ -23,40 +23,52 @@ static void *NaClAllocatePow2AlignedMemory(size_t mem_sz, size_t log_alignment)
   uintptr_t orig_addr;
   uintptr_t rounded_addr;
   size_t extra;
+  ZENTER;
 
   pow2align = ((uintptr_t)1) << log_alignment;
   request_sz = mem_sz + pow2align;
-  ZLOG(LOG_INSANE, "%25s %016lx", " Ask:", request_sz);
+  ZLOGS(LOG_INSANE, "%25s %016lx", " Ask:", request_sz);
 
   /* d'b: try to get the fixed address r15 (user base register) */
+  /* ###
+   * fixing bug with sigsegv on mmap with MAP_FIXED. try to mmap with hint
+   * if failed try again {{
+   *
+   */
   mem_ptr = mmap(R15_CONST, request_sz, PROT_NONE, ABSOLUTE_MMAP, -1, (off_t)0);
+//  do {
+//    mem_ptr = mmap(R15_CONST, request_sz, PROT_NONE, RELATIVE_MMAP, -1, (off_t)0);
+//    ZLOGIF(R15_CONST != mem_ptr, "can't mmap on R15_CONST (%p). trying again", mem_ptr);
+//  } while(R15_CONST != mem_ptr);
+  /* }} */
+
   if(MAP_FAILED == mem_ptr)
   {
     ZLOG(LOG_ERROR, "the base register absolute address allocation failed!"
         " trying to allocate user space in NOT DETERMINISTIC WAY");
     mem_ptr = mmap(NULL, request_sz, PROT_NONE, RELATIVE_MMAP, -1, (off_t)0);
-    if(MAP_FAILED == mem_ptr) return NULL;
+    ZLOGFAIL(MAP_FAILED == mem_ptr, ENOMEM, FAILED_MSG);
   }
 
   orig_addr = (uintptr_t)mem_ptr;
-  ZLOG(LOG_INSANE, "%25s %016lx", "orig memory at", orig_addr);
+  ZLOGS(LOG_INSANE, "%25s %016lx", "orig memory at", orig_addr);
 
   rounded_addr = (orig_addr + (pow2align - 1)) & ~(pow2align - 1);
   extra = rounded_addr - orig_addr;
   if(0 != extra)
   {
-    ZLOG(LOG_INSANE, "%25s %016lx, %016lx", "Freeing front:", orig_addr, extra);
+    ZLOGS(LOG_INSANE, "%25s %016lx, %016lx", "Freeing front:", orig_addr, extra);
     ZLOGFAIL(-1 == munmap((void *)orig_addr, extra), errno, "munmap front failed");
   }
 
   extra = pow2align - extra;
   if(0 != extra)
   {
-    ZLOG(LOG_INSANE, "%25s %016lx, %016lx", "Freeing tail:", rounded_addr + mem_sz, extra);
+    ZLOGS(LOG_INSANE, "%25s %016lx, %016lx", "Freeing tail:", rounded_addr + mem_sz, extra);
     ZLOGFAIL(-1 == munmap((void *)(rounded_addr + mem_sz), extra), errno, "munmap tail failed");
   }
 
-  ZLOG(LOG_INSANE, "%25s %016lx", "Aligned memory:", rounded_addr);
+  ZLOGS(LOG_INSANE, "%25s %016lx", "Aligned memory:", rounded_addr);
 
   /*
    * we could also mmap again at rounded_addr w/o MAP_NORESERVE etc to
@@ -74,7 +86,7 @@ void NaClAllocateSpace(void **mem, size_t addrsp_size)
   size_t log_align = ALIGN_BITS;
   void *mem_ptr;
 
-  ZLOG(LOG_INSANE, "NaClAllocateSpace(*, 0x%016lx bytes)", addrsp_size);
+  ZLOGS(LOG_INSANE, "NaClAllocateSpace(*, 0x%016lx bytes)", addrsp_size);
   ZLOGFAIL(addrsp_size != FOURGIG, EFAULT, "addrsp_size != FOURGIG");
 
   errno = 0;
@@ -86,5 +98,5 @@ void NaClAllocateSpace(void **mem, size_t addrsp_size)
    * we skip over an initial 40G guard.
    */
   *mem = (void *)(((char *)mem_ptr) + GUARDSIZE);
-  ZLOG(LOG_INSANE, "addr space at 0x%016lx", (uintptr_t)*mem);
+  ZLOGS(LOG_INSANE, "addr space at 0x%016lx", (uintptr_t)*mem);
 }

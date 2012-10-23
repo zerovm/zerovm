@@ -17,6 +17,8 @@
 
 void NaClPerfCounterCtor(struct NaClPerfCounter *sv, const char *app_name)
 {
+  ZENTER;
+
   if(NULL == sv)
   {
     ZLOG(LOG_ERROR, "NaClPerfCounterStart received null pointer");
@@ -44,6 +46,7 @@ void NaClPerfCounterCtor(struct NaClPerfCounter *sv, const char *app_name)
   }
 
   sv->samples++;
+  ZLEAVE;
 }
 
 /*
@@ -54,14 +57,18 @@ void NaClPerfCounterCtor(struct NaClPerfCounter *sv, const char *app_name)
  */
 int NaClPerfCounterMark(struct NaClPerfCounter *sv, const char *ev_name)
 {
+  ZENTER;
+
   if((NULL == sv) || (NULL == ev_name))
   {
     ZLOG(LOG_ERROR, "NaClPerfCounterMark received null args");
+    ZLEAVE;
     return -1;
   }
   if(sv->samples >= NACL_MAX_PERF_COUNTER_SAMPLES)
   {
     ZLOG(LOG_ERROR, "NaClPerfCounterMark going beyond buffer size");
+    ZLEAVE;
     return -1;
   }
   /* busy loop until we succeed, damn it */
@@ -79,6 +86,7 @@ int NaClPerfCounterMark(struct NaClPerfCounter *sv, const char *ev_name)
   /* Being explicit about string termination */
   sv->sample_names[sv->samples][LAST_IDX(sv->sample_names[sv->samples])] = '\0';
 
+  ZLEAVE;
   return (sv->samples)++;
 }
 
@@ -105,10 +113,15 @@ int64_t NaClPerfCounterInterval(struct NaClPerfCounter *sv, uint32_t a, uint32_t
 
 int64_t NaClPerfCounterIntervalLast(struct NaClPerfCounter *sv)
 {
+  ZENTER;
+
   if(NULL != sv)
   {
+    ZLEAVE;
     return NaClPerfCounterInterval(sv, sv->samples - 2, sv->samples - 1);
   }
+
+  ZLEAVE;
   return -1;
 }
 

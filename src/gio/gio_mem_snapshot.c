@@ -10,6 +10,7 @@
 
 #include <sys/stat.h>
 #include "src/gio/gio.h"
+#include "src/service_runtime/zlog.h"
 
 struct GioVtbl const  kGioMemoryFileSnapshotVtbl = {
   GioMemoryFileRead,
@@ -20,19 +21,23 @@ struct GioVtbl const  kGioMemoryFileSnapshotVtbl = {
   GioMemoryFileSnapshotDtor,
 };
 
-int   GioMemoryFileSnapshotCtor(struct GioMemoryFileSnapshot  *self,
-                                char                          *fn) {
+/* todo(d'b): rewrite */
+int GioMemoryFileSnapshotCtor(struct GioMemoryFileSnapshot *self, char *fn)
+{
   FILE            *iop;
   struct stat     stbuf;
   char            *buffer;
+  ZENTER;
 
   ((struct Gio *) self)->vtbl = (struct GioVtbl *) NULL;
   if (0 == (iop = fopen(fn, "rb"))) {
+    ZLEAVE;
     return 0;
   }
   if (fstat(fileno(iop), &stbuf) == -1) {
  abort0:
     fclose(iop);
+    ZLEAVE;
     return 0;
   }
   if (0 == (buffer = malloc(stbuf.st_size))) {
@@ -49,6 +54,7 @@ int   GioMemoryFileSnapshotCtor(struct GioMemoryFileSnapshot  *self,
   (void) fclose(iop);
 
   ((struct Gio *) self)->vtbl = &kGioMemoryFileSnapshotVtbl;
+  ZLEAVE;
   return 1;
 }
 

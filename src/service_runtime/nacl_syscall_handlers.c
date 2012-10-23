@@ -26,7 +26,7 @@ static int32_t NotImplementedDecoder(struct NaClApp *nap)
 static void NaClAddSyscall(int num, int32_t(*fn)(struct NaClApp *))
 {
   ZLOGFAIL(nacl_syscall[num].handler != &NotImplementedDecoder,
-      EFAULT, "Duplicate syscall number %d\n", num);
+      EFAULT, "Duplicate syscall number %d", num);
   nacl_syscall[num].handler = fn;
 }
 

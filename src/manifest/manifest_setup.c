@@ -16,6 +16,7 @@
 #include "src/manifest/manifest_parser.h"
 #include "src/manifest/manifest_setup.h"
 #include "src/manifest/mount_channel.h"
+#include "src/service_runtime/accounting.h"
 
 /* lower zerovm priority */
 static void LowerOwnPriority()
@@ -82,11 +83,13 @@ static void DisableSuperUser()
  */
 void LastDefenseLine(struct NaClApp *nap)
 {
+  ZENTER;
   LowerOwnPriority();
   LimitOwnIO(nap);
   LimitOwnMemory();
   ChrootJail();
   DisableSuperUser();
+  ZLEAVE;
 }
 
 /* preallocate memory area of given size. abort if fail */
@@ -243,6 +246,7 @@ static void SetTimeout(struct SystemManifest *policy)
 void SystemManifestCtor(struct NaClApp *nap)
 {
   struct SystemManifest *policy;
+  ZENTER;
 
   /* check for design errors */
   assert(nap != NULL);
@@ -297,6 +301,7 @@ void SystemManifestCtor(struct NaClApp *nap)
 
   /* zerovm return code */
   nap->system_manifest->ret_code = OK_CODE;
+  ZLEAVE;
 }
 
 /*
@@ -381,12 +386,12 @@ int ProxyReport(struct NaClApp *nap)
   length = snprintf(report, BIG_ENOUGH_SPACE,
       "validator state = %d\nuser return code = %d\netag = %s\naccounting = %s\n"
       "exit state = %s\n", nap->validation_state,
-      nap->system_manifest->user_ret_code, etag, nap->accounting, GetExitState());
+      nap->system_manifest->user_ret_code, etag, GetAccountingInfo(), GetExitState());
 #else
   /* .. but for production zvm will switch to more brief output */
   length = snprintf(report, BIG_ENOUGH_SPACE, "%d\n%d\n%s\n%s\n%s\n",
       nap->validation_state, nap->system_manifest->user_ret_code,
-      etag, nap->accounting, GetExitState());
+      etag, GetAccountingInfo(), GetExitState());
 #endif
 
   /* give the report to proxy */
@@ -396,7 +401,7 @@ int ProxyReport(struct NaClApp *nap)
   length = snprintf(report, BIG_ENOUGH_SPACE,
       "validator state = %d, user return code = %d, etag = %s, accounting = %s, "
       "exit state = %s", nap->validation_state,
-      nap->system_manifest->user_ret_code, etag, nap->accounting, GetExitState());
+      nap->system_manifest->user_ret_code, etag, GetAccountingInfo(), GetExitState());
   ZLOGS(LOG_DEBUG, "%s", report);
 
   return i == length ? OK_CODE : ERR_CODE;

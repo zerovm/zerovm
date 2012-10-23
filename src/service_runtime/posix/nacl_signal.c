@@ -132,7 +132,7 @@ static void FindAndRunHandler(int sig, siginfo_t *info, void *uc) {
          * the default behavior which is to exit the app with the signal
          * number as the error code.
          */
-        NaClSignalErrorMessage("Failed to handle signal.\n");
+        NaClSignalErrorMessage("Failed to handle signal");
         NaClExit(-sig);
       }
     }
@@ -190,6 +190,7 @@ void NaClSignalHandlerFiniPlatform()
 void NaClSignalAssertNoHandlers()
 {
   int i;
+  ZENTER;
 
   for(i = 0; i < SIGNAL_COUNT; i++)
   {
@@ -202,4 +203,5 @@ void NaClSignalAssertNoHandlers()
         : (sa.sa_handler != SIG_DFL && sa.sa_handler != SIG_IGN), EFAULT,
         "A signal handler is registered for signal %d. Did Breakpad register this?", signum);
   }
+  ZLEAVE;
 }

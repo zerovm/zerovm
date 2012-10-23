@@ -41,13 +41,16 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
 {
   int opt;
   char *manifest_name = NULL;
-  int verbosity = 0;
+  ZENTER;
 
   /* set defaults */
   nap->skip_qualification = 0;
   nap->quit_after_load = 0;
   nap->handle_signals = 1;
   nap->storage_limit = ZEROVM_IO_LIMIT;
+
+  /* construct zlog with default verbosity */
+  ZLogCtor(LOG_ERROR);
 
   /* todo(d'b): revise switches and rename them */
   while((opt = getopt(argc, argv, "+FeQsSv:M:l:")) != -1)
@@ -78,8 +81,8 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
             "invalid storage limit: %d", nap->storage_limit);
         break;
       case 'v':
-        verbosity = ATOI(optarg);
-        verbosity = MAX(verbosity, 0);
+        ZLogDtor();
+        ZLogCtor(ATOI(optarg));
         break;
       case 'Q':
         nap->skip_qualification = 1;
@@ -93,9 +96,6 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
         break;
     }
   }
-
-  /* construct zlog */
-  ZLogCtor(verbosity);
 
   /* show zerovm command line */
   ZVMCommandLine(argc, argv);
@@ -113,6 +113,7 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
   nap->system_manifest->nexe = GetValueByKey("Nexe");
   ZLOGFAIL(GetFileSize(nap->system_manifest->nexe) < 0, ENOENT, "nexe open error");
   syscallback = 0;
+  ZLEAVE;
 }
 
 /*
@@ -129,6 +130,7 @@ static void ValidateNexe(struct NaClApp *nap)
     ValidationOK,
     ValidationFailed
   };
+  ZENTER;
 
   assert(nap != NULL);
   assert(nap->system_manifest != NULL);
@@ -146,6 +148,7 @@ static void ValidateNexe(struct NaClApp *nap)
   /* check the result */
   nap->validation_state = exit_status == 0 ? ValidationOK : ValidationFailed;
   ZLOGFAIL(nap->validation_state != ValidationOK, ENOEXEC, "validation failed");
+  ZLEAVE;
 }
 
 int main(int argc, char **argv)
@@ -161,13 +164,12 @@ int main(int argc, char **argv)
   nap->system_manifest = &sys_mft;
   memset(nap->system_manifest, 0, sizeof *nap->system_manifest);
   gnap = nap;
-  ZLogCtor(0); /* make log working */
-  NaClSignalHandlerInit();
 
+  ParseCommandLine(nap, argc, argv);
+  NaClSignalHandlerInit();
   NaClAllModulesInit();
   NaClPerfCounterCtor(&time_all_main, "SelMain");
 
-  ParseCommandLine(nap, argc, argv);
 
   /* validate given nexe and run/fail/exit */
   ValidateNexe(nap);
@@ -211,11 +213,11 @@ int main(int argc, char **argv)
   /* "defence in depth" call */
   LastDefenseLine(nap);
 
-  /* Make sure all the file buffers are flushed before entering the nexe */
-  fflush((FILE *) NULL);
-
   /* start accounting */
   AccountingCtor(nap);
+
+  /* Make sure all the file buffers are flushed before entering the nexe */
+  fflush((FILE*) NULL);
 
   /* set user code trap() exit location and switch to the user code */
   PERF_CNT("CreateMainThread");
@@ -225,11 +227,7 @@ int main(int argc, char **argv)
   PERF_CNT("WaitForMainThread");
   PERF_CNT("SelMainEnd");
 
-  /* stop accounting and harvest info */
-  AccountingDtor(nap);
-
-  /* report to host. call destructors. exit */
-  ZLogDtor();
+  /* zerovm exit with finalization, report and stuff */
   NaClExit(0);
 
   /* Unreachable, but having the return prevents a compiler error. */

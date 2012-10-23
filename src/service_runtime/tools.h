@@ -23,6 +23,7 @@
 #define MANIFEST_MAX 0x100000 /* limit for the manifest size */
 #define KEYWORD_SIZE_MAX 256
 #define BIG_ENOUGH_SPACE 65536 /* ..size of the biggest temporary variable */
+#define BIG_ENOUGH_STRING 1024 /* ..size of the random biggest string */
 #define INT32_STRLEN (11) /* enough space to place maximum int32 value + '\0' */
 #define SIGNAL_STRLEN (64) /* enough space to place zerovm state message */
 

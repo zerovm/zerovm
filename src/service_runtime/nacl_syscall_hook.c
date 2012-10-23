@@ -69,7 +69,7 @@
   NaClSetThreadCtxSp(user, sp_user);
 
   /* debug print to log */
-  ZLOG(LOG_INSANE, "system call number %ld", sysnum);
+  ZLOGS(LOG_INSANE, "system call number %ld", sysnum);
 
   if(sysnum >= NACL_MAX_SYSCALLS)
   {

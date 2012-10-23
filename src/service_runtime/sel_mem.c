@@ -35,12 +35,12 @@ struct NaClVmmapEntry *NaClVmmapEntryMake(uintptr_t             page_num,
                                           struct NaClMemObj     *nmop) {
   struct NaClVmmapEntry *entry;
 
-  ZLOG(LOG_INSANE, "NaClVmmapEntryMake(0x%lx, 0x%lx, 0x%x, 0x%lx)",
+  ZLOGS(LOG_INSANE, "NaClVmmapEntryMake(0x%lx, 0x%lx, 0x%x, 0x%lx)",
       page_num, npages, prot, (uintptr_t)nmop);
   entry = (struct NaClVmmapEntry *) malloc(sizeof *entry);
   if (NULL == entry) return 0;
 
-  ZLOG(LOG_INSANE, "entry: 0x%lx", (uintptr_t) entry);
+  ZLOGS(LOG_INSANE, "entry: 0x%lx", (uintptr_t) entry);
   entry->page_num = page_num;
   entry->npages = npages;
   entry->prot = prot;

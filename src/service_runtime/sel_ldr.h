@@ -205,7 +205,6 @@ struct NaClApp {
   /* for channels */
   int                       node_id; /* own node id from manifest */
   char                      *node_name; /* own node name from manifest. available for user */
-  char                      *accounting; /* contains accounting info after AccountingDtor */
 
   /* fields taken from the natp */
   void                      *signal_stack; /* signal handling, registered with sigaltstack() */

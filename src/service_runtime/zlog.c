@@ -8,24 +8,25 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
+#include "src/service_runtime/tools.h"
 #include "src/platform/nacl_exit.h"
 #include "src/service_runtime/zlog.h"
 
-static int verbosity = LOWEST_VERBOSITY;
+static int verbosity = 0;
 static int zline = 0;
 static const char *zfile = NULL;
 
 /* initialize syslog */
 void ZLogCtor(int v)
 {
-  verbosity = v + LOWEST_VERBOSITY;
+  verbosity = MAX(v, 0);
   openlog(ZLOG_NAME, ZLOG_OPTIONS, ZLOG_PRIORITY);
 }
 
 /* close the log, reset verbosity level */
 void ZLogDtor()
 {
-  verbosity = LOWEST_VERBOSITY;
+  verbosity = 0;
   closelog();
 }
 
@@ -63,7 +64,7 @@ void ZLogTag(const char *file, int line)
  */
 void ZLog(int priority, char *fmt, ...)
 {
-  ZLO(priority >= verbosity);
+  ZLO(priority > verbosity);
   if(priority == LOG_FATAL) NaClAbort();
 }
 

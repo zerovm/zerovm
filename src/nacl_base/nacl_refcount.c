@@ -18,7 +18,7 @@ void NaClRefCountUnref(struct NaClRefCount *nrcp)
 {
   int destroy;
 
-  ZLOG(LOG_INSANE, "NaClRefCountUnref(0x%08lx).\n", (uintptr_t)nrcp);
+  ZLOG(LOG_INSANE, "NaClRefCountUnref(0x%08lx)", (uintptr_t)nrcp);
   ZLOGFAIL(0 == nrcp->ref_count, EFAULT,
       "NaClRefCountUnref on 0x%08ld, refcount already zero!", (uintptr_t)nrcp);
 

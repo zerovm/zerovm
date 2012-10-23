@@ -181,9 +181,11 @@ int ManifestCtor(const char *name)
 {
   int64_t mft_size;
   int retcode;
-  FILE *mft = fopen(name, "r");
+  FILE *mft;
+  ZENTER;
 
   /* get file size and check it for sanity */
+  mft = fopen(name, "r");
   ZLOGFAIL(mft == NULL, errno, "cannot open manifest file %s", name);
   mft_size = GetFileSize(name);
   ZLOGFAIL(mft_size > MANIFEST_MAX, EFBIG, "manifest file exceeded the limit %d", mft_size);
@@ -206,6 +208,7 @@ int ManifestCtor(const char *name)
 
   /* close file and return */
   fclose(mft);
+  ZLEAVE;
   return OK_CODE;
 }
 

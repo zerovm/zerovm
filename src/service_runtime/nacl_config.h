@@ -176,7 +176,7 @@
 #define FOURGIG     (((size_t) 1) << 32)
 #define GUARDSIZE   (10 * FOURGIG)
 #define ALIGN_BITS  (32)
-#define R15_CONST   ((void*)0x7f0000000000) /* d'b: base address to mmap to */
+#define R15_CONST   ((void*)0x440000000000) /* d'b: base address to mmap to */
 #define RELATIVE_MMAP (MAP_ANONYMOUS | MAP_NORESERVE | MAP_PRIVATE) /* d'b */
 #define ABSOLUTE_MMAP (RELATIVE_MMAP | MAP_FIXED) /* d'b */
 #define START_OF_USER_SPACE ((uintptr_t)R15_CONST)

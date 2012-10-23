@@ -23,6 +23,8 @@ EXTERN_C_BEGIN
 #define ZLOGIF ZLogTag(__FILE__, __LINE__), LogIf
 #define ZLOGFAIL ZLogTag(__FILE__, __LINE__), FailIf
 #define ZLOGS ZLogTag(NULL, 0), ZLog
+#define ZENTER ZLOG(LOG_INSANE, "entered")
+#define ZLEAVE ZLOG(LOG_INSANE, "left")
 
 #define FAILED_MSG "check failed"
 #define ZLOG_NAME "ZeroVM"
@@ -30,7 +32,6 @@ EXTERN_C_BEGIN
 #define ZLOG_PRIORITY LOG_USER
 #define TAG_FORMAT "%s %d: "
 #define LOG_MSG_LIMIT 0x1000
-#define LOWEST_VERBOSITY 1
 
 /* develop fix for verbosity level names */
 #undef LOG_DEBUG

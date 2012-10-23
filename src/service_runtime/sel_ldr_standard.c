@@ -182,6 +182,7 @@ void NaClAppLoadFile(struct Gio *gp, struct NaClApp *nap)
   struct NaClElfImage *image = NULL;
   struct NaClPerfCounter time_load_file;
   int err;
+  ZENTER;
 
   NaClPerfCounterCtor(&time_load_file, "NaClAppLoadFile");
 
@@ -300,6 +301,7 @@ void NaClAppLoadFile(struct Gio *gp, struct NaClApp *nap)
   NaClElfImageDelete(image);
   NaClPerfCounterMark(&time_load_file, "EndLoadFile");
   NaClPerfCounterIntervalTotal(&time_load_file);
+  ZLEAVE;
 }
 #undef DUMP
 
@@ -334,6 +336,7 @@ int NaClCreateMainThread(struct NaClApp *nap)
   int                   argc;
   char                  **argv;
   char const *const     *envv;
+  ZENTER;
 
   assert(nap != NULL);
   assert(nap->system_manifest != NULL);
@@ -503,5 +506,6 @@ cleanup:
   free(argv_len);
   free(envv_len);
 
+  ZLEAVE;
   return retval;
 }

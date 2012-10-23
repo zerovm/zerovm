@@ -17,6 +17,7 @@
 int NaClAppWithSyscallTableCtor(struct NaClApp               *nap,
                                 struct NaClSyscallTableEntry *table)
 {
+  ZENTER;
   nap->addr_bits = NACL_MAX_ADDR_BITS;
   nap->stack_size = NACL_DEFAULT_STACK_MAX;
   nap->mem_start = 0;
@@ -31,8 +32,10 @@ int NaClAppWithSyscallTableCtor(struct NaClApp               *nap,
   nap->initial_entry_pt = 0;
   nap->user_entry_pt = 0;
 
-  if (!NaClVmmapCtor(&nap->mem_map)) {
-    goto cleanup;
+  if(!NaClVmmapCtor(&nap->mem_map))
+  {
+    ZLEAVE;
+    return 0;
   }
 
   nap->text_shm = NULL;
@@ -48,10 +51,8 @@ int NaClAppWithSyscallTableCtor(struct NaClApp               *nap,
 
   nap->syscall_table = table;
 
+  ZLEAVE;
   return 1;
-
- cleanup:
-  return 0;
 }
 
 int NaClAppCtor(struct NaClApp *nap) {
@@ -170,7 +171,7 @@ void  NaClLoadTrampoline(struct NaClApp *nap) {
   int         i;
   uintptr_t   addr;
 
-  ZLOGFAIL(!NaClMakeDispatchThunk(nap), EFAULT, "NaClMakeDispatchThunk failed!\n");
+  ZLOGFAIL(!NaClMakeDispatchThunk(nap), EFAULT, FAILED_MSG);
   NaClFillTrampolineRegion(nap);
 
   /*

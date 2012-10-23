@@ -11,11 +11,17 @@
 #include <errno.h>
 #include "src/service_runtime/sel_ldr.h"
 #include "src/service_runtime/accounting.h"
+#include "src/manifest/manifest_setup.h"
+#include "src/manifest/mount_channel.h"
+#include "api/zvm.h"
 
 /* accounting folder name. NULL if not available */
+#ifdef CGROUPS
 static char *acc_folder;
+#endif
+char accounting[BIG_ENOUGH_STRING] = DEFAULT_ACCOUNTING;
 
-#if 0
+#ifdef CGROUPS
 /* read information for the given stat */
 static int64_t ReadExtendedStat(const struct NaClApp *nap, const char *stat)
 {
@@ -49,12 +55,13 @@ static int64_t ReadExtendedStat(const struct NaClApp *nap, const char *stat)
   /* convert and return the result */
   return atoi(buf);
 }
+#endif
 
 /*
  * populate given string with an extended accounting statistics
  * todo(d'b): under construction
  */
-static void ReadExtendedAccounting(const struct NaClApp *nap, char *buf, int size)
+static int ReadSystemAccounting(const struct NaClApp *nap, char *buf, int size)
 {
   int64_t user_cpu = 0;
   int64_t memory_size = 0;
@@ -66,6 +73,7 @@ static void ReadExtendedAccounting(const struct NaClApp *nap, char *buf, int siz
   assert(nap->system_manifest != NULL);
   assert(size > 0);
 
+#ifdef CGROUPS
   /* get statistics if there is an extended accounting */
   if(acc_folder != NULL)
   {
@@ -74,12 +82,63 @@ static void ReadExtendedAccounting(const struct NaClApp *nap, char *buf, int siz
     memory_size = ReadExtendedStat(nap, CGROUPS_MEMORY);
     swap_size = ReadExtendedStat(nap, CGROUPS_SWAP);
   }
+#else
+  memory_size = nap->heap_end + nap->stack_size;
   real_cpu = (int64_t)(clock() / (double)(CLOCKS_PER_SEC / 1000));
+#endif
 
   /* construct and return the result */
-  snprintf(buf, size, "%ld %ld %ld %ld", real_cpu, user_cpu, memory_size, swap_size);
+  return snprintf(buf, size, "%ld %ld %ld %ld",
+      real_cpu, user_cpu, memory_size, swap_size);
 }
 
+/* get internal i/o information from channels counters */
+static int GetChannelsAccounting(const struct NaClApp *nap, char *buf, int size)
+{
+  int64_t network_stats[IOLimitsCount] = {0};
+  int64_t local_stats[IOLimitsCount] = {0};
+  int i;
+
+  assert(nap != NULL);
+  assert(nap->system_manifest != NULL);
+  assert(buf != NULL);
+  assert(size != 0);
+
+  /* gather all channels statistics */
+  for(i = 0; i < nap->system_manifest->channels_count; ++i)
+  {
+    struct ChannelDesc *channel = &nap->system_manifest->channels[i];
+    int64_t *stats = NULL;
+    int j;
+
+    /* select proper stats array */
+    switch(channel->source)
+    {
+      case ChannelRegular:
+      case ChannelCharacter:
+        stats = local_stats;
+        break;
+      case ChannelTCP:
+        stats = network_stats;
+        break;
+      default:
+        ZLOG(LOG_ERR, "internal error. source type %d not supported", channel->source);
+        return 0;
+    }
+
+    for(j = 0; j < PutSizeLimit; ++j)
+      stats[j] += channel->counters[j];
+  }
+
+  /* construct the accounting statistics string */
+  return snprintf(buf, size, "%ld %ld %ld %ld %ld %ld %ld %ld",
+      local_stats[GetsLimit], local_stats[GetSizeLimit], /* local channels input */
+      local_stats[PutsLimit], local_stats[PutSizeLimit], /* local channels output */
+      network_stats[GetsLimit], network_stats[GetSizeLimit], /* network channels input */
+      network_stats[PutsLimit], network_stats[PutSizeLimit]);  /* network channels output */
+}
+
+#ifdef CGROUPS
 /*
  * finalize an extended accounting
  * todo(d'b): under construction
@@ -106,7 +165,6 @@ static void StopExtendedAccounting(struct NaClApp *nap)
 
   /* anything else?.. */
 }
-#endif
 
 /* create/overwrite file and put integer in it */
 static inline void EchoToFile(const char *path, int code)
@@ -117,10 +175,13 @@ static inline void EchoToFile(const char *path, int code)
   fprintf(f, "%d", code);
   fclose(f);
 }
+#endif
 
 /* initialize accounting */
 void AccountingCtor(struct NaClApp *nap)
 {
+  ZENTER;
+#if 0
   struct stat st;
   char cfolder[BIG_ENOUGH_SPACE + 1];
   char counter[BIG_ENOUGH_SPACE + 1];
@@ -164,12 +225,24 @@ void AccountingCtor(struct NaClApp *nap)
   /* create swap accountant */
   snprintf(counter, BIG_ENOUGH_SPACE, "%s/%s", cfolder, CGROUPS_SWAP);
   EchoToFile(counter, 1);
+#endif
+  ZLEAVE;
 }
 
 /* finalize accounting. return string with statistics */
 void AccountingDtor(struct NaClApp *nap)
 {
+  int offset = 0;
+
   assert(nap != NULL);
 
-  nap->accounting = "disabled";
+  offset = ReadSystemAccounting(nap, accounting, BIG_ENOUGH_STRING);
+  strncat(accounting, " ", 1);
+  GetChannelsAccounting(nap, accounting + offset, BIG_ENOUGH_STRING - offset);
+}
+
+/* return accounting string */
+const char *GetAccountingInfo()
+{
+  return (const char*)accounting;
 }

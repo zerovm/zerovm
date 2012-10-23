@@ -11,9 +11,12 @@
 
 void NaClRunSelQualificationTests()
 {
+  ZENTER;
+
   /* fail if Operating system platform is not supported */
   ZLOGFAIL(!NaClOsIsSupported(), EFAULT, "os not supported");
 
   /* fail if Data Execution Prevention is required but is not supported */
   ZLOGFAIL(!NaClCheckDEP(), EFAULT, "dep not supported");
+  ZLEAVE;
 }
