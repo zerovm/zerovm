@@ -11,8 +11,8 @@
 #ifndef NATIVE_CLIENT_SRC_TRUSTED_DESC_NACL_DESC_BASE_H_
 #define NATIVE_CLIENT_SRC_TRUSTED_DESC_NACL_DESC_BASE_H_
 
+#include <stdint.h>
 #include "src/include/nacl_base.h"
-#include "src/platform/nacl_host_desc.h" /* for nacl_off64_t */
 #include "src/nacl_base/nacl_refcount.h"
 
 EXTERN_C_BEGIN

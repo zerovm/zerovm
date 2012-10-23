@@ -16,6 +16,11 @@
 EXTERN_C_BEGIN
 
 /*
+ * off64_t in linux, off_t in osx and __int64_t in win
+ */
+typedef int64_t nacl_off64_t;
+
+/*
  * Memory object for the virtual memory map.  We map in 64KB chunks,
  * and we need this so that we can recreate the memory from the
  * original source should we need to move the address space.

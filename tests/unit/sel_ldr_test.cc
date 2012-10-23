@@ -56,15 +56,8 @@ void SelLdrTest::TearDown() {
 // set, get, setavail operations on the descriptor table
 TEST_F(SelLdrTest, DescTable) {
   struct NaClApp app;
-  struct NaClHostDesc *host_desc;
   int ret_code;
 
   ret_code = NaClAppCtor(&app);
   ASSERT_EQ(1, ret_code);
-
-  host_desc = (struct NaClHostDesc *) malloc(sizeof *host_desc);
-  if (NULL == host_desc) {
-    fprintf(stderr, "No memory\n");
-  }
-  ASSERT_TRUE(NULL != host_desc);
 }
