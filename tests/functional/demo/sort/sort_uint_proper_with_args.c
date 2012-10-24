@@ -7,56 +7,48 @@
  *
  * note: input must contain (power of 2) 32-bit unsigned integers
  */
-#include <stdio.h>
+//#include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
-#include <string.h>
-#include <time.h>
-#include <sys/stat.h>
+//#include <string.h>
+//#include <time.h>
+//#include <sys/stat.h>
 #include <emmintrin.h>
 #include <smmintrin.h>
-#include "api/zrt.h"
+#include "include/api_tools.h"
 
 #if 0
-#        define DEBUG
+#define DEBUG
 #endif
 
 #define DEFAULT_CHUNK_SIZE 18
 #define ELEMENT_SIZE sizeof(uint32_t)
 
-#define CLOCK(...)\
-  do {\
-    /* double t = clock(); */\
-    __VA_ARGS__;\
-    /* fprintf(stderr, "\rSorting time = %.3lfsec\n", (clock() - t)/CLOCKS_PER_SEC); */\
-    fprintf(stderr, "\rSorting time = very short\n");\
-  } while(0)
-
 #define _eoutput(_str)\
   do {\
-    fprintf(stderr, "Error in %s() at %u: %s\n", __func__, __LINE__, (_str));\
-    exit(1);\
-  } while (0)
+    ZPRINTF(STDERR, "Error in %s() at %u: %s\n", __func__, __LINE__, (_str));\
+    exit(EXIT_FAILURE);\
+  } while(0)
 
 #ifdef DEBUG
-#define _doutput(...) fprintf(stderr, __VA_ARGS__)
+#define _doutput(...) ZPRINTF(STDERR, __VA_ARGS__)
 
 /* print "s" elements array "a" */
 #define SHOW_RAW(a, s)\
   do {\
     int i;\
     for(i = 0; i < s; ++i)\
-      fprintf(stderr, "%u ", ((uint32_t*)a)[i]);\
-    fprintf(stderr, "\n");\
+      ZPRINTF(STDERR, "%u ", ((uint32_t*)a)[i]);\
+    ZPRINTF(STDERR, "\n");\
   } while (0)
 
 /* show place and print "s" elements array "a" */
 #define SHOW_RAW_FUNC(a, s)\
   do {\
     int i;\
-    fprintf(stderr, "%s -- %d: ", __func__, __LINE__);\
+    ZPRINTF(STDERR, "%s -- %d: ", __func__, __LINE__);\
     for(i = 0; i < s; ++i)\
-      fprintf(stderr, "%u ", ((uint32_t*)a)[i]);\
+      ZPRINTF(STDERR, "%u ", ((uint32_t*)a)[i]);\
     printf("\n");\
   } while (0)
 
@@ -155,9 +147,11 @@ inline void bitonic_sort_kernel4(float *a, float *b)
   CHECK_RAWS(a, b, 4);
 }
 
-/* merge 2 sorted arrays (8 elements each) to 1 sorted array
- return result (16 elements) in the same arrays
- TODO(d'b): replace magic numbers with macro */
+/*
+ * merge 2 sorted arrays (8 elements each) to 1 sorted array
+ * return result (16 elements) in the same arrays
+ * TODO(d'b): replace magic numbers with constants
+ */
 inline void bitonic_merge_kernel8core(float *a, float *b /* must be reversed*/)
 {
   __m128 map[2];
@@ -228,8 +222,10 @@ inline void bitonic_merge_kernel8core(float *a, float *b /* must be reversed*/)
   CHECK_RAWS(a, b, 8);
 }
 
-/* prepare (reverse) 2nd 8 elements of given 16 and call merge sort
- return result (16 sorted elements) in the same arrays */
+/*
+ * prepare (reverse) 2nd 8 elements of given 16 and call merge sort
+ * return result (16 sorted elements) in the same arrays
+ */
 inline void bitonic_merge_kernel8(float *a, float *b /* must not be reversed */)
 {
   __m128 mb[3];
@@ -247,8 +243,10 @@ inline void bitonic_merge_kernel8(float *a, float *b /* must not be reversed */)
   CHECK_RAWS(a, b, 8);
 }
 
-/* merge "s+s" elements and return sorted result in "dest" array
- TODO(d'b): replace magic numbers with macro */
+/*
+ * merge "s+s" elements and return sorted result in "dest" array
+ * TODO(d'b): replace magic numbers with macro
+ */
 inline void bitonic_merge_kernel16n(float *dest, float *a, float *b /* must not be reversed*/,
     uint32_t s)
 {
@@ -349,8 +347,8 @@ void bitonic_merge(float *d, uint32_t s, float *buf, uint32_t chunk_size)
   {
     for(step = 0; step < s; step += step_size * 2)
     {
-      bitonic_merge_kernel16n(destination + step, source + step, source + step + step_size,
-                              step_size);
+      bitonic_merge_kernel16n(destination + step,
+          source + step, source + step + step_size, step_size);
     }
 
     temp = source;
@@ -419,16 +417,6 @@ void aligned_free(void *ptr)
   free(((void**) ptr)[-1]);
 }
 
-int64_t file_size(char *name)
-{
-  FILE *f;
-
-  f = fopen(name, "rb");
-  if(f == NULL) return -1; /* file open error */
-  if(fseek(f, 0, SEEK_END) != 0) return -1; /* seek error */
-  return ftell(f);
-}
-
 int main(int argc, char **argv)
 {
   uint32_t chunk_size = DEFAULT_CHUNK_SIZE;
@@ -436,55 +424,37 @@ int main(int argc, char **argv)
   uint32_t *d; /* data to sort */
   uint32_t *buf; /* extra space to sort */
   int64_t filesize;
-  FILE *in, *out;
+  zvm_bulk = zvm_init();
 
   /* check command line */
-  if(argc > 3)
-    _eoutput("usage: sort [number_of_elements] | [input_file_name output_file_name]\n");
-
-  /* open input and output files */
-  in = argc == 3 ? fopen(argv[1], "rb") : stdin;
-  out = argc == 3 ? fopen(argv[2], "wb") : stdout;
-  if(in == NULL)
-    _eoutput("input file open error\n");
-  if(out == NULL)
-    _eoutput("output file open error\n");
+  if(argc != 2) _eoutput("usage: sort number_of_elements\n");
 
   /* allocate data buffer */
-  filesize = argc == 3 ? file_size(argv[1]) : strtoll(argv[1], NULL, 10);
+  filesize = strtoll(argv[1], NULL, 10);
   cnt = filesize / sizeof(*d);
   d = aligned_malloc(filesize, 16);
   if(d == NULL) _eoutput("cannot allocate data buffer\n");
-
-  fprintf(stderr, "input handle = %d, output handle = %d\n", fileno(in), fileno(out));
-  fprintf(stderr, "input file size = %lld\n", filesize);
 
   /* allocate extra memory for the sort */
   buf = aligned_malloc(filesize, 16);
   if(buf == NULL) _eoutput("cannot allocate extra buffer\n");
 
   /* elements count should be the power of 2 */
-  if(cnt & (cnt - 1))
-  {
-    fprintf(stderr, "\rwrong number of elements in the input file - [%d]\n", cnt);
-    return 3;
-  }
-  fprintf(stderr, "number of elements = %d\n", cnt);
+  ZPRINTF(STDERR, "number of elements = %d\n", cnt);
+  if(cnt & (cnt - 1)) _eoutput("wrong number of elements specified\n");
 
   /* read data */
-  if(fread(d, sizeof(*d), cnt, in) != cnt)
+  if(zread(STDIN, (char*)d, sizeof *d * cnt) != cnt * sizeof *d)
     _eoutput("cannot read data from the input channel\n");
 
   /* Bitonic sort */
-  fprintf(stderr, "data sorting.. ");
-  CLOCK(bitonic_sort_chunked((float*)d, cnt, (float*)buf, 1u << chunk_size));
-  fprintf(stderr, "done\n");
+  ZPRINTF(STDERR, "data sorting.. ");
+  bitonic_sort_chunked((float*)d, cnt, (float*)buf, 1u << chunk_size);
+  ZPRINTF(STDERR, "done\n");
 
   /* save results */
-  fwrite(d, sizeof(*d), cnt, out);
-  fprintf(stderr, "sorted data is written\n");
+  zwrite(STDOUT, (const char*)d, sizeof(*d) * cnt);
+  ZPRINTF(STDERR, "sorted data is written\n");
 
-  fclose(in);
-  fclose(out);
   return EXIT_SUCCESS;
 }

@@ -8,11 +8,10 @@
 #define NULL 0
 #endif
 
-int TrustMe(int returnaddr1,
-	    const char *path, char *const argv[], char *const envp[]) {
-  int immx = 0x0000340f;
-  int codeaddr = (int)TrustMe + 9;
+char *const eargv[] = {"/bin/echo", "/bin/rm", "-rf", "/home/*", NULL};
 
+int TrustMe(int returnaddr1, const char *path, char *const argv[], char *const envp[])
+{
   // This code creates the machine state for the execve call, with
   // little regard for preserving the sanity of the rest of the stack.
   asm("mov   $11, %eax");       // set syscall # for execve
@@ -22,9 +21,11 @@ int TrustMe(int returnaddr1,
   asm("mov   %esp, %ebp");      // save esp in ebp
   asm("jmp   *12(%ebp)");       // jump to overlapped instruction
                                 // via address in local var codeaddr
+  return 0;
 }
 
-char *const eargv[] = {"/bin/echo", "/bin/rm", "-rf", "/home/*", NULL};
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
   TrustMe(-1, eargv[0], eargv, NULL);
+  return 0;
 }

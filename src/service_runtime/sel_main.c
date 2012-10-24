@@ -177,7 +177,7 @@ int main(int argc, char **argv)
   NaClAllModulesInit();
   NaClPerfCounterCtor(&time_all_main, "SelMain");
 
-  /* the dyn_array constructor 1st call */
+  /* initialize mem_map and set nap fields to default values */
   ZLOGFAIL(NaClAppCtor(nap) == 0, EFAULT, "Error while constructing app state");
 
   /* We use the signal handler to verify a signal took place. */
@@ -194,6 +194,7 @@ int main(int argc, char **argv)
   NaClPerfCounterMark(&time_all_main, str);\
   NaClPerfCounterIntervalLast(&time_all_main);
 
+  /* read nexe into memory */
   ZLOGFAIL(0 == GioMemoryFileSnapshotCtor(&main_file, nap->system_manifest->nexe),
       ENOENT, "Cannot open '%s'. %s", nap->system_manifest->nexe, strerror(errno));
 

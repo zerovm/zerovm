@@ -1,17 +1,16 @@
 =====================================================================
-== "generator" example with zrt library usage. new channels design
+== "tester" example with zrt library usage. new channels design
 =====================================================================
-Channel = /dev/null, /dev/stdin, 0, 99999999, 99999999, 0, 0
-Channel = /CURDIR/unsorted.data, /dev/stdout, 0, 0, 0, 99999999, 99999999
-Channel = /CURDIR/generator.stderr.log, /dev/stderr, 0, 0, 0, 99999999, 99999999
+Channel = CURDIR/sorted.data, /dev/stdin, 0, 99999999, 99999999, 0, 0
+Channel = /dev/null, /dev/stdout, 0, 0, 0, 99999999, 99999999
+Channel = CURDIR/tester.stderr.log, /dev/stderr, 0, 0, 0, 99999999, 99999999
 
 =====================================================================
 == switches for zerovm. some of them used to control nexe, some
 == for the internal zerovm needs
 =====================================================================
 Version = 09082012
-Nexe = generator.uint32_t.nexe
-NexeMax = 10000000
-SyscallsMax = 3333
-CommandLine = 16777216
-
+Nexe = tester.uint32_t.nexe
+CommandLine = 67108864
+Timeout = 30
+MemMax = 536870912

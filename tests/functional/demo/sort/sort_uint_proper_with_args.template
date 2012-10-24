@@ -1,17 +1,16 @@
 =====================================================================
-== "tester" example with zrt library usage. new channels design
+== "sort" example with zrt library usage. new channels design
 =====================================================================
-Channel = /CURDIR/sorted.data, /dev/stdin, 0, 99999999, 99999999, 0, 0
-Channel = /CURDIR/tester.stdout.log, /dev/stdout, 0, 0, 0, 99999999, 99999999
-Channel = /CURDIR/tester.stderr.log, /dev/stderr, 0, 0, 0, 99999999, 99999999
+Channel = CURDIR/unsorted.data, /dev/stdin, 0, 99999999, 99999999, 0, 0
+Channel = CURDIR/sorted.data, /dev/stdout, 0, 0, 0, 99999999, 99999999
+Channel = CURDIR/sort.stderr.log, /dev/stderr, 0, 0, 0, 99999999, 99999999
 
 =====================================================================
 == switches for zerovm. some of them used to control nexe, some
 == for the internal zerovm needs
 =====================================================================
 Version = 09082012
-Nexe = tester.uint32_t.nexe
-NexeMax = 10000000
-SyscallsMax = 3333
+Nexe = sort_uint_proper_with_args.nexe
 CommandLine = 67108864
-
+Timeout = 30
+MemMax = 536870912
