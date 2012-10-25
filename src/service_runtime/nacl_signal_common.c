@@ -4,7 +4,7 @@
  * found in the LICENSE file.
  */
 #include <signal.h>
-#include "src/include/portability_io.h"
+#include "src/include/portability.h"
 #include "src/service_runtime/nacl_signal.h"
 #include "src/manifest/manifest_setup.h"
 #include "src/service_runtime/nacl_globals.h"
