@@ -5,7 +5,7 @@
 #include "include/api_tools.h"
 
 #define SIGNALS_NUMBER 64
-#define RAISER 8
+#define RAISER 24
 
 void signal_na()
 {

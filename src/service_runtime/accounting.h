@@ -8,12 +8,8 @@
 #ifndef ACCOUNTING_H_
 #define ACCOUNTING_H_
 
-#define CGROUPS_FOLDER "/cgroups/zerovm"
-#define CGROUPS_TASKS "tasks"
-#define CGROUPS_USER_CPU "cpuacct.usage"
-#define CGROUPS_MEMORY "memory.max_usage_in_bytes"
-#define CGROUPS_SWAP "memory.memsw.max_usage_in_bytes"
 #define DEFAULT_ACCOUNTING "not available"
+#define STAT_FMT "%*d %*s %*c %*d %*d %*d %*d %*d %*u %*u %*u %*u %*u %lu %lu"
 
 /* initialize accounting */
 void AccountingCtor(struct NaClApp *nap);
