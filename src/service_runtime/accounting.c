@@ -18,10 +18,7 @@
 /* accounting folder name. NULL if not available */
 char accounting[BIG_ENOUGH_STRING] = DEFAULT_ACCOUNTING;
 
-/*
- * populate given string with an extended accounting statistics
- * return string size
- */
+/* populate "buf" with an extended accounting statistics, return string size */
 static int ReadSystemAccounting(const struct NaClApp *nap, char *buf, int size)
 {
   uint64_t user_time = 0;
@@ -93,7 +90,7 @@ static int GetChannelsAccounting(const struct NaClApp *nap, char *buf, int size)
         return 0;
     }
 
-    for(j = 0; j < PutSizeLimit; ++j)
+    for(j = 0; j < IOLimitsCount; ++j)
       stats[j] += channel->counters[j];
   }
 
