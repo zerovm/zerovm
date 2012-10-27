@@ -425,6 +425,7 @@ int main(int argc, char **argv)
   uint32_t *buf; /* extra space to sort */
   int64_t filesize;
   zvm_bulk = zvm_init();
+  UNREFERENCED_VAR(ERRCOUNT);
 
   /* check command line */
   if(argc != 2) _eoutput("usage: sort number_of_elements\n");

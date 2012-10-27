@@ -27,6 +27,7 @@ int main(int argc, char **argv)
   uint32_t seq_size = 2; /* take in account the probe elements */
   uint32_t inc;
   zvm_bulk = zvm_init();
+  UNREFERENCED_VAR(ERRCOUNT);
 
   /* get 2 elements and calculate the increment */
   i = zread(STDIN, (char*)buf, 2 * ELEMENT_SIZE);

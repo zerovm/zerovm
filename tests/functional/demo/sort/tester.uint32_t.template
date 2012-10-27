@@ -1,9 +1,9 @@
 =====================================================================
 == "tester" example with zrt library usage. new channels design
 =====================================================================
-Channel = CURDIR/sorted.data, /dev/stdin, 0, 99999999, 99999999, 0, 0
-Channel = /dev/null, /dev/stdout, 0, 0, 0, 99999999, 99999999
-Channel = CURDIR/tester.stderr.log, /dev/stderr, 0, 0, 0, 99999999, 99999999
+Channel = CURDIR/sorted.data, /dev/stdin, 0, 999999999, 999999999, 0, 0
+Channel = /dev/null, /dev/stdout, 0, 0, 0, 999999999, 999999999
+Channel = CURDIR/tester.stderr.log, /dev/stderr, 0, 0, 0, 999999999, 999999999
 
 =====================================================================
 == switches for zerovm. some of them used to control nexe, some
@@ -11,6 +11,7 @@ Channel = CURDIR/tester.stderr.log, /dev/stderr, 0, 0, 0, 99999999, 99999999
 =====================================================================
 Version = 09082012
 Nexe = tester.uint32_t.nexe
-CommandLine = 67108864
+CommandLine = 268435456
 Timeout = 30
-MemMax = 536870912
+MemMax = 805306368
+

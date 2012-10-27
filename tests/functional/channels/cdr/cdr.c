@@ -2,6 +2,9 @@
  * cdr channel test. tests statistics goes to stdout channel.
  * returns the number of failed tests
  */
+
+static char data_start = 0;
+
 #include "include/api_tools.h"
 
 #undef STDLOG
@@ -125,6 +128,52 @@ int main(int argc, char **argv)
   ZPRINTF(STDLOG, "TEST NULL BUFFER CASES\n");
   ZTEST(zvm_pwrite(zhandle(STDCDR_GOAT), NULL, 1, 0) == -1);
   ZTEST(zvm_pwrite(zhandle(STDCDR_GOAT), NULL, 0, 0) == -1);
+  overall_errors += ERRCOUNT;
+  zput(STDLOG, ERRCOUNT ? "TEST FAILED\n\n" : "TEST SUCCEED\n\n");
+
+  /* test other invalid buffer address/size cases for pwrite */
+  ERRCOUNT = 0;
+  ZPRINTF(STDLOG, "TEST OTHER INVALID BUFFER/SIZE CASES FOR PWRITE\n");
+  ZTEST(zvm_pwrite(zhandle(STDCDR_GOAT), (void*)0x1, 1, 0) == -1);
+  ZTEST(zvm_pwrite(zhandle(STDCDR_GOAT), (void*)0xffff, 1, 0) == -1);
+  ZTEST(zvm_pwrite(zhandle(STDCDR_GOAT), (void*)0x10000, -1, 0) == -1);
+  ZTEST(zvm_pwrite(zhandle(STDCDR_GOAT), zvm_bulk->heap_ptr, zvm_bulk->heap_size + 1, 0) == -1);
+  ZTEST(zvm_pwrite(zhandle(STDCDR_GOAT), zvm_bulk->heap_ptr + zvm_bulk->heap_size, 1, 0) == -1);
+  ZTEST(zvm_pwrite(zhandle(STDCDR_GOAT), (void*)0x100000000LL - 0x1000001, 1, 0) == -1);
+  ZTEST(zvm_pwrite(zhandle(STDCDR_GOAT), (void*)0x100000000LL, 1, 0) == -1);
+  ZTEST(zvm_pwrite(zhandle(STDCDR_GOAT), (void*)0x100000000LL - 0x1000000, 0x1000001, 0) == -1);
+  overall_errors += ERRCOUNT;
+  zput(STDLOG, ERRCOUNT ? "TEST FAILED\n\n" : "TEST SUCCEED\n\n");
+
+  /* test other valid buffer address/size cases for pwrite */
+  ERRCOUNT = 0;
+  ZPRINTF(STDLOG, "TEST OTHER VALID BUFFER/SIZE CASES FOR PWRITE\n");
+  ZTEST(zvm_pwrite(zhandle(STDCDR_GOAT), (void*)0x10000, 1, 0) == 1);
+  ZTEST(zvm_pwrite(zhandle(STDCDR_GOAT), zvm_bulk->heap_ptr + zvm_bulk->heap_size - 1, 1, 0) == 1);
+  ZTEST(zvm_pwrite(zhandle(STDCDR_GOAT), (void*)0x100000000LL - 0x1000000, 1, 0) == 1);
+  ZTEST(zvm_pwrite(zhandle(STDCDR_GOAT), (void*)0x100000000LL - 0x1, 1, 0) == 1);
+  overall_errors += ERRCOUNT;
+  zput(STDLOG, ERRCOUNT ? "TEST FAILED\n\n" : "TEST SUCCEED\n\n");
+
+  /* test other invalid buffer address/size cases for pread */
+  ERRCOUNT = 0;
+  ZPRINTF(STDLOG, "TEST OTHER INVALID BUFFER/SIZE CASES FOR PREAD\n");
+  ZTEST(zvm_pread(zhandle(STDCDR_GOAT), (char*)main, 1, 0) == -1);
+  ZTEST(zvm_pread(zhandle(STDCDR_GOAT), zvm_bulk->heap_ptr, zvm_bulk->heap_size + 1, 0) == -1);
+  ZTEST(zvm_pread(zhandle(STDCDR_GOAT), zvm_bulk->heap_ptr + zvm_bulk->heap_size, 1, 0) == -1);
+  ZTEST(zvm_pread(zhandle(STDCDR_GOAT), (void*)0x100000000LL - 0x1000001, 1, 0) == -1);
+  ZTEST(zvm_pread(zhandle(STDCDR_GOAT), (void*)0x100000000LL, 1, 0) == -1);
+  ZTEST(zvm_pread(zhandle(STDCDR_GOAT), (void*)0x100000000LL - 0x1000000, 0x1000001, 0) == -1);
+  overall_errors += ERRCOUNT;
+  zput(STDLOG, ERRCOUNT ? "TEST FAILED\n\n" : "TEST SUCCEED\n\n");
+
+  /* test other valid buffer address/size cases for pread */
+  ERRCOUNT = 0;
+  ZPRINTF(STDLOG, "TEST OTHER VALID BUFFER/SIZE CASES FOR PREAD\n");
+  ZTEST(zvm_pread(zhandle(STDCDR_GOAT), &data_start, 1, 0) == 1);
+  ZTEST(zvm_pread(zhandle(STDCDR_GOAT), zvm_bulk->heap_ptr + zvm_bulk->heap_size - 1, 1, 0) == 1);
+  ZTEST(zvm_pread(zhandle(STDCDR_GOAT), (void*)0x100000000LL - 0x1000000, 1, 0) == 1);
+  ZTEST(zvm_pread(zhandle(STDCDR_GOAT), (void*)0x100000000LL - 0x1, 1, 0) == 1);
   overall_errors += ERRCOUNT;
   zput(STDLOG, ERRCOUNT ? "TEST FAILED\n\n" : "TEST SUCCEED\n\n");
 

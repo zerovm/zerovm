@@ -23,6 +23,7 @@ int main(int argc, char **argv)
   uint32_t seq_size;
   uint32_t inc;
   zvm_bulk = zvm_init();
+  UNREFERENCED_VAR(ERRCOUNT);
 
   /* check the command line */
   if(argc != 2)

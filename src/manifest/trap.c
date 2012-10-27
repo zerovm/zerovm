@@ -66,6 +66,53 @@ static void UpdateChannelTag(struct ChannelDesc *channel,
   ZLOGIF(i == ERR_CODE, "cannot update channel tag");
 }
 
+/* todo(d'b): get rid of code doubling */
+/* return 0 if the user gap has read access. note that size can be 0 */
+static int CheckReadAccess(struct NaClApp *nap, const void *p, int32_t size)
+{
+  uintptr_t addr = (uintptr_t)p;
+
+  /* check the address for NULL and convert to system space */
+  if(p == NULL) return ERR_CODE;
+
+  /* the address inside the trampoline .. the user heap end space */
+  if(addr >= NACL_MAP_PAGESIZE
+      && addr <= nap->heap_end
+      && addr + size >= NACL_MAP_PAGESIZE
+      && addr + size <= nap->heap_end) return OK_CODE;
+
+  /* the address inside the user stack */
+  if(addr >= FOURGIG - nap->stack_size
+      && addr <= FOURGIG
+      && addr + size >= FOURGIG - nap->stack_size
+      && addr + size <= FOURGIG) return OK_CODE;
+
+  return ERR_CODE;
+}
+
+/* return 0 if the user gap has write access. note that size can be 0 */
+static int CheckWriteAccess(struct NaClApp *nap, const void *p, int32_t size)
+{
+  uintptr_t addr = (uintptr_t)p;
+
+  /* check the address for NULL and convert to system space */
+  if(p == NULL) return ERR_CODE;
+
+  /* the address inside the trampoline .. the user heap end space */
+  if(addr >= nap->data_start
+      && addr <= nap->heap_end
+      && addr + size >= nap->data_start
+      && addr + size <= nap->heap_end) return OK_CODE;
+
+  /* the address inside the user stack */
+  if(addr >= FOURGIG - nap->stack_size
+      && addr <= FOURGIG
+      && addr + size >= FOURGIG - nap->stack_size
+      && addr + size <= FOURGIG) return OK_CODE;
+
+  return ERR_CODE;
+}
+
 /*
  * read specified amount of bytes from given desc/offset to buffer
  * return amount of read bytes or negative error code if call failed
@@ -82,13 +129,15 @@ int32_t ZVMReadHandle(struct NaClApp *nap,
   assert(nap->system_manifest != NULL);
   assert(nap->system_manifest->channels != NULL);
 
+  /* check the channel number */
+  if(ch < 0 || ch > nap->system_manifest->channels_count) return -EINVAL;
+  channel = &nap->system_manifest->channels[ch];
+
   /* check buffer and convert address */
-  if(buffer == NULL) return -EINVAL;
-  if(ch > nap->system_manifest->channels_count) return -EINVAL;
+  if(CheckWriteAccess(nap, buffer, size) == ERR_CODE) return -EINVAL;
   sys_buffer = (char*)NaClUserToSys(nap, (uintptr_t) buffer);
 
   /* prevent reading from the closed or not readable channel */
-  channel = &nap->system_manifest->channels[ch];
   if(!CHANNEL_READABLE(channel)) return -EBADF;
 
   /* ignore user offset for sequential access read */
@@ -185,12 +234,13 @@ int32_t ZVMWriteHandle(struct NaClApp *nap,
   assert(nap->system_manifest != NULL);
   assert(nap->system_manifest->channels != NULL);
 
+  /* check the channel number */
+  if(ch < 0 || ch > nap->system_manifest->channels_count) return -EINVAL;
   channel = &nap->system_manifest->channels[ch];
 
   /* check buffer and convert address */
-  if(buffer == NULL) return -EINVAL;
-  if(ch > nap->system_manifest->channels_count) return -EINVAL;
-  sys_buffer = (const char*)NaClUserToSys(nap, (uintptr_t) buffer);
+  if(CheckReadAccess(nap, buffer, size) == ERR_CODE) return -EINVAL;
+  sys_buffer = (char*)NaClUserToSys(nap, (uintptr_t) buffer);
 
   /* prevent writing to the not writable channel */
   if(CHANNEL_WRITEABLE(channel) == 0) return -EBADF;
