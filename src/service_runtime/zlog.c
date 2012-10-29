@@ -21,7 +21,7 @@ static const char *zfile = NULL;
 void ZLogCtor(int v)
 {
   verbosity = MAX(v, 0);
-  openlog(ZLOG_NAME, ZLOG_OPTIONS, ZLOG_PRIORITY);
+  openlog(ZLOG_NAME, ZLOG_OPTIONS, ZLOG_FACILITY);
 }
 
 /* close the log, reset verbosity level */
