@@ -44,7 +44,7 @@ tests: test_compile
 	./service_runtime_tests;\
 	cd ..
 
-zvm_api: api/syscall_manager.S api/zrt.c api/zrt.h api/zvm.c api/zvm.h
+zvm_api: api/zvm.c api/zvm.h
 	@make -Capi
 
 test_compile: tests/unit/manifest_parser_test tests/unit/service_runtime_tests

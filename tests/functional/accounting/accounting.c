@@ -100,8 +100,11 @@ int main(int argc, char **argv)
   /* read data from stdin and write to stdout */
   copy_channel(STDOUT, STDIN);
 
+  /* temporary disabled */
+#if 0
   /* read data from input and write to output */
   copy_channel(OUTPUT, INPUT);
+#endif
 
   /* free counters and print accounting data */
   counters_dtor();

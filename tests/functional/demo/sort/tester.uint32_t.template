@@ -1,5 +1,5 @@
 =====================================================================
-== "tester" example with zrt library usage. new channels design
+== "tester" from "net" example with zvm api usage
 =====================================================================
 Channel = CURDIR/sorted.data, /dev/stdin, 0, 999999999, 999999999, 0, 0
 Channel = /dev/null, /dev/stdout, 0, 0, 0, 999999999, 999999999

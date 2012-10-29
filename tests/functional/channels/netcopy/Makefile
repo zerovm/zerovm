@@ -4,7 +4,7 @@ NACL_TOOLCHAIN=$(NACL_SDK_ROOT)/toolchain/linux_x86_glibc
 all: $(NAME).o
 	$(NACL_TOOLCHAIN)/bin/x86_64-nacl-gcc -o $(NAME).nexe -s -static -T \
 	$(NACL_TOOLCHAIN)/x86_64-nacl/lib64/ldscripts/elf64_nacl.x.static \
-	-melf64_nacl -m64 $(NAME).o $(ZEROVM_ROOT)/api/libzrt.a
+	-melf64_nacl -m64 $(NAME).o $(ZEROVM_ROOT)/api/zvm.o
 	@python $(CURDIR)/ns_server.py 3 54321&
 	@sed 's#CURDIR#$(CURDIR)#g' $(NAME)1.template > $(NAME)1.manifest
 	@sed 's#CURDIR#$(CURDIR)#g' $(NAME)2.template > $(NAME)2.manifest
