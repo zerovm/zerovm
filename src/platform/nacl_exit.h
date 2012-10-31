@@ -18,8 +18,8 @@
 
 EXTERN_C_BEGIN
 
+/* exit zerovm. if code != 0 log it */
 void NaClExit(int code);
-void NaClAbort(void);
 
 /* set the text for "exit state" in report */
 void SetExitState(const char *state);

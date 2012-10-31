@@ -53,7 +53,8 @@ static enum ChannelSourceType GetSourceType(char *name)
   else
     type = GetChannelProtocol(name);
 
-  ZLOGFAIL(type == ChannelSourceTypeNumber, EPROTONOSUPPORT, "can't mount %s", name);
+  ZLOGFAIL(type == ChannelSourceTypeNumber, EPROTONOSUPPORT,
+      "can't detect source of %s", name);
   return type;
 }
 

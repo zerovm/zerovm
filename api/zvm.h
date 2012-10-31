@@ -10,7 +10,8 @@
 
 #include <stdint.h>
 
-#define STACK_SIZE (16 << 20) /* should be taken from sel_ldr.h*/
+/* todo(d'b): should be taken from sel_ldr.h */
+#define STACK_SIZE (16 << 20)
 
 enum ZVM_CODES
 {
@@ -65,7 +66,7 @@ struct ZVMChannel
   int64_t size; /* channel size. optional */
   enum AccessType type; /* type of access sequential/random */
 #ifdef USER_SIDE
-  int32_t pad2;
+  int32_t pad;
 #endif
   char *name; /* file name (int32_t). secured */
 };

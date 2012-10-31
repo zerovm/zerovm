@@ -75,16 +75,9 @@ const char *GetExitState()
   return zvm_state;
 }
 
-void NaClAbort(void)
-{
-  Finalizer();
-  ZLOGIF(1, "zerovm aborted with no specific error code");
-  _exit(EFAULT);
-}
-
 void NaClExit(int err_code)
 {
   Finalizer();
   ZLOGIF(err_code != 0, "zerovm exited with error '%s'", strerror(err_code));
-  _exit(err_code); /* supposed to be in sync with gnap->zvm_code */
+  _exit(err_code);
 }

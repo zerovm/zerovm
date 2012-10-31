@@ -50,7 +50,7 @@ NORETURN void SwitchToApp(struct NaClApp  *nap, uintptr_t stack_ptr)
   /* pass control to the nexe */
   NaClSwitchToApp(nap, nacl_user->new_prog_ctr);
 
-  NaClAbort(); /* unreachable */
+  ZLOGFAIL(1, EFAULT, "unreachable code reached");
 }
 /* d'b end */
 

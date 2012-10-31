@@ -14,10 +14,10 @@
 EXTERN_C_BEGIN
 
 /*
- * ZLOG - add file and line info to given message and put it to syslog
- * ZLOGS - put given message to syslog
- * ZLOGIF - check condition and, if true, ZLOG it
- * ZLOGFAIL - check condition, if true, ZLOG it and abort
+ * ZLOG(format, ...) - add file and line info to given message and put it to syslog
+ * ZLOGS(format, ...) - put given message to syslog
+ * ZLOGIF(condition, format, ...) - check condition and, if true, ZLOG it
+ * ZLOGFAIL(condition, code, format, ...) - check condition, if true, ZLOG it and exit with code
  */
 #define ZLOG ZLogTag(__FILE__, __LINE__), ZLog
 #define ZLOGIF ZLogTag(__FILE__, __LINE__), LogIf
@@ -37,10 +37,10 @@ EXTERN_C_BEGIN
 /* develop fix for verbosity level names */
 #undef LOG_DEBUG
 
-#define LOG_INSANE  (3) /* slows down logging */
-#define LOG_DEBUG   (2)
+#define LOG_INSANE  (3) /* shows everything, slows down logging */
+#define LOG_DEBUG   (2) /* shows calls history */
 #define LOG_ERROR   (1) /* mandatory message */
-#define LOG_FATAL   (0) /* mandatory message */
+#define LOG_FATAL   (0) /* for completeness. not used */
 
 /* initialize syslog with verbosity */
 void ZLogCtor(int v);
