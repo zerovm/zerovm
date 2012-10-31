@@ -8,8 +8,8 @@
 #include "src/service_runtime/zlog.h"
 #include "src/service_runtime/sel_ldr.h"
 #include "src/service_runtime/sel_memory.h"
-#include "src/service_runtime/arch/x86/sel_ldr_x86.h"
-#include "src/service_runtime/arch/x86_64/tramp_64.h"
+#include "src/service_runtime/sel_ldr_x86.h"
+#include "src/service_runtime/tramp_64.h"
 
 extern int NaClSyscallSeg(); /* d'b: moved from tiny header file to remove it */
 

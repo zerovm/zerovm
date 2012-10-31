@@ -10,9 +10,10 @@
 #include "src/service_runtime/nacl_switch_to_app.h"
 #include "src/service_runtime/nacl_syscall_handlers.h"
 #include "src/service_runtime/include/bits/nacl_syscalls.h"
-#include "src/service_runtime/nacl_globals.h" /* d'b */
-#include "src/manifest/manifest_setup.h" /* d'b */
-#include "src/service_runtime/include/sys/errno.h" /* d'b */
+#include "src/service_runtime/nacl_globals.h"
+#include "src/service_runtime/sel_rt_64.h"
+#include "src/manifest/manifest_setup.h"
+#include "src/service_runtime/include/sys/errno.h"
 
 #ifdef DISABLE_RDTSC
 #include <signal.h>
@@ -23,7 +24,8 @@
 
 /*
  * d'b: make syscall invoked from the untrusted code
- */NORETURN void NaClSyscallCSegHook()
+ */
+NORETURN void NaClSyscallCSegHook()
 {
   struct NaClApp *nap;
   struct NaClThreadContext *user;

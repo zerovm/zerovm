@@ -6,13 +6,13 @@ CXXFLAGS0=-m64 -Wno-variadic-macros
 TESTFLAGS=-Llib/gtest -lgtest -lzmq -lrt -ldl -lpthread -lglib-2.0 -lssl -lcrypto
 
 # RELEASE BUILD
-#CCFLAGS=-DNDEBUG -O3 -s $(CCFLAGS0)
-#CXXFLAGS=-DNDEBUG -O3 -s
+CCFLAGS=-DNDEBUG -O3 -s $(CCFLAGS0)
+CXXFLAGS=-DNDEBUG -O3 -s
 
 # DEBUG BUILD
 #COVFLAGS=--coverage
-CCFLAGS=-DDEBUG -g $(CCFLAGS0) ${COVFLAGS}
-CXXFLAGS=-DDEBUG -g ${COVFLAGS}
+#CCFLAGS=-DDEBUG -g $(CCFLAGS0) ${COVFLAGS}
+#CXXFLAGS=-DDEBUG -g ${COVFLAGS}
 
 CCFLAGS1=-std=gnu99 -Wdeclaration-after-statement $(FLAGS0) $(CCFLAGS)
 CCFLAGS2=-Wextra -Wswitch-enum -Wsign-compare $(CCFLAGS)
@@ -101,13 +101,13 @@ obj/manifest_setup.o: src/manifest/manifest_setup.c
 obj/manifest_parser.o: src/manifest/manifest_parser.c
 	$(CC) ${CCFLAGS1} -o $@ $^
 
-obj/nacl_switch_64.o: src/service_runtime/arch/x86_64/nacl_switch_64.S
+obj/nacl_switch_64.o: src/service_runtime/nacl_switch_64.S
 	$(CC) ${CCFLAGS2} -o $@ $^
 
-obj/nacl_syscall_64.o: src/service_runtime/arch/x86_64/nacl_syscall_64.S
+obj/nacl_syscall_64.o: src/service_runtime/nacl_syscall_64.S
 	$(CC) ${CCFLAGS2} -o $@ $^
 
-obj/tramp_64.o: src/service_runtime/arch/x86_64/tramp_64.S
+obj/tramp_64.o: src/service_runtime/tramp_64.S
 	$(CC) ${CCFLAGS2} -o $@ $^
 
 obj/sel_main.o: src/service_runtime/sel_main.c
@@ -149,31 +149,31 @@ obj/sel_mem.o: src/service_runtime/sel_mem.c
 obj/sel_qualify.o: src/service_runtime/sel_qualify.c
 	$(CC) ${CCFLAGS1} -o $@ $^
 
-obj/nacl_switch_to_app_64.o: src/service_runtime/arch/x86_64/nacl_switch_to_app_64.c
+obj/nacl_switch_to_app_64.o: src/service_runtime/nacl_switch_to_app_64.c
 	$(CC) ${CCFLAGS1} -o $@ $^
 
-obj/sel_addrspace_x86_64.o: src/service_runtime/arch/x86_64/sel_addrspace_x86_64.c
+obj/sel_addrspace_x86_64.o: src/service_runtime/sel_addrspace_x86_64.c
 	$(CC) ${CCFLAGS1} -o $@ $^
 
-obj/sel_ldr_x86_64.o: src/service_runtime/arch/x86_64/sel_ldr_x86_64.c
+obj/sel_ldr_x86_64.o: src/service_runtime/sel_ldr_x86_64.c
 	$(CC) ${CCFLAGS1} -o $@ $^
 
-obj/sel_rt_64.o: src/service_runtime/arch/x86_64/sel_rt_64.c
+obj/sel_rt_64.o: src/service_runtime/sel_rt_64.c
 	$(CC) ${CCFLAGS1} -o $@ $^
 
-obj/sel_addrspace_posix_x86_64.o: src/service_runtime/arch/x86_64/sel_addrspace_posix_x86_64.c
+obj/sel_addrspace_posix_x86_64.o: src/service_runtime/sel_addrspace_posix_x86_64.c
 	$(CC) ${CCFLAGS1} -o $@ $^
 
-obj/sel_memory.o: src/service_runtime/linux/sel_memory.c
+obj/sel_memory.o: src/service_runtime/sel_memory.c
 	$(CC) ${CCFLAGS1} -o $@ $^
 
-obj/sel_segments.o: src/service_runtime/linux/x86/sel_segments.c
+obj/sel_segments.o: src/service_runtime/sel_segments.c
 	$(CC) ${CCFLAGS1} -o $@ $^
 
-obj/nacl_signal.o: src/service_runtime/posix/nacl_signal.c
+obj/nacl_signal.o: src/service_runtime/nacl_signal.c
 	$(CC) ${CCFLAGS1} -o $@ $^
 
-obj/nacl_signal_64.o: src/service_runtime/linux/nacl_signal_64.c
+obj/nacl_signal_64.o: src/service_runtime/nacl_signal_64.c
 	$(CC) ${CCFLAGS1} -o $@ $^
 
 obj/nacl_desc_base.o: src/desc/nacl_desc_base.c
@@ -188,19 +188,19 @@ obj/nacl_perf_counter.o: src/perf_counter/nacl_perf_counter.c
 obj/nacl_refcount.o: src/nacl_base/nacl_refcount.c
 	$(CC) ${CCFLAGS1} -o $@ $^
 
-obj/nacl_os_qualify.o: src/platform_qualify/linux/nacl_os_qualify.c
+obj/nacl_os_qualify.o: src/platform_qualify/nacl_os_qualify.c
 	$(CC) ${CCFLAGS1} -o $@ $^
 
-obj/nacl_dep_qualify.o: src/platform_qualify/posix/nacl_dep_qualify.c
+obj/nacl_dep_qualify.o: src/platform_qualify/nacl_dep_qualify.c
 	$(CC) ${CCFLAGS1} -o $@ $^
 
-obj/nacl_dep_qualify_arch.o: src/platform_qualify/arch/x86_64/nacl_dep_qualify_arch.c
+obj/nacl_dep_qualify_arch.o: src/platform_qualify/nacl_dep_qualify_arch.c
 	$(CC) ${CCFLAGS1} -o $@ $^
 
-obj/nacl_exit.o: src/platform/linux/nacl_exit.c
+obj/nacl_exit.o: src/platform/nacl_exit.c
 	$(CC) ${CCFLAGS1} -o $@ $^
 
-obj/nacl_time.o: src/platform/linux/nacl_time.c
+obj/nacl_time.o: src/platform/nacl_time.c
 	$(CC) ${CCFLAGS1} -o $@ $^
 
 obj/zlog.o: src/service_runtime/zlog.c

@@ -10,7 +10,7 @@
 #include "src/service_runtime/zlog.h"
 #include "src/gio/gio.h"
 #include "src/service_runtime/sel_ldr.h"
-#include "src/service_runtime/arch/x86/sel_ldr_x86.h"
+#include "src/service_runtime/sel_ldr_x86.h"
 #include "src/service_runtime/nacl_globals.h"
 #include "src/service_runtime/nacl_syscall_handlers.h"
 

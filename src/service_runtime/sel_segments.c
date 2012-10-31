@@ -7,7 +7,7 @@
 /*
  * NaCl Runtime.
  */
-#include "src/service_runtime/arch/x86/sel_rt.h"
+#include "src/service_runtime/sel_rt.h"
 
 nacl_reg_t NaClGetStackPtr(void) {
   nacl_reg_t rsp;

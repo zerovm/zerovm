@@ -12,7 +12,7 @@
 
 #include "src/perf_counter/nacl_perf_counter.h"
 #include "src/service_runtime/include/bits/mman.h"
-#include "src/service_runtime/arch/x86/sel_ldr_x86.h"
+#include "src/service_runtime/sel_ldr_x86.h"
 #include "src/service_runtime/elf_util.h"
 #include "src/service_runtime/nacl_switch_to_app.h"
 #include "src/service_runtime/sel_memory.h"

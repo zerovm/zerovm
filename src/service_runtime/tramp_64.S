@@ -11,7 +11,7 @@
 /*
  * NaCl code uses the standard x86-64 calling convention, whereas the
  * service runtime might be using the x86-64 calling convention or the
- * Microsoft x86-64 calling convention.  See arch/x86_64/sel_rt_64.h
+ * Microsoft x86-64 calling convention.  See sel_rt_64.h
  * for a discussion and pointers to references.
  *
  * Available registers: rax, rcx, rdx, r8, r9, r10, r11, since these
@@ -56,7 +56,7 @@ IDENTIFIER(NaCl_trampoline_code_end):
          * Address Space Layout Randomization enabled, would not leak ASLR
          * information to the untrusted code.
          *
-         * See arch/x86_64/sel_ldr_x86_64.c and {linux,win}/sel_memory.c for
+         * See sel_ldr_x86_64.c and {linux,win}/sel_memory.c for
          * how the thunk is generated.
          */
         .text

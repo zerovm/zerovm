@@ -27,7 +27,7 @@ void signal_11()
 
 void signal_24()
 {
-  ZPRINTF(STDOUT, "invocation of signal #11\n");
+  ZPRINTF(STDOUT, "invocation of signal #24\n");
   for(;;);
 }
 

@@ -11,6 +11,7 @@
 #ifndef SERVICE_RUNTIME_NACL_SWITCH_TO_APP_H__
 #define SERVICE_RUNTIME_NACL_SWITCH_TO_APP_H__ 1
 
+#include "src/service_runtime/sel_ldr.h"
 #include "src/service_runtime/sel_rt.h"
 /* get nacl_reg_t */
 

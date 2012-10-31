@@ -34,6 +34,9 @@ struct NaClThreadContext {
 };
 /* 0xa8 */
 
+uintptr_t NaClGetThreadCtxSp(struct NaClThreadContext  *th_ctx);
+void NaClSetThreadCtxSp(struct NaClThreadContext  *th_ctx, uintptr_t sp);
+
 /*
  * Argument passing convention in AMD64, from
  *

@@ -6,7 +6,7 @@
 #include <sys/ucontext.h>
 
 #include "src/service_runtime/nacl_signal.h"
-#include "src/service_runtime/arch/x86_64/sel_rt_64.h"
+#include "src/service_runtime/sel_rt_64.h"
 
 /*
  * Definition of the POSIX ucontext_t for Linux can be found in:

@@ -15,8 +15,8 @@
  * to and from architecture dependent CPU state structures.
  */
 
-#include "src/service_runtime/arch/x86_64/nacl_signal_64.h"
-#include "src/service_runtime/arch/x86_64/sel_rt_64.h"
+#include "src/service_runtime/nacl_signal_64.h"
+#include "src/service_runtime/sel_rt_64.h"
 
 EXTERN_C_BEGIN
 

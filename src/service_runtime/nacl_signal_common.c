@@ -11,7 +11,7 @@
 #include "src/service_runtime/zlog.h"
 
 #ifdef DISABLE_RDTSC
-#include "src/service_runtime/arch/x86_64/sel_rt_64.h"
+#include "src/service_runtime/sel_rt_64.h"
 #include "src/service_runtime/nacl_switch_to_app.h"
 #endif
 

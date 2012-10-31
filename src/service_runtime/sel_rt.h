@@ -4,15 +4,14 @@
  * be found in the LICENSE file.
  */
 
-#ifndef NATIVE_CLIENT_SERVICE_RUNTIME_SEL_RT_H__
-#define NATIVE_CLIENT_SERVICE_RUNTIME_SEL_RT_H__ 1
+/*
+ * NaCl Secure Runtime
+ */
+#ifndef __NATIVE_CLIENT_SERVICE_RUNTIME_ARCH_X86_SEL_RT_H__
+#define __NATIVE_CLIENT_SERVICE_RUNTIME_ARCH_X86_SEL_RT_H__ 1
 
-#include "src/service_runtime/arch/x86/sel_rt.h"
+#include "src/service_runtime/sel_rt_64.h"
 
-struct NaClApp; /* fwd */
+nacl_reg_t NaClGetStackPtr(void);
 
-uintptr_t NaClGetThreadCtxSp(struct NaClThreadContext  *th_ctx);
-
-void      NaClSetThreadCtxSp(struct NaClThreadContext  *th_ctx, uintptr_t sp);
-
-#endif  /* NATIVE_CLIENT_SERVICE_RUNTIME_SEL_RT_H__ */
+#endif /* __NATIVE_CLIENT_SERVICE_RUNTIME_ARCH_X86_SEL_RT_H__ */
