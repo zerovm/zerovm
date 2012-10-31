@@ -1,18 +1,8 @@
-# todo(d'b): replace DEBUG/RELEASE (un)comment with build switch
 NACLDEFS=-DNACL_LINUX=1 -D_GNU_SOURCE=1 -D_LARGEFILE64_SOURCE=1 -D__STDC_FORMAT_MACROS=1 -DNACL_BLOCK_SHIFT=5 -DNACL_BUILD_ARCH=x86 -DNACL_BUILD_SUBARCH=64 -DNACL_TARGET_SUBARCH=64 -DNACL_ENABLE_TMPFS_REDIRECT_VAR=0
 FLAGS0=-fPIE -Wall -pedantic -Wno-long-long -fvisibility=hidden -fstack-protector --param ssp-buffer-size=4
 CCFLAGS0=-c -m64 -fPIC $(NACLDEFS) -I.
 CXXFLAGS0=-m64 -Wno-variadic-macros
 TESTFLAGS=-Llib/gtest -lgtest -lzmq -lrt -ldl -lpthread -lglib-2.0 -lssl -lcrypto
-
-# RELEASE BUILD
-CCFLAGS=-DNDEBUG -O3 -s $(CCFLAGS0)
-CXXFLAGS=-DNDEBUG -O3 -s
-
-# DEBUG BUILD
-#COVFLAGS=--coverage
-#CCFLAGS=-DDEBUG -g $(CCFLAGS0) ${COVFLAGS}
-#CXXFLAGS=-DDEBUG -g ${COVFLAGS}
 
 CCFLAGS1=-std=gnu99 -Wdeclaration-after-statement $(FLAGS0) $(CCFLAGS)
 CCFLAGS2=-Wextra -Wswitch-enum -Wsign-compare $(CCFLAGS)
@@ -32,8 +22,8 @@ all: create_dirs zerovm zvm_api tests
 
 dist: CCFLAGS1 += -DNDEBUG -O3 -s $(CCFLAGS0) 
 dist: CCFLAGS2 += -DNDEBUG -O3 -s $(CCFLAGS0) 
-dist: CXXFLAGS1 := -DDEBUG -g $(CXXFLAGS1)
-dist: CXXFLAGS2 := -DDEBUG -g $(CXXFLAGS2)
+dist: CXXFLAGS1 := -DNDEBUG -O3 -s $(CXXFLAGS1)
+dist: CXXFLAGS2 := -DNDEBUG -O3 -s $(CXXFLAGS2)
 dist: create_dirs zerovm zvm_api tests
 
 create_dirs:
