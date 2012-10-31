@@ -33,11 +33,8 @@
  * this value must be consistent with NaCl compiler flags
  * -falign-functions -falign-labels -and nacl-align.
  */
-#if defined(NACL_BLOCK_SHIFT)
-# define NACL_INSTR_BLOCK_SHIFT       (NACL_BLOCK_SHIFT)
-#else
-# error "NACL_BLOCK_SHIFT should be defined by CFLAGS"
-#endif
+#define NACL_BLOCK_SHIFT 5
+#define NACL_INSTR_BLOCK_SHIFT        (NACL_BLOCK_SHIFT)
 #define NACL_INSTR_BLOCK_SIZE         (1 << NACL_INSTR_BLOCK_SHIFT)
 
 /* this must be a multiple of the system page size */
