@@ -24,7 +24,17 @@ OBJS=obj/dyn_array.o obj/elf_util.o obj/gio_mem.o obj/gio_mem_snapshot.o obj/man
 CC=@gcc
 CXX=@g++
 
+all: CCFLAGS1 += -DDEBUG -g $(COVFLAGS) $(CCFLAGS0) 
+all: CCFLAGS2 += -DDEBUG -g $(COVFLAGS) $(CCFLAGS0) 
+all: CXXFLAGS1 := -DDEBUG -g $(COVFLAGS) $(CXXFLAGS1)
+all: CXXFLAGS2 := -DDEBUG -g $(COVFLAGS) $(CXXFLAGS2)
 all: create_dirs zerovm zvm_api tests
+
+dist: CCFLAGS1 += -DNDEBUG -O3 -s $(CCFLAGS0) 
+dist: CCFLAGS2 += -DNDEBUG -O3 -s $(CCFLAGS0) 
+dist: CXXFLAGS1 := -DDEBUG -g $(CXXFLAGS1)
+dist: CXXFLAGS2 := -DDEBUG -g $(CXXFLAGS2)
+dist: create_dirs zerovm zvm_api tests
 
 create_dirs:
 	@mkdir obj -p
