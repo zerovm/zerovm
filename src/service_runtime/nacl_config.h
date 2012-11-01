@@ -26,16 +26,13 @@
  */
 #define IDENTIFIER(n)  n
 #define HIDDEN(n)  .hidden IDENTIFIER(n)
-#define DEFINE_GLOBAL_HIDDEN_IDENTIFIER(n) \
-  .globl IDENTIFIER(n); HIDDEN(n); IDENTIFIER(n)
 
 /*
  * this value must be consistent with NaCl compiler flags
  * -falign-functions -falign-labels -and nacl-align.
  */
 #define NACL_BLOCK_SHIFT 5
-#define NACL_INSTR_BLOCK_SHIFT        (NACL_BLOCK_SHIFT)
-#define NACL_INSTR_BLOCK_SIZE         (1 << NACL_INSTR_BLOCK_SHIFT)
+#define NACL_INSTR_BLOCK_SIZE         (1 << NACL_BLOCK_SHIFT)
 
 /* this must be a multiple of the system page size */
 #define NACL_PAGESHIFT                12
@@ -47,36 +44,6 @@
 #if NACL_MAP_PAGESHIFT < NACL_PAGESHIFT
 # error "NACL_MAP_PAGESHIFT smaller than NACL_PAGESHIFT"
 #endif
-
-/* NACL_MAP_PAGESIFT >= NACL_PAGESHIFT must hold */
-#define NACL_PAGES_PER_MAP            (1 << (NACL_MAP_PAGESHIFT-NACL_PAGESHIFT))
-
-#define NACL_MEMORY_ALLOC_RETRY_MAX   256 /* see win/sel_memory.c */
-
-/*
- * NACL_KERN_STACK_SIZE: The size of the secure stack allocated for
- * use while a NaCl thread is in kernel mode, i.e., during
- * startup/exit and during system call processing.
- *
- * This must be greater than 64K for address space squatting, but
- * that uses up too much memory and decreases the maximum number of
- * threads that the system can spawn.  Instead, we grab the vm lock
- * when spawning threads.
- */
-#define NACL_KERN_STACK_SIZE          (64 << 10)
-
-/*
- * NACL_CONFIG_PATH_MAX: What is the maximum file path allowed in the
- * NaClSysOpen syscall?  This is on the kernel stack for validation
- * during the processing of the syscall, so beware running into
- * NACL_KERN_STACK_SIZE above.
- */
-#define NACL_CONFIG_PATH_MAX          1024
-
-/*
- * newfd value for dup2 must be below this value.
- */
-#define NACL_MAX_FD                   4096
 
 /*
  * Macro for the start address of the trampolines
@@ -141,33 +108,17 @@
  */
 #define NACL_HALT_SLED_SIZE     32
 
-/*
- * If NACL_MASK_INODES is defined to be 1, then NACL_FAKE_INODE_NUM is
- * used throughout as inode number returned in stat/fstat/getdents
- * system calls.  If NACL_MASK_INODES is defined to be 0, then the
- * service runtime will let the real inode number through.  Exposing
- * inode numbers are a miniscule information leak; more importantly,
- * it is yet another platform difference since none of the standard
- * Windows filesystems have inode numbers.
- */
-#if !defined(NACL_MASK_INODES)
-# define NACL_MASK_INODES 1
-#endif
-#if !defined(NACL_FAKE_INODE_NUM) /* allow alternate value */
-# define NACL_FAKE_INODE_NUM     0x6c43614e
-#endif
-
-#  define NACL_USERRET_FIX        (0x8)
-#  define NACL_SYSARGS_FIX        (-0x18)
-#  define NACL_SYSCALLRET_FIX     (0x10)
+#define NACL_USERRET_FIX        (0x8)
+#define NACL_SYSARGS_FIX        (-0x18)
+#define NACL_SYSCALLRET_FIX     (0x10)
 /*
  * System V Application Binary Interface, AMD64 Architecture Processor
  * Supplement, at http://www.x86-64.org/documentation/abi.pdf, section
  * 3.2.2 discusses stack alignment.
  */
-#  define NACL_STACK_ALIGN_MASK   (0xf)
-#  define NACL_STACK_GETS_ARG     (0)
-#  define NACL_STACK_PAD_BELOW_ALIGN (8)
+#define NACL_STACK_ALIGN_MASK   (0xf)
+#define NACL_STACK_GETS_ARG     (0)
+#define NACL_STACK_PAD_BELOW_ALIGN (8)
 
 /* d'b: macro definitions for the user space allocation */
 #define FOURGIG     (((size_t) 1) << 32)

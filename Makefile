@@ -5,8 +5,8 @@ TESTFLAGS=-Llib/gtest -lgtest -lzmq -lrt -ldl -lpthread -lglib-2.0 -lssl -lcrypt
 
 CCFLAGS1=-std=gnu99 -Wdeclaration-after-statement $(FLAGS0)
 CCFLAGS2=-Wextra -Wswitch-enum -Wsign-compare
-CXXFLAGS1=-c -std=c++98 -D_GNU_SOURCE=1 -I. -Ilib $(CXXFLAGS0) $(FLAGS0) $(CXXFLAGS)
-CXXFLAGS2=-Wl,-z,noexecstack $(CXXFLAGS0) $(CXXFLAGS) -Lobj -L/usr/lib64 -pie -Wl,-z,relro -Wl,-z,now
+CXXFLAGS1=-c -std=c++98 -D_GNU_SOURCE=1 -I. -Ilib $(CXXFLAGS0) $(FLAGS0)
+CXXFLAGS2=-Wl,-z,noexecstack $(CXXFLAGS0) -Lobj -L/usr/lib64 -pie -Wl,-z,relro -Wl,-z,now
 
 all: CCFLAGS1 += -DDEBUG -g $(COVFLAGS) $(CCFLAGS0)
 all: CCFLAGS2 += -DDEBUG -g $(COVFLAGS) $(CCFLAGS0)
