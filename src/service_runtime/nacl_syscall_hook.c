@@ -10,7 +10,7 @@
 #include <errno.h>
 #include "src/service_runtime/nacl_switch_to_app.h"
 #include "src/service_runtime/nacl_syscall_handlers.h"
-#include "src/service_runtime/include/bits/nacl_syscalls.h"
+#include "src/service_runtime/nacl_syscalls.h"
 #include "src/service_runtime/nacl_globals.h"
 #include "src/service_runtime/sel_rt_64.h"
 #include "src/manifest/manifest_setup.h"

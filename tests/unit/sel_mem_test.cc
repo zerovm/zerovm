@@ -4,7 +4,8 @@
  * be found in the LICENSE file.
  */
 
-#include "src/include/nacl_platform.h"
+#include <sys/mman.h>
+#include "src/include/elf.h"
 #include "src/service_runtime/sel_mem.h"
 #include "src/service_runtime/zlog.h"
 #include "gtest/gtest.h"

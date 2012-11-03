@@ -4,7 +4,8 @@
  * found in the LICENSE file.
  */
 
-#include "src/include/nacl_platform.h"
+#include <sys/mman.h>
+#include "src/include/portability.h"
 #include "src/service_runtime/sel_memory.h"
 #include "src/service_runtime/sel_ldr.h"
 

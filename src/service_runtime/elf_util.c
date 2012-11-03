@@ -8,9 +8,8 @@
  * NaCl helper functions to deal with elf images
  */
 #include <string.h>
-
 #include "src/include/nacl_macros.h"
-#include "src/include/nacl_platform.h"
+#include "src/include/elf.h"
 #include "src/gio/gio.h"
 #include "src/service_runtime/elf_util.h"
 #include "src/service_runtime/sel_memory.h"

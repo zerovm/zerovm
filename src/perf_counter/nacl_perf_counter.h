@@ -11,7 +11,7 @@
  */
 
 #include "src/include/nacl_base.h"
-#include "src/service_runtime/include/sys/time.h"
+#include "src/platform/time.h"
 
 EXTERN_C_BEGIN
 

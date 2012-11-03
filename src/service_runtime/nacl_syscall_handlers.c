@@ -6,11 +6,11 @@
 
 /* todo(d'b): revise the headers */
 #include <errno.h>
-#include "src/include/nacl_platform.h"
+#include "src/include/portability.h"
 #include "src/service_runtime/nacl_globals.h"
 #include "src/service_runtime/nacl_syscall_handlers.h"
 #include "src/service_runtime/sel_memory.h"
-#include "src/service_runtime/include/bits/nacl_syscalls.h"
+#include "src/service_runtime/nacl_syscalls.h"
 #include "src/manifest/trap.h"
 #include "src/manifest/manifest_setup.h"
 

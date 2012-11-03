@@ -10,7 +10,8 @@
  * useless. remove whole class.
  */
 #include <errno.h>
-#include "src/include/nacl_platform.h"
+#include <sys/mman.h>
+#include <stdio.h>
 #include "src/service_runtime/zlog.h"
 
 void NaCl_page_free(void *p, size_t size)
