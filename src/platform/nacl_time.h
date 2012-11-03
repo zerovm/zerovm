@@ -16,6 +16,11 @@
 
 EXTERN_C_BEGIN
 
+/* NaClTimeState definition for Unix-like OSes */
+struct NaClTimeState {
+  uint64_t time_resolution_ns;
+};
+
 void NaClTimeInit(void);
 
 void NaClTimeFini(void);

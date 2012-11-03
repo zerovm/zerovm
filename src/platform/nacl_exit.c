@@ -13,7 +13,7 @@
 #include "src/service_runtime/accounting.h"
 
 static int verb = LOG_INSANE;
-static const char *zvm_state = "unknown error, see syslog";
+static const char *zvm_state = UNKNOWN_STATE;
 
 static void VmentryPrinter(void *state, struct NaClVmmapEntry *vmep)
 {

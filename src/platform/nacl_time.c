@@ -13,7 +13,6 @@
 #include <sys/time.h>
 #include "src/include/nacl_macros.h"
 #include "src/platform/nacl_time.h"
-#include "src/platform/nacl_time_types.h"
 #include "src/service_runtime/sel_ldr.h"
 
 #define NANOS_PER_UNIT  (1000*1000*1000)

@@ -139,8 +139,6 @@ int GioMemoryFileSnapshotCtor(struct GioMemoryFileSnapshot  *self,
 
 void  GioMemoryFileSnapshotDtor(struct Gio                    *vself);
 
-#define ggetc(gp) ({ char ch; (*gp->vtbl->Read)(gp, &ch, 1) == 1 ? ch : EOF;})
-
 EXTERN_C_END
 
 #endif  /* NATIVE_CLIENT_SRC_SHARED_GIO_GIO_H_ */
