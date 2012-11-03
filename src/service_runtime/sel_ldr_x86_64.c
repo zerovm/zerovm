@@ -114,9 +114,6 @@ void NaClPatchOneTrampoline(struct NaClApp *nap, uintptr_t target_addr)
 void NaClFillMemoryRegionWithHalt(void *start, size_t size)
 {
   ZLOGFAIL(size % NACL_HALT_LEN, EFAULT, FAILED_MSG);
-
-  /* Tell valgrind that this memory is accessible and undefined */
-  NACL_MAKE_MEM_UNDEFINED(start, size);
   memset(start, NACL_HALT_OPCODE, size);
 }
 

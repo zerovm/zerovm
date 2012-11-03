@@ -356,12 +356,6 @@ void NaClElfImageLoad(struct NaClElfImage *image,
     ZLOGS(LOG_DEBUG, "Reading %d (0x%x) bytes to address 0x%x",
         php->p_filesz, php->p_filesz, paddr);
 
-    /*
-     * Tell valgrind that this memory is accessible and undefined. For more details see
-     * http://code.google.com/p/nativeclient/wiki/ValgrindMemcheck#Implementation_details
-     */
-    NACL_MAKE_MEM_UNDEFINED((void *) paddr, php->p_filesz);
-
     ZLOGFAIL((Elf_Word)(*gp->vtbl->Read)(gp, (void *)paddr, php->p_filesz) != php->p_filesz,
         ENOEXEC, "load failure segment %d", segnum);
     /* region from p_filesz to p_memsz should already be zero filled */

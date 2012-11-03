@@ -128,7 +128,7 @@ static void FailOnInvalidNetChannel(const struct ChannelDesc *channel)
  * using channel host id and channel mark (bind, connect or outsider)
  * note: even for channels marked as outsiders a key will be created
  */
-inline static uint32_t MakeKey(const struct ChannelConnection *record)
+INLINE static uint32_t MakeKey(const struct ChannelConnection *record)
 {
   uint32_t result;
   ZLOG(LOG_INSANE, "MakeKey");
@@ -623,7 +623,7 @@ enum ChannelSourceType GetChannelProtocol(const char *url)
  * initiate networking (if there are network channels)
  * note: will run only once on the 1st channel construction
  */
-static inline void NetCtor()
+static INLINE void NetCtor()
 {
   struct ChannelDesc channel;
 
@@ -667,7 +667,7 @@ static inline void NetCtor()
  * note: global nap object has been used. but it is ok since the patch
  *   is temporary
  */
-static inline void CloseChannels()
+static INLINE void CloseChannels()
 {
   extern struct NaClApp *gnap;
   struct ChannelDesc *channels = gnap->system_manifest->channels;
@@ -705,7 +705,7 @@ static inline void CloseChannels()
  * finalize networking (if there are network channels)
  * note: will run only once. should be called from channel destructor
  */
-static inline void NetDtor()
+static INLINE void NetDtor()
 {
   /* context will be destroyed at the last call */
   if(--channels_cnt) return;
@@ -770,7 +770,7 @@ int PrefetchChannelCtor(struct ChannelDesc *channel)
 }
 
 /* check and update channel EOF state and etag */
-static inline void UpdateChannelState(struct ChannelDesc *channel)
+static INLINE void UpdateChannelState(struct ChannelDesc *channel)
 {
   int64_t more = 0;
   size_t more_size = sizeof more;

@@ -13,6 +13,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include "src/include/nacl_compiler_annotations.h"
 
 /*****************************************************************************
  * Safety macros                                                             *
@@ -92,7 +93,7 @@
     }                                                         \
   } while (0)
 
-static inline void *NaClArrayCheckHelper(void *arg) {
+static INLINE void *NaClArrayCheckHelper(void *arg) {
   /*
    * Doing runtime checks is not really necessary -- this code is in
    * fact unreachable code that gets optimized out when used with the
@@ -130,14 +131,6 @@ static inline void *NaClArrayCheckHelper(void *arg) {
 # endif  /* __GNUC__ */
 
 /*
- * NACL_ASSERT_IS_POINTER(arr) generates a somewhat opaque compile-time
- * error if lvalue is not a pointer lvalue but is instead an actual
- * array (which is a T * const object).  This is complementary to
- * NACL_ASSERT_IS_ARRAY.
- */
-#define NACL_ASSERT_IS_POINTER(ptr) do { if (0) { ++ptr; } } while (0)
-
-/*
  * NACL_ASSERT_SAME_SIZE(t1, t2) verifies that the two types have the same size
  * (as reported by sizeof).  When the check fails it generates a somewhat
  * opaque warning, mitigated by the variable's name.
@@ -150,68 +143,11 @@ static inline void *NaClArrayCheckHelper(void *arg) {
   do { char tested_types_are_not_the_same_size[sizeof(t1) == sizeof(t2)]; \
        (void) tested_types_are_not_the_same_size; } while (0)
 
-
-/*
- * NACL_COMPILE_TIME_ASSERT(boolexp) verifies that the argument
- * boolexp is true.  The check occurs at compile time, assuming
- * -pedantic flag or similar is used so that the ISO C forbidden
- * zero-sized array generates an error.  This is standard with NaCl
- * code.  If the wrong compilation flags are used, then we would get a
- * run-time abort.
- *
- * Example:
- *
- * NACL_COMPILE_TIME_ASSERT(NACL_MAX_VAL(int32_t) <= SIZE_T_MAX)
- *
- * to explicitly state the assumption that an int32_t expression -- if
- * containing a non-negative number -- will fit in a size_t variable.
- */
-#define NACL_COMPILE_TIME_ASSERT(boolexp)                          \
-  do {                                                             \
-    char compile_time_boolean_expression_is_false[0 != (boolexp)]; \
-    if (0 == sizeof compile_time_boolean_expression_is_false) {    \
-      abort();                                                     \
-    }                                                              \
-  } while (0)
-
-/*****************************************************************************
- * MAX/MIN macros for integral types                                         *
- ****************************************************************************/
-
-/*
- * For NACL_MAX_VAL, T must be a type where u ## T is the unsigned
- * version of the type.
- *
- * These macros rely on -1 being signed extended to the width of T (or
- * u ## T), and on two's complement representation of integers.
- *
- * Generally, stdint.h's INT16_MAX etc can be used, but these are
- * useful for macros that take a type parameter and need the max or
- * min value for the type, since then the macro would not have to also take
- * the max or min value as additional parameter(s).
- */
-#define NACL_UMAX_VAL(T)  ((T) -1)
-#define NACL_MAX_VAL(T)   ((T) (((u ## T) -1) >> 1))
-#define NACL_UMIN_VAL(T)  ((T) 0)
-#define NACL_MIN_VAL(T)   ((T) ~NACL_MAX_VAL(T))
-
-
 /*****************************************************************************
  * Readability macros                                                        *
  ****************************************************************************/
 
 #define NACL_NANOS_PER_MICRO          (1000)
-#define NACL_100_NANOS_PER_MILLI      (10 * 1000)
-#define NACL_NANOS_PER_MILLI          (1000 * 1000)
-#define NACL_MICROS_PER_MILLI         (1000)
 #define NACL_MICROS_PER_UNIT          (1000 * 1000)
-#define NACL_MILLIS_PER_UNIT          (1000)
-#define NACL_UNIT_CONVERT_ROUND(v, m) (((v) + (m) - 1)/(m))
-
-#define NACL_NO_FILE_DESC             (-1)
-#define NACL_NO_URL                   ""
-#define NACL_NO_FILE_PATH             ""
-
-#define NACL_HTTP_STATUS_OK           200
 
 #endif  /* NATIVE_CLIENT_SRC_INCLUDE_NACL_MACROS_H_ */

@@ -9,13 +9,8 @@
 
 /* gcc only */
 #define INLINE __inline__
-#define DLLEXPORT __attribute__ ((visibility("default")))
-#define ATTRIBUTE_FORMAT_PRINTF(m, n) __attribute__((format(printf, m, n)))
 #define UNREFERENCED_PARAMETER(P) do { (void) P; } while (0)
 #define NORETURN __attribute__((noreturn))
-#define _cdecl /* empty */
-#define THREAD __thread
-#define WINAPI
 #define NACL_WUR __attribute__((__warn_unused_result__))
 
 #endif
