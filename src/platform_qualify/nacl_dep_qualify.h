@@ -27,40 +27,8 @@ EXTERN_C_BEGIN
 /*
  * Checks that Data Execution Prevention is working as required by the
  * architecture.  On some architectures this is a no-op.
- *
- * NOTE: the implementation of this function is architecture-specific, and can
- * be found beneath arch/ in this directory.
  */
 int NaClCheckDEP();
-
-/*
- * Attempts to generate and execute some functions in data memory, to verify
- * that Data Execution Prevention is working.  This is only used on platforms
- * where DEP is required.
- *
- * NOTE: the implementation of this function is platform-specific, and can be
- * found in linux/, win/, or osx/ in this directory.
- */
-int NaClAttemptToExecuteData();
-
-/*
- * A void nullary function.  We generate functions of this type in the heap and
- * stack to prove that we cannot call them.  See NaClGenerateThunk, below.
- */
-typedef void (*nacl_void_thunk)();
-
-/*
- * Generates an architecture-specific void thunk sequence into the provided
- * buffer.  Returns a pointer to the thunk (which may be offset into the
- * buffer, depending on alignment constraints etc.).
- *
- * If the buffer is too small for the architecture's thunk sequence, returns
- * NULL.  In general the buffer should be more than 4 bytes.
- *
- * NOTE: the implementation of this function is architecture-specific, and can
- * be found beneath arch/ in this directory.
- */
-nacl_void_thunk NaClGenerateThunk(char *buf, size_t buf_size);
 
 EXTERN_C_END
 
