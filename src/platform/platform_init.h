@@ -11,11 +11,9 @@
 
 EXTERN_C_BEGIN
 
-
 void NaClPlatformInit(void);
 
 void NaClPlatformFini(void);
-
 
 EXTERN_C_END
 
