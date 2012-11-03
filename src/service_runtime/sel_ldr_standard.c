@@ -11,7 +11,7 @@
 #include <errno.h>
 
 #include "src/perf_counter/nacl_perf_counter.h"
-#include "src/service_runtime/include/bits/mman.h"
+#include <sys/mman.h>
 #include "src/service_runtime/sel_ldr_x86.h"
 #include "src/service_runtime/elf_util.h"
 #include "src/service_runtime/nacl_switch_to_app.h"
@@ -258,7 +258,7 @@ void NaClAppLoadFile(struct Gio *gp, struct NaClApp *nap)
   ZLOGS(LOG_DEBUG, "Loading into memory");
   err = NaCl_mprotect((void *)(nap->mem_start + NACL_TRAMPOLINE_START),
       NaClRoundAllocPage(nap->data_end) - NACL_TRAMPOLINE_START,
-      NACL_ABI_PROT_READ | NACL_ABI_PROT_WRITE);
+      PROT_READ | PROT_WRITE);
   ZLOGFAIL(0 != err, EFAULT, "Failed to make image pages writable. code 0x%x", err);
 
   NaClElfImageLoad(image, gp, nap->addr_bits, nap->mem_start);

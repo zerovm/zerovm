@@ -6,6 +6,8 @@
 
 /*
  * NaCl Service Runtime memory allocation code
+ * todo(d'b): since zvm only works on linux x86 64 the wrappers bellow
+ * useless. remove whole class.
  */
 #include <errno.h>
 #include "src/include/nacl_platform.h"

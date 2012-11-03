@@ -12,7 +12,6 @@
 #include "src/desc/nacl_desc_base.h"
 #include "src/service_runtime/zlog.h"
 #include "src/nacl_base/nacl_refcount.h"
-#include "src/service_runtime/include/sys/errno.h"
 
 struct NaClDesc *NaClDescRef(struct NaClDesc *ndp) {
   return (struct NaClDesc *) NaClRefCountRef(&ndp->base);

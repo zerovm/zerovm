@@ -5,22 +5,21 @@
  */
 
 /* todo(d'b): revise the headers */
+#include <errno.h>
 #include "src/include/nacl_platform.h"
 #include "src/service_runtime/nacl_globals.h"
 #include "src/service_runtime/nacl_syscall_handlers.h"
 #include "src/service_runtime/sel_memory.h"
-#include "src/service_runtime/include/bits/mman.h"
 #include "src/service_runtime/include/bits/nacl_syscalls.h"
 #include "src/manifest/trap.h"
 #include "src/manifest/manifest_setup.h"
-#include "src/service_runtime/include/sys/errno.h"
 
 struct NaClSyscallTableEntry nacl_syscall[NACL_MAX_SYSCALLS] = {{0}};
 
 static int32_t NotImplementedDecoder(struct NaClApp *nap)
 {
   UNREFERENCED_PARAMETER(nap);
-  return -NACL_ABI_ENOSYS;
+  return -ENOSYS;
 }
 
 static void NaClAddSyscall(int num, int32_t(*fn)(struct NaClApp *))
@@ -51,14 +50,12 @@ int32_t NaClSysExit(struct NaClApp *nap, int status)
   longjmp(user_exit, status);
 
   /* NOTREACHED */
-  return -NACL_ABI_EINVAL;
+  return -EINVAL;
 }
 
 /* tls create */
-#define CLEANUP(cond, code) if(cond) {retval = code; goto cleanup;}
 int32_t NaClSysTls_Init(struct NaClApp *nap, void *thread_ptr)
 {
-  int32_t   retval = -NACL_ABI_EINVAL;
   uintptr_t sys_tls;
 
   ZLOGS(LOG_DEBUG, "tls init with 0x%08lx", (uintptr_t)thread_ptr);
@@ -70,14 +67,11 @@ int32_t NaClSysTls_Init(struct NaClApp *nap, void *thread_ptr)
   sys_tls = NaClUserToSysAddrRange(nap, (uintptr_t) thread_ptr, 4);
   ZLOGS(LOG_INSANE, "thread_ptr 0x%p, sys_tls 0x%lx", thread_ptr, sys_tls);
 
-  CLEANUP(kNaClBadAddress == sys_tls, -NACL_ABI_EFAULT);
-  nap->sys_tls = sys_tls;
-  retval = 0;
+  if(kNaClBadAddress == sys_tls) return -EFAULT;
 
-cleanup:
-  return retval;
+  nap->sys_tls = sys_tls;
+  return 0;
 }
-#undef CLEANUP
 
 /* tls get */
 int32_t NaClSysTls_Get(struct NaClApp *nap) {
