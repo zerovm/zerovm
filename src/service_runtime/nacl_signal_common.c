@@ -145,7 +145,6 @@ enum NaClSignalResult NaClSignalHandlerFind(int signal, void *ctx) {
 
 void NaClSignalHandlerInit() {
   int a;
-  ZENTER;
 
   /* Build the free list */
   for (a = 0; a < MAX_NACL_HANDLERS; a++) {
@@ -165,12 +164,9 @@ void NaClSignalHandlerInit() {
 
   /* In stand-alone mode (sel_ldr) we handle all signals. */
   NaClSignalHandlerAdd(NaClSignalHandleAll);
-  ZLEAVE;
 }
 
 void NaClSignalHandlerFini() {
   /* We try to lock, but since we are shutting down, we ignore failures. */
-  ZENTER;
   NaClSignalHandlerFiniPlatform();
-  ZLEAVE;
 }

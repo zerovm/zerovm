@@ -182,7 +182,6 @@ int ManifestCtor(const char *name)
   int64_t mft_size;
   int retcode;
   FILE *mft;
-  ZENTER;
 
   /* get file size and check it for sanity */
   mft = fopen(name, "r");
@@ -208,7 +207,6 @@ int ManifestCtor(const char *name)
 
   /* close file and return */
   fclose(mft);
-  ZLEAVE;
   return OK_CODE;
 }
 

@@ -42,7 +42,6 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
 {
   int opt;
   char *manifest_name = NULL;
-  ZENTER;
 
   /* set defaults */
   nap->skip_qualification = 0;
@@ -120,7 +119,6 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
   nap->system_manifest->nexe = GetValueByKey("Nexe");
   ZLOGFAIL(GetFileSize(nap->system_manifest->nexe) < 0, ENOENT, "nexe open error");
   syscallback = 0;
-  ZLEAVE;
 }
 
 /*
@@ -137,7 +135,6 @@ static void ValidateNexe(struct NaClApp *nap)
     ValidationOK,
     ValidationFailed
   };
-  ZENTER;
 
   assert(nap != NULL);
   assert(nap->system_manifest != NULL);
@@ -155,7 +152,6 @@ static void ValidateNexe(struct NaClApp *nap)
   /* check the result */
   nap->validation_state = exit_status == 0 ? ValidationOK : ValidationFailed;
   ZLOGFAIL(nap->validation_state != ValidationOK, ENOEXEC, "validation failed");
-  ZLEAVE;
 }
 
 int main(int argc, char **argv)
@@ -165,14 +161,12 @@ int main(int argc, char **argv)
   struct GioMemoryFileSnapshot main_file;
   struct NaClPerfCounter time_all_main;
 
-  /* d'b: initial settings */
-  /* todo(d'b): move to inline function and explicitly set all fields */
+  /* zerovm initialization */
   memset(nap, 0, sizeof *nap);
   nap->system_manifest = &sys_mft;
   memset(nap->system_manifest, 0, sizeof *nap->system_manifest);
   gnap = nap;
 
-  /* get the task, setup log, etag, intercept signals */
   ParseCommandLine(nap, argc, argv);
   NaClSignalHandlerInit();
   NaClTimeInit();

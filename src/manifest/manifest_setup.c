@@ -83,13 +83,11 @@ static void DisableSuperUser()
  */
 void LastDefenseLine(struct NaClApp *nap)
 {
-  ZENTER;
   LowerOwnPriority();
   LimitOwnIO(nap);
   LimitOwnMemory();
   ChrootJail();
   DisableSuperUser();
-  ZLEAVE;
 }
 
 /* preallocate memory area of given size. abort if fail */
@@ -246,7 +244,6 @@ static void SetTimeout(struct SystemManifest *policy)
 void SystemManifestCtor(struct NaClApp *nap)
 {
   struct SystemManifest *policy;
-  ZENTER;
 
   /* check for design errors */
   assert(nap != NULL);
@@ -291,7 +288,6 @@ void SystemManifestCtor(struct NaClApp *nap)
 
   /* zerovm return code */
   nap->system_manifest->ret_code = OK_CODE;
-  ZLEAVE;
 }
 
 /*

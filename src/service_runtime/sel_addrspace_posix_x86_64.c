@@ -23,7 +23,6 @@ static void *NaClAllocatePow2AlignedMemory(size_t mem_sz, size_t log_alignment)
   uintptr_t orig_addr;
   uintptr_t rounded_addr;
   size_t extra;
-  ZENTER;
 
   pow2align = ((uintptr_t)1) << log_alignment;
   request_sz = mem_sz + pow2align;

@@ -23,8 +23,6 @@ EXTERN_C_BEGIN
 #define ZLOGIF ZLogTag(__FILE__, __LINE__), LogIf
 #define ZLOGFAIL ZLogTag(__FILE__, __LINE__), FailIf
 #define ZLOGS ZLogTag(NULL, 0), ZLog
-#define ZENTER ZLOG(LOG_INSANE, "entered")
-#define ZLEAVE ZLOG(LOG_INSANE, "left")
 
 #define FAILED_MSG "check failed"
 #define ZLOG_NAME "ZeroVM"

@@ -21,23 +21,20 @@ struct GioVtbl const  kGioMemoryFileSnapshotVtbl = {
   GioMemoryFileSnapshotDtor,
 };
 
-/* todo(d'b): rewrite */
+/* todo(d'b): rewrite or (even better) remove */
 int GioMemoryFileSnapshotCtor(struct GioMemoryFileSnapshot *self, char *fn)
 {
   FILE            *iop;
   struct stat     stbuf;
   char            *buffer;
-  ZENTER;
 
   ((struct Gio *) self)->vtbl = (struct GioVtbl *) NULL;
   if (0 == (iop = fopen(fn, "rb"))) {
-    ZLEAVE;
     return 0;
   }
   if (fstat(fileno(iop), &stbuf) == -1) {
  abort0:
     fclose(iop);
-    ZLEAVE;
     return 0;
   }
   if (0 == (buffer = malloc(stbuf.st_size))) {
@@ -54,7 +51,6 @@ int GioMemoryFileSnapshotCtor(struct GioMemoryFileSnapshot *self, char *fn)
   (void) fclose(iop);
 
   ((struct Gio *) self)->vtbl = &kGioMemoryFileSnapshotVtbl;
-  ZLEAVE;
   return 1;
 }
 

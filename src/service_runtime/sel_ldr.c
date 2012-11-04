@@ -17,7 +17,6 @@
 int NaClAppWithSyscallTableCtor(struct NaClApp               *nap,
                                 struct NaClSyscallTableEntry *table)
 {
-  ZENTER;
   nap->addr_bits = NACL_MAX_ADDR_BITS;
   nap->stack_size = NACL_DEFAULT_STACK_MAX;
   nap->mem_start = 0;
@@ -34,7 +33,6 @@ int NaClAppWithSyscallTableCtor(struct NaClApp               *nap,
 
   if(!NaClVmmapCtor(&nap->mem_map))
   {
-    ZLEAVE;
     return 0;
   }
 
@@ -51,7 +49,6 @@ int NaClAppWithSyscallTableCtor(struct NaClApp               *nap,
 
   nap->syscall_table = table;
 
-  ZLEAVE;
   return 1;
 }
 
