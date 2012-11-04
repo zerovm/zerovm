@@ -3,6 +3,7 @@
  *
  * AccountingCtor(nap)
  * AccountingDtor(nap)
+ * GetAccountingInfo()
  *
  *  Created on: Oct 14, 2012
  *      Author: d'b
@@ -16,7 +17,7 @@
 #include "api/zvm.h"
 
 /* accounting folder name. NULL if not available */
-char accounting[BIG_ENOUGH_STRING] = DEFAULT_ACCOUNTING;
+static char accounting[BIG_ENOUGH_STRING] = DEFAULT_ACCOUNTING;
 
 /* populate "buf" with an extended accounting statistics, return string size */
 static int ReadSystemAccounting(const struct NaClApp *nap, char *buf, int size)

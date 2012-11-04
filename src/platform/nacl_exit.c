@@ -9,7 +9,7 @@
 #include "src/manifest/manifest_setup.h"
 #include "src/service_runtime/nacl_globals.h"
 #include "src/service_runtime/nacl_signal.h"
-#include "src/service_runtime/nacl_all_modules.h"
+#include "src/platform/nacl_time.h"
 #include "src/service_runtime/accounting.h"
 
 static int verb = LOG_INSANE;
@@ -43,7 +43,7 @@ static void FinalDump(struct NaClApp *nap)
   ZLOGS(LOG_INSANE, "Done");
 
   if(nap->handle_signals) NaClSignalHandlerFini();
-  NaClAllModulesFini();
+  NaClTimeFini();
 }
 
 /*

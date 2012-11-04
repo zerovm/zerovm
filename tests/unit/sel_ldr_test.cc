@@ -5,7 +5,9 @@
  */
 
 #include "src/service_runtime/sel_ldr.h"
-#include "src/desc/nrd_all_modules.h"
+//#include "src/desc/nrd_all_modules.h"
+#include "src/platform/nacl_time.h"
+
 #include "gtest/gtest.h"
 
 //
@@ -46,11 +48,11 @@ class SelLdrTest : public testing::Test {
 };
 
 void SelLdrTest::SetUp() {
-  NaClNrdAllModulesInit();
+  NaClTimeInit();
 }
 
 void SelLdrTest::TearDown() {
-  NaClNrdAllModulesFini();
+  NaClTimeFini();
 }
 
 // set, get, setavail operations on the descriptor table

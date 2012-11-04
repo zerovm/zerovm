@@ -13,7 +13,7 @@
 #include <glib.h>
 #include "src/gio/gio.h"
 #include "src/perf_counter/nacl_perf_counter.h"
-#include "src/service_runtime/nacl_all_modules.h"
+#include "src/platform/nacl_time.h"
 #include "src/service_runtime/nacl_globals.h"
 #include "src/service_runtime/nacl_signal.h"
 #include "src/service_runtime/etag.h"
@@ -21,6 +21,7 @@
 #include "src/manifest/manifest_setup.h"
 #include "src/service_runtime/sel_qualify.h"
 #include "src/service_runtime/accounting.h"
+#include "src/service_runtime/nacl_syscall_handlers.h"
 
 /* log zerovm command line */
 static void ZVMCommandLine(int argc, char **argv)
@@ -174,7 +175,8 @@ int main(int argc, char **argv)
   /* get the task, setup log, etag, intercept signals */
   ParseCommandLine(nap, argc, argv);
   NaClSignalHandlerInit();
-  NaClAllModulesInit();
+  NaClTimeInit();
+  NaClSyscallTableInit();
   NaClPerfCounterCtor(&time_all_main, "SelMain");
 
   /* initialize mem_map and set nap fields to default values */

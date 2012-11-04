@@ -9,18 +9,10 @@
  */
 
 #include <string.h>
-#define DYN_ARRAY_DEBUG 0
-
-#if DYN_ARRAY_DEBUG
-# include "src/service_runtime/zlog.h"
-#endif
-
 #include "src/service_runtime/dyn_array.h"
-
 
 static int const kBitsPerWord = 32;
 static int const kWordIndexShift = 5;  /* 2**kWordIndexShift==kBitsPerWord */
-
 
 static INLINE size_t BitsToAllocWords(size_t nbits) {
   return (nbits + kBitsPerWord - 1) >> kWordIndexShift;
