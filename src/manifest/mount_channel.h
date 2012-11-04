@@ -68,12 +68,12 @@ enum ChannelSourceType {
 /* source file prefixes */
 #define CHANNEL_SOURCE_PREFIXES { \
   "file", /* ChannelRegular */\
-  "file", /* ChannelDirectory */\
-  "file", /*ChannelCharacter*/\
-  "file", /* ChannelBlock */\
-  "file", /* ChannelFIFO */\
-  "file", /* ChannelLink */ \
-  "file", /* ChannelSocket */\
+  "directory", /* ChannelDirectory */\
+  "character", /*ChannelCharacter*/\
+  "block", /* ChannelBlock */\
+  "fifo", /* ChannelFIFO */\
+  "link", /* ChannelLink */ \
+  "socket", /* ChannelSocket */\
   "ipc", /* ChannelIPC */\
   "tcp", /* ChannelTCP */\
   "inproc", /* ChannelINPROC */\

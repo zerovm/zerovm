@@ -145,8 +145,8 @@ static void ChannelCtor(struct NaClApp *nap, char **tokens)
     case ChannelPGM:
     case ChannelEPGM:
     case ChannelUDP:
-      ZLOGFAIL(1, EPROTONOSUPPORT, "'%s' isn't supported",
-          StringizeChannelSourceType(channel->source));
+      ZLOGFAIL(1, EPROTONOSUPPORT, "'%s': '%s' type isn't supported",
+          channel->name, StringizeChannelSourceType(channel->source));
       break;
     default:
       ZLOGFAIL(1, EFAULT, "invalid channel source. internal error!");
@@ -190,11 +190,11 @@ static void ChannelDtor(struct ChannelDesc *channel)
     case ChannelPGM:
     case ChannelEPGM:
     case ChannelUDP:
-      ZLOGFAIL(1, EPROTONOSUPPORT, "'%s' isn't supported. internal error!",
-          StringizeChannelSourceType(channel->source));
+      ZLOG(LOG_ERR, "'%s': '%s' type isn't supported",
+          channel->name, StringizeChannelSourceType(channel->source));
       break;
     default:
-      ZLOGFAIL(1, EFAULT, "invalid channel source. internal error!");
+      ZLOG(LOG_ERR, "invalid channel source %d. internal error!", channel->source);
       break;
   }
 }

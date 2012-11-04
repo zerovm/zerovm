@@ -87,8 +87,10 @@ static int GetChannelsAccounting(const struct NaClApp *nap, char *buf, int size)
         stats = network_stats;
         break;
       default:
-        ZLOG(LOG_ERR, "internal error. source type %d not supported", channel->source);
-        break;
+        ZLOG(LOG_ERR, "'%s': source type '%s' not supported",
+            channel->name, StringizeChannelSourceType(channel->source));
+        buf = DEFAULT_ACCOUNTING;
+        return sizeof DEFAULT_ACCOUNTING;
     }
 
     for(j = 0; j < IOLimitsCount; ++j)
