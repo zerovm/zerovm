@@ -9,7 +9,9 @@
 #include <string.h>
 #include <stdio.h>
 
+#ifndef USER_SIDE
 #define USER_SIDE
+#endif
 #include "zvm.h"
 
 /* pointer to trap() through the trampoline */
