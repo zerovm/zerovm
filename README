@@ -14,7 +14,10 @@ VirtualBox doesn't support SSE4.1 used by several of provided samples.
 1.1. Install ordinary prerequisites:
    sudo apt-get install build-essential gcc-multilib g++-multilib libsdl1.2-dev texinfo libcrypto++-dev libssl-dev m4 lib32z1 uuid-dev
 
-1.2. sqlite was here. no need anymore
+1.2. add to ~/.bashrc
+   export NACL_SDK_ROOT=/home/bortoq/nacl_sdk/pepper_23
+   export ZEROVM_ROOT=/home/bortoq/git/zerovm
+   export ZRT_ROOT=/home/bortoq/git/zrt
 
 1.3. Install zeromq & packages required by zeromq
    cd ~
@@ -40,10 +43,10 @@ VirtualBox doesn't support SSE4.1 used by several of provided samples.
 2. Installing ZeroVM
 2.1. Console installation (not needed if compiling from eclipse):
    cd ~
-   wget https://github.com/Dazo-org/zerovm/zipball/master
+   wget https://github.com/zerovm/zerovm/zipball/master
    unzip master
    mkdir zerovm
-   mv Dazo-blah-blah-blah/* zerovm/
+   mv zerovm-zerovm-#######/* zerovm/
    cd zerovm
    make
    sudo ldconfig
@@ -52,7 +55,7 @@ VirtualBox doesn't support SSE4.1 used by several of provided samples.
    If your system doesn't have JRE, install recent JRE. 
    Download Eclipse CDT from eclipse download site. No installation necessary, just unpack and run executable.
    Download and install Egit plugin for eclipse
-   Point Egit to git://github.com/Dazo-org/zerovm.git and pull the recent ZeroVM sources.
+   Point Egit to git://github.com/zerovm/zerovm.git and pull the recent ZeroVM sources.
    Select 'creare C/C++ project from makefile" to create new eclipse project
    Run the makefile to build the project and run unit tests
 
