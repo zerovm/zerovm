@@ -15,9 +15,10 @@ VirtualBox doesn't support SSE4.1 used by several of provided samples.
    sudo apt-get install build-essential gcc-multilib g++-multilib libsdl1.2-dev texinfo libcrypto++-dev libssl-dev m4 lib32z1 uuid-dev
 
 1.2. add to ~/.bashrc
-   export NACL_SDK_ROOT=/home/bortoq/nacl_sdk/pepper_23
-   export ZEROVM_ROOT=/home/bortoq/git/zerovm
-   export ZRT_ROOT=/home/bortoq/git/zrt
+   put your home directory name instead of "~"
+   export NACL_SDK_ROOT=~/nacl_sdk/pepper_23
+   export ZEROVM_ROOT=~/git/zerovm
+   export ZRT_ROOT=~/git/zrt
 
 1.3. Install zeromq & packages required by zeromq
    cd ~
