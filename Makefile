@@ -1,5 +1,5 @@
 FLAGS0=-fPIE -Wall -pedantic -Wno-long-long -fvisibility=hidden -fstack-protector --param ssp-buffer-size=4
-CCFLAGS0=-c -m64 -fPIC -D_GNU_SOURCE=1 -I.
+CCFLAGS0=-c -m64 -fPIC -D_GNU_SOURCE=1 -I. `pkg-config --cflags glib-2.0`
 CXXFLAGS0=-m64 -Wno-variadic-macros
 TESTFLAGS=-Llib/gtest -lgtest -lzmq -lrt -ldl -lpthread -lglib-2.0 -lssl -lcrypto
 
@@ -85,7 +85,7 @@ obj/mount_channel.o: src/manifest/mount_channel.c
 	$(CC) ${CCFLAGS1} -o $@ $^
 
 obj/prefetch.o: src/manifest/prefetch.c
-	$(CC) ${CCFLAGS1} `pkg-config --cflags glib-2.0` -o $@ $^
+	$(CC) ${CCFLAGS1} -o $@ $^
 
 obj/preload.o: src/manifest/preload.c
 	$(CC) ${CCFLAGS1} -o $@ $^
@@ -109,7 +109,7 @@ obj/tramp_64.o: src/service_runtime/tramp_64.S
 	$(CC) ${CCFLAGS2} -o $@ $^
 
 obj/sel_main.o: src/service_runtime/sel_main.c
-	$(CC) ${CCFLAGS1} `pkg-config --cflags glib-2.0` -o $@ $^
+	$(CC) ${CCFLAGS1} -o $@ $^
 
 obj/dyn_array.o: src/service_runtime/dyn_array.c
 	$(CC) ${CCFLAGS1} -o $@ $^
