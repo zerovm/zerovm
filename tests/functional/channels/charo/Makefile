@@ -7,7 +7,7 @@ all: $(NAME).o
 	-melf64_nacl -m64 $(NAME).o $(ZEROVM_ROOT)/api/zvm.o
 	@sed 's#CURDIR#$(CURDIR)#g' $(NAME).template > $(NAME).manifest 
 	@binpatch $(NAME).nexe 4c01fc0f3148c1e2 4c01fc909048c1e2
-	@$(ZEROVM_ROOT)/zerovm -e -M$(NAME).manifest
+	@echo 111111111111111111111111111111111111111111111 | $(ZEROVM_ROOT)/zerovm -e -M$(NAME).manifest
 
 $(NAME).o: $(NAME).c
 	$(NACL_TOOLCHAIN)/bin/x86_64-nacl-gcc -c -Wall -DUSER_SIDE -Wno-long-long \

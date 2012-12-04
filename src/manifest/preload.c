@@ -74,7 +74,6 @@ static void CharacterChannel(struct ChannelDesc* channel)
   char *mode = NULL;
 
   assert(channel != NULL);
-  assert(channel->source == ChannelCharacter);
 
   /* calculate open mode */
   mode = channel->limits[PutsLimit] == 0 ? "rb" : "wb";
@@ -168,6 +167,8 @@ int PreloadChannelCtor(struct ChannelDesc* channel)
       RegularChannel(channel);
       break;
     case ChannelCharacter:
+    case ChannelFIFO:
+    case ChannelSocket:
       CharacterChannel(channel);
       break;
     default:

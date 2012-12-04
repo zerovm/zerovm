@@ -128,6 +128,8 @@ static void ChannelCtor(struct NaClApp *nap, char **tokens)
     int code;
     case ChannelRegular:
     case ChannelCharacter:
+    case ChannelFIFO:
+    case ChannelSocket:
       code = PreloadChannelCtor(channel);
       ZLOGFAIL(code, EFAULT, "cannot allocate channel %s", channel->alias);
       break;
@@ -137,9 +139,7 @@ static void ChannelCtor(struct NaClApp *nap, char **tokens)
       break;
     case ChannelDirectory:
     case ChannelBlock:
-    case ChannelFIFO:
     case ChannelLink:
-    case ChannelSocket:
     case ChannelIPC:
     case ChannelINPROC:
     case ChannelPGM:
@@ -175,6 +175,8 @@ static void ChannelDtor(struct ChannelDesc *channel)
   {
     case ChannelRegular:
     case ChannelCharacter:
+    case ChannelFIFO:
+    case ChannelSocket:
       PreloadChannelDtor(channel);
       break;
     case ChannelTCP:
@@ -182,9 +184,7 @@ static void ChannelDtor(struct ChannelDesc *channel)
       break;
     case ChannelDirectory:
     case ChannelBlock:
-    case ChannelFIFO:
     case ChannelLink:
-    case ChannelSocket:
     case ChannelIPC:
     case ChannelINPROC:
     case ChannelPGM:

@@ -178,7 +178,9 @@ int32_t ZVMReadHandle(struct NaClApp *nap,
       if(retcode == -1) retcode = -errno;
       break;
     case ChannelCharacter:
-      retcode = fread(sys_buffer, 1, (size_t)size, (FILE*)channel->socket);
+    case ChannelFIFO:
+    case ChannelSocket:
+     retcode = fread(sys_buffer, 1, (size_t)size, (FILE*)channel->socket);
       if(retcode == -1) retcode = -errno;
       break;
     case ChannelTCP:
@@ -273,6 +275,8 @@ int32_t ZVMWriteHandle(struct NaClApp *nap,
       if(retcode == -1) retcode = -errno;
       break;
     case ChannelCharacter:
+    case ChannelFIFO:
+    case ChannelSocket:
       retcode = fwrite(sys_buffer, 1, (size_t)size, (FILE*)channel->socket);
       if(retcode == -1) retcode = -errno;
       break;
