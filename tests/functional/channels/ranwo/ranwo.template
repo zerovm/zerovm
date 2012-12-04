@@ -2,7 +2,7 @@
 == the random write only channels test
 =====================================================================
 Channel = /dev/null, /dev/stdin, 0, 16, 256, 0, 0
-Channel = CURDIR/stdout.data, /dev/stdout, 0, 0, 0, 512, 8192
+Channel = CURDIR/result.log, /dev/stdout, 0, 0, 0, 512, 8192
 Channel = /dev/null, /dev/stderr, 0, 0, 0, 16, 256
 Channel = CURDIR/ranwo.data, /dev/ranwo, 2, 0, 0, 32, 32
 

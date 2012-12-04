@@ -3,7 +3,7 @@
 =====================================================================
 Channel = /dev/null, /dev/stdin, 0, 256, 16384, 0, 0
 Channel = /dev/null, /dev/stdout, 0, 0, 0, 1024, 65536
-Channel = CURDIR/stderr.data, /dev/stderr, 0, 0, 0, 512, 32768
+Channel = CURDIR/result.log, /dev/stderr, 0, 0, 0, 512, 32768
 Channel = CURDIR/api.manifest, /dev/control, 1, 128, 8192, 0, 0
 
 =====================================================================

@@ -11,7 +11,8 @@ int main(int argc, char **argv)
   UNREFERENCED_VAR(errcount);
 
   /* write to zvm provided stdout */
-  zput(STDOUT, "hello, world!\n");
+//  zput(STDOUT, "hello, world!\n");
+  zput(STDOUT, "\033[1mhello, world!\033[0m\n");
 
   /* write to zvm provided stderr */
   zput(STDERR, "hello, world!\n");
