@@ -1,0 +1,20 @@
+=====================================================================
+== the read/write channels test. assumes existance of "stubbed.data"
+=====================================================================
+Channel = /dev/null, /dev/stdin, 0, 16, 256, 0, 0
+Channel = CURDIR/result.log, /dev/stdout, 0, 0, 0, 512, 8192
+Channel = /dev/null, /dev/stderr, 0, 0, 0, 16, 256
+Channel = CURDIR/empty.data, /dev/empty, 3, 512, 8192, 16, 36
+Channel = CURDIR/stubbed.data, /dev/stubbed, 3, 512, 8192, 16, 35
+Channel = CURDIR/scapegoat.data, /dev/scapegoat, 3, 512, 8192, 16, 16
+
+=====================================================================
+== switches for zerovm. some of them used to control nexe, some
+== for the internal zerovm needs
+=====================================================================
+Version = 09082012
+Nexe = ranrw.nexe
+NexeMax = 4194304
+MemMax = 134217728
+Timeout = 5
+

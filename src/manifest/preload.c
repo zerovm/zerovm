@@ -105,6 +105,7 @@ static void RegularChannel(struct ChannelDesc* channel)
       ZLOGFAIL(channel->handle == -1, errno, "'%s' open error", channel->name);
       channel->size = GetFileSize((char*)channel->name);
       break;
+
     case 2: /* write only. existing file will be overwritten */
       channel->handle = open(channel->name, O_WRONLY|O_CREAT|O_TRUNC, S_IRWXU);
       ZLOGFAIL(channel->handle == -1, errno, "'%s' open error", channel->name);
@@ -113,11 +114,15 @@ static void RegularChannel(struct ChannelDesc* channel)
       i = ftruncate(channel->handle, channel->limits[PutSizeLimit]);
       ZLOGFAIL(i == -1, errno, "cannot preallocate '%s' channel", channel->alias);
       break;
-    case 3: /* cdr */
-      ZLOGFAIL(channel->type != 1, EFAULT, "only cdr channels can have r/w access");
+
+    case 3: /* cdr or full random access */
+      ZLOGFAIL(channel->type == SGetSPut, EFAULT,
+          "sequential channels cannot have r/w access");
+      ZLOGFAIL(channel->type == SGetRPut, EFAULT,
+          "sequential read / random write channels not supported");
 
       /* open the file and ensure that putpos is not greater than the file size */
-      channel->handle = open(channel->name, O_RDWR|O_CREAT, S_IRWXU);
+      channel->handle = open(channel->name, O_RDWR | O_CREAT, S_IRWXU);
       ZLOGFAIL(channel->handle == -1, errno, "'%s' open error", channel->name);
       channel->size = GetFileSize(channel->name);
       ZLOGFAIL(channel->putpos > channel->size, EFAULT,
@@ -131,8 +136,8 @@ static void RegularChannel(struct ChannelDesc* channel)
         break;
       }
 
-      /* update putpos preferring to use manifest value */
-      if(channel->putpos == 0) channel->putpos = channel->size;
+      /* update the start of writing position */
+      channel->putpos = channel->type == RGetSPut ? channel->size : 0;
       break;
 
     case 0: /* inaccessible */
