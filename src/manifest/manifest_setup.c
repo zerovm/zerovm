@@ -9,6 +9,7 @@
 #include <time.h>
 #include <sys/resource.h> /* timeout, process priority */
 #include <sys/mman.h>
+#include <glib.h>
 #include "src/service_runtime/sel_ldr.h"
 #include "src/service_runtime/etag.h"
 #include "src/service_runtime/nacl_syscall_handlers.h"
@@ -140,7 +141,7 @@ static void SetCustomAttributes(struct SystemManifest *policy)
 
   /* allocate space to hold string pointers */
   count >>= 1;
-  policy->envp = calloc(count + 1, sizeof(*policy->envp));
+  policy->envp = g_malloc0((count + 1) * sizeof(*policy->envp));
 
   /* construct array of environment variables */
   for(i = 0; i < count; ++i)
@@ -149,8 +150,7 @@ static void SetCustomAttributes(struct SystemManifest *policy)
     char *value = *tokens++;
     int length = strlen(key) + strlen(value) + 1 + 1; /* + '=' + '\0' */
 
-    policy->envp[i] = calloc(length + 1, sizeof(*policy->envp[0]));
-    ZLOGFAIL(policy->envp[i] == NULL, ENOMEM, "cannot allocate memory for custom attribute");
+    policy->envp[i] = g_malloc0((length + 1) * sizeof(*policy->envp[0]));
     sprintf(policy->envp[i], "%s=%s", key, value);
   }
 }
@@ -216,9 +216,7 @@ static void SetCommandLine(struct SystemManifest *policy)
    * also, the last element should be NULL so 1 extra element must be reserved
    */
   ++policy->cmd_line_size;
-  policy->cmd_line = calloc(policy->cmd_line_size + 1, sizeof *policy->cmd_line);
-  ZLOGFAIL(policy->cmd_line == NULL, ENOMEM,
-      "cannot allocate memory for user command line parameters");
+  policy->cmd_line = g_malloc0((policy->cmd_line_size + 1) * sizeof *policy->cmd_line);
 
   /* populate command line arguments array with pointers */
   for(i = 0; i < policy->cmd_line_size - 1; ++i)

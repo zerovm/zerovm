@@ -9,6 +9,7 @@
  */
 
 #include <sys/stat.h>
+#include <glib.h>
 #include "src/gio/gio.h"
 #include "src/service_runtime/zlog.h"
 
@@ -24,32 +25,35 @@ struct GioVtbl const  kGioMemoryFileSnapshotVtbl = {
 /* todo(d'b): rewrite or (even better) remove */
 int GioMemoryFileSnapshotCtor(struct GioMemoryFileSnapshot *self, char *fn)
 {
-  FILE            *iop;
-  struct stat     stbuf;
-  char            *buffer;
+  FILE *iop;
+  struct stat stbuf;
+  char *buffer;
 
   ((struct Gio *) self)->vtbl = (struct GioVtbl *) NULL;
-  if (0 == (iop = fopen(fn, "rb"))) {
+  if(0 == (iop = fopen(fn, "rb")))
+  {
     return 0;
   }
-  if (fstat(fileno(iop), &stbuf) == -1) {
- abort0:
-    fclose(iop);
+
+  if(fstat(fileno(iop), &stbuf) == -1)
+  {
+    abort0: fclose(iop);
     return 0;
   }
-  if (0 == (buffer = malloc(stbuf.st_size))) {
+
+  buffer = g_malloc(stbuf.st_size);
+  if(fread(buffer, 1, stbuf.st_size, iop) != (size_t) stbuf.st_size)
+  {
+    abort1: g_free(buffer);
     goto abort0;
   }
-  if (fread(buffer, 1, stbuf.st_size, iop) != (size_t) stbuf.st_size) {
- abort1:
-    free(buffer);
-    goto abort0;
-  }
-  if (GioMemoryFileCtor(&self->base, buffer, stbuf.st_size) == 0) {
+
+  if(GioMemoryFileCtor(&self->base, buffer, stbuf.st_size) == 0)
+  {
     goto abort1;
   }
-  (void) fclose(iop);
 
+  (void) fclose(iop);
   ((struct Gio *) self)->vtbl = &kGioMemoryFileSnapshotVtbl;
   return 1;
 }

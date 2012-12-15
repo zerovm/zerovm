@@ -8,6 +8,7 @@
  * NaCl helper functions to deal with elf images
  */
 #include <string.h>
+#include <glib.h>
 #include "src/include/nacl_macros.h"
 #include "src/include/elf.h"
 #include "src/gio/gio.h"
@@ -299,7 +300,7 @@ struct NaClElfImage *NaClElfImageNew(struct Gio *gp)
 
   /* we delay allocating till the end to avoid cleanup code */
   /* fail if not enough memory for image meta data */
-  result = malloc(sizeof image);
+  result = g_malloc(sizeof image);
   ZLOGFAIL(result == NULL, ENOMEM, FAILED_MSG);
 
   memcpy(result, &image, sizeof image);
@@ -363,7 +364,7 @@ void NaClElfImageLoad(struct NaClElfImage *image,
 }
 
 void NaClElfImageDelete(struct NaClElfImage *image) {
-  free(image);
+  g_free(image);
 }
 
 uintptr_t NaClElfImageGetEntryPoint(struct NaClElfImage *image) {

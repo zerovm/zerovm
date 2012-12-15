@@ -81,8 +81,11 @@ static int NaClAttemptToExecuteData()
 {
   int result;
   char *thunk_buffer = malloc(64);
-  nacl_void_thunk thunk = NaClGenerateThunk(thunk_buffer, 64);
+  nacl_void_thunk thunk;
 
+  /* d'b: small fixes */
+  if(thunk_buffer == NULL) return 0;
+  thunk = NaClGenerateThunk(thunk_buffer, 64);
   setup_signals();
 
   if(0 == sigsetjmp(try_state, 1))
@@ -96,6 +99,7 @@ static int NaClAttemptToExecuteData()
   }
 
   restore_signals();
+  free(thunk_buffer);
   return result;
 }
 
