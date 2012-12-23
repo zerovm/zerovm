@@ -32,7 +32,7 @@ static void ZVMCommandLine(int argc, char **argv)
 
   offset += sprintf(cmd, "zerovm command line:");
   for(i = 0; i < argc; ++i)
-    offset += snprintf(cmd + offset, BIG_ENOUGH_SPACE - offset, " %s", argv[i]);
+    offset += g_snprintf(cmd + offset, BIG_ENOUGH_SPACE - offset, " %s", argv[i]);
 
   ZLOGS(LOG_DEBUG, "%s", cmd);
 }

@@ -367,13 +367,13 @@ int ProxyReport(struct NaClApp *nap)
 
   /* for debugging purposes it is useful to see more advanced information */
 #ifdef DEBUG
-  length = snprintf(report, BIG_ENOUGH_SPACE,
+  length = g_snprintf(report, BIG_ENOUGH_SPACE,
       "validator state = %d\nuser return code = %d\netag = %s\naccounting = %s\n"
       "exit state = %s\n", nap->validation_state,
       nap->system_manifest->user_ret_code, etag, GetAccountingInfo(), GetExitState());
 #else
   /* .. but for production zvm will switch to more brief output */
-  length = snprintf(report, BIG_ENOUGH_SPACE, "%d\n%d\n%s\n%s\n%s\n",
+  length = g_snprintf(report, BIG_ENOUGH_SPACE, "%d\n%d\n%s\n%s\n%s\n",
       nap->validation_state, nap->system_manifest->user_ret_code,
       etag, GetAccountingInfo(), GetExitState());
 #endif
@@ -382,7 +382,7 @@ int ProxyReport(struct NaClApp *nap)
   i = write(STDOUT_FILENO, report, length);
 
   /* log the report */
-  length = snprintf(report, BIG_ENOUGH_SPACE,
+  length = g_snprintf(report, BIG_ENOUGH_SPACE,
       "validator state = %d, user return code = %d, etag = %s, accounting = %s, "
       "exit state = %s", nap->validation_state,
       nap->system_manifest->user_ret_code, etag, GetAccountingInfo(), GetExitState());

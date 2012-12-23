@@ -200,12 +200,12 @@ static void MakeURL(char *url, const int32_t size,
   {
     struct in_addr ip;
     case BIND_MARK:
-      snprintf(host, BIG_ENOUGH_SPACE, "*");
+      g_snprintf(host, BIG_ENOUGH_SPACE, "*");
       break;
     case CONNECT_MARK:
     case OUTSIDER_MARK:
       ip.s_addr = bswap_32(record->host);
-      snprintf(host, BIG_ENOUGH_SPACE, "%s", inet_ntoa(ip));
+      g_snprintf(host, BIG_ENOUGH_SPACE, "%s", inet_ntoa(ip));
       break;
     default:
       ZLOGFAIL(1, EFAULT, "unknown channel mark");
@@ -214,7 +214,7 @@ static void MakeURL(char *url, const int32_t size,
 
   /* construct url */
   host[BIG_ENOUGH_SPACE - 1] = '\0';
-  snprintf(url, size, "%s://%s:%u",
+  g_snprintf(url, size, "%s://%s:%u",
       StringizeChannelSourceType(record->protocol), host, record->port);
   url[size-1] = '\0';
 

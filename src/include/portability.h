@@ -27,8 +27,6 @@
 # define SIZE_T_MAX ((size_t) -1)
 #endif
 
-#define SNPRINTF snprintf
-
 #include <inttypes.h>
 
 #endif  /* NATIVE_CLIENT_SRC_INCLUDE_PORTABILITY_H_ */

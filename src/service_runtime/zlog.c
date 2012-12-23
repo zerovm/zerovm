@@ -9,6 +9,7 @@
 #include <string.h>
 #include <stdarg.h>
 #include <assert.h>
+#include <glib.h>
 #include "src/service_runtime/tools.h"
 #include "src/platform/nacl_exit.h"
 #include "src/service_runtime/zlog.h"
@@ -51,8 +52,8 @@ void ZLogTag(const char *file, int line)
   /* construct log message */\
   va_start(ap, fmt);\
   if(zfile != NULL)\
-    offset = snprintf(msg, LOG_MSG_LIMIT, TAG_FORMAT, zfile, zline);\
-  vsnprintf(msg + offset, LOG_MSG_LIMIT - offset, fmt, ap);\
+    offset = g_snprintf(msg, LOG_MSG_LIMIT, TAG_FORMAT, zfile, zline);\
+  g_vsnprintf(msg + offset, LOG_MSG_LIMIT - offset, fmt, ap);\
   va_end(ap);\
 \
   /* log the message */\

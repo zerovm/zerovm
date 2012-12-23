@@ -10,6 +10,7 @@
  */
 #include <assert.h>
 #include <errno.h>
+#include <glib.h>
 #include "src/service_runtime/sel_ldr.h"
 #include "src/service_runtime/accounting.h"
 #include "src/manifest/manifest_setup.h"
@@ -39,7 +40,7 @@ static int ReadSystemAccounting(const struct NaClApp *nap, char *buf, int size)
   /* get time information */
   ticks = sysconf(_SC_CLK_TCK);
   pid = getpid();
-  snprintf(path, BIG_ENOUGH_STRING, "/proc/%d/stat", pid);
+  g_snprintf(path, BIG_ENOUGH_STRING, "/proc/%d/stat", pid);
 
   f = fopen(path, "r");
   if(f != NULL)
@@ -53,7 +54,7 @@ static int ReadSystemAccounting(const struct NaClApp *nap, char *buf, int size)
   memory_size = nap->heap_end + nap->stack_size;
 
   /* construct and return the result */
-  return snprintf(buf, size, "%.2f %.2f %ld %ld",
+  return g_snprintf(buf, size, "%.2f %.2f %ld %ld",
       (float)sys_time / ticks, (float)user_time / ticks, memory_size, (int64_t)0);
 }
 
@@ -98,7 +99,7 @@ static int GetChannelsAccounting(const struct NaClApp *nap, char *buf, int size)
   }
 
   /* construct the accounting statistics string */
-  return snprintf(buf, size, "%ld %ld %ld %ld %ld %ld %ld %ld",
+  return g_snprintf(buf, size, "%ld %ld %ld %ld %ld %ld %ld %ld",
       local_stats[GetsLimit], local_stats[GetSizeLimit], /* local channels input */
       local_stats[PutsLimit], local_stats[PutSizeLimit], /* local channels output */
       network_stats[GetsLimit], network_stats[GetSizeLimit], /* network channels input */

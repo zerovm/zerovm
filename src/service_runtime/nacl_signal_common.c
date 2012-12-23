@@ -4,6 +4,7 @@
  * found in the LICENSE file.
  */
 #include <signal.h>
+#include <glib.h>
 #include "src/include/portability.h"
 #include "src/service_runtime/nacl_signal.h"
 #include "src/manifest/manifest_setup.h"
@@ -94,7 +95,7 @@ enum NaClSignalResult NaClSignalHandleAll(int signum, void *ctx)
 #endif
 
   /* set zvm state */
-  SNPRINTF(msg, SIGNAL_STRLEN, "Signal %d from %strusted code: Halting at 0x%012lX",
+  g_snprintf(msg, SIGNAL_STRLEN, "Signal %d from %strusted code: Halting at 0x%012lX",
       signum, NaClSignalContextIsUntrusted(&sigCtx) ? "un" : "", sigCtx.prog_ctr);
   SetExitState(msg);
 
