@@ -5,6 +5,7 @@
  *      Author: d'b
  */
 #include <assert.h>
+#include <glib.h>
 #include "src/service_runtime/etag.h"
 #include "src/service_runtime/sel_ldr.h"
 #include "src/manifest/manifest_setup.h"
@@ -225,8 +226,7 @@ void ChannelsCtor(struct NaClApp *nap)
       "not all standard channels are provided");
 
   /* allocate memory for channels */
-  mft->channels = calloc(mft->channels_count, sizeof(*mft->channels));
-  ZLOGFAIL(mft->channels == NULL, ENOMEM, "cannot allocate memory for channels");
+  mft->channels = g_malloc0(mft->channels_count * sizeof(*mft->channels));
 
   /* parse channels. 0..2 reserved for stdin/stdout/stderr */
   for(i = 0; i < mft->channels_count; ++i)

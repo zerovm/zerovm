@@ -9,8 +9,22 @@
 #include <errno.h>
 #include "include/api_tools.h"
 
+/*
+ * avoid compile errors (gnome library isn't ported to nacl)
+ * because the code uses c-source inclusion below
+ */
+#define g_malloc malloc
+#define g_malloc0 my_calloc
+
+/* single argument calloc version */
+void *my_calloc(size_t size)
+{
+  return calloc(1, size);
+}
+
 /* a cheat to have an access to static members */
 #include "src/manifest/manifest_parser.c"
+
 
 #define CONTROL "/dev/control"
 #define CHANNEL_ATTRIBUTES_NUMBER 7

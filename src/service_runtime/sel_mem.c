@@ -11,6 +11,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <errno.h>
+#include <glib.h>
 #include "src/service_runtime/zlog.h"
 #include "src/service_runtime/sel_mem.h"
 #include "src/service_runtime/sel_util.h"
@@ -37,8 +38,7 @@ struct NaClVmmapEntry *NaClVmmapEntryMake(uintptr_t             page_num,
 
   ZLOGS(LOG_INSANE, "NaClVmmapEntryMake(0x%lx, 0x%lx, 0x%x, 0x%lx)",
       page_num, npages, prot, (uintptr_t)nmop);
-  entry = (struct NaClVmmapEntry *) malloc(sizeof *entry);
-  if (NULL == entry) return 0;
+  entry = (struct NaClVmmapEntry *) g_malloc(sizeof *entry);
 
   ZLOGS(LOG_INSANE, "entry: 0x%lx", (uintptr_t) entry);
   entry->page_num = page_num;
@@ -68,11 +68,7 @@ int NaClVmmapCtor(struct NaClVmmap *self)
     return 0;
   }
 
-  self->vmentry = calloc(self->size, sizeof *self->vmentry);
-  if(!self->vmentry)
-  {
-    return 0;
-  }
+  self->vmentry = g_malloc0(self->size * sizeof *self->vmentry);
 
   self->nvalid = 0;
   self->is_sorted = 1;
@@ -230,10 +226,7 @@ int NaClVmmapAdd(struct NaClVmmap   *self,
     size_t                    new_size = 2 * self->size;
     struct NaClVmmapEntry     **new_map;
 
-    new_map = realloc(self->vmentry, new_size * sizeof *new_map);
-    if (NULL == new_map) {
-      return 0;
-    }
+    new_map = g_realloc(self->vmentry, new_size * sizeof *new_map);
     self->vmentry = new_map;
     self->size = new_size;
   }

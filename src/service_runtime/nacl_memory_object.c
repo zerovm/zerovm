@@ -8,6 +8,7 @@
  * NaCl Simple/secure ELF loader (NaCl SEL) memory object.
  */
 #include <errno.h>
+#include <glib.h>
 #include "src/service_runtime/zlog.h"
 #include "src/service_runtime/nacl_memory_object.h"
 
@@ -50,8 +51,7 @@ struct NaClMemObj *NaClMemObjMake(struct NaClDesc *ndp,
     return NULL; /* anonymous paging file backed memory */
   }
 
-  nmop = malloc(sizeof *nmop);
-  ZLOGFAIL(NULL == nmop, ENOMEM, "ndp is NULL");
+  nmop = g_malloc(sizeof *nmop);
   ZLOGFAIL(!NaClMemObjCtor(nmop, ndp, nbytes, offset), EFAULT, "NaClMemObjCtor failed!");
 
   return nmop;

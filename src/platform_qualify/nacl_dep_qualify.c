@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <signal.h>
+#include <glib.h>
 #include "src/platform_qualify/nacl_dep_qualify.h"
 #include "src/include/nacl_macros.h"
 
@@ -80,7 +81,7 @@ static nacl_void_thunk NaClGenerateThunk(char *buf, size_t size_in_bytes)
 static int NaClAttemptToExecuteData()
 {
   int result;
-  char *thunk_buffer = malloc(64);
+  char *thunk_buffer = g_malloc(64);
   nacl_void_thunk thunk;
 
   /* d'b: small fixes */
@@ -99,7 +100,7 @@ static int NaClAttemptToExecuteData()
   }
 
   restore_signals();
-  free(thunk_buffer);
+  g_free(thunk_buffer);
   return result;
 }
 

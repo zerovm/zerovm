@@ -10,8 +10,9 @@ all: $(NAME).o
 	@$(ZEROVM_ROOT)/zerovm -e -v2 -M$(NAME).manifest
 
 $(NAME).o: $(NAME).c
+	touch glib.h
 	$(NACL_TOOLCHAIN)/bin/x86_64-nacl-gcc -c -Wall -DUSER_SIDE -Wno-long-long \
-	-O3 -msse4.1 -m64 -I$(ZEROVM_ROOT) -I$(ZEROVM_ROOT)/tests/functional -o $@ $^
+	-O3 -msse4.1 -m64 -I$(ZEROVM_ROOT) -I`pwd` -I$(ZEROVM_ROOT)/tests/functional -o $@ $^
 
 clean:
-	rm -f $(NAME).nexe $(NAME).o *.log *.data *.manifest
+	rm -f $(NAME).nexe $(NAME).o *.log *.data *.manifest glib.h

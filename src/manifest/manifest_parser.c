@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <assert.h>
+#include <glib.h>
 
 #include "api/zvm.h" /* error codes */
 #include "src/service_runtime/tools.h"
@@ -190,11 +191,9 @@ int ManifestCtor(const char *name)
   ZLOGFAIL(mft_size > MANIFEST_MAX, EFBIG, "manifest file exceeded the limit %d", mft_size);
 
   /* allocate memory to hold manifest data */
-  mft_data = malloc(mft_size + 1);
-  mft_ptr =  calloc(mft_size, sizeof *mft_ptr);
+  mft_data = g_malloc(mft_size + 1);
+  mft_ptr =  g_malloc0(mft_size * sizeof *mft_ptr);
   mft_count = 0;
-  ZLOGFAIL(mft_data == NULL, ENOMEM, "cannot allocate memory to hold manifest data");
-  ZLOGFAIL(mft_ptr == NULL, ENOMEM, "cannot allocate memory to hold manifest tokens");
   mft_data[mft_size] = '\0';
 
   /* read data from manifest into the memory */

@@ -9,6 +9,7 @@
  */
 
 #include <string.h>
+#include <glib.h>
 #include "src/service_runtime/dyn_array.h"
 
 static int const kBitsPerWord = 32;
@@ -30,17 +31,9 @@ int DynArrayCtor(struct DynArray  *dap,
     /* would integer overflow */
     return 0;
   }
-  dap->ptr_array = calloc(initial_size, sizeof *dap->ptr_array);
-  if (NULL == dap->ptr_array) {
-    return 0;
-  }
-  dap->available = calloc(BitsToAllocWords(initial_size),
-                          sizeof *dap->available);
-  if (NULL == dap->available) {
-    free(dap->ptr_array);
-    dap->ptr_array = NULL;
-    return 0;
-  }
+
+  dap->ptr_array = g_malloc0(initial_size * sizeof *dap->ptr_array);
+  dap->available = g_malloc0(BitsToAllocWords(initial_size) * sizeof *dap->available);
   dap->avail_ix = 0;  /* hint */
 
   dap->ptr_array_space = initial_size;

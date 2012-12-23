@@ -9,7 +9,7 @@
  */
 #include <assert.h>
 #include <errno.h>
-
+#include <glib.h>
 #include "src/perf_counter/nacl_perf_counter.h"
 #include <sys/mman.h>
 #include "src/service_runtime/sel_ldr_x86.h"
@@ -31,8 +31,7 @@
 NORETURN void SwitchToApp(struct NaClApp  *nap, uintptr_t stack_ptr)
 {
   /* initialize "nacl_user" global */
-  if(!nacl_user) nacl_user = malloc(sizeof(*nacl_user));
-  assert(nacl_user != NULL);
+  if(!nacl_user) nacl_user = g_malloc(sizeof(*nacl_user));
 
   /* construct "nacl_user" global */
   NaClThreadContextCtor(nacl_user, nap, nap->initial_entry_pt,
@@ -42,8 +41,8 @@ NORETURN void SwitchToApp(struct NaClApp  *nap, uintptr_t stack_ptr)
   nacl_user->new_prog_ctr = NaClUserToSys(nap, nap->initial_entry_pt);
 
   /* initialize "nacl_sys" global */
-  if(!nacl_sys) nacl_sys = malloc(sizeof(*nacl_sys));
-  assert(nacl_sys != NULL);
+  if(!nacl_sys) nacl_sys = g_malloc(sizeof(*nacl_sys));
+
   nacl_sys->rbp = NaClGetStackPtr();
   nacl_sys->rsp = NaClGetStackPtr();
 
@@ -356,12 +355,8 @@ int NaClCreateMainThread(struct NaClApp *nap)
   }
 
   envv_len = 0;
-  argv_len = malloc(argc * sizeof argv_len[0]);
-  envv_len = malloc(envc * sizeof envv_len[0]);
-  if(NULL == argv_len)
-    goto cleanup;
-  if(NULL == envv_len && 0 != envc)
-    goto cleanup;
+  argv_len = g_malloc(argc * sizeof argv_len[0]);
+  envv_len = g_malloc(envc * sizeof envv_len[0]);
 
   size = 0;
 

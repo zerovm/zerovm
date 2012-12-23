@@ -35,15 +35,6 @@
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define SHOWID printf("%s: %d, %s\n", __FILE__, __LINE__, __func__)
 
-/* malloc and check. if allocation failed abort with message 'msg' */
-static INLINE void *my_malloc(size_t size, const char *msg)
-{
-  void *ptr = malloc(size);
-  ZLOGFAIL(ptr == NULL, ENOMEM, msg);
-  return ptr;
-}
-#define MALLOC(size, msg) my_malloc((size), (msg))
-
 /* safe strlen(). NULL can be used. return 0 for NULL */
 static INLINE size_t my_strlen(const char *str)
 {

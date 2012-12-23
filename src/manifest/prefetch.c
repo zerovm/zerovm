@@ -233,8 +233,7 @@ static void StoreChannelConnectionInfo(const struct ChannelDesc *channel)
   assert(channel != NULL);
 
   /* initiate the hash table if not yet */
-  record = malloc(sizeof *record);
-  ZLOGFAIL(record == NULL, ENOMEM, "cannot allocate memory to hold connection info");
+  record = g_malloc(sizeof *record);
 
   /* prepare and store the channel connection record */
   ZLOGS(LOG_DEBUG, "validating channel with alias '%s'", channel->alias);
@@ -650,8 +649,7 @@ static INLINE void NetCtor()
   if(channel.name == NULL) return;
 
   /* parse the given string and make url (static var) */
-  nameservice = malloc(sizeof *nameservice);
-  ZLOGFAIL(nameservice == NULL, ENOMEM, "cannot allocate memory to hold name server url");
+  nameservice = g_malloc(sizeof *nameservice);
   ParseURL(&channel, nameservice);
   ZLOGFAIL(nameservice->mark != OUTSIDER_MARK, EFAULT, "invalid name server type");
   ZLOGFAIL(nameservice->host == 0, EFAULT, "invalid name server host");
