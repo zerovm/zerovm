@@ -55,9 +55,9 @@ void NaClVmmapEntryFree(struct NaClVmmapEntry *entry)
       (uintptr_t)entry, entry->page_num, entry->npages, entry->prot, (uintptr_t)entry->nmop);
 
   NaClMemObjSafeDtor(entry->nmop);
-  free(entry->nmop);
+  g_free(entry->nmop);
 
-  free(entry);
+  g_free(entry);
 }
 
 int NaClVmmapCtor(struct NaClVmmap *self)
@@ -85,7 +85,7 @@ void NaClVmmapDtor(struct NaClVmmap *self) {
   for (i = 0; i < self->nvalid; ++i) {
     NaClVmmapEntryFree(self->vmentry[i]);
   }
-  free(self->vmentry);
+  g_free(self->vmentry);
   self->vmentry = 0;
 }
 

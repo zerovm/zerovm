@@ -216,8 +216,8 @@ void ManifestDtor()
   assert(mft_ptr != NULL);
   assert(mft_count != 0);
 
-  free(mft_data);
-  free(mft_ptr);
+  g_free(mft_data);
+  g_free(mft_ptr);
   mft_data = NULL;
   mft_ptr = NULL;
   mft_count = 0;

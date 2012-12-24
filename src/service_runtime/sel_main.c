@@ -198,6 +198,7 @@ int main(int argc, char **argv)
 
   /* validate given nexe (ensure that text segment is safe) */
   ValidateNexe(nap);
+  PERF_CNT("Validation");
 
   /* validate nexe structure (check elf header and segments) */
   ZLOGS(LOG_DEBUG, "Loading nacl file %s", nap->system_manifest->nexe);

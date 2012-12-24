@@ -15,6 +15,7 @@
  */
 #define g_malloc malloc
 #define g_malloc0 my_calloc
+#define g_free free
 
 /* single argument calloc version */
 void *my_calloc(size_t size)

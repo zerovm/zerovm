@@ -4,6 +4,7 @@
  * found in the LICENSE file.
  */
 #include <errno.h>
+#include <glib.h>
 #include "src/nacl_base/nacl_refcount.h"
 #include "src/service_runtime/zlog.h"
 
@@ -26,6 +27,6 @@ void NaClRefCountUnref(struct NaClRefCount *nrcp)
   if(destroy)
   {
     (*nrcp->vtbl->Dtor)(nrcp);
-    free(nrcp);
+    g_free(nrcp);
   }
 }

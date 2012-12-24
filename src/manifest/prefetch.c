@@ -718,7 +718,7 @@ static INLINE void NetDtor()
   g_hash_table_destroy(netlist);
 
   /* deallocate name server record */
-  free(nameservice);
+  g_free(nameservice);
 }
 
 /*

@@ -61,6 +61,6 @@ int GioMemoryFileSnapshotCtor(struct GioMemoryFileSnapshot *self, char *fn)
 void GioMemoryFileSnapshotDtor(struct Gio                     *vself) {
   struct GioMemoryFileSnapshot  *self = (struct GioMemoryFileSnapshot *)
       vself;
-  free(self->base.buffer);
+  g_free(self->base.buffer);
   GioMemoryFileDtor(vself);
 }

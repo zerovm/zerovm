@@ -42,9 +42,9 @@ int DynArrayCtor(struct DynArray  *dap,
 
 void DynArrayDtor(struct DynArray *dap) {
   dap->num_entries = 0;  /* assume user has freed entries */
-  free(dap->ptr_array);
+  g_free(dap->ptr_array);
   dap->ptr_array = NULL;
   dap->ptr_array_space = 0;
-  free(dap->available);
+  g_free(dap->available);
   dap->available = NULL;
 }

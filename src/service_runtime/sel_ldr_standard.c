@@ -495,8 +495,8 @@ int NaClCreateMainThread(struct NaClApp *nap)
 
   retval = 1;
 cleanup:
-  free(argv_len);
-  free(envv_len);
+  g_free(argv_len);
+  g_free(envv_len);
 
   return retval;
 }

@@ -264,5 +264,5 @@ void ChannelsDtor(struct NaClApp *nap)
 
   for(i = 0; i < nap->system_manifest->channels_count; ++i)
     ChannelDtor(&nap->system_manifest->channels[i]);
-  free(nap->system_manifest->channels);
+  g_free(nap->system_manifest->channels);
 }
