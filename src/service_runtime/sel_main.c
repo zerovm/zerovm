@@ -207,9 +207,14 @@ int main(int argc, char **argv)
 
   if(-1 == (*((struct Gio *)&main_file)->vtbl->Close)((struct Gio *)&main_file))
     ZLOG(LOG_ERROR, "Error while closing '%s'", nap->system_manifest->nexe);
-
   (*((struct Gio *) &main_file)->vtbl->Dtor)((struct Gio *) &main_file);
-  if(nap->quit_after_load) NaClExit(0);
+
+  /* quit if fuzz testing specified */
+  if(nap->quit_after_load)
+  {
+    SetExitState(OK_STATE);
+    NaClExit(0);
+  }
 
   /* setup zerovm from manifest */
   SystemManifestCtor(nap); /* needs dyn_array initialized */

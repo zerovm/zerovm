@@ -1,21 +1,21 @@
 FLAGS0=-fPIE -Wall -pedantic -Wno-long-long -fvisibility=hidden -fstack-protector --param ssp-buffer-size=4
 CCFLAGS0=-c -m64 -fPIC -D_GNU_SOURCE=1 -I. `pkg-config --cflags glib-2.0`
-CXXFLAGS0=-m64 -Wno-variadic-macros
+CXXFLAGS0=-m64 -Wno-variadic-macros `pkg-config --cflags glib-2.0`
 TESTFLAGS=-Llib/gtest -lgtest -lzmq -lrt -ldl -lpthread -lglib-2.0 -lssl -lcrypto
 
-CCFLAGS1=-std=gnu99 -Wdeclaration-after-statement $(FLAGS0)
-CCFLAGS2=-Wextra -Wswitch-enum -Wsign-compare
+CCFLAGS1=-std=gnu99 -Wdeclaration-after-statement $(FLAGS0) $(CCFLAGS0)
+CCFLAGS2=-Wextra -Wswitch-enum -Wsign-compare $(CCFLAGS0)
 CXXFLAGS1=-c -std=c++98 -D_GNU_SOURCE=1 -I. -Ilib $(CXXFLAGS0) $(FLAGS0)
 CXXFLAGS2=-Wl,-z,noexecstack $(CXXFLAGS0) -Lobj -L/usr/lib64 -pie -Wl,-z,relro -Wl,-z,now
 
-all: CCFLAGS1 += -DDEBUG -g $(COVFLAGS) $(CCFLAGS0)
-all: CCFLAGS2 += -DDEBUG -g $(COVFLAGS) $(CCFLAGS0)
-all: CXXFLAGS1 := -DDEBUG -g $(COVFLAGS) $(CXXFLAGS1)
-all: CXXFLAGS2 := -DDEBUG -g $(COVFLAGS) $(CXXFLAGS2)
+all: CCFLAGS1 += -DDEBUG -g
+all: CCFLAGS2 += -DDEBUG -g
+all: CXXFLAGS1 := -DDEBUG -g $(CXXFLAGS1)
+all: CXXFLAGS2 := -DDEBUG -g $(CXXFLAGS2)
 all: create_dirs zerovm zvm_api tests
 
-dist: CCFLAGS1 += -DNDEBUG -O3 -s $(CCFLAGS0)
-dist: CCFLAGS2 += -DNDEBUG -O3 -s $(CCFLAGS0)
+dist: CCFLAGS1 += -DNDEBUG -O3 -s
+dist: CCFLAGS2 += -DNDEBUG -O3 -s
 dist: CXXFLAGS1 := -DNDEBUG -O3 -s $(CXXFLAGS1)
 dist: CXXFLAGS2 := -DNDEBUG -O3 -s $(CXXFLAGS2)
 dist: create_dirs zerovm zvm_api tests

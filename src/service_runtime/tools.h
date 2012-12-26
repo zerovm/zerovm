@@ -15,6 +15,7 @@
 #include <string.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <glib.h>
 #include <unistd.h>
 #include <sys/stat.h>
 #include "src/include/nacl_compiler_annotations.h"
@@ -48,7 +49,7 @@ static INLINE size_t my_strlen(const char *str)
  */
 static INLINE int64_t my_atoi(const char *str)
 {
-  return (str == NULL) ? 0 : (int64_t)strtoll(str, NULL, 10);
+  return (str == NULL) ? 0 : g_ascii_strtoll(str, NULL, 10);
 }
 #define ATOI(str) my_atoi(str)
 
@@ -58,13 +59,6 @@ static INLINE void *my_strcpy(char *dst, const char *src)
   return (src == NULL || dst == NULL) ? NULL : strcpy(dst, src);
 }
 #define STRCPY(dst, src) my_strcpy((dst), (src))
-
-/* safe strncpy(). NULL can be used. return NULL if dst or src is NULL */
-static INLINE void *my_strncpy(char *dst, const char *src, size_t size)
-{
-  return (src == NULL || dst == NULL) ? NULL : strncpy(dst, src, size);
-}
-#define STRNCPY(dst, src) my_strncpy((dst), (src))
 
 /* safe memcpy(). NULL can be used. return NULL if copy failed */
 static INLINE void *my_memcpy(void *dst, const void *src, size_t size)

@@ -7,6 +7,7 @@
 #ifndef SERVICE_RUNTIME_MANIFEST_PARSER_H__
 #define SERVICE_RUNTIME_MANIFEST_PARSER_H__ 1
 
+#include <glib.h>
 #include "src/include/nacl_base.h"
 
 EXTERN_C_BEGIN
@@ -44,7 +45,7 @@ int ParseValue(char *value, const char *delimiter, char *tokens[], int capacity)
 #define GET_INT_BY_KEY(var, str) \
   do {\
     char *p = GetValueByKey(str);\
-    var = p == NULL ? 0 : strtoll(p, NULL, 10);\
+    var = p == NULL ? 0 : g_ascii_strtoll(p, NULL, 10);\
   } while(0)
 
 EXTERN_C_END

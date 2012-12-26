@@ -190,11 +190,6 @@ struct NaClApp {
   /* d'b: added fields {{ */
   struct SystemManifest     *system_manifest;
   uintptr_t                 heap_end; /* end of user heap */
-
-  /*
-   * todo(d'b): move zvm_state to separated class
-   */
-  char                      zvm_state[SIGNAL_STRLEN + 1];
   int                       validation_state; /* needs for the report */
   int                       skip_qualification; /* startup time variable */
   int                       quit_after_load; /* startup time variable */
