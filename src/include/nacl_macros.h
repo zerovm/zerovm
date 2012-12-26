@@ -148,6 +148,7 @@ static INLINE void *NaClArrayCheckHelper(void *arg) {
  ****************************************************************************/
 
 #define NACL_NANOS_PER_MICRO          (1000)
+#define NACL_MICROS_PER_MILLI         (1000)
 #define NACL_MICROS_PER_UNIT          (1000 * 1000)
 
 #endif  /* NATIVE_CLIENT_SRC_INCLUDE_NACL_MACROS_H_ */

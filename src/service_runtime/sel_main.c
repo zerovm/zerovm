@@ -12,7 +12,6 @@
 #include <errno.h>
 #include <glib.h>
 #include "src/gio/gio.h"
-#include "src/perf_counter/nacl_perf_counter.h"
 #include "src/platform/nacl_time.h"
 #include "src/service_runtime/nacl_globals.h"
 #include "src/service_runtime/nacl_signal.h"
@@ -22,6 +21,7 @@
 #include "src/service_runtime/sel_qualify.h"
 #include "src/service_runtime/accounting.h"
 #include "src/service_runtime/nacl_syscall_handlers.h"
+#include "src/include/nacl_macros.h"
 
 /* log zerovm command line */
 static void ZVMCommandLine(int argc, char **argv)
@@ -159,7 +159,7 @@ int main(int argc, char **argv)
   struct NaClApp state, *nap = &state;
   struct SystemManifest sys_mft;
   struct GioMemoryFileSnapshot main_file;
-  struct NaClPerfCounter time_all_main;
+  GTimer *timer;
 
   /* zerovm initialization */
   memset(nap, 0, sizeof *nap);
@@ -171,7 +171,6 @@ int main(int argc, char **argv)
   NaClSignalHandlerInit();
   NaClTimeInit();
   NaClSyscallTableInit();
-  NaClPerfCounterCtor(&time_all_main, "SelMain");
 
   /* initialize mem_map and set nap fields to default values */
   ZLOGFAIL(NaClAppCtor(nap) == 0, EFAULT, "Error while constructing app state");
@@ -186,24 +185,28 @@ int main(int argc, char **argv)
     NaClSignalAssertNoHandlers(); /* Sanity check. */
   }
 
-#define PERF_CNT(str) \
-  NaClPerfCounterMark(&time_all_main, str);\
-  NaClPerfCounterIntervalLast(&time_all_main);
-
   /* read nexe into memory */
+  timer = g_timer_new();
   ZLOGFAIL(0 == GioMemoryFileSnapshotCtor(&main_file, nap->system_manifest->nexe),
       ENOENT, "Cannot open '%s'. %s", nap->system_manifest->nexe, strerror(errno));
 
-  PERF_CNT("SnapshotNaclFile");
+#define TIMER_REPORT(msg) \
+  do {\
+    ZLOGS(LOG_DEBUG, msg " took %.3f milliseconds",\
+        g_timer_elapsed(timer, NULL) * NACL_MICROS_PER_MILLI);\
+    g_timer_start(timer);\
+  } while(0)
+
+  TIMER_REPORT("GioMemoryFileSnapshotCtor()");
 
   /* validate given nexe (ensure that text segment is safe) */
   ValidateNexe(nap);
-  PERF_CNT("Validation");
+  TIMER_REPORT("ValidateNexe()");
 
   /* validate nexe structure (check elf header and segments) */
   ZLOGS(LOG_DEBUG, "Loading nacl file %s", nap->system_manifest->nexe);
   NaClAppLoadFile((struct Gio *) &main_file, nap);
-  PERF_CNT("AppLoadEnd");
+  TIMER_REPORT("NaClAppLoadFile()");
 
   if(-1 == (*((struct Gio *)&main_file)->vtbl->Close)((struct Gio *)&main_file))
     ZLOG(LOG_ERROR, "Error while closing '%s'", nap->system_manifest->nexe);
@@ -227,14 +230,13 @@ int main(int argc, char **argv)
 
   /* Make sure all the file buffers are flushed before entering the nexe */
   fflush((FILE*) NULL);
+  TIMER_REPORT("nexe start preparation");
 
   /* set user code trap() exit location and switch to the user code */
-  PERF_CNT("CreateMainThread");
   if(setjmp(user_exit) == 0)
     ZLOGFAIL(!NaClCreateMainThread(nap), EFAULT, "switching to nexe failed");
   SetExitState(OK_STATE);
-  PERF_CNT("WaitForMainThread");
-  PERF_CNT("SelMainEnd");
+  TIMER_REPORT("NaClCreateMainThread()");
 
   /* zerovm exit with finalization, report and stuff */
   NaClExit(0);

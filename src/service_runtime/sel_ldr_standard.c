@@ -10,7 +10,6 @@
 #include <assert.h>
 #include <errno.h>
 #include <glib.h>
-#include "src/perf_counter/nacl_perf_counter.h"
 #include <sys/mman.h>
 #include "src/service_runtime/sel_ldr_x86.h"
 #include "src/service_runtime/elf_util.h"
@@ -179,10 +178,7 @@ void NaClAppLoadFile(struct Gio *gp, struct NaClApp *nap)
   uintptr_t data_end;
   uintptr_t max_vaddr;
   struct NaClElfImage *image = NULL;
-  struct NaClPerfCounter time_load_file;
   int err;
-
-  NaClPerfCounterCtor(&time_load_file, "NaClAppLoadFile");
 
   /* fail if Address space too big */
   ZLOGFAIL(nap->addr_bits > NACL_MAX_ADDR_BITS, EFAULT, FAILED_MSG);
@@ -243,11 +239,7 @@ void NaClAppLoadFile(struct Gio *gp, struct NaClApp *nap)
   NaClCheckAddressSpaceLayoutSanity(nap, rodata_end, data_end, max_vaddr);
 
   ZLOGS(LOG_DEBUG, "Allocating address space");
-  NaClPerfCounterMark(&time_load_file, "PreAllocAddrSpace");
-  NaClPerfCounterIntervalLast(&time_load_file);
   NaClAllocAddrSpace(nap);
-  NaClPerfCounterMark(&time_load_file, NACL_PERF_IMPORTANT_PREFIX "AllocAddrSpace");
-  NaClPerfCounterIntervalLast(&time_load_file);
 
   /*
    * Make sure the static image pages are marked writable before we try
@@ -297,8 +289,6 @@ void NaClAppLoadFile(struct Gio *gp, struct NaClApp *nap)
   NaClLogAddressSpaceLayout(nap);
 
   NaClElfImageDelete(image);
-  NaClPerfCounterMark(&time_load_file, "EndLoadFile");
-  NaClPerfCounterIntervalTotal(&time_load_file);
 }
 #undef DUMP
 
