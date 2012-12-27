@@ -116,6 +116,9 @@ static void PreallocateUserMemory(struct NaClApp *nap)
   i = NaCl_mprotect(p, heap, PROT_READ | PROT_WRITE);
   ZLOGFAIL(0 != i, -i, "cannot set protection on user heap");
   nap->heap_end = NaClSysToUser(nap, (uintptr_t)p + heap);
+
+  /* todo(d'b): perhaps move the whole function to sel_addrespace? */
+  nap->mem_map[HeapIdx].npages += heap >> NACL_PAGESHIFT;
 }
 
 /* helper. sets custom user attributes for user */

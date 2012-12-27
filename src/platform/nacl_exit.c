@@ -9,7 +9,6 @@
 #include "src/manifest/manifest_setup.h"
 #include "src/service_runtime/nacl_globals.h"
 #include "src/service_runtime/nacl_signal.h"
-#include "src/platform/nacl_time.h"
 #include "src/service_runtime/accounting.h"
 
 static const char *zvm_state = UNKNOWN_STATE;
@@ -19,16 +18,15 @@ static void LogMemMap(struct NaClApp *nap, int verbosity)
 {
   int i;
 
-  ZLOG(verbosity, "user memory map:");
-  fflush(stdout);
+  ZLOGS(verbosity, "user memory map (in pages):");
 
   for(i = 0; i < MemMapSize; ++i)
   {
-    ZLOG(verbosity, "%s: address = 0x%06x, size = %d, protection = x",
-        nap->mem_map[RODataIdx].name,
-        (uint32_t) nap->mem_map[RODataIdx].page_num,
-        (uint32_t) nap->mem_map[RODataIdx].npages,
-        nap->mem_map[RODataIdx].prot);
+    ZLOGS(verbosity, "%s: address = 0x%06x, size = %d, protection = x",
+        nap->mem_map[i].name,
+        (uint32_t) nap->mem_map[i].page_num,
+        (uint32_t) nap->mem_map[i].npages,
+        nap->mem_map[i].prot);
   }
 }
 
@@ -41,7 +39,6 @@ static void FinalDump(struct NaClApp *nap)
   LogMemMap(nap, LOG_INSANE);
 
   if(nap->handle_signals) NaClSignalHandlerFini();
-  NaClTimeFini();
 }
 
 /*

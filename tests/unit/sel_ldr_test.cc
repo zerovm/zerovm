@@ -2,11 +2,11 @@
  * Copyright (c) 2011 The Native Client Authors. All rights reserved.
  * Use of this source code is governed by a BSD-style license that can be
  * found in the LICENSE file.
+ *
+ * update(d'b): i think this test can be removed (or should be rewritten)
  */
 
 #include "src/service_runtime/sel_ldr.h"
-//#include "src/desc/nrd_all_modules.h"
-#include "src/platform/nacl_time.h"
 
 #include "gtest/gtest.h"
 
@@ -48,11 +48,9 @@ class SelLdrTest : public testing::Test {
 };
 
 void SelLdrTest::SetUp() {
-  NaClTimeInit();
 }
 
 void SelLdrTest::TearDown() {
-  NaClTimeFini();
 }
 
 // set, get, setavail operations on the descriptor table

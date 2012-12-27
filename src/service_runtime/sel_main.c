@@ -12,7 +12,6 @@
 #include <errno.h>
 #include <glib.h>
 #include "src/gio/gio.h"
-#include "src/platform/nacl_time.h"
 #include "src/service_runtime/nacl_globals.h"
 #include "src/service_runtime/nacl_signal.h"
 #include "src/service_runtime/etag.h"
@@ -169,7 +168,6 @@ int main(int argc, char **argv)
 
   ParseCommandLine(nap, argc, argv);
   NaClSignalHandlerInit();
-  NaClTimeInit();
   NaClSyscallTableInit();
 
   /* initialize mem_map and set nap fields to default values */

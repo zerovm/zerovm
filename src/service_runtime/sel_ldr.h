@@ -75,7 +75,7 @@ enum MemMapIndices {
 
 struct MemBlock {
   char                  *name;    /* block name */
-  intptr_t              page_num; /* base virtual address >> NACL_PAGESHIFT ### type switched to signed */
+  intptr_t              page_num; /* system virtual address >> NACL_PAGESHIFT */
   size_t                npages;   /* number of pages */
   int                   prot;     /* mprotect attribute */
 };
