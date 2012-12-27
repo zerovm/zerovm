@@ -101,36 +101,31 @@ void NaClMemoryProtection(struct NaClApp *nap)
   err = NaCl_mprotect((void *)start_addr, region_size, PROT_READ | PROT_EXEC);
   ZLOGFAIL(0 != err, err, FAILED_MSG);
 
-  err = NaClVmmapAdd(&nap->mem_map, NaClSysToUser(nap, start_addr) >> NACL_PAGESHIFT,
-      region_size >> NACL_PAGESHIFT,  PROT_READ | PROT_EXEC, NULL);
-  ZLOGFAIL(0 == err, EFAULT, FAILED_MSG);
+  SET_MEM_MAP_IDX(nap->mem_map[TextIdx], "Text",
+      start_addr, region_size, PROT_READ | PROT_EXEC);
 
+  /*
+   * Page protections for this region have already been set up by
+   * nacl_text.c.
+   *
+   * todo(d'b): since text.c exists no more, protection should be set here
+   *
+   * We record the mapping for consistency with other fixed
+   * mappings, but the record is not actually used.  Overmapping is
+   * prevented by a separate range check, which is done by
+   * NaClSysCommonAddrRangeContainsExecutablePages_mu().
+   */
+  /*
+   * zerovm does not support dynamic text. the code below will check its
+   * existence, log information and fail if needed.
+   * todo(d'b): after the dynamic text support will be added or completely
+   * removed the block below should be rewritten or removed
+   */
   start_addr = NaClUserToSys(nap, nap->dynamic_text_start);
   region_size = nap->dynamic_text_end - nap->dynamic_text_start;
   ZLOGS(LOG_DEBUG, "shm txt region start 0x%08x, size 0x%08x, end 0x%08x",
-          start_addr, region_size, start_addr + region_size);
-
-  if(0 != region_size)
-  {
-    /*
-     * Page protections for this region have already been set up by
-     * nacl_text.c.
-     *
-     * todo(d'b): since text.c exists no more, protection should be set here
-     *
-     * We record the mapping for consistency with other fixed
-     * mappings, but the record is not actually used.  Overmapping is
-     * prevented by a separate range check, which is done by
-     * NaClSysCommonAddrRangeContainsExecutablePages_mu().
-     */
-    /* the log bellow added to prevent dynamic nexe loading w/o dynamic text support */
-    ZLOGFAIL(1, EFAULT, "dynamic text detected. the logic not written!");
-
-    err = NaClVmmapAdd(&nap->mem_map, NaClSysToUser(nap, start_addr) >> NACL_PAGESHIFT,
-        region_size >> NACL_PAGESHIFT, PROT_READ | PROT_EXEC,
-        NaClMemObjMake(nap->text_shm, region_size, 0));
-    ZLOGFAIL(0 != err, err, FAILED_MSG);
-  }
+      start_addr, region_size, start_addr + region_size);
+  ZLOGFAIL(0 != region_size, EFAULT, "zerovm does not support nexe with dynamic text!");
 
   if(0 != nap->rodata_start)
   {
@@ -154,9 +149,8 @@ void NaClMemoryProtection(struct NaClApp *nap)
     err = NaCl_mprotect((void *)start_addr, region_size, PROT_READ);
     ZLOGFAIL(0 != err, err, FAILED_MSG);
 
-    err = NaClVmmapAdd(&nap->mem_map, NaClSysToUser(nap, start_addr) >> NACL_PAGESHIFT,
-        region_size >> NACL_PAGESHIFT, PROT_READ, (struct NaClMemObj *)NULL);
-    ZLOGFAIL(0 == err, err, FAILED_MSG);
+    SET_MEM_MAP_IDX(nap->mem_map[RODataIdx], "ROData",
+        start_addr, region_size, PROT_READ);
   }
 
   /*
@@ -174,9 +168,8 @@ void NaClMemoryProtection(struct NaClApp *nap)
     err = NaCl_mprotect((void *)start_addr, region_size, PROT_READ | PROT_WRITE);
     ZLOGFAIL(0 != err, err, FAILED_MSG);
 
-    err = NaClVmmapAdd(&nap->mem_map, NaClSysToUser(nap, start_addr) >> NACL_PAGESHIFT,
-        region_size >> NACL_PAGESHIFT, PROT_READ | PROT_WRITE, (struct NaClMemObj *)NULL);
-    ZLOGFAIL(0 == err, err, FAILED_MSG);
+    SET_MEM_MAP_IDX(nap->mem_map[HeapIdx], "Heap",
+        start_addr, region_size, PROT_READ | PROT_WRITE);
   }
 
   /* stack is read/write but not execute */
@@ -190,7 +183,6 @@ void NaClMemoryProtection(struct NaClApp *nap)
       PROT_READ | PROT_WRITE);
   ZLOGFAIL(0 != err, err, FAILED_MSG);
 
-  err = NaClVmmapAdd(&nap->mem_map, NaClSysToUser(nap, start_addr) >> NACL_PAGESHIFT,
-      nap->stack_size >> NACL_PAGESHIFT, PROT_READ | PROT_WRITE, (struct NaClMemObj *)NULL);
-  ZLOGFAIL(0 == err, err, FAILED_MSG);
+  SET_MEM_MAP_IDX(nap->mem_map[StackIdx], "Stack",
+      start_addr, NaClRoundAllocPage(nap->stack_size), PROT_READ | PROT_WRITE);
 }

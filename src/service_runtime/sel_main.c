@@ -220,7 +220,7 @@ int main(int argc, char **argv)
   }
 
   /* setup zerovm from manifest */
-  SystemManifestCtor(nap); /* needs dyn_array initialized */
+  SystemManifestCtor(nap);
 
   /* "defence in depth" call */
   LastDefenseLine(nap);

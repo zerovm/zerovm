@@ -7,6 +7,7 @@
  * (in that case zvm will just need to check if pointer is in range)
  */
 #include <errno.h>
+#include <glib.h>
 #include "include/api_tools.h"
 
 /*
@@ -16,6 +17,8 @@
 #define g_malloc malloc
 #define g_malloc0 my_calloc
 #define g_free free
+
+int64_t g_ascii_strtoll();
 
 /* single argument calloc version */
 void *my_calloc(size_t size)

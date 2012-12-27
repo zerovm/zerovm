@@ -39,5 +39,6 @@ void NaClMemoryProtection(struct NaClApp *nap);
  */
 void NaClAllocateSpace(void **mem, size_t addrsp_size);
 
+/* protect bumpers (guarding space) */
 void NaClMprotectGuards(struct NaClApp *nap);
 #endif

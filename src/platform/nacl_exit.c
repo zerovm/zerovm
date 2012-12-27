@@ -12,24 +12,24 @@
 #include "src/platform/nacl_time.h"
 #include "src/service_runtime/accounting.h"
 
-static int verb = LOG_INSANE;
 static const char *zvm_state = UNKNOWN_STATE;
 
-static void VmentryPrinter(void *state, struct NaClVmmapEntry *vmep)
+/* log user memory map */
+static void LogMemMap(struct NaClApp *nap, int verbosity)
 {
-  UNREFERENCED_PARAMETER(state);
-  ZLOG(verb, "page num 0x%06x", (uint32_t) vmep->page_num);
-  ZLOG(verb, "num pages %d", (uint32_t) vmep->npages);
-  ZLOG(verb, "prot bits %x", vmep->prot);
-  fflush(stdout);
-}
+  int i;
 
-static void PrintVmmap(struct NaClApp *nap, int verbosity)
-{
-  ZLOG(verbosity, "In PrintVmmap");
+  ZLOG(verbosity, "user memory map:");
   fflush(stdout);
-  verb = verbosity;
-  NaClVmmapVisit(&nap->mem_map, VmentryPrinter, NULL);
+
+  for(i = 0; i < MemMapSize; ++i)
+  {
+    ZLOG(verbosity, "%s: address = 0x%06x, size = %d, protection = x",
+        nap->mem_map[RODataIdx].name,
+        (uint32_t) nap->mem_map[RODataIdx].page_num,
+        (uint32_t) nap->mem_map[RODataIdx].npages,
+        nap->mem_map[RODataIdx].prot);
+  }
 }
 
 static void FinalDump(struct NaClApp *nap)
@@ -38,9 +38,7 @@ static void FinalDump(struct NaClApp *nap)
 
   /* NULL can be used because syslog used for nacl log */
   NaClAppPrintDetails(nap, (struct Gio *) NULL, LOG_INSANE);
-  ZLOGS(LOG_INSANE, "Dumping vmmap");
-  PrintVmmap(nap, LOG_INSANE);
-  ZLOGS(LOG_INSANE, "Done");
+  LogMemMap(nap, LOG_INSANE);
 
   if(nap->handle_signals) NaClSignalHandlerFini();
   NaClTimeFini();
@@ -52,7 +50,7 @@ static void FinalDump(struct NaClApp *nap)
  */
 static void Finalizer(void)
 {
-  /* todo(d'b): get rid of hardcoded "ok" */
+  /* todo(d'b): get rid of hard coded "ok" */
   if(!STREQ(zvm_state, OK_STATE)) FinalDump(gnap);
 
   AccountingDtor(gnap);

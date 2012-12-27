@@ -303,25 +303,28 @@ int SystemManifestDtor(struct NaClApp *nap)
 }
 
 /* updates user_tag (should be constructed) with memory chunk data */
-static void EtagMemoryChunk(void *state, struct NaClVmmapEntry *vmep)
+static void EtagMemoryChunk(struct NaClApp *nap)
 {
-  uintptr_t addr;
-  int32_t size;
-  struct NaClApp *nap = state;
   int i;
 
   assert(nap != NULL);
   assert(TagEngineEnabled() != 0);
 
-  /* skip inaccessible and removed pages */
-  if(vmep->prot == 0) return;
-  if(vmep->removed) return;
+  for(i = 0; i < MemMapSize; ++i)
+  {
+    uintptr_t addr;
+    int32_t size;
+    int code;
 
-  /* update user_etag with the chunk data */
-  addr = nap->mem_start + (vmep->page_num << NACL_PAGESHIFT);
-  size = vmep->npages << NACL_PAGESHIFT;
-  i = TagUpdate(&nap->user_tag, (const char*)addr, size);
-  ZLOGIF(i == ERR_CODE, "cannot update user_tag");
+    /* skip inaccessible pages */
+    if(nap->mem_map[RODataIdx].prot == PROT_NONE) continue;
+
+    /* update user_etag with the chunk data */
+    addr = nap->mem_map[RODataIdx].page_num << NACL_PAGESHIFT;
+    size = nap->mem_map[RODataIdx].npages << NACL_PAGESHIFT;
+    code = TagUpdate(&nap->user_tag, (const char*)addr, size);
+    ZLOGIF(code == ERR_CODE, "cannot update user_tag");
+  }
 }
 
 /* updates user_tag (should be constructed) with all channels digests */
@@ -357,11 +360,10 @@ int ProxyReport(struct NaClApp *nap)
   assert(nap->system_manifest != NULL);
 
   /* tag user memory and channels */
-  /* todo(d'b)#97: if user memory is not set up zvm crashes */
   if(TagEngineEnabled())
   {
     ChannelsDigest(nap);
-    NaClVmmapVisit(&nap->mem_map, EtagMemoryChunk, nap);
+    EtagMemoryChunk(nap);
     TagDigest(nap->user_tag, etag);
   }
 

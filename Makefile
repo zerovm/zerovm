@@ -20,7 +20,7 @@ dist: CXXFLAGS1 := -DNDEBUG -O3 -s $(CXXFLAGS1)
 dist: CXXFLAGS2 := -DNDEBUG -O3 -s $(CXXFLAGS2)
 dist: create_dirs zerovm zvm_api tests
 
-OBJS=obj/dyn_array.o obj/elf_util.o obj/gio_mem.o obj/gio_mem_snapshot.o obj/manifest_parser.o obj/manifest_setup.o obj/mount_channel.o obj/nacl_dep_qualify.o obj/nacl_desc_base.o obj/nacl_exit.o obj/zlog.o obj/nacl_memory_object.o obj/nacl_os_qualify.o obj/nacl_refcount.o obj/nacl_signal_64.o obj/nacl_signal_common.o obj/nacl_signal.o obj/nacl_switch_64.o obj/nacl_switch_to_app_64.o obj/nacl_syscall_64.o obj/nacl_syscall_handlers.o obj/nacl_syscall_hook.o obj/nacl_time.o obj/prefetch.o obj/preload.o obj/sel_addrspace.o obj/sel_addrspace_posix_x86_64.o obj/sel_addrspace_x86_64.o obj/sel_ldr.o obj/sel_ldr_standard.o obj/sel_ldr_x86_64.o obj/sel_mem.o obj/sel_memory.o obj/sel_qualify.o obj/sel_rt_64.o obj/sel_segments.o obj/tramp_64.o obj/trap.o obj/etag.o obj/accounting.o
+OBJS=obj/elf_util.o obj/gio_mem.o obj/gio_mem_snapshot.o obj/manifest_parser.o obj/manifest_setup.o obj/mount_channel.o obj/nacl_dep_qualify.o obj/nacl_exit.o obj/zlog.o obj/nacl_os_qualify.o obj/nacl_signal_64.o obj/nacl_signal_common.o obj/nacl_signal.o obj/nacl_switch_64.o obj/nacl_switch_to_app_64.o obj/nacl_syscall_64.o obj/nacl_syscall_handlers.o obj/nacl_syscall_hook.o obj/nacl_time.o obj/prefetch.o obj/preload.o obj/sel_addrspace.o obj/sel_addrspace_posix_x86_64.o obj/sel_addrspace_x86_64.o obj/sel_ldr.o obj/sel_ldr_standard.o obj/sel_ldr_x86_64.o obj/sel_memory.o obj/sel_qualify.o obj/sel_rt_64.o obj/sel_segments.o obj/tramp_64.o obj/trap.o obj/etag.o obj/accounting.o
 CC=@gcc
 CXX=@g++
 
@@ -54,13 +54,11 @@ tests/unit/manifest_parser_test: obj/manifest_parser_test.o $(OBJS)
 
 obj/sel_ldr_test.o: tests/unit/sel_ldr_test.cc
 	$(CXX) ${CXXFLAGS1} -o $@ $^
-obj/sel_mem_test.o: tests/unit/sel_mem_test.cc
-	$(CXX) ${CXXFLAGS1} -o $@ $^
 obj/sel_memory_unittest.o: tests/unit/sel_memory_unittest.cc
 	$(CXX) ${CXXFLAGS1} -o $@ $^
 obj/unittest_main.o: tests/unit/unittest_main.cc
 	$(CXX) ${CXXFLAGS1} -o $@ $^
-tests/unit/service_runtime_tests: obj/sel_ldr_test.o obj/sel_mem_test.o obj/sel_memory_unittest.o obj/unittest_main.o $(OBJS)
+tests/unit/service_runtime_tests: obj/sel_ldr_test.o obj/sel_memory_unittest.o obj/unittest_main.o $(OBJS)
 	$(CXX) ${CXXFLAGS2} -o $@ $^ ${TESTFLAGS}
 
 .PHONY: clean clean_gcov clean_intermediate clean_api
@@ -111,13 +109,7 @@ obj/tramp_64.o: src/service_runtime/tramp_64.S
 obj/sel_main.o: src/service_runtime/sel_main.c
 	$(CC) ${CCFLAGS1} -o $@ $^
 
-obj/dyn_array.o: src/service_runtime/dyn_array.c
-	$(CC) ${CCFLAGS1} -o $@ $^
-
 obj/elf_util.o: src/service_runtime/elf_util.c
-	$(CC) ${CCFLAGS1} -o $@ $^
-
-obj/nacl_memory_object.o: src/service_runtime/nacl_memory_object.c
 	$(CC) ${CCFLAGS1} -o $@ $^
 
 obj/nacl_signal_common.o: src/service_runtime/nacl_signal_common.c
@@ -136,9 +128,6 @@ obj/sel_ldr.o: src/service_runtime/sel_ldr.c
 	$(CC) ${CCFLAGS1} -o $@ $^
 
 obj/sel_ldr_standard.o: src/service_runtime/sel_ldr_standard.c
-	$(CC) ${CCFLAGS1} -o $@ $^
-
-obj/sel_mem.o: src/service_runtime/sel_mem.c
 	$(CC) ${CCFLAGS1} -o $@ $^
 
 obj/sel_qualify.o: src/service_runtime/sel_qualify.c
@@ -169,12 +158,6 @@ obj/nacl_signal.o: src/service_runtime/nacl_signal.c
 	$(CC) ${CCFLAGS1} -o $@ $^
 
 obj/nacl_signal_64.o: src/service_runtime/nacl_signal_64.c
-	$(CC) ${CCFLAGS1} -o $@ $^
-
-obj/nacl_desc_base.o: src/desc/nacl_desc_base.c
-	$(CC) ${CCFLAGS1} -o $@ $^
-
-obj/nacl_refcount.o: src/nacl_base/nacl_refcount.c
 	$(CC) ${CCFLAGS1} -o $@ $^
 
 obj/nacl_os_qualify.o: src/platform_qualify/nacl_os_qualify.c

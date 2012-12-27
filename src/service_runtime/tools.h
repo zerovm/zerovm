@@ -43,10 +43,7 @@ static INLINE size_t my_strlen(const char *str)
 }
 #define STRLEN(str) my_strlen(str)
 
-/*
- * safe atoi(). NULL can be used. return 0 for NULL
- * todo(d'b): c99 function used. should be replaced with c90 code
- */
+/* safe atoi(). NULL can be used. return 0 for NULL */
 static INLINE int64_t my_atoi(const char *str)
 {
   return (str == NULL) ? 0 : g_ascii_strtoll(str, NULL, 10);

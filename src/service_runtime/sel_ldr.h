@@ -35,12 +35,8 @@
 #define AT_ENTRY        9   /* Entry point of the executable */
 #define AT_SYSINFO      32  /* System call entry point */
 
-
-
 #include "src/service_runtime/zlog.h"
-#include "src/service_runtime/dyn_array.h"
 #include "src/gio/gio.h"
-#include "src/service_runtime/sel_mem.h"
 #include "src/service_runtime/sel_util.h"
 #include "src/service_runtime/sel_rt.h"
 #include "src/service_runtime/tools.h"
@@ -55,8 +51,36 @@ EXTERN_C_BEGIN
 
 #define NACL_SANDBOX_CHROOT_FD  "SBX_D"
 
+/*
+ * helper macro. _element should be nap->mem_map[index], _addr - block
+ * address (bytes), _size - block size (bytes), _prot - block protection
+ */
+#define SET_MEM_MAP_IDX(_element, _name, _addr, _size, _prot) \
+  do {\
+    _element.name = _name;\
+    _element.page_num = (_addr) >> NACL_PAGESHIFT;\
+    _element.npages = (_size) >> NACL_PAGESHIFT;\
+    _element.prot = _prot;\
+  } while(0)
+
+enum MemMapIndices {
+  LeftBumperIdx, /* includes NULL protector */
+  TextIdx, /* includes trampoline */
+  RODataIdx,
+  HeapIdx, /* includes r/w data */
+  StackIdx,
+  RightBumperIdx,
+  MemMapSize
+};
+
+struct MemBlock {
+  char                  *name;    /* block name */
+  intptr_t              page_num; /* base virtual address >> NACL_PAGESHIFT ### type switched to signed */
+  size_t                npages;   /* number of pages */
+  int                   prot;     /* mprotect attribute */
+};
+
 struct NaClAppThread;
-struct NaClDesc;  /* see src/desc/nacl_desc_base.h */
 struct NaClDynamicRegion;
 struct NaClManifestProxy;
 struct NaClSecureService;
@@ -139,20 +163,8 @@ struct NaClApp {
    */
   struct NaClSyscallTableEntry *syscall_table;
 
-  /*
-   * runtime info below, thread state, etc; initialized only when app
-   * is run.  Mutex mu protects access to mem_map and other member
-   * variables while the application is running and may be
-   * multithreaded; thread, desc members have their own locks.  At
-   * other times it is assumed that only one thread is
-   * constructing/loading the NaClApp and that no mutual exclusion is
-   * needed.
-   */
-
-  /*
-   * memory map is in user addresses.
-   */
-  struct NaClVmmap          mem_map;
+  /* user memory map */
+  struct MemBlock           mem_map[MemMapSize];
 
   /*
    * may reject nexes that are incompatible w/ dynamic-text in the near future
