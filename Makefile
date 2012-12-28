@@ -79,107 +79,107 @@ clean_intermediate:
 clean_api:
 	@make -Capi clean
 
-obj/mount_channel.o: src/manifest/mount_channel.c
+obj/mount_channel.o: src/channels/mount_channel.c
 	$(CC) ${CCFLAGS1} -o $@ $^
 
-obj/prefetch.o: src/manifest/prefetch.c
+obj/prefetch.o: src/channels/prefetch.c
 	$(CC) ${CCFLAGS1} -o $@ $^
 
-obj/preload.o: src/manifest/preload.c
+obj/preload.o: src/channels/preload.c
 	$(CC) ${CCFLAGS1} -o $@ $^
 
-obj/trap.o: src/manifest/trap.c
+obj/trap.o: src/syscalls/trap.c
 	$(CC) ${CCFLAGS1} -o $@ $^
 
-obj/manifest_setup.o: src/manifest/manifest_setup.c
+obj/manifest_setup.o: src/main/manifest_setup.c
 	$(CC) ${CCFLAGS1} -o $@ $^
 
-obj/manifest_parser.o: src/manifest/manifest_parser.c
+obj/manifest_parser.o: src/main/manifest_parser.c
 	$(CC) ${CCFLAGS1} -o $@ $^
 
-obj/nacl_switch_64.o: src/service_runtime/nacl_switch_64.S
+obj/nacl_switch_64.o: src/syscalls/nacl_switch_64.S
 	$(CC) ${CCFLAGS2} -o $@ $^
 
-obj/nacl_syscall_64.o: src/service_runtime/nacl_syscall_64.S
+obj/nacl_syscall_64.o: src/syscalls/nacl_syscall_64.S
 	$(CC) ${CCFLAGS2} -o $@ $^
 
-obj/tramp_64.o: src/service_runtime/tramp_64.S
+obj/tramp_64.o: src/syscalls/tramp_64.S
 	$(CC) ${CCFLAGS2} -o $@ $^
 
-obj/sel_main.o: src/service_runtime/sel_main.c
+obj/sel_main.o: src/main/sel_main.c
 	$(CC) ${CCFLAGS1} -o $@ $^
 
-obj/elf_util.o: src/service_runtime/elf_util.c
+obj/elf_util.o: src/loader/elf_util.c
 	$(CC) ${CCFLAGS1} -o $@ $^
 
-obj/nacl_signal_common.o: src/service_runtime/nacl_signal_common.c
+obj/nacl_signal_common.o: src/platform/nacl_signal_common.c
 	$(CC) ${CCFLAGS1} -o $@ $^
 
-obj/nacl_syscall_handlers.o: src/service_runtime/nacl_syscall_handlers.c
+obj/nacl_syscall_handlers.o: src/syscalls/nacl_syscall_handlers.c
 	$(CC) ${CCFLAGS1} -o $@ $^
 
-obj/nacl_syscall_hook.o: src/service_runtime/nacl_syscall_hook.c
+obj/nacl_syscall_hook.o: src/syscalls/nacl_syscall_hook.c
 	$(CC) ${CCFLAGS1} -o $@ $^
 
-obj/sel_addrspace.o: src/service_runtime/sel_addrspace.c
+obj/sel_addrspace.o: src/loader/sel_addrspace.c
 	$(CC) ${CCFLAGS1} -o $@ $^
 
-obj/sel_ldr.o: src/service_runtime/sel_ldr.c
+obj/sel_ldr.o: src/loader/sel_ldr.c
 	$(CC) ${CCFLAGS1} -o $@ $^
 
-obj/sel_ldr_standard.o: src/service_runtime/sel_ldr_standard.c
+obj/sel_ldr_standard.o: src/loader/sel_ldr_standard.c
 	$(CC) ${CCFLAGS1} -o $@ $^
 
-obj/sel_qualify.o: src/service_runtime/sel_qualify.c
+obj/sel_qualify.o: src/platform/sel_qualify.c
 	$(CC) ${CCFLAGS1} -o $@ $^
 
-obj/nacl_switch_to_app_64.o: src/service_runtime/nacl_switch_to_app_64.c
+obj/nacl_switch_to_app_64.o: src/syscalls/nacl_switch_to_app_64.c
 	$(CC) ${CCFLAGS1} -o $@ $^
 
-obj/sel_addrspace_x86_64.o: src/service_runtime/sel_addrspace_x86_64.c
+obj/sel_addrspace_x86_64.o: src/loader/sel_addrspace_x86_64.c
 	$(CC) ${CCFLAGS1} -o $@ $^
 
-obj/sel_ldr_x86_64.o: src/service_runtime/sel_ldr_x86_64.c
+obj/sel_ldr_x86_64.o: src/loader/sel_ldr_x86_64.c
 	$(CC) ${CCFLAGS1} -o $@ $^
 
-obj/sel_rt_64.o: src/service_runtime/sel_rt_64.c
+obj/sel_rt_64.o: src/loader/sel_rt_64.c
 	$(CC) ${CCFLAGS1} -o $@ $^
 
-obj/sel_addrspace_posix_x86_64.o: src/service_runtime/sel_addrspace_posix_x86_64.c
+obj/sel_addrspace_posix_x86_64.o: src/loader/sel_addrspace_posix_x86_64.c
 	$(CC) ${CCFLAGS1} -o $@ $^
 
-obj/sel_memory.o: src/service_runtime/sel_memory.c
+obj/sel_memory.o: src/platform/sel_memory.c
 	$(CC) ${CCFLAGS1} -o $@ $^
 
-obj/sel_segments.o: src/service_runtime/sel_segments.c
+obj/sel_segments.o: src/loader/sel_segments.c
 	$(CC) ${CCFLAGS1} -o $@ $^
 
-obj/nacl_signal.o: src/service_runtime/nacl_signal.c
+obj/nacl_signal.o: src/platform/nacl_signal.c
 	$(CC) ${CCFLAGS1} -o $@ $^
 
-obj/nacl_signal_64.o: src/service_runtime/nacl_signal_64.c
+obj/nacl_signal_64.o: src/platform/nacl_signal_64.c
 	$(CC) ${CCFLAGS1} -o $@ $^
 
-obj/nacl_os_qualify.o: src/platform_qualify/nacl_os_qualify.c
+obj/nacl_os_qualify.o: src/platform/nacl_os_qualify.c
 	$(CC) ${CCFLAGS1} -o $@ $^
 
-obj/nacl_dep_qualify.o: src/platform_qualify/nacl_dep_qualify.c
+obj/nacl_dep_qualify.o: src/platform/nacl_dep_qualify.c
 	$(CC) ${CCFLAGS1} -o $@ $^
 
-obj/nacl_exit.o: src/platform/nacl_exit.c
+obj/nacl_exit.o: src/main/nacl_exit.c
 	$(CC) ${CCFLAGS1} -o $@ $^
 
-obj/zlog.o: src/service_runtime/zlog.c
+obj/zlog.o: src/main/zlog.c
 	$(CC) ${CCFLAGS1} -o $@ $^
 
-obj/gio_mem.o: src/gio/gio_mem.c
+obj/gio_mem.o: src/platform/gio_mem.c
 	$(CC) ${CCFLAGS1} -o $@ $^
 
-obj/gio_mem_snapshot.o: src/gio/gio_mem_snapshot.c
+obj/gio_mem_snapshot.o: src/platform/gio_mem_snapshot.c
 	$(CC) ${CCFLAGS1} -o $@ $^
 
-obj/etag.o: src/service_runtime/etag.c
+obj/etag.o: src/main/etag.c
 	$(CC) ${CCFLAGS1} -o $@ $^
 
-obj/accounting.o: src/service_runtime/accounting.c
+obj/accounting.o: src/main/accounting.c
 	$(CC) ${CCFLAGS1} -o $@ $^

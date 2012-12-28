@@ -8,8 +8,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "gtest/gtest.h"
-#include "src/manifest/manifest_parser.h"
-#include "src/service_runtime/tools.h"
+#include "src/main/manifest_parser.h"
+#include "src/main/tools.h"
 
 #define BIG_ENOUGH 0x10000
 #define MANIFEST_FILE "killme.manifest.txt"

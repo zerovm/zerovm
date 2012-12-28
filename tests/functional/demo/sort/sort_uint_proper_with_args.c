@@ -7,12 +7,8 @@
  *
  * note: input must contain (power of 2) 32-bit unsigned integers
  */
-//#include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
-//#include <string.h>
-//#include <time.h>
-//#include <sys/stat.h>
 #include <emmintrin.h>
 #include <smmintrin.h>
 #include "include/api_tools.h"

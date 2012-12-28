@@ -6,7 +6,7 @@
  * update(d'b): i think this test can be removed (or should be rewritten)
  */
 
-#include "src/service_runtime/sel_ldr.h"
+#include "src/loader/sel_ldr.h"
 
 #include "gtest/gtest.h"
 

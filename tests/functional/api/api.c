@@ -27,7 +27,7 @@ void *my_calloc(size_t size)
 }
 
 /* a cheat to have an access to static members */
-#include "src/manifest/manifest_parser.c"
+#include "src/main/manifest_parser.c"
 
 
 #define CONTROL "/dev/control"

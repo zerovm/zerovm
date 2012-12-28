@@ -8,12 +8,10 @@
 #include <stdlib.h>
 #include "gtest/gtest.h"
 #include "api/zvm.h"
-#include "src/service_runtime/sel_ldr.h"
+#include "src/loader/sel_ldr.h"
 
-#include "src/service_runtime/dyn_array.h"
-
-#include "src/manifest/manifest_parser.h"
-#include "src/manifest/manifest_setup.h"
+#include "src/main/manifest_parser.h"
+#include "src/main/manifest_setup.h"
 
 /*
  * plan:
