@@ -9,13 +9,10 @@
 #define ETAG_H_
 
 #include <stdint.h>
-#include <openssl/evp.h>
 
-#define TAG_ENCRYPTION "md5"
+#define TAG_ENCRYPTION G_CHECKSUM_MD5
+#define TAG_DIGEST_SIZE 32 + 1 /* tag digest size + '\0' (depend on TAG_ENCRYPTION) */
 #define TAG_ENGINE_DISABLED "disabled"
-#define TAG_CONTEXT_SIZE sizeof(EVP_MD_CTX) /* tag size */
-#define TAG_BINARY_SIZE EVP_MAX_MD_SIZE /* tag size */
-#define TAG_DIGEST_SIZE TAG_BINARY_SIZE * 2 + 1 /* tag digest size */
 
 /* etag engine construction */
 void TagEngineCtor();
@@ -27,10 +24,13 @@ void TagEngineDtor();
 int TagEngineEnabled();
 
 /*
- * initialize the hash context in provided space
- * return 0 if everything is ok
+ * initialize and return the hash context or abort if failed
+ * to avoid memory leak context must be freed after usage
  */
-int TagCtor(void *ctx);
+void *TagCtor();
+
+/* deallocate tag context */
+void TagDtor(void *ctx);
 
 /*
  * calculates digest from the context. can be used consequently
@@ -42,6 +42,6 @@ void TagDigest(void *ctx, char *digest);
  * update etag with the given buffer.
  * returns 0 if all ok or -1 if failed
  */
-int TagUpdate(void *ctx, const char *buffer, int32_t size);
+void TagUpdate(void *ctx, const char *buffer, int32_t size);
 
 #endif /* ETAG_H_ */

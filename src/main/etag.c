@@ -14,22 +14,17 @@
 #include "api/zvm.h" /* ERR_CODE and OK_CODE */
 
 static int tag_engine_enabled = 0;
-static const EVP_MD *tag_type = NULL;
 
 /* etag engine construction */
 void TagEngineCtor()
 {
   tag_engine_enabled = 1;
-  OpenSSL_add_all_digests();
-  tag_type = EVP_get_digestbyname(TAG_ENCRYPTION);
-  ZLOGFAIL(tag_type == NULL, EFAULT, "cannot initialize tag type");
 }
 
 /* disable etag */
 void TagEngineDtor()
 {
   tag_engine_enabled = 0;
-  tag_type = NULL;
 }
 
 /* return the etag_enabled state */
@@ -39,19 +34,22 @@ int TagEngineEnabled()
 }
 
 /*
- * initialize the hash context in provided space
- * return 0 if everything is ok
+ * initialize and return the hash context or abort if failed
+ * to avoid memory leak context must be freed after usage
  */
-int TagCtor(void *ctx)
+void *TagCtor()
 {
-  int i;
+  GChecksum *ctx;
 
-  assert(tag_type != NULL);
+  ctx = g_checksum_new(TAG_ENCRYPTION);
+  ZLOGFAIL(ctx == NULL, EFAULT, "error initializing tag context");
+  return ctx;
+}
 
-  EVP_MD_CTX_init(ctx);
-  i = EVP_DigestInit_ex(ctx, tag_type, NULL);
-  ZLOGIF(i != 1, "error initializing hash context");
-  return i != 1 ? ERR_CODE : OK_CODE;
+/* deallocate tag context */
+void TagDtor(void *ctx)
+{
+  g_checksum_free(ctx);
 }
 
 /*
@@ -60,39 +58,26 @@ int TagCtor(void *ctx)
  */
 void TagDigest(void *ctx, char *digest)
 {
-  unsigned char p[TAG_BINARY_SIZE] = {0};
-  EVP_MD_CTX tag;
-  unsigned dsize;
-  int i;
+  const char *hex;
+  GChecksum *tmp;
 
-  assert(ctx != NULL);
-  assert(digest != NULL);
-
-  /* copy context aside and finalize it to get digest */
-  EVP_MD_CTX_init(&tag);
-  i = EVP_MD_CTX_copy_ex(&tag, ctx);
-  ZLOGIF(i != 1, "error copying tag");
-  EVP_DigestFinal_ex(&tag, p, &dsize);
-  ZLOGIF(i != 1, "error finalizing tag");
-  for(i = 0; i < dsize; ++i)
-    sprintf(&digest[2*i], "%02X", p[i]);
+  tmp = g_checksum_copy(ctx);
+  hex = g_checksum_get_string(tmp);
+  strcpy(digest, hex);
+  g_checksum_free(tmp);
 }
 
 /*
- * update etag with the given buffer.
+ * update tag with the given buffer.
  * returns 0 if all ok or -1 if failed
  */
-int TagUpdate(void *ctx, const char *buffer, int32_t size)
+void TagUpdate(void *ctx, const char *buffer, int32_t size)
 {
-  int i;
-
   assert(ctx != NULL);
   assert(buffer != NULL);
   assert(size >= 0);
-  if(size == 0) return OK_CODE;
 
   /* update the context with a new data */
-  i = EVP_DigestUpdate(ctx, buffer, size);
-  ZLOGIF(i != 1, "error updating tag");
-  return i != 1 ? ERR_CODE : OK_CODE;
+  if(size > 0)
+    g_checksum_update(ctx, (const guchar*)buffer, size);
 }

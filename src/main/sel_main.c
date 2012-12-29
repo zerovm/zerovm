@@ -67,13 +67,8 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
         nap->quit_after_load = 1;
         break;
       case 'e':
-        /* todo(d'b): if etag construction failed, zerovm must fail too */
         TagEngineCtor();
-        if(TagCtor(&nap->user_tag) == ERR_CODE)
-        {
-          TagEngineDtor();
-          ZLOG(LOG_ERROR, "cannot construct overall channels tag");
-        }
+        nap->user_tag = TagCtor();
         break;
       case 'S':
         /* d'b: disable signals handling */

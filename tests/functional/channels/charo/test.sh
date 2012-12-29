@@ -1,6 +1,6 @@
 #!/bin/sh
 
-name="sequential read only channel"
+name="sequential read only character channel"
 
 test="\033[01;38m$name\033[00m test has"
 make clean all>/dev/null

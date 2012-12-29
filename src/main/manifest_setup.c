@@ -317,7 +317,6 @@ static void EtagMemoryChunk(struct NaClApp *nap)
   {
     uintptr_t addr;
     int32_t size;
-    int code;
 
     /* skip inaccessible pages */
     if(nap->mem_map[RODataIdx].prot == PROT_NONE) continue;
@@ -325,8 +324,7 @@ static void EtagMemoryChunk(struct NaClApp *nap)
     /* update user_etag with the chunk data */
     addr = nap->mem_map[RODataIdx].page_num << NACL_PAGESHIFT;
     size = nap->mem_map[RODataIdx].npages << NACL_PAGESHIFT;
-    code = TagUpdate(&nap->user_tag, (const char*)addr, size);
-    ZLOGIF(code == ERR_CODE, "cannot update user_tag");
+    TagUpdate(nap->user_tag, (const char*)addr, size);
   }
 }
 
@@ -334,17 +332,12 @@ static void EtagMemoryChunk(struct NaClApp *nap)
 void ChannelsDigest(struct NaClApp *nap)
 {
   int i;
-  int code;
 
   assert(nap != NULL);
 
-  /* go through all channels */
   for(i = 0; i < nap->system_manifest->channels_count; ++i)
-  {
-    code = TagUpdate(&nap->user_tag,
-        (const char*)nap->system_manifest->channels[i].digest, TAG_DIGEST_SIZE);
-    ZLOGIF(code == ERR_CODE, "cannot update overall channels tag");
-  }
+    TagUpdate(nap->user_tag,
+        (const char*) nap->system_manifest->channels[i].digest, TAG_DIGEST_SIZE);
 }
 
 /*
@@ -368,6 +361,7 @@ int ProxyReport(struct NaClApp *nap)
     ChannelsDigest(nap);
     EtagMemoryChunk(nap);
     TagDigest(nap->user_tag, etag);
+    TagDtor(nap->user_tag);
   }
 
   /* for debugging purposes it is useful to see more advanced information */

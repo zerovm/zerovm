@@ -52,8 +52,6 @@ int ChannelIOMask(struct ChannelDesc *channel)
 static void UpdateChannelTag(struct ChannelDesc *channel,
     const char *buffer, int32_t size)
 {
-  int i;
-
   /* skip if etag is not enabled */
   if(!TagEngineEnabled()) return;
 
@@ -62,8 +60,7 @@ static void UpdateChannelTag(struct ChannelDesc *channel,
 
   /* update etag and log information */
   if(size <= 0) return;
-  i = TagUpdate(&channel->tag, buffer, size);
-  ZLOGIF(i == ERR_CODE, "cannot update channel tag");
+  TagUpdate(channel->tag, buffer, size);
 }
 
 /* todo(d'b): get rid of code doubling */
@@ -130,7 +127,7 @@ int32_t ZVMReadHandle(struct NaClApp *nap,
   assert(nap->system_manifest->channels != NULL);
 
   /* check the channel number */
-  if(ch < 0 || ch > nap->system_manifest->channels_count) return -EINVAL;
+  if(ch < 0 || ch >= nap->system_manifest->channels_count) return -EINVAL;
   channel = &nap->system_manifest->channels[ch];
 
   /* check buffer and convert address */
@@ -237,7 +234,7 @@ int32_t ZVMWriteHandle(struct NaClApp *nap,
   assert(nap->system_manifest->channels != NULL);
 
   /* check the channel number */
-  if(ch < 0 || ch > nap->system_manifest->channels_count) return -EINVAL;
+  if(ch < 0 || ch >= nap->system_manifest->channels_count) return -EINVAL;
   channel = &nap->system_manifest->channels[ch];
 
   /* check buffer and convert address */

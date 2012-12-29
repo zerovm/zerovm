@@ -10,6 +10,7 @@
 #include "src/main/nacl_globals.h"
 #include "src/platform/nacl_signal.h"
 #include "src/main/accounting.h"
+#include "src/main/etag.h"
 
 static const char *zvm_state = UNKNOWN_STATE;
 
@@ -53,6 +54,7 @@ static void Finalizer(void)
   AccountingDtor(gnap);
   SystemManifestDtor(gnap);
   ProxyReport(gnap);
+  TagEngineDtor();
   ZLogDtor();
 }
 

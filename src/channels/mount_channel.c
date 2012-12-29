@@ -106,9 +106,10 @@ static void ChannelCtor(struct NaClApp *nap, char **tokens)
   channel->alias = tokens[ChannelAlias];
   channel->source = GetSourceType((char*)channel->name);
 
+  /* initialize the channel tag */
   if(TagEngineEnabled())
   {
-    ZLOGFAIL(TagCtor(&channel->tag) == ERR_CODE, EFAULT, "channel tag setup error");
+    channel->tag = TagCtor();
     memset(channel->digest, 0, TAG_DIGEST_SIZE);
   }
 
@@ -166,6 +167,9 @@ static void ChannelDtor(struct ChannelDesc *channel)
     /* if not already set */
     if(channel->digest[0] == 0)
       TagDigest(channel->tag, channel->digest);
+
+    /* deallocate the tag context (will not destroy digest) */
+    TagDtor(channel->tag);
 
     ZLOGS(LOG_DEBUG, "channel %s closed with etag = %s, getsize = %ld, "
         "putsize = %ld", channel->alias, channel->digest,

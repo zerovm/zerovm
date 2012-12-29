@@ -91,8 +91,8 @@ struct ChannelDesc
 {
   char *name; /* real name */
   char *alias; /* name for untrusted */
-  char tag[TAG_CONTEXT_SIZE]; /* tag context (currently sha1) */
-  char digest[TAG_DIGEST_SIZE]; /* tag digest (currently sha1) */
+  void *tag; /* tag context */
+  char digest[TAG_DIGEST_SIZE]; /* tag hexadecimal digest */
 
   int32_t handle; /* file handle. fit only for regular files. ### replace it with socket? */
   void *socket; /* can be used both by network and local channel */
