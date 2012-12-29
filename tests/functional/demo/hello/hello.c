@@ -14,7 +14,7 @@ int main(int argc, char **argv)
   zput(STDOUT, "\033[1mhello, world!\033[0m\n");
 
   /* write to zvm provided stderr */
-  zput(STDERR, "hello, world!\n");
+  zput(STDERR, "hello, world!");
 
   /* exit with code */
   zvm_exit(0);

@@ -10,8 +10,8 @@
 
 #include <stdint.h>
 
-#define TAG_ENCRYPTION G_CHECKSUM_MD5
-#define TAG_DIGEST_SIZE 32 + 1 /* tag digest size + '\0' (depend on TAG_ENCRYPTION) */
+#define TAG_ENCRYPTION G_CHECKSUM_SHA1 /* G_CHECKSUM_MD5, G_CHECKSUM_SHA1, G_CHECKSUM_SHA256 */
+#define TAG_DIGEST_SIZE 40 + 1 /* without '\0': 32, 40, 64 */
 #define TAG_ENGINE_DISABLED "disabled"
 
 /* etag engine construction */
