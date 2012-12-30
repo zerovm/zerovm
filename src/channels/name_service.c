@@ -60,12 +60,11 @@ static void FailOnInvalidNetChannel(const struct ChannelDesc *channel)
 INLINE static uint32_t MakeKey(const struct ChannelConnection *record)
 {
   uint32_t result;
-  ZLOG(LOG_INSANE, "MakeKey");
+
   assert(record != NULL);
 
   result = ((uint32_t)record->mark)<<24 ^ record->host;
-  ZLOG(LOG_INSANE, "mark = %u, host = %u", record->mark, record->host);
-  ZLOG(LOG_INSANE, "result = %u", result);
+  ZLOG(LOG_INSANE, "mark = %u, host = %u, result = %u", record->mark, record->host, result);
   return result;
 }
 
@@ -142,10 +141,8 @@ void MakeURL(char *url, const int32_t size,
   }
 
   /* construct url */
-  host[BIG_ENOUGH_SPACE - 1] = '\0';
   g_snprintf(url, size, "%s://%s:%u",
       StringizeChannelSourceType(record->protocol), host, record->port);
-  url[size-1] = '\0';
 
   ZLOG(LOG_INSANE, "url = %s", url);
 }

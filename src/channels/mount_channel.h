@@ -19,7 +19,6 @@
 #ifndef MOUNT_CHANNEL_H_
 #define MOUNT_CHANNEL_H_
 
-#include <openssl/sha.h> /* SHA_DIGEST_LENGTH, SHA_CTX */
 #include <zmq.h>
 #include "src/loader/sel_ldr.h"
 #include "src/main/etag.h"
@@ -32,7 +31,7 @@ EXTERN_C_BEGIN
 /* name, id, access type, gets, getsize, puts, putsize */
 #define CHANNEL_ATTRIBUTES ChannelAttributesNumber
 
-/* stdin, stdout, stderr. in the future 2 more channels will be added */
+/* stdin, stdout, stderr */
 #define RESERVED_CHANNELS 3
 #define NET_BUFFER_SIZE 0x10000
 
@@ -40,11 +39,6 @@ EXTERN_C_BEGIN
 #define STDIN "/dev/stdin" /* c90 stdin */
 #define STDOUT "/dev/stdout" /* c90 stdout */
 #define STDERR "/dev/stderr" /* c90 stderr */
-#define STDDBG "/dev/debug" /* zvm extension */
-
-/* not used so far */
-#define INPUT "/dev/input" /* random access read-only channel */
-#define OUTPUT "/dev/input" /* random access write-only channel */
 
 /* attributes has fixed order, thats why enum has been used */
 enum ChannelAttributes {
@@ -62,10 +56,10 @@ enum ChannelAttributes {
 enum ChannelSourceType {
   ChannelRegular, /* supported */
   ChannelDirectory, /* not supported */
-  ChannelCharacter, /* supported. under construction */
-  ChannelBlock, /* not tested */
+  ChannelCharacter, /* supported */
+  ChannelBlock, /* not supported */
   ChannelFIFO, /* not tested */
-  ChannelLink, /* not tested */
+  ChannelLink, /* not supported */
   ChannelSocket, /* not tested (ChannelIPC replacement) */
   ChannelIPC, /* to remove */
   ChannelTCP, /* supported */
@@ -76,7 +70,7 @@ enum ChannelSourceType {
   ChannelSourceTypeNumber
 };
 
-/* source file prefixes */
+/* source file prefixes (should be in synch with ChannelSourceType) */
 #define CHANNEL_SOURCE_PREFIXES { \
   "file", /* ChannelRegular */\
   "directory", /* ChannelDirectory */\

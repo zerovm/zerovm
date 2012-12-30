@@ -340,7 +340,7 @@ void NaClElfImageLoad(struct NaClElfImage *image,
 
     if(0 == php->p_filesz)
     {
-      ZLOGS(LOG_DEBUG, "zero-sized segment.  ignoring...");
+      ZLOGS(LOG_DEBUG, "zero-sized segment. ignoring...");
       continue;
     }
     end_vaddr = php->p_vaddr + php->p_filesz;

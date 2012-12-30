@@ -18,9 +18,6 @@
  */
 
 #include <assert.h>
-#include <glib.h> /* hash table */
-#include <byteswap.h> /* for big endian conversion */
-#include <arpa/inet.h> /* convert ip <-> int */
 #include <zmq.h>
 #include "src/main/manifest_parser.h"
 #include "src/main/manifest_setup.h" /* todo(d'b): remove it. defines SystemManifest */
@@ -251,6 +248,7 @@ static INLINE void NetCtor()
  *   team will fix it.
  * note: global nap object has been used. but it is ok since the patch
  *   is temporary
+ * todo(d'b): remove this function
  */
 static INLINE void CloseChannels()
 {

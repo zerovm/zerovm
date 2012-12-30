@@ -27,31 +27,15 @@
 #include "src/channels/mount_channel.h"
 
 /* get string contain protocol name by channel source type */
-#define SOURCE_PREFIX(type) case type: return prefix[type]
 char *StringizeChannelSourceType(enum ChannelSourceType type)
 {
   char *prefix[] = CHANNEL_SOURCE_PREFIXES;
 
-  switch(type)
-  {
-    SOURCE_PREFIX(ChannelRegular);
-    SOURCE_PREFIX(ChannelDirectory);
-    SOURCE_PREFIX(ChannelCharacter);
-    SOURCE_PREFIX(ChannelBlock);
-    SOURCE_PREFIX(ChannelFIFO);
-    SOURCE_PREFIX(ChannelLink);
-    SOURCE_PREFIX(ChannelSocket);
-    SOURCE_PREFIX(ChannelIPC);
-    SOURCE_PREFIX(ChannelTCP);
-    SOURCE_PREFIX(ChannelINPROC);
-    SOURCE_PREFIX(ChannelPGM);
-    SOURCE_PREFIX(ChannelEPGM);
-    SOURCE_PREFIX(ChannelUDP);
-    case ChannelSourceTypeNumber: break; /* prevent warning */
-  }
-  return NULL;
+  if(type >= ChannelRegular && type < ChannelSourceTypeNumber)
+    return prefix[type];
+  else
+    return NULL;
 }
-#undef SOURCE_PREFIX
 
 /* return source type inferred from the source file (or url) */
 static enum ChannelSourceType GetSourceType(char *name)
@@ -97,6 +81,7 @@ static struct ChannelDesc* SelectNextChannel(struct NaClApp *nap, char *alias)
 static void ChannelCtor(struct NaClApp *nap, char **tokens)
 {
   struct ChannelDesc *channel;
+  int code;
 
   assert(nap != NULL);
   assert(tokens != NULL);
@@ -139,17 +124,14 @@ static void ChannelCtor(struct NaClApp *nap, char **tokens)
   /* mount given channel */
   switch(channel->source)
   {
-    int code;
     case ChannelRegular:
     case ChannelCharacter:
     case ChannelFIFO:
     case ChannelSocket:
       code = PreloadChannelCtor(channel);
-      ZLOGFAIL(code, EFAULT, "cannot allocate channel %s", channel->alias);
       break;
     case ChannelTCP:
       code = PrefetchChannelCtor(channel);
-      ZLOGFAIL(code, EFAULT, "cannot allocate channel %s", channel->alias);
       break;
     case ChannelDirectory:
     case ChannelBlock:
@@ -159,13 +141,12 @@ static void ChannelCtor(struct NaClApp *nap, char **tokens)
     case ChannelPGM:
     case ChannelEPGM:
     case ChannelUDP:
+    default:
       ZLOGFAIL(1, EPROTONOSUPPORT, "'%s': '%s' type isn't supported",
           channel->name, StringizeChannelSourceType(channel->source));
       break;
-    default:
-      ZLOGFAIL(1, EFAULT, "invalid channel source. internal error!");
-      break;
   }
+  ZLOGFAIL(code, EFAULT, "cannot allocate channel %s", channel->alias);
 }
 
 /* close channel and deallocate its resources */
@@ -207,11 +188,9 @@ static void ChannelDtor(struct ChannelDesc *channel)
     case ChannelPGM:
     case ChannelEPGM:
     case ChannelUDP:
+    default:
       ZLOG(LOG_ERR, "'%s': '%s' type isn't supported",
           channel->name, StringizeChannelSourceType(channel->source));
-      break;
-    default:
-      ZLOG(LOG_ERR, "invalid channel source %d. internal error!", channel->source);
       break;
   }
 }
