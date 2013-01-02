@@ -40,3 +40,25 @@ determinism. therefore before building ncval the patch should be applied:
  367               0 :       *disallows_flags |= NACL_DISALLOWS_FLAG(NaClMarkedIllegal);
 insert to any place a new case:
                            case NACLi_RDTSC:  
+
+update (2013.01.02):
+// find "const uint8_t kNaClFullStop = 0xf4;" in src/trusted/validator/x86/ncval_reg_sfi/ncvalidate_iter.c
+// and after the line add folowing code:
+
+const char kNaClRDTSC[] = {0x0f, 0x31}; /* x86 RDTSC opcode */
+const uint16_t kNaClRDTSC_SIZE = sizeof kNaClRDTSC; /* x86 RDTSC opcode size */
+
+// also replace original NCStubOutMem() with a new version:
+
+void NCStubOutMem(NaClValidatorState *state, void *ptr, size_t num) {
+  state->did_stub_out = TRUE;
+
+  /* d'b: only RDTSC should be replaced with NOPs */
+  if(num == kNaClRDTSC_SIZE && !memcmp(ptr, kNaClRDTSC, num))
+    memset(ptr, kNaClNOP, num);
+  else
+    memset(ptr, kNaClFullStop, num);
+}
+
+// this is a quick and dirty hack. in the future nacl validator must have own project in zerovm and 
+// the code should be changed on more neat way
