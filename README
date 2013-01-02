@@ -69,15 +69,24 @@ VirtualBox doesn't support SSE4.1 used by several of provided samples.
 
    You should see a usage message.
    Consider building and running samples located in samples directory.
-   
-   notice: some of samples can be found in samples/ but more of them resides in the
+
+   notice: some of samples can be found in tests/functional/ but more of them resides in the
    zrt project
+
+   about missing ncval and ncval_stubout see Troubleshooting(3) 
 
 Troubleshooting:
 1.
-- ... Fatal error: can't create obj/sel_main.o: No such file or directory
-- missing subfolders in the ZeroVM folder. create 2 directories: "obj/" and "test/"
+problem: Fatal error: can't create obj/sel_main.o: No such file or directory
+solution: missing subfolders in the ZeroVM folder. create 2 directories: "obj/" and "test/"
 
 2. 
-- ... error: expected specifier-qualifier-list before ‘AES_KEY’
-- missing library. look at (2) of Installation chapter and issue the given command
+problem: error: expected specifier-qualifier-list before ‘AES_KEY’
+solution: missing library. look at (2) of Installation chapter and issue the given command
+
+3.
+problem: exit state = src/main/sel_main.c 156: cannot start validator
+solution: put in "ncval" path (ncval can be found in zerovm/lib/bin)
+problem: exit state = src/main/sel_main.c 162: validation failed
+solution: put in "ncval_stubout" path (ncval_stubout can be found in zerovm/lib/bin)
+  if the problem remains try to find out exact source of problem using ncval 
