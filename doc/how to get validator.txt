@@ -40,3 +40,10 @@ determinism. therefore before building ncval the patch should be applied:
  367               0 :       *disallows_flags |= NACL_DISALLOWS_FLAG(NaClMarkedIllegal);
 insert to any place a new case:
                            case NACLi_RDTSC:  
+
+update (2013.01.02):
+"const uint8_t kNaClFullStop = 0xf4;" in src/trusted/validator/x86/ncval_reg_sfi/ncvalidate_iter.c
+should be replaced with the "const uint8_t kNaClFullStop = 0x90;"
+
+it is a quick and dirty hack. in the future nacl validator must have own project in zerovm and 
+the code should be changed on more neat way
