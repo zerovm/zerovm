@@ -7,7 +7,7 @@ all: $(NAME).o
 	-melf64_nacl -m64 $(NAME).o $(ZEROVM_ROOT)/api/zvm.o
 	@cp cdr_stubbed.stored cdr_stubbed.data
 	@sed 's#CURDIR#$(CURDIR)#g' $(NAME).template > $(NAME).manifest 
-	@binpatch $(NAME).nexe 4c01fc0f3148c1e2 4c01fc909048c1e2
+	@ncval_stubout $(NAME).nexe -o $(NAME).nexe
 	@$(ZEROVM_ROOT)/zerovm -e -M$(NAME).manifest
 
 $(NAME).o: $(NAME).c

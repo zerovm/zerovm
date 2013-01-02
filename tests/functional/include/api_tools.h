@@ -28,6 +28,7 @@
 #define LOT_ENOUGH 0x100
 
 #define UNREFERENCED_VAR(a) do { (void)a; } while(0)
+#define UNREFERENCED_FUNCTION(f) do {if(0) f();} while(0)
 
 /*
  * if condition is false increase the errors count (ERRCOUNT),

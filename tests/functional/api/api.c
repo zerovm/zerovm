@@ -105,6 +105,8 @@ int main(int argc, char **argv)
   char *token;
   int number;
 
+  UNREFERENCED_FUNCTION(g_ascii_strtoll);
+
   /* get the control data */
   if(manifest_ctor() != 0)
   {

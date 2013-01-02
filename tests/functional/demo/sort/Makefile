@@ -16,9 +16,9 @@ all: $(NAME_1).o $(NAME_2).o $(NAME_3).o
 	@sed 's#CURDIR#$(CURDIR)#g' $(NAME_1).template > $(NAME_1).manifest
 	@sed 's#CURDIR#$(CURDIR)#g' $(NAME_2).template > $(NAME_2).manifest
 	@sed 's#CURDIR#$(CURDIR)#g' $(NAME_3).template > $(NAME_3).manifest
-	@binpatch $(NAME_1).nexe 4c01fc0f3148c1e2 4c01fc909048c1e2
-	@binpatch $(NAME_2).nexe 4c01fc0f3148c1e2 4c01fc909048c1e2
-	@binpatch $(NAME_3).nexe 4c01fc0f3148c1e2 4c01fc909048c1e2
+	@ncval_stubout $(NAME_1).nexe -o $(NAME_1).nexe
+	@ncval_stubout $(NAME_2).nexe -o $(NAME_2).nexe
+	@ncval_stubout $(NAME_3).nexe -o $(NAME_3).nexe
 	./run_test.sh
 
 $(NAME_1).o: $(NAME_1).c
