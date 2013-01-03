@@ -81,7 +81,7 @@ static struct ChannelDesc* SelectNextChannel(struct NaClApp *nap, char *alias)
 static void ChannelCtor(struct NaClApp *nap, char **tokens)
 {
   struct ChannelDesc *channel;
-  int code;
+  int code = 1; /* means error */
 
   assert(nap != NULL);
   assert(tokens != NULL);
