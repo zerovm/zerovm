@@ -45,8 +45,6 @@
     "Channel = tcp:2:, /dev/in/in, 0, 99999999, 99999999, 0, 0"\
     \
     "== the limits section ==============================================="\
-    "NexeMax = 4194304"\
-    "SyscallsMax = 8192"\
     "MaxMem = 100663296"\
     "Timeout = 5"\
     "Version = 09082012"

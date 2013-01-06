@@ -11,7 +11,6 @@ Channel = /dev/null, /dev/stderr, 0, 0, 0, 16, 256
 =====================================================================
 Version = 09082012
 Nexe = environment.nexe
-NexeMax = 4194304
 MemMax = 134217728
 Timeout = 5
 

@@ -1,12 +1,12 @@
 This document describes ZeroVM security, how ZeroVM stands against possible attacks
 -----------------------------------------------------------------------------------
 
-We assume that original NaCl implementation i perfect and will analyze only the 
+We assume that original NaCl implementation is perfect and will analyze only the 
 ZeroVM features that can affect the system security.
 
 Syscallback
 -----------
-Most dangerous feature is the syscallback engine. User is allowed to set her own direct jump from 
+The most dangerous feature is the syscallback engine. User is allowed to set her own direct jump from 
 the trusted space to the untrusted code. To prevent security leaks zerovm analyzes the given 
 syscallback address. The address must point to a static or dynamic text, other addresses will
 be treated as invalid. The address must be modulo of 0x20 to prevent jumping to the middle of

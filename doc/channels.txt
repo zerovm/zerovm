@@ -7,23 +7,26 @@ by the type of the access ZeroVM has 4 types of channels:
 2 - sequential read / random write
 3 - random read / random write
 
-For now ZeroVM supports 5 kinds of the channels:
+For now ZeroVM supports 6 kinds of the channels:
 - sequential read only channel
 - random read only channel
 - sequential write only channel
 - random write only channel
 - appendable channel. random read, sequential write. if the channel is not empty
-the write position is set next to the last byte 
+  the write position is set next to the last byte
+- full random access channel. can be read or written from any valid position
+notice: there is possibility to create thousands channel types, using all
+possible channel attributes. but for now zerovm only support a very limited subset
 
 There are 3 mandatory channels (standard c90 streams): stdin, stdout, stdout.
 The channels has names "/dev/stdin", "/dev/stdout" and "/dev/stderr". The access
 type of the standard channels is 0 - a pure sequential one.
 
 Channel is the file abstraction over the local files and network streams. Local files
-can have random access type, network streams are always sequential. 
+can have random access type, network streams are always sequential.
 
 Channel fields passed via the manifest to ZeroVM:
-name -- local file name or zeromq-type url. local files must use absolute pathes
+name -- local file name or zeromq-type url. local files must use absolute paths
 alias -- device name for the user side. Cannot be the same as "name". Must follow 
     the device naming scheme: /dev/device-name
 type -- access type. Can be in 0..3 range
@@ -39,7 +42,7 @@ limits -- 4 limits for the channel
 size -- channel size. only available for random access channels
 handle -- not a real handle, just an index in the "channels" array
     it is guaranteed that indices 0..2 represents stdin, stdout and stderr
-          
+
 All channels are opened before the nexe starts and closed after nexe ends. In case of
 the channels i/o error ZeroVM will not start. ZeroVM preallocates specified size
 for the local writable channels.
@@ -53,3 +56,11 @@ notation: "tcp:123.1.2.3:123". Such name doesn't need to be resolved and can be 
 by ZeroVM "as is".
 
 For now the channels number specified in the manifest limited to 6048
+
+--------
+канал связывающий два zerovm назвается каналом связи. он всегда имеет только 
+последовательный доступ и только одно направление передачи данных. то есть
+это канал типа 0 "только для чтения" или "только для записи". каждый канал связи
+завершается символом zvm_eof. если включен механизм etag, то zvm_eof содержит
+контрольную сумму канала. это позволяет проконтролировать целостность
+переданных/принятых данных

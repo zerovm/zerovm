@@ -12,7 +12,6 @@ Channel = CURDIR/ranro.data, /dev/ranro, 1, 32, 32, 0, 0
 =====================================================================
 Version = 09082012
 Nexe = ranro.nexe
-NexeMax = 4194304
 MemMax = 134217728
 Timeout = 5
 

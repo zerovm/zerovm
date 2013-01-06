@@ -11,7 +11,6 @@ Channel = CURDIR/stderr.data, /dev/stderr, 0, 0, 0, 999999, 999999
 =====================================================================
 Version = 09082012
 Nexe = hello.nexe
-NexeMax = 4121440
 NodeName = hello, 1
 MemMax = 536870912
 Timeout = 1

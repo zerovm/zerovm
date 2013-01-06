@@ -12,7 +12,6 @@ Channel
 Environment
 Version
 Nexe
-NexeMax
 NexeEtag
 Timeout
 MemMax
@@ -53,9 +52,6 @@ Version
 Nexe
   (obligatory, single value)
   NaCl module name to isolate and run
-NexeMax
-  (obligatory, single value, will be removed)
-  The size limit for the nexe 
 NexeEtag
   (single value)
   reserved
