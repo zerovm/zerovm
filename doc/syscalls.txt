@@ -5,21 +5,19 @@ NaCl application is not allowed to use real system calls, it should use the NaCl
 There is however a difference between the original NaCl sel_ldr (NaCl executable loader) and zerovm: 
 zerovm does not support any syscalls except the following ones:
   NACL_sys_sysbrk (20), 
-  NACL_sys_mmap (21), 
-  NACL_sys_munmap (22), 
   NACL_sys_exit (30),
   NACL_sys_mutex_create (70), 
   NACL_sys_tls_init (82), 
   NACL_sys_tls_get (84). 
 More than that, zerovm supports a special syscall with number 0 called "trap" (see "trap.txt")
 
-When zerovm encounters an unsupported syscall it executes the stub (just returns 0).
+When zerovm encounters an unsupported syscall it executes the stub returning -ENOSYS (-38).
 
 For the input/output syscalls zerovm offers a replacement: the channels (see 
 "channels.txt"). To pass custom attributes (like a system time) the "Environment"
 manifest keyword can be used (see "environment.txt" and "api.txt").
 
-More detailed information about syscalls can be obtained from the Google NaCl paper.
+More detailed information about NaCl syscalls can be obtained from the Google NaCl paper.
 
 User program could intercept all the syscalls except trap() syscall (for further information
 see "syscallback.txt"). This is the way to emulate some (or all) nacl syscalls (see "zrtlib.txt").

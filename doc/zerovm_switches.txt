@@ -3,25 +3,33 @@ This document describes ZeroVM command line switches
 
 ZeroVM command line switches:
 
-    Usage: ZeroVM [-M manifest_file] [-v d] [-FSsQ]
-     -M <file> load settings from manifest
-     -v [level] verbosity
-    
-     (testing flags)
-     -s skip validation
-     -F fuzz testing; quit after loading NaCl app
-     -S disable signal handling
-     -Q disable platform qualification (dangerous!)
+  ZeroVM lightweight VM manager, build 2012-12-29
+  Usage: <-M manifest_file> [-v #] [-l #] [-FSseQ]
+
+   -M <file> load settings from manifest
+   -e enable the data oversight (etag)
+   -l set a new storage limit (in Gb)
+   -s skip validation
+
+   (testing flags)
+   -v [level] verbosity
+   -F fuzz testing; quit after loading NaCl app
+   -S disable signal handling
+   -Q disable platform qualification (dangerous!)
 
 
 -M -- The manifest contains a set of control data for the executable. Obligatory switch.
       More details about the manifest file can be found in the appropriate document on 
-      github.com/Dazo-org/ZeroVM
+      github.com/ZeroVM/ZeroVM
+
+-e -- enable etag engine to control data integrity. user encouraged to use this keyword.
+
+-l -- changes zerovm i/o hard limit. by default session only allowed to use 4gb
+
+-s -- skips validation. used for "prevalidation" engine.
 
 -v -- controls verbosity of information in the ZeroVM log. writes ZeroVM 
       log to "var/log/syslog". it is not recommended to use values more than 2
-
--s -- skips validation. used for "prevalidation" engine.
 
 -F -- specified NaCl application will be loaded but not run. used for 
       "prevalidation" engine.
@@ -30,3 +38,13 @@ ZeroVM command line switches:
 
 -Q -- will skip data execution test. This switch makes it possible to run ZeroVM 
       application on a platform with no "data execution" protection.
+
+examples:
+  zerovm -v2 -Mtest.manifest
+  starts zerovm with manifest "test.manifest" and "debug" verbosity
+  
+  zerovm -e -Mtest.manifest
+  starts zerovm with manifest "test.manifest" with enabled etag
+  
+  zerovm -F -Mtest.manifest
+  loads nexe specified in "test.manifest" and exits with validator status

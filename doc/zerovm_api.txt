@@ -1,5 +1,6 @@
 This document describes API for zerovm NaCl applications
 (after review the document should be joined with "api.txt")
+(obsolete. use api.txt instead)
 ---------------------------------------------------------
 
 
