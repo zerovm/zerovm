@@ -85,8 +85,7 @@ static void ParseURL(const struct ChannelDesc *channel, struct ChannelConnection
   ZLOG(LOG_INSANE, "url = %s", channel->name);
 
   /* copy the channel name aside and parse it */
-  strncpy(name, channel->name, BIG_ENOUGH_SPACE);
-  name[BIG_ENOUGH_SPACE - 1] = '\0';
+  g_strlcpy(name, channel->name, BIG_ENOUGH_SPACE);
   ParseValue(name, ":", tokens, BIG_ENOUGH_SPACE);
   assert(tokens[0] != NULL);
 
