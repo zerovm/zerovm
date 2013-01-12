@@ -26,13 +26,6 @@
 #include "src/main/nacl_globals.h"
 #include "src/syscalls/nacl_switch_to_app.h"
 
-#ifdef DISABLE_RDTSC
-#include <signal.h>
-#include <inttypes.h>
-#include <sys/prctl.h>
-#include <linux/prctl.h>
-#endif
-
 #define NORETURN_PTR NORETURN
 
 static NORETURN_PTR void (*NaClSwitch)(struct NaClThreadContext *context);
@@ -67,23 +60,5 @@ NORETURN void NaClSwitchToApp(struct NaClApp *nap, nacl_reg_t new_prog_ctr)
   nacl_user->new_prog_ctr = new_prog_ctr;
   nacl_user->sysret = nap->sysret;
 
-#ifdef DISABLE_RDTSC
-  /* prevent rdtsc execution */
-  ZLOGFAIL(prctl(PR_SET_TSC, PR_TSC_SIGSEGV) == -1,
-      errno, "cannot prevent rdtsc execution");
-#endif
-
   NaClSwitch(nacl_user);
 }
-
-#ifdef DISABLE_RDTSC
-/* switch to the nacl module (untrusted content) after signal */
-NORETURN void NaClSwitchToAppAfterSignal(struct NaClApp *nap)
-{
-  /* prevent rdtsc execution */
-  ZLOGFAIL(prctl(PR_SET_TSC, PR_TSC_SIGSEGV) == -1,
-      errno, "cannot prevent rdtsc execution");
-
-  NaClSwitch(nacl_user);
-}
-#endif

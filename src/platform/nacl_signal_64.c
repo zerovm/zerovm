@@ -72,34 +72,3 @@ void NaClSignalContextFromHandler(struct NaClSignalContext *sigCtx, const void *
   sigCtx->ds = 0;
   sigCtx->ss = 0;
 }
-
-#ifdef DISABLE_RDTSC
-/* store the signal context into the thread context */
-void NaClThreadContextFromHandler(struct NaClThreadContext *thread_ctx, const void *rawCtx)
-{
-  const ucontext_t *uctx = (const ucontext_t *)rawCtx;
-  const mcontext_t *mctx = &uctx->uc_mcontext;
-
-  thread_ctx->new_prog_ctr = mctx->gregs[REG_RIP];
-  thread_ctx->prog_ctr = mctx->gregs[REG_RIP]; /* do we need set this? */
-  thread_ctx->sysret = 0; /* meaningless since there was no syscall. just clear it */
-
-  thread_ctx->rax = mctx->gregs[REG_RAX];
-  thread_ctx->rbx = mctx->gregs[REG_RBX];
-  thread_ctx->rcx = mctx->gregs[REG_RCX];
-  thread_ctx->rdx = mctx->gregs[REG_RDX];
-  thread_ctx->rsi = mctx->gregs[REG_RSI];
-  thread_ctx->rdi = mctx->gregs[REG_RDI];
-  thread_ctx->rbp = mctx->gregs[REG_RBP];
-  thread_ctx->rsp = mctx->gregs[REG_RSP];
-
-  thread_ctx->r8 = mctx->gregs[REG_R8];
-  thread_ctx->r9 = mctx->gregs[REG_R9];
-  thread_ctx->r10 = mctx->gregs[REG_R10];
-  thread_ctx->r11 = mctx->gregs[REG_R11];
-  thread_ctx->r12 = mctx->gregs[REG_R12];
-  thread_ctx->r13 = mctx->gregs[REG_R13];
-  thread_ctx->r14 = mctx->gregs[REG_R14];
-  thread_ctx->r15 = mctx->gregs[REG_R15];
-}
-#endif

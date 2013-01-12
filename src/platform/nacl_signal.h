@@ -94,11 +94,6 @@ int NaClSignalHandlerAdd(NaClSignalHandler func);
 void NaClSignalContextFromHandler(struct NaClSignalContext *sigCtx,
                                   const void *rawCtx);
 
-#ifdef DISABLE_RDTSC
-/* d'b: store the signal context into the thread context */
-void NaClThreadContextFromHandler(struct NaClThreadContext *thread_ctx, const void *rawCtx);
-#endif
-
 /*
  * Return non-zero if the signal context is currently executing in an
  * untrusted environment.

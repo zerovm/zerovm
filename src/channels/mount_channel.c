@@ -31,10 +31,8 @@ char *StringizeChannelSourceType(enum ChannelSourceType type)
 {
   char *prefix[] = CHANNEL_SOURCE_PREFIXES;
 
-  if(type >= ChannelRegular && type < ChannelSourceTypeNumber)
-    return prefix[type];
-  else
-    return NULL;
+  assert(type >= ChannelRegular && type < ChannelSourceTypeNumber);
+  return prefix[type];
 }
 
 /* return source type inferred from the source file (or url) */

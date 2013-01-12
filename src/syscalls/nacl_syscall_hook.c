@@ -30,13 +30,6 @@
 #include "src/loader/sel_rt_64.h"
 #include "src/main/manifest_setup.h"
 
-#ifdef DISABLE_RDTSC
-#include <signal.h>
-#include <inttypes.h>
-#include <sys/prctl.h>
-#include <linux/prctl.h>
-#endif
-
 /*
  * d'b: make syscall invoked from the untrusted code
  */
@@ -55,12 +48,6 @@ NORETURN void NaClSyscallCSegHook()
   user = nacl_user; /* restore from global */
   sp_user = NaClGetThreadCtxSp(user);
   sp_sys = NaClUserToSysStackAddr(nap, sp_user);
-
-#ifdef DISABLE_RDTSC
-  /* prevent rdtsc execution */
-  ZLOGFAIL(prctl(PR_SET_TSC, PR_TSC_ENABLE) == -1,
-      errno, "cannot allow rdtsc execution");
-#endif
 
   /*
    * sp_sys points to the top of user stack where there is a retaddr to

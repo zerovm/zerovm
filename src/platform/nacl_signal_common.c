@@ -27,11 +27,6 @@
 #include "src/main/nacl_globals.h"
 #include "src/main/zlog.h"
 
-#ifdef DISABLE_RDTSC
-#include "src/service_runtime/sel_rt_64.h"
-#include "src/service_runtime/nacl_switch_to_app.h"
-#endif
-
 #define MAX_NACL_HANDLERS 16
 
 struct NaClSignalNode {
@@ -85,30 +80,6 @@ enum NaClSignalResult NaClSignalHandleAll(int signum, void *ctx)
    * simulate normal OS behavior
    */
   NaClSignalContextFromHandler(&sigCtx, ctx);
-
-#ifdef DISABLE_RDTSC
-  /*
-   * d'b: fix for rdtsc indeterminism. should be removed after nacl sdk
-   * will blacklist rdtsc.
-   * update: disabled since i don't able to understand how to make it
-   * work for consequent signals
-   */
-#define RDTSC_OPCODE ((uint16_t)0x310f)
-  if(signum == SIGSEGV)
-  {
-    NaClThreadContextFromHandler(nacl_user, ctx);
-    if(*(uint16_t*)nacl_user->prog_ctr == RDTSC_OPCODE)
-    {
-      nacl_user->prog_ctr += sizeof RDTSC_OPCODE;
-      nacl_user->new_prog_ctr += sizeof RDTSC_OPCODE;
-      nacl_user->rax = 0;
-      nacl_user->rdx = 0;
-
-      /* switch to user application */
-      NaClSwitchToAppAfterSignal(gnap);
-    }
-  }
-#endif
 
   /* set zvm state */
   g_snprintf(msg, SIGNAL_STRLEN, "Signal %d from %strusted code: Halting at 0x%012lX",
@@ -169,13 +140,6 @@ void NaClSignalHandlerInit() {
     s_SignalNodes[a].id = a + 1;
     s_FreeList = &s_SignalNodes[a];
   }
-
-#ifdef DISABLE_RDTSC
-  /* allocate signal stack */
-  ZLOGFAIL(NaClSignalStackAllocate(&gnap->signal_stack) == 0,
-      ENOMEM, "cannot allocate signal stack");
-  NaClSignalStackRegister(gnap->signal_stack);
-#endif
 
   NaClSignalHandlerInitPlatform();
 
