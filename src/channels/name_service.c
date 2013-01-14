@@ -40,10 +40,7 @@ static uint32_t binds = 0; /* "bind" channel number */
 static uint32_t connects = 0; /* "connect" channel number */
 static struct ChannelConnection *nameservice = NULL;
 
-/*
- * test the channel for validity
- * todo(d'b): update the function with more checks
- */
+/* test the channel for validity */
 static void FailOnInvalidNetChannel(const struct ChannelDesc *channel)
 {
   ZLOGFAIL(channel->source != ChannelTCP, EPROTONOSUPPORT, "protocol not supported");
