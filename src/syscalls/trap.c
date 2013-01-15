@@ -45,7 +45,7 @@ static int32_t ZVMExitHandle(struct NaClApp *nap, int32_t code)
  * 0x3 - read/write
  * note: for the cdr 0x1 means the channel exceeded write limit
  */
-int ChannelIOMask(struct ChannelDesc *channel)
+static int ChannelIOMask(struct ChannelDesc *channel)
 {
   uint32_t rw = 0;
   int64_t puts_rest = channel->limits[PutsLimit] - channel->counters[PutsLimit];
@@ -125,7 +125,7 @@ static int CheckWriteAccess(struct NaClApp *nap, const void *p, int32_t size)
  * read specified amount of bytes from given desc/offset to buffer
  * return amount of read bytes or negative error code if call failed
  */
-int32_t ZVMReadHandle(struct NaClApp *nap,
+static int32_t ZVMReadHandle(struct NaClApp *nap,
     int ch, char *buffer, int32_t size, int64_t offset)
 {
   struct ChannelDesc *channel;
@@ -138,8 +138,15 @@ int32_t ZVMReadHandle(struct NaClApp *nap,
   assert(nap->system_manifest->channels != NULL);
 
   /* check the channel number */
-  if(ch < 0 || ch >= nap->system_manifest->channels_count) return -EINVAL;
+  if(ch < 0 || ch >= nap->system_manifest->channels_count)
+  {
+    ZLOGS(LOG_DEBUG, "channel_id=%d, buffer=0x%lx, size=%d, offset=%ld",
+        ch, (intptr_t)buffer, size, offset);
+    return -EINVAL;
+  }
   channel = &nap->system_manifest->channels[ch];
+  ZLOGS(LOG_DEBUG, "channel %s, buffer=0x%lx, size=%d, offset=%ld",
+      channel->alias, (intptr_t)buffer, size, offset);
 
   /* check buffer and convert address */
   if(CheckWriteAccess(nap, buffer, size) == ERR_CODE) return -EINVAL;
@@ -174,8 +181,6 @@ int32_t ZVMReadHandle(struct NaClApp *nap,
   tail = channel->limits[GetSizeLimit] - channel->counters[GetSizeLimit];
   if(size > tail) size = tail;
   if(size < 1) return -EDQUOT;
-  ZLOGS(LOG_DEBUG, "channel %s, buffer=0x%lx, size=%d, offset=%ld",
-      channel->alias, (intptr_t)buffer, size, offset);
 
   /* read data and update position */
   /* todo(d'b): when the reading operation hits channels end return EOF(-1?) */
@@ -232,7 +237,7 @@ int32_t ZVMReadHandle(struct NaClApp *nap,
  * write specified amount of bytes from buffer to given desc/offset
  * return amount of read bytes or negative error code if call failed
  */
-int32_t ZVMWriteHandle(struct NaClApp *nap,
+static int32_t ZVMWriteHandle(struct NaClApp *nap,
     int ch, const char *buffer, int32_t size, int64_t offset)
 {
   struct ChannelDesc *channel;
@@ -245,8 +250,15 @@ int32_t ZVMWriteHandle(struct NaClApp *nap,
   assert(nap->system_manifest->channels != NULL);
 
   /* check the channel number */
-  if(ch < 0 || ch >= nap->system_manifest->channels_count) return -EINVAL;
+  if(ch < 0 || ch >= nap->system_manifest->channels_count)
+  {
+    ZLOGS(LOG_DEBUG, "channel_id=%d, buffer=0x%lx, size=%d, offset=%ld",
+        ch, (intptr_t)buffer, size, offset);
+    return -EINVAL;
+  }
   channel = &nap->system_manifest->channels[ch];
+  ZLOGS(LOG_DEBUG, "channel %s, buffer=0x%lx, size=%d, offset=%ld",
+      channel->alias, (intptr_t)buffer, size, offset);
 
   /* check buffer and convert address */
   if(CheckReadAccess(nap, buffer, size) == ERR_CODE) return -EINVAL;
@@ -272,8 +284,6 @@ int32_t ZVMWriteHandle(struct NaClApp *nap,
   if(offset >= channel->size + tail) return -EINVAL;
   if(size > tail) size = tail;
   if(size < 1) return -EDQUOT;
-  ZLOGS(LOG_DEBUG, "channel %s, buffer=0x%lx, size=%d, offset=%ld",
-      channel->alias, (intptr_t)buffer, size, offset);
 
   /* write data and update position */
   switch(channel->source)
@@ -337,7 +347,7 @@ static int32_t ZVMHeapEnd(struct NaClApp *nap)
  * and "name" field in the given channel descriptor is NULL
  * otherwise also copy channel alias to "name" field
  */
-int32_t ZVMChannelName(struct NaClApp *nap, struct ZVMChannel *chnl, int ch)
+static int32_t ZVMChannelName(struct NaClApp *nap, struct ZVMChannel *chnl, int ch)
 {
   struct ZVMChannel *uchannel;
   struct ChannelDesc *channel;
@@ -345,6 +355,8 @@ int32_t ZVMChannelName(struct NaClApp *nap, struct ZVMChannel *chnl, int ch)
 
   assert(nap != NULL);
   assert(nap->system_manifest != NULL);
+
+  ZLOGS(LOG_DEBUG, "channel_id=%d, chnl=0x%lx", ch, (intptr_t)chnl);
 
   if(chnl == NULL) return -EINVAL;
 
@@ -374,6 +386,8 @@ static int32_t ZVMChannels(struct NaClApp *nap, struct ZVMChannel *buf)
 
   assert(nap != NULL);
   assert(nap->system_manifest != NULL);
+
+  ZLOGS(LOG_DEBUG, "buf=0x%lx", (intptr_t)buf);
 
   /* user asked for the channels count */
   if(buf == NULL) return nap->system_manifest->channels_count;
@@ -431,6 +445,8 @@ static int32_t ZVMSyscallback(struct NaClApp *nap, int32_t addr)
 
   assert(nap != NULL);
   assert(nap->system_manifest != NULL);
+
+  ZLOGS(LOG_DEBUG, "address==0x%x", addr);
 
   /* uninstall syscallback if 0 given */
   if(addr == 0)

@@ -42,9 +42,6 @@ EXTERN_C_BEGIN
  */
 int32_t TrapHandler(struct NaClApp *nap, uint32_t args);
 
-/* helper. should be used with macros */
-/* todo(d'b): yakk! */
-int ChannelIOMask(struct ChannelDesc *channel);
 /* macros uses channel type and limits */
 #define CHANNEL_READABLE(channel) ((ChannelIOMask(channel) & 1) == 1)
 #define CHANNEL_WRITEABLE(channel) ((ChannelIOMask(channel) & 2) == 2)
