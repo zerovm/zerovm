@@ -7,7 +7,7 @@ all: $(NAME).o
 	-melf64_nacl -m64 $(NAME).o $(ZEROVM_ROOT)/api/zvm.o
 	@sed 's#CURDIR#$(CURDIR)#g' $(NAME).template > $(NAME).manifest 
 	@ncval_stubout $(NAME).nexe -o $(NAME).nexe
-	@$(ZEROVM_ROOT)/zerovm -e -v2 -M$(NAME).manifest
+	@$(ZEROVM_ROOT)/zerovm -e -M$(NAME).manifest
 
 $(NAME).o: $(NAME).c
 	$(NACL_TOOLCHAIN)/bin/x86_64-nacl-gcc -c -Wall -DUSER_SIDE -Wno-long-long \

@@ -243,7 +243,7 @@ int main(int argc, char **argv)
   if(setjmp(user_exit) == 0)
     ZLOGFAIL(!NaClCreateMainThread(nap), EFAULT, "switching to nexe failed");
   SetExitState(OK_STATE);
-  TIMER_REPORT("NaClCreateMainThread()");
+  TIMER_REPORT("nexe session");
 
   /* zerovm exit with finalization, report and stuff */
   NaClExit(0);
