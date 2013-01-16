@@ -139,9 +139,9 @@ static void ValidateNexe(struct NaClApp *nap)
   GError *error = NULL;
   int exit_status = 0;
   enum ValidationState {
-    NotValidated,
     ValidationOK,
-    ValidationFailed
+    ValidationFailed,
+    NotValidated
   };
 
   assert(nap != NULL);
