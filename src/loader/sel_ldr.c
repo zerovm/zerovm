@@ -60,6 +60,7 @@ int NaClAppWithSyscallTableCtor(struct NaClApp               *nap,
   nap->dynamic_mapcache_ret = 0;
 
   nap->syscall_table = table;
+  nap->sys_tls = 0; /* d'b: available for user */
 
   return 1;
 }

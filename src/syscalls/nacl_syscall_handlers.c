@@ -19,7 +19,6 @@
  * limitations under the License.
  */
 
-/* todo(d'b): revise the headers */
 #include <errno.h>
 #include "src/platform/portability.h"
 #include "src/main/nacl_globals.h"
@@ -51,7 +50,6 @@ static void NaClAddSyscall(int num, int32_t(*fn)(struct NaClApp *))
  */
 int32_t NaClSysSysbrk(struct NaClApp *nap, uintptr_t new_break)
 {
-  /* todo(d'b): find appropriate macro (range check) or write it */
   if(new_break >= nap->data_end && new_break < nap->heap_end)
     nap->break_addr = new_break;
   return (int32_t)nap->break_addr;
@@ -89,7 +87,8 @@ int32_t NaClSysTls_Init(struct NaClApp *nap, void *thread_ptr)
 }
 
 /* tls get */
-int32_t NaClSysTls_Get(struct NaClApp *nap) {
+int32_t NaClSysTls_Get(struct NaClApp *nap)
+{
   uint32_t user_tls;
 
   /* too frequently used, and syscall-number level logging suffices */
@@ -102,8 +101,10 @@ int32_t NaClSysTls_Get(struct NaClApp *nap) {
  */
 
 /* this function was automagically generated */
-static int32_t NaClSysSysbrkDecoder(struct NaClApp *nap) {
-  struct NaClSysSysbrkArgs {
+static int32_t NaClSysSysbrkDecoder(struct NaClApp *nap)
+{
+  struct NaClSysSysbrkArgs
+  {
     uint32_t new_break;
   } p = *(struct NaClSysSysbrkArgs *) nap->syscall_args;
 
@@ -111,18 +112,21 @@ static int32_t NaClSysSysbrkDecoder(struct NaClApp *nap) {
 }
 
 /* this function was automagically generated */
-static int32_t NaClSysExitDecoder(struct NaClApp *nap) {
-  struct NaClSysExitArgs {
+static int32_t NaClSysExitDecoder(struct NaClApp *nap)
+{
+  struct NaClSysExitArgs
+  {
     uint32_t status;
   } p = *(struct NaClSysExitArgs *) nap->syscall_args;
 
-  return NaClSysExit(nap, (int)  p.status);
+  return NaClSysExit(nap, (int) p.status);
 }
 
 /* this function was automagically generated */
 static int32_t NaClSysTls_InitDecoder(struct NaClApp *nap)
 {
-    struct NaClSysTls_InitArgs {
+  struct NaClSysTls_InitArgs
+  {
     uint32_t thread_ptr;
   } p = *(struct NaClSysTls_InitArgs *) nap->syscall_args;
 
@@ -159,11 +163,12 @@ static int32_t TrapDecoder(struct NaClApp *nap)
  * d'b: see documentation about "one ring" tonneling syscall
  * note: all syscalls except trap() only need for nexe prolog
  */
-void NaClSyscallTableInit() {
+void NaClSyscallTableInit()
+{
   int i;
-  for (i = 0; i < NACL_MAX_SYSCALLS; ++i) {
-     nacl_syscall[i].handler = &NotImplementedDecoder;
-  }
+
+  for(i = 0; i < NACL_MAX_SYSCALLS; ++i)
+    nacl_syscall[i].handler = &NotImplementedDecoder;
 
   NaClAddSyscall(Trap, &TrapDecoder); /* 0. added onering call */
   NaClAddSyscall(NACL_sys_sysbrk, &NaClSysSysbrkDecoder); /* 20 */
