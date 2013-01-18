@@ -43,6 +43,7 @@ dictionary, bestiary (###):
   вспомогательная программа обеспечивающая установление связи между zerovm-ами
 - nacl sdk
   инструмены позволяющие разрабатывать программы для google native client (nacl)
+  подробная информация может быть получена на https://developers.google.com/native-client/sdk/
 - nacl syscall
   системный вызов nacl
 - syscallback
