@@ -31,10 +31,13 @@ enum ChannelSourceType GetChannelSource(const char *name)
   assert(name != NULL);
 
   /* get the file statistics (try both open modes r/o and w/o) */
+  /*
+   * todo(d'b): it is assumed not existing files are regular
+   * how to support other types like pipes and others?
+   */
   desc = open(name, O_RDONLY);
-  if(desc < 0) desc = open(name, O_WRONLY);
-  if(desc < 0) desc = open(name, O_WRONLY|O_CREAT|O_TRUNC, S_IRWXU);
-  if(desc < 0) return ChannelSourceTypeNumber;
+  if(desc < 0) return ChannelRegular;
+
   code = fstat(desc, &fs);
   close(desc);
   if(code < 0) return ChannelSourceTypeNumber;

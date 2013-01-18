@@ -152,6 +152,9 @@ static void ChannelDtor(struct ChannelDesc *channel)
 {
   assert(channel != NULL);
 
+  /* quit if channel isn't mounted */
+  if(channel->name == NULL) return;
+
   /* set the tag digests for each channel */
   if(TagEngineEnabled())
   {
