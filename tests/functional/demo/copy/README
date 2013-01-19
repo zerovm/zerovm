@@ -1,0 +1,2 @@
+this sample copies data from the input channel to the output channel
+for now it used to test fifo support
