@@ -144,7 +144,7 @@ static void SetCustomAttributes(struct SystemManifest *policy)
   assert(policy->envp == NULL);
 
   /* get environment */
-  environment = GetValueByKey("Environment");
+  environment = GetValueByKey(MFT_ENVIRONMENT);
   if(environment == NULL) return;
 
   /* parse and check count of attributes */
@@ -174,7 +174,7 @@ static void SetNodeName(struct NaClApp *nap)
 {
   int i;
   char *buf[BIG_ENOUGH_SPACE], **tokens = buf;
-  char *pgm_name = GetValueByKey("NodeName");
+  char *pgm_name = GetValueByKey(MFT_NODE);
 
   assert(nap != NULL);
   assert(nap->system_manifest != NULL);
@@ -215,7 +215,7 @@ static void SetCommandLine(struct SystemManifest *policy)
   assert(policy->cmd_line_size == 0);
 
   /* get parameters */
-  parameters = GetValueByKey("CommandLine");
+  parameters = GetValueByKey(MFT_COMMANDLINE);
 
   /* if there is command line parse and check count of parameters */
   if(parameters != NULL)
@@ -237,14 +237,14 @@ static void SetCommandLine(struct SystemManifest *policy)
     policy->cmd_line[i + 1] = tokens[i];
 }
 
-/* set timeout. by design "Timeout" must be specified in manifest */
+/* set timeout. by design timeout must be specified in manifest */
 static void SetTimeout(struct SystemManifest *policy)
 {
   struct rlimit rl;
 
   assert(policy != NULL);
 
-  GET_INT_BY_KEY(policy->timeout, "Timeout");
+  GET_INT_BY_KEY(policy->timeout, MFT_TIMEOUT);
   ZLOGFAIL(policy->timeout < 1, EFAULT, "invalid or absent timeout");
   rl.rlim_cur = policy->timeout;
   rl.rlim_max = -1;
@@ -265,8 +265,8 @@ void SystemManifestCtor(struct NaClApp *nap)
   policy->syscallback = 0;
 
   /* get zerovm settings from manifest */
-  policy->version = GetValueByKey("Version");
-  policy->nexe_etag = GetValueByKey("NexeEtag");
+  policy->version = GetValueByKey(MFT_VERSION);
+  policy->nexe_etag = GetValueByKey(MFT_ETAG);
 
   /* check mandatory manifest keys */
   ZLOGFAIL(nap->system_manifest->version == NULL, EFAULT,
@@ -295,7 +295,7 @@ void SystemManifestCtor(struct NaClApp *nap)
    * in raw because after chunk allocated there will be no free user memory
    * note: will set "heap_ptr"
    */
-  GET_INT_BY_KEY(nap->heap_end, "MemMax");
+  GET_INT_BY_KEY(nap->heap_end, MFT_MEMORY);
   PreallocateUserMemory(nap);
 
   /* zerovm return code */

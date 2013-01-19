@@ -38,16 +38,24 @@ EXTERN_C_BEGIN
     " -S disable signal handling\n"\
     " -Q disable platform qualification (dangerous!)\n"
 
-/* todo(d'b): order and move it to zerovm setup or gather all zvm settings here {{ */
 #define NEXE_PGM_NAME "loner" /* default argv[0] for nexe */
-#define MANIFEST_VERSION "09082012"
 #define ZEROVM_PRIORITY 19
 #define ZEROVM_IO_LIMIT_UNIT 0x40000000l
 #define ZEROVM_IO_LIMIT 4*ZEROVM_IO_LIMIT_UNIT
 #define NEW_ROOT "/"
 #define VALIDATOR_NAME "ncval"
 #define IOSTATS_SIZE 0X100
-/* }} */
+
+#define MANIFEST_VERSION "19012013"
+#define MFT_VERSION "Version"
+#define MFT_MEMORY "MemMax"
+#define MFT_CHANNEL "Channel"
+#define MFT_NEXE "Nexe"
+#define MFT_ETAG "NexeEtag"
+#define MFT_TIMEOUT "Timeout"
+#define MFT_NODE "NodeName"
+#define MFT_ENVIRONMENT "Environment" /* deprecated */
+#define MFT_COMMANDLINE "CommandLine" /* deprecated */
 
 /*
  * todo(d'b): make a decition: leave it here or move to NaClApp

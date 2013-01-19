@@ -215,7 +215,7 @@ void ChannelsCtor(struct NaClApp *nap)
    */
   mft = nap->system_manifest;
   mft->channels_count =
-      GetValuesByKey("Channel", values, MAX_CHANNELS_NUMBER);
+      GetValuesByKey(MFT_CHANNEL, values, MAX_CHANNELS_NUMBER);
   ZLOGFAIL(mft->channels_count >= MAX_CHANNELS_NUMBER, ENFILE,
       "channels number reached maximum");
   ZLOGFAIL(mft->channels_count < RESERVED_CHANNELS, EFAULT,
