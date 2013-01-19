@@ -1,7 +1,7 @@
 FLAGS0=-fPIE -Wall -pedantic -Wno-long-long -fvisibility=hidden -fstack-protector --param ssp-buffer-size=4
 CCFLAGS0=-c -m64 -fPIC -D_GNU_SOURCE=1 -I. `pkg-config --cflags glib-2.0`
 CXXFLAGS0=-m64 -Wno-variadic-macros `pkg-config --cflags glib-2.0`
-TESTFLAGS=-Llib/gtest -lgtest -lzmq -lrt -ldl -lpthread -lglib-2.0 -lssl -lcrypto
+TESTFLAGS=-Llib/gtest -lgtest -lzmq -lrt -ldl -lpthread -lglib-2.0
 
 CCFLAGS1=-std=gnu99 -Wdeclaration-after-statement $(FLAGS0) $(CCFLAGS0)
 CCFLAGS2=-Wextra -Wswitch-enum -Wsign-compare $(CCFLAGS0)
@@ -28,7 +28,7 @@ create_dirs:
 	@mkdir obj -p
 
 zerovm: obj/sel_main.o $(OBJS)
-	$(CXX) -o $@ ${CXXFLAGS2} $^ -lrt -lglib-2.0 -lzmq -lssl -lcrypto
+	$(CXX) -o $@ ${CXXFLAGS2} $^ -lrt -lglib-2.0 -lzmq
 
 gcov: clean all
 	@lcov --directory . --base-directory=$(ZEROVM_ROOT) --capture --output-file app.info
