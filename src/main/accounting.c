@@ -90,6 +90,8 @@ static int GetChannelsAccounting(const struct NaClApp *nap, char *buf, int size)
     {
       case ChannelRegular:
       case ChannelCharacter:
+      case ChannelFIFO:
+      case ChannelSocket:
         stats = local_stats;
         break;
       case ChannelTCP:
