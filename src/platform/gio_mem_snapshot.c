@@ -27,6 +27,7 @@
 #include <glib.h>
 #include "src/platform/gio.h"
 #include "src/main/zlog.h"
+#include "src/main/tools.h"
 
 struct GioVtbl const  kGioMemoryFileSnapshotVtbl = {
   GioMemoryFileRead,
@@ -37,38 +38,30 @@ struct GioVtbl const  kGioMemoryFileSnapshotVtbl = {
   GioMemoryFileSnapshotDtor,
 };
 
-/* todo(d'b): rewrite or (even better) remove */
+/*
+ * d'b: refactored. read file into given object.
+ * return 1 if success, 0 if failed
+ */
 int GioMemoryFileSnapshotCtor(struct GioMemoryFileSnapshot *self, char *fn)
 {
   FILE *iop;
-  struct stat stbuf;
   char *buffer;
+  size_t size = GetFileSize(fn);
 
-  ((struct Gio *) self)->vtbl = (struct GioVtbl *) NULL;
-  if(0 == (iop = fopen(fn, "rb")))
+  ((struct Gio *) self)->vtbl = NULL;
+  if(size < 0) return 0;
+  iop = fopen(fn, "rb");
+  buffer = g_malloc(size);
+
+  if(fread(buffer, 1, size, iop) != size)
   {
+    g_free(buffer);
+    fclose(iop);
     return 0;
   }
 
-  if(fstat(fileno(iop), &stbuf) == -1)
-  {
-    abort0: fclose(iop);
-    return 0;
-  }
-
-  buffer = g_malloc(stbuf.st_size);
-  if(fread(buffer, 1, stbuf.st_size, iop) != (size_t) stbuf.st_size)
-  {
-    abort1: g_free(buffer);
-    goto abort0;
-  }
-
-  if(GioMemoryFileCtor(&self->base, buffer, stbuf.st_size) == 0)
-  {
-    goto abort1;
-  }
-
-  (void) fclose(iop);
+  fclose(iop);
+  GioMemoryFileCtor(&self->base, buffer, size);
   ((struct Gio *) self)->vtbl = &kGioMemoryFileSnapshotVtbl;
   return 1;
 }

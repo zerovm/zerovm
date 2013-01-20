@@ -26,7 +26,7 @@ EXTERN_C_BEGIN
 #include "stdio.h"
 
 #define HELP_SCREEN /* update command line switches here */\
-    "\033[1mZeroVM\033[0m lightweight VM manager, build 2013-01-15\n"\
+    "\033[1mZeroVM\033[0m lightweight VM manager, build 2013-01-19\n"\
     "Usage: <-M manifest_file> [-v #] [-l #] [-FSseQ]\n\n"\
     " -M <file> load settings from manifest\n"\
     " -e enable the data oversight (etag)\n"\
@@ -46,7 +46,7 @@ EXTERN_C_BEGIN
 #define VALIDATOR_NAME "ncval"
 #define IOSTATS_SIZE 0X100
 
-#define MANIFEST_VERSION "19012013"
+#define MANIFEST_VERSION "09082012"
 #define MFT_VERSION "Version"
 #define MFT_MEMORY "MemMax"
 #define MFT_CHANNEL "Channel"
@@ -57,9 +57,6 @@ EXTERN_C_BEGIN
 #define MFT_ENVIRONMENT "Environment" /* deprecated */
 #define MFT_COMMANDLINE "CommandLine" /* deprecated */
 
-/*
- * todo(d'b): make a decition: leave it here or move to NaClApp
- */
 struct SystemManifest
 {
   /* zerovm control */

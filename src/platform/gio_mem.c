@@ -40,15 +40,13 @@ struct GioVtbl const    kGioMemoryFileVtbl = {
   GioMemoryFileDtor,
 };
 
-int GioMemoryFileCtor(struct GioMemoryFile  *self,
-                      char                  *buffer,
-                      size_t                len) {
+void GioMemoryFileCtor(struct GioMemoryFile *self, char *buffer, size_t len)
+{
   self->buffer = buffer;
   self->len = len;
   self->curpos = 0;
 
   self->base.vtbl = &kGioMemoryFileVtbl;
-  return 1;
 }
 
 ssize_t GioMemoryFileRead(struct Gio  *vself,

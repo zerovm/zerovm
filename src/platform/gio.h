@@ -123,9 +123,7 @@ struct GioMemoryFile {
   /* if curpos == len, everything has been read */
 };
 
-int GioMemoryFileCtor(struct GioMemoryFile  *self,
-                      char                  *buffer,
-                      size_t                len);
+void GioMemoryFileCtor(struct GioMemoryFile *self, char *buffer, size_t len);
 
 ssize_t GioMemoryFileRead(struct Gio  *vself,
                           void        *buf,
