@@ -23,9 +23,6 @@
 #include "src/main/manifest_parser.h"
 #include "src/channels/name_service.h"
 
-/*
- * todo(d'b): all channels helpers should be extracted to separate file
- */
 #include "src/channels/prefetch.h" /* for GetChannelProtocol() */
 
 /*

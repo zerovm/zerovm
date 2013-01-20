@@ -74,7 +74,6 @@ static void UpdateChannelTag(struct ChannelDesc *channel,
   TagUpdate(channel->tag, buffer, size);
 }
 
-/* todo(d'b): get rid of code doubling */
 /* return 0 if the user gap has read access. note that size can be 0 */
 static int CheckReadAccess(struct NaClApp *nap, const void *p, int32_t size)
 {
@@ -183,7 +182,6 @@ static int32_t ZVMReadHandle(struct NaClApp *nap,
   if(size < 1) return -EDQUOT;
 
   /* read data and update position */
-  /* todo(d'b): when the reading operation hits channels end return EOF(-1?) */
   switch(channel->source)
   {
     case ChannelRegular:

@@ -2,8 +2,6 @@
  * all macros, definitions and small functions which
  * not fit to other header and often used are here
  *
- * todo(d'b): split into macro functions and zvm setup values
- *
  * Copyright (c) 2012, LiteStack, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");

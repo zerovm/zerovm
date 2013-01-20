@@ -65,7 +65,6 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
   /* construct zlog with default verbosity */
   ZLogCtor(LOG_ERROR);
 
-  /* todo(d'b): revise switches and rename them */
   while((opt = getopt(argc, argv, "+FeQsSv:M:l:")) != -1)
   {
     switch(opt)

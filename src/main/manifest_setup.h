@@ -87,10 +87,7 @@ struct SystemManifest
  */
 void LastDefenseLine();
 
-/*
- * construct system_manifest object and initialize from manifest
- * todo(d'b): everythig about 'report' should be moved to HostManifestCtor()
- */
+/* construct system_manifest object and initialize from manifest */
 void SystemManifestCtor(struct NaClApp *nap);
 
 /* deallocate memory, close files, free other resources. put everything in the place */

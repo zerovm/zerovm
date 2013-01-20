@@ -31,7 +31,6 @@
  */
 int PreloadChannelCtor(struct ChannelDesc* channel);
 
-/* todo(d'b): under construction */
 int PreloadChannelDtor(struct ChannelDesc* channel);
 
 /* return the file source type or ChannelSourceTypeNumber */

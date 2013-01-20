@@ -20,7 +20,7 @@
 #include <assert.h>
 #include <zmq.h>
 #include "src/main/manifest_parser.h"
-#include "src/main/manifest_setup.h" /* todo(d'b): remove it. defines SystemManifest */
+#include "src/main/manifest_setup.h" /* todo(d'b): remove it. defines system_manifest */
 #include "src/channels/prefetch.h"
 #include "src/main/etag.h" /* ETAG_SIZE. corruption control */
 #include "src/main/nacl_globals.h" /* gnap */

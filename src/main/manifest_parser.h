@@ -50,16 +50,6 @@ int GetValuesByKey(const char *key, char *values[], int capacity);
  */
 int ParseValue(char *value, const char *delimiter, char *tokens[], int capacity);
 
-/*
- * get integer value by key from the manifest. 0 if not found
- * todo(d'b): find how to inform caller if key not found
- */
-#define GET_INT_BY_KEY(var, str) \
-  do {\
-    char *p = GetValueByKey(str);\
-    var = p == NULL ? 0 : g_ascii_strtoll(p, NULL, 10);\
-  } while(0)
-
 EXTERN_C_END
 
 #endif

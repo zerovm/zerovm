@@ -64,7 +64,6 @@ static void FinalDump(struct NaClApp *nap)
  */
 static void Finalizer(void)
 {
-  /* todo(d'b): get rid of hard coded "ok" */
   if(!STREQ(zvm_state, OK_STATE)) FinalDump(gnap);
 
   AccountingDtor(gnap);

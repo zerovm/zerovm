@@ -16,6 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* todo(d'b): should disappear in sel_addrspace, sel_ldr, nacl_exit e.t.c. */
 #include <assert.h>
 #include <time.h>
 #include <sys/resource.h> /* timeout, process priority */
@@ -128,7 +129,6 @@ static void PreallocateUserMemory(struct NaClApp *nap)
   ZLOGFAIL(0 != i, -i, "cannot set protection on user heap");
   nap->heap_end = NaClSysToUser(nap, (uintptr_t)p + heap);
 
-  /* todo(d'b): perhaps move the whole function to sel_addrespace? */
   nap->mem_map[HeapIdx].npages += heap >> NACL_PAGESHIFT;
 }
 
@@ -236,6 +236,13 @@ static void SetCommandLine(struct SystemManifest *policy)
   for(i = 0; i < policy->cmd_line_size - 1; ++i)
     policy->cmd_line[i + 1] = tokens[i];
 }
+
+/* get integer value by key from the manifest. 0 if not found */
+#define GET_INT_BY_KEY(var, str) \
+  do {\
+    char *p = GetValueByKey(str);\
+    var = p == NULL ? 0 : g_ascii_strtoll(p, NULL, 10);\
+  } while(0)
 
 /* set timeout. by design timeout must be specified in manifest */
 static void SetTimeout(struct SystemManifest *policy)
