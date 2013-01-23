@@ -86,15 +86,27 @@ static void FailOnInvalidFileChannel(const struct ChannelDesc *channel)
 /* preload given character device to channel */
 static void CharacterChannel(struct ChannelDesc* channel)
 {
+  int desc;
   char *mode = NULL;
+  int flags;
 
   assert(channel != NULL);
 
   /* calculate open mode */
-  mode = channel->limits[PutsLimit] == 0 ? "rb" : "wb";
+  if(channel->limits[PutsLimit] == 0)
+  {
+    mode = "rb";
+    flags = O_RDONLY;
+  }
+  else
+  {
+    mode = "wb";
+    flags = O_RDWR;
+  }
 
   /* open file */
-  channel->socket = fopen(channel->name, mode);
+  desc = open(channel->name, flags | O_NONBLOCK);
+  channel->socket = fdopen(desc, mode);
   ZLOGFAIL(channel->socket == NULL, errno, "cannot open channel %s", channel->name);
 
   /* set channel attributes */
