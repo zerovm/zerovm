@@ -35,7 +35,7 @@ enum ChannelSourceType GetChannelSource(const char *name)
    * todo(d'b): it is assumed not existing files are regular
    * how to support other types like pipes and others?
    */
-  desc = open(name, O_RDONLY);
+  desc = open(name, O_RDONLY | O_NONBLOCK);
   if(desc < 0) return ChannelRegular;
 
   code = fstat(desc, &fs);
