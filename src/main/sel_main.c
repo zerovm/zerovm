@@ -231,12 +231,12 @@ int main(int argc, char **argv)
   /* "defence in depth" call */
   LastDefenseLine(nap);
 
-  /* start accounting */
-  AccountingCtor(nap);
-
   /* Make sure all the file buffers are flushed before entering the nexe */
   fflush((FILE*) NULL);
   TIMER_REPORT("nexe start preparation");
+
+  /* start accounting */
+  AccountingCtor(nap);
 
   /* set user code trap() exit location and switch to the user code */
   if(setjmp(user_exit) == 0)
