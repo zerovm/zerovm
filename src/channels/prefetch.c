@@ -45,7 +45,7 @@ static int DoBind(const struct ChannelDesc* channel)
   assert(record != NULL);
 
   MakeURL(url, BIG_ENOUGH_SPACE, channel, record);
-
+  ZLOGS(LOG_DEBUG, "bind url = %s", url);
   return zmq_bind(channel->socket, url);
 }
 
@@ -113,7 +113,7 @@ static int DoConnect(struct ChannelDesc* channel)
   assert(record != NULL);
 
   MakeURL(url, BIG_ENOUGH_SPACE, channel, record);
-  ZLOGS(LOG_DEBUG, "url = %s", url);
+  ZLOGS(LOG_DEBUG, "connect url = %s", url);
   return zmq_connect(channel->socket, url);
 }
 
