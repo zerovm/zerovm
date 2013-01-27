@@ -41,8 +41,13 @@ Channel
     [5] get size limits, 
     [6] puts limit, 
     [7] put size limits
+  Each manifest SHOULD have at least three Channel configuration entries for the standard devices: stdin, stdout, stderr
+  Example (maps all channels to /dev/null):
+    Channel = /dev/null, /dev/stdin, 0, 0, 0, 0, 0
+    Channel = /dev/null, /dev/stdout, 0, 0, 0, 0, 0
+    Channel = /dev/null, /dev/stderr, 0, 0, 0, 0, 0
 Environment
-  (comma separated values, will be removed)
+  (comma separated values, will be deprecated soon)
   expects comma separated pairs: key, value. example:
   Environment = TimeStamp, 1337012520, ContentType, utf-8
 Version
@@ -51,7 +56,7 @@ Version
   working version is 09082012
 Nexe
   (obligatory, single value)
-  NaCl module name to isolate and run
+  NaCl module to isolate and run, full path
 NexeEtag
   (single value)
   reserved
@@ -65,13 +70,14 @@ MemMax
   allocation syscalls due nexe runtime. MemMax should take in account that 16mb should be
   reserved for the user stack, 1mb+ - for nexe code and data, and some memory for system area
 CommandLine
-  (space separated values, will be removed)
+  (space separated values, will be deprecated soon)
   command line arguments for nexe
 NodeName
   (2 comma separated values)
   Specifies the node name (available for the untrusted code) and node id (not available 
-  for the untrusted code). The node id should be 32-bit unsigned integer. example:
-  loner, 1
+  for the untrusted code). The node id should be 32-bit unsigned integer.
+  Example:
+  NodeName = loner, 1
 
 Both keywords and values have size limit of 64kb. The manifest file size limited
 to 0x100000. The limitations can be changed in the future.
