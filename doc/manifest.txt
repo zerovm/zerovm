@@ -8,15 +8,16 @@ The manifest is a text file which must be provided in order to run a NaCl applic
 Manifest samples can be found in "samples" directory.
 
 list of available keywords:
-Channel
-Environment
 Version
 Nexe
-NexeEtag
-Timeout
+Channel
 MemMax
-CommandLine
+Timeout
 NodeName
+NexeEtag
+NameServer
+Environment (will deprecated soon)
+CommandLine (will deprecated soon)
 
 Structure:
 - each valid line must contain exactly only one key and value(s) separated by exactly one '=' sign
@@ -29,6 +30,17 @@ Structure:
 - some keywords expects complex values: comma separated values. for example, "Environment"
 
 List of valid keywords:
+NameServer
+  (pseudo url)
+  the address of name server. name server resolves zerovm provided network channels.
+  only supported protocol is udp. notation used to specify the address is not standard
+  since 1. it is internal thing, 2. it is more simple to parse such pseudo url. the
+  same notation used for network channels.
+  NameServer = udp:127.0.0.1:54321
+  udp - protocol
+  127.0.0.1 - server ip address
+  54321 - server port
+  
 Channel
   (obligatory, 7 comma separated values)
   Description of a channel. The order does matter. example:
@@ -46,6 +58,7 @@ Channel
     Channel = /dev/null, /dev/stdin, 0, 0, 0, 0, 0
     Channel = /dev/null, /dev/stdout, 0, 0, 0, 0, 0
     Channel = /dev/null, /dev/stderr, 0, 0, 0, 0, 0
+  network channels has same fields, but the very 1st one (trusted chanel name) has special form
 Environment
   (comma separated values, will be deprecated soon)
   expects comma separated pairs: key, value. example:
