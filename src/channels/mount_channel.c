@@ -106,6 +106,7 @@ static void ChannelCtor(struct NaClApp *nap, char **tokens)
   {
     channel->tag = TagCtor();
     memset(channel->digest, 0, TAG_DIGEST_SIZE);
+    memset(channel->control, 0, TAG_DIGEST_SIZE);
   }
 
   /* limits and counters */
@@ -154,21 +155,6 @@ static void ChannelDtor(struct ChannelDesc *channel)
 
   /* quit if channel isn't mounted */
   if(channel->name == NULL) return;
-
-  /* set the tag digests for each channel */
-  if(TagEngineEnabled())
-  {
-    /* if not already set */
-    if(channel->digest[0] == 0)
-      TagDigest(channel->tag, channel->digest);
-
-    /* deallocate the tag context (will not destroy digest) */
-    TagDtor(channel->tag);
-
-    ZLOGS(LOG_DEBUG, "channel %s closed with etag = %s, getsize = %ld, "
-        "putsize = %ld", channel->alias, channel->digest,
-        channel->counters[GetSizeLimit], channel->counters[PutSizeLimit]);
-  }
 
   switch(channel->source)
   {

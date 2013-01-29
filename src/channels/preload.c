@@ -57,13 +57,23 @@ enum ChannelSourceType GetChannelSource(const char *name)
 /* (adjust and) close file associated with the channel */
 int PreloadChannelDtor(struct ChannelDesc* channel)
 {
-  int i = OK_CODE;
+  int i = 0;
 
   assert(channel != NULL);
 
   /* adjust the size of writable channels */
   if(channel->limits[PutSizeLimit] && channel->limits[PutsLimit])
     i = ftruncate(channel->handle, channel->putpos);
+
+  /* if not already set */
+  TagDigest(channel->tag, channel->digest);
+
+  /* deallocate the tag context (will not destroy digest) */
+  TagDtor(channel->tag);
+
+  ZLOGS(LOG_DEBUG, "channel %s closed with tag = %s, getsize = %ld, "
+      "putsize = %ld", channel->alias, channel->digest,
+      channel->counters[GetSizeLimit], channel->counters[PutSizeLimit]);
 
   close(channel->handle);
   return i == 0 ? OK_CODE : ERR_CODE;

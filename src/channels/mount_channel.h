@@ -95,6 +95,7 @@ struct ChannelDesc
   char *alias; /* name for untrusted */
   void *tag; /* tag context */
   char digest[TAG_DIGEST_SIZE]; /* tag hexadecimal digest */
+  char control[TAG_DIGEST_SIZE]; /* received digest */
 
   int32_t handle; /* file handle. fit only for regular files */
   void *socket; /* can be used both by network and local channel */

@@ -361,7 +361,7 @@ static INLINE void UpdateChannelState(struct ChannelDesc *channel)
   if(more != 0 && channel->bufend == TAG_DIGEST_SIZE - 1 && TagEngineEnabled())
   {
     /* store received digest */
-    memcpy(channel->digest, zmq_msg_data(&channel->msg), TAG_DIGEST_SIZE - 1);
+    memcpy(channel->control, zmq_msg_data(&channel->msg), TAG_DIGEST_SIZE - 1);
 
     /* receive the zero part */
     zmq_recv(channel->socket, &channel->msg, 0);
@@ -513,6 +513,7 @@ int PrefetchChannelDtor(struct ChannelDesc *channel)
   /* log parameters and channel internals */
   MakeURL(url, BIG_ENOUGH_SPACE, channel, GetChannelConnectionInfo(channel));
   ZLOGS(LOG_DEBUG, "alias = %s, url = %s", channel->alias, url);
+  TagDigest(channel->tag, channel->digest);
 
   /* close "PUT" channel */
   if(channel->limits[PutsLimit] && channel->limits[PutSizeLimit])
@@ -543,16 +544,19 @@ int PrefetchChannelDtor(struct ChannelDesc *channel)
     /* test integrity (if etag enabled) */
     if(TagEngineEnabled())
     {
-      char local_digest[TAG_DIGEST_SIZE];
+      if(memcmp(channel->control, channel->digest, TAG_DIGEST_SIZE) != 0)
+      {
+        ZLOG(LOG_ERROR, "channel %s corrupted, tags = %s : %s",
+            channel->alias, channel->control, channel->digest);
+        SetExitState("data corrupted");
+        /* set zerovm exit code: EIO or EPIPE */
+      }
 
-      if(channel->digest[0] == 0)
-        TagDigest(channel->tag, local_digest);
-      channel->digest[TAG_DIGEST_SIZE - 1] = '\0';
-      if(memcmp(local_digest, channel->digest, TAG_DIGEST_SIZE - 1) == 0)
-        ZLOGS(LOG_DEBUG, "channel %s is ok. tag = %s", channel->alias, local_digest);
-      else
-        ZLOG(LOG_ERROR, "channel %s is corrupted. tags = %s : %s",
-            channel->alias, local_digest, channel->digest);
+      ZLOGS(LOG_DEBUG, "channel %s closed with tag = %s, getsize = %ld, "
+          "putsize = %ld", channel->alias, channel->digest,
+          channel->counters[GetSizeLimit], channel->counters[PutSizeLimit]);
+
+      TagDtor(channel->tag);
     }
 
     zmq_msg_close(&channel->msg);
