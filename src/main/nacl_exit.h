@@ -42,6 +42,9 @@ void SetExitState(const char *state);
 /* get the "exit state" message */
 const char *GetExitState();
 
+/* set zerovm exit code */
+void SetExitCode(int code);
+
 EXTERN_C_END
 
 #endif /* NATIVE_CLIENT_SRC_SHARED_PLATFORM_NACL_EXIT_H_ */

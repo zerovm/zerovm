@@ -549,7 +549,7 @@ int PrefetchChannelDtor(struct ChannelDesc *channel)
         ZLOG(LOG_ERROR, "channel %s corrupted, tags = %s : %s",
             channel->alias, channel->control, channel->digest);
         SetExitState("data corrupted");
-        /* set zerovm exit code: EIO or EPIPE */
+        SetExitCode(EPIPE);
       }
 
       ZLOGS(LOG_DEBUG, "channel %s closed with tag = %s, getsize = %ld, "

@@ -29,6 +29,7 @@
 #include "src/main/etag.h"
 
 static const char *zvm_state = UNKNOWN_STATE;
+static int zvm_code = 0;
 
 /* log user memory map */
 static void LogMemMap(struct NaClApp *nap, int verbosity)
@@ -87,9 +88,17 @@ const char *GetExitState()
   return zvm_state;
 }
 
+/* set zerovm exit code */
+void SetExitCode(int code)
+{
+  /* only the 1st error matters */
+  if(zvm_code == 0) zvm_code = code;
+}
+
 void NaClExit(int err_code)
 {
   Finalizer();
-  ZLOGIF(err_code != 0, "zerovm exited with error '%s'", strerror(err_code));
-  _exit(err_code);
+  SetExitCode(err_code);
+  ZLOGIF(zvm_code != 0, "zerovm exited with error '%s'", strerror(zvm_code));
+  _exit(zvm_code);
 }
