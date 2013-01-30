@@ -65,11 +65,12 @@ int PreloadChannelDtor(struct ChannelDesc* channel)
   if(channel->limits[PutSizeLimit] && channel->limits[PutsLimit])
     i = ftruncate(channel->handle, channel->putpos);
 
-  /* if not already set */
-  TagDigest(channel->tag, channel->digest);
-
-  /* deallocate the tag context (will not destroy digest) */
-  TagDtor(channel->tag);
+  /* calculate digest and free the tag */
+  if(TagEngineEnabled())
+  {
+    TagDigest(channel->tag, channel->digest);
+    TagDtor(channel->tag);
+  }
 
   ZLOGS(LOG_DEBUG, "channel %s closed with tag = %s, getsize = %ld, "
       "putsize = %ld", channel->alias, channel->digest,

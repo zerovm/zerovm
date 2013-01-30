@@ -513,14 +513,20 @@ int PrefetchChannelDtor(struct ChannelDesc *channel)
   /* log parameters and channel internals */
   MakeURL(url, BIG_ENOUGH_SPACE, channel, GetChannelConnectionInfo(channel));
   ZLOGS(LOG_DEBUG, "alias = %s, url = %s", channel->alias, url);
-  TagDigest(channel->tag, channel->digest);
 
   /* close "PUT" channel */
   if(channel->limits[PutsLimit] && channel->limits[PutSizeLimit])
   {
     int size = TagEngineEnabled() ? TAG_DIGEST_SIZE - 1 : 0;
 
-    /* send channel etag digest (if enabled) */
+    /* prepare digest */
+    if(TagEngineEnabled())
+    {
+      TagDigest(channel->tag, channel->digest);
+      TagDtor(channel->tag);
+    }
+
+    /* send eof */
     channel->eof = 1;
     SendMessage(channel, channel->digest, size);
   }
@@ -544,6 +550,7 @@ int PrefetchChannelDtor(struct ChannelDesc *channel)
     /* test integrity (if etag enabled) */
     if(TagEngineEnabled())
     {
+      TagDigest(channel->tag, channel->digest);
       if(memcmp(channel->control, channel->digest, TAG_DIGEST_SIZE) != 0)
       {
         ZLOG(LOG_ERROR, "channel %s corrupted, tags = %s : %s",
