@@ -550,7 +550,11 @@ int PrefetchChannelDtor(struct ChannelDesc *channel)
     /* test integrity (if etag enabled) */
     if(TagEngineEnabled())
     {
+      /* prepare digest */
       TagDigest(channel->tag, channel->digest);
+      TagDtor(channel->tag);
+
+      /* raise the error if the data corrupted */
       if(memcmp(channel->control, channel->digest, TAG_DIGEST_SIZE) != 0)
       {
         ZLOG(LOG_ERROR, "channel %s corrupted, tags = %s : %s",
@@ -563,7 +567,6 @@ int PrefetchChannelDtor(struct ChannelDesc *channel)
           "putsize = %ld", channel->alias, channel->digest,
           channel->counters[GetSizeLimit], channel->counters[PutSizeLimit]);
 
-      TagDtor(channel->tag);
     }
 
     zmq_msg_close(&channel->msg);

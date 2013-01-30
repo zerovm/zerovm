@@ -29,7 +29,7 @@ CXX=@g++
 create_dirs:
 	@mkdir obj -p
 
-zerovm: obj/sel_main.o $(OBJS)
+zerovm: obj/zvm_main.o $(OBJS)
 	$(CXX) -o $@ $(CXXFLAGS2) $^ $(LIBS)
 
 gcov: clean all
@@ -111,7 +111,7 @@ obj/nacl_syscall_64.o: src/syscalls/nacl_syscall_64.S
 obj/tramp_64.o: src/syscalls/tramp_64.S
 	$(CC) $(CCFLAGS2) -o $@ $^
 
-obj/sel_main.o: src/main/sel_main.c
+obj/zvm_main.o: src/main/zvm_main.c
 	$(CC) $(CCFLAGS1) -o $@ $^
 
 obj/elf_util.o: src/loader/elf_util.c

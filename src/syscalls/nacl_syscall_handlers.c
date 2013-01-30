@@ -160,7 +160,7 @@ static int32_t TrapDecoder(struct NaClApp *nap)
 }
 
 /*
- * d'b: see documentation about "one ring" tonneling syscall
+ * d'b: see documentation about "one ring" tunneling syscall
  * note: all syscalls except trap() only need for nexe prolog
  */
 void NaClSyscallTableInit()
