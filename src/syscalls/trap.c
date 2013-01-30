@@ -152,7 +152,7 @@ static int32_t ZVMReadHandle(struct NaClApp *nap,
   sys_buffer = (char*)NaClUserToSys(nap, (uintptr_t) buffer);
 
   /* prevent reading from the closed or not readable channel */
-  if(!CHANNEL_READABLE(channel)) return -EBADF;
+  if(!CHANNEL_READABLE(channel)) return -EDQUOT;
 
   /* ignore user offset for sequential access read */
   if(CHANNEL_SEQ_READABLE(channel))
@@ -263,7 +263,7 @@ static int32_t ZVMWriteHandle(struct NaClApp *nap,
   sys_buffer = (char*)NaClUserToSys(nap, (uintptr_t) buffer);
 
   /* prevent writing to the not writable channel */
-  if(CHANNEL_WRITEABLE(channel) == 0) return -EBADF;
+  if(CHANNEL_WRITEABLE(channel) == 0) return -EDQUOT;
 
   /* ignore user offset for sequential access write */
   if(CHANNEL_SEQ_WRITEABLE(channel)) offset = channel->putpos;
