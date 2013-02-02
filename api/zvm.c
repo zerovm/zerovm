@@ -20,9 +20,6 @@ static int32_t (*_trap)(uint64_t *in) = (int32_t (*)(uint64_t*))
     0x20 /* size of trampoline record */ *
     0 /* onering syscall number */;
 
-/* holds all information which could get via api */
-static struct UserManifest setup;
-
 /* zerovm error number */
 static int32_t zvm_errno_num = 0;
 
@@ -35,37 +32,7 @@ int32_t zvm_errno()
 /* initialization of zerovm api */
 struct UserManifest *zvm_init()
 {
-  int i;
-  struct UserManifest *result = &setup;
-
-  /* system */
-  result->heap_ptr = zvm_heap_ptr();
-  result->heap_size = zvm_heap_size();
-
-  /* get channels information */
-  result->channels_count = zvm_channels(NULL);
-  result->channels = calloc(result->channels_count, sizeof(*result->channels));
-  zvm_channels(result->channels);
-
-  /* channels names */
-  for(i = 0; i < result->channels_count; ++i)
-  {
-    int length;
-    struct ZVMChannel *channel = &result->channels[i];
-
-    channel->name = NULL;
-    length = zvm_channel_name(channel, i);
-    channel->name = malloc(length);
-
-    /*
-     * allocate space to hold channel name
-     * todo(d'b): raise here error flag
-     */
-    if(channel->name == NULL) break;
-    zvm_channel_name(channel, i);
-  }
-
-  return result;
+  return (void*) *((uintptr_t*) 0xFEFFFFFC);
 }
 
 /*
@@ -86,7 +53,6 @@ int32_t zvm_pread(int desc, char *buffer, int32_t size, int64_t offset)
   }
 
   /* if eof reached (and only if so) user will get 0 */
-
   return code;
 }
 
@@ -119,48 +85,6 @@ int32_t zvm_exit(int32_t code)
 int32_t zvm_syscallback(intptr_t addr)
 {
   uint64_t request[] = {TrapSyscallback, 0, addr};
-  return _trap(request);
-}
-
-/* return address of the 1st available byte in the user heap */
-void* zvm_heap_ptr()
-{
-  uint64_t request[] = {TrapHeapPtr};
-  return (void*)_trap(request);
-}
-
-/* calculate and return user heap size */
-uint32_t zvm_heap_size()
-{
-  uint64_t request[] = {TrapHeapEnd};
-  return _trap(request) - (uint32_t)zvm_heap_ptr();
-}
-
-/*
- * if channel->name in given channel is NULL returns channel name
- * length, otherwise copy channel name to provided pointer
- * affects zvm_errno (if invalid argument given)
- */
-int32_t zvm_channel_name(struct ZVMChannel *channel, int ch)
-{
-  int32_t code;
-  uint64_t request[] = {TrapChannelName, 0, (intptr_t)channel, ch};
-  code = _trap(request);
-  if(code < 0)
-  {
-    zvm_errno_num = -code;
-    return -1;
-  }
-  return code;
-}
-
-/*
- * called with NULL return channels number, otherwise copy
- * channels information into provided space
- */
-int32_t zvm_channels(struct ZVMChannel *channels)
-{
-  uint64_t request[] = {TrapChannels, 0, (intptr_t)channels};
   return _trap(request);
 }
 

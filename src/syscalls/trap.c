@@ -1,7 +1,7 @@
 /*
  * "single syscall" engine
  * this is the replacement for nacl multiple syscalls. however we still use
- * trampoline engine to translate invocations to system from user space
+ * trampoline engine to translate invocations to system from the user space
  *
  * Copyright (c) 2012, LiteStack, Inc.
  *
@@ -322,115 +322,6 @@ static int32_t ZVMWriteHandle(struct NaClApp *nap,
 }
 
 /*
- * ZeroVM API. accessors and initializers
- */
-
-/* accessor: returns user heap start address */
-static int32_t ZVMHeapPtr(struct NaClApp *nap)
-{
-  assert(nap != NULL);
-  assert(nap->system_manifest != NULL);
-  return (int32_t)nap->break_addr;
-}
-
-/* accessor: returns the end of the user heap */
-static int32_t ZVMHeapEnd(struct NaClApp *nap)
-{
-  assert(nap != NULL);
-  return (int32_t)nap->heap_end;
-}
-
-/*
- * return channel name length + 1 if given pointer is not NULL
- * and "name" field in the given channel descriptor is NULL
- * otherwise also copy channel alias to "name" field
- */
-static int32_t ZVMChannelName(struct NaClApp *nap, struct ZVMChannel *chnl, int ch)
-{
-  struct ZVMChannel *uchannel;
-  struct ChannelDesc *channel;
-  char *alias;
-
-  assert(nap != NULL);
-  assert(nap->system_manifest != NULL);
-
-  ZLOGS(LOG_DEBUG, "channel_id=%d, chnl=0x%lx", ch, (intptr_t)chnl);
-
-  if(chnl == NULL) return -EINVAL;
-
-  uchannel = (struct ZVMChannel*)NaClUserToSys(nap, (uintptr_t)chnl);
-  channel = &nap->system_manifest->channels[ch];
-
-  /* user asked for the name. give her the channel alias */
-  if(uchannel->name != NULL)
-  {
-    alias = (char*)NaClUserToSys(nap, (uintptr_t)uchannel->name);
-    strcpy(alias, channel->alias);
-  }
-
-  return strlen(channel->alias) + 1;
-}
-
-/*
- * initializer: channels
- * returns channels number if buffer == NULL, otherwise
- * returns channels number and initializes given buffer with channels data
- */
-static int32_t ZVMChannels(struct NaClApp *nap, struct ZVMChannel *buf)
-{
-  struct ZVMChannel *uchannels;
-  struct ChannelDesc *channels;
-  int ch;
-
-  assert(nap != NULL);
-  assert(nap->system_manifest != NULL);
-
-  ZLOGS(LOG_DEBUG, "buf=0x%lx", (intptr_t)buf);
-
-  /* user asked for the channels count */
-  if(buf == NULL) return nap->system_manifest->channels_count;
-
-  channels = nap->system_manifest->channels;
-  uchannels = (struct ZVMChannel*)NaClUserToSys(nap, (uintptr_t)buf);
-
-  /* populate given array with the channels information */
-  for(ch = 0; ch < nap->system_manifest->channels_count; ++ch)
-  {
-    int i;
-
-    uchannels[ch].name = NULL; /* see ZVMChannelName() */
-    uchannels[ch].type = channels[ch].type;
-
-    /* copy limits and counters */
-    for(i = 0; i < IOLimitsCount; ++i)
-      uchannels[ch].limits[i] = channels[ch].limits[i];
-
-    /* channel size/position */
-    switch(uchannels[ch].type)
-    {
-      case SGetSPut:
-        /* size/position is not defined */
-        break;
-      case SGetRPut:
-        uchannels[ch].size = channels[ch].size;
-        break;
-      case RGetSPut:
-        uchannels[ch].size = channels[ch].size;
-        break;
-      case RGetRPut:
-        /* in this case get or put updates both positions synchronously */
-        uchannels[ch].size = channels[ch].size;
-        break;
-      default:
-        /* invalid access type */
-        break;
-    }
-  }
-
-  return nap->system_manifest->channels_count;
-}
-
-/*
  * set syscallback
  * returns a new syscallback when successfully installed or
  * returns an old syscallback if installation failed
@@ -479,11 +370,6 @@ static const char *FunctionNameById(int id)
     case TrapRead: return "TrapRead";
     case TrapWrite: return "TrapWrite";
     case TrapSyscallback: return "TrapSyscallback";
-    case TrapChannels: return "TrapChannels";
-    case TrapChannelName: return "TrapChannelName";
-    case TrapAttributes: return "TrapAttributes";
-    case TrapHeapEnd: return "TrapMemSize";
-    case TrapHeapPtr: return "TrapHeapPtr";
     case TrapExit: return "TrapExit";
   }
   return "not supported";
@@ -525,18 +411,6 @@ int32_t TrapHandler(struct NaClApp *nap, uint32_t args)
       break;
     case TrapSyscallback:
       retcode = ZVMSyscallback(nap, (int32_t)sys_args[2]);
-      break;
-    case TrapChannels:
-      retcode = ZVMChannels(nap, (struct ZVMChannel*)sys_args[2]);
-      break;
-    case TrapChannelName:
-      retcode = ZVMChannelName(nap, (struct ZVMChannel*)sys_args[2], (int32_t)sys_args[3]);
-      break;
-    case TrapHeapEnd:
-      retcode = ZVMHeapEnd(nap);
-      break;
-    case TrapHeapPtr:
-      retcode = ZVMHeapPtr(nap);
       break;
     default:
       retcode = -EPERM;

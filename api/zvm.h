@@ -12,6 +12,8 @@
 
 /* todo(d'b): should be taken from sel_ldr.h */
 #define STACK_SIZE (16 << 20)
+//const struct UserManifest const *zvm_manifest = (void*) *((uintptr_t*) 0xFEFFFFFC);
+//extern const struct UserManifest const *zvm_manifest = (const struct UserManifest const *)0xFEFFFFFC;
 
 enum ZVM_CODES
 {
@@ -44,11 +46,6 @@ enum TrapCalls {
   TrapRead = 17770431,
   TrapWrite = 17770432,
   TrapSyscallback = 17770433,
-  TrapChannels = 17770434,
-  TrapChannelName = 17770435,
-  TrapAttributes = 17770436,
-  TrapHeapEnd = 17770439,
-  TrapHeapPtr = 17770440,
   TrapExit = 17770441
 };
 
@@ -65,9 +62,6 @@ struct ZVMChannel
   int64_t limits[IOLimitsCount];
   int64_t size; /* channel size. optional */
   enum AccessType type; /* type of access sequential/random */
-#ifdef USER_SIDE
-  int32_t pad;
-#endif
   char *name; /* file name (int32_t). secured */
 };
 
@@ -77,15 +71,11 @@ struct ZVMChannel
  */
 struct UserManifest
 {
-  /* system */
   void *heap_ptr;
   uint32_t heap_size;
-
-  /* channels */
+  uint32_t stack_size;
   int32_t channels_count;
   struct ZVMChannel *channels;
-
-  /* user custom attributes (environment) */
   char **envp;
 };
 
@@ -106,29 +96,8 @@ int32_t zvm_pwrite(int desc, const char *buffer, int32_t size, int64_t offset);
 /* wrapper for zerovm "TrapExit" */
 int32_t zvm_exit(int32_t code);
 
-/* return user heap starting address */
-void* zvm_heap_ptr();
-
-/*
- * return user memory size. note that this is not the heap
- * size, but whole memory available for user
- */
-uint32_t zvm_heap_size();
-
 /* set syscallback address. return active syscallback */
 int32_t zvm_syscallback(intptr_t addr);
-
-/*
- * if channel->name in given channel is NULL returns channel name
- * length, otherwise copy channel name to provided pointer
- */
-int32_t zvm_channel_name(struct ZVMChannel *channel, int ch);
-
-/*
- * called with NULL return channels number, otherwise copy
- * channels information into provided space
- */
-int32_t zvm_channels(struct ZVMChannel *channels);
 
 /* get zerovm error number. standard error codes were used */
 int32_t zvm_errno();

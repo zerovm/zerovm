@@ -84,6 +84,7 @@ enum MemMapIndices {
   RODataIdx,
   HeapIdx, /* includes r/w data */
   StackIdx,
+  SysDataIdx,
   RightBumperIdx,
   MemMapSize
 };
@@ -223,6 +224,8 @@ struct NaClApp {
   int                       handle_signals; /* startup time variable */
   int64_t                   storage_limit; /* hard limit for all zerovm i/o */
   void                      *user_tag; /* tag context for memory and channels */
+
+  uintptr_t                 user_manifest; /* pointer to user manifest, points to user space, r */
 
   /* for channels */
   int                       node_id; /* own node id from manifest */
