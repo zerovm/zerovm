@@ -8,7 +8,7 @@ all: $(NAME).o
 	@sed 's#CURDIR#$(CURDIR)#g' $(NAME).template > $(NAME).manifest 
 	@ncval_stubout $(NAME).nexe -o $(NAME).nexe
 	@mkfifo input.data
-	@cat $(NAME).nexe > input.data&
+	@cp $(NAME).nexe input.data&
 	$(ZEROVM_ROOT)/zerovm -e -M$(NAME).manifest
 
 $(NAME).o: $(NAME).c

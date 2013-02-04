@@ -25,22 +25,11 @@
 enum ChannelSourceType GetChannelSource(const char *name)
 {
   struct stat fs;
-  int desc;
-  int code;
 
   assert(name != NULL);
 
-  /* get the file statistics (try both open modes r/o and w/o) */
-  /*
-   * todo(d'b): it is assumed not existing files are regular
-   * how to support other types like pipes and others?
-   */
-  desc = open(name, O_RDONLY | O_NONBLOCK);
-  if(desc < 0) return ChannelRegular;
-
-  code = fstat(desc, &fs);
-  close(desc);
-  if(code < 0) return ChannelSourceTypeNumber;
+  /* get the file statistics */
+  if(stat(name, &fs) < 0) return ChannelRegular;
 
   /* calculate the file source type */
   if(S_ISREG(fs.st_mode)) return ChannelRegular;
@@ -51,7 +40,8 @@ enum ChannelSourceType GetChannelSource(const char *name)
   if(S_ISLNK(fs.st_mode)) return ChannelLink;
   if(S_ISSOCK(fs.st_mode)) return ChannelSocket;
 
-  return ChannelSourceTypeNumber;
+  ZLOGFAIL(1, EFAULT, "cannot detect source type of %s", name);
+  return ChannelRegular; /* not reachable */
 }
 
 /* (adjust and) close file associated with the channel */
@@ -80,10 +70,7 @@ int PreloadChannelDtor(struct ChannelDesc* channel)
   return i == 0 ? OK_CODE : ERR_CODE;
 }
 
-/*
- * test the channel for validity
- * todo(d'b): add more checks
- */
+/* test the channel for validity */
 static void FailOnInvalidFileChannel(const struct ChannelDesc *channel)
 {
   ZLOGFAIL(channel->source < ChannelRegular || channel->source > ChannelSocket,
