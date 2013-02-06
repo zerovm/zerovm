@@ -42,8 +42,10 @@ int main(int argc, char **argv)
   ZTEST(zvm_pwrite(zhandle(SEQWO), buf, 1,
       zvm_bulk->channels[zhandle(SEQWO)].limits[PutSizeLimit]) == 1);
 
+  /* correct requests: reading of 0 bytes attempt */
+  ZTEST(zvm_pread(zhandle(SEQWO), buf, 0, 0) == 0);
+
   /* incorrect requests: read attempt */
-  ZTEST(zvm_pread(zhandle(SEQWO), buf, 0, 0) == -1);
   ZTEST(zvm_pread(zhandle(SEQWO), buf, 1, 0) == -1);
   ZTEST(zvm_pread(zhandle(SEQWO), buf, 1,
       zvm_bulk->channels[zhandle(SEQWO)].limits[PutSizeLimit]) == -1);

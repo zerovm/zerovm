@@ -39,8 +39,10 @@ int main(int argc, char **argv)
   ZTEST(zvm_pread(zhandle(SEQRO), buf, 1, -1) == 1);
   ZTEST(zvm_pread(zhandle(SEQRO), buf, 1, zvm_bulk->channels[zhandle(SEQRO)].size) == 1);
 
+  /* correct requests: writing of 0 bytes attempt */
+  ZTEST(zvm_pwrite(zhandle(SEQRO), buf, 0, 0) == 0);
+
   /* incorrect requests: write attempt */
-  ZTEST(zvm_pwrite(zhandle(SEQRO), buf, 0, 0) == -1);
   ZTEST(zvm_pwrite(zhandle(SEQRO), buf, 1, 0) == -1);
   ZTEST(zvm_pwrite(zhandle(SEQRO), buf, 1, zvm_bulk->channels[zhandle(SEQRO)].size) == -1);
   ZTEST(zvm_pwrite(zhandle(SEQRO), buf, 1, zvm_bulk->channels[zhandle(SEQRO)].size - 1) == -1);

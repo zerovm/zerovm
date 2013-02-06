@@ -1,9 +1,9 @@
 =====================================================================
 == "tester" from "net" example with zvm api usage
 =====================================================================
-Channel = CURDIR/sorted.data, /dev/stdin, 0, 999999999, 999999999, 0, 0
-Channel = /dev/null, /dev/stdout, 0, 0, 0, 999999999, 999999999
-Channel = CURDIR/tester.stderr.log, /dev/stderr, 0, 0, 0, 999999999, 999999999
+Channel = CURDIR/sorted.data, /dev/stdin, 0, 268435456, 268435457, 0, 0
+Channel = /dev/null, /dev/stdout, 0, 0, 0, 268435456, 268435456
+Channel = CURDIR/tester.stderr.log, /dev/stderr, 0, 0, 0, 268435456, 268435456
 
 =====================================================================
 == switches for zerovm. some of them used to control nexe, some

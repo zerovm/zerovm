@@ -45,7 +45,9 @@ int main(int argc, char **argv)
   {
     /* get the next portion of data */
     i = zread(STDIN, (char*)buf, ELEMENT_SIZE * BUFFER_SIZE);
-    if(i == 0) break;
+    if(i == -1)
+      ZPRINTF(STDERR, "errno = %d\n", zvm_errno()); // ###
+    if(i <= 0) break;
 
     i /= ELEMENT_SIZE;
     seq_size += i;
