@@ -1,0 +1,67 @@
+Name server description
+-----------------------
+
+Name server is used by zerovm instances to resolve host identifiers into ip:port pairs.
+To read more about host identifiers consult channels.txt manual.
+Name server daemon or service is run before launching all zerovm clustered instances and is shut down after all zerovm instances exit.
+The number of zerovm instances in cluster must be known before launch.
+Name server must be launched on specific port and with number of instances supplied in one way or another.
+In the reference implementation name server gets port number and the number of instances on the command line.
+Name server uses UDP packets.
+The request packet looks like this (all numbers are big endian):
+4 bytes: my host identifier, integer
+4 bytes: count of listen sockets in the array, integer
+array of 10 byte values:
+- 4 bytes: incoming connecion host identifier, integer
+- 4 bytes: zero, reserved
+- 2 bytes: port number, TCP port notation
+4 bytes: count of connect sockets in the array, integer
+array of 10 byte values:
+- 4 bytes: outgoing connection host identifier, integer
+- 6 bytes: zero, will be filled in response
+
+The response packet looks exactly like the request packet with the second array filled up:
+............
+............
+4 bytes: count of connect sockets in the array, integer
+array of 10 byte values:
+- 4 bytes: outgoing connection host identifier, integer
+- 4 bytes: outgoing connection ip address, IP addrsss notation
+- 2 bytes: outgoing connection tcp port, TCP port notation
+
+
+Request:
+
+|      4      |      4      |  2   |      4      |  2   |
+=========================================================
+| my host id  | bind count  |
+---------------------------------------------------------
+| incoming id | 00000000000 | port |.............|.......
+---------------------------------------------------------
+.......|......|.............|.............|......|.......
+---------------------------------------------------------
+| conn count  |
+---------------------------------------------------------
+| outgoing id | 000000000000000000 |.............|.......
+---------------------------------------------------------
+..............|..........................................
+---------------------------------------------------------
+
+Response:
+
+|      4      |      4      |  2   |      4      |  2   |
+=========================================================
+| my host id  | bind count  |
+---------------------------------------------------------
+| incoming id | 00000000000 | port |.............|.......
+---------------------------------------------------------
+.......|......|.............|.............|......|.......
+---------------------------------------------------------
+| conn count  |
+---------------------------------------------------------
+| outgoing id | outgoing ip & port |.............|.......
+---------------------------------------------------------
+..............|.............|....................|.......
+---------------------------------------------------------
+
+
