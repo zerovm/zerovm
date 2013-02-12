@@ -14,12 +14,12 @@ Channel = [host identifier], [guest device name], [access type], [limit for read
 ex.: Channel = tcp:21:, /dev/out/node21, 0, 0, 0, 1073741824, 1073741824
 
 Channels are the key component of ZeroVM I/O subsystem
-On the host system side the channels are backed by the filesystem using either regular files or tcp sockets.
+On the host system side the channels are backed by the file system using either regular files or tcp sockets.
 On the guest side the channel is a device file. It could be used as either character 
 or block device it depends on the usage pattern and access type (see access types below).
 All guest devices must reside in the /dev directory or its subdirectories.
 
-Channel fields passed via the manifest to ZeroVM (comma delimitered, see examples above):
+Channel fields passed via the manifest to ZeroVM (comma delimited, see examples above):
 name -- can be a local file or device name or tcp socket or host identifier (see more on host identifiers below)
 alias -- device name for the user side. Must follow the device naming scheme: /dev/device-name
 type -- access type. Can be in 0..3 range
@@ -92,7 +92,7 @@ Channel = tcp:10.0.0.1:34423, /dev/in/instance1, 0, 9999999, 9999999, 0, 0
 Channel = tcp:10.0.0.2:56645, /dev/out/instance1, 0, 0, 0, 9999999, 9999999
 
 Each read from read only network channel can result in zvm_eof indicator read.
-This means that the other party closed the channel, you will get the zame zvm_eof 
+This means that the other party closed the channel, you will get the same zvm_eof 
 each time you try to read from this channel again.
 If integrity checks are in place (zerovm was run with -e option) 
 zvm_eof will contain channel integrity checksum.
@@ -138,14 +138,14 @@ NodeName = instance-2, 2
 
 If the manifest contains host identifiers ZeroVM will do the following on startup:
 
-1) for all write only channels, bind on any available port for each one
+1) for all write only channels, bind on any available port (but 1st will try 49152..65535) for each one
 2) send discovery packet to name server with all the bound ports
 discovery packet also contains all identifiers for read only channels present in the manifest
 3) wait for name server reply
 4) name server replies with mapping of identifiers sent in 2) to ip:port tuples
 5) connect to all read only channels
 
-After this 5 step operation all channels wil be set up with correct unidirectional data paths
+After this 5 step operation all channels will be set up with correct unidirectional data paths
 The reference implementation of name server daemon can be found in ZRT library (name_server.py).
 You can also use ZRT networked samples to see the flow, namely 'reqrep' or 'disort' sample.
 
@@ -154,5 +154,5 @@ To find more info about name server consult name_server.txt
 Limitations
 -----------
 
-The number of channels in the manifest is limited to 6048 "Channel" lines
-
+- The number of channels in the manifest is limited to 6548 "Channel" lines
+- user program cannot bind and connect network channel to itself

@@ -4,8 +4,6 @@
 Channel = CURDIR/accounting.nexe, /dev/stdin, 0, 65536, 4194304, 0, 0
 Channel = CURDIR/stdout.data, /dev/stdout, 0, 0, 0, 65536, 4194304
 Channel = CURDIR/result.log, /dev/stderr, 0, 0, 0, 65536, 4194304
-=Channel = tcp:127.0.0.1:55555, input, 0, 65536, 4194304, 0, 0
-=Channel = tcp:127.0.0.1:55555, output, 0, 0, 0, 65536, 4194304
 
 =====================================================================
 == switches for zerovm. some of them used to control nexe, some
@@ -15,4 +13,3 @@ Version = 09082012
 Nexe = accounting.nexe
 MemMax = 134217728
 Timeout = 5
-
