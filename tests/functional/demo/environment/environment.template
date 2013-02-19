@@ -2,7 +2,7 @@
 == "environment" example. demo of the new user custom attributes design
 =====================================================================
 Channel = /dev/null, /dev/stdin, 0, 16, 256, 0, 0
-Channel = CURDIR/stdout.data, /dev/stdout, 0, 0, 0, 512, 8192
+Channel = PWD/stdout.data, /dev/stdout, 0, 0, 0, 512, 8192
 Channel = /dev/null, /dev/stderr, 0, 0, 0, 16, 256
 
 =====================================================================
@@ -19,4 +19,3 @@ Timeout = 5
 =====================================================================
 CommandLine = Aktyubinsk Tashkent Chirchiq Rassvet NaberezhnyeChelny Severobaykalsk Kazan TelAviv Giv'atayim RamatGan Pattaya
 Environment = TimeStamp, 1337012520, Gort, klaato_barada_nikto
-
