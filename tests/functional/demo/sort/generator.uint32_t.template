@@ -2,8 +2,8 @@
 == "random generator" from "net" example with zvm api usage
 =====================================================================
 Channel = /dev/null, /dev/stdin, 0, 268435456, 268435456, 0, 0
-Channel = CURDIR/unsorted.data, /dev/stdout, 0, 0, 0, 268435456, 268435456
-Channel = CURDIR/generator.stderr.log, /dev/stderr, 0, 0, 0, 268435456, 268435456
+Channel = PWD/unsorted.data, /dev/stdout, 0, 0, 0, 268435456, 268435456
+Channel = PWD/generator.stderr.log, /dev/stderr, 0, 0, 0, 268435456, 268435456
 
 =====================================================================
 == switches for zerovm. some of them used to control nexe, some

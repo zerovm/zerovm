@@ -1,9 +1,9 @@
 =====================================================================
 == "bitonic sort" from "net" example with zvm api usage
 =====================================================================
-Channel = CURDIR/unsorted.data, /dev/stdin, 0, 268435456, 268435456, 0, 0
-Channel = CURDIR/sorted.data, /dev/stdout, 0, 0, 0, 268435456, 268435456
-Channel = CURDIR/sort.stderr.log, /dev/stderr, 0, 0, 0, 268435456, 268435456
+Channel = PWD/unsorted.data, /dev/stdin, 0, 268435456, 268435456, 0, 0
+Channel = PWD/sorted.data, /dev/stdout, 0, 0, 0, 268435456, 268435456
+Channel = PWD/sort.stderr.log, /dev/stderr, 0, 0, 0, 268435456, 268435456
 
 =====================================================================
 == switches for zerovm. some of them used to control nexe, some
@@ -14,4 +14,3 @@ Nexe = sort_uint_proper_with_args.nexe
 CommandLine = 268435456
 Timeout = 30
 MemMax = 805306368
-
