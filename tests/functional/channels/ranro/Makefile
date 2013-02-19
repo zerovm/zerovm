@@ -12,4 +12,4 @@ $(NAME).o: $(NAME).c
 	-I$(ZEROVM_ROOT) -I$(ZEROVM_ROOT)/tests/functional -o $@ $^
 
 clean:
-	rm -f $(NAME).nexe $(NAME).o *.log *.data debug* *.manifest
+	rm -f $(NAME).nexe $(NAME).o *.log debug* *.manifest
