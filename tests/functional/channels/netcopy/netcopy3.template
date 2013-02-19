@@ -2,8 +2,8 @@
 == net copy functional test. 3rd collocutor
 =====================================================================
 Channel = tcp:2:, /dev/stdin, 0, 65536, 67108864, 0, 0
-Channel = CURDIR/output.data, /dev/stdout, 0, 0, 0, 65536, 67108864
-Channel = CURDIR/stderr3.log, /dev/stderr, 0, 0, 0, 4096, 65536
+Channel = PWD/output.data, /dev/stdout, 0, 0, 0, 65536, 67108864
+Channel = PWD/stderr3.log, /dev/stderr, 0, 0, 0, 4096, 65536
 
 =====================================================================
 == zerovm settings

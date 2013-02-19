@@ -2,7 +2,7 @@
 == provokes signal
 =====================================================================
 Channel = /dev/null, /dev/stdin, 0, 65536, 4194304, 0, 0
-Channel = CURDIR/result.log, /dev/stdout, 0, 0, 0, 65536, 4194304
+Channel = PWD/result.log, /dev/stdout, 0, 0, 0, 65536, 4194304
 Channel = /dev/null, /dev/stderr, 0, 0, 0, 65536, 4194304
 
 =====================================================================

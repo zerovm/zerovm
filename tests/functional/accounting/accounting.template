@@ -1,9 +1,9 @@
 =====================================================================
 == the character device read only channels test
 =====================================================================
-Channel = CURDIR/accounting.nexe, /dev/stdin, 0, 65536, 4194304, 0, 0
-Channel = CURDIR/stdout.data, /dev/stdout, 0, 0, 0, 65536, 4194304
-Channel = CURDIR/result.log, /dev/stderr, 0, 0, 0, 65536, 4194304
+Channel = PWD/accounting.nexe, /dev/stdin, 0, 65536, 4194304, 0, 0
+Channel = PWD/stdout.data, /dev/stdout, 0, 0, 0, 65536, 4194304
+Channel = PWD/result.log, /dev/stderr, 0, 0, 0, 65536, 4194304
 
 =====================================================================
 == switches for zerovm. some of them used to control nexe, some

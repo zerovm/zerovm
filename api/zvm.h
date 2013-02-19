@@ -82,7 +82,6 @@ struct UserManifest
 /*
  * "One Ring" wrappers and logger. disabled for trusted code
  */
-#ifdef USER_SIDE
 
 /* must be called before api usage. return 0 if successful */
 struct UserManifest *zvm_init();
@@ -101,7 +100,5 @@ int32_t zvm_syscallback(intptr_t addr);
 
 /* get zerovm error number. standard error codes were used */
 int32_t zvm_errno();
-
-#endif /* USER_SIDE */
 
 #endif /* API_ZVM_MANIFEST_H__ */

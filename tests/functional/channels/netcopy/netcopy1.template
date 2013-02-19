@@ -1,9 +1,9 @@
 =====================================================================
 == net copy functional test. 1st collocutor
 =====================================================================
-Channel = CURDIR/netcopy.nexe, /dev/stdin, 0, 65536, 67108864, 0, 0
+Channel = PWD/netcopy.nexe, /dev/stdin, 0, 65536, 67108864, 0, 0
 Channel = tcp:2:, /dev/stdout, 0, 0, 0, 65536, 67108864
-Channel = CURDIR/stderr1.log, /dev/stderr, 0, 0, 0, 4096, 65536
+Channel = PWD/stderr1.log, /dev/stderr, 0, 0, 0, 4096, 65536
 
 =====================================================================
 == zerovm settings

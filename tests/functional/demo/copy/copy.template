@@ -1,8 +1,8 @@
 =====================================================================
 == copy data from the input channel to the output channel
 =====================================================================
-Channel = CURDIR/input.data, /dev/stdin, 0, 1073741824, 1073741824, 0, 0
-Channel = CURDIR/output.data, /dev/stdout, 0, 0, 0, 1073741824, 1073741824
+Channel = PWD/input.data, /dev/stdin, 0, 1073741824, 1073741824, 0, 0
+Channel = PWD/output.data, /dev/stdout, 0, 0, 0, 1073741824, 1073741824
 Channel = /dev/null, /dev/stderr, 0, 0, 0, 65536, 65536
 
 =====================================================================

@@ -2,11 +2,11 @@
 == the cdr channels test. assumes existance of cdr_const file
 =====================================================================
 Channel = /dev/null, /dev/stdin, 0, 16, 256, 0, 0
-Channel = CURDIR/result.log, /dev/stdout, 0, 0, 0, 512, 8192
+Channel = PWD/result.log, /dev/stdout, 0, 0, 0, 512, 8192
 Channel = /dev/null, /dev/stderr, 0, 0, 0, 16, 256
-Channel = CURDIR/cdr_empty.data, /dev/cdr_empty, 1, 512, 8192, 16, 36
-Channel = CURDIR/cdr_stubbed.data, /dev/cdr_stubbed, 1, 512, 8192, 16, 35
-Channel = CURDIR/cdr_scapegoat.data, /dev/cdr_scapegoat, 1, 512, 8192, 16, 16
+Channel = PWD/cdr_empty.data, /dev/cdr_empty, 1, 512, 8192, 16, 36
+Channel = PWD/cdr_stubbed.data, /dev/cdr_stubbed, 1, 512, 8192, 16, 35
+Channel = PWD/cdr_scapegoat.data, /dev/cdr_scapegoat, 1, 512, 8192, 16, 16
 
 =====================================================================
 == switches for zerovm. some of them used to control nexe, some

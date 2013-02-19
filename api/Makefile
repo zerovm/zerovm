@@ -1,5 +1,4 @@
 INCLUDE_FLAGS=-I ..
-MACROS_FLAGS=-D USER_SIDE
 NACL_TOOLCHAIN_PATH=$(NACL_SDK_ROOT)/toolchain/linux_x86_glibc
 
 all:

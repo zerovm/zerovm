@@ -2,9 +2,9 @@
 == the sequential read only channels test
 =====================================================================
 Channel = /dev/null, /dev/stdin, 0, 16, 256, 0, 0
-Channel = CURDIR/result.log, /dev/stdout, 0, 0, 0, 512, 8192
+Channel = PWD/result.log, /dev/stdout, 0, 0, 0, 512, 8192
 Channel = /dev/null, /dev/stderr, 0, 0, 0, 16, 256
-Channel = CURDIR/seqro.data, /dev/seqro, 0, 32, 32, 0, 0
+Channel = PWD/seqro.data, /dev/seqro, 0, 32, 32, 0, 0
 
 =====================================================================
 == switches for zerovm. some of them used to control nexe, some

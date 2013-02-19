@@ -2,9 +2,9 @@
 == the random write only channels test
 =====================================================================
 Channel = /dev/null, /dev/stdin, 0, 16, 256, 0, 0
-Channel = CURDIR/result.log, /dev/stdout, 0, 0, 0, 512, 8192
+Channel = PWD/result.log, /dev/stdout, 0, 0, 0, 512, 8192
 Channel = /dev/null, /dev/stderr, 0, 0, 0, 16, 256
-Channel = CURDIR/ranwo.data, /dev/ranwo, 2, 0, 0, 32, 32
+Channel = PWD/ranwo.data, /dev/ranwo, 2, 0, 0, 32, 32
 
 =====================================================================
 == switches for zerovm. some of them used to control nexe, some
@@ -14,4 +14,3 @@ Version = 09082012
 Nexe = ranwo.nexe
 MemMax = 134217728
 Timeout = 5
-

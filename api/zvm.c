@@ -9,9 +9,6 @@
 #include <string.h>
 #include <stdio.h>
 
-#ifndef USER_SIDE
-#define USER_SIDE
-#endif
 #include "zvm.h"
 
 /* pointer to trap() through the trampoline */
@@ -87,5 +84,3 @@ int32_t zvm_syscallback(intptr_t addr)
   uint64_t request[] = {TrapSyscallback, 0, addr};
   return _trap(request);
 }
-
-#undef USER_SIDE
