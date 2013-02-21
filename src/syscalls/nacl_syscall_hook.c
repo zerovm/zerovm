@@ -75,6 +75,14 @@ NORETURN void NaClSyscallCSegHook()
   /* debug print to log */
   ZLOGS(LOG_INSANE, "system call number %ld", sysnum);
 
+  /*
+   * todo(d'b): preparation for the nacl syscalls removal. remove
+   * "ifdef" after it will be done
+   */
+#ifdef DISABLE_NACL_SYSCALLS
+  ZLOGFAIL(sysnum != 0, EINTR, "nacl syscall %d received", sysnum);
+#endif
+
   if(sysnum >= NACL_MAX_SYSCALLS)
   {
     ZLOG(LOG_ERROR, "INVALID system call %ld", sysnum);

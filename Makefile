@@ -10,6 +10,7 @@ CCFLAGS2=-Wextra -Wswitch-enum -Wsign-compare $(CCFLAGS0)
 CXXFLAGS1=-c -std=c++98 -D_GNU_SOURCE=1 -I. -Ilib $(CXXFLAGS0) $(FLAGS0)
 CXXFLAGS2=-Wl,-z,noexecstack $(CXXFLAGS0) -Lobj -L/usr/lib64 -pie -Wl,-z,relro -Wl,-z,now
 
+# to compile zvm w/o nacl syscalls support -DDISABLE_NACL_SYSCALLS should be specidied
 all: CCFLAGS1 += -DNDEBUG -O3 -s
 all: CCFLAGS2 += -DNDEBUG -O3 -s
 all: CXXFLAGS1 := -DNDEBUG -O3 -s $(CXXFLAGS1)

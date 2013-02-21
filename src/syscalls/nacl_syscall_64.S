@@ -102,6 +102,14 @@ trap:
         movq    (%rdx), %rdx
 
         movq    0x38(%rdx), %rsp
+
+        /*
+         * d'b: added to align stack to 16 bytes, in the future
+         * for other platform the alignment should be set to appropriate
+         * values.
+         * note: w/o alignment some avx instructions aren't working
+         */
+        andq	$-0xf, %rsp
         /*
          * hic sunt dracones
          *
