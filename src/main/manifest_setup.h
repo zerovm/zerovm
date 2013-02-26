@@ -26,8 +26,8 @@ EXTERN_C_BEGIN
 #include "stdio.h"
 
 #define HELP_SCREEN /* update command line switches here */\
-    "\033[4m\033[1mZeroVM\033[0m lightweight VM manager, build 2013-02-05\n"\
-    "Usage: <-M manifest_file> [-v#] [-l#] [-FSseQ]\n\n"\
+    "\033[4m\033[1mZeroVM\033[0m lightweight VM manager, build 2013-02-25\n"\
+    "Usage: <-M manifest_file> [-v#] [-l#] [-PFSseQ]\n\n"\
     " -M <file> load settings from manifest\n"\
     " -e enable the data oversight (etag)\n"\
     " -l set a new storage limit (in Gb)\n"\
@@ -36,7 +36,8 @@ EXTERN_C_BEGIN
     " -v [level] verbosity\n"\
     " -F fuzz testing; quit after loading NaCl app\n"\
     " -S disable signal handling\n"\
-    " -Q disable platform qualification (dangerous!)\n"
+    " -Q disable platform qualification (dangerous!)\n"\
+    " -P disable channels space preallocation\n"
 
 #define NEXE_PGM_NAME "loner" /* default argv[0] for nexe */
 #define ZEROVM_PRIORITY 19

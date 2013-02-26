@@ -21,6 +21,13 @@
 #include "src/channels/mount_channel.h"
 #include "src/channels/preload.h"
 
+static int disable_preallocation = 0;
+
+void PreloadAllocationDisable()
+{
+  disable_preallocation = 1;
+}
+
 /* return the file source type or ChannelSourceTypeNumber */
 enum ChannelSourceType GetChannelSource(const char *name)
 {
@@ -136,8 +143,13 @@ static void RegularChannel(struct ChannelDesc* channel)
       ZLOGFAIL(channel->handle == -1, errno, "'%s' open error", channel->name);
       channel->size = 0;
       if(STREQ(channel->name, DEV_NULL)) break;
-      i = ftruncate(channel->handle, channel->limits[PutSizeLimit]);
-      ZLOGFAIL(i == -1, errno, "cannot preallocate '%s' channel", channel->alias);
+
+      /* preallocate channel space */
+      if(!disable_preallocation)
+      {
+        i = ftruncate(channel->handle, channel->limits[PutSizeLimit]);
+        ZLOGFAIL(i == -1, errno, "cannot preallocate '%s' channel", channel->alias);
+      }
       break;
 
     case 3: /* cdr or full random access */
@@ -156,8 +168,12 @@ static void RegularChannel(struct ChannelDesc* channel)
       /* file does not exist */
       if(channel->size == 0 && STRNEQ(channel->name, DEV_NULL))
       {
-        i = ftruncate(channel->handle, channel->limits[PutSizeLimit]);
-        ZLOGFAIL(i == -1, errno, "cannot preallocate cdr channel");
+        /* preallocate channel space */
+        if(!disable_preallocation)
+        {
+          i = ftruncate(channel->handle, channel->limits[PutSizeLimit]);
+          ZLOGFAIL(i == -1, errno, "cannot preallocate cdr channel");
+        }
         break;
       }
 

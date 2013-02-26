@@ -25,6 +25,9 @@
 #define CHANNEL_OPEN_FLAGS {O_RDONLY, O_RDWR | O_CREAT, O_RDWR | O_CREAT, -1, -1}
 #define DEV_NULL "/dev/null"
 
+/* disable space preallocation */
+void PreloadAllocationDisable();
+
 /*
  * preload given file to channel.
  * return 0 if success, otherwise negative errcode

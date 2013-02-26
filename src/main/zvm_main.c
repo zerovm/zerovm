@@ -35,6 +35,7 @@
 #include "src/main/accounting.h"
 #include "src/syscalls/nacl_syscall_handlers.h"
 #include "src/platform/nacl_macros.h"
+#include "src/channels/preload.h" /* for PreloadAllocationDisable() */
 
 /* log zerovm command line */
 static void ZVMCommandLine(int argc, char **argv)
@@ -65,7 +66,7 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
   /* construct zlog with default verbosity */
   ZLogCtor(LOG_ERROR);
 
-  while((opt = getopt(argc, argv, "+FeQsSv:M:l:")) != -1)
+  while((opt = getopt(argc, argv, "+PFeQsSv:M:l:")) != -1)
   {
     switch(opt)
     {
@@ -101,6 +102,9 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
         nap->skip_qualification = 1;
         ZLOGS(LOG_ERROR, "PLATFORM QUALIFICATION DISABLED BY -Q - "
             "Native Client's sandbox will be unreliable!");
+        break;
+      case 'P':
+        PreloadAllocationDisable();
         break;
       default:
         ZLOGS(LOG_ERROR, "ERROR: unknown option: [%c]", opt);

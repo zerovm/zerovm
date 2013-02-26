@@ -80,7 +80,7 @@ NORETURN void NaClSyscallCSegHook()
    * "ifdef" after it will be done
    */
 #ifdef DISABLE_NACL_SYSCALLS
-  ZLOGFAIL(sysnum != 0, EINTR, "nacl syscall %d received", sysnum);
+  ZLOGIF(sysnum != 0, "nacl syscall %d received", sysnum);
 #endif
 
   if(sysnum >= NACL_MAX_SYSCALLS)
