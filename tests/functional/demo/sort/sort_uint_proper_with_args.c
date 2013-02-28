@@ -7,11 +7,9 @@
  *
  * note: input must contain (power of 2) 32-bit unsigned integers
  */
-#include <stdlib.h>
-#include <stdint.h>
 #include <emmintrin.h>
 #include <smmintrin.h>
-#include "include/api_tools.h"
+#include "include/zvmlib.h"
 
 #if 0
 #define DEBUG
@@ -22,30 +20,30 @@
 
 #define _eoutput(_str)\
   do {\
-    ZPRINTF(STDERR, "Error in %s() at %u: %s\n", __func__, __LINE__, (_str));\
-    exit(EXIT_FAILURE);\
+    FPRINTF(STDERR, "Error in %s() at %u: %s\n", __func__, __LINE__, (_str));\
+    zvm_exit(1);\
   } while(0)
 
 #ifdef DEBUG
-#define _doutput(...) ZPRINTF(STDERR, __VA_ARGS__)
+#define _doutput(...) FPRINTF(STDERR, __VA_ARGS__)
 
 /* print "s" elements array "a" */
 #define SHOW_RAW(a, s)\
   do {\
     int i;\
     for(i = 0; i < s; ++i)\
-      ZPRINTF(STDERR, "%u ", ((uint32_t*)a)[i]);\
-    ZPRINTF(STDERR, "\n");\
+      FPRINTF(STDERR, "%u ", ((uint32_t*)a)[i]);\
+    FPRINTF(STDERR, "\n");\
   } while (0)
 
 /* show place and print "s" elements array "a" */
 #define SHOW_RAW_FUNC(a, s)\
   do {\
     int i;\
-    ZPRINTF(STDERR, "%s -- %d: ", __func__, __LINE__);\
+    FPRINTF(STDERR, "%s -- %d: ", __func__, __LINE__);\
     for(i = 0; i < s; ++i)\
-      ZPRINTF(STDERR, "%u ", ((uint32_t*)a)[i]);\
-    printf("\n");\
+      FPRINTF(STDERR, "%u ", ((uint32_t*)a)[i]);\
+    FPRINTF(STDERR, "\n");\
   } while (0)
 
 /* check if "s" elements of array "a" are sorted */
@@ -352,7 +350,7 @@ void bitonic_merge(float *d, uint32_t s, float *buf, uint32_t chunk_size)
     destination = temp;
   }
 
-  if(source != d) memcpy(d, source, s * sizeof(float));
+  if(source != d) MEMCPY(d, source, s * sizeof(float));
 }
 
 /* sort given 32 elemens */
@@ -401,7 +399,7 @@ void bitonic_sort_chunked(float *d, uint32_t s, float *buf, uint32_t chunk_size)
 /* need for SSE aligned memory access */
 void *aligned_malloc(size_t size, size_t align)
 {
-  void *mem = malloc(size + align + sizeof(void*));
+  void *mem = MALLOC(size + align + sizeof(void*));
   void **ptr = (void**) (((size_t) mem + align + sizeof(void*)) & ~(align - 1));
   ptr[-1] = mem;
   return ptr;
@@ -410,7 +408,7 @@ void *aligned_malloc(size_t size, size_t align)
 /* replaces free() */
 void aligned_free(void *ptr)
 {
-  free(((void**) ptr)[-1]);
+  FREE(((void**) ptr)[-1]);
 }
 
 int main(int argc, char **argv)
@@ -420,14 +418,12 @@ int main(int argc, char **argv)
   uint32_t *d; /* data to sort */
   uint32_t *buf; /* extra space to sort */
   int64_t filesize;
-  zvm_bulk = zvm_init();
-  UNREFERENCED_VAR(ERRCOUNT);
 
   /* check command line */
   if(argc != 2) _eoutput("usage: sort number_of_elements\n");
 
   /* allocate data buffer */
-  filesize = strtoll(argv[1], NULL, 10);
+  filesize = STRTOL(argv[1], NULL, 10);
   cnt = filesize / sizeof(*d);
   d = aligned_malloc(filesize, 16);
   if(d == NULL) _eoutput("cannot allocate data buffer\n");
@@ -437,21 +433,21 @@ int main(int argc, char **argv)
   if(buf == NULL) _eoutput("cannot allocate extra buffer\n");
 
   /* elements count should be the power of 2 */
-  ZPRINTF(STDERR, "number of elements = %d\n", cnt);
+  FPRINTF(STDERR, "number of elements = %d\n", cnt);
   if(cnt & (cnt - 1)) _eoutput("wrong number of elements specified\n");
 
   /* read data */
-  if(zread(STDIN, (char*)d, sizeof *d * cnt) != cnt * sizeof *d)
+  if(READ(STDIN, (char*)d, sizeof *d * cnt) != cnt * sizeof *d)
     _eoutput("cannot read data from the input channel\n");
 
   /* Bitonic sort */
-  ZPRINTF(STDERR, "data sorting.. ");
+  FPRINTF(STDERR, "data sorting.. ");
   bitonic_sort_chunked((float*)d, cnt, (float*)buf, 1u << chunk_size);
-  ZPRINTF(STDERR, "done\n");
+  FPRINTF(STDERR, "done\n");
 
   /* save results */
-  zwrite(STDOUT, (const char*)d, sizeof(*d) * cnt);
-  ZPRINTF(STDERR, "sorted data is written\n");
+  WRITE(STDOUT, (const char*)d, sizeof(*d) * cnt);
+  FPRINTF(STDERR, "sorted data is written\n");
 
-  return EXIT_SUCCESS;
+  return 0;
 }

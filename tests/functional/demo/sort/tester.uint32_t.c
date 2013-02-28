@@ -2,10 +2,7 @@
  * test array with 32-bit elements using algorithm from "generator"
  * return 0 if data is sorted, otherwise - 1
  */
-
-#include <stdint.h>
-#include <stdlib.h>
-#include "include/api_tools.h"
+#include "include/zvmlib.h"
 
 #define ELEMENT_SIZE sizeof(uint32_t)
 #define BUFFER_SIZE 0x4000
@@ -26,11 +23,9 @@ int main(int argc, char **argv)
   uint32_t buf[BUFFER_SIZE];
   uint32_t seq_size = 2; /* take in account the probe elements */
   uint32_t inc;
-  zvm_bulk = zvm_init();
-  UNREFERENCED_VAR(ERRCOUNT);
 
   /* get 2 elements and calculate the increment */
-  i = zread(STDIN, (char*)buf, 2 * ELEMENT_SIZE);
+  i = READ(STDIN, buf, 2 * ELEMENT_SIZE);
   inc = i != 2 * ELEMENT_SIZE ? 0 : buf[1] - buf[0];
 
   /* exit on error */
@@ -40,13 +35,13 @@ int main(int argc, char **argv)
    * read and check elements one by one, making the last element
    * the beginning one (to make ring buffer)
    */
-  ZPRINTF(STDERR, "checking..\n");
+  FPRINTF(STDERR, "checking..\n");
   for(i = 0; i == 0; buf[0] = buf[i])
   {
     /* get the next portion of data */
-    i = zread(STDIN, (char*)buf, ELEMENT_SIZE * BUFFER_SIZE);
-    if(i == -1)
-      ZPRINTF(STDERR, "errno = %d\n", zvm_errno()); // ###
+    i = READ(STDIN, buf, ELEMENT_SIZE * BUFFER_SIZE);
+    if(i < 0)
+      FPRINTF(STDERR, "errno = %d\n", i);
     if(i <= 0) break;
 
     i /= ELEMENT_SIZE;
@@ -55,6 +50,6 @@ int main(int argc, char **argv)
   }
 
   i = i || -1U / seq_size != inc;
-  ZPRINTF(STDERR, "the data %ssorted\n", i ? "UN" : "");
+  FPRINTF(STDERR, "the data %ssorted\n", i ? "UN" : "");
   return i;
 }
