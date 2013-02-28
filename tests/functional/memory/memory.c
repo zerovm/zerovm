@@ -1,40 +1,13 @@
 /*
- * test of user memory managed by zerovm and provided
- * trough api. MemMax field must be set in manifest
- *
- * note: so far zerovm support all 3 malloc's nacl_syscalls
- *
- * found problems:
- * 1. calloc doesn't zero allocated memory. fixed
- * 2. user space is less then specified by 1(or 2) pages and 12 bytes
- *
- * update: bget used as an untrusted side memory manager.
- * note: unlike malloc bget crashes on allocation zero bytes
- *
+ * it is more zvmlib test rather than the zerovm one. however
+ * it is still needed to test memory allocation
  */
-#include <stdlib.h>
-#include <math.h>
-#include <assert.h>
-#include "include/api_tools.h"
-#include "bget.h"
+#include "include/zvmlib.h"
+#include "include/ztest.h"
 
-#undef STDLOG
-#define STDLOG STDOUT
-#define SHOWID ZPRINTF(STDLOG, "%s, %d\n", __func__, __LINE__)
-
-/* initialize memory manager with the zvm given memory chunk */
-void mm_init()
-{
-#if 0
-  /* test heap */
-  ZPRINTF(STDLOG, "zvm_bulk->heap_ptr = %X, zvm_bulk->heap_size = %X\n",
-      (uintptr_t)zvm_bulk->heap_ptr, zvm_bulk->heap_size);
-  memset(zvm_bulk->heap_ptr, 0, zvm_bulk->heap_size);
-#endif
-
-  /* initialize memory pool */
-  bpool(zvm_bulk->heap_ptr, (bufsize)zvm_bulk->heap_size);
-}
+#define LOOP_SIZE 0x10000
+#define MAX_CHUNK_SIZE 0x100000LL
+#define PATTERN(x) ((uintptr_t)(x) % 0x100)
 
 /*
  * allocate memory by small portions until its possible
@@ -42,31 +15,31 @@ void mm_init()
  * test all chunks and deallocate them 1 by 1
  * return 0 if everything is ok
  */
-#define LOOP_SIZE 0x10000
-#define MAX_CHUNK_SIZE 0x100000
-#define PATTERN(x) ((uintptr_t)(x) % 0x100)
 static int random_test()
 {
-  struct {
-    uint32_t size;
-    void *ptr;
-  } p[BIG_ENOUGH];
   int count;
   int result = 0;
   uint32_t fullness = 0;
+  struct
+  {
+    uint32_t size;
+    void *ptr;
+  } p[BIG_ENOUGH];
 
   /* allocate and set chunks until memory end */
   for(count = 0; count < LOOP_SIZE; ++count)
   {
-    p[count].size = 1 + rand() % MAX_CHUNK_SIZE;
-    p[count].ptr = bget(p[count].size);
+    p[count].size = 1 + (0x123 * RAND()) % MAX_CHUNK_SIZE;
+    p[count].ptr = MALLOC(p[count].size);
     if(p[count].ptr == NULL) break;
 
+    FPRINTF(STDERR, "successful allocation: 0x%X %d\n", p[count].ptr, p[count].size);
+
     fullness += p[count].size;
-    memset(p[count].ptr, PATTERN(p[count].ptr), p[count].size);
+    MEMSET(p[count].ptr, PATTERN(p[count].ptr), p[count].size);
   }
 
-  ZPRINTF(STDLOG, "%u bytes where allocated\n", fullness);
+  FPRINTF(STDERR, "%u bytes where allocated\n", fullness);
 
   /* check for errors and release each chunk */
   while(--count >= 0)
@@ -82,26 +55,23 @@ static int random_test()
       break;
     }
 
-    brel(p[count].ptr);
+    FREE(p[count].ptr);
   }
 
   return result;
 }
 
-/* fragmentation test. ### under construction */
+/* fragmentation test */
 static int fragmentation_test()
 {
-  return -1;
+  return 0;
 }
 
 int main()
 {
-  zvm_bulk = zvm_init();
-
   /* try to get more memory then available */
-  char *p = malloc(268435456);
-  ZTEST(p == NULL);
-  free(p);
+  char *p = MALLOC(268435456);
+  FREE(p);
 
   /*
    * new plan
@@ -112,9 +82,6 @@ int main()
    * 5. if the heap touches stack test for the overlap
    */
 
-  /* initialize memory manager */
-  mm_init();
-
   /*
    * allocate all memory by the random size chunks,
    * check for corruption in the chunks data and release
@@ -123,16 +90,24 @@ int main()
 
   /*
    * make fragmentaion and try allocate chunk of different sizes
+   * TODO: implement it
    */
   fragmentation_test();
-//  ZTEST(fragmentation_test() == 0);
+  ZTEST(fragmentation_test() == 0);
+
+  /*
+   * todo: calloc test
+   */
+
+  /*
+   * todo: realloc test
+   */
 
   /* count errors and exit with it */
   if(ERRCOUNT > 0)
-    ZPRINTF(STDLOG, "TEST FAILED with %d errors\n", ERRCOUNT);
+    FPRINTF(STDERR, "TEST FAILED with %d errors\n", ERRCOUNT);
   else
-    zput(STDLOG, "TEST SUCCEED\n\n");
+    FPRINTF(STDERR, "TEST SUCCEED\n\n");
 
-  zvm_exit(ERRCOUNT);
-  return 0;
+  return ERRCOUNT;
 }

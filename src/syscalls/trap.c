@@ -80,21 +80,21 @@ static int CheckReadAccess(struct NaClApp *nap, const void *p, int32_t size)
   uintptr_t addr = (uintptr_t)p;
 
   /* check the address for NULL and convert to system space */
-  if(p == NULL) return ERR_CODE;
+  if(p == NULL) return -1;
 
   /* the address inside the trampoline .. the user heap end space */
   if(addr >= NACL_MAP_PAGESIZE
       && addr <= nap->heap_end
       && addr + size >= NACL_MAP_PAGESIZE
-      && addr + size <= nap->heap_end) return OK_CODE;
+      && addr + size <= nap->heap_end) return 0;
 
   /* the address inside the user stack */
   if(addr >= FOURGIG - nap->stack_size
       && addr <= FOURGIG
       && addr + size >= FOURGIG - nap->stack_size
-      && addr + size <= FOURGIG) return OK_CODE;
+      && addr + size <= FOURGIG) return 0;
 
-  return ERR_CODE;
+  return -1;
 }
 
 /* return 0 if the user gap has write access. note that size can be 0 */
@@ -103,21 +103,21 @@ static int CheckWriteAccess(struct NaClApp *nap, const void *p, int32_t size)
   uintptr_t addr = (uintptr_t)p;
 
   /* check the address for NULL and convert to system space */
-  if(p == NULL) return ERR_CODE;
+  if(p == NULL) return -1;
 
   /* the address inside the trampoline .. the user heap end space */
   if(addr >= nap->data_start
       && addr <= nap->heap_end
       && addr + size >= nap->data_start
-      && addr + size <= nap->heap_end) return OK_CODE;
+      && addr + size <= nap->heap_end) return 0;
 
   /* the address inside the user stack */
   if(addr >= FOURGIG - nap->stack_size
       && addr <= FOURGIG
       && addr + size >= FOURGIG - nap->stack_size
-      && addr + size <= FOURGIG) return OK_CODE;
+      && addr + size <= FOURGIG) return 0;
 
-  return ERR_CODE;
+  return -1;
 }
 
 /*
@@ -130,7 +130,7 @@ static int32_t ZVMReadHandle(struct NaClApp *nap,
   struct ChannelDesc *channel;
   int64_t tail;
   char *sys_buffer;
-  int32_t retcode = ERR_CODE;
+  int32_t retcode = -1;
 
   assert(nap != NULL);
   assert(nap->system_manifest != NULL);
@@ -148,7 +148,7 @@ static int32_t ZVMReadHandle(struct NaClApp *nap,
       channel->alias, (intptr_t)buffer, size, offset);
 
   /* check buffer and convert address */
-  if(CheckWriteAccess(nap, buffer, size) == ERR_CODE) return -EINVAL;
+  if(CheckWriteAccess(nap, buffer, size) == -1) return -EINVAL;
   sys_buffer = (char*)NaClUserToSys(nap, (uintptr_t) buffer);
 
   /* ignore user offset for sequential access read */
@@ -238,7 +238,7 @@ static int32_t ZVMWriteHandle(struct NaClApp *nap,
   struct ChannelDesc *channel;
   int64_t tail;
   const char *sys_buffer;
-  int32_t retcode = ERR_CODE;
+  int32_t retcode = -1;
 
   assert(nap != NULL);
   assert(nap->system_manifest != NULL);
@@ -256,7 +256,7 @@ static int32_t ZVMWriteHandle(struct NaClApp *nap,
       channel->alias, (intptr_t)buffer, size, offset);
 
   /* check buffer and convert address */
-  if(CheckReadAccess(nap, buffer, size) == ERR_CODE) return -EINVAL;
+  if(CheckReadAccess(nap, buffer, size) == -1) return -EINVAL;
   sys_buffer = (char*)NaClUserToSys(nap, (uintptr_t) buffer);
 
   /* ignore user offset for sequential access write */
@@ -315,6 +315,7 @@ static int32_t ZVMWriteHandle(struct NaClApp *nap,
   return retcode;
 }
 
+#ifndef DISABLE_NACL_SYSCALLS
 /*
  * set syscallback
  * returns a new syscallback when successfully installed or
@@ -355,6 +356,7 @@ static int32_t ZVMSyscallback(struct NaClApp *nap, int32_t addr)
 
   return nap->system_manifest->syscallback;
 }
+#endif
 
 /* this function debug only. return function name by id */
 static const char *FunctionNameById(int id)
@@ -363,7 +365,9 @@ static const char *FunctionNameById(int id)
   {
     case TrapRead: return "TrapRead";
     case TrapWrite: return "TrapWrite";
+#ifndef DISABLE_NACL_SYSCALLS
     case TrapSyscallback: return "TrapSyscallback";
+#endif
     case TrapExit: return "TrapExit";
   }
   return "not supported";
@@ -403,9 +407,11 @@ int32_t TrapHandler(struct NaClApp *nap, uint32_t args)
       retcode = ZVMWriteHandle(nap,
           (int)sys_args[2], (char*)sys_args[3], (int32_t)sys_args[4], sys_args[5]);
       break;
+#ifndef DISABLE_NACL_SYSCALLS
     case TrapSyscallback:
       retcode = ZVMSyscallback(nap, (int32_t)sys_args[2]);
       break;
+#endif
     default:
       retcode = -EPERM;
       ZLOG(LOG_ERROR, "function %ld is not supported", *sys_args);

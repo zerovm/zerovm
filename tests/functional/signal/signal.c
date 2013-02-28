@@ -4,36 +4,39 @@
  * todo(d'b): add signals
  *   2 - Interrupt from keyboard
  *   25 - File size limit exceeded
+ * update: it is possible to invoke almost any signal from makefile via pkill.
+ *         it would be better to initiate signal from the user code, but zerovm
+ *         can be also tested from outside
  */
-#include <stdlib.h>
-#include "include/api_tools.h"
+#include "include/zvmlib.h"
+#include "include/ztest.h"
 
 #define SIGNALS_NUMBER 64
 
 void signal_na()
 {
-  ZPRINTF(STDOUT, "not supported signal\n");
+  FPRINTF(STDERR, "not supported signal\n");
 }
 
 /* Floating point exception */
 void signal_8()
 {
   int i = 0;
-  ZPRINTF(STDOUT, "invocation of signal #8\n");
-  ZPRINTF(STDOUT, "falling.. %d\n", 1/i);
+  FPRINTF(STDERR, "invocation of signal #8\n");
+  FPRINTF(STDERR, "falling.. %d\n", 1/i);
 }
 
 /* Invalid memory reference */
 void signal_11()
 {
-  ZPRINTF(STDOUT, "invocation of signal #11\n");
-  ZPRINTF(STDOUT, "falling.. %d\n", *(char*)NULL);
+  FPRINTF(STDERR, "invocation of signal #11\n");
+  FPRINTF(STDERR, "falling.. %d\n", *(char*)NULL);
 }
 
 /* CPU time limit exceeded */
 void signal_24()
 {
-  ZPRINTF(STDOUT, "invocation of signal #24\n");
+  FPRINTF(STDERR, "invocation of signal #24\n");
   for(;;);
 }
 
@@ -52,11 +55,8 @@ void signals_ctor(void (*signals[])())
 
 int main(int argc, char **argv, char **envp)
 {
-  zvm_bulk = zvm_init();
   void (*signals[SIGNALS_NUMBER])();
   uint32_t signum = -1U;
-
-  UNREFERENCED_VAR(errcount);
 
   /* constructor of signal raisers */
   signals_ctor(signals);
@@ -64,12 +64,12 @@ int main(int argc, char **argv, char **envp)
   /* provoke the signal */
   if(argc == 2)
   {
-    signum = strtol(argv[1], NULL, 10);
+    signum = STRTOL(argv[1], NULL, 10);
     if(signum < SIGNALS_NUMBER)
       signals[signum]();
   }
 
   /* not reached if the signal handler invoked */
-  ZPRINTF(STDOUT, "FAILED on signal #%u\n", signum);
-  return 0;
+  FPRINTF(STDERR, "FAILED on signal #%u\n", signum);
+  return ERRCOUNT;
 }

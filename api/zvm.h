@@ -1,36 +1,46 @@
 /*
- * ZeroVM API. contains the ZeroVM API function prototypes, data structures,
- * macro definitions, types and ZeroVM error codes
+ * ZeroVM API. contains function prototypes, data structures,
+ * macro definitions, types and constants
  *
- *  Created on: Dec 2, 2011
- *      Author: d'b
+ * Copyright (c) 2012, LiteStack, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
-#ifndef API_ZVM_MANIFEST_H__
-#define API_ZVM_MANIFEST_H__ 1
+#ifndef ZVM_API_H__
+#define ZVM_API_H__ 1
 
 #include <stdint.h>
 
-/* todo(d'b): should be taken from sel_ldr.h */
-#define STACK_SIZE (16 << 20)
-//const struct UserManifest const *zvm_manifest = (void*) *((uintptr_t*) 0xFEFFFFFC);
-//extern const struct UserManifest const *zvm_manifest = (const struct UserManifest const *)0xFEFFFFFC;
-
-enum ZVM_CODES
+/* zerovm system calls */
+enum TrapCalls
 {
-  ERR_CODE = -1, /* general error */
-  OK_CODE = 0 /* must be zero */
+  TrapRead = 17770431,
+  TrapWrite = 17770432,
+  TrapExit = 17770441
 };
 
-/* channels available for user. very 1st channel must be InputChannel */
-enum AccessType {
+/* channel types */
+enum AccessType
+{
   SGetSPut, /* sequential read, sequential write */
   RGetSPut, /* random read, sequential write */
   SGetRPut, /* sequential read, random write */
   RGetRPut /* random read, random write */
 };
 
-/* limits/counters for i/o */
-enum IOLimits {
+/* channel limits */
+enum IOLimits
+{
   GetsLimit,
   GetSizeLimit,
   PutsLimit,
@@ -38,37 +48,16 @@ enum IOLimits {
   IOLimitsCount
 };
 
-/*
- * all the trap() syscalls resides here
- * note: the try to make user exploit function names instead of numbers
- */
-enum TrapCalls {
-  TrapRead = 17770431,
-  TrapWrite = 17770432,
-  TrapSyscallback = 17770433,
-  TrapExit = 17770441
-};
-
-/*
- * the file abstraction over a zerovm channel. user work with
- * zerovm channels like with regular files. meantime zerovm channels
- * could be files or network streams or anything else.
- *
- * - "optional" in comments means that fields is not necessary set
- * - "secured" field contain synthetic information
- */
+/* channel descriptor */
 struct ZVMChannel
 {
   int64_t limits[IOLimitsCount];
-  int64_t size; /* channel size. optional */
-  enum AccessType type; /* type of access sequential/random */
-  char *name; /* file name (int32_t). secured */
+  int64_t size; /* 0 for sequential channels */
+  enum AccessType type;
+  char *name;
 };
 
-/*
- * synthetic structure to substitute the older one
- * note: zerovm doesn't use it
- */
+/* system data available for the user */
 struct UserManifest
 {
   void *heap_ptr;
@@ -76,29 +65,19 @@ struct UserManifest
   uint32_t stack_size;
   int32_t channels_count;
   struct ZVMChannel *channels;
-  char **envp;
 };
 
-/*
- * "One Ring" wrappers and logger. disabled for trusted code
- */
+/* pointer to the user manifest */
+#define MANIFEST ((const struct UserManifest const *)*((uintptr_t*)0xFEFFFFFC))
 
-/* must be called before api usage. return 0 if successful */
-struct UserManifest *zvm_init();
+/* pointer to trap */
+#define TRAP ((int32_t (*)(uint64_t*))0x10000)
 
-/* wrapper for zerovm "TrapRead" */
-int32_t zvm_pread(int desc, char *buffer, int32_t size, int64_t offset);
+/* trap functions */
+#define zvm_pread(desc, buffer, size, offset) \
+  TRAP((uint64_t[]){TrapRead, 0, desc, (uintptr_t)buffer, size, offset})
+#define zvm_pwrite(desc, buffer, size, offset) \
+  TRAP((uint64_t[]){TrapWrite, 0, desc, (uintptr_t)buffer, size, offset})
+#define zvm_exit(code) TRAP((uint64_t[]){TrapExit, 0, code})
 
-/* wrapper for zerovm "TrapWrite" */
-int32_t zvm_pwrite(int desc, const char *buffer, int32_t size, int64_t offset);
-
-/* wrapper for zerovm "TrapExit" */
-int32_t zvm_exit(int32_t code);
-
-/* set syscallback address. return active syscallback */
-int32_t zvm_syscallback(intptr_t addr);
-
-/* get zerovm error number. standard error codes were used */
-int32_t zvm_errno();
-
-#endif /* API_ZVM_MANIFEST_H__ */
+#endif /* ZVM_API_H__ */

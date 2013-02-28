@@ -182,7 +182,7 @@ static int ParseManifest()
   }
 
   /* return error if no recods were found */
-  return mft_count ? 0 : ERR_CODE;
+  return mft_count ? 0 : -1;
 }
 
 /*
@@ -217,7 +217,7 @@ int ManifestCtor(const char *name)
 
   /* close file and return */
   fclose(mft);
-  return OK_CODE;
+  return 0;
 }
 
 /* free resources used by manifest */

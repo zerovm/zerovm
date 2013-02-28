@@ -12,7 +12,7 @@
 #endif /* PROTOTYPES */
 #endif
 
-typedef long bufsize;
+typedef long long bufsize; // ### d'b
 void	bpool	    _((void *buffer, bufsize len));
 void   *bget	    _((bufsize size));
 void   *bgetz	    _((bufsize size));

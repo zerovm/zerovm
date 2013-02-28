@@ -5,11 +5,10 @@
  *
  * note: not fully functional. network part should be updated in manifest
  */
-#include <stdlib.h>
-#include "include/api_tools.h"
+#include "include/zvmlib.h"
+#include "include/ztest.h"
 
-#define INPUT "INPUT"
-#define OUTPUT "OUTPUT"
+/* from here a new test framework started {{ */
 
 static uint64_t *acgets;
 static uint64_t *acputs;
@@ -21,15 +20,15 @@ static int counters_ctor()
 {
   int code;
 
-  acgets = calloc(zvm_bulk->channels_count, sizeof *acgets);
-  acputs = calloc(zvm_bulk->channels_count, sizeof *acputs);
-  acgetsizes = calloc(zvm_bulk->channels_count, sizeof *acgetsizes);
-  acputsizes = calloc(zvm_bulk->channels_count, sizeof *acputsizes);
+  acgets = CALLOC(MANIFEST->channels_count, sizeof *acgets);
+  acputs = CALLOC(MANIFEST->channels_count, sizeof *acputs);
+  acgetsizes = CALLOC(MANIFEST->channels_count, sizeof *acgetsizes);
+  acputsizes = CALLOC(MANIFEST->channels_count, sizeof *acputsizes);
 
   /* check allocation */
   if(!acgets || !acputs || !acgetsizes || !acputsizes)
   {
-    zput(STDLOG, "cannot allocate counter(s)\n");
+    FPRINTF(STDERR, "cannot allocate counter(s)\n");
     return -1;
   }
 
@@ -37,11 +36,11 @@ static int counters_ctor()
    * patch: since zerovm provides very primitive memory management
    * and calloc doesn't work it is more safe to use memset
    */
-  code = zvm_bulk->channels_count * sizeof *acgets;
-  memset(acgets, 0, code);
-  memset(acputs, 0, code);
-  memset(acgetsizes, 0, code);
-  memset(acputsizes, 0, code);
+  code = MANIFEST->channels_count * sizeof *acgets;
+  MEMSET(acgets, 0, code);
+  MEMSET(acputs, 0, code);
+  MEMSET(acgetsizes, 0, code);
+  MEMSET(acputsizes, 0, code);
   return 0;
 }
 
@@ -50,18 +49,18 @@ static void counters_dtor()
 {
   int i;
 
-  for(i = 0; i < zvm_bulk->channels_count; ++i)
+  for(i = 0; i < MANIFEST->channels_count; ++i)
   {
-    ZPRINTF(STDLOG, "channel %d: gets = %llu, "
-        "getsizes = %llu\n", i, acgets[i], acgetsizes[i]);
-    ZPRINTF(STDLOG, "channel %d: puts = %llu, "
-        "putsizes = %llu\n", i, acputs[i], acputsizes[i]);
+    FPRINTF(STDERR, "channel %d: gets = %u, "
+        "getsizes = %u\n", i, acgets[i], acgetsizes[i]);
+    FPRINTF(STDERR, "channel %d: puts = %u, "
+        "putsizes = %u\n", i, acputs[i], acputsizes[i]);
   }
 
-  free(acgets);
-  free(acputs);
-  free(acgetsizes);
-  free(acputsizes);
+  FREE(acgets);
+  FREE(acputs);
+  FREE(acgetsizes);
+  FREE(acputsizes);
 }
 
 /* copies all data from in to out */
@@ -71,31 +70,29 @@ static void copy_channel(const char *out, const char *in)
   int code;
 
   /* check channels availability */
-  ZTEST(zhandle(in) >= 0);
-  ZTEST(zhandle(out) >= 0);
-  if(zhandle(in) < 0 || zhandle(out) < 0) return;
+  ZTEST(OPEN(in) >= 0);
+  ZTEST(OPEN(out) >= 0);
+  if(ERRCOUNT > 0) return;
 
   /* copy data */
   for(;;)
   {
-    code = zread(in, buf, BIG_ENOUGH);
+    code = READ(in, buf, BIG_ENOUGH);
     if(code == 0) break;
-    acgetsizes[zhandle(in)] += code;
-    ++acgets[zhandle(in)];
+    acgetsizes[OPEN(in)] += code;
+    ++acgets[OPEN(in)];
 
-    code = zwrite(out, buf, code);
+    code = WRITE(out, buf, code);
     if(code == 0) break;
-    acputsizes[zhandle(out)] += code;
-    ++acputs[zhandle(out)];
+    acputsizes[OPEN(out)] += code;
+    ++acputs[OPEN(out)];
   }
 }
 
 int main(int argc, char **argv)
 {
-  zvm_bulk = zvm_init();
-
   /* allocate counters */
-  if(counters_ctor() != 0) return 1;
+  ZTEST(counters_ctor() == 0);
 
   /* read data from stdin and write to stdout */
   copy_channel(STDOUT, STDIN);
@@ -111,9 +108,9 @@ int main(int argc, char **argv)
 
   /* count errors and exit with it */
   if(ERRCOUNT > 0)
-  ZPRINTF(STDLOG, "TEST FAILED with %d errors\n", ERRCOUNT);
-  else zput(STDLOG, "TEST SUCCEED\n\n");
+    FPRINTF(STDERR, "TEST FAILED with %d errors\n", ERRCOUNT);
+  else
+    FPRINTF(STDERR, "TEST SUCCEED\n\n");
 
-  zvm_exit(ERRCOUNT);
-  return 0;
+  return ERRCOUNT;
 }

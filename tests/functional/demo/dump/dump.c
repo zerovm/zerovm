@@ -3,19 +3,15 @@
  * the stack end. creates the memory map.
  */
 #include <limits.h>
-#include <sys/param.h> /* MIN/MAX */
-#include "include/api_tools.h"
+#include "include/zvmlib.h"
 
-/* pointer to the user manifest */
-#define MANIFEST ((struct UserManifest*)*((uintptr_t*)0xFEFFFFFC))
-
-/* pointer to the array of channels */
+/* pointer to the array of CHANNELS */
 #define CHANNELS ((struct ZVMChannel*)MANIFEST->channels)
 
 /* regions */
 #define TRAMPOLINE_START ((int64_t)0x10000)
-#define HEAP_END ((uintptr_t)zvm_bulk->heap_ptr + zvm_bulk->heap_size)
-#define STACK_END ((int64_t)(-1U + 1 - STACK_SIZE))
+#define HEAP_END ((uintptr_t)MANIFEST->heap_ptr + MANIFEST->heap_size)
+#define STACK_END ((int64_t)(-1U + 1 - MANIFEST->stack_size))
 
 #define CHUNK_SIZE (SSIZE_MAX / 16)
 #define BUMPER_SIZE (0x10000)
@@ -33,7 +29,7 @@ int64_t zwrite_all(char *file, char *buf, int64_t size)
   for(pos = 0; pos < size; pos += rest)
   {
     rest = MIN(CHUNK_SIZE, size - pos);
-    if(zwrite(file, buf + pos, rest) != rest) return -1;
+    if(WRITE(file, buf + pos, rest) != rest) return -1;
   }
 
   return pos;
@@ -43,53 +39,51 @@ int64_t zwrite_all(char *file, char *buf, int64_t size)
 void dump_bumper(char *file)
 {
   char buf[BUMPER_SIZE];
-  memset(buf, 0xff, BUMPER_SIZE);
+  MEMSET(buf, 0xff, BUMPER_SIZE);
   zwrite_all(file, buf, BUMPER_SIZE);
 }
 
-int main()
+int main(int argc, char **argv)
 {
-  struct UserManifest *manifest = MANIFEST;
-  struct ZVMChannel *channels = CHANNELS;
   int64_t i;
 
-  zvm_bulk = zvm_init();
-  UNREFERENCED_VAR(errcount);
-
   /* memory map */
-  ZPRINTF(STDERR, "MEMORY MAP:\n");
-  ZPRINTF(STDERR, "%-16s = 0x%08llX\n", "trampoline start", TRAMPOLINE_START);
-  ZPRINTF(STDERR, "%-16s = 0x%08X\n", "heap start", (uintptr_t)zvm_bulk->heap_ptr);
-  ZPRINTF(STDERR, "%-16s = 0x%08llX\n", "heap end", (int64_t)HEAP_END);
-  ZPRINTF(STDERR, "%-16s = 0x%08llX\n", "stack end", STACK_END);
-  ZPRINTF(STDERR, "%-16s = 0x%09llX\n", "stack start", STACK_END + (uint64_t)STACK_SIZE);
+  FPRINTF(STDERR, "MEMORY MAP:\n");
+  FPRINTF(STDERR, "%16s = 0x%08X\n", "trampoline start", TRAMPOLINE_START);
+  FPRINTF(STDERR, "%16s = 0x%08X\n", "heap start", (uintptr_t)MANIFEST->heap_ptr);
+  FPRINTF(STDERR, "%16s = 0x%08X\n", "heap end", (int64_t)HEAP_END);
+  FPRINTF(STDERR, "%16s = 0x%08X\n", "stack end", STACK_END);
+  FPRINTF(STDERR, "%16s = 0x%08X\n", "stack start", STACK_END + (uint64_t)MANIFEST->stack_size);
+
+  /* put name to the bottom of the stack */
+  *(uint64_t*)0xFF000000 = 0x716f74726f622764LLU;
 
   /* dump "small" bumper */
   dump_bumper(STDOUT);
 
   /* dump memory from the trampoline start to the heap end */
-  i = zwrite_all(STDOUT, (char*)TRAMPOLINE_START, (int64_t)HEAP_END - TRAMPOLINE_START);
+  i = zwrite_all(STDOUT, (void*)TRAMPOLINE_START, (int64_t)HEAP_END - TRAMPOLINE_START);
 
   /* dump stack */
-  i = zwrite_all(STDOUT, (char*)STACK_END, (int64_t)STACK_SIZE);
+  i = zwrite_all(STDOUT, (void*)(uintptr_t)STACK_END, (int64_t)MANIFEST->stack_size);
 
-  /* user manifest */
-  ZPRINTF(STDERR, "\nUSER MANIFEST:\n");
-  ZPRINTF(STDERR, "%-16s = 0x%08X\n\n", "manifest address", (uintptr_t)manifest);
-  ZPRINTF(STDERR, "%-16s = 0x%08X\n\n", "channels address", (uintptr_t)manifest->channels);
+  /* user MANIFEST */
+  FPRINTF(STDERR, "\nUSER MANIFEST:\n");
+  FPRINTF(STDERR, "%16s = 0x%08X\n\n", "manifest address", (uintptr_t)MANIFEST);
+  FPRINTF(STDERR, "%16s = 0x%08X\n\n", "channels address", (uintptr_t)CHANNELS);
 
-  ZPRINTF(STDERR, "%-16s = 0x%08X\n", "heap start", (uintptr_t)manifest->heap_ptr);
-  ZPRINTF(STDERR, "%-16s = 0x%08X\n", "heap size", manifest->heap_size);
-  ZPRINTF(STDERR, "%-16s = 0x%08X\n", "stack size", manifest->stack_size);
-  ZPRINTF(STDERR, "%-16s = 0x%08X\n", "environment", (uintptr_t)zvm_bulk->envp);
-  ZPRINTF(STDERR, "%-16s = 0x%08X\n", "channels count", manifest->channels_count);
+  FPRINTF(STDERR, "%16s = 0x%08X\n", "heap start", (uintptr_t)MANIFEST->heap_ptr);
+  FPRINTF(STDERR, "%16s = 0x%08X\n", "heap size", MANIFEST->heap_size);
+  FPRINTF(STDERR, "%16s = 0x%08X\n", "stack size", MANIFEST->stack_size);
+  FPRINTF(STDERR, "%16s = 0x%08X\n", "channels count", MANIFEST->channels_count);
 
-  for(i = 0; i < zvm_bulk->channels_count; ++i)
+  FPRINTF(STDERR, "\n");
+  for(i = 0; i < MANIFEST->channels_count; ++i)
   {
-    ZPRINTF(STDERR, "%02lld %s type = %d, size = %lld, %lld:%lld:%lld:%lld\n",
-        i, channels[i].name, channels[i].type, channels[i].size,
-        channels[i].limits[0], channels[i].limits[1],
-        channels[i].limits[2], channels[i].limits[3]);
+    FPRINTF(STDERR, "%02d %s type = %d, size = %d, %d:%d:%d:%d\n",
+        i, CHANNELS[i].name, CHANNELS[i].type, CHANNELS[i].size,
+        CHANNELS[i].limits[0], CHANNELS[i].limits[1],
+        CHANNELS[i].limits[2], CHANNELS[i].limits[3]);
   }
 
   return 0;

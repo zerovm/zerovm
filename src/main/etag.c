@@ -22,7 +22,6 @@
 #include <assert.h>
 #include "src/main/tools.h"
 #include "src/main/etag.h"
-#include "api/zvm.h" /* ERR_CODE and OK_CODE */
 
 static int tag_engine_enabled = 0;
 

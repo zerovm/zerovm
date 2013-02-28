@@ -1,4 +1,4 @@
-NAME=hello
+NAME=calloc
 
 all: $(NAME).o
 	$(ZVM_TOOLCHAIN)/bin/gcc -o $(NAME).nexe -s -static \

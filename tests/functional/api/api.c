@@ -6,29 +6,43 @@
  * or if memory management will be completely moved to untrusted code
  * (in that case zvm will just need to check if pointer is in range)
  */
-#include <errno.h>
-#include <glib.h>
-#include "include/api_tools.h"
+#include "include/zvmlib.h"
+#include "include/ztest.h"
 
-/*
- * avoid compile errors (gnome library isn't ported to nacl)
- * because the code uses c-source inclusion below
- */
-#define g_malloc malloc
-#define g_malloc0 my_calloc
-#define g_free free
+#define LOT_ENOUGH 0x100
 
-int64_t g_ascii_strtoll();
+/* skip "extra load" headers */
+#define TOOLS_H_ 1
+#define __G_LIB_H__ 1
+#define _ERRNO_H 1
+#define _CTYPE_H 1
+#define _ASSERT_H 1
 
-/* single argument calloc version */
-void *my_calloc(size_t size)
-{
-  return calloc(1, size);
-}
+/* disable falling */
+#undef ZLOGFAIL
+#define ZLOGFAIL(...)
+#define ZLogTag(...)
+#define ZLog(...)
+#define FailIf(...)
+#define assert(...)
+#define fopen(...) NULL
+#define fread(...) -1
+#define fclose(...)
+#define GetFileSize(...) -1
+
+/* redefine functions */
+#define strtok STRTOK
+#define strcmp STRCMP
+#define strlen STRLEN
+#define strchr STRCHR
+#define strrchr STRRCHR
+#define isspace ISSPACE
+#define g_malloc MALLOC
+#define g_malloc0(size) CALLOC(size, 1)
+#define g_free FREE
 
 /* a cheat to have an access to static members */
 #include "src/main/manifest_parser.c"
-
 
 #define CONTROL "/dev/control"
 #define CHANNEL_ATTRIBUTES_NUMBER 7
@@ -42,13 +56,6 @@ enum ChannelFields {
   CFieldPutSizeLimit
 };
 
-/* disable falling */
-#undef ZLOGFAIL
-#define ZLOGFAIL(...)
-void ZLogTag(const char *file, int line) {}
-void ZLog(int priority, char *fmt, ...) {}
-void FailIf(int cond, int err, char const *fmt, ...) {}
-
 /*
  * get control data and parse it to make part of manifest parser
  * functions usable: GetValueByKey, GetValuesByKey, ParseValue
@@ -58,15 +65,18 @@ static int manifest_ctor()
 {
   static char buf_mft[BIG_ENOUGH];
   static char buf_ptr[BIG_ENOUGH];
-  struct ZVMChannel *control = &zvm_bulk->channels[zhandle(CONTROL)];
 
   /* get the data and initialize manifest */
   mft_count = 0;
   mft_data = buf_mft;
   mft_ptr = (void*)buf_ptr;
-  if(zread(CONTROL, mft_data, control->size) < 0) return -1;
+
+  if(READ(CONTROL, mft_data, MANIFEST->channels[OPEN(CONTROL)].size) < 0)
+    return -1;
+
   ParseManifest();
-  if(mft_count > 0) return 0;
+  if(mft_count > 0)
+    return 0;
 
   return -1;
 }
@@ -78,55 +88,45 @@ static void test_channel(char *token)
   int i;
 
   /* show channel control info */
-  zput(STDLOG, "the testing channel control info: ");
-  zput(STDLOG, token);
-  zput(STDLOG, "\n");
+  FPRINTF(STDERR, "the testing channel control info: ");
+  FPRINTF(STDERR, token);
+  FPRINTF(STDERR, "\n");
 
   /* parse token */
   i = ParseValue(token, ", ", tokens, LOT_ENOUGH);
   ZTEST(i == CHANNEL_ATTRIBUTES_NUMBER);
 
   /* find appropriate channel */
-  i = zhandle(tokens[CFieldAlias]);
+  i = OPEN(tokens[CFieldAlias]);
 
   /* compare channel attributes with the control ones */
-  ZTEST(strcmp(zvm_bulk->channels[i].name, tokens[CFieldAlias]) == 0);
-  ZTEST(zvm_bulk->channels[i].limits[GetsLimit] == atoi(tokens[CFieldGetsLimit]));
-  ZTEST(zvm_bulk->channels[i].limits[GetSizeLimit] == atoi(tokens[CFieldGetSizeLimit]));
-  ZTEST(zvm_bulk->channels[i].limits[PutsLimit] == atoi(tokens[CFieldPutsLimit]));
-  ZTEST(zvm_bulk->channels[i].limits[PutSizeLimit] == atoi(tokens[CFieldPutSizeLimit]));
-  ZTEST(zvm_bulk->channels[i].type == atoi(tokens[CFieldType]));
+  ZTEST(STRCMP(MANIFEST->channels[i].name, tokens[CFieldAlias]) == 0);
+  ZTEST(MANIFEST->channels[i].limits[GetsLimit] == ATOI(tokens[CFieldGetsLimit]));
+  ZTEST(MANIFEST->channels[i].limits[GetSizeLimit] == ATOI(tokens[CFieldGetSizeLimit]));
+  ZTEST(MANIFEST->channels[i].limits[PutsLimit] == ATOI(tokens[CFieldPutsLimit]));
+  ZTEST(MANIFEST->channels[i].limits[PutSizeLimit] == ATOI(tokens[CFieldPutSizeLimit]));
+  ZTEST(MANIFEST->channels[i].type == ATOI(tokens[CFieldType]));
 }
 
 int main(int argc, char **argv)
 {
-  zvm_bulk = zvm_init();
   char *tokens[LOT_ENOUGH];
   char *token;
   int number;
 
-  UNREFERENCED_FUNCTION(g_ascii_strtoll);
-
   /* get the control data */
   if(manifest_ctor() != 0)
   {
-    zput(STDLOG, "cannot get the control data\n");
-    zput(STDLOG, "\nTEST FAILED\n");
-    zvm_exit(1);
+    FPRINTF(STDERR, "cannot get the control data\n");
+    FPRINTF(STDERR, "\nTEST FAILED\n");
+    return 1;
   }
 
   /* check general information provided by zerovm */
   /* memory */
   token = GetValueByKey("MemMax");
-  ZTEST((uintptr_t)zvm_bulk->heap_ptr + zvm_bulk->heap_size + STACK_SIZE
-      == (token != NULL ? atoi(token) : 0));
-
-  /* environment. todo(d'b): extend it */
-  token = GetValueByKey("Environment");
-  if(token == NULL)
-    ZTEST(zvm_bulk->envp == NULL);
-  else
-    ZTEST(zvm_bulk->envp != NULL);
+  ZTEST((uintptr_t)MANIFEST->heap_ptr + MANIFEST->heap_size + MANIFEST->stack_size
+      == (token != NULL ? ATOI(token) : 0));
 
   /* node name */
   token = GetValueByKey("NodeName");
@@ -134,39 +134,24 @@ int main(int argc, char **argv)
   {
     number = ParseValue(token, ", ", tokens, 2);
     ZTEST(number == 2);
-    ZTEST(strcmp(argv[0], tokens[0]) == 0);
+    ZTEST(STRCMP(argv[0], tokens[0]) == 0);
   }
   else
-    ZTEST(strcmp(argv[0], "loner") == 0);
-
-  /* command line */
-  token = GetValueByKey("CommandLine");
-  if(token != NULL)
-  {
-    int i;
-    number = ParseValue(token, ", ", tokens, LOT_ENOUGH);
-    ZTEST(argc == number + 1);
-    for(i = 0; i < number; ++i)
-      ZTEST(strcmp(argv[i+1], tokens[i]) == 0);
-    ZTEST(argv[number + 1] == NULL);
-  }
-  else
-    ZTEST(argv[1] == NULL);
+    ZTEST(STRCMP(argv[0], "loner") == 0);
 
   /* check channels number */
   number = GetValuesByKey("Channel", tokens, LOT_ENOUGH);
-  ZTEST(zvm_bulk->channels_count == number);
+  ZTEST(MANIFEST->channels_count == number);
 
   /* test channels one by one */
-  for(number = 0; number < zvm_bulk->channels_count; ++number)
+  for(number = 0; number < MANIFEST->channels_count; ++number)
     test_channel(tokens[number]);
 
   /* count errors and exit with it */
   if(ERRCOUNT > 0)
-    ZPRINTF(STDLOG, "TEST FAILED with %d errors\n", ERRCOUNT);
+    FPRINTF(STDERR, "TEST FAILED with %d errors\n", ERRCOUNT);
   else
-    zput(STDLOG, "TEST SUCCEED\n\n");
+    FPRINTF(STDERR, "TEST SUCCEED\n\n");
 
-  zvm_exit(ERRCOUNT);
-  return 0;
+  return ERRCOUNT;
 }

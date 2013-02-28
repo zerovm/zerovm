@@ -2,120 +2,115 @@
  * read/write (full access) channel test. tests statistics goes to stdout channel
  * returns the number of failed tests
  */
+#include "include/zvmlib.h"
+#include "include/ztest.h"
 
-static char data_start = 0;
-
-#include "include/api_tools.h"
-
-#undef STDLOG
-#define STDLOG STDOUT
 #define STDRW_EMPTY "/dev/empty"
 #define STDRW_STUBBED "/dev/stubbed"
 #define STDRW_GOAT "/dev/scapegoat"
 
-#define WRITEGOAT(size, offset, result) \
-  ZTEST(zvm_pwrite(zhandle(STDRW_GOAT), buf, size, offset) == result);
-#define READGOAT(size, offset, result) \
-  ZTEST(zvm_pread(zhandle(STDRW_GOAT), buf, size, offset) == result);
+static char data_start = 0;
+
 int main(int argc, char **argv)
 {
   int overall_errors = 0;
   char buf[BIG_ENOUGH];
-  zvm_bulk = zvm_init();
 
-  /* (un)successfull writes to an empty channel */
-  /* (un)successfull writes to not empty channel */
-  /* unsuccessfull reads from an empty channel */
-  /* (un)successfull reads from not empty channel */
-
-  /* test (in)valid write cases */
-  ERRCOUNT = 0;
-  ZPRINTF(STDLOG, "TEST (IN)VALID RW WRITE CASES\n");
-  WRITEGOAT(0, 0, 0); /* accessing of 0 bytes is always ok */
-  WRITEGOAT(-1, -1, -1); /* invalid size, invalid offset = fail */
-  WRITEGOAT(-1, 0, -1); /* invalid size, valid offset = fail */
-  WRITEGOAT(-1, 1, -1); /* invalid size, valid offset = fail */
-  WRITEGOAT(0, -1, 0); /* accessing of 0 bytes is always ok */
-  WRITEGOAT(1, -1, -1); /* size = 1, offset ignored = 1 byte written */
-  WRITEGOAT(0, zvm_bulk->channels[zhandle(STDRW_GOAT)].limits[PutSizeLimit] + 1, 0);
-  WRITEGOAT(1, zvm_bulk->channels[zhandle(STDRW_GOAT)].limits[PutSizeLimit] + 1, -1);
-  overall_errors += ERRCOUNT;
-  zput(STDLOG, ERRCOUNT ? "TEST FAILED\n\n" : "TEST SUCCEED\n\n");
+  /*
+   * todo: add more cases for
+   * (un)successfull writes to an empty channel
+   * (un)successfull writes to not empty channel
+   * (un)successfull reads from an empty channel
+   * (un)successfull reads from not empty channel
+   */
 
   /* test (in)valid write cases */
   ERRCOUNT = 0;
-  ZPRINTF(STDLOG, "TEST (IN)VALID RW READ CASES\n");
-  READGOAT(0, 0, 0); /* accessing of 0 bytes is always ok */
-  READGOAT(-1, -1, -1); /* invalid size, invalid offset = fail */
-  READGOAT(-1, 0, -1); /* invalid size, valid offset = fail */
-  READGOAT(-1, 1, -1); /* invalid size, valid offset = fail */
-  READGOAT(0, -1, 0); /* accessing of 0 bytes is always ok */
-  READGOAT(1, -1, -1); /* valid size, invalid offset = fail */
-  READGOAT(0, zvm_bulk->channels[zhandle(STDRW_GOAT)].limits[PutSizeLimit] + 1, -1);
-  READGOAT(1, zvm_bulk->channels[zhandle(STDRW_GOAT)].limits[PutSizeLimit] + 1, -1);
+  FPRINTF(STDERR, "TEST (IN)VALID CDR WRITE CASES\n");
+  ZTEST(PWRITE(STDRW_GOAT, buf, 0, 0) == 0); /* accessing 0 bytes is always ok */
+  ZTEST(PWRITE(STDRW_GOAT, buf, -1, -1) < 0); /* invalid size, offset ignored = fail */
+  ZTEST(PWRITE(STDRW_GOAT, buf, -1, 0) < 0); /* invalid size, offset ignored = fail */
+  ZTEST(PWRITE(STDRW_GOAT, buf, -1, 1) < 0); /* invalid size, offset ignored = fail */
+  ZTEST(PWRITE(STDRW_GOAT, buf, 0, -1) == 0); /* accessing of 0 bytes is always ok */
+  ZTEST(PWRITE(STDRW_GOAT, buf, 1, -1) < 0); /* size = 1, offset invalid */
+  ZTEST(PWRITE(STDRW_GOAT, buf, 0, MANIFEST->channels[OPEN(STDRW_GOAT)].limits[PutSizeLimit] + 1) == 0);
+  ZTEST(PWRITE(STDRW_GOAT, buf, 1, MANIFEST->channels[OPEN(STDRW_GOAT)].limits[PutSizeLimit] + 1) < 0);
   overall_errors += ERRCOUNT;
-  zput(STDLOG, ERRCOUNT ? "TEST FAILED\n\n" : "TEST SUCCEED\n\n");
+  FPRINTF(STDERR, ERRCOUNT ? "TEST FAILED\n\n" : "TEST SUCCEED\n\n");
+
+  /* test (in)valid reead cases */
+  ERRCOUNT = 0;
+  FPRINTF(STDERR, "TEST (IN)VALID CDR READ CASES\n");
+  ZTEST(PREAD(STDRW_GOAT, buf, 0, 0) == 0); /* accessing 0 bytes is always ok */
+  ZTEST(PREAD(STDRW_GOAT, buf, -1, -1) < 0); /* invalid size, invalid offset = fail */
+  ZTEST(PREAD(STDRW_GOAT, buf, -1, 0) < 0); /* invalid size, invalid offset = fail */
+  ZTEST(PREAD(STDRW_GOAT, buf, -1, 1) < 0); /* invalid size, invalid offset = fail */
+  ZTEST(PREAD(STDRW_GOAT, buf, 0, -1) == 0); /* accessing 0 bytes is always ok */
+  ZTEST(PREAD(STDRW_GOAT, buf, 1, -1) < 0); /* valid size, invalid offset = fail */
+  ZTEST(PREAD(STDRW_GOAT, buf, 0, MANIFEST->channels[OPEN(STDRW_GOAT)].limits[PutSizeLimit] + 1) < 0);
+  ZTEST(PREAD(STDRW_GOAT, buf, 1, MANIFEST->channels[OPEN(STDRW_GOAT)].limits[PutSizeLimit] + 1) < 0);
+  overall_errors += ERRCOUNT;
+  FPRINTF(STDERR, ERRCOUNT ? "TEST FAILED\n\n" : "TEST SUCCEED\n\n");
 
   /* test NULL buffer cases */
   ERRCOUNT = 0;
-  ZPRINTF(STDLOG, "TEST NULL BUFFER CASES\n");
-  ZTEST(zvm_pwrite(zhandle(STDRW_GOAT), NULL, 1, 0) == -1);
-  ZTEST(zvm_pwrite(zhandle(STDRW_GOAT), NULL, 0, 0) == -1);
+  FPRINTF(STDERR, "TEST NULL BUFFER CASES\n");
+  ZTEST(PWRITE(STDRW_GOAT, NULL, 1, 0) < 0);
+  ZTEST(PWRITE(STDRW_GOAT, NULL, 0, 0) < 0);
   overall_errors += ERRCOUNT;
-  zput(STDLOG, ERRCOUNT ? "TEST FAILED\n\n" : "TEST SUCCEED\n\n");
+  FPRINTF(STDERR, ERRCOUNT ? "TEST FAILED\n\n" : "TEST SUCCEED\n\n");
 
   /* test other invalid buffer address/size cases for pwrite */
   ERRCOUNT = 0;
-  ZPRINTF(STDLOG, "TEST OTHER INVALID BUFFER/SIZE CASES FOR PWRITE\n");
-  ZTEST(zvm_pwrite(zhandle(STDRW_GOAT), (void*)0x1, 1, 0) == -1);
-  ZTEST(zvm_pwrite(zhandle(STDRW_GOAT), (void*)0xffff, 1, 0) == -1);
-  ZTEST(zvm_pwrite(zhandle(STDRW_GOAT), (void*)0x10000, -1, 0) == -1);
-  ZTEST(zvm_pwrite(zhandle(STDRW_GOAT), zvm_bulk->heap_ptr, zvm_bulk->heap_size + 1, 0) == -1);
-  ZTEST(zvm_pwrite(zhandle(STDRW_GOAT), zvm_bulk->heap_ptr + zvm_bulk->heap_size, 1, 0) == -1);
-  ZTEST(zvm_pwrite(zhandle(STDRW_GOAT), (void*)0x100000000LL - 0x1000001, 1, 0) == -1);
-  ZTEST(zvm_pwrite(zhandle(STDRW_GOAT), (void*)0x100000000LL, 1, 0) == -1);
-  ZTEST(zvm_pwrite(zhandle(STDRW_GOAT), (void*)0x100000000LL - 0x1000000, 0x1000001, 0) == -1);
+  FPRINTF(STDERR, "TEST OTHER INVALID BUFFER/SIZE CASES FOR PWRITE\n");
+  ZTEST(PWRITE(STDRW_GOAT, (void*)0x1, 1, 0) < 0);
+  ZTEST(PWRITE(STDRW_GOAT, (void*)0xffff, 1, 0) < 0);
+  ZTEST(PWRITE(STDRW_GOAT, (void*)0x10000, -1, 0) < 0);
+  ZTEST(PWRITE(STDRW_GOAT, MANIFEST->heap_ptr, MANIFEST->heap_size + 1, 0) < 0);
+  ZTEST(PWRITE(STDRW_GOAT, MANIFEST->heap_ptr + MANIFEST->heap_size, 1, 0) < 0);
+  ZTEST(PWRITE(STDRW_GOAT, (void*)0x100000000LL - 0x1000001, 1, 0) < 0);
+  ZTEST(PWRITE(STDRW_GOAT, (void*)0x100000000LL, 1, 0) < 0);
+  ZTEST(PWRITE(STDRW_GOAT, (void*)0x100000000LL - 0x1000000, 0x1000001, 0) < 0);
   overall_errors += ERRCOUNT;
-  zput(STDLOG, ERRCOUNT ? "TEST FAILED\n\n" : "TEST SUCCEED\n\n");
+  FPRINTF(STDERR, ERRCOUNT ? "TEST FAILED\n\n" : "TEST SUCCEED\n\n");
 
   /* test other valid buffer address/size cases for pwrite */
   ERRCOUNT = 0;
-  ZPRINTF(STDLOG, "TEST OTHER VALID BUFFER/SIZE CASES FOR PWRITE\n");
-  ZTEST(zvm_pwrite(zhandle(STDRW_GOAT), (void*)0x10000, 1, 0) == 1); // ???
-  ZTEST(zvm_pwrite(zhandle(STDRW_GOAT), zvm_bulk->heap_ptr + zvm_bulk->heap_size - 1, 1, 0) == 1);
-  ZTEST(zvm_pwrite(zhandle(STDRW_GOAT), (void*)0x100000000LL - 0x1000000, 1, 0) == 1);
-  ZTEST(zvm_pwrite(zhandle(STDRW_GOAT), (void*)0x100000000LL - 0x1, 1, 0) == 1);
+  FPRINTF(STDERR, "TEST OTHER VALID BUFFER/SIZE CASES FOR PWRITE\n");
+  ZTEST(PWRITE(STDRW_GOAT, (void*)0x10000, 1, 0) == 1);
+  ZTEST(PWRITE(STDRW_GOAT, MANIFEST->heap_ptr + MANIFEST->heap_size - 1, 1, 0) == 1);
+  ZTEST(PWRITE(STDRW_GOAT, (void*)0x100000000LL - 0x1000000, 1, 0) == 1);
+  ZTEST(PWRITE(STDRW_GOAT, (void*)0x100000000LL - 0x1, 1, 0) == 1);
   overall_errors += ERRCOUNT;
-  zput(STDLOG, ERRCOUNT ? "TEST FAILED\n\n" : "TEST SUCCEED\n\n");
+  FPRINTF(STDERR, ERRCOUNT ? "TEST FAILED\n\n" : "TEST SUCCEED\n\n");
 
   /* test other invalid buffer address/size cases for pread */
   ERRCOUNT = 0;
-  ZPRINTF(STDLOG, "TEST OTHER INVALID BUFFER/SIZE CASES FOR PREAD\n");
-  ZTEST(zvm_pread(zhandle(STDRW_GOAT), (char*)main, 1, 0) == -1);
-  ZTEST(zvm_pread(zhandle(STDRW_GOAT), zvm_bulk->heap_ptr, zvm_bulk->heap_size + 1, 0) == -1);
-  ZTEST(zvm_pread(zhandle(STDRW_GOAT), zvm_bulk->heap_ptr + zvm_bulk->heap_size, 1, 0) == -1);
-  ZTEST(zvm_pread(zhandle(STDRW_GOAT), (void*)0x100000000LL - 0x1000001, 1, 0) == -1);
-  ZTEST(zvm_pread(zhandle(STDRW_GOAT), (void*)0x100000000LL, 1, 0) == -1);
-  ZTEST(zvm_pread(zhandle(STDRW_GOAT), (void*)0x100000000LL - 0x1000000, 0x1000001, 0) == -1);
+  FPRINTF(STDERR, "TEST OTHER INVALID BUFFER/SIZE CASES FOR PREAD\n");
+  ZTEST(PREAD(STDRW_GOAT, (char*)main, 1, 0) < 0);
+  ZTEST(PREAD(STDRW_GOAT, MANIFEST->heap_ptr, MANIFEST->heap_size + 1, 0) < 0);
+  ZTEST(PREAD(STDRW_GOAT, MANIFEST->heap_ptr + MANIFEST->heap_size, 1, 0) < 0);
+  ZTEST(PREAD(STDRW_GOAT, (void*)0x100000000LL - 0x1000001, 1, 0) < 0);
+  ZTEST(PREAD(STDRW_GOAT, (void*)0x100000000LL, 1, 0) < 0);
+  ZTEST(PREAD(STDRW_GOAT, (void*)0x100000000LL - 0x1000000, 0x1000001, 0) < 0);
   overall_errors += ERRCOUNT;
-  zput(STDLOG, ERRCOUNT ? "TEST FAILED\n\n" : "TEST SUCCEED\n\n");
+  FPRINTF(STDERR, ERRCOUNT ? "TEST FAILED\n\n" : "TEST SUCCEED\n\n");
 
   /* test other valid buffer address/size cases for pread */
   ERRCOUNT = 0;
-  ZPRINTF(STDLOG, "TEST OTHER VALID BUFFER/SIZE CASES FOR PREAD\n");
-  ZTEST(zvm_pread(zhandle(STDRW_GOAT), &data_start, 1, 0) == 1);
-  ZTEST(zvm_pread(zhandle(STDRW_GOAT), zvm_bulk->heap_ptr + zvm_bulk->heap_size - 1, 1, 0) == 1);
-  ZTEST(zvm_pread(zhandle(STDRW_GOAT), (void*)0x100000000LL - 0x1000000, 1, 0) == 1);
-  ZTEST(zvm_pread(zhandle(STDRW_GOAT), (void*)0x100000000LL - 0x1, 1, 0) == 1);
+  FPRINTF(STDERR, "TEST OTHER VALID BUFFER/SIZE CASES FOR PREAD\n");
+  ZTEST(PREAD(STDRW_GOAT, &data_start, 1, 0) == 1);
+  ZTEST(PREAD(STDRW_GOAT, MANIFEST->heap_ptr + MANIFEST->heap_size - 1, 1, 0) == 1);
+  ZTEST(PREAD(STDRW_GOAT, (void*)0x100000000LL - 0x1000000, 1, 0) == 1);
+  ZTEST(PREAD(STDRW_GOAT, (void*)0x100000000LL - 0x1, 1, 0) == 1);
   overall_errors += ERRCOUNT;
-  zput(STDLOG, ERRCOUNT ? "TEST FAILED\n\n" : "TEST SUCCEED\n\n");
+  FPRINTF(STDERR, ERRCOUNT ? "TEST FAILED\n\n" : "TEST SUCCEED\n\n");
 
   /* exit with code */
   if(overall_errors > 0)
-    ZPRINTF(STDLOG, "OVERALL TEST FAILED with %d errors\n", overall_errors);
+    FPRINTF(STDERR, "OVERALL TEST FAILED with %d errors\n", overall_errors);
   else
-    zput(STDLOG, "OVERALL TEST SUCCEED\n\n");
+    FPRINTF(STDERR, "OVERALL TEST SUCCEED\n\n");
 
-  zvm_exit(overall_errors);
-  return 0;
+  return overall_errors;
 }

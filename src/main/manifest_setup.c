@@ -259,22 +259,29 @@ static void SetTimeout(struct SystemManifest *policy)
   ZLOGFAIL(setrlimit(RLIMIT_CPU, &rl) != 0, errno, "cannot set timeout");
 }
 
-// ### added from sel_addrspace {{
-/* put protection on the page(s) of given size containing given pointer */
+/*
+ * calculate pointer and size aligned to mmap page for given area
+ * note: size will be returned by reference
+ */
+static uintptr_t AlignToPage(uintptr_t ptr, int64_t *size)
+{
+  assert(ptr != 0);
+  assert(*size > 0);
+
+  *size = ptr - NaClTruncAllocPage(ptr) + *size;
+  return NaClTruncAllocPage(ptr);
+}
+
+/* protect page(s) (ptr should be aligned to mmap page) */
 static void ProtectAligned(uintptr_t ptr, int64_t size, int prot)
 {
   int i;
-  intptr_t aligned_ptr;
-  intptr_t aligned_size;
 
-  assert(ptr != 0);
-  assert(size > 0);
+  assert(ptr % NACL_MAP_PAGESIZE == 0);
 
-  aligned_ptr = NaClTruncAllocPage(ptr);
-  aligned_size = ptr - aligned_ptr + size;
-  i = NaCl_mprotect((void*)aligned_ptr, aligned_size, prot);
+  i = NaCl_mprotect((void*)ptr, size, prot);
   ZLOGFAIL(0 != i, i, "cannot protect 0x%x of %d bytes with %d",
-      aligned_ptr, aligned_size, prot);
+      ptr, size, prot);
 }
 
 /*
@@ -288,9 +295,9 @@ static char *CopyAlias(char *area, char *name)
   int size = strlen(name) + 1;
 
   /* when the page crossed, append the new one */
-  page_ptr = NaClRoundPage((uintptr_t)area - size);
-  if(page_ptr != NaClRoundPage((uintptr_t)area))
-    ProtectAligned(page_ptr, NACL_PAGESIZE, PROT_READ | PROT_WRITE);
+  page_ptr = NaClTruncAllocPage((uintptr_t)area - size);
+  if(page_ptr != NaClTruncAllocPage((uintptr_t)area))
+    ProtectAligned(page_ptr, NACL_MAP_PAGESIZE, PROT_READ | PROT_WRITE);
 
   /* update the "name area" */
   return memcpy(area - size, name, size);
@@ -316,16 +323,23 @@ struct UserManifestSerialized
 #define USER_PTR_SIZE sizeof(int32_t)
 #define CHANNEL_STRUCT_SIZE sizeof(struct ChannelSerialized)
 #define USER_MANIFEST_STRUCT_SIZE sizeof(struct UserManifestSerialized)
-#define CRT0_RESERVED 256*1024 /* prologue reserved */
+
+/* set pointer to user manifest */
+static void SetUserManifestPtr(struct NaClApp *nap, uintptr_t user_manifest)
+{
+  uintptr_t *p;
+
+  /* 0xFEFFFFFC == FOURGIG - nap->stack_size - USER_PTR_SIZE */
+  p = (void*)NaClUserToSys(nap, 0xFEFFFFFC);
+  *p = NaClSysToUser(nap, user_manifest);
+}
 
 /* serialize system data to user space */
 static void SetSystemData(struct NaClApp *nap)
 {
   struct SystemManifest *manifest;
   struct ChannelSerialized *channels; /* points to user space */
-  struct UserManifestSerialized *umft; /* points to user space */
-  uint32_t *p;
-  int channels_size;
+  struct UserManifestSerialized *umft; /* pointer to the user manifest area */
   int64_t i, j;
 
   assert(nap != NULL);
@@ -335,28 +349,22 @@ static void SetSystemData(struct NaClApp *nap)
   manifest = nap->system_manifest;
 
   /* calculate user manifest (with channels) start and size */
-  channels_size = manifest->channels_count * CHANNEL_STRUCT_SIZE;
-  i = channels_size + USER_MANIFEST_STRUCT_SIZE + USER_PTR_SIZE;
-  nap->user_manifest = NaClUserToSys(nap, FOURGIG - nap->stack_size - i);
+  j = manifest->channels_count * CHANNEL_STRUCT_SIZE; /* size of channels array */
+  j += USER_MANIFEST_STRUCT_SIZE + USER_PTR_SIZE; /* size of user manifest w/o aliases */
+  umft = (void*)(FOURGIG - nap->stack_size - j); /* pointer to user manifest in user space */
+  nap->user_manifest = NaClUserToSys(nap, (uintptr_t)umft); /* pointer to user manifest */
   channels = (void*)(nap->user_manifest + USER_MANIFEST_STRUCT_SIZE);
 
   /* make user manifest r/w */
-  ProtectAligned(nap->user_manifest, i, PROT_READ | PROT_WRITE);
-
-  /* reserve space for the 1st alias */
-  nap->user_manifest -= strlen(manifest->channels[0].alias) + 1;
-
-  /* serialize "still" user manifest data */
+  umft = (void*)AlignToPage(nap->user_manifest, &j);
+  ProtectAligned((uintptr_t)umft, j, PROT_READ | PROT_WRITE);
   umft = (void*)nap->user_manifest;
-  umft->heap_ptr = nap->break_addr + CRT0_RESERVED;
-  umft->heap_size = nap->heap_end - nap->break_addr - CRT0_RESERVED;
-  umft->stack_size = nap->stack_size;
-  umft->channels_count = manifest->channels_count;
-  umft->channels = NaClSysToUser(nap, (uintptr_t)channels);
 
   /* set pointer to user manifest */
-  p = (void*)NaClUserToSys(nap, FOURGIG - nap->stack_size - USER_PTR_SIZE);
-  *p = NaClSysToUser(nap, (uintptr_t)umft);
+  SetUserManifestPtr(nap, nap->user_manifest);
+
+  /* reserve space for the 1st alias */
+  umft -= strlen(manifest->channels[0].alias) + 1;
 
   /* serialize channels */
   for(i = 0; i < manifest->channels_count; ++i)
@@ -371,14 +379,30 @@ static void SetSystemData(struct NaClApp *nap)
         ? 0 : manifest->channels[i].size;
 
     /* alias */
-    p = (void*)CopyAlias((char*)nap->user_manifest, manifest->channels[i].alias);
-    channels[i].name = NaClSysToUser(nap, (uintptr_t)p);
-    nap->user_manifest = (uintptr_t)p;
+    umft = (void*)CopyAlias((char*)umft, manifest->channels[i].alias);
+    channels[i].name = NaClSysToUser(nap, (uintptr_t)umft);
   }
 
+  /* serialize "still" user manifest data */
+  ((struct UserManifestSerialized*)nap->user_manifest)->heap_ptr =
+      nap->break_addr;
+  ((struct UserManifestSerialized*)nap->user_manifest)->stack_size =
+      nap->stack_size;
+  ((struct UserManifestSerialized*)nap->user_manifest)->channels_count =
+      manifest->channels_count;
+  ((struct UserManifestSerialized*)nap->user_manifest)->channels =
+      NaClSysToUser(nap, (uintptr_t)channels);
+
+  /* calculate aligned user manifest size and pointer */
+  j = FOURGIG - nap->stack_size - NaClSysToUser(nap, (uintptr_t)umft);
+  umft = (void*)AlignToPage((uintptr_t)umft, &j); /* j - aligned size of umft area */
+
+  /* serialize heap size */
+  ((struct UserManifestSerialized*)nap->user_manifest)->heap_size =
+      MIN(nap->heap_end, NaClSysToUser(nap, (uintptr_t)umft)) - nap->break_addr;
+
   /* protect the user manifest segment */
-  i = FOURGIG - nap->stack_size - NaClSysToUser(nap, nap->user_manifest);
-  ProtectAligned(nap->user_manifest, i, PROT_READ);
+  ProtectAligned((uintptr_t)umft, j, PROT_READ);
 }
 
 /* construct system_manifest object and initialize it from manifest */
@@ -431,7 +455,7 @@ void SystemManifestCtor(struct NaClApp *nap)
   SetSystemData(nap);
 
   /* zerovm return code */
-  nap->system_manifest->ret_code = OK_CODE;
+  nap->system_manifest->ret_code = 0;
 }
 
 /*
@@ -445,7 +469,7 @@ int SystemManifestDtor(struct NaClApp *nap)
   if(nap->system_manifest != NULL)
     ChannelsDtor(nap);
 
-  return OK_CODE;
+  return 0;
 }
 
 /* updates user_tag (should be constructed) with memory chunk data */
@@ -530,5 +554,5 @@ int ProxyReport(struct NaClApp *nap)
       nap->system_manifest->user_ret_code, etag, GetAccountingInfo(), GetExitState());
   ZLOGS(LOG_DEBUG, "%s", report);
 
-  return i == length ? OK_CODE : ERR_CODE;
+  return i == length ? 0 : -1;
 }

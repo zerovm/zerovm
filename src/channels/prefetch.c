@@ -92,10 +92,10 @@ static void PrepareBind(struct ChannelDesc *channel)
   {
     record->port = port;
     result = DoBind(channel);
-    if(result == OK_CODE) break;
+    if(result == 0) break;
   }
 
-  ZLOGFAIL(result != OK_CODE, EFAULT ,"cannot get the port to bind the channel");
+  ZLOGFAIL(result != 0, EFAULT ,"cannot get the port to bind the channel");
   ZLOGS(LOG_DEBUG, "host = %u, port = %u", record->host, record->port);
 }
 
@@ -204,7 +204,7 @@ void KickPrefetchChannels(struct NaClApp *nap)
       ZLOG(LOG_ERROR, "zmq: error %d, %s",\
               zmq_errno(), zmq_strerror(zmq_errno()));\
       zmq_msg_close(msg_ptr);\
-      return ERR_CODE;\
+      return -1;\
     }
 
 /* return ChannelSourceType for network channels */
@@ -346,7 +346,7 @@ int PrefetchChannelCtor(struct ChannelDesc *channel)
     ++binds;
   }
 
-  return OK_CODE;
+  return 0;
 }
 
 /* check and update channel EOF state and etag */
@@ -576,5 +576,5 @@ int PrefetchChannelDtor(struct ChannelDesc *channel)
   /* will destroy context and netlist after all network channels closed */
   NetDtor();
 
-  return OK_CODE;
+  return 0;
 }

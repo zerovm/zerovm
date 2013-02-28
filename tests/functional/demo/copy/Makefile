@@ -3,7 +3,7 @@ NAME=copy
 all: $(NAME).o
 	$(ZVM_TOOLCHAIN)/bin/gcc -o $(NAME).nexe -s -static \
 	-T $(ZVM_TOOLCHAIN)/lib/ldscripts/elf64_nacl.x.static \
-	$(NAME).o $(ZEROVM_ROOT)/api/zvm.o
+	$(NAME).o $(ZEROVM_ROOT)/tests/functional/include/libzvmlib.a
 	@sed 's#PWD#$(PWD)#g' $(NAME).template > $(NAME).manifest
 	@mkfifo input.data
 	@cp $(NAME).nexe input.data&
@@ -14,4 +14,4 @@ $(NAME).o: $(NAME).c
 	-I$(ZEROVM_ROOT) -I$(ZEROVM_ROOT)/tests/functional -o $@ $^
 
 clean:
-	rm -f $(NAME).nexe $(NAME).o *.log *.data debug* *.manifest
+	rm -f $(NAME).nexe $(NAME).o *.log *.data *.manifest

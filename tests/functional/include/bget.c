@@ -26,52 +26,41 @@
 
  This program is in the public domain.
 
- d'b: not so funny shit removed. doc removed. tests related code removed.
- the code customized to use with embedded applications.
+ d'b: settings ifdefs changed to ifs. 0 or undefined means disabled setting.
+ doc removed. tests related code removed. the code customized for embedded
+ applications. not so funny shit removed.
 
  BGET CONFIGURATION
  ==================
  */
 
-#define TestProg    20000       /* Generate built-in test program
-           if defined.  The value specifies
-           how many buffer allocation attempts
-           the test program should make. */
-
-#define SizeQuant   4         /* Buffer allocation size quantum:
+#define SizeQuant   4 /* Buffer allocation size quantum:
            all buffers allocated are a
            multiple of this size.  This
            MUST be a power of two. */
 
-#define BufStats    1         /* Define this symbol to enable the
+#define BufStats    1 /* Define this symbol to enable the
            bstats() function which calculates
            the total free space in the buffer
            pool, the largest available
            buffer, and the total space
            currently allocated. */
 
-#define FreeWipe    1         /* Wipe free buffers to a guaranteed
+#define FreeWipe    0 /* Wipe free buffers to a guaranteed
            pattern of garbage to trip up
            miscreants who attempt to use
            pointers into released buffers. */
 
-/* Use a best fit algorithm when
-#define BestFit     1
+
+#define BestFit     0 /* Use a best fit algorithm when
            searching for space for an
            allocation request.  This uses
            memory more efficiently, but
            allocation will be much slower. */
 
 #include <stdio.h>
-
-#ifdef lint
-#define NDEBUG            /* Exits in asserts confuse lint */
-/* LINTLIBRARY *//* Don't complain about def, no ref */
-extern char *sprintf(); /* Sun includes don't define sprintf */
-#endif
-
-#include <assert.h>
-#include <memory.h>
+#include <string.h> /* d'b: for memset() */
+#define assert(a) /* d'b: remove it (or get rid of asserts). assert pools a lot of code from glibc */
 
 /*  Declare the interface, including the requested buffer size type,
  bufsize.  */
@@ -124,7 +113,7 @@ static struct bfhead freelist =
 { 0, 0 },
 { &freelist, &freelist } };
 
-#ifdef BufStats
+#if BufStats > 0
 static bufsize totalloc = 0; /* Total space currently allocated */
 static long numget = 0, numrel = 0; /* Number of bget() and brel() calls */
 #endif /* BufStats */
@@ -140,7 +129,20 @@ static long numget = 0, numrel = 0; /* Number of bget() and brel() calls */
  end of pool block.  The most negative number which will  fit  in  a
  bufsize, defined in a way that the compiler will accept. */
 
-#define ESent ((bufsize) (-(((1L << (sizeof(bufsize) * 8 - 2)) - 1) * 2) - 2))
+#define ESent ((bufsize) (-(((1LL << (sizeof(bufsize) * 8 - 2)) - 1) * 2) - 2)) /* d'b: patched to int64 */
+
+/* d'b: replace glibc memcpy to avoid syscalls usage */
+/* todo: replace with faster code */
+static void *zl_memcpy(void *dst, const void *src, size_t n)
+{
+  char* d = dst;
+  char* s = (char*)src;
+  --s;
+  --d;
+
+  while(n--) *++d = *++s;
+  return dst;
+}
 
 /*  BGET  --  Allocate a buffer.  */
 
@@ -149,7 +151,7 @@ void *bget(requested_size)
 {
   bufsize size = requested_size;
   struct bfhead *b;
-#ifdef BestFit
+#if BestFit > 0
   struct bfhead *best;
 #endif
   void *buf;
@@ -160,24 +162,22 @@ void *bget(requested_size)
   { /* Need at least room for the */
     size = SizeQ; /*    queue links.  */
   }
-#ifdef SizeQuant
 #if SizeQuant > 1
   size = (size + (SizeQuant - 1)) & (~(SizeQuant - 1));
-#endif
 #endif
 
   size += sizeof(struct bhead); /* Add overhead in allocated buffer
    to size required. */
 
   b = freelist.ql.flink;
-#ifdef BestFit
+#if BestFit > 0
   best = &freelist;
 #endif
 
   /* Scan the free list searching for the first buffer big enough
    to hold the requested size buffer. */
 
-#ifdef BestFit
+#if BestFit > 0
   while(b != &freelist)
   {
     if(b->bh.bsize >= size)
@@ -222,7 +222,7 @@ void *bget(requested_size)
         /* Mark buffer after this one not preceded by free block. */
         bn->prevfree = 0;
 
-#ifdef BufStats
+#if BufStats > 0
         totalloc += size;
         numget++; /* Increment number of bget() calls */
 #endif
@@ -244,7 +244,7 @@ void *bget(requested_size)
         b->ql.blink->ql.flink = b->ql.flink;
         b->ql.flink->ql.blink = b->ql.blink;
 
-#ifdef BufStats
+#if BufStats > 0
         totalloc += b->bh.bsize;
         numget++; /* Increment number of bget() calls */
 #endif
@@ -292,8 +292,10 @@ void *bgetz(size)
     else
     {
       rsize -= sizeof(struct bhead);
-    }assert(rsize >= size);
+    }
+    assert(rsize >= size);
     V memset(buf, 0, (MemSize) rsize);
+    V memset(buf, 0, (MemSize) size);
   }
   return ((void *) buf);
 }
@@ -322,7 +324,7 @@ void *bgetr(buf, size)
   osize = -b->bsize;
   osize -= sizeof(struct bhead);
   assert(osize > 0);
-  V memcpy((char *) nbuf, (char *) buf, /* Copy the data */
+  V zl_memcpy((char *) nbuf, (char *) buf, /* Copy the data */
            (MemSize) ((size < osize) ? size : osize));
   brel(buf);
   return nbuf;
@@ -336,7 +338,7 @@ void brel(buf)
   struct bfhead *b, *bn;
 
   b = BFH(((char *) buf) - sizeof(struct bhead));
-#ifdef BufStats
+#if BufStats > 0
   numrel++; /* Increment number of brel() calls */
 #endif
   assert(buf != NULL);
@@ -354,7 +356,7 @@ void brel(buf)
 
   assert(BH((char *) b - b->bh.bsize)->prevfree == 0);
 
-#ifdef BufStats
+#if BufStats > 0
   totalloc += b->bh.bsize;
   assert(totalloc >= 0);
 #endif
@@ -420,7 +422,7 @@ void brel(buf)
 
     bn = BFH(((char *) b) + b->bh.bsize);
   }
-#ifdef FreeWipe
+#if FreeWipe > 0
   V memset(((char *) b) + sizeof(struct bfhead), 0x55,
            (MemSize) (b->bh.bsize - sizeof(struct bfhead)));
 #endif
@@ -440,7 +442,7 @@ void bpool(buf, len)
   struct bfhead *b = BFH(buf);
   struct bhead *bn;
 
-#ifdef SizeQuant
+#if SizeQuant > 0
   len &= ~(SizeQuant - 1);
 #endif
 
@@ -475,9 +477,11 @@ void bpool(buf, len)
 
   len -= sizeof(struct bhead);
   b->bh.bsize = (bufsize) len;
-#ifdef FreeWipe
+
+#if FreeWipe > 0
   V memset(((char *) b) + sizeof(struct bfhead), 0x55, (MemSize) (len - sizeof(struct bfhead)));
 #endif
+
   bn = BH(((char *) b) + len);
   bn->prevfree = (bufsize) len;
   /* Definition of ESent assumes two's complement! */
@@ -485,7 +489,7 @@ void bpool(buf, len)
   bn->bsize = ESent;
 }
 
-#ifdef BufStats
+#if BufStats > 0
 
 /*  BSTATS  --  Return buffer allocation free space statistics.  */
 

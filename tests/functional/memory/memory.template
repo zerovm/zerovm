@@ -2,8 +2,8 @@
 == memory management test (zerovm support all 3 malloc's nacl_syscalls)
 =====================================================================
 Channel = /dev/null, /dev/stdin, 0, 16, 256, 0, 0
-Channel = PWD/result.log, /dev/stdout, 0, 0, 0, 1048576, 4194304
-Channel = /dev/null, /dev/stderr, 0, 0, 0, 16, 256
+Channel = /dev/null, /dev/stdout, 0, 0, 0, 16, 256
+Channel = PWD/result.log, /dev/stderr, 0, 0, 0, 512, 65536
 
 =====================================================================
 == switches for zerovm. some of them used to control nexe, some

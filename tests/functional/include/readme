@@ -1,2 +1,7 @@
 this folder contain headers to include to functional tests
-in the future the folder can be moved to %projectname%/include
+- zvmlib.h
+- ztest.h
+
+and small library to be used against functional tests. it replaces
+glibc, except small (and mostly string) functions
+- libzvmlib.a

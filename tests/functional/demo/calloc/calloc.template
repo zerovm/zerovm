@@ -1,18 +1,16 @@
 =====================================================================
-== provokes signal
+== "calloc" tests zvm lib memory allocation
 =====================================================================
-Channel = /dev/null, /dev/stdin, 0, 65536, 4194304, 0, 0
-Channel = /dev/null, /dev/stdout, 0, 0, 0, 16, 256
-Channel = PWD/result.log, /dev/stderr, 0, 0, 0, 512, 8192
+Channel = /dev/null, /dev/stdin, 0, 999999, 999999, 0, 0
+Channel = PWD/stderr.data, /dev/stdout, 0, 0, 0, 999999, 999999
+Channel = /dev/null, /dev/stderr, 0, 0, 0, 999999, 999999
 
 =====================================================================
 == switches for zerovm. some of them used to control nexe, some
 == for the internal zerovm needs
 =====================================================================
 Version = 09082012
-Nexe = signal.nexe
-MemMax = 134217728
-
-== available signals: 8, 11, 24
-CommandLine = 8
+Nexe = calloc.nexe
+NodeName = calloc, 1
+MemMax = 536870912
 Timeout = 1

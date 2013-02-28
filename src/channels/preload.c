@@ -74,7 +74,7 @@ int PreloadChannelDtor(struct ChannelDesc* channel)
       channel->counters[GetSizeLimit], channel->counters[PutSizeLimit]);
 
   close(channel->handle);
-  return i == 0 ? OK_CODE : ERR_CODE;
+  return i == 0 ? 0 : -1;
 }
 
 /* test the channel for validity */
@@ -221,5 +221,5 @@ int PreloadChannelCtor(struct ChannelDesc* channel)
       ZLOGFAIL(1, EPROTONOSUPPORT, "the channel not supported");
       break;
   }
-  return OK_CODE;
+  return 0;
 }

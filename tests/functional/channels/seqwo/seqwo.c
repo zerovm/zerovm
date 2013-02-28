@@ -2,63 +2,60 @@
  * random write only channel test. tests statistics goes to stdout channel.
  * returns the number of failed tests
  */
-#include "include/api_tools.h"
+#include "include/zvmlib.h"
+#include "include/ztest.h"
 
-#undef STDLOG
-#define STDLOG STDOUT
 #define SEQWO "/dev/seqwo"
 
 int main(int argc, char **argv)
 {
   char buf[BIG_ENOUGH];
-  zvm_bulk = zvm_init();
 
   /* correct requests */
-  ERRCOUNT = 0;
-  ZPRINTF(STDLOG, "TEST SEQUENTIAL WRITE ONLY CHANNEL\n");
-  ZPRINTF(STDLOG, "channel size = %lld\n", zvm_bulk->channels[zhandle(SEQWO)].size);
-  ZTEST(zvm_bulk->channels[zhandle(SEQWO)].size == 0);
-  ZTEST(zvm_pwrite(zhandle(SEQWO), buf, 0, 0) == 0);
-  ZTEST(zvm_pwrite(zhandle(SEQWO), buf, 0, 1) == 0);
-  ZTEST(zvm_pwrite(zhandle(SEQWO), buf, 1, 0) == 1);
-  ZTEST(zvm_pwrite(zhandle(SEQWO), buf, 1,
-      zvm_bulk->channels[zhandle(SEQWO)].limits[PutSizeLimit] - 1) == 1);
-  ZTEST(zvm_pwrite(zhandle(SEQWO), buf, 0, -1) == 0);
+  FPRINTF(STDERR, "TEST SEQUENTIAL WRITE ONLY CHANNEL\n");
+  FPRINTF(STDERR, "channel size = %lld\n", MANIFEST->channels[OPEN(SEQWO)].size);
+  ZTEST(MANIFEST->channels[OPEN(SEQWO)].size == 0);
+  ZTEST(PWRITE(SEQWO, buf, 0, 0) == 0);
+  ZTEST(PWRITE(SEQWO, buf, 0, 1) == 0);
+  ZTEST(PWRITE(SEQWO, buf, 1, 0) == 1);
+  ZTEST(PWRITE(SEQWO, buf, 1,
+      MANIFEST->channels[OPEN(SEQWO)].limits[PutSizeLimit] - 1) == 1);
+  ZTEST(PWRITE(SEQWO, buf, 0, -1) == 0);
 
   /* incorrect requests: NULL buffer */
-  ZTEST(zvm_pwrite(zhandle(SEQWO), NULL, 0, 0) == -1);
-  ZTEST(zvm_pwrite(zhandle(SEQWO), NULL, 0, 1) == -1);
-  ZTEST(zvm_pwrite(zhandle(SEQWO), NULL, 1, 0) == -1);
-  ZTEST(zvm_pwrite(zhandle(SEQWO), NULL, 1,
-      zvm_bulk->channels[zhandle(SEQWO)].limits[PutSizeLimit] - 1) == -1);
-  ZTEST(zvm_pwrite(zhandle(SEQWO), NULL, 0, -1) == -1);
+  ZTEST(PWRITE(SEQWO, NULL, 0, 0) < 0);
+  ZTEST(PWRITE(SEQWO, NULL, 0, 1) < 0);
+  ZTEST(PWRITE(SEQWO, NULL, 1, 0) < 0);
+  ZTEST(PWRITE(SEQWO, NULL, 1,
+      MANIFEST->channels[OPEN(SEQWO)].limits[PutSizeLimit] - 1) < 0);
+  ZTEST(PWRITE(SEQWO, NULL, 0, -1) < 0);
 
   /* incorrect requests: size */
-  ZTEST(zvm_pwrite(zhandle(SEQWO), buf, -1, 0) == -1);
+  ZTEST(PWRITE(SEQWO, buf, -1, 0) < 0);
 
   /* incorrect requests: offset */
-  ZTEST(zvm_pwrite(zhandle(SEQWO), buf, 0, -1) == 0);
-  ZTEST(zvm_pwrite(zhandle(SEQWO), buf, 1, -1) == 1);
-  ZTEST(zvm_pwrite(zhandle(SEQWO), buf, 1,
-      zvm_bulk->channels[zhandle(SEQWO)].limits[PutSizeLimit]) == 1);
+  ZTEST(PWRITE(SEQWO, buf, 0, -1) == 0);
+  ZTEST(PWRITE(SEQWO, buf, 1, -1) == 1);
+  ZTEST(PWRITE(SEQWO, buf, 1,
+      MANIFEST->channels[OPEN(SEQWO)].limits[PutSizeLimit]) == 1);
 
   /* correct requests: reading of 0 bytes attempt */
-  ZTEST(zvm_pread(zhandle(SEQWO), buf, 0, 0) == 0);
+  ZTEST(PREAD(SEQWO, buf, 0, 0) == 0);
 
   /* incorrect requests: read attempt */
-  ZTEST(zvm_pread(zhandle(SEQWO), buf, 1, 0) == -1);
-  ZTEST(zvm_pread(zhandle(SEQWO), buf, 1,
-      zvm_bulk->channels[zhandle(SEQWO)].limits[PutSizeLimit]) == -1);
+  ZTEST(PREAD(SEQWO, buf, 1, 0) < 0);
+  ZTEST(PREAD(SEQWO, buf, 1,
+      MANIFEST->channels[OPEN(SEQWO)].limits[PutSizeLimit]) < 0);
 
   /* incorrect requests: exhausted */
-  ZTEST(zvm_pwrite(zhandle(SEQWO), buf, 30, 0) == 28);
-  ZTEST(zvm_pwrite(zhandle(SEQWO), buf, 10, 0) == -1);
+  ZTEST(PWRITE(SEQWO, buf, 30, 0) == 28);
+  ZTEST(PWRITE(SEQWO, buf, 10, 0) < 0);
 
   /* count errors and exit with it */
   if(ERRCOUNT > 0)
-    ZPRINTF(STDLOG, "TEST FAILED with %d errors\n", ERRCOUNT);
+    FPRINTF(STDERR, "TEST FAILED with %d errors\n", ERRCOUNT);
   else
-    zput(STDLOG, "TEST SUCCEED\n\n");
+    FPRINTF(STDERR, "TEST SUCCEED\n\n");
 
   zvm_exit(ERRCOUNT);
   return 0;
