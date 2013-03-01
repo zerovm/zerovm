@@ -3,7 +3,7 @@
 =====================================================================
 Channel = /dev/null, /dev/stdin, 0, 16, 256, 0, 0
 Channel = /dev/null, /dev/stdout, 0, 0, 0, 16, 256
-Channel = PWD/result.log, /dev/stderr, 0, 0, 0, 512, 65536
+Channel = PWD/result.log, /dev/stderr, 0, 0, 0, 65536, 4194304
 
 =====================================================================
 == switches for zerovm. some of them used to control nexe, some
@@ -11,6 +11,7 @@ Channel = PWD/result.log, /dev/stderr, 0, 0, 0, 512, 65536
 =====================================================================
 Version = 09082012
 Nexe = memory.nexe
-MemMax = 268435456
+==MemMax = 4294967296
+MemMax = 2147483648
 NodeName = test, 1
 Timeout = 60

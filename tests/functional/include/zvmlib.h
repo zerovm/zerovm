@@ -50,6 +50,8 @@ void tfp_sprintf(char *s, char *fmt, ...);
 #define ISDIGIT(c) zl_isdigit(c)
 #define STRCHR(s, c) zl_strchr(s, c)
 #define STRRCHR(s, c) zl_strchr(s, c)
+#define STRSPN(s1, s2) zl_strspn(s1, s2)
+#define STRCSPN(s1, s2) zl_strcspn(s1, s2)
 #define STRCMP(s1, s2) zl_strcmp(s1, s2)
 #define STRLEN(s) zl_strlen(s)
 #define STRTOK(s, delim) zl_strtok(s, delim)
@@ -93,6 +95,8 @@ int zl_isspace(char c);
 int zl_isdigit(char c);
 char *zl_strchr(const char *s, int c);
 char *zl_strrchr(const char *s, int c);
+size_t zl_strspn(const char *s1, const char *s2);
+size_t zl_strcspn(const char *s1, const char *s2);
 int zl_strcmp(const void *s1, const void *s2);
 size_t zl_strlen(const char *s);
 char *zl_strtok(char *s, const char *delim);

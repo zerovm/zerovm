@@ -11,12 +11,12 @@
 
 #define LOT_ENOUGH 0x100
 
+/* prepare everything to cheat "manifest_parser.c" */
 /* skip "extra load" headers */
 #define TOOLS_H_ 1
 #define __G_LIB_H__ 1
 #define _ERRNO_H 1
 #define _CTYPE_H 1
-#define _ASSERT_H 1
 
 /* disable falling */
 #undef ZLOGFAIL
@@ -24,7 +24,6 @@
 #define ZLogTag(...)
 #define ZLog(...)
 #define FailIf(...)
-#define assert(...)
 #define fopen(...) NULL
 #define fread(...) -1
 #define fclose(...)
@@ -42,6 +41,7 @@
 #define g_free FREE
 
 /* a cheat to have an access to static members */
+#define NDEBUG /* to disable assert() */
 #include "src/main/manifest_parser.c"
 
 #define CONTROL "/dev/control"

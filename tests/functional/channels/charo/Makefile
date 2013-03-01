@@ -1,8 +1,8 @@
 NAME=charo
 
 all: $(NAME).o
-	$(ZVM_TOOLCHAIN)/bin/gcc -o $(NAME).nexe -s -static \
-	-T $(ZVM_TOOLCHAIN)/lib/ldscripts/elf64_nacl.x.static \
+	$(ZVM_TOOLCHAIN)/bin/gcc -o $(NAME).nexe -n -s -nostartfiles -static \
+	-T $(ZEROVM_ROOT)/tests/functional/include/elf64_nacl.x.static \
 	$(NAME).o $(ZEROVM_ROOT)/tests/functional/include/libzvmlib.a
 	@sed 's#PWD#$(PWD)#g' $(NAME).template > $(NAME).manifest
 	@echo 1111111111111111111111111111111 | $(ZEROVM_ROOT)/zerovm -e -M$(NAME).manifest

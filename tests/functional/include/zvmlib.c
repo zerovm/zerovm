@@ -4,6 +4,10 @@
  *
  * Copyright (C) 2002 Michael Ringgaard. All rights reserved.
  * (full (c) stuff see below)
+ *
+ * perhaps it would be wise to get rid of glibc usage completely.
+ * by that and -nostdlib resulting nexe will contain no extra code
+ * or fail to build.
  */
 #include <stdio.h>
 #include <limits.h>
@@ -64,22 +68,31 @@ int zl_memcmp(const void *s1, const void *s2, size_t n)
   return memcmp(s1, s2, n);
 }
 
-/* ### */
 char *zl_strchr(const char *s, int c)
 {
-  return strchr(s, c);
+  while(*s != (char)c)
+    if(!*s++)
+      return 0;
+  return (char *)s;
 }
 
-/* ### */
 char *zl_strrchr(const char *s, int c)
 {
-  return strchr(s, c);
+  char *ret = 0;
+
+  do {
+    if(*s == (char)c)
+      ret = (char*)s;
+  } while(*s++);
+
+  return ret;
 }
 
-/* safe to use glibc version */
 int zl_strcmp(const void *s1, const void *s2)
 {
-  return strcmp(s1, s2);
+  while(*(char*)s1 && (*(char*)s1 == *(char*)s2))
+    s1++, s2++;
+  return *(const unsigned char*) s1 - *(const unsigned char*) s2;
 }
 
 /* safe to use glibc version */
@@ -88,10 +101,43 @@ size_t zl_strlen(const char *s)
   return strlen(s);
 }
 
-/* safe to use glibc version */
-char *zl_strtok(char *s, const char *delim)
+size_t zl_strspn(const char *s1, const char *s2)
 {
-  return strtok(s, delim);
+  size_t ret = 0;
+
+  while(*s1 && zl_strchr(s2, *s1++))
+    ret++;
+  return ret;
+}
+
+size_t zl_strcspn(const char *s1, const char *s2)
+{
+  size_t ret = 0;
+
+  while(*s1)
+    if(zl_strchr(s2, *s1))
+      return ret;
+    else
+      s1++, ret++;
+  return ret;
+}
+
+char *zl_strtok(char * str, const char * delim)
+{
+  static char* p = 0;
+
+  if(str)
+    p = str;
+  else if(!p)
+    return 0;
+
+  str = p + zl_strspn(p, delim);
+  p = str + zl_strcspn(str, delim);
+  if(p == str)
+    return p = 0;
+
+  p = *p ? *p = 0, p + 1 : 0;
+  return str;
 }
 
 int zl_isupper(char c)
@@ -340,26 +386,26 @@ static void zl_init()
 }
 
 /* the standard glibc prologue replacement */
-void __libc_start_main (
-  int (*main) (int argc, char **argv, char **envp),
-  int argc,
-  char **argv,
-  int (*init) (int argc, char **argv, char **envp),
-  void (*fini) (void),
-  void (*rtld_fini) (void),
-  void *stack_end
-  )
+int main (int argc, char **argv, char **envp);
+void _start (uint32_t *info)
 {
-  int code;
+  int argc = info[2];
+  char **argv = (void *) &info[3];
+
+  /*
+   * command line (with the program name) and environment
+   * available via /dev/nvram channel. it can be read from
+   * argv/envp, however the support will be removed soon
+   */
+
+  /* put marker to the bottom of the stack */
+  *(uint64_t*)0xFF000000 = 0x716f74726f622764LLU;
 
   /* initialize zerovm library */
   zl_init();
 
-  /* call the user main */
-  code = main(argc, argv, NULL);
-
-  /* exit to zerovm */
-  zvm_exit(code);
+  /* call the user main and exit to zerovm */
+  zvm_exit(main(argc, argv, NULL));
 }
 
 /*
