@@ -222,13 +222,6 @@ int main(int argc, char **argv)
     ZLOG(LOG_ERROR, "Error while closing '%s'", nap->system_manifest->nexe);
   (*((struct Gio *) &main_file)->vtbl->Dtor)((struct Gio *) &main_file);
 
-  /* quit if fuzz testing specified */
-  if(nap->quit_after_load)
-  {
-    SetExitState(OK_STATE);
-    NaClExit(0);
-  }
-
   /* setup zerovm from manifest */
   SystemManifestCtor(nap);
 
@@ -241,6 +234,13 @@ int main(int argc, char **argv)
 
   /* start accounting */
   AccountingCtor(nap);
+
+  /* quit if fuzz testing specified */
+  if(nap->quit_after_load)
+  {
+    SetExitState(OK_STATE);
+    NaClExit(0);
+  }
 
   /* set user code trap() exit location and switch to the user code */
   if(setjmp(user_exit) == 0)

@@ -8,10 +8,20 @@
  * perhaps it would be wise to get rid of glibc usage completely.
  * by that and -nostdlib resulting nexe will contain no extra code
  * or fail to build.
+ *
+ * update: if NOSTDLIB defined library will not use standard
+ *         functions (glibc)
  */
+#ifndef NOSTDLIB
 #include <stdio.h>
 #include <limits.h>
 #include <string.h> /* todo: remove it after wrappers will be removed */
+#else
+#define LONG_MAX 2147483647L
+#define LONG_MIN (-LONG_MAX - 1L)
+#define ULONG_MAX (LONG_MAX * 2UL + 1UL)
+#endif
+
 #include "api/zvm.h" /* todo: change it to zvm.h */
 #include "zvmlib.h"
 #include "bget.h"
@@ -25,7 +35,15 @@
 /* safe to use glibc version */
 void *zl_memset(void *s, int c, size_t n)
 {
+#ifdef NOSTDLIB
+  unsigned char* p = s;
+
+  while(n--)
+    *p++ = (unsigned char)c;
+  return s;
+#else
   return memset(s, c, n);
+#endif
 }
 
 void *zl_malloc(size_t size)
@@ -53,6 +71,7 @@ void zl_free(void *p)
 
 void *zl_memcpy(void *dst, const void *src, size_t n)
 {
+#ifdef NOSTDLIB
   char* d = dst;
   char* s = (char*)src;
   --s;
@@ -60,24 +79,42 @@ void *zl_memcpy(void *dst, const void *src, size_t n)
 
   while(n--) *++d = *++s;
   return dst;
+#else
+  return memcpy(dst, src, n);
+#endif
 }
 
 /* safe to use glibc version */
 int zl_memcmp(const void *s1, const void *s2, size_t n)
 {
+#ifdef NOSTDLIB
+  if(!n) return 0;
+  while(--n && *(char*)s1 == *(char*)s2)
+  {
+    s1 = (char*)s1 + 1;
+    s2 = (char*)s2 + 1;
+  }
+  return (*((unsigned char*)s1) - *((unsigned char*)s2));
+#else
   return memcmp(s1, s2, n);
+#endif
 }
 
 char *zl_strchr(const char *s, int c)
 {
+#ifdef NOSTDLIB
   while(*s != (char)c)
     if(!*s++)
       return 0;
   return (char *)s;
+#else
+  return strchr(s, c);
+#endif
 }
 
 char *zl_strrchr(const char *s, int c)
 {
+#ifdef NOSTDLIB
   char *ret = 0;
 
   do {
@@ -86,32 +123,51 @@ char *zl_strrchr(const char *s, int c)
   } while(*s++);
 
   return ret;
+#else
+  return strrchr(s, c);
+#endif
 }
 
 int zl_strcmp(const void *s1, const void *s2)
 {
+#ifdef NOSTDLIB
   while(*(char*)s1 && (*(char*)s1 == *(char*)s2))
     s1++, s2++;
   return *(const unsigned char*) s1 - *(const unsigned char*) s2;
+#else
+  return strcmp(s1, s2);
+#endif
 }
 
 /* safe to use glibc version */
 size_t zl_strlen(const char *s)
 {
+#ifdef NOSTDLIB
+  const char *p = s;
+  while(*s)
+    ++s;
+  return s - p;
+#else
   return strlen(s);
+#endif
 }
 
 size_t zl_strspn(const char *s1, const char *s2)
 {
+#ifdef NOSTDLIB
   size_t ret = 0;
 
   while(*s1 && zl_strchr(s2, *s1++))
     ret++;
   return ret;
+#else
+  return strspn(s1, s2);
+#endif
 }
 
 size_t zl_strcspn(const char *s1, const char *s2)
 {
+#ifdef NOSTDLIB
   size_t ret = 0;
 
   while(*s1)
@@ -120,10 +176,14 @@ size_t zl_strcspn(const char *s1, const char *s2)
     else
       s1++, ret++;
   return ret;
+#else
+  return strcspn(s1, s2);
+#endif
 }
 
-char *zl_strtok(char * str, const char * delim)
+char *zl_strtok(char *str, const char *delim)
 {
+#ifdef NOSTDLIB
   static char* p = 0;
 
   if(str)
@@ -138,6 +198,9 @@ char *zl_strtok(char * str, const char * delim)
 
   p = *p ? *p = 0, p + 1 : 0;
   return str;
+#else
+  return strtok(str, delim);
+#endif
 }
 
 int zl_isupper(char c)
@@ -346,7 +409,7 @@ long atol(const char *nptr)
 
 int zl_atoi(const char *s)
 {
-  return (int) atol(s);
+  return (int)atol(s);
 }
 
 static unsigned long int seed = 1;

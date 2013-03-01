@@ -2,15 +2,16 @@ NAME_1=generator.uint32_t
 NAME_2=sort_uint_proper_with_args
 NAME_3=tester.uint32_t
 NACL_TOOLCHAIN=$(NACL_SDK_ROOT)/toolchain/linux_x86_glibc
+CCFLAGS=-n -s -nostartfiles -static -nostdlib
 
 all: $(NAME_1).o $(NAME_2).o $(NAME_3).o
-	$(ZVM_TOOLCHAIN)/bin/gcc -o $(NAME_1).nexe -n -s -nostartfiles -static \
+	$(ZVM_TOOLCHAIN)/bin/gcc -o $(NAME_1).nexe $(CCFLAGS) \
 	-T $(ZEROVM_ROOT)/tests/functional/include/elf64_nacl.x.static \
 	$(NAME_1).o $(ZEROVM_ROOT)/tests/functional/include/libzvmlib.a
-	$(ZVM_TOOLCHAIN)/bin/gcc -o $(NAME_2).nexe -n -s -nostartfiles -static \
+	$(ZVM_TOOLCHAIN)/bin/gcc -o $(NAME_2).nexe $(CCFLAGS) \
 	-T $(ZEROVM_ROOT)/tests/functional/include/elf64_nacl.x.static \
 	$(NAME_2).o $(ZEROVM_ROOT)/tests/functional/include/libzvmlib.a
-	$(ZVM_TOOLCHAIN)/bin/gcc -o $(NAME_3).nexe -n -s -nostartfiles -static \
+	$(ZVM_TOOLCHAIN)/bin/gcc -o $(NAME_3).nexe $(CCFLAGS) \
 	-T $(ZEROVM_ROOT)/tests/functional/include/elf64_nacl.x.static \
 	$(NAME_3).o $(ZEROVM_ROOT)/tests/functional/include/libzvmlib.a
 	@sed 's#PWD#$(PWD)#g' $(NAME_1).template > $(NAME_1).manifest

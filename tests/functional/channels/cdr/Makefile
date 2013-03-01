@@ -1,7 +1,8 @@
 NAME=cdr
+CCFLAGS=-n -s -nostartfiles -static -nostdlib
 
 all: $(NAME).o
-	$(ZVM_TOOLCHAIN)/bin/gcc -o $(NAME).nexe -n -s -nostartfiles -static \
+	$(ZVM_TOOLCHAIN)/bin/gcc -o $(NAME).nexe $(CCFLAGS) \
 	-T $(ZEROVM_ROOT)/tests/functional/include/elf64_nacl.x.static \
 	$(NAME).o $(ZEROVM_ROOT)/tests/functional/include/libzvmlib.a
 	@cp cdr_stubbed.stored cdr_stubbed.data

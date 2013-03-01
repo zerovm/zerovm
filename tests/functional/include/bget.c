@@ -59,13 +59,21 @@
            allocation will be much slower. */
 
 #include <stdio.h>
-#include <string.h> /* d'b: for memset() */
-#define assert(a) /* d'b: remove it (or get rid of asserts). assert pools a lot of code from glibc */
 
 /*  Declare the interface, including the requested buffer size type,
  bufsize.  */
 
 #include "bget.h"
+
+/* d'b: {{ */
+//#include "zvmlib.h"
+void *zl_memset(void *s, int c, size_t n);
+void *zl_memcpy(void *dst, const void *src, size_t n);
+#define MEMSET(s, c, n) zl_memset(s, c, n)
+#define MEMCPY(dst, src, n) zl_memcpy(dst, src, n)
+#define NDEBUG /* get rid of asserts, since it pools a lot of code from glibc */
+#define assert(a) /* prevent compilator warning */
+/* }} */
 
 #define MemSize     int         /* Type for size arguments to memxxx()
            functions such as memcmp(). */
@@ -130,19 +138,6 @@ static long numget = 0, numrel = 0; /* Number of bget() and brel() calls */
  bufsize, defined in a way that the compiler will accept. */
 
 #define ESent ((bufsize) (-(((1LL << (sizeof(bufsize) * 8 - 2)) - 1) * 2) - 2)) /* d'b: patched to int64 */
-
-/* d'b: replace glibc memcpy to avoid syscalls usage */
-/* todo: replace with faster code */
-static void *zl_memcpy(void *dst, const void *src, size_t n)
-{
-  char* d = dst;
-  char* s = (char*)src;
-  --s;
-  --d;
-
-  while(n--) *++d = *++s;
-  return dst;
-}
 
 /*  BGET  --  Allocate a buffer.  */
 
@@ -294,8 +289,8 @@ void *bgetz(size)
       rsize -= sizeof(struct bhead);
     }
     assert(rsize >= size);
-    V memset(buf, 0, (MemSize) rsize);
-    V memset(buf, 0, (MemSize) size);
+    V MEMSET(buf, 0, (MemSize) rsize);
+    V MEMSET(buf, 0, (MemSize) size);
   }
   return ((void *) buf);
 }
@@ -324,7 +319,7 @@ void *bgetr(buf, size)
   osize = -b->bsize;
   osize -= sizeof(struct bhead);
   assert(osize > 0);
-  V zl_memcpy((char *) nbuf, (char *) buf, /* Copy the data */
+  V MEMCPY((char *) nbuf, (char *) buf, /* Copy the data */
            (MemSize) ((size < osize) ? size : osize));
   brel(buf);
   return nbuf;
@@ -349,7 +344,8 @@ void brel(buf)
   if(b->bh.bsize >= 0)
   {
     bn = NULL;
-  }assert(b->bh.bsize < 0);
+  }
+  assert(b->bh.bsize < 0);
 
   /*  Back pointer in next buffer must be zero, indicating the
    same thing: */
@@ -423,7 +419,7 @@ void brel(buf)
     bn = BFH(((char *) b) + b->bh.bsize);
   }
 #if FreeWipe > 0
-  V memset(((char *) b) + sizeof(struct bfhead), 0x55,
+  V MEMSET(((char *) b) + sizeof(struct bfhead), 0x55,
            (MemSize) (b->bh.bsize - sizeof(struct bfhead)));
 #endif
   assert(bn->bh.bsize < 0);
@@ -479,7 +475,7 @@ void bpool(buf, len)
   b->bh.bsize = (bufsize) len;
 
 #if FreeWipe > 0
-  V memset(((char *) b) + sizeof(struct bfhead), 0x55, (MemSize) (len - sizeof(struct bfhead)));
+  V MEMSET(((char *) b) + sizeof(struct bfhead), 0x55, (MemSize) (len - sizeof(struct bfhead)));
 #endif
 
   bn = BH(((char *) b) + len);
