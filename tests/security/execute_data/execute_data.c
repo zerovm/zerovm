@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <inttypes.h>
+#include "include/zvmlib.h"
 
 /*
  * We put the buffer in the data segment (low address) rather than on
@@ -24,15 +25,15 @@ uint32_t code[] __attribute__((aligned(32)))= { 0xe12fff1e /* BX LR */ };
 # error Unknown architecture
 #endif
 
-int main() {
+int main() 
+{
   void (*func)();
 
   /* Double cast required to stop gcc complaining. */
   func = (void (*)()) (uintptr_t) code;
 
-  fprintf(stdout, "This should fault...\n");
-  fflush(stdout);
+  FPRINTF(STDOUT, "This should fault...\n");
   func();
-  fprintf(stdout, "We're still running. This is bad.\n");
+  FPRINTF(STDOUT, "We're still running. This is bad.\n");
   return 1;
 }

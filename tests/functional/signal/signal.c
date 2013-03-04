@@ -12,6 +12,7 @@
 #include "include/ztest.h"
 
 #define SIGNALS_NUMBER 64
+#define BIGFILE "quota.data"
 
 void signal_na()
 {
@@ -40,6 +41,17 @@ void signal_24()
   for(;;);
 }
 
+/* disk i/o limit exceeded */
+#define MEGABYTE 0x100000
+void signal_25()
+{
+  char buf[MEGABYTE];
+  FPRINTF(STDERR, "invocation of signal #25\n");
+
+  for(;;)
+    WRITE(BIGFILE, buf, MEGABYTE);
+}
+
 /* initialize array of pointers to signal raisers */
 void signals_ctor(void (*signals[])())
 {
@@ -51,6 +63,7 @@ void signals_ctor(void (*signals[])())
   signals[8] = signal_8;
   signals[11] = signal_11;
   signals[24] = signal_24;
+  signals[25] = signal_25;
 }
 
 int main(int argc, char **argv, char **envp)

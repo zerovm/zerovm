@@ -1,9 +1,8 @@
 zerovm must show something like:
 
-validator state = 2
+validator state = 1
 user return code = 0
-etag = D41D8CD98F00B204E9800998ECF8427E
-accounting = 10 0 16777216 0 0 0 0 0 0 0 0 0
-exit state = src/service_runtime/sel_main.c 156: validation failed
-make: *** [all] Error 8
+etag = da39a3ee5e6b4b0d3255bfef95601890afd80709
+accounting = 0.00 0.00 16777216 0 0 0 0 0 0 0 0 0
+exit state = src/main/zvm_main.c 165: validation failed
 

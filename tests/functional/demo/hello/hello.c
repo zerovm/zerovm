@@ -7,10 +7,10 @@
 int main()
 {
   /* write to stdout channel */
-  PRINTF("\033[1mhello, world!\033[0m\n");
+  PRINTF("\033[1mhello from dev/stdout!\033[0m\n");
 
   /* write to stderr channel */
-  FPRINTF(STDERR, "hello, world!");
+  FPRINTF(STDERR, "\033[36mhello from dev/stderr!\033[0m\n");
 
   return 0;
 }

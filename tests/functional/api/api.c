@@ -30,12 +30,6 @@
 #define GetFileSize(...) -1
 
 /* redefine functions */
-#define strtok STRTOK
-#define strcmp STRCMP
-#define strlen STRLEN
-#define strchr STRCHR
-#define strrchr STRRCHR
-#define isspace ISSPACE
 #define g_malloc MALLOC
 #define g_malloc0(size) CALLOC(size, 1)
 #define g_free FREE

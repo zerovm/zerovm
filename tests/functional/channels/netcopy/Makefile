@@ -9,7 +9,7 @@ all: $(NAME).o
 	@sed 's#PWD#$(PWD)#g' $(NAME)1.template > $(NAME)1.manifest
 	@sed 's#PWD#$(PWD)#g' $(NAME)2.template > $(NAME)2.manifest
 	@sed 's#PWD#$(PWD)#g' $(NAME)3.template > $(NAME)3.manifest
-	@sleep 1
+	@perl -e 'select(undef,undef,undef,.04)'
 	@$(ZEROVM_ROOT)/zerovm -e -M$(NAME)1.manifest&
 	@$(ZEROVM_ROOT)/zerovm -e -M$(NAME)2.manifest&
 	@$(ZEROVM_ROOT)/zerovm -e -M$(NAME)3.manifest

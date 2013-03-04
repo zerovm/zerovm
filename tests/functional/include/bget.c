@@ -66,13 +66,10 @@
 #include "bget.h"
 
 /* d'b: {{ */
-//#include "zvmlib.h"
-void *zl_memset(void *s, int c, size_t n);
-void *zl_memcpy(void *dst, const void *src, size_t n);
-#define MEMSET(s, c, n) zl_memset(s, c, n)
-#define MEMCPY(dst, src, n) zl_memcpy(dst, src, n)
+void *memset(void *s, int c, size_t n);
+void *memcpy(void *dst, const void *src, size_t n);
 #define NDEBUG /* get rid of asserts, since it pools a lot of code from glibc */
-#define assert(a) /* prevent compilator warning */
+#define assert(a) /* prevent compiler warning */
 /* }} */
 
 #define MemSize     int         /* Type for size arguments to memxxx()
@@ -289,8 +286,8 @@ void *bgetz(size)
       rsize -= sizeof(struct bhead);
     }
     assert(rsize >= size);
-    V MEMSET(buf, 0, (MemSize) rsize);
-    V MEMSET(buf, 0, (MemSize) size);
+    V memset(buf, 0, (MemSize) rsize);
+    V memset(buf, 0, (MemSize) size);
   }
   return ((void *) buf);
 }
@@ -319,7 +316,7 @@ void *bgetr(buf, size)
   osize = -b->bsize;
   osize -= sizeof(struct bhead);
   assert(osize > 0);
-  V MEMCPY((char *) nbuf, (char *) buf, /* Copy the data */
+  V memcpy((char *) nbuf, (char *) buf, /* Copy the data */
            (MemSize) ((size < osize) ? size : osize));
   brel(buf);
   return nbuf;
@@ -419,7 +416,7 @@ void brel(buf)
     bn = BFH(((char *) b) + b->bh.bsize);
   }
 #if FreeWipe > 0
-  V MEMSET(((char *) b) + sizeof(struct bfhead), 0x55,
+  V memset(((char *) b) + sizeof(struct bfhead), 0x55,
            (MemSize) (b->bh.bsize - sizeof(struct bfhead)));
 #endif
   assert(bn->bh.bsize < 0);
@@ -475,7 +472,7 @@ void bpool(buf, len)
   b->bh.bsize = (bufsize) len;
 
 #if FreeWipe > 0
-  V MEMSET(((char *) b) + sizeof(struct bfhead), 0x55, (MemSize) (len - sizeof(struct bfhead)));
+  V memset(((char *) b) + sizeof(struct bfhead), 0x55, (MemSize) (len - sizeof(struct bfhead)));
 #endif
 
   bn = BH(((char *) b) + len);

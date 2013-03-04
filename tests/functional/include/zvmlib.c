@@ -1,4 +1,6 @@
 /*
+ * replacement for the glibc library (not portable, should be used with gcc)
+ *
  *  Created on: Feb 25, 2013
  *      Author: bortoq
  *
@@ -11,16 +13,13 @@
  *
  * update: if NOSTDLIB defined library will not use standard
  *         functions (glibc)
+ *
+ * Copyright (C) 2002 Michael Ringgaard. All rights reserved.
+ * (full (c) stuff see below)
  */
-#ifndef NOSTDLIB
-#include <stdio.h>
-#include <limits.h>
-#include <string.h> /* todo: remove it after wrappers will be removed */
-#else
 #define LONG_MAX 2147483647L
 #define LONG_MIN (-LONG_MAX - 1L)
 #define ULONG_MAX (LONG_MAX * 2UL + 1UL)
-#endif
 
 #include "api/zvm.h" /* todo: change it to zvm.h */
 #include "zvmlib.h"
@@ -33,35 +32,31 @@
  */
 
 /* safe to use glibc version */
-void *zl_memset(void *s, int c, size_t n)
+inline void *memset(void *s, int c, size_t n)
 {
-#ifdef NOSTDLIB
   unsigned char* p = s;
 
   while(n--)
     *p++ = (unsigned char)c;
   return s;
-#else
-  return memset(s, c, n);
-#endif
 }
 
-void *zl_malloc(size_t size)
+inline void *malloc(size_t size)
 {
   return bget(size);
 }
 
-void *zl_calloc(size_t n, size_t size)
+inline void *calloc(size_t n, size_t size)
 {
   return bgetz((long long int)n * size);
 }
 
-void *zl_realloc(void *p, size_t size)
+inline void *realloc(void *p, size_t size)
 {
   return bgetr(p, size);
 }
 
-void zl_free(void *p)
+inline void free(void *p)
 {
   /* prevent crash */
   if(p == NULL) return;
@@ -69,9 +64,8 @@ void zl_free(void *p)
   brel(p);
 }
 
-void *zl_memcpy(void *dst, const void *src, size_t n)
+inline void *memcpy(void *dst, const void *src, size_t n)
 {
-#ifdef NOSTDLIB
   char* d = dst;
   char* s = (char*)src;
   --s;
@@ -79,15 +73,11 @@ void *zl_memcpy(void *dst, const void *src, size_t n)
 
   while(n--) *++d = *++s;
   return dst;
-#else
-  return memcpy(dst, src, n);
-#endif
 }
 
 /* safe to use glibc version */
-int zl_memcmp(const void *s1, const void *s2, size_t n)
+inline int memcmp(const void *s1, const void *s2, size_t n)
 {
-#ifdef NOSTDLIB
   if(!n) return 0;
   while(--n && *(char*)s1 == *(char*)s2)
   {
@@ -95,26 +85,18 @@ int zl_memcmp(const void *s1, const void *s2, size_t n)
     s2 = (char*)s2 + 1;
   }
   return (*((unsigned char*)s1) - *((unsigned char*)s2));
-#else
-  return memcmp(s1, s2, n);
-#endif
 }
 
-char *zl_strchr(const char *s, int c)
+inline char *strchr(const char *s, int c)
 {
-#ifdef NOSTDLIB
   while(*s != (char)c)
     if(!*s++)
       return 0;
   return (char *)s;
-#else
-  return strchr(s, c);
-#endif
 }
 
-char *zl_strrchr(const char *s, int c)
+inline char *strrchr(const char *s, int c)
 {
-#ifdef NOSTDLIB
   char *ret = 0;
 
   do {
@@ -123,67 +105,65 @@ char *zl_strrchr(const char *s, int c)
   } while(*s++);
 
   return ret;
-#else
-  return strrchr(s, c);
-#endif
 }
 
-int zl_strcmp(const void *s1, const void *s2)
+inline int strcmp(const void *s1, const void *s2)
 {
-#ifdef NOSTDLIB
   while(*(char*)s1 && (*(char*)s1 == *(char*)s2))
     s1++, s2++;
   return *(const unsigned char*) s1 - *(const unsigned char*) s2;
-#else
-  return strcmp(s1, s2);
-#endif
+}
+
+inline char *strcpy(char *dst, const char *src)
+{
+  char *ret = dst;
+  while ((*dst++ = *src++))
+    ;
+  return ret;
+}
+
+inline char *strcat(char *dst, const char *src)
+{
+  char *ret = dst;
+  while (*dst)
+    dst++;
+  while ((*dst++ = *src++))
+    ;
+  return ret;
 }
 
 /* safe to use glibc version */
-size_t zl_strlen(const char *s)
+inline size_t strlen(const char *s)
 {
-#ifdef NOSTDLIB
   const char *p = s;
   while(*s)
     ++s;
   return s - p;
-#else
-  return strlen(s);
-#endif
 }
 
-size_t zl_strspn(const char *s1, const char *s2)
+inline size_t strspn(const char *s1, const char *s2)
 {
-#ifdef NOSTDLIB
   size_t ret = 0;
 
-  while(*s1 && zl_strchr(s2, *s1++))
+  while(*s1 && strchr(s2, *s1++))
     ret++;
   return ret;
-#else
-  return strspn(s1, s2);
-#endif
 }
 
-size_t zl_strcspn(const char *s1, const char *s2)
+inline size_t strcspn(const char *s1, const char *s2)
 {
-#ifdef NOSTDLIB
   size_t ret = 0;
 
   while(*s1)
-    if(zl_strchr(s2, *s1))
+    if(strchr(s2, *s1))
       return ret;
     else
       s1++, ret++;
   return ret;
-#else
-  return strcspn(s1, s2);
-#endif
 }
 
-char *zl_strtok(char *str, const char *delim)
+inline char *strtok(char *str, const char *delim)
 {
-#ifdef NOSTDLIB
   static char* p = 0;
 
   if(str)
@@ -191,45 +171,42 @@ char *zl_strtok(char *str, const char *delim)
   else if(!p)
     return 0;
 
-  str = p + zl_strspn(p, delim);
-  p = str + zl_strcspn(str, delim);
+  str = p + strspn(p, delim);
+  p = str + strcspn(str, delim);
   if(p == str)
     return p = 0;
 
   p = *p ? *p = 0, p + 1 : 0;
   return str;
-#else
-  return strtok(str, delim);
-#endif
 }
 
-int zl_isupper(char c)
+inline int isupper(int c)
 {
   return (c >= 'A' && c <= 'Z');
 }
 
-int zl_islower(char c)
+inline int islower(int c)
 {
   return (c >= 'a' && c <= 'z');
 }
 
-static int zl_toupper(char c)
+inline int toupper(int c)
 {
-  return zl_islower(c) ? c - 'a' + 'A' : c;
+  return islower(c) ? c - 'a' + 'A' : c;
 }
 
-int zl_isalpha(char c)
+inline int isalpha(int c)
 {
-  return (zl_isupper(c) || zl_islower(c));
+  return (isupper(c) || islower(c));
 }
 
-int zl_isspace(char c)
+inline int isspace(int c)
 {
   return (c == ' ' || c == '\t' || c == '\v'
       || c == '\f' || c == '\n' || c == '\r');
 }
 
-int zl_isdigit(char c)
+inline int isdigit(int c)
 {
   return (c >= '0' && c <= '9');
 }
@@ -250,7 +227,7 @@ static unsigned long strtoxl(const char *nptr, char **endptr, int ibase, int fla
   number = 0;
 
   c = *p++;
-  while(zl_isspace(c))
+  while(isspace(c))
     c = *p++;
 
   if(c == '-')
@@ -298,13 +275,13 @@ static unsigned long strtoxl(const char *nptr, char **endptr, int ibase, int fla
 
   for(;;)
   {
-    if(zl_isdigit(c))
+    if(isdigit(c))
     {
       digval = c - '0';
     }
-    else if(zl_isalpha(c))
+    else if(isalpha(c))
     {
-      digval = zl_toupper(c) - 'A' + 10;
+      digval = toupper(c) - 'A' + 10;
     }
     else
     {
@@ -365,24 +342,24 @@ static unsigned long strtoxl(const char *nptr, char **endptr, int ibase, int fla
   return number;
 }
 
-long int zl_strtol(const char *p, char **end, int base)
+inline long int strtol(const char *p, char **end, int base)
 {
   return (long) strtoxl(p, end, base, 0);
 }
 
-unsigned long zl_strtoul(const char *p, char **end, int base)
+inline unsigned long strtoul(const char *p, char **end, int base)
 {
   return strtoxl(p, end, base, FL_UNSIGNED);
 }
 
-long atol(const char *nptr)
+inline long atol(const char *nptr)
 {
   int c;
   int sign;
   long total;
   const unsigned char *p = (const unsigned char *) nptr;
 
-  while(zl_isspace(*p))
+  while(isspace(*p))
     ++p;
 
   c = *p++;
@@ -391,7 +368,7 @@ long atol(const char *nptr)
     c = *p++;
 
   total = 0;
-  while(zl_isdigit(c))
+  while(isdigit(c))
   {
     total = 10 * total + (c - '0');
     c = *p++;
@@ -407,18 +384,18 @@ long atol(const char *nptr)
   }
 }
 
-int zl_atoi(const char *s)
+inline int atoi(const char *s)
 {
   return (int)atol(s);
 }
 
 static unsigned long int seed = 1;
-void zl_srand(unsigned long int s)
+inline void srand(unsigned int s)
 {
   seed = s;
 }
 
-int zl_rand()
+inline int rand()
 {
   seed = seed * 1103515245 + 12345;
   return (unsigned int)(seed/65536) % 32768;
@@ -428,7 +405,7 @@ int zl_rand()
  * get handle by the channel alias. return -1 if failed
  * todo: replace it with open(), change dependent functions
  */
-int zl_handle(const char *alias)
+inline int handle(const char *alias)
 {
   if(alias != NULL && *alias != '\0')
   {
@@ -442,7 +419,7 @@ int zl_handle(const char *alias)
 }
 
 /* initializer of zlib (replaces glibc prologue) */
-static void zl_init()
+static void _init()
 {
   /* setup memory manager */
   bpool(MANIFEST->heap_ptr, MANIFEST->heap_size);
@@ -465,7 +442,7 @@ void _start (uint32_t *info)
   *(uint64_t*)0xFF000000 = 0x716f74726f622764LLU;
 
   /* initialize zerovm library */
-  zl_init();
+  _init();
 
   /* call the user main and exit to zerovm */
   zvm_exit(main(argc, argv, NULL));

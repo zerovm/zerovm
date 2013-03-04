@@ -1,5 +1,4 @@
 NAME=zvmlib
-DEFS=-DNOSTDLIB
 
 all: $(NAME).o bget.o printf.o
 	$(ZVM_TOOLCHAIN)/bin/ar r lib$(NAME).a $^

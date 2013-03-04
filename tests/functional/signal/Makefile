@@ -6,7 +6,7 @@ all: $(NAME).o
 	-T $(ZEROVM_ROOT)/tests/functional/include/elf64_nacl.x.static \
 	$(NAME).o $(ZEROVM_ROOT)/tests/functional/include/libzvmlib.a
 	@sed 's#PWD#$(PWD)#g' $(NAME).template > $(NAME).manifest
-	@$(ZEROVM_ROOT)/zerovm -e -M$(NAME).manifest
+	@$(ZEROVM_ROOT)/zerovm -l1 -e -M$(NAME).manifest
 
 $(NAME).o: $(NAME).c
 	$(ZVM_TOOLCHAIN)/bin/gcc -c -Wall -O3 -msse4.1 \

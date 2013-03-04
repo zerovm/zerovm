@@ -3,7 +3,10 @@
 =====================================================================
 Channel = /dev/null, /dev/stdin, 0, 65536, 4194304, 0, 0
 Channel = /dev/null, /dev/stdout, 0, 0, 0, 16, 256
-Channel = PWD/result.log, /dev/stderr, 0, 0, 0, 512, 8192
+Channel = PWD/result.log, /dev/stderr, 0, 0, 0, 65536, 4194304
+
+== exceed disk quota (default disk i/o quota is 4gb)
+Channel = PWD/quota.data, quota.data, 0, 0, 0, 5368709120, 5368709120
 
 =====================================================================
 == switches for zerovm. some of them used to control nexe, some
@@ -13,6 +16,7 @@ Version = 09082012
 Nexe = signal.nexe
 MemMax = 134217728
 
-== available signals: 8, 11, 24
-CommandLine = 8
+== available signals: 8, 11, 24, 25
+== (for #25 timeout have to be set to adequate value)
+CommandLine = 24
 Timeout = 1

@@ -7,9 +7,10 @@
  *
  * note: input must contain (power of 2) 32-bit unsigned integers
  */
+#define _STDLIB_H /* d'b: avoid stdlib.h including */
+#include "include/zvmlib.h"
 #include <emmintrin.h>
 #include <smmintrin.h>
-#include "include/zvmlib.h"
 
 #if 0
 #define DEBUG

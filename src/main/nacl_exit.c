@@ -95,10 +95,24 @@ void SetExitCode(int code)
   if(zvm_code == 0) zvm_code = code;
 }
 
+/* manage special signals. note: may change zvm_state */
+/* todo(d'b): remove this patch after reworking zvm signals */
+static void SpecSignals()
+{
+  if(strstr(zvm_state, "Signal 24") != NULL)
+    SetExitState("session timeout");
+  else if(strstr(zvm_state, "Signal 25") != NULL)
+    SetExitState("disk quota exceeded");
+}
+
 void NaClExit(int err_code)
 {
+  /* patch */
+  if(err_code !=0) SpecSignals();
+
   Finalizer();
   SetExitCode(err_code);
+
   ZLOGIF(zvm_code != 0, "zerovm exited with error '%s'", strerror(zvm_code));
   _exit(zvm_code);
 }

@@ -1,5 +1,5 @@
 NAME=hello
-CCFLAGS=-n -s -nostartfiles -static -nostdlib
+CCFLAGS=-n -s -nostartfiles -static -nostdlib 
 
 all: $(NAME).o
 	$(ZVM_TOOLCHAIN)/bin/gcc -o $(NAME).nexe $(CCFLAGS) \
