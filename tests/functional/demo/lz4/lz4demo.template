@@ -1,0 +1,16 @@
+=====================================================================
+== "lz4demo" compressor ported to zerovm
+=====================================================================
+Channel = PWD/input.data, /dev/stdin, 0, 65536, 4294967296, 0, 0
+Channel = PWD/output.lz4, /dev/stdout, 0, 0, 0, 65536, 4294967296
+Channel = /dev/stdout, /dev/stderr, 0, 0, 0, 65536, 65536
+
+=====================================================================
+== switches for zerovm. some of them used to control nexe, some
+== for the internal zerovm needs
+=====================================================================
+Version = 09082012
+Nexe = lz4demo.nexe
+MemMax = 4294967296
+Timeout = 10
+CommandLine = /dev/stdin /dev/stdout
