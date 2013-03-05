@@ -173,12 +173,6 @@ struct NaClApp {
   int                       bundle_size; /* d'b: can be replaced with define.
                                             only need for NaClSandboxCodeAddr */
 
-  /*
-   * An array of NaCl syscall handlers. The length of the array must be
-   * at least NACL_MAX_SYSCALLS.
-   */
-  struct NaClSyscallTableEntry *syscall_table;
-
   /* user memory map */
   struct MemBlock           mem_map[MemMapSize];
 
@@ -215,7 +209,7 @@ struct NaClApp {
   uintptr_t                 break_addr;   /* user addr */
   /* data_end <= break_addr is an invariant */
 
-  /* d'b: added fields {{ */
+  /* d'b: added fields */
   struct SystemManifest     *system_manifest;
   uintptr_t                 heap_end; /* end of user heap */
   int                       validation_state; /* needs for the report */
@@ -233,10 +227,7 @@ struct NaClApp {
 
   /* fields taken from the natp */
   void                      *signal_stack; /* signal handling, registered with sigaltstack() */
-  uintptr_t                 *syscall_args;
   uint32_t                  sysret; /* syscall return code */
-  uintptr_t                 sys_tls;
-  /* }} */
 };
 
 /*
@@ -251,10 +242,7 @@ struct NaClApp {
  * Caution! Syscall handlers must be extremely careful with respect to
  * argument validation, including time-of-check vs time-of-use defense, etc.
  */
-int NaClAppWithSyscallTableCtor(struct NaClApp               *nap,
-                                struct NaClSyscallTableEntry *table) NACL_WUR;
-
-int   NaClAppCtor(struct NaClApp  *nap) NACL_WUR;
+int NaClAppCtor(struct NaClApp *nap) NACL_WUR;
 
 /*
  * Loads a NaCl ELF file into memory in preparation for running it.
@@ -318,50 +306,11 @@ int NaClAddrIsValidEntryPt(struct NaClApp *nap,
  */
 int NaClCreateMainThread(struct NaClApp     *nap) NACL_WUR;
 
-int NaClWaitForMainThreadToExit(struct NaClApp  *nap);
-
-/*
- * Used by syscall code.
- */
-int32_t NaClCreateAdditionalThread(struct NaClApp *nap,
-                                   uintptr_t      prog_ctr,
-                                   uintptr_t      stack_ptr,
-                                   uintptr_t      sys_tls,
-                                   uint32_t       user_tls2) NACL_WUR;
-
 void NaClLoadTrampoline(struct NaClApp *nap);
-
-void NaClLoadSpringboard(struct NaClApp  *nap);
 
 static const uintptr_t kNaClBadAddress = (uintptr_t) -1;
 
-#ifndef NACL_NO_INLINE
 #include "src/loader/sel_ldr-inl.h"
-#endif
-
-/*
- * Looks up a descriptor in the open-file table.  An additional
- * reference is taken on the returned NaClDesc object (if non-NULL).
- * The caller is responsible for invoking NaClDescUnref() on it when
- * done.
- */
-struct NaClDesc *NaClGetDesc(struct NaClApp *nap,
-                             int            d);
-
-/*
- * Versions that are called while already holding the desc_mu lock
- */
-struct NaClDesc *NaClGetDescMu(struct NaClApp *nap,
-                               int            d);
-
-void NaClSetDescMu(struct NaClApp   *nap,
-                   int              d,
-                   struct NaClDesc  *ndp);
-
-int32_t NaClSetAvailMu(struct NaClApp   *nap,
-                       struct NaClDesc  *ndp);
-
-void NaClAppInitialDescriptorHookup(struct NaClApp  *nap);
 
 void NaClFillMemoryRegionWithHalt(void *start, size_t size);
 

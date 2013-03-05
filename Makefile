@@ -10,23 +10,22 @@ CCFLAGS2=-Wextra -Wswitch-enum -Wsign-compare $(CCFLAGS0)
 CXXFLAGS1=-c -std=c++98 -D_GNU_SOURCE=1 -I. -Ilib $(CXXFLAGS0) $(FLAGS0)
 CXXFLAGS2=-Wl,-z,noexecstack $(CXXFLAGS0) -Lobj -L/usr/lib64 -pie -Wl,-z,relro -Wl,-z,now
 
-# to compile zvm w/o nacl syscalls support -DDISABLE_NACL_SYSCALLS should be specidied
-all: CCFLAGS1 += -DNDEBUG -O3 -s -DDISABLE_NACL_SYSCALLS
-all: CCFLAGS2 += -DNDEBUG -O3 -s -DDISABLE_NACL_SYSCALLS
-all: CXXFLAGS1 := -DNDEBUG -O3 -s $(CXXFLAGS1) -DDISABLE_NACL_SYSCALLS
-all: CXXFLAGS2 := -DNDEBUG -O3 -s $(CXXFLAGS2) -DDISABLE_NACL_SYSCALLS
+all: CCFLAGS1 += -DNDEBUG -O3 -s
+all: CCFLAGS2 += -DNDEBUG -O3 -s
+all: CXXFLAGS1 := -DNDEBUG -O3 -s $(CXXFLAGS1)
+all: CXXFLAGS2 := -DNDEBUG -O3 -s $(CXXFLAGS2)
 all: create_dirs zerovm
 
-debug: CCFLAGS1 += -DDEBUG -g -DDISABLE_NACL_SYSCALLS
-debug: CCFLAGS2 += -DDEBUG -g -DDISABLE_NACL_SYSCALLS
-debug: CXXFLAGS1 := -DDEBUG -g $(CXXFLAGS1) -DDISABLE_NACL_SYSCALLS
-debug: CXXFLAGS2 := -DDEBUG -g $(CXXFLAGS2) -DDISABLE_NACL_SYSCALLS
+debug: CCFLAGS1 += -DDEBUG -g
+debug: CCFLAGS2 += -DDEBUG -g
+debug: CXXFLAGS1 := -DDEBUG -g $(CXXFLAGS1)
+debug: CXXFLAGS2 := -DDEBUG -g $(CXXFLAGS2)
 
 # d'b
 #debug: create_dirs zerovm zvm_api tests
 debug: create_dirs zerovm tests
 
-OBJS=obj/elf_util.o obj/gio_mem.o obj/gio_mem_snapshot.o obj/manifest_parser.o obj/manifest_setup.o obj/mount_channel.o obj/nacl_dep_qualify.o obj/nacl_exit.o obj/zlog.o obj/nacl_os_qualify.o obj/nacl_signal_64.o obj/nacl_signal_common.o obj/nacl_signal.o obj/nacl_switch_64.o obj/nacl_switch_to_app_64.o obj/nacl_syscall_64.o obj/nacl_syscall_handlers.o obj/nacl_syscall_hook.o obj/prefetch.o obj/name_service.o obj/preload.o obj/sel_addrspace.o obj/sel_addrspace_posix_x86_64.o obj/sel_addrspace_x86_64.o obj/sel_ldr.o obj/sel_ldr_standard.o obj/sel_ldr_x86_64.o obj/sel_memory.o obj/sel_qualify.o obj/sel_rt_64.o obj/sel_segments.o obj/tramp_64.o obj/trap.o obj/etag.o obj/accounting.o
+OBJS=obj/elf_util.o obj/gio_mem.o obj/gio_mem_snapshot.o obj/manifest_parser.o obj/manifest_setup.o obj/mount_channel.o obj/nacl_dep_qualify.o obj/nacl_exit.o obj/zlog.o obj/nacl_os_qualify.o obj/nacl_signal_64.o obj/nacl_signal_common.o obj/nacl_signal.o obj/nacl_switch_64.o obj/nacl_switch_to_app_64.o obj/nacl_syscall_64.o obj/nacl_syscall_hook.o obj/prefetch.o obj/name_service.o obj/preload.o obj/sel_addrspace.o obj/sel_addrspace_posix_x86_64.o obj/sel_addrspace_x86_64.o obj/sel_ldr.o obj/sel_ldr_standard.o obj/sel_ldr_x86_64.o obj/sel_memory.o obj/sel_qualify.o obj/sel_rt_64.o obj/sel_segments.o obj/tramp_64.o obj/trap.o obj/etag.o obj/accounting.o
 CC=@gcc
 CXX=@g++
 
@@ -128,9 +127,6 @@ obj/elf_util.o: src/loader/elf_util.c
 	$(CC) $(CCFLAGS1) -o $@ $^
 
 obj/nacl_signal_common.o: src/platform/nacl_signal_common.c
-	$(CC) $(CCFLAGS1) -o $@ $^
-
-obj/nacl_syscall_handlers.o: src/syscalls/nacl_syscall_handlers.c
 	$(CC) $(CCFLAGS1) -o $@ $^
 
 obj/nacl_syscall_hook.o: src/syscalls/nacl_syscall_hook.c

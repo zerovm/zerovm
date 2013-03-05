@@ -33,7 +33,6 @@
 #include "src/main/manifest_setup.h"
 #include "src/platform/sel_qualify.h"
 #include "src/main/accounting.h"
-#include "src/syscalls/nacl_syscall_handlers.h"
 #include "src/platform/nacl_macros.h"
 #include "src/channels/preload.h" /* for PreloadAllocationDisable() */
 
@@ -180,7 +179,6 @@ int main(int argc, char **argv)
 
   ParseCommandLine(nap, argc, argv);
   NaClSignalHandlerInit();
-  NaClSyscallTableInit();
 
   /* initialize mem_map and set nap fields to default values */
   ZLOGFAIL(NaClAppCtor(nap) == 0, EFAULT, "Error while constructing app state");

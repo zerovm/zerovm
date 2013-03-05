@@ -24,11 +24,10 @@
  */
 #include <errno.h>
 #include "src/syscalls/nacl_switch_to_app.h"
-#include "src/syscalls/nacl_syscall_handlers.h"
-#include "src/syscalls/nacl_syscalls.h"
 #include "src/main/nacl_globals.h"
 #include "src/loader/sel_rt_64.h"
 #include "src/main/manifest_setup.h"
+#include "src/syscalls/trap.h"
 
 /*
  * d'b: make syscall invoked from the untrusted code
@@ -72,36 +71,14 @@ NORETURN void NaClSyscallCSegHook()
   sp_user += NACL_SYSCALLRET_FIX;
   NaClSetThreadCtxSp(user, sp_user);
 
-  /* debug print to log */
-  ZLOGS(LOG_INSANE, "system call number %ld", sysnum);
+  /* fail if nacl syscall received */
+  ZLOGFAIL(sysnum != 0, EINVAL, "nacl syscalls not supported (#%d received)", sysnum);
 
   /*
-   * todo(d'b): preparation for the nacl syscalls removal. remove
-   * "ifdef" after it will be done
+   * syscall_args must point to the first argument of a system call.
+   * System call arguments are placed on the untrusted user stack.
    */
-#ifdef DISABLE_NACL_SYSCALLS
-  ZLOGIF(sysnum != 0, "nacl syscall %d received", sysnum);
-#endif
-
-  if(sysnum >= NACL_MAX_SYSCALLS)
-  {
-    ZLOG(LOG_ERROR, "INVALID system call %ld", sysnum);
-    nap->sysret = -EINVAL;
-  }
-  else
-  {
-    /*
-     * syscall_args is used by Decoder functions in
-     * nacl_syscall_handlers.c which is automatically generated file
-     * and placed in the
-     * scons-out/.../gen/src/service_runtime/
-     * directory.  syscall_args must point to the first argument of a
-     * system call. System call arguments are placed on the untrusted
-     * user stack.
-     */
-    nap->syscall_args = (uintptr_t *)sp_sys;
-    nap->sysret = (*(nap->syscall_table[sysnum].handler))(nap);
-  }
+  nap->sysret = TrapHandler(nap, *(uint32_t*)sp_sys);
 
   /*
    * before switching back to user module, we need to make sure that the

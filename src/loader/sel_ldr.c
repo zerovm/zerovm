@@ -27,10 +27,8 @@
 #include "src/loader/sel_ldr.h"
 #include "src/loader/sel_ldr_x86.h"
 #include "src/main/nacl_globals.h"
-#include "src/syscalls/nacl_syscall_handlers.h"
 
-int NaClAppWithSyscallTableCtor(struct NaClApp               *nap,
-                                struct NaClSyscallTableEntry *table)
+int NaClAppCtor(struct NaClApp *nap)
 {
   nap->addr_bits = NACL_MAX_ADDR_BITS;
   nap->stack_size = NACL_DEFAULT_STACK_MAX;
@@ -59,14 +57,7 @@ int NaClAppWithSyscallTableCtor(struct NaClApp               *nap,
   nap->dynamic_mapcache_size = 0;
   nap->dynamic_mapcache_ret = 0;
 
-  nap->syscall_table = table;
-  nap->sys_tls = 0; /* d'b: available for user */
-
   return 1;
-}
-
-int NaClAppCtor(struct NaClApp *nap) {
-  return NaClAppWithSyscallTableCtor(nap, nacl_syscall);
 }
 
 /*

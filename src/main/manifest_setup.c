@@ -24,7 +24,6 @@
 #include <glib.h>
 #include "src/loader/sel_ldr.h"
 #include "src/main/etag.h"
-#include "src/syscalls/nacl_syscall_handlers.h"
 #include "src/platform/sel_memory.h"
 #include "src/main/manifest_parser.h"
 #include "src/main/manifest_setup.h"

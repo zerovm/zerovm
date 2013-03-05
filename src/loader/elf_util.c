@@ -29,7 +29,6 @@
 #include "src/platform/gio.h"
 #include "src/loader/elf_util.h"
 #include "src/platform/sel_memory.h"
-#include "src/syscalls/nacl_syscall_handlers.h"
 
 /* private */
 struct NaClElfImage {

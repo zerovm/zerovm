@@ -315,49 +315,6 @@ static int32_t ZVMWriteHandle(struct NaClApp *nap,
   return retcode;
 }
 
-#ifndef DISABLE_NACL_SYSCALLS
-/*
- * set syscallback
- * returns a new syscallback when successfully installed or
- * returns an old syscallback if installation failed
- * note: global syscallback uses system address space,
- *       nap->system_manifest->syscallback - user space
- */
-static int32_t ZVMSyscallback(struct NaClApp *nap, int32_t addr)
-{
-  int32_t good_pos = 0;
-
-  assert(nap != NULL);
-  assert(nap->system_manifest != NULL);
-
-  ZLOGS(LOG_DEBUG, "address==0x%x", addr);
-
-  /* uninstall syscallback if 0 given */
-  if(addr == 0)
-  {
-    syscallback = 0; /* global variable */
-    nap->system_manifest->syscallback = 0;
-    return 0;
-  }
-
-  /* check alignement */
-  if(addr & (OP_ALIGNEMENT - 1))
-    return nap->system_manifest->syscallback;
-
-  /* check if syscallback points to text */
-  good_pos |= addr >= NACL_TRAMPOLINE_END && addr < nap->static_text_end;
-  good_pos |= addr >= nap->dynamic_text_start && addr < nap->dynamic_text_end;
-
-  if(good_pos)
-  {
-    nap->system_manifest->syscallback = addr;
-    syscallback = NaClUserToSys(nap, (intptr_t) addr);
-  }
-
-  return nap->system_manifest->syscallback;
-}
-#endif
-
 /* this function debug only. return function name by id */
 static const char *FunctionNameById(int id)
 {
@@ -365,9 +322,6 @@ static const char *FunctionNameById(int id)
   {
     case TrapRead: return "TrapRead";
     case TrapWrite: return "TrapWrite";
-#ifndef DISABLE_NACL_SYSCALLS
-    case TrapSyscallback: return "TrapSyscallback";
-#endif
     case TrapExit: return "TrapExit";
   }
   return "not supported";
@@ -407,11 +361,6 @@ int32_t TrapHandler(struct NaClApp *nap, uint32_t args)
       retcode = ZVMWriteHandle(nap,
           (int)sys_args[2], (char*)sys_args[3], (int32_t)sys_args[4], sys_args[5]);
       break;
-#ifndef DISABLE_NACL_SYSCALLS
-    case TrapSyscallback:
-      retcode = ZVMSyscallback(nap, (int32_t)sys_args[2]);
-      break;
-#endif
     default:
       retcode = -EPERM;
       ZLOG(LOG_ERROR, "function %ld is not supported", *sys_args);
