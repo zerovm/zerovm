@@ -46,17 +46,6 @@ int NaClAppCtor(struct NaClApp *nap)
 
   memset(nap->mem_map, 0, sizeof nap->mem_map);
 
-  nap->text_shm = NULL;
-  nap->dynamic_page_bitmap = NULL;
-
-  nap->dynamic_regions = NULL;
-  nap->num_dynamic_regions = 0;
-  nap->dynamic_regions_allocated = 0;
-
-  nap->dynamic_mapcache_offset = 0;
-  nap->dynamic_mapcache_size = 0;
-  nap->dynamic_mapcache_ret = 0;
-
   return 1;
 }
 

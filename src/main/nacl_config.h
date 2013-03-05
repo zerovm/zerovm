@@ -132,7 +132,6 @@
  * 3.2.2 discusses stack alignment.
  */
 #define NACL_STACK_ALIGN_MASK   (0xf)
-#define NACL_STACK_GETS_ARG     (0)
 #define NACL_STACK_PAD_BELOW_ALIGN (8)
 
 /* d'b: macro definitions for the user space allocation */

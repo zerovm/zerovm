@@ -97,26 +97,11 @@ void NaClFillEndOfTextRegion(struct NaClApp *nap) {
       + NACL_HALT_SLED_SIZE > nap->rodata_start, EFAULT,
       "Missing gap between text and rodata for halt_sled");
 
-  if(NULL == nap->text_shm)
-  {
-    /* No dynamic text exists.  Space for NACL_HALT_SLED_SIZE must exist */
-    page_pad = NaClRoundAllocPage(nap->static_text_end + NACL_HALT_SLED_SIZE)
-        - nap->static_text_end;
-    ZLOGFAIL(page_pad < NACL_HALT_SLED_SIZE, EFAULT, FAILED_MSG);
-    ZLOGFAIL(page_pad >= NACL_MAP_PAGESIZE + NACL_HALT_SLED_SIZE, EFAULT, FAILED_MSG);
-  }
-  else
-  {
-    /*
-     * Dynamic text exists; the halt sled resides in the dynamic text
-     * region, so all we need to do here is to round out the last
-     * static text page with HLT instructions.  It doesn't matter if
-     * the size of this region is smaller than NACL_HALT_SLED_SIZE --
-     * this is just to fully initialize the page, rather than (later)
-     * decoding/validating zero-filled memory as instructions.
-     */
-    page_pad = NaClRoundAllocPage(nap->static_text_end) - nap->static_text_end;
-  }
+  /* No dynamic text exists.  Space for NACL_HALT_SLED_SIZE must exist */
+  page_pad = NaClRoundAllocPage(nap->static_text_end + NACL_HALT_SLED_SIZE)
+      - nap->static_text_end;
+  ZLOGFAIL(page_pad < NACL_HALT_SLED_SIZE, EFAULT, FAILED_MSG);
+  ZLOGFAIL(page_pad >= NACL_MAP_PAGESIZE + NACL_HALT_SLED_SIZE, EFAULT, FAILED_MSG);
 
   ZLOGS(LOG_DEBUG, "Filling with halts: %08lx, %08lx bytes",
           nap->mem_start + nap->static_text_end, page_pad);
@@ -411,8 +396,7 @@ int NaClCreateMainThread(struct NaClApp *nap)
   if(0 != nap->user_entry_pt)
     auxv_entries++;
 
-  ptr_tbl_size = (sizeof(uint32_t) *
-      ((NACL_STACK_GETS_ARG ? 1 : 0) + (3 + argc + 1 + envc + 1 + auxv_entries * 2)));
+  ptr_tbl_size = (sizeof(uint32_t) * ((3 + argc + 1 + envc + 1 + auxv_entries * 2)));
 
   if(SIZE_T_MAX - size < ptr_tbl_size)
   {
@@ -441,16 +425,6 @@ int NaClCreateMainThread(struct NaClApp *nap)
 
   p = (uint32_t *) stack_ptr;
   strp = (char *) stack_ptr + ptr_tbl_size;
-
-  /*
-   * For x86-32, we push an initial argument that is the address of
-   * the main argument block.  For other machines, this is passed
-   * in a register and that's set in NaClStartThreadInApp.
-   */
-  if (NACL_STACK_GETS_ARG) {
-    uint32_t *argloc = p++;
-    *argloc = (uint32_t) NaClSysToUser(nap, (uintptr_t) p);
-  }
 
   *p++ = 0;  /* Cleanup function pointer, always NULL.  */
   *p++ = envc;

@@ -96,8 +96,6 @@ struct MemBlock {
   int                   prot;     /* mprotect attribute */
 };
 
-struct NaClAppThread;
-struct NaClDynamicRegion;
 struct NaClManifestProxy;
 struct NaClSecureService;
 struct NaClSecureReverseService;
@@ -169,40 +167,12 @@ struct NaClApp {
   /*
    * bundle_size is the bundle alignment boundary for validation (16
    * or 32), so int is okay.  This value must be a power of 2.
+   * todo(d'b): can be replaced with define. only need for NaClSandboxCodeAddr
    */
-  int                       bundle_size; /* d'b: can be replaced with define.
-                                            only need for NaClSandboxCodeAddr */
+  int                       bundle_size;
 
   /* user memory map */
   struct MemBlock           mem_map[MemMapSize];
-
-  /*
-   * may reject nexes that are incompatible w/ dynamic-text in the near future
-   */
-  struct NaClDesc           *text_shm;
-  /*
-   * This records which pages in text_shm have been allocated.  When a
-   * page is allocated, it is filled with halt instructions and then
-   * made executable by untrusted code.
-   */
-  uint8_t                   *dynamic_page_bitmap;
-
-  /*
-   * The array of dynamic_regions is maintained in sorted order
-   * Accesses must be protected by dynamic_load_mutex
-   */
-  struct NaClDynamicRegion  *dynamic_regions;
-  int                       num_dynamic_regions;
-  int                       dynamic_regions_allocated;
-
-  /*
-   * These variables are used for caching mapped writable views of the
-   * dynamic text segment.  See CachedMapWritableText in nacl_text.c.
-   * Accesses must be protected by dynamic_load_mutex
-   */
-  uint32_t                  dynamic_mapcache_offset;
-  uint32_t                  dynamic_mapcache_size;
-  uintptr_t                 dynamic_mapcache_ret;
 
   int                       skip_validator;
 
@@ -231,16 +201,8 @@ struct NaClApp {
 };
 
 /*
- * Initializes a NaCl application with the default parameters
- * and the specified syscall table.
- *
+ * Initializes a NaCl application with the default parameters.
  * nap is a pointer to the NaCl object that is being filled in.
- *
- * table is the NaCl syscall table. The syscall table must contain at least
- * NACL_MAX_SYSCALLS valid entries.
- *
- * Caution! Syscall handlers must be extremely careful with respect to
- * argument validation, including time-of-check vs time-of-use defense, etc.
  */
 int NaClAppCtor(struct NaClApp *nap) NACL_WUR;
 
@@ -256,11 +218,6 @@ int NaClAppCtor(struct NaClApp *nap) NACL_WUR;
  * nap is a pointer to the NaCl object that is being filled in.  it
  * should be properly constructed via NaClAppCtor.
  *
- * return value: one of the LOAD_* values defined in
- * nacl_error_code.h.  TODO: add some error detail string and hang
- * that off the nap object, so that more details are available w/o
- * incrementing verbosity (and polluting stdout).
- *
  * note: it may be necessary to flush the icache if the memory
  * allocated for use had already made it into the icache from another
  * NaCl application instance, and the icache does not detect
@@ -272,37 +229,12 @@ void NaClAppLoadFile(struct Gio *gp, struct NaClApp *nap);
 void  NaClAppPrintDetails(struct NaClApp  *nap,
                           struct Gio      *gp, int verbosity);
 
-int NaClValidateCode(struct NaClApp *nap,
-                     uintptr_t      guest_addr,
-                     uint8_t        *data,
-                     size_t         size) NACL_WUR;
-
-/*
- * Validates that the code found at data_old can safely be replaced with
- * the code found at data_new.
- */
-int NaClValidateCodeReplacement(struct    NaClApp *nap,
-                                uintptr_t guest_addr,
-                                uint8_t   *data_old,
-                                uint8_t   *data_new,
-                                size_t    size);
-
-/*
- * Copies code from data_new to data_old in a thread-safe way
- */
-int NaClCopyCode(struct NaClApp *nap, uintptr_t guest_addr,
-                 uint8_t *data_old, uint8_t *data_new,
-                 size_t size);
-
 int NaClAddrIsValidEntryPt(struct NaClApp *nap,
                            uintptr_t      addr);
 
 /*
- * Used to launch the main thread.  NB: calling thread may in the
- * future become the main NaCl app thread, and this function will
- * return only after the NaCl app main thread exits.  In such an
- * alternative design, NaClWaitForMainThreadToExit will become a
- * no-op.
+ * Used to launch user session. it is the same zerovm process
+ * but sandboxed
  */
 int NaClCreateMainThread(struct NaClApp     *nap) NACL_WUR;
 

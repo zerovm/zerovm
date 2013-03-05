@@ -32,7 +32,6 @@
 EXTERN_C_BEGIN
 
 struct NaClThreadContext;
-struct NaClAppThread;
 struct NaClApp;
 
 /* d'b: added global variables */

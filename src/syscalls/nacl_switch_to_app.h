@@ -32,24 +32,13 @@
 
 EXTERN_C_BEGIN
 
-struct NaClAppThread;
-
-struct NaclThreadContext;
-
 void NaClInitSwitchToApp(struct NaClApp *nap);
 
 extern NORETURN void NaClSwitchAVX(struct NaClThreadContext *context);
 extern NORETURN void NaClSwitchSSE(struct NaClThreadContext *context);
 extern NORETURN void NaClSwitchNoSSE(struct NaClThreadContext *context);
 
-NORETURN void NaClStartThreadInApp(struct NaClAppThread *natp,
-                                   nacl_reg_t           new_prog_ctr);
-
 NORETURN void NaClSwitchToApp(struct NaClApp *nap, nacl_reg_t new_prog_ctr);
-
-/* switch to the nacl module (untrusted content) after signal */
-NORETURN void NaClSwitchToAppAfterSignal(struct NaClApp *nap);
-
 
 EXTERN_C_END
 

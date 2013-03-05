@@ -140,7 +140,7 @@ void NaClMemoryProtection(struct NaClApp *nap)
   region_size = nap->dynamic_text_end - nap->dynamic_text_start;
   ZLOGS(LOG_DEBUG, "shm txt region start 0x%08x, size 0x%08x, end 0x%08x",
       start_addr, region_size, start_addr + region_size);
-  ZLOGFAIL(0 != region_size, EFAULT, "zerovm does not support nexe with dynamic text!");
+  ZLOGFAIL(0 != region_size, ENOEXEC, "zerovm does not support dynamic text");
 
   if(0 != nap->rodata_start)
   {
