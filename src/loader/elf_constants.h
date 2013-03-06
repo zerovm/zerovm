@@ -69,24 +69,8 @@ EXTERN_C_BEGIN
 #define ET_EXEC         2   /* executable file */
 #define ET_DYN          3   /* shared object file */
 #define ET_CORE         4   /* core file */
-/* TODO(karl) figure out effect of adding ET_LOOS through ET_HIOS */
-#define ET_LOOS    0xfe00   /* Environment-specific */
-#define ET_HIOS    0xfeff   /* Environment-specific */
-#define ET_LOPROC  0xff00   /* processor-specific */
-#define ET_HIPROC  0xffff   /* processor-specific */
 
-#define EM_NONE         0   /* no machine */
-#define EM_M32          1   /* at&t we 32100 */
-#define EM_SPARC        2   /* sparc */
-#define EM_386          3   /* intel architecture */
-#define EM_68K          4   /* motorola 68000 */
-#define EM_88K          5   /* motorola 88000 */
-#define EM_860          7   /* intel 80860 */
-#define EM_MIPS         9   /* mips rs3000 big-endian */
-#define EM_MIPS_RS4_BE  10  /* mips rs4000 big-endian */
-#define EM_LORESERVED   11
-#define EM_HIRESERVED   16
-#define EM_ARM          40  /* arm */
+/* all platforms (but x86_64) removed */
 #define EM_X86_64       62  /* x86-64 */
 
 #define EM_EXPECTED_BY_NACL EM_X86_64
@@ -101,16 +85,6 @@ EXTERN_C_BEGIN
 #define EI_CLASS        4   /* file class */
 #define EI_DATA         5   /* data encoding */
 #define EI_VERSION      6   /* file version */
-/*
- * EI_PAD deviates from the pdf specification, where its value is 7, since
- * EI_OSABI and EI_ABIVERSION have been introduced.  EI_OSABI and
- * EI_OSABIVERSION are from linux elf.h for code usage compatibility.
- * Also, for Elf 64, the value for EI_PAD is also 9.
- */
-#define EI_PAD          9   /* start of padding bytes */
-
-#define EI_OSABI        7
-#define EI_ABIVERSION   8
 
 /*
  * ELFMAG and SELFMAG are names/values from linux elf.h, for code usage
@@ -149,14 +123,9 @@ EXTERN_C_BEGIN
 #define PT_GNU_EH_FRAME 0x6474e550      /* GCC .eh_frame_hdr segment */
 #define PT_GNU_RELRO    0x6474e552      /* Read-only after relocation */
 
-
 #define PF_X          1
 #define PF_W          2
 #define PF_R          4
-/*
- * PF_MASKOS is from linux elf.h, for code usage compatibility
- */
-#define PF_MASKOS     0x0ff00000  /* os specific */
 
 #define SHF_WRITE       0x1         /* Has writable data */
 #define SHF_ALLOC       0x2         /* Allocated in memory image of program */

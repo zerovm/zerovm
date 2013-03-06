@@ -23,12 +23,13 @@
 #include "src/platform/sel_qualify.h"
 #include "src/main/zlog.h"
 #include "src/platform/nacl_dep_qualify.h"
-#include "src/platform/nacl_os_qualify.h"
 
 void NaClRunSelQualificationTests()
 {
-  /* fail if Operating system platform is not supported */
-  ZLOGFAIL(!NaClOsIsSupported(), EFAULT, "os not supported");
+  /*
+   * update: NaClOsIsSupported() removed since zerovm doesn't
+   * need shared memory support it always true
+   */
 
   /* fail if Data Execution Prevention is required but is not supported */
   ZLOGFAIL(!NaClCheckDEP(), EFAULT, "dep not supported");

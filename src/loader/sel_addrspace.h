@@ -35,25 +35,4 @@ void NaClAllocAddrSpace(struct NaClApp *nap);
  */
 void NaClMemoryProtection(struct NaClApp *nap);
 
-/*
- * Platform-specific routine to allocate memory space for the NaCl
- * module.  mem is an out argument; addrsp_size is the requested
- * address space size, currently always ((size_t) 1) <<
- * nap->addr_bits.  On x86-64, there's a further requirement that this
- * is 4G.
- *
- * The actual amount of memory allocated is larger than requested on
- * x86-64 and on the ARM, since guard pages are also allocated to be
- * contiguous with the allocated address space.
- *
- * If successful, the guard pages are not yet memory protected.  The
- * function NaClMprotectGuards must be called for the guard pages to
- * be active.
- *
- * update: abort zvm if failed
- */
-void NaClAllocateSpace(void **mem, size_t addrsp_size);
-
-/* protect bumpers (guarding space) */
-void NaClMprotectGuards(struct NaClApp *nap);
 #endif

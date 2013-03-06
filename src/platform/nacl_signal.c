@@ -45,17 +45,23 @@
 #define SIGNAL_STACK_SIZE (SIGSTKSZ + 4096)
 #define STACK_GUARD_SIZE NACL_PAGESIZE
 
-#ifdef SIGSTKFLT
-#define SIGNAL_COUNT 10
-static int s_Signals[SIGNAL_COUNT] = {
-  SIGINT, SIGQUIT, SIGILL, SIGTRAP, SIGBUS, SIGFPE, SIGSEGV, SIGSTKFLT, SIGXFSZ, SIGXCPU
+#define SIGNAL_COUNT (sizeof s_Signals / sizeof *s_Signals)
+static int s_Signals[] = {
+  SIGINT, SIGQUIT, SIGILL, SIGTRAP, SIGBUS, SIGFPE,
+  SIGSEGV, SIGSTKFLT, SIGABRT, SIGXFSZ, SIGXCPU,
+  /* in the future SIGHUP will be used to restart session */
+  SIGHUP,
+  /*
+   * for sake of determinism zvm makes all possible to prevent any
+   * i/o errors
+   */
+  SIGPIPE,
+  /* reserved for the future */
+  SIGALRM,
+  SIGTERM,
+  /* reserved for the snapshot engine */
+  SIGPWR
 };
-#else
-#define SIGNAL_COUNT 9
-static int s_Signals[SIGNAL_COUNT] = {
-  SIGINT, SIGQUIT, SIGILL, SIGTRAP, SIGBUS, SIGFPE, SIGSEGV, SIGXFSZ, SIGXCPU
-};
-#endif
 
 static struct sigaction s_OldActions[SIGNAL_COUNT];
 
@@ -168,7 +174,7 @@ void NaClSignalHandlerInitPlatform()
   memset(&sa, 0, sizeof(sa));
   sigemptyset(&sa.sa_mask);
   sa.sa_sigaction = SignalCatch;
-  sa.sa_flags = SA_ONSTACK | SA_SIGINFO ;
+  sa.sa_flags = SA_ONSTACK | SA_SIGINFO;
 
   /* Mask all exceptions we catch to prevent re-entry */
   for(i = 0; i < SIGNAL_COUNT; i++)
@@ -176,7 +182,7 @@ void NaClSignalHandlerInitPlatform()
 
   /* Install all handlers */
   for(i = 0; i < SIGNAL_COUNT; i++)
-    ZLOGFAIL(-1 == sigaction(s_Signals[i], &sa, &s_OldActions[i]),
+    ZLOGFAIL(0 != sigaction(s_Signals[i], &sa, &s_OldActions[i]),
         errno, "Failed to install handler for %d", s_Signals[i]);
 }
 
@@ -186,7 +192,7 @@ void NaClSignalHandlerFiniPlatform()
 
   /* Remove all handlers */
   for(i = 0; i < SIGNAL_COUNT; i++)
-    ZLOGFAIL(-1 == sigaction(s_Signals[i], &s_OldActions[i], NULL),
+    ZLOGFAIL(0 != sigaction(s_Signals[i], &s_OldActions[i], NULL),
         errno, "Failed to unregister handler for %d", s_Signals[i]);
 
   /* release signal stack */

@@ -22,22 +22,16 @@
 /*
  * NaCl Simple/secure ELF loader (NaCl SEL).
  *
- * This loader can only process NaCl object files as produced using
- * the NaCl toolchain.  Other ELF files will be rejected.
+ * notice: "NaCl" is here by historical reasons. in fact zvm only can
+ * use binaries built with ZeroVM toolchain (former NaCl toolchain)
+ *
+ * This loader can only process ZeroVM object files as produced using
+ * the ZeroVM toolchain.  Other ELF files will be rejected.
  *
  * The primary function, NaClAppLoadFile, parses an ELF file,
  * allocates memory, loads the relocatable image from the ELF file
  * into memory, and performs relocation.  NaClAppRun runs the
  * resultant program.
- *
- * This loader is written in C so that it can be used by C-only as
- * well as C++ applications.  Other languages should also be able to
- * use their foreign-function interfaces to invoke C code.
- *
- * This loader must be part of the NaCl TCB, since it directly handles
- * externally supplied input (the ELF file).  Any security
- * vulnerabilities in handling the ELF image, e.g., buffer or integer
- * overflows, can put the application at risk.
  */
 
 #ifndef NATIVE_CLIENT_SRC_TRUSTED_SERVICE_RUNTIME_SEL_LDR_H_

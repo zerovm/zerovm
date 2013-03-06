@@ -33,8 +33,6 @@
 #include "src/loader/sel_addrspace.h"
 #include "src/main/manifest_setup.h"
 #include "src/main/nacl_globals.h"
-#include "src/platform/nacl_signal.h"
-#include "src/syscalls/nacl_switch_to_app.h"
 #include "src/main/zlog.h"
 #include "src/main/nacl_config.h"
 

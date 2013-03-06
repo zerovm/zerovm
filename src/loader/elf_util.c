@@ -298,8 +298,7 @@ struct NaClElfImage *NaClElfImageNew(struct Gio *gp)
   /*
    * NB: cast from e_phoff to off_t may not be valid, since off_t can be
    * smaller than Elf64_off, but since invalid values will be rejected
-   * by Seek() the cast is safe (cf bsy)
-   * d'b: fail if cannot seek tp prog headers
+   * by Seek() the cast is safe (cf bsy). fail if cannot seek tp prog headers
    */
   ZLOGFAIL((*gp->vtbl->Seek)(gp, (off_t)image.ehdr.e_phoff, SEEK_SET) == (off_t)-1,
       EIO, FAILED_MSG);

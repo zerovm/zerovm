@@ -28,6 +28,132 @@
 #include "src/loader/sel_ldr.h"
 #include "src/platform/sel_memory.h"
 
+/* protect bumpers (guarding space) */
+static void NaClMprotectGuards(struct NaClApp *nap)
+{
+  int err;
+
+  ZLOGS(LOG_DEBUG, "protecting bumpers");
+
+  /*
+   * make bumpers (guard pages) with "inaccessible" protection. the "left"
+   * bumper size is 40gb + 64kb, the "right" one - 40gb
+   */
+  err = NaCl_mprotect((void *)(nap->mem_start - GUARDSIZE),
+      GUARDSIZE + NACL_SYSCALL_START_ADDR, PROT_NONE);
+  ZLOGFAIL(err != 0, err, FAILED_MSG);
+  err = NaCl_mprotect((void *)(nap->mem_start + FOURGIG), GUARDSIZE, PROT_NONE);
+  ZLOGFAIL(err != 0, err, FAILED_MSG);
+
+  /* put information to the memory map */
+  SET_MEM_MAP_IDX(nap->mem_map[LeftBumperIdx], "LeftBumper",
+      nap->mem_start - GUARDSIZE, GUARDSIZE + NACL_SYSCALL_START_ADDR, PROT_NONE);
+  SET_MEM_MAP_IDX(nap->mem_map[RightBumperIdx], "RightBumper",
+      nap->mem_start + FOURGIG, GUARDSIZE, PROT_NONE);
+}
+
+/*
+ * NaClAllocatePow2AlignedMemory is for allocating a large amount of
+ * memory of mem_sz bytes that must be address aligned, so that
+ * log_alignment low-order address bits must be zero.
+ *
+ * Returns the aligned region on success, or NULL on failure.
+ */
+static void *NaClAllocatePow2AlignedMemory(size_t mem_sz, size_t log_alignment)
+{
+  uintptr_t pow2align;
+  size_t request_sz;
+  void *mem_ptr;
+  uintptr_t orig_addr;
+  uintptr_t rounded_addr;
+  size_t extra;
+
+  pow2align = ((uintptr_t)1) << log_alignment;
+  request_sz = mem_sz + pow2align;
+  ZLOGS(LOG_INSANE, "%25s %016lx", " Ask:", request_sz);
+
+  /* d'b: try to get the fixed address r15 (user base register) */
+  /*
+   * WARNING: mmap can overwrite the zerovm dynamically linked code.
+   * to prevent it the code should be linked statically
+   */
+  mem_ptr = mmap(R15_CONST, request_sz, PROT_NONE, ABSOLUTE_MMAP, -1, (off_t)0);
+  if(MAP_FAILED == mem_ptr)
+  {
+    ZLOG(LOG_ERROR, "the base register absolute address allocation failed!"
+        " trying to allocate user space in NOT DETERMINISTIC WAY");
+    mem_ptr = mmap(NULL, request_sz, PROT_NONE, RELATIVE_MMAP, -1, (off_t)0);
+    ZLOGFAIL(MAP_FAILED == mem_ptr, ENOMEM, FAILED_MSG);
+  }
+
+  orig_addr = (uintptr_t)mem_ptr;
+  ZLOGS(LOG_INSANE, "%25s %016lx", "orig memory at", orig_addr);
+
+  rounded_addr = (orig_addr + (pow2align - 1)) & ~(pow2align - 1);
+  extra = rounded_addr - orig_addr;
+  if(0 != extra)
+  {
+    ZLOGS(LOG_INSANE, "%25s %016lx, %016lx", "Freeing front:", orig_addr, extra);
+    ZLOGFAIL(-1 == munmap((void *)orig_addr, extra), errno, "munmap front failed");
+  }
+
+  extra = pow2align - extra;
+  if(0 != extra)
+  {
+    ZLOGS(LOG_INSANE, "%25s %016lx, %016lx", "Freeing tail:", rounded_addr + mem_sz, extra);
+    ZLOGFAIL(-1 == munmap((void *)(rounded_addr + mem_sz), extra), errno, "munmap tail failed");
+  }
+
+  ZLOGS(LOG_INSANE, "%25s %016lx", "Aligned memory:", rounded_addr);
+
+  /*
+   * we could also mmap again at rounded_addr w/o MAP_NORESERVE etc to
+   * ensure that we have the memory, but that's better done in another
+   * utility function.  the semantics here is no paging space
+   * reserved, as in Windows MEM_RESERVE without MEM_COMMIT.
+   */
+
+  return (void *)rounded_addr;
+}
+
+/*
+ * Platform-specific routine to allocate memory space for the NaCl
+ * module.  mem is an out argument; addrsp_size is the requested
+ * address space size, currently always ((size_t) 1) <<
+ * nap->addr_bits.  On x86-64, there's a further requirement that this
+ * is 4G.
+ *
+ * The actual amount of memory allocated is larger than requested on
+ * x86-64 and on the ARM, since guard pages are also allocated to be
+ * contiguous with the allocated address space.
+ *
+ * If successful, the guard pages are not yet memory protected.  The
+ * function NaClMprotectGuards must be called for the guard pages to
+ * be active.
+ *
+ * update: abort zvm if failed
+ */
+static void NaClAllocateSpace(void **mem, size_t addrsp_size)
+{
+  size_t mem_sz = 2 * GUARDSIZE + FOURGIG; /* 40G guard on each side */
+  size_t log_align = ALIGN_BITS;
+  void *mem_ptr;
+
+  ZLOGS(LOG_INSANE, "NaClAllocateSpace(*, 0x%016lx bytes)", addrsp_size);
+  ZLOGFAIL(addrsp_size != FOURGIG, EFAULT, "addrsp_size != FOURGIG");
+
+  errno = 0;
+  mem_ptr = NaClAllocatePow2AlignedMemory(mem_sz, log_align);
+  ZLOGFAIL(NULL == mem_ptr, errno, "NaClAllocatePow2AlignedMemory failed");
+
+  /*
+   * The module lives in the middle FOURGIG of the allocated region --
+   * we skip over an initial 40G guard.
+   */
+  *mem = (void *)(((char *)mem_ptr) + GUARDSIZE);
+  ZLOGS(LOG_INSANE, "addr space at 0x%016lx", (uintptr_t)*mem);
+}
+
 void NaClAllocAddrSpace(struct NaClApp *nap)
 {
   void        *mem;
