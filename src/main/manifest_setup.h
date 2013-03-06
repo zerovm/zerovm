@@ -26,7 +26,7 @@ EXTERN_C_BEGIN
 #include "stdio.h"
 
 #define HELP_SCREEN /* update command line switches here */\
-    "\033[4m\033[1mZeroVM\033[0m lightweight VM manager, build 2013-03-06\n"\
+    "\033[1m\033[37mZeroVM\033[0m lightweight VM manager, build 2013-03-06\n"\
     "Usage: <manifest_file> [-v#] [-l#] [-PFSseQ]\n\n"\
     " <manifest_file> load settings from manifest\n"\
     " -e enable the data oversight (etag)\n"\

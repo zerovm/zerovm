@@ -36,6 +36,12 @@
 #include "src/platform/nacl_macros.h"
 #include "src/channels/preload.h" /* for PreloadAllocationDisable() */
 
+#define BADCMDLINE(msg) \
+  do { \
+    printf("\033[1m\033[31m%s%s%s\033[0m", msg == NULL ? "" : msg, \
+      msg == NULL ? "" : "\n", HELP_SCREEN); exit(EINVAL); \
+  } while(0)
+
 /* log zerovm command line */
 static void ZVMCommandLine(int argc, char **argv)
 {
@@ -71,6 +77,8 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
     {
       case 1:
       case 'M':
+        if(manifest_name != NULL)
+          BADCMDLINE("2nd manifest encountered");
         manifest_name = optarg;
         break;
       case 's':
@@ -92,8 +100,8 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
       case 'l':
         /* calculate hard limit in Gb and don't allow it less then "big enough" */
         nap->storage_limit = ATOI(optarg) * ZEROVM_IO_LIMIT_UNIT;
-        ZLOGFAIL(nap->storage_limit < ZEROVM_IO_LIMIT_UNIT, EFAULT,
-            "invalid storage limit: %d", nap->storage_limit);
+        if(nap->storage_limit < ZEROVM_IO_LIMIT_UNIT)
+          BADCMDLINE("invalid storage limit");
         break;
       case 'v':
         ZLogDtor();
@@ -107,9 +115,7 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
         PreloadAllocationDisable();
         break;
       default:
-        ZLOGS(LOG_ERROR, "ERROR: unknown option: [%c]", opt);
-        puts(HELP_SCREEN);
-        exit(EINVAL);
+        BADCMDLINE(NULL);
         break;
     }
   }
@@ -117,12 +123,10 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
   /* show zerovm command line */
   ZVMCommandLine(argc, argv);
 
-  /* parse manifest file specified in cmdline */
-  if(manifest_name == NULL)
-  {
-    puts(HELP_SCREEN);
-    exit(EINVAL);
-  }
+  /* last chance to find command line errors */
+  if(manifest_name == NULL) BADCMDLINE(NULL);
+
+  /* parse manifest file specified in command line */
   ZLOGFAIL(ManifestCtor(manifest_name), EFAULT, "Invalid manifest '%s'", manifest_name);
 
   /* set available nap and manifest fields */
