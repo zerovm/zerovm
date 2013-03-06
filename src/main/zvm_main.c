@@ -65,16 +65,17 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
   /* construct zlog with default verbosity */
   ZLogCtor(LOG_ERROR);
 
-  while((opt = getopt(argc, argv, "+PFeQsSv:M:l:")) != -1)
+  while((opt = getopt(argc, argv, "-PFeQsSv:M:l:")) != -1)
   {
     switch(opt)
     {
+      case 1:
       case 'M':
         manifest_name = optarg;
         break;
       case 's':
         nap->skip_validator = 1;
-        ZLOG(LOG_ERROR, "validation disabled by -s");
+        ZLOG(LOG_ERROR, "VALIDATION DISABLED by -s");
         break;
       case 'F':
         nap->quit_after_load = 1;
@@ -86,6 +87,7 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
       case 'S':
         /* d'b: disable signals handling */
         nap->handle_signals = 0;
+        ZLOG(LOG_ERROR, "SIGNAL HANDLING DISABLED by -S");
         break;
       case 'l':
         /* calculate hard limit in Gb and don't allow it less then "big enough" */
@@ -99,8 +101,7 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
         break;
       case 'Q':
         nap->skip_qualification = 1;
-        ZLOGS(LOG_ERROR, "PLATFORM QUALIFICATION DISABLED BY -Q - "
-            "Native Client's sandbox will be unreliable!");
+        ZLOGS(LOG_ERROR, "PLATFORM QUALIFICATION DISABLED by -Q");
         break;
       case 'P':
         PreloadAllocationDisable();

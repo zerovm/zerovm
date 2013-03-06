@@ -1,3 +1,17 @@
 This document will be updated as soon as gdb could be used for nexe debugging.
 
 For now user can debug NaCl application by using log (in available in manifest)
+
+update:
+it is possible now to use gdb from the gnu toolchain with script:
+
+set confirm off
+b NaClCreateMainThread
+r
+c
+b main
+add-symbol-file <module name> 0x440a00020000
+c
+
+where <module name> the file name of the user program compiled with zerovm toolchain
+note: the module must have debug information (can be turned of with the -g compile option)
