@@ -164,7 +164,13 @@ static void ValidateNexe(struct NaClApp *nap)
 
   /* prepare command line and run it */
   args[1] = nap->system_manifest->nexe;
-  ZLOGFAIL(g_spawn_sync(NULL, args, NULL, G_SPAWN_SEARCH_PATH |
+
+  ZLOGFAIL(g_spawn_sync(NULL, args, NULL,
+#ifdef VALIDATOR_NAME
+      (sizeof(VALIDATOR_NAME) < 2 ? G_SPAWN_SEARCH_PATH : 0) |
+#else
+      G_SPAWN_SEARCH_PATH |
+#endif
       G_SPAWN_STDOUT_TO_DEV_NULL | G_SPAWN_STDERR_TO_DEV_NULL, NULL, NULL,
       NULL, NULL, &exit_status, &error) == 0, EPERM, "cannot start validator");
 
