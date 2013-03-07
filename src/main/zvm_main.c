@@ -38,9 +38,13 @@
 
 #define BADCMDLINE(msg) \
   do { \
-    printf("\033[1m\033[31m%s%s%s\033[0m", msg == NULL ? "" : msg, \
+    printf("\033[2m\033[31m%s%s%s\033[0m", msg == NULL ? "" : msg, \
       msg == NULL ? "" : "\n", HELP_SCREEN); exit(EINVAL); \
   } while(0)
+
+static int skip_qualification = 0;
+static int quit_after_load = 0;
+static int skip_validator = 0;
 
 /* log zerovm command line */
 static void ZVMCommandLine(int argc, char **argv)
@@ -62,12 +66,6 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
   int opt;
   char *manifest_name = NULL;
 
-  /* set defaults */
-  nap->skip_qualification = 0;
-  nap->quit_after_load = 0;
-  nap->handle_signals = 1;
-  nap->storage_limit = ZEROVM_IO_LIMIT;
-
   /* construct zlog with default verbosity */
   ZLogCtor(LOG_ERROR);
 
@@ -82,11 +80,11 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
         manifest_name = optarg;
         break;
       case 's':
-        nap->skip_validator = 1;
+        skip_validator = 1;
         ZLOG(LOG_ERROR, "VALIDATION DISABLED by -s");
         break;
       case 'F':
-        nap->quit_after_load = 1;
+        quit_after_load = 1;
         break;
       case 'e':
         TagEngineCtor();
@@ -94,13 +92,12 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
         break;
       case 'S':
         /* d'b: disable signals handling */
-        nap->handle_signals = 0;
+        SetSignalHandling(0);
         ZLOG(LOG_ERROR, "SIGNAL HANDLING DISABLED by -S");
         break;
       case 'l':
         /* calculate hard limit in Gb and don't allow it less then "big enough" */
-        nap->storage_limit = ATOI(optarg) * ZEROVM_IO_LIMIT_UNIT;
-        if(nap->storage_limit < ZEROVM_IO_LIMIT_UNIT)
+        if(SetStorageLimit(ATOI(optarg)) != 0)
           BADCMDLINE("invalid storage limit");
         break;
       case 'v':
@@ -108,7 +105,7 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
         ZLogCtor(ATOI(optarg));
         break;
       case 'Q':
-        nap->skip_qualification = 1;
+        skip_qualification = 1;
         ZLOGS(LOG_ERROR, "PLATFORM QUALIFICATION DISABLED by -Q");
         break;
       case 'P':
@@ -156,7 +153,7 @@ static void ValidateNexe(struct NaClApp *nap)
 
   /* skip validation? */
   nap->validation_state = NotValidated;
-  if(nap->skip_validator != 0) return;
+  if(skip_validator != 0) return;
 
   /* prepare command line and run it */
   args[1] = nap->system_manifest->nexe;
@@ -183,20 +180,14 @@ int main(int argc, char **argv)
   gnap = nap;
 
   ParseCommandLine(nap, argc, argv);
+
+  /* We use the signal handler to verify a signal took place. */
+  if(skip_qualification == 0) NaClRunSelQualificationTests();
+
   NaClSignalHandlerInit();
 
   /* initialize mem_map and set nap fields to default values */
   ZLOGFAIL(NaClAppCtor(nap) == 0, EFAULT, "Error while constructing app state");
-
-  /* We use the signal handler to verify a signal took place. */
-  if(nap->skip_qualification == 0) NaClRunSelQualificationTests();
-
-  /* Remove the signal handler if we are not using it. */
-  if(nap->handle_signals == 0)
-  {
-    NaClSignalHandlerFini();
-    NaClSignalAssertNoHandlers(); /* Sanity check. */
-  }
 
   /* read nexe into memory */
   timer = g_timer_new();
@@ -239,7 +230,7 @@ int main(int argc, char **argv)
   AccountingCtor(nap);
 
   /* quit if fuzz testing specified */
-  if(nap->quit_after_load)
+  if(quit_after_load)
   {
     SetExitState(OK_STATE);
     NaClExit(0);

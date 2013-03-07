@@ -62,7 +62,6 @@ static int s_Signals[] = {
   /* reserved for the snapshot engine */
   SIGPWR
 };
-
 static struct sigaction s_OldActions[SIGNAL_COUNT];
 
 void NaClSignalStackRegister(void *stack) {

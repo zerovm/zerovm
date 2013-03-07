@@ -56,7 +56,7 @@ static void FinalDump(struct NaClApp *nap)
   NaClAppPrintDetails(nap, (struct Gio *) NULL, LOG_INSANE);
   LogMemMap(nap, LOG_INSANE);
 
-  if(nap->handle_signals) NaClSignalHandlerFini();
+  NaClSignalHandlerFini();
 }
 
 /*

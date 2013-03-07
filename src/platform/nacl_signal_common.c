@@ -38,6 +38,7 @@ struct NaClSignalNode {
 static struct NaClSignalNode *s_FirstHandler = NULL;
 static struct NaClSignalNode *s_FreeList = NULL;
 static struct NaClSignalNode s_SignalNodes[MAX_NACL_HANDLERS];
+static int handle_signals = 1;
 
 ssize_t NaClSignalErrorMessage(const char *msg)
 {
@@ -131,11 +132,21 @@ enum NaClSignalResult NaClSignalHandlerFind(int signal, void *ctx) {
   return result;
 }
 
-void NaClSignalHandlerInit() {
+void SetSignalHandling(int a)
+{
+  handle_signals = a;
+}
+
+void NaClSignalHandlerInit()
+{
   int a;
 
+  /* return if signals handling is not enabled */
+  if(!handle_signals) return;
+
   /* Build the free list */
-  for (a = 0; a < MAX_NACL_HANDLERS; a++) {
+  for(a = 0; a < MAX_NACL_HANDLERS; a++)
+  {
     s_SignalNodes[a].next = s_FreeList;
     s_SignalNodes[a].id = a + 1;
     s_FreeList = &s_SignalNodes[a];
@@ -147,7 +158,11 @@ void NaClSignalHandlerInit() {
   NaClSignalHandlerAdd(NaClSignalHandleAll);
 }
 
-void NaClSignalHandlerFini() {
+void NaClSignalHandlerFini()
+{
+  /* return if signals handling is not enabled */
+  if(!handle_signals) return;
+
   /* We try to lock, but since we are shutting down, we ignore failures. */
   NaClSignalHandlerFiniPlatform();
 }

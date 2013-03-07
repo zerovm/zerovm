@@ -30,6 +30,12 @@
 #include "src/channels/mount_channel.h"
 #include "src/main/accounting.h"
 
+/* hard limit for all zerovm i/o */
+static int64_t storage_limit = ZEROVM_IO_LIMIT;
+
+/* pointer to user manifest, points to user space, r/o */
+//static uintptr_t user_manifest;
+
 /* lower zerovm priority */
 static void LowerOwnPriority()
 {
@@ -45,16 +51,24 @@ static void ChrootJail()
   ZLOGIF(chroot(NEW_ROOT) != 0, "cannot 'chroot' zerovm");
 }
 
+int SetStorageLimit(int64_t a)
+{
+  if(a < 1) return -1;
+
+  storage_limit = a * ZEROVM_IO_LIMIT_UNIT;
+  return 0;
+}
+
 /* limit zerovm i/o */
 static void LimitOwnIO(struct NaClApp *nap)
 {
   struct rlimit rl;
 
   assert(nap != NULL);
-  assert(nap->storage_limit > 0);
+  assert(storage_limit > 0);
 
   ZLOGIF(getrlimit(RLIMIT_FSIZE, &rl) != 0, "cannot get i/o limits");
-  rl.rlim_cur = nap->storage_limit;
+  rl.rlim_cur = storage_limit;
   ZLOGIF(setrlimit(RLIMIT_FSIZE, &rl) != 0, "cannot set i/o limits");
 }
 

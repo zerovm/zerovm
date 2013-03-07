@@ -18,5 +18,5 @@ MemMax = 134217728
 
 == available signals: 8, 11, 24, 25
 == (for #25 timeout have to be set to adequate value)
-CommandLine = 24
-Timeout = 11
+CommandLine = 8
+Timeout = 1

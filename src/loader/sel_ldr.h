@@ -168,29 +168,22 @@ struct NaClApp {
   /* user memory map */
   struct MemBlock           mem_map[MemMapSize];
 
-  int                       skip_validator;
-
   uintptr_t                 break_addr;   /* user addr */
   /* data_end <= break_addr is an invariant */
 
-  /* d'b: added fields */
   struct SystemManifest     *system_manifest;
   uintptr_t                 heap_end; /* end of user heap */
   int                       validation_state; /* needs for the report */
-  int                       skip_qualification; /* startup time variable */
-  int                       quit_after_load; /* startup time variable */
-  int                       handle_signals; /* startup time variable */
-  int64_t                   storage_limit; /* hard limit for all zerovm i/o */
   void                      *user_tag; /* tag context for memory and channels */
 
-  uintptr_t                 user_manifest; /* pointer to user manifest, points to user space, r */
+  uintptr_t                 user_manifest; /* pointer to user manifest, points to user space, r */ // ### to move
 
   /* for channels */
   int                       node_id; /* own node id from manifest */
   char                      *node_name; /* own node name from manifest. available for user */
 
   /* fields taken from the natp */
-  void                      *signal_stack; /* signal handling, registered with sigaltstack() */
+  void                      *signal_stack; /* signal handling, registered with sigaltstack() */ // ### to move
   uint32_t                  sysret; /* syscall return code */
 };
 

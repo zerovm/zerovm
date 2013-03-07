@@ -59,6 +59,9 @@ int NaClSignalStackAllocate(void **result);
 
 void NaClSignalStackRegister(void *stack);
 
+/* with 0 signals handling is disabled */
+void SetSignalHandling(int support_signals);
+
 /*
  * Register process-wide signal handlers.
  */

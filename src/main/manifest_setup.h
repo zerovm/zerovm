@@ -88,6 +88,12 @@ struct SystemManifest
  */
 void LastDefenseLine();
 
+/*
+ * set limit for the disk writes (in bytes)
+ * return 0 if successfully set
+ */
+int SetStorageLimit(int64_t a);
+
 /* construct system_manifest object and initialize from manifest */
 void SystemManifestCtor(struct NaClApp *nap);
 
