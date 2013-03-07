@@ -49,14 +49,6 @@ enum NaClSignalResult {
  */
 typedef enum NaClSignalResult (*NaClSignalHandler)(int sig_num, void *ctx);
 
-/*
- * Allocates a stack suitable for passing to
- * NaClSignalStackRegister(), for use as a stack for signal handlers.
- * This can be called in any thread.
- * Stores the result in *result; returns 1 on success, 0 on failure.
- */
-int NaClSignalStackAllocate(void **result);
-
 void NaClSignalStackRegister(void *stack);
 
 /* with 0 signals handling is disabled */

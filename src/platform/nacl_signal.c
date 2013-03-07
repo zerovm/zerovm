@@ -63,6 +63,7 @@ static int s_Signals[] = {
   SIGPWR
 };
 static struct sigaction s_OldActions[SIGNAL_COUNT];
+static void *signal_stack;
 
 void NaClSignalStackRegister(void *stack) {
   /*
@@ -94,7 +95,12 @@ void NaClSignalStackUnregister(void)
   ZLOGFAIL(sigaltstack(&st, NULL) == -1, errno, "Failed to unregister signal stack");
 }
 
-int NaClSignalStackAllocate(void **result)
+/*
+ * Allocates a stack suitable for passing to NaClSignalStackRegister(),
+ * for use as a stack for signal handlers. This can be called in any
+ * thread. Stores the result in *result;
+ */
+static void NaClSignalStackAllocate(void **result)
 {
   /*
    * We use mmap() to allocate the signal stack for two reasons:
@@ -110,14 +116,13 @@ int NaClSignalStackAllocate(void **result)
    */
   uint8_t *stack = mmap(NULL, SIGNAL_STACK_SIZE + STACK_GUARD_SIZE,
       PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-  if(stack == MAP_FAILED) return 0;
+  ZLOGFAIL(stack == MAP_FAILED, errno, "failed to allocate signal stack");
 
   /* We assume that the stack grows downwards. */
   ZLOGFAIL(-1 == mprotect(stack, STACK_GUARD_SIZE, PROT_NONE),
       errno, "Failed to mprotect() the stack guard page");
 
   *result = stack;
-  return 1;
 }
 
 void NaClSignalStackFree(void *stack)
@@ -183,6 +188,9 @@ void NaClSignalHandlerInitPlatform()
   for(i = 0; i < SIGNAL_COUNT; i++)
     ZLOGFAIL(0 != sigaction(s_Signals[i], &sa, &s_OldActions[i]),
         errno, "Failed to install handler for %d", s_Signals[i]);
+
+  /* allocate signal stack */
+  NaClSignalStackAllocate(&signal_stack);
 }
 
 void NaClSignalHandlerFiniPlatform()
@@ -195,10 +203,8 @@ void NaClSignalHandlerFiniPlatform()
         errno, "Failed to unregister handler for %d", s_Signals[i]);
 
   /* release signal stack */
-  /* todo(d'b): it fails. fix it ###
   NaClSignalStackUnregister();
-  NaClSignalStackFree(&gnap->signal_stack);
-  */
+  NaClSignalStackFree(signal_stack);
 }
 
 /*
