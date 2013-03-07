@@ -48,23 +48,6 @@ IDENTIFIER(NaClSyscallSeg):
         cld
 
         /*
-         * d'b: important part here is do not touch user registers/stack
-         * since the control can be immediatelly transfered to the user code
-         * the only thing allowed to change is flags
-         */
-
-        /* is it trap? nb: trap cannot be intercepted by syscallback */
-        cmpl     $0x1000c, (%rsp)
-        je      trap
-
-        /* do we have installed syscallback? */
-        cmpq    $0, IDENTIFIER(syscallback)(%rip)
-        je      trap
-        jmpq    *IDENTIFIER(syscallback)(%rip) /* return control to the untrusted handler */
-trap:
-        /* d'b end */
-
-        /*
          * pushl   %r9d
          * pushl   %r8d
          * pushl   %ecx

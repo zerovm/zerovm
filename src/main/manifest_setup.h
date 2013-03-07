@@ -26,7 +26,7 @@ EXTERN_C_BEGIN
 #include "stdio.h"
 
 #define HELP_SCREEN /* update command line switches here */\
-    "\033[1m\033[37mZeroVM\033[0m lightweight VM manager, build 2013-03-06\n"\
+    "\033[1m\033[37mZeroVM\033[0m lightweight VM manager, build 2013-03-07\n"\
     "Usage: <manifest_file> [-v#] [-l#] [-PFSseQ]\n\n"\
     " <manifest_file> load settings from manifest\n"\
     " -e enable the data oversight (etag)\n"\
@@ -39,7 +39,7 @@ EXTERN_C_BEGIN
     " -Q disable platform qualification (dangerous!)\n"\
     " -P disable channels space preallocation\n"
 
-#define NEXE_PGM_NAME "loner" /* default argv[0] for nexe */
+#define NEXE_PGM_NAME "loner" /* default argv[0] for nexe. deprecated */
 #define ZEROVM_PRIORITY 19
 #define ZEROVM_IO_LIMIT_UNIT 0x40000000l
 #define ZEROVM_IO_LIMIT 4*ZEROVM_IO_LIMIT_UNIT
@@ -61,21 +61,19 @@ EXTERN_C_BEGIN
 struct SystemManifest
 {
   /* zerovm control */
-  char *version; /* zerovm version */
-  int32_t ret_code; /* zerovm return code */
+  char *version; /* manifest version */
+  int node_id; /* own node id from manifest */
 
   /* nexe control */
   char *nexe; /* nexe file name */
-  char *nexe_etag; /* signature. reserved for a future "short" nexe validation */
-  unsigned char *etag; /* channels and user memory digital signature */
+  char *nexe_etag; /* signature. reserved for a future */
   int32_t timeout; /* time user module allowed to run */
   int32_t user_ret_code; /* nexe return code */
 
-  /* variables and limits for a nexe */
-  int cmd_line_size; /* command line size for nexe */
-  char **cmd_line; /* command line for nexe */
-  char **envp; /* environment variables for user */
-  int32_t syscallback; /* untrusted address callback (see "syscallback.txt") */
+  /* variables for a nexe. deprecated */
+  int cmd_line_size; /* command line size for nexe. deprecated */
+  char **cmd_line; /* command line for nexe. deprecated */
+  char **envp; /* environment variables for user. deprecated */
 
   /* channels */
   int32_t channels_count; /* count of channels */

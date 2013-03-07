@@ -21,6 +21,7 @@
 #include "src/main/tools.h"
 #include "src/main/zlog.h"
 #include "src/main/manifest_parser.h"
+#include "src/main/manifest_setup.h"
 #include "src/channels/name_service.h"
 
 #include "src/channels/prefetch.h" /* for GetChannelProtocol() */
@@ -213,7 +214,7 @@ static void NSRecordSerializer(gpointer key, gpointer value, gpointer buffer)
 static int32_t ParcelCtor(const struct NaClApp *nap, char *parcel, const uint32_t size)
 {
   char *p = parcel; /* parcel pointer */
-  uint32_t node_id_network = bswap_32(nap->node_id); /* BIG ENDIAN */
+  uint32_t node_id_network = bswap_32(nap->system_manifest->node_id); /* BIG ENDIAN */
   uint32_t binds_network = bswap_32(binds); /* BIG ENDIAN */
   uint32_t connects_network = bswap_32(connects); /* BIG ENDIAN */
 

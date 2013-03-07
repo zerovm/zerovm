@@ -38,7 +38,6 @@ struct NaClApp;
 struct NaClThreadContext    *nacl_user; /* user registers storage */
 struct NaClThreadContext    *nacl_sys; /* zerovm registers storage */
 struct NaClApp              *gnap; /* pointer to global NaClApp object */
-int64_t                     syscallback; /* 0 if not installed */
 jmp_buf                     user_exit; /* part of trap() exit */
 /* variables above will be initialized later */
 

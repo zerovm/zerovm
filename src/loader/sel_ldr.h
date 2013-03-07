@@ -176,11 +176,7 @@ struct NaClApp {
   int                       validation_state; /* needs for the report */
   void                      *user_tag; /* tag context for memory and channels */
 
-  /* for channels */
-  int                       node_id; /* own node id from manifest */
-  char                      *node_name; /* own node name from manifest. available for user */
-
-  /* fields taken from the natp */
+  /* former natp field */
   uint32_t                  sysret; /* syscall return code */
 };
 

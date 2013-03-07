@@ -198,7 +198,7 @@ static void SetNodeName(struct NaClApp *nap)
   if(pgm_name == NULL)
   {
     nap->system_manifest->cmd_line[0] = NEXE_PGM_NAME;
-    nap->node_id = 0;
+    nap->system_manifest->node_id = 0;
   }
   else
   {
@@ -207,13 +207,13 @@ static void SetNodeName(struct NaClApp *nap)
     ZLOGFAIL(tokens[0] == NULL, EFAULT, "invalid node name");
     ZLOGFAIL(tokens[1] == NULL, EFAULT, "invalid node id");
     nap->system_manifest->cmd_line[0] = tokens[0];
-    nap->node_id = ATOI(tokens[1]);
-    ZLOGFAIL(nap->node_id == 0, EFAULT, "node id must be > 0");
+    nap->system_manifest->node_id = ATOI(tokens[1]);
+    ZLOGFAIL(nap->system_manifest->node_id == 0, EFAULT, "node id must be > 0");
   }
 
   /* put node name and id to the log */
   ZLOGS(LOG_DEBUG, "node name = %s, node id = %d",
-      nap->system_manifest->cmd_line[0], nap->node_id);
+      nap->system_manifest->cmd_line[0], nap->system_manifest->node_id);
 }
 
 /* helper. sets command line parameters for the user */
@@ -424,7 +424,6 @@ void SystemManifestCtor(struct NaClApp *nap)
   assert(nap->system_manifest != NULL);
 
   policy = nap->system_manifest;
-  policy->syscallback = 0;
 
   /* get zerovm settings from manifest */
   policy->version = GetValueByKey(MFT_VERSION);
@@ -462,9 +461,6 @@ void SystemManifestCtor(struct NaClApp *nap)
 
   /* set user manifest in user space (new ZVM API) */
   SetSystemData(nap);
-
-  /* zerovm return code */
-  nap->system_manifest->ret_code = 0;
 }
 
 /*
