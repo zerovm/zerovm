@@ -139,7 +139,14 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
  */
 static void ValidateNexe(struct NaClApp *nap)
 {
-  char *args[3] = {VALIDATOR_NAME, NULL, NULL};
+  char *args[3] = {
+#ifdef VALIDATOR_NAME
+  sizeof(VALIDATOR_NAME) < 2 ?
+      DEFAULT_VALIDATOR_NAME : VALIDATOR_NAME
+#else
+      DEFAULT_VALIDATOR_NAME
+#endif
+  };
   GError *error = NULL;
   int exit_status = 0;
   enum ValidationState {

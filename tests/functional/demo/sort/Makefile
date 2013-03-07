@@ -1,7 +1,6 @@
 NAME_1=generator.uint32_t
 NAME_2=sort_uint_proper_with_args
 NAME_3=tester.uint32_t
-NACL_TOOLCHAIN=$(NACL_SDK_ROOT)/toolchain/linux_x86_glibc
 CCFLAGS=-n -s -nostartfiles -static -nostdlib
 
 all: $(NAME_1).o $(NAME_2).o $(NAME_3).o

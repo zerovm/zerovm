@@ -1,6 +1,6 @@
 FLAGS0=-fPIE -Wall -pedantic -Wno-long-long -fvisibility=hidden -fstack-protector --param ssp-buffer-size=4
 GLIB=`pkg-config --cflags glib-2.0`
-CCFLAGS0=-c -m64 -fPIC -D_GNU_SOURCE=1 -I. $(GLIB)
+CCFLAGS0=-c -m64 -fPIC -D_GNU_SOURCE=1 -DVALIDATOR_NAME='"$(VALIDATOR_NAME)"' -I. $(GLIB)
 CXXFLAGS0=-m64 -Wno-variadic-macros $(GLIB)
 LIBS=-lzmq -lglib-2.0
 TESTLIBS=-Llib/gtest -lgtest $(LIBS)
@@ -21,8 +21,6 @@ debug: CCFLAGS2 += -DDEBUG -g
 debug: CXXFLAGS1 := -DDEBUG -g $(CXXFLAGS1)
 debug: CXXFLAGS2 := -DDEBUG -g $(CXXFLAGS2)
 
-# d'b
-#debug: create_dirs zerovm zvm_api tests
 debug: create_dirs zerovm tests
 
 OBJS=obj/elf_util.o obj/gio_mem.o obj/gio_mem_snapshot.o obj/manifest_parser.o obj/manifest_setup.o obj/mount_channel.o obj/nacl_dep_qualify.o obj/nacl_exit.o obj/zlog.o obj/nacl_signal_64.o obj/nacl_signal_common.o obj/nacl_signal.o obj/nacl_switch_64.o obj/nacl_switch_to_app_64.o obj/nacl_syscall_64.o obj/nacl_syscall_hook.o obj/prefetch.o obj/name_service.o obj/preload.o obj/sel_addrspace.o obj/sel_ldr.o obj/sel_ldr_standard.o obj/sel_ldr_x86_64.o obj/sel_memory.o obj/sel_qualify.o obj/sel_rt_64.o obj/sel_segments.o obj/tramp_64.o obj/trap.o obj/etag.o obj/accounting.o
@@ -47,10 +45,6 @@ tests: test_compile
 	./service_runtime_tests;\
 	cd ..
 
-# d'b
-#zvm_api: api/zvm.c api/zvm.h
-#	@make -Capi
-
 test_compile: tests/unit/manifest_parser_test tests/unit/service_runtime_tests
 
 obj/manifest_parser_test.o: tests/unit/manifest_parser_test.cc
@@ -67,16 +61,12 @@ obj/unittest_main.o: tests/unit/unittest_main.cc
 tests/unit/service_runtime_tests: obj/sel_ldr_test.o obj/sel_memory_unittest.o obj/unittest_main.o $(OBJS)
 	$(CXX) $(CXXFLAGS2) -o $@ $^ $(TESTLIBS)
 
-# d'b
-#.PHONY: clean clean_gcov clean_intermediate clean_api
 .PHONY: clean clean_gcov clean_intermediate
 
 clean_gcov:
 	@find -name *.gcda -o -name *.gcno | xargs rm -f
 	@rm cov_htmp -f -r
 
-# d'b
-#clean: clean_gcov clean_intermediate clean_api
 clean: clean_gcov clean_intermediate
 	@rm -f zerovm
 	@echo ZeroVM has been deleted
@@ -85,10 +75,6 @@ clean_intermediate:
 	@rm -f tests/unit/manifest_parser_test tests/unit/service_runtime_tests obj/*
 	@echo intermediate files has been deleted
 	@echo unit tests has been deleted
-
-# d'b
-#clean_api:
-#	@make -Capi clean
 
 obj/mount_channel.o: src/channels/mount_channel.c
 	$(CC) $(CCFLAGS1) -o $@ $^
