@@ -33,9 +33,6 @@
 /* hard limit for all zerovm i/o */
 static int64_t storage_limit = ZEROVM_IO_LIMIT;
 
-/* pointer to user manifest, points to user space, r/o */
-static struct UserManifestSerialized *user_manifest;
-
 /* lower zerovm priority */
 static void LowerOwnPriority()
 {
@@ -338,13 +335,13 @@ struct UserManifestSerialized
 #define USER_MANIFEST_STRUCT_SIZE sizeof(struct UserManifestSerialized)
 
 /* set pointer to user manifest */
-static void SetUserManifestPtr(struct NaClApp *nap)
+static void SetUserManifestPtr(struct NaClApp *nap, void *mft)
 {
   uintptr_t *p;
 
   /* 0xFEFFFFFC == FOURGIG - nap->stack_size - USER_PTR_SIZE */
   p = (void*)NaClUserToSys(nap, 0xFEFFFFFC);
-  *p = NaClSysToUser(nap, (uintptr_t)user_manifest);
+  *p = NaClSysToUser(nap, (uintptr_t)mft);
 }
 
 /* serialize system data to user space */
@@ -353,6 +350,7 @@ static void SetSystemData(struct NaClApp *nap)
   struct SystemManifest *manifest;
   struct ChannelSerialized *channels; /* points to user space */
   struct UserManifestSerialized *umft; /* pointer to the user manifest area */
+  struct UserManifestSerialized *user_manifest; /* helper pointer */
   int64_t i, j;
 
   assert(nap != NULL);
@@ -366,7 +364,7 @@ static void SetSystemData(struct NaClApp *nap)
   j += USER_MANIFEST_STRUCT_SIZE + USER_PTR_SIZE; /* size of user manifest w/o aliases */
   umft = (void*)(FOURGIG - nap->stack_size - j); /* pointer to user manifest in user space */
   user_manifest = (void*)NaClUserToSys(nap, (uintptr_t)umft); /* pointer to user manifest */
-  channels = (void*)(user_manifest + USER_MANIFEST_STRUCT_SIZE);
+  channels = (void*)(user_manifest);
 
   /* make user manifest r/w */
   umft = (void*)AlignToPage((uintptr_t)user_manifest, &j);
@@ -374,7 +372,7 @@ static void SetSystemData(struct NaClApp *nap)
   umft = user_manifest;
 
   /* set pointer to user manifest */
-  SetUserManifestPtr(nap);
+  SetUserManifestPtr(nap, user_manifest);
 
   /* reserve space for the 1st alias */
   umft -= strlen(manifest->channels[0].alias) + 1;
@@ -404,14 +402,23 @@ static void SetSystemData(struct NaClApp *nap)
 
   /* calculate aligned user manifest size and pointer */
   j = FOURGIG - nap->stack_size - NaClSysToUser(nap, (uintptr_t)umft);
-  umft = (void*)AlignToPage((uintptr_t)umft, &j); /* j - aligned size of umft area */
 
-  /* serialize heap size */
+  /* recalculate the proper heap size */
   user_manifest->heap_size =
       MIN(nap->heap_end, NaClSysToUser(nap, (uintptr_t)umft)) - nap->break_addr;
 
-  /* protect the user manifest segment */
-  ProtectAligned((uintptr_t)umft, j, PROT_READ);
+  /* protect user manifest (exact size) */
+  user_manifest = umft; /* store the user manifest area start */
+  umft = (void*)AlignToPage((uintptr_t)umft, &j);
+  i = NaCl_mprotect(umft, j, PROT_READ);
+  ZLOGFAIL(0 != i, i, "cannot protect 0x%lx of %d bytes with %d",
+      (uintptr_t)umft, j, PROT_READ);
+
+  /* make the rest of heap before the user manifest available */
+  j = (intptr_t)user_manifest - (intptr_t)umft;
+  i = NaCl_mprotect(umft, j, PROT_READ | PROT_WRITE);
+  ZLOGFAIL(0 != i, i, "cannot protect 0x%lx of %d bytes with %d",
+      (uintptr_t)umft, j, PROT_READ | PROT_WRITE);
 }
 
 /* construct system_manifest object and initialize it from manifest */
