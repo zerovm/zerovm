@@ -53,12 +53,7 @@
 
 EXTERN_C_BEGIN
 
-#define NACL_SERVICE_PORT_DESCRIPTOR    3
-#define NACL_SERVICE_ADDRESS_DESCRIPTOR 4
-
 #define NACL_DEFAULT_STACK_MAX  (16 << 20)  /* main thread stack */
-
-#define NACL_SANDBOX_CHROOT_FD  "SBX_D"
 
 /*
  * helper macro. _element should be nap->mem_map[index], _addr - block
@@ -89,11 +84,6 @@ struct MemBlock {
   size_t                npages;   /* number of pages */
   int                   prot;     /* mprotect attribute */
 };
-
-struct NaClManifestProxy;
-struct NaClSecureService;
-struct NaClSecureReverseService;
-struct NaClThreadInterface;  /* see sel_ldr_thread_interface.h */
 
 struct NaClApp {
   /*
