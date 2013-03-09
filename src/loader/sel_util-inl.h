@@ -38,8 +38,12 @@ static INLINE size_t  NaClRoundAllocPage(size_t    nbytes) {
   return (nbytes + NACL_MAP_PAGESIZE - 1) & ~((size_t) NACL_MAP_PAGESIZE - 1);
 }
 
+/* round down to 64kb page size */
 static INLINE size_t NaClTruncAllocPage(size_t  nbytes) {
   return nbytes & ~((size_t) NACL_MAP_PAGESIZE - 1);
 }
+
+#define ROUNDDOWN_64K(a) ((a) & ~(NACL_MAP_PAGESIZE - 1LLU))
+#define ROUNDUP_64K(a) ROUNDDOWN_64K((a) + NACL_MAP_PAGESIZE - 1LLU)
 
 #endif  /* NATIVE_CLIENT_SRC_TRUSTED_SERVICE_RUNTIME_SEL_UTIL_INL_H_ */

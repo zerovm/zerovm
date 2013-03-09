@@ -139,7 +139,8 @@ static void PreallocateUserMemory(struct NaClApp *nap)
   ZLOGFAIL(0 != i, -i, "cannot set protection on user heap");
   nap->heap_end = NaClSysToUser(nap, (uintptr_t)p + heap);
 
-  nap->mem_map[HeapIdx].npages += heap >> NACL_PAGESHIFT;
+  nap->mem_map[HeapIdx].size += heap;
+  nap->mem_map[HeapIdx].end += heap;
 }
 
 /* helper. sets custom user attributes for user */
@@ -269,50 +270,7 @@ static void SetTimeout(struct SystemManifest *policy)
   ZLOGFAIL(setrlimit(RLIMIT_CPU, &rl) != 0, errno, "cannot set timeout");
 }
 
-/*
- * calculate pointer and size aligned to mmap page for given area
- * note: size will be returned by reference
- */
-static uintptr_t AlignToPage(uintptr_t ptr, int64_t *size)
-{
-  assert(ptr != 0);
-  assert(*size > 0);
-
-  *size = ptr - NaClTruncAllocPage(ptr) + *size;
-  return NaClTruncAllocPage(ptr);
-}
-
-/* protect page(s) (ptr should be aligned to mmap page) */
-static void ProtectAligned(uintptr_t ptr, int64_t size, int prot)
-{
-  int i;
-
-  assert(ptr % NACL_MAP_PAGESIZE == 0);
-
-  i = NaCl_mprotect((void*)ptr, size, prot);
-  ZLOGFAIL(0 != i, i, "cannot protect 0x%x of %d bytes with %d",
-      ptr, size, prot);
-}
-
-/*
- * append the given name to sysdata "names area" from the beginning
- * and return the pointer to newly created string. if the new string
- * crosses the page (64kb) bound make the new page accessible
- */
-static char *CopyAlias(char *area, char *name)
-{
-  uintptr_t page_ptr;
-  int size = strlen(name) + 1;
-
-  /* when the page crossed, append the new one */
-  page_ptr = NaClTruncAllocPage((uintptr_t)area - size);
-  if(page_ptr != NaClTruncAllocPage((uintptr_t)area))
-    ProtectAligned(page_ptr, NACL_MAP_PAGESIZE, PROT_READ | PROT_WRITE);
-
-  /* update the "name area" */
-  return memcpy(area - size, name, size);
-}
-
+/* should be kept in sync with api/zvm.h*/
 struct ChannelSerialized
 {
   int64_t limits[IOLimitsCount];
@@ -321,6 +279,7 @@ struct ChannelSerialized
   uint32_t name;
 };
 
+/* should be kept in sync with api/zvm.h*/
 struct UserManifestSerialized
 {
   uint32_t heap_ptr;
@@ -339,19 +298,70 @@ static void SetUserManifestPtr(struct NaClApp *nap, void *mft)
 {
   uintptr_t *p;
 
-  /* 0xFEFFFFFC == FOURGIG - nap->stack_size - USER_PTR_SIZE */
-  p = (void*)NaClUserToSys(nap, 0xFEFFFFFC);
+  p = (void*)NaClUserToSys(nap, FOURGIG - nap->stack_size - USER_PTR_SIZE);
   *p = NaClSysToUser(nap, (uintptr_t)mft);
+}
+
+/* align area to page(s) both bounds an protect. return pointer to (new) area */
+static uintptr_t AlignAndProtect(uintptr_t area, int64_t size, int prot)
+{
+  uintptr_t page_ptr;
+  uint64_t aligned_size;
+  int code;
+
+  page_ptr = ROUNDDOWN_64K(area);
+  aligned_size = ROUNDUP_64K(size + (area - page_ptr));
+
+  code = NaCl_mprotect((void*)page_ptr, aligned_size, prot);
+  ZLOGFAIL(0 != code, code, "cannot protect 0x%x of %d bytes with %d",
+      page_ptr, aligned_size, prot);
+  return page_ptr;
+}
+
+/*
+ * copy given name before the given area making it writeable 1st
+ * return a new pointer to name preceding area
+ */
+static void *CopyDown(void *area, char *name)
+{
+  int size = strlen(name) + 1;
+
+  /* when the page crossed, append the new one */
+  if((uintptr_t) area - ROUNDDOWN_64K((uintptr_t)area) < size)
+    AlignAndProtect((uintptr_t) area - size, size, PROT_READ | PROT_WRITE);
+
+  /* copy name down */
+  return memcpy((char*)area - size, name, size);
+}
+
+/* protect user manifest and update mem_map */
+static void ProtectUserManifest(struct NaClApp *nap, void *mft)
+{
+  uintptr_t page_ptr;
+  uint64_t size;
+
+  size = FOURGIG - nap->stack_size - NaClSysToUser(nap, (uintptr_t)mft);
+  page_ptr = AlignAndProtect((uintptr_t) mft, size, PROT_READ);
+
+  /* update mem_map */
+  SET_MEM_MAP_IDX(nap->mem_map[SysDataIdx], "UserManifest",
+      page_ptr, ROUNDUP_64K(size + ((uintptr_t)mft - page_ptr)), PROT_READ);
+
+  /* its time to add hole to memory map */
+  page_ptr = nap->mem_map[HeapIdx].end;
+  size = nap->mem_map[SysDataIdx].start - nap->mem_map[HeapIdx].end;
+  SET_MEM_MAP_IDX(nap->mem_map[HoleIdx], "Hole", page_ptr, size, PROT_NONE);
 }
 
 /* serialize system data to user space */
 static void SetSystemData(struct NaClApp *nap)
 {
   struct SystemManifest *manifest;
-  struct ChannelSerialized *channels; /* points to user space */
-  struct UserManifestSerialized *umft; /* pointer to the user manifest area */
-  struct UserManifestSerialized *user_manifest; /* helper pointer */
-  int64_t i, j;
+  struct ChannelSerialized *channels;
+  struct UserManifestSerialized *user_manifest;
+  void *ptr; /* pointer to the user manifest area */
+  int64_t size;
+  int i;
 
   assert(nap != NULL);
   assert(nap->system_manifest != NULL);
@@ -360,27 +370,24 @@ static void SetSystemData(struct NaClApp *nap)
   manifest = nap->system_manifest;
 
   /* calculate user manifest (with channels) start and size */
-  j = manifest->channels_count * CHANNEL_STRUCT_SIZE; /* size of channels array */
-  j += USER_MANIFEST_STRUCT_SIZE + USER_PTR_SIZE; /* size of user manifest w/o aliases */
-  umft = (void*)(FOURGIG - nap->stack_size - j); /* pointer to user manifest in user space */
-  user_manifest = (void*)NaClUserToSys(nap, (uintptr_t)umft); /* pointer to user manifest */
+  size = manifest->channels_count * CHANNEL_STRUCT_SIZE; /* size of channels array */
+  size += USER_MANIFEST_STRUCT_SIZE + USER_PTR_SIZE; /* size of user manifest w/o aliases */
+  ptr = (void*)(FOURGIG - nap->stack_size - size); /* pointer to user manifest in user space */
+  user_manifest = (void*)NaClUserToSys(nap, (uintptr_t)ptr); /* pointer to user manifest */
   channels = (void*)(user_manifest);
 
-  /* make user manifest r/w */
-  umft = (void*)AlignToPage((uintptr_t)user_manifest, &j);
-  ProtectAligned((uintptr_t)umft, j, PROT_READ | PROT_WRITE);
-  umft = user_manifest;
+  /* make the 1st page of user manifest writeable */
+  CopyDown((void*)NaClUserToSys(nap, FOURGIG - nap->stack_size), "");
+  ptr = user_manifest;
 
-  /* set pointer to user manifest */
+  /* initialize pointer to user manifest */
   SetUserManifestPtr(nap, user_manifest);
-
-  /* reserve space for the 1st alias */
-  umft -= strlen(manifest->channels[0].alias) + 1;
 
   /* serialize channels */
   for(i = 0; i < manifest->channels_count; ++i)
   {
     /* limits */
+    int64_t j;
     for(j = 0; j < IOLimitsCount; ++j)
       channels[i].limits[j] = manifest->channels[i].limits[j];
 
@@ -390,35 +397,29 @@ static void SetSystemData(struct NaClApp *nap)
         ? 0 : manifest->channels[i].size;
 
     /* alias */
-    umft = (void*)CopyAlias((char*)umft, manifest->channels[i].alias);
-    channels[i].name = NaClSysToUser(nap, (uintptr_t)umft);
+    ptr = CopyDown(ptr, manifest->channels[i].alias);
+    channels[i].name = NaClSysToUser(nap, (uintptr_t)ptr);
   }
 
-  /* serialize "still" user manifest data */
+  /* update heap_size in the user manifest */
+  size = ROUNDDOWN_64K(NaClSysToUser(nap, (uintptr_t)ptr));
+  size = MIN(nap->heap_end, size);
+  user_manifest->heap_size = size - nap->break_addr;
+
+  /* note that rw data merged with heap! */
+
+  /* update memory map */
+  nap->mem_map[HeapIdx].end = NaClUserToSys(nap, size);
+  nap->mem_map[HeapIdx].size = user_manifest->heap_size;
+
+  /* serialize the rest of the user manifest records */
   user_manifest->heap_ptr = nap->break_addr;
   user_manifest->stack_size = nap->stack_size;
   user_manifest->channels_count = manifest->channels_count;
   user_manifest->channels = NaClSysToUser(nap, (uintptr_t)channels);
 
-  /* calculate aligned user manifest size and pointer */
-  j = FOURGIG - nap->stack_size - NaClSysToUser(nap, (uintptr_t)umft);
-
-  /* recalculate the proper heap size */
-  user_manifest->heap_size =
-      MIN(nap->heap_end, NaClSysToUser(nap, (uintptr_t)umft)) - nap->break_addr;
-
-  /* protect user manifest (exact size) */
-  user_manifest = umft; /* store the user manifest area start */
-  umft = (void*)AlignToPage((uintptr_t)umft, &j);
-  i = NaCl_mprotect(umft, j, PROT_READ);
-  ZLOGFAIL(0 != i, i, "cannot protect 0x%lx of %d bytes with %d",
-      (uintptr_t)umft, j, PROT_READ);
-
-  /* make the rest of heap before the user manifest available */
-  j = (intptr_t)user_manifest - (intptr_t)umft;
-  i = NaCl_mprotect(umft, j, PROT_READ | PROT_WRITE);
-  ZLOGFAIL(0 != i, i, "cannot protect 0x%lx of %d bytes with %d",
-      (uintptr_t)umft, j, PROT_READ | PROT_WRITE);
+  /* make the user manifest read only */
+  ProtectUserManifest(nap, ptr);
 }
 
 /* construct system_manifest object and initialize it from manifest */
@@ -501,8 +502,8 @@ static void EtagMemoryChunk(struct NaClApp *nap)
     if(nap->mem_map[RODataIdx].prot == PROT_NONE) continue;
 
     /* update user_etag with the chunk data */
-    addr = nap->mem_map[RODataIdx].page_num << NACL_PAGESHIFT;
-    size = nap->mem_map[RODataIdx].npages << NACL_PAGESHIFT;
+    addr = nap->mem_map[RODataIdx].start;
+    size = nap->mem_map[RODataIdx].size;
     TagUpdate(nap->user_tag, (const char*)addr, size);
   }
 }

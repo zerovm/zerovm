@@ -40,11 +40,9 @@ static void LogMemMap(struct NaClApp *nap, int verbosity)
 
   for(i = 0; i < MemMapSize; ++i)
   {
-    ZLOGS(verbosity, "%s: address = 0x%06x, size = %d, protection = x",
-        nap->mem_map[i].name,
-        (uint32_t) nap->mem_map[i].page_num,
-        (uint32_t) nap->mem_map[i].npages,
-        nap->mem_map[i].prot);
+    ZLOGS(verbosity, "%s: address = 0x%08x, size = 0x%08x, protection = x",
+        nap->mem_map[i].name, (uint32_t) nap->mem_map[i].start,
+        (uint32_t) nap->mem_map[i].size, nap->mem_map[i].prot);
   }
 }
 

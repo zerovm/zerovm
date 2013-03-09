@@ -62,8 +62,9 @@ EXTERN_C_BEGIN
 #define SET_MEM_MAP_IDX(_element, _name, _addr, _size, _prot) \
   do {\
     _element.name = _name;\
-    _element.page_num = (_addr) >> NACL_PAGESHIFT;\
-    _element.npages = (_size) >> NACL_PAGESHIFT;\
+    _element.start = (_addr);\
+    _element.end = (_addr) + (_size);\
+    _element.size = (_size);\
     _element.prot = _prot;\
   } while(0)
 
@@ -72,17 +73,19 @@ enum MemMapIndices {
   TextIdx, /* includes trampoline */
   RODataIdx,
   HeapIdx, /* includes r/w data */
-  StackIdx,
+  HoleIdx,
   SysDataIdx,
+  StackIdx,
   RightBumperIdx,
   MemMapSize
 };
 
 struct MemBlock {
-  char                  *name;    /* block name */
-  intptr_t              page_num; /* system virtual address >> NACL_PAGESHIFT */
-  size_t                npages;   /* number of pages */
-  int                   prot;     /* mprotect attribute */
+  char      *name; /* block name */
+  uintptr_t start; /* block start. system virtual address */
+  uintptr_t end;   /* block end (for ease). system virtual address */
+  size_t    size;  /* number of bytes */
+  int       prot;  /* mprotect attribute */
 };
 
 struct NaClApp {

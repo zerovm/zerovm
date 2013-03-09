@@ -19,6 +19,7 @@
  */
 
 #include <assert.h>
+#include <sys/mman.h>
 #include "src/main/etag.h"
 #include "src/syscalls/trap.h"
 #include "src/main/manifest_setup.h"
@@ -74,49 +75,29 @@ static void UpdateChannelTag(struct ChannelDesc *channel,
   TagUpdate(channel->tag, buffer, size);
 }
 
-/* return 0 if the user gap has read access. note that size can be 0 */
-static int CheckReadAccess(struct NaClApp *nap, const void *p, int32_t size)
+/*
+ * check "prot" access for user area (start, size)
+ * if failed return -1, otherwise - 0
+ */
+static int CheckRAMAccess(struct NaClApp *nap, uintptr_t start, int32_t size, int prot)
 {
-  uintptr_t addr = (uintptr_t)p;
+  int i;
 
-  /* check the address for NULL and convert to system space */
-  if(p == NULL) return -1;
+  start = NaClUserToSysAddrNullOkay(nap, start);
+  for(i = LeftBumperIdx; i < MemMapSize; ++i)
+  {
+    /* skip until start hit block in mem_map */
+    if(start >= nap->mem_map[i].end) continue;
 
-  /* the address inside the trampoline .. the user heap end space */
-  if(addr >= NACL_MAP_PAGESIZE
-      && addr <= nap->heap_end
-      && addr + size >= NACL_MAP_PAGESIZE
-      && addr + size <= nap->heap_end) return 0;
+    /* fail if block protection doesn't meat prot */
+    if((prot & nap->mem_map[i].prot) == 0) return -1;
 
-  /* the address inside the user stack */
-  if(addr >= FOURGIG - nap->stack_size
-      && addr <= FOURGIG
-      && addr + size >= FOURGIG - nap->stack_size
-      && addr + size <= FOURGIG) return 0;
+    /* subtract checked space from given area */
+    size -= (nap->mem_map[i].end - start);
+    if(size <= 0) return 0;
 
-  return -1;
-}
-
-/* return 0 if the user gap has write access. note that size can be 0 */
-static int CheckWriteAccess(struct NaClApp *nap, const void *p, int32_t size)
-{
-  uintptr_t addr = (uintptr_t)p;
-
-  /* check the address for NULL and convert to system space */
-  if(p == NULL) return -1;
-
-  /* the address inside the trampoline .. the user heap end space */
-  if(addr >= nap->data_start
-      && addr <= nap->heap_end
-      && addr + size >= nap->data_start
-      && addr + size <= nap->heap_end) return 0;
-
-  /* the address inside the user stack */
-  if(addr >= FOURGIG - nap->stack_size
-      && addr <= FOURGIG
-      && addr + size >= FOURGIG - nap->stack_size
-      && addr + size <= FOURGIG) return 0;
-
+    start = nap->mem_map[i].end;
+  }
   return -1;
 }
 
@@ -148,7 +129,7 @@ static int32_t ZVMReadHandle(struct NaClApp *nap,
       channel->alias, (intptr_t)buffer, size, offset);
 
   /* check buffer and convert address */
-  if(CheckWriteAccess(nap, buffer, size) == -1) return -EINVAL;
+  if(CheckRAMAccess(nap, (uintptr_t)buffer, size, PROT_READ) == -1) return -EINVAL;
   sys_buffer = (char*)NaClUserToSys(nap, (uintptr_t) buffer);
 
   /* ignore user offset for sequential access read */
@@ -256,7 +237,7 @@ static int32_t ZVMWriteHandle(struct NaClApp *nap,
       channel->alias, (intptr_t)buffer, size, offset);
 
   /* check buffer and convert address */
-  if(CheckReadAccess(nap, buffer, size) == -1) return -EINVAL;
+  if(CheckRAMAccess(nap, (uintptr_t)buffer, size, PROT_READ) == -1) return -EINVAL;
   sys_buffer = (char*)NaClUserToSys(nap, (uintptr_t) buffer);
 
   /* ignore user offset for sequential access write */

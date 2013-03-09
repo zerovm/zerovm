@@ -11,5 +11,6 @@ Channel = /dev/stderr, /dev/stderr, 0, 0, 0, 999999, 999999
 =====================================================================
 Version = 09082012
 Nexe = hello.nexe
+== current minimum to start: 25493505
 MemMax = 4294967296
 Timeout = 1

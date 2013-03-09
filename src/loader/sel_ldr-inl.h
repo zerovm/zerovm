@@ -68,11 +68,10 @@
  */
 #include "src/main/zlog.h"
 
-static INLINE uintptr_t NaClUserToSysAddrNullOkay(struct NaClApp  *nap,
-                                                  uintptr_t       uaddr) {
-  if (((uintptr_t) 1U << nap->addr_bits <= uaddr)) {
-    return kNaClBadAddress;
-  }
+/* d'b: no checks, just does the work */
+static INLINE uintptr_t NaClUserToSysAddrNullOkay
+    (struct NaClApp *nap, uintptr_t uaddr)
+{
   return uaddr + nap->mem_start;
 }
 
@@ -84,7 +83,7 @@ static INLINE uintptr_t NaClUserToSysAddr(struct NaClApp  *nap,
   return uaddr + nap->mem_start;
 }
 
-/* todo(d'b): rewrite it to use in trap and setbreak */
+/* todo(d'b): rewrite it to use in trap */
 static INLINE int NaClIsUserAddr(struct NaClApp  *nap,
                                  uintptr_t       sysaddr) {
   return nap->mem_start <= sysaddr &&
@@ -110,7 +109,6 @@ static INLINE uintptr_t NaClUserToSysAddrRange(struct NaClApp  *nap,
   return uaddr + nap->mem_start;
 }
 
-/* todo(d'b): check buffer address and size to prevent SYGSEGV */
 static INLINE uintptr_t NaClUserToSys(struct NaClApp *nap, uintptr_t uaddr)
 {
   ZLOGFAIL(0 == uaddr || ((uintptr_t) 1U << nap->addr_bits) <= uaddr, EFAULT,

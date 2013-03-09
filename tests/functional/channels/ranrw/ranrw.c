@@ -68,7 +68,7 @@ int main(int argc, char **argv)
   ZTEST(PWRITE(STDRW_GOAT, (void*)0x10000, -1, 0) < 0);
   ZTEST(PWRITE(STDRW_GOAT, MANIFEST->heap_ptr, MANIFEST->heap_size + 1, 0) < 0);
   ZTEST(PWRITE(STDRW_GOAT, MANIFEST->heap_ptr + MANIFEST->heap_size, 1, 0) < 0);
-  ZTEST(PWRITE(STDRW_GOAT, (void*)0x100000000LL - 0x1000001, 1, 0) < 0);
+  ZTEST(PWRITE(STDRW_GOAT, (void*)0x100000000LL - 0x1000001 - 0x10000, 1, 0) < 0);
   ZTEST(PWRITE(STDRW_GOAT, (void*)0x100000000LL, 1, 0) < 0);
   ZTEST(PWRITE(STDRW_GOAT, (void*)0x100000000LL - 0x1000000, 0x1000001, 0) < 0);
   overall_errors += ERRCOUNT;
