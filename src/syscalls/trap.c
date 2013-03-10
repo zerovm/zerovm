@@ -79,7 +79,7 @@ static void UpdateChannelTag(struct ChannelDesc *channel,
  * check "prot" access for user area (start, size)
  * if failed return -1, otherwise - 0
  */
-static int CheckRAMAccess(struct NaClApp *nap, uintptr_t start, int32_t size, int prot)
+static int CheckRAMAccess(struct NaClApp *nap, uintptr_t start, int64_t size, int prot)
 {
   int i;
 

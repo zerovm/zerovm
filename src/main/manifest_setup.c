@@ -374,7 +374,7 @@ static void SetSystemData(struct NaClApp *nap)
   size += USER_MANIFEST_STRUCT_SIZE + USER_PTR_SIZE; /* size of user manifest w/o aliases */
   ptr = (void*)(FOURGIG - nap->stack_size - size); /* pointer to user manifest in user space */
   user_manifest = (void*)NaClUserToSys(nap, (uintptr_t)ptr); /* pointer to user manifest */
-  channels = (void*)(user_manifest);
+  channels = (void*)(&user_manifest->channels);
 
   /* make the 1st page of user manifest writeable */
   CopyDown((void*)NaClUserToSys(nap, FOURGIG - nap->stack_size), "");
@@ -387,7 +387,7 @@ static void SetSystemData(struct NaClApp *nap)
   for(i = 0; i < manifest->channels_count; ++i)
   {
     /* limits */
-    int64_t j;
+    int j;
     for(j = 0; j < IOLimitsCount; ++j)
       channels[i].limits[j] = manifest->channels[i].limits[j];
 

@@ -213,30 +213,30 @@ int main(int argc, char **argv)
     g_timer_start(timer);\
   } while(0)
 
-  TIMER_REPORT("GioMemoryFileSnapshotCtor()");
+  TIMER_REPORT(" constructing of memory snapshot");
 
   /* validate given nexe (ensure that text segment is safe) */
   ValidateNexe(nap);
-  TIMER_REPORT("ValidateNexe()");
+  TIMER_REPORT(" validating of nacl module");
 
   /* validate nexe structure (check elf header and segments) */
   ZLOGS(LOG_DEBUG, "Loading nacl file %s", nap->system_manifest->nexe);
   NaClAppLoadFile((struct Gio *) &main_file, nap);
-  TIMER_REPORT("NaClAppLoadFile()");
 
   if(-1 == (*((struct Gio *)&main_file)->vtbl->Close)((struct Gio *)&main_file))
     ZLOG(LOG_ERROR, "Error while closing '%s'", nap->system_manifest->nexe);
   (*((struct Gio *) &main_file)->vtbl->Dtor)((struct Gio *) &main_file);
+  TIMER_REPORT(" loading of nacl module");
 
   /* setup zerovm from manifest */
   SystemManifestCtor(nap);
+  TIMER_REPORT(" setting hypervisor from manifest");
 
   /* "defence in depth" call */
   LastDefenseLine(nap);
 
   /* Make sure all the file buffers are flushed before entering the nexe */
   fflush((FILE*) NULL);
-  TIMER_REPORT("nexe start preparation");
 
   /* start accounting */
   AccountingCtor(nap);
@@ -247,12 +247,13 @@ int main(int argc, char **argv)
     SetExitState(OK_STATE);
     NaClExit(0);
   }
+  TIMER_REPORT(" last preparations");
 
   /* set user code trap() exit location and switch to the user code */
   if(setjmp(user_exit) == 0)
     ZLOGFAIL(!NaClCreateMainThread(nap), EFAULT, "switching to nexe failed");
   SetExitState(OK_STATE);
-  TIMER_REPORT("nexe session");
+  TIMER_REPORT(" nacl module session");
 
   /* zerovm exit with finalization, report and stuff */
   NaClExit(0);
