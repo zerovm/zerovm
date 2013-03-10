@@ -50,12 +50,17 @@ enum ChannelFields {
   CFieldPutSizeLimit
 };
 
+#define FOURGIG 0x100000000ULL
+#define PAGESIZE 0x10000
+#define ROUNDDOWN_64K(a) ((a) & ~(PAGESIZE - 1LLU))
+#define ROUNDUP_64K(a) ROUNDDOWN_64K((a) + PAGESIZE - 1LLU)
+
 /*
  * get control data and parse it to make part of manifest parser
  * functions usable: GetValueByKey, GetValuesByKey, ParseValue
  * return 0 if success, otherwise -1
  */
-static int manifest_ctor()
+static void manifest_ctor()
 {
   static char buf_mft[BIG_ENOUGH];
   static char buf_ptr[BIG_ENOUGH];
@@ -65,14 +70,31 @@ static int manifest_ctor()
   mft_data = buf_mft;
   mft_ptr = (void*)buf_ptr;
 
-  if(READ(CONTROL, mft_data, MANIFEST->channels[OPEN(CONTROL)].size) < 0)
-    return -1;
+  ZTEST(READ(CONTROL, mft_data, MANIFEST->channels[OPEN(CONTROL)].size) > 0);
 
   ParseManifest();
-  if(mft_count > 0)
-    return 0;
+  ZTEST(mft_count > 0);
+}
 
-  return -1;
+void check_memory()
+{
+  int64_t umft_size;
+  int64_t heap_end;
+
+  /* fail if memory is not set in manifest */
+  ZTEST(GetValueByKey("MemMax") != NULL);
+
+  /* user manifest area size */
+  umft_size = (uintptr_t)&MANIFEST->channels[MANIFEST->channels_count - 1].name;
+  umft_size = (FOURGIG - MANIFEST->stack_size) - ROUNDDOWN_64K(umft_size);
+
+  /* get memory size specified in manifest */
+  heap_end = ATOI(GetValueByKey("MemMax"));
+  ZTEST(heap_end > 0);
+
+  /* calculate approximate heap_ptr */
+  heap_end -= MANIFEST->stack_size;
+  ZTEST(heap_end - (uintptr_t)MANIFEST->heap_ptr - MANIFEST->heap_size < umft_size);
 }
 
 /* parse the channel record, find the channel and test its info */
@@ -109,18 +131,11 @@ int main(int argc, char **argv)
   int number;
 
   /* get the control data */
-  if(manifest_ctor() != 0)
-  {
-    FPRINTF(STDERR, "cannot get the control data\n");
-    FPRINTF(STDERR, "\nTEST FAILED\n");
-    return 1;
-  }
+  manifest_ctor();
 
   /* check general information provided by zerovm */
   /* memory */
-  token = GetValueByKey("MemMax");
-  ZTEST((uintptr_t)MANIFEST->heap_ptr + MANIFEST->heap_size + MANIFEST->stack_size
-      == (token != NULL ? ATOI(token) : 0));
+  check_memory();
 
   /* node name */
   token = GetValueByKey("NodeName");
