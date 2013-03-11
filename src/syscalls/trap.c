@@ -26,15 +26,17 @@
 #include "src/channels/prefetch.h"
 #include "src/main/nacl_globals.h"
 
-/* user exit. invokes long jump to main(). uses global var */
+/* user exit. session is finished */
 static int32_t ZVMExitHandle(struct NaClApp *nap, int32_t code)
 {
   assert(nap != NULL);
+
   nap->system_manifest->user_ret_code = code;
   ZLOGS(LOG_DEBUG, "Exit syscall handler: %d", code);
-  longjmp(user_exit, code);
+  SetExitState(OK_STATE);
+  NaClExit(code);
 
-  return code; /* prevent compiler warning. not reached */
+  return 0; /* unreachable */
 }
 
 /*

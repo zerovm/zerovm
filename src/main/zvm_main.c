@@ -249,15 +249,7 @@ int main(int argc, char **argv)
   }
   TIMER_REPORT(" last preparations");
 
-  /* set user code trap() exit location and switch to the user code */
-  if(setjmp(user_exit) == 0)
-    ZLOGFAIL(!NaClCreateMainThread(nap), EFAULT, "switching to nexe failed");
-  SetExitState(OK_STATE);
-  TIMER_REPORT(" nacl module session");
-
-  /* zerovm exit with finalization, report and stuff */
-  NaClExit(0);
-
-  /* Unreachable, but having the return prevents a compiler error. */
-  return -1;
+  /* switch to the user code */
+  ZLOGFAIL(!NaClCreateMainThread(nap), EFAULT, "switching to nexe failed");
+  return EFAULT; /* unreachable */
 }

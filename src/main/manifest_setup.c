@@ -270,6 +270,7 @@ static void SetTimeout(struct SystemManifest *policy)
   ZLOGFAIL(setrlimit(RLIMIT_CPU, &rl) != 0, errno, "cannot set timeout");
 }
 
+/* todo(d'b): move it to sel_addrspace */
 /* should be kept in sync with api/zvm.h*/
 struct ChannelSerialized
 {
@@ -426,6 +427,7 @@ static void SetSystemData(struct NaClApp *nap)
   /* make the user manifest read only */
   ProtectUserManifest(nap, ptr);
 }
+/* }} */
 
 /* construct system_manifest object and initialize it from manifest */
 void SystemManifestCtor(struct NaClApp *nap)

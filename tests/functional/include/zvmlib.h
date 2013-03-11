@@ -77,6 +77,9 @@
     WRITE(alias, _buf, _size);\
   } while(0)
 #define PRINTF(...) FPRINTF(STDOUT, __VA_ARGS__)
+#define sprintf SPRINTF
+#define fprintf FPRINTF
+#define printf PRINTF
 
 /***************************************************
  * zero library functions. it is recommended to use

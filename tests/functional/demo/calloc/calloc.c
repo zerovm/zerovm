@@ -1,43 +1,38 @@
 /*
- * calloc test
+ * calloc test (it is not hypervisor test, but zvmlib)
  */
 #include "include/zvmlib.h"
 
-#define SIZE 256
+#define SIZE 256*1024*1024 /* 256mb */
 #define PATTERN 0xDB
+#define FAILIF(cond, msg) if(cond) { printf("%s\n", msg); return 1; }
 
 int main(int argc, char **argv)
 {
   int i;
-  uint8_t *p = CALLOC(SIZE, sizeof *p);
-
-  /* heap info */
-  PRINTF("heap_ptr = 0x%X, heap_size = %d\n",
-      (uintptr_t)MANIFEST->heap_ptr, MANIFEST->heap_size);
+  uint8_t *p = calloc(SIZE, sizeof *p);
 
   /* memory allocated? */
-  if(p == NULL)
-  {
-    PRINTF("memory allocation error\n");
-  }
-  else
-  {
-    PRINTF("memory allocated at 0x%X\n", (uintptr_t)p);
-  }
+  FAILIF(p == NULL, "memory allocation error");
+
+  /* heap info */
+  printf("memory allocated at 0x%X\n", (uintptr_t)p);
+  printf("heap_ptr = 0x%X, heap_size = %d\n",
+      (uintptr_t)MANIFEST->heap_ptr, MANIFEST->heap_size);
 
   /* set allocated buffer to pattern */
-  MEMSET(p, PATTERN, SIZE);
-  PRINTF("memory set to 0x%X pattern\n", PATTERN);
+  memset(p, PATTERN, SIZE);
+  printf("memory set to 0x%X pattern\n", PATTERN);
 
-  /* check pattern */
+  /* free and calloc again */
+  free(p);
+  p = calloc(SIZE, sizeof *p);
+
+  /* check if buffer is populated with 0s again */
   for(i = 0; i < SIZE; ++i)
-  {
-    if(p[i] != PATTERN)
-      PRINTF("invalid pattern 0x%X at 0x%X\n", p[i], (uintptr_t)p + i);
-  }
-  PRINTF("pattern tested\n");
+    FAILIF(p[i] != 0, "test failed. invalid pattern found");
 
-  FREE(p);
-
+  printf("pattern tested successfully\n");
+  free(p);
   return 0;
 }

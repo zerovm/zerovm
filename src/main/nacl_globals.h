@@ -27,7 +27,6 @@
 #define NATIVE_CLIENT_SRC_TRUSTED_SERVICE_RUNTIME_NACL_GLOBALS_H__
 
 #include <stdint.h>
-#include <setjmp.h>
 
 EXTERN_C_BEGIN
 
@@ -38,7 +37,6 @@ struct NaClApp;
 struct NaClThreadContext    *nacl_user; /* user registers storage */
 struct NaClThreadContext    *nacl_sys; /* zerovm registers storage */
 struct NaClApp              *gnap; /* pointer to global NaClApp object */
-jmp_buf                     user_exit; /* part of trap() exit */
 /* variables above will be initialized later */
 
 EXTERN_C_END
