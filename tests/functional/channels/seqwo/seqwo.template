@@ -12,5 +12,5 @@ Channel = PWD/seqwo.data, /dev/seqwo, 1, 0, 0, 32, 32
 =====================================================================
 Version = 09082012
 Nexe = seqwo.nexe
-MemMax = 134217728
-Timeout = 5
+MemMax = 33554432
+Timeout = 1

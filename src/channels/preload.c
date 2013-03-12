@@ -61,7 +61,7 @@ int PreloadChannelDtor(struct ChannelDesc* channel)
     i = ftruncate(channel->handle, channel->putpos);
 
   /* calculate digest and free the tag */
-  if(TagEngineEnabled())
+  if(CHANNELS_ETAG_ENABLED)
   {
     TagDigest(channel->tag, channel->digest);
     TagDtor(channel->tag);

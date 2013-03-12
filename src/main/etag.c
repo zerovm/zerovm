@@ -25,9 +25,10 @@
 
 static int tag_engine_enabled = 0;
 
-void TagEngineCtor()
+void TagEngineCtor(int level)
 {
-  tag_engine_enabled = 1;
+  ZLOGFAIL(level < 1 || level > 3, EFAULT, "invalid etag level %d", level);
+  tag_engine_enabled = level;
 }
 
 /* disable etag */
@@ -66,7 +67,7 @@ void TagDigest(void *ctx, char *digest)
   g_checksum_free(tmp);
 }
 
-void TagUpdate(void *ctx, const char *buffer, int32_t size)
+void TagUpdate(void *ctx, const char *buffer, int64_t size)
 {
   assert(ctx != NULL);
   assert(buffer != NULL);

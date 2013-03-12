@@ -10,9 +10,9 @@ all: $(NAME).o
 	@sed 's#PWD#$(PWD)#g' $(NAME)2.template > $(NAME)2.manifest
 	@sed 's#PWD#$(PWD)#g' $(NAME)3.template > $(NAME)3.manifest
 	@perl -e 'select(undef,undef,undef,.04)'
-	@$(ZEROVM_ROOT)/zerovm -e -M$(NAME)1.manifest&
-	@$(ZEROVM_ROOT)/zerovm -e -M$(NAME)2.manifest&
-	@$(ZEROVM_ROOT)/zerovm -e -M$(NAME)3.manifest
+	@$(ZEROVM_ROOT)/zerovm -e3 $(NAME)1.manifest&
+	@$(ZEROVM_ROOT)/zerovm -e3 $(NAME)2.manifest&
+	@$(ZEROVM_ROOT)/zerovm -e3 $(NAME)3.manifest
 
 $(NAME).o: $(NAME).c
 	$(ZVM_TOOLCHAIN)/bin/gcc -c -Wall -O3 -msse4.1 \

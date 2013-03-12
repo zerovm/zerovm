@@ -24,10 +24,10 @@ EXTERN_C_BEGIN
 #include "src/loader/sel_ldr.h"
 
 #define HELP_SCREEN /* update command line switches here */\
-    "\033[1m\033[37mZeroVM\033[0m lightweight VM manager, build 2013-03-11\n"\
+    "\033[1m\033[37mZeroVM\033[0m lightweight VM manager, build 2013-03-12\n"\
     "Usage: <manifest_file> [-v#] [-l#] [-PFSseQ]\n\n"\
     " <manifest_file> load settings from manifest\n"\
-    " -e enable the data oversight (etag)\n"\
+    " -e [level] enable the data control. 1 - channels, 2 - memory, 3 - both\n"\
     " -l set a new storage limit (in Gb)\n"\
     " -s skip validation\n\n"\
     " (testing flags)\n"\
@@ -41,7 +41,6 @@ EXTERN_C_BEGIN
 #define ZEROVM_PRIORITY 19
 #define ZEROVM_IO_LIMIT_UNIT 0x40000000l
 #define ZEROVM_IO_LIMIT 4*ZEROVM_IO_LIMIT_UNIT
-#define NEW_ROOT "/"
 #define IOSTATS_SIZE 0X100
 #define DEFAULT_VALIDATOR_NAME "ncval"
 

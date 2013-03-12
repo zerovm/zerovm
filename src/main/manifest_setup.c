@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* todo(d'b): should disappear in sel_addrspace, sel_ldr, nacl_exit e.t.c. */
+/* todo(d'b): should merge into sel_addrspace, sel_ldr, nacl_exit e.t.c. */
 #include <assert.h>
 #include <time.h>
 #include <sys/resource.h> /* timeout, process priority */
@@ -83,28 +83,11 @@ static void SetTimeout(struct SystemManifest *policy)
   ZLOGFAIL(setrlimit(RLIMIT_CPU, &rl) != 0, errno, "cannot set timeout");
 }
 
-#if 0
-/* put zerovm in a "jail" */
-static void ChrootJail()
-{
-  ZLOGS(LOG_DEBUG, "'chrooting' zerovm to %s", NEW_ROOT);
-  ZLOGIF(chdir(NEW_ROOT) != 0, "cannot 'chdir' zerovm");
-  ZLOGIF(chroot(NEW_ROOT) != 0, "cannot 'chroot' zerovm");
-}
-#endif
-
 void LastDefenseLine(struct NaClApp *nap)
 {
   LowerOwnPriority();
   LimitOwnIO();
   SetTimeout(nap->system_manifest);
-
-  /*
-   * ChrootJail();
-   * disabled as useless. chroot can be used only by privileged program.
-   * zerovm is not intended to be privileged
-   * todo(d'b): looks like it should be deleted not disabled.
-   */
 }
 
 /* preallocate memory area of given size. abort if fail */
@@ -464,25 +447,21 @@ static void EtagMemoryChunk(struct NaClApp *nap)
   int i;
 
   assert(nap != NULL);
-  assert(TagEngineEnabled() != 0);
+  assert(MEMORY_ETAG_ENABLED != 0);
 
   for(i = 0; i < MemMapSize; ++i)
   {
-    uintptr_t addr;
-    int32_t size;
+    uintptr_t addr = nap->mem_map[i].start;
+    int64_t size = nap->mem_map[i].size;
 
-    /* skip inaccessible pages */
-    if(nap->mem_map[RODataIdx].prot == PROT_NONE) continue;
-
-    /* update user_etag with the chunk data */
-    addr = nap->mem_map[RODataIdx].start;
-    size = nap->mem_map[RODataIdx].size;
-    TagUpdate(nap->user_tag, (const char*)addr, size);
+    /* update user_etag skipping inaccessible pages */
+    if(nap->mem_map[i].prot & PROT_READ)
+      TagUpdate(nap->user_tag, (const char*) addr, size);
   }
 }
 
 /* updates user_tag (should be constructed) with all channels digests */
-void ChannelsDigest(struct NaClApp *nap)
+static void ChannelsDigest(struct NaClApp *nap)
 {
   int i;
 
@@ -506,8 +485,8 @@ int ProxyReport(struct NaClApp *nap)
   /* tag user memory and channels */
   if(TagEngineEnabled())
   {
-    ChannelsDigest(nap);
-    EtagMemoryChunk(nap);
+    if(CHANNELS_ETAG_ENABLED) ChannelsDigest(nap);
+    if(MEMORY_ETAG_ENABLED) EtagMemoryChunk(nap);
     TagDigest(nap->user_tag, etag);
     TagDtor(nap->user_tag);
   }

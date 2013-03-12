@@ -12,5 +12,5 @@ Channel = PWD/ranwo.data, /dev/ranwo, 2, 0, 0, 32, 32
 =====================================================================
 Version = 09082012
 Nexe = ranwo.nexe
-MemMax = 134217728
-Timeout = 5
+MemMax = 33554432
+Timeout = 1

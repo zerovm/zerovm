@@ -347,7 +347,7 @@ static INLINE void UpdateChannelState(struct ChannelDesc *channel)
   zmq_getsockopt(channel->socket, ZMQ_RCVMORE, &more, &more_size);
 
   /* etag enabled */
-  if(more != 0 && channel->bufend == TAG_DIGEST_SIZE - 1 && TagEngineEnabled())
+  if(more != 0 && channel->bufend == TAG_DIGEST_SIZE - 1 && CHANNELS_ETAG_ENABLED)
   {
     /* store received digest */
     memcpy(channel->control, zmq_msg_data(&channel->msg), TAG_DIGEST_SIZE - 1);
@@ -494,7 +494,7 @@ int PrefetchChannelDtor(struct ChannelDesc *channel)
   /* close "PUT" channel */
   if(channel->limits[PutsLimit] && channel->limits[PutSizeLimit])
   {
-    int size = TagEngineEnabled() ? TAG_DIGEST_SIZE - 1 : 0;
+    int size = CHANNELS_ETAG_ENABLED ? TAG_DIGEST_SIZE - 1 : 0;
 
     /* prepare digest */
     if(TagEngineEnabled())

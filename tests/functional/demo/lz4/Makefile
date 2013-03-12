@@ -6,7 +6,7 @@ all: $(NAME).o lz4.o
 	-T $(ZEROVM_ROOT)/tests/functional/include/elf64_nacl.x.static \
 	$(NAME).o lz4.o $(ZEROVM_ROOT)/tests/functional/include/libzvmlib.a
 	@sed 's#PWD#$(PWD)#g' $(NAME).template > $(NAME).manifest
-	@$(ZEROVM_ROOT)/zerovm -PQs -M$(NAME).manifest
+	@$(ZEROVM_ROOT)/zerovm -PQs $(NAME).manifest
 	@./lz4demo -t output.lz4
 
 $(NAME).o: $(NAME).c

@@ -7,7 +7,7 @@ all: $(NAME).o
 	$(NAME).o $(ZEROVM_ROOT)/tests/functional/include/libzvmlib.a
 	@cp stubbed.stored stubbed.data
 	@sed 's#PWD#$(PWD)#g' $(NAME).template > $(NAME).manifest
-	@$(ZEROVM_ROOT)/zerovm -e -M$(NAME).manifest
+	@$(ZEROVM_ROOT)/zerovm -e3 $(NAME).manifest
 
 $(NAME).o: $(NAME).c
 	$(ZVM_TOOLCHAIN)/bin/gcc -c -Wall -O3 -msse4.1 \

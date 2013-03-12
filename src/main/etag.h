@@ -25,8 +25,16 @@
 #define TAG_DIGEST_SIZE 40 + 1 /* without '\0': 32, 40, 64 */
 #define TAG_ENGINE_DISABLED "disabled"
 
+/*
+ * calculate by mask. return 0 if disabled
+ * 00000001 - channels etag enabled
+ * 00000010 - memory etag enabled
+ */
+#define CHANNELS_ETAG_ENABLED (TagEngineEnabled() & 1)
+#define MEMORY_ETAG_ENABLED (TagEngineEnabled() & 2)
+
 /* etag engine construction */
-void TagEngineCtor();
+void TagEngineCtor(int level);
 
 /* disable etag */
 void TagEngineDtor();
@@ -53,6 +61,6 @@ void TagDigest(void *ctx, char *digest);
  * update etag with the given buffer.
  * returns 0 if all ok or -1 if failed
  */
-void TagUpdate(void *ctx, const char *buffer, int32_t size);
+void TagUpdate(void *ctx, const char *buffer, int64_t size);
 
 #endif /* ETAG_H_ */

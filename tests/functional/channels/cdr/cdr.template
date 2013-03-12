@@ -14,6 +14,6 @@ Channel = PWD/cdr_scapegoat.data, /dev/cdr_scapegoat, 1, 512, 8192, 16, 16
 =====================================================================
 Version = 09082012
 Nexe = cdr.nexe
-MemMax = 134217728
-Timeout = 5
+MemMax = 33554432
+Timeout = 1
 

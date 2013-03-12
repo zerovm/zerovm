@@ -8,7 +8,7 @@ all: $(NAME).o
 	@sed 's#PWD#$(PWD)#g' $(NAME).template > $(NAME).manifest
 	@mkfifo input.data
 	@cp $(NAME).nexe input.data&
-	@$(ZEROVM_ROOT)/zerovm -e -M$(NAME).manifest
+	@$(ZEROVM_ROOT)/zerovm -e3 $(NAME).manifest
 
 $(NAME).o: $(NAME).c
 	$(ZVM_TOOLCHAIN)/bin/gcc -c -Wall -O3 -msse4.1 \

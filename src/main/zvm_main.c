@@ -69,7 +69,7 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
   /* construct zlog with default verbosity */
   ZLogCtor(LOG_ERROR);
 
-  while((opt = getopt(argc, argv, "-PFeQsSv:M:l:")) != -1)
+  while((opt = getopt(argc, argv, "-PFe:QsSv:M:l:")) != -1)
   {
     switch(opt)
     {
@@ -87,7 +87,7 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
         quit_after_load = 1;
         break;
       case 'e':
-        TagEngineCtor();
+        TagEngineCtor(ATOI(optarg));
         nap->user_tag = TagCtor();
         break;
       case 'S':

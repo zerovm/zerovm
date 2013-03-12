@@ -101,7 +101,7 @@ static void ChannelCtor(struct NaClApp *nap, char **tokens)
   channel->source = GetSourceType((char*)channel->name);
 
   /* initialize the channel tag */
-  if(TagEngineEnabled())
+  if(CHANNELS_ETAG_ENABLED)
   {
     channel->tag = TagCtor();
     memset(channel->digest, 0, TAG_DIGEST_SIZE);

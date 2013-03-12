@@ -67,7 +67,7 @@ static void UpdateChannelTag(struct ChannelDesc *channel,
     const char *buffer, int32_t size)
 {
   /* skip if etag is not enabled */
-  if(!TagEngineEnabled()) return;
+  if(!CHANNELS_ETAG_ENABLED) return;
 
   assert(channel != NULL);
   assert(buffer != NULL);

@@ -12,5 +12,5 @@ Channel = PWD/ranro.data, /dev/ranro, 1, 32, 32, 0, 0
 =====================================================================
 Version = 09082012
 Nexe = ranro.nexe
-MemMax = 134217728
-Timeout = 5
+MemMax = 33554432
+Timeout = 1

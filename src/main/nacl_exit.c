@@ -22,6 +22,7 @@
 #include <errno.h>
 #include <assert.h>
 #include "src/main/nacl_exit.h"
+#include "src/main/manifest_parser.h"
 #include "src/main/manifest_setup.h"
 #include "src/main/nacl_globals.h"
 #include "src/platform/nacl_signal.h"
@@ -70,6 +71,7 @@ static void Finalizer(void)
   ProxyReport(gnap);
   TagEngineDtor();
   ZLogDtor();
+  ManifestDtor();
 }
 
 void SetExitState(const char *state)

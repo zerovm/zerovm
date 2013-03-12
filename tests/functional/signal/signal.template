@@ -14,7 +14,7 @@ Channel = PWD/quota.data, quota.data, 0, 0, 0, 5368709120, 5368709120
 =====================================================================
 Version = 09082012
 Nexe = signal.nexe
-MemMax = 134217728
+MemMax = 33554432
 
 == available signals: 8, 11, 24, 25
 == (for #25 timeout have to be set to adequate value)

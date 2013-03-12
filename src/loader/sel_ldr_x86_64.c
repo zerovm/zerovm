@@ -24,7 +24,7 @@
 #include "src/loader/sel_ldr.h"
 #include "src/platform/sel_memory.h"
 #include "src/loader/sel_ldr_x86.h"
-#include "src/loader/tramp_64.h"
+#include "src/loader/tramp.h"
 
 extern int NaClSyscallSeg(); /* d'b: defined in nacl_syscall_64.S */
 
