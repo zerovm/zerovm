@@ -26,7 +26,7 @@
 #include "src/loader/sel_ldr_x86.h"
 #include "src/loader/tramp_64.h"
 
-extern int NaClSyscallSeg(); /* d'b: moved from tiny header file to remove it */
+extern int NaClSyscallSeg(); /* d'b: defined in nacl_syscall_64.S */
 
 int NaClMakeDispatchThunk(struct NaClApp *nap)
 {

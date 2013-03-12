@@ -40,7 +40,7 @@
  * d'b: alternative mechanism to pass control to user side
  * note: initializes "nacl_user" global
  */
-NORETURN void SwitchToApp(struct NaClApp  *nap, uintptr_t stack_ptr)
+NORETURN static void SwitchToApp(struct NaClApp  *nap, uintptr_t stack_ptr)
 {
   /* initialize "nacl_user" global */
   if(!nacl_user) nacl_user = g_malloc(sizeof(*nacl_user));
@@ -63,13 +63,22 @@ NORETURN void SwitchToApp(struct NaClApp  *nap, uintptr_t stack_ptr)
 
   ZLOGFAIL(1, EFAULT, "unreachable code reached");
 }
-/* d'b end */
 
 #if !defined(SIZE_T_MAX)
 # define SIZE_T_MAX     (~(size_t) 0)
 #endif
 
-void NaClFillEndOfTextRegion(struct NaClApp *nap) {
+/*
+ * Fill from static_text_end to end of that page with halt
+ * instruction, which is at least NACL_HALT_LEN in size when no
+ * dynamic text is present.  Does not touch dynamic text region, which
+ * should be pre-filled with HLTs.
+ *
+ * By adding NACL_HALT_SLED_SIZE, we ensure that the code region ends
+ * with HLTs, just in case the CPU has a bug in which it fails to
+ * check for running off the end of the x86 code segment.
+ */
+void static NaClFillEndOfTextRegion(struct NaClApp *nap) {
   size_t page_pad;
 
   /*
@@ -145,7 +154,7 @@ static void NaClCheckAddressSpaceLayoutSanity(struct NaClApp *nap,
 }
 
 #define DUMP(a) ZLOGS(LOG_DEBUG, "%-24s = 0x%016x", #a, a)
-void NaClLogAddressSpaceLayout(struct NaClApp *nap)
+static void NaClLogAddressSpaceLayout(struct NaClApp *nap)
 {
   ZLOGS(LOG_DEBUG, "NaClApp addr space layout:");
   DUMP(nap->static_text_end);
@@ -158,6 +167,12 @@ void NaClLogAddressSpaceLayout(struct NaClApp *nap)
   DUMP(nap->initial_entry_pt);
   DUMP(nap->user_entry_pt);
   DUMP(nap->bundle_size);
+}
+
+int NaClAddrIsValidEntryPt(struct NaClApp *nap, uintptr_t addr)
+{
+  if(0 != (addr & (nap->bundle_size - 1))) return 0;
+  return addr < nap->static_text_end;
 }
 
 void NaClAppLoadFile(struct Gio *gp, struct NaClApp *nap)
@@ -279,12 +294,6 @@ void NaClAppLoadFile(struct Gio *gp, struct NaClApp *nap)
   NaClElfImageDelete(image);
 }
 #undef DUMP
-
-int NaClAddrIsValidEntryPt(struct NaClApp *nap, uintptr_t addr)
-{
-  if(0 != (addr & (nap->bundle_size - 1))) return 0;
-  return addr < nap->static_text_end;
-}
 
 int NaClCreateMainThread(struct NaClApp *nap)
 {

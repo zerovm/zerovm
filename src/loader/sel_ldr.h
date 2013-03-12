@@ -203,9 +203,6 @@ void NaClAppLoadFile(struct Gio *gp, struct NaClApp *nap);
 void  NaClAppPrintDetails(struct NaClApp  *nap,
                           struct Gio      *gp, int verbosity);
 
-int NaClAddrIsValidEntryPt(struct NaClApp *nap,
-                           uintptr_t      addr);
-
 /*
  * launch user session. preconditions: argc > 0, argc and argv table is
  * consistent, envv may be NULL (this happens on MacOS/Cocoa if envv is
@@ -227,18 +224,6 @@ static const uintptr_t kNaClBadAddress = (uintptr_t) -1;
 void NaClFillMemoryRegionWithHalt(void *start, size_t size);
 
 void NaClFillTrampolineRegion(struct NaClApp *nap);
-
-/*
- * Fill from static_text_end to end of that page with halt
- * instruction, which is at least NACL_HALT_LEN in size when no
- * dynamic text is present.  Does not touch dynamic text region, which
- * should be pre-filled with HLTs.
- *
- * By adding NACL_HALT_SLED_SIZE, we ensure that the code region ends
- * with HLTs, just in case the CPU has a bug in which it fails to
- * check for running off the end of the x86 code segment.
- */
-void NaClFillEndOfTextRegion(struct NaClApp *nap);
 
 int NaClMakeDispatchThunk(struct NaClApp *nap);
 

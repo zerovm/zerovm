@@ -22,6 +22,14 @@
 #include <errno.h>
 #include "src/loader/sel_ldr.h"
 
+nacl_reg_t NaClGetStackPtr(void)
+{
+  nacl_reg_t rsp;
+
+  __asm__("mov %%rsp, %0" : "=r" (rsp) : );
+  return rsp;
+}
+
 uintptr_t NaClGetThreadCtxSp(struct NaClThreadContext  *th_ctx)
 {
   return (uintptr_t) th_ctx->rsp;

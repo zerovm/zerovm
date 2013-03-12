@@ -40,7 +40,6 @@ int NaClAppCtor(struct NaClApp *nap)
   nap->rodata_start = 0;
   nap->data_start = 0;
   nap->data_end = 0;
-
   nap->initial_entry_pt = 0;
   nap->user_entry_pt = 0;
 
@@ -68,14 +67,10 @@ static uint64_t NaClLoadMem(uintptr_t addr, size_t user_nbytes)
   return value;
 }
 
-#define GENERIC_LOAD(bits) \
-  static uint ## bits ## _t NaClLoad ## bits(uintptr_t addr) { \
-    return (uint ## bits ## _t) NaClLoadMem(addr, sizeof(uint ## bits ## _t)); \
-  }
-
-GENERIC_LOAD(64)
-
-#undef GENERIC_LOAD
+static uint64_t NaClLoad64(uintptr_t addr)
+{
+  return NaClLoadMem(addr, sizeof(uint64_t));
+}
 
 /* unaligned little-endian store */
 static void NaClStoreMem(uintptr_t addr, size_t nbytes, uint64_t value)
@@ -160,7 +155,7 @@ void  NaClLoadTrampoline(struct NaClApp *nap) {
    * anyway to help detect NULL pointer errors, and we might as well
    * not dirty the page.
    *
-   * The last syscall entry point is used for springboard code.
+   * The last syscall entry point is reserved (nacl springboard code)
    */
   num_syscalls = ((NACL_TRAMPOLINE_END - NACL_SYSCALL_START_ADDR) / NACL_SYSCALL_BLOCK_SIZE) - 1;
   ZLOGS(LOG_DEBUG, "num_syscalls = %d (0x%x)", num_syscalls, num_syscalls);

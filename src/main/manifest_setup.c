@@ -29,6 +29,7 @@
 #include "src/main/manifest_setup.h"
 #include "src/channels/mount_channel.h"
 #include "src/main/accounting.h"
+#include "src/main/tools.h"
 
 /* get integer value by key from the manifest. 0 if not found */
 #define GET_INT_BY_KEY(var, str) \
@@ -494,7 +495,7 @@ void ChannelsDigest(struct NaClApp *nap)
 
 int ProxyReport(struct NaClApp *nap)
 {
-  char report[BIG_ENOUGH_SPACE + 1];
+  char report[BIG_ENOUGH_SPACE];
   char etag[TAG_DIGEST_SIZE] = TAG_ENGINE_DISABLED;
   int length;
   int i;

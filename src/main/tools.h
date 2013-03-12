@@ -34,16 +34,13 @@
 
 #define MANIFEST_MAX 0x100000 /* limit for the manifest size */
 #define KEYWORD_SIZE_MAX 256
-#define BIG_ENOUGH_SPACE 65536 /* ..size of the biggest temporary variable */
+#define BIG_ENOUGH_SPACE 0x10000 /* ..size of the biggest stack variable */
 #define BIG_ENOUGH_STRING 1024 /* ..size of the random biggest string */
 #define INT32_STRLEN (11) /* enough space to place maximum int32 value + '\0' */
 #define SIGNAL_STRLEN (64) /* enough space to place zerovm state message */
 
-#undef MIN /* prevent conflict with glib.h*/
-#undef MAX /* prevent conflict with glib.h*/
+/* debug macro */
 #undef SHOWID
-#define MIN(a, b) ((a) < (b) ? (a) : (b))
-#define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define SHOWID printf("%s: %d, %s\n", __FILE__, __LINE__, __func__)
 
 /* safe atoi(). NULL can be used. return 0 for NULL */
