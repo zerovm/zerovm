@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+#include <sys/fcntl.h>
 #include <assert.h>
 #include "src/channels/mount_channel.h"
 #include "src/channels/preload.h"
@@ -166,7 +166,7 @@ static void RegularChannel(struct ChannelDesc* channel)
           "'%s' size is less then specified append position", channel->alias);
 
       /* file does not exist */
-      if(channel->size == 0 && STRNEQ(channel->name, DEV_NULL))
+      if(channel->size == 0 && !STREQ(channel->name, DEV_NULL))
       {
         /* preallocate channel space */
         if(!disable_preallocation)

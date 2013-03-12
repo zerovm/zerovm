@@ -30,6 +30,13 @@
 #include "src/channels/mount_channel.h"
 #include "src/main/accounting.h"
 
+/* get integer value by key from the manifest. 0 if not found */
+#define GET_INT_BY_KEY(var, str) \
+  do {\
+    char *p = GetValueByKey(str);\
+    var = p == NULL ? 0 : g_ascii_strtoll(p, NULL, 10);\
+  } while(0)
+
 /* hard limit for all zerovm i/o */
 static int64_t storage_limit = ZEROVM_IO_LIMIT;
 
@@ -38,14 +45,6 @@ static void LowerOwnPriority()
 {
   ZLOGIF(setpriority(PRIO_PROCESS, 0, ZEROVM_PRIORITY) != 0,
       "cannot lower zerovm priority");
-}
-
-/* put zerovm in a "jail" */
-static void ChrootJail()
-{
-  ZLOGS(LOG_DEBUG, "'chrooting' zerovm to %s", NEW_ROOT);
-  ZLOGIF(chdir(NEW_ROOT) != 0, "cannot 'chdir' zerovm");
-  ZLOGIF(chroot(NEW_ROOT) != 0, "cannot 'chroot' zerovm");
 }
 
 int SetStorageLimit(int64_t a)
@@ -57,11 +56,10 @@ int SetStorageLimit(int64_t a)
 }
 
 /* limit zerovm i/o */
-static void LimitOwnIO(struct NaClApp *nap)
+static void LimitOwnIO()
 {
   struct rlimit rl;
 
-  assert(nap != NULL);
   assert(storage_limit > 0);
 
   ZLOGIF(getrlimit(RLIMIT_FSIZE, &rl) != 0, "cannot get i/o limits");
@@ -69,36 +67,30 @@ static void LimitOwnIO(struct NaClApp *nap)
   ZLOGIF(setrlimit(RLIMIT_FSIZE, &rl) != 0, "cannot set i/o limits");
 }
 
-/* limit heap and stack available for zerovm */
-/* todo(d'b): under construction */
-static void LimitOwnMemory()
+/* set timeout. by design timeout must be specified in manifest */
+static void SetTimeout(struct SystemManifest *policy)
 {
-#if 0
-  int result;
+  struct rlimit rl;
 
-  ZLOGIF(result != 0, "cannot limit zerovm i/o");
-#endif
+  assert(policy != NULL);
+
+  GET_INT_BY_KEY(policy->timeout, MFT_TIMEOUT);
+  ZLOGFAIL(policy->timeout < 1, EFAULT, "invalid or absent timeout");
+  rl.rlim_cur = policy->timeout;
+  rl.rlim_max = -1;
+  setrlimit(RLIMIT_CPU, &rl);
+  ZLOGFAIL(setrlimit(RLIMIT_CPU, &rl) != 0, errno, "cannot set timeout");
 }
 
-/* give up the super user priority */
-/* todo(d'b): under construction */
-static void DisableSuperUser()
-{
 #if 0
-  int result;
-
-  if (getuid() == 0)
-  {
-    /* process is running as root, drop privileges */
-    if (setgid(groupid) != 0)
-        fatal("setgid: Unable to drop group privileges: %s", strerror(errno));
-    if (setuid(userid) != 0)
-        fatal("setuid: Unable to drop user privileges: %S", strerror(errno));
-  }
-
-  ZLOGIF(result != 0, "cannot disable super user");
-#endif
+/* put zerovm in a "jail" */
+static void ChrootJail()
+{
+  ZLOGS(LOG_DEBUG, "'chrooting' zerovm to %s", NEW_ROOT);
+  ZLOGIF(chdir(NEW_ROOT) != 0, "cannot 'chdir' zerovm");
+  ZLOGIF(chroot(NEW_ROOT) != 0, "cannot 'chroot' zerovm");
 }
+#endif
 
 /*
  * "defense in depth". the last frontier of defense.
@@ -107,10 +99,15 @@ static void DisableSuperUser()
 void LastDefenseLine(struct NaClApp *nap)
 {
   LowerOwnPriority();
-  LimitOwnIO(nap);
-  LimitOwnMemory();
-  ChrootJail();
-  DisableSuperUser();
+  LimitOwnIO();
+  SetTimeout(nap->system_manifest);
+
+  /*
+   * ChrootJail();
+   * disabled as useless. chroot can be used only by privileged program.
+   * zerovm is not intended to be privileged
+   * todo(d'b): looks like it should be deleted not disabled.
+   */
 }
 
 /* preallocate memory area of given size. abort if fail */
@@ -246,28 +243,6 @@ static void SetCommandLine(struct SystemManifest *policy)
   /* populate command line arguments array with pointers */
   for(i = 0; i < policy->cmd_line_size - 1; ++i)
     policy->cmd_line[i + 1] = tokens[i];
-}
-
-/* get integer value by key from the manifest. 0 if not found */
-#define GET_INT_BY_KEY(var, str) \
-  do {\
-    char *p = GetValueByKey(str);\
-    var = p == NULL ? 0 : g_ascii_strtoll(p, NULL, 10);\
-  } while(0)
-
-/* set timeout. by design timeout must be specified in manifest */
-static void SetTimeout(struct SystemManifest *policy)
-{
-  struct rlimit rl;
-
-  assert(policy != NULL);
-
-  GET_INT_BY_KEY(policy->timeout, MFT_TIMEOUT);
-  ZLOGFAIL(policy->timeout < 1, EFAULT, "invalid or absent timeout");
-  rl.rlim_cur = policy->timeout;
-  rl.rlim_max = -1;
-  setrlimit(RLIMIT_CPU, &rl);
-  ZLOGFAIL(setrlimit(RLIMIT_CPU, &rl) != 0, errno, "cannot set timeout");
 }
 
 /* todo(d'b): move it to sel_addrspace */
@@ -447,9 +422,8 @@ void SystemManifestCtor(struct NaClApp *nap)
   /* check mandatory manifest keys */
   ZLOGFAIL(nap->system_manifest->version == NULL, EFAULT,
       "the manifest version is not provided");
-  ZLOGFAIL(STRCMP(nap->system_manifest->version, MANIFEST_VERSION),
+  ZLOGFAIL(g_strcmp0(nap->system_manifest->version, MANIFEST_VERSION),
       EFAULT, "manifest version not supported");
-  SetTimeout(policy);
 
   /* user data (environment, command line) */
   policy->envp = NULL;

@@ -23,7 +23,6 @@
 #include "src/main/accounting.h"
 #include "src/main/manifest_setup.h"
 #include "src/channels/mount_channel.h"
-#include "api/zvm.h"
 
 /* accounting folder name. NULL if not available */
 static char accounting[BIG_ENOUGH_STRING] = DEFAULT_ACCOUNTING;

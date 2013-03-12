@@ -27,7 +27,6 @@
 #include <assert.h>
 #include <glib.h>
 
-#include "api/zvm.h" /* error codes */
 #include "src/main/tools.h"
 #include "src/main/manifest_parser.h"
 

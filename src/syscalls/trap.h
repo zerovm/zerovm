@@ -19,7 +19,6 @@
 #ifndef TRAP_H_
 #define TRAP_H_
 
-#include "api/zvm.h"
 #include "src/loader/sel_ldr.h"
 #include "src/channels/mount_channel.h"
 

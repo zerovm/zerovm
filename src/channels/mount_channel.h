@@ -36,9 +36,9 @@ EXTERN_C_BEGIN
 #define NET_BUFFER_SIZE 0x10000
 
 /* reserved zerovm channels names */
-#define STDIN "/dev/stdin" /* c90 stdin */
-#define STDOUT "/dev/stdout" /* c90 stdout */
-#define STDERR "/dev/stderr" /* c90 stderr */
+#define STDIN "/dev/stdin"
+#define STDOUT "/dev/stdout"
+#define STDERR "/dev/stderr"
 
 /* attributes has fixed order, thats why enum has been used */
 enum ChannelAttributes {

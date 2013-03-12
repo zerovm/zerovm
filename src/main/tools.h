@@ -46,54 +46,19 @@
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define SHOWID printf("%s: %d, %s\n", __FILE__, __LINE__, __func__)
 
-/* safe strlen(). NULL can be used. return 0 for NULL */
-static INLINE size_t my_strlen(const char *str)
-{
-  return (str == NULL) ? 0 : strlen(str);
-}
-#define STRLEN(str) my_strlen(str)
-
 /* safe atoi(). NULL can be used. return 0 for NULL */
-static INLINE int64_t my_atoi(const char *str)
+static INLINE int64_t safe_atoi(const char *str)
 {
   return (str == NULL) ? 0 : g_ascii_strtoll(str, NULL, 10);
 }
-#define ATOI(str) my_atoi(str)
+#define ATOI(str) safe_atoi(str)
 
-/* safe strcpy(). NULL can be used. return NULL if dst or src is NULL */
-static INLINE void *my_strcpy(char *dst, const char *src)
+/* safe streq(). NULL can be used. return 1 when a == b */
+static INLINE int safe_streq(const char *a, const char *b)
 {
-  return (src == NULL || dst == NULL) ? NULL : strcpy(dst, src);
+  return g_strcmp0(a, b) == 0;
 }
-#define STRCPY(dst, src) my_strcpy((dst), (src))
-
-/* safe memcpy(). NULL can be used. return NULL if copy failed */
-static INLINE void *my_memcpy(void *dst, const void *src, size_t size)
-{
-  return (dst == NULL || src == NULL) ? NULL : memcpy(dst, src, size);
-}
-#define MEMCPY(dst, src, cnt) my_memcpy((dst), (src), (cnt))
-
-/* safe strcmp(). NULL can be used. return -1 if failed */
-static INLINE int my_strcmp(const char *a, const char *b)
-{
-  return (a == NULL || b == NULL) ? -1 : strcmp(a, b);
-}
-#define STRCMP(a, b) my_strcmp((a), (b))
-
-/* safe streq(). NULL can be used. return -1 if failed */
-static INLINE int my_streq(const char *a, const char *b)
-{
-  return STRCMP(a, b) == 0;
-}
-#define STREQ(a, b) my_streq((a), (b))
-
-/* safe strneq(). NULL can be used. return -1 if failed */
-static INLINE int my_strneq(const char *a, const char *b)
-{
-  return !STREQ(a, b);
-}
-#define STRNEQ(a, b) my_strneq((a), (b))
+#define STREQ(a, b) safe_streq((a), (b))
 
 /* return size of given file or negative error code */
 static INLINE int64_t GetFileSize(const char *name)

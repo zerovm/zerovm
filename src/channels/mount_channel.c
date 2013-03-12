@@ -42,7 +42,7 @@ static enum ChannelSourceType GetSourceType(char *name)
 
   assert(name != NULL);
 
-  /* network channel always contain ':'s */
+  /* unlike local network channels always contain ':'s */
   if(strchr(name, ':') == NULL)
     type = GetChannelSource(name);
   else
