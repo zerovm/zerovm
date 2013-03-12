@@ -25,7 +25,7 @@
 #include <errno.h>
 #include "src/syscalls/nacl_switch_to_app.h"
 #include "src/main/nacl_globals.h"
-#include "src/loader/sel_rt_64.h"
+#include "src/loader/sel_rt.h"
 #include "src/main/manifest_setup.h"
 #include "src/syscalls/trap.h"
 

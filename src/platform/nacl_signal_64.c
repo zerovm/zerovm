@@ -22,7 +22,7 @@
 #include <sys/ucontext.h>
 
 #include "src/platform/nacl_signal.h"
-#include "src/loader/sel_rt_64.h"
+#include "src/loader/sel_rt.h"
 
 void NaClSignalContextFromHandler(struct NaClSignalContext *sigCtx, const void *rawCtx)
 {

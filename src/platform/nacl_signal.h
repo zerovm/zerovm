@@ -31,7 +31,7 @@
  */
 
 #include "src/platform/nacl_signal_64.h"
-#include "src/loader/sel_rt_64.h"
+#include "src/loader/sel_rt.h"
 
 EXTERN_C_BEGIN
 
