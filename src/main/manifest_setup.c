@@ -307,6 +307,14 @@ static void ProtectUserManifest(struct NaClApp *nap, void *mft)
   page_ptr = nap->mem_map[HeapIdx].end;
   size = nap->mem_map[SysDataIdx].start - nap->mem_map[HeapIdx].end;
   SET_MEM_MAP_IDX(nap->mem_map[HoleIdx], "Hole", page_ptr, size, PROT_NONE);
+
+  /*
+   * patch: change the heap size to correct value. the user manifest
+   * contains the different heap start (it does not include r/w data)
+   * todo(d'b): fix it by adding a new memory region
+   */
+  nap->mem_map[HeapIdx].size =
+      nap->mem_map[HeapIdx].end - nap->mem_map[HeapIdx].start;
 }
 
 /* serialize system data to user space */
