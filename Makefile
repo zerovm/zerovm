@@ -23,7 +23,7 @@ debug: CXXFLAGS2 := -DDEBUG -g $(CXXFLAGS2)
 
 debug: create_dirs zerovm tests
 
-OBJS=obj/elf_util.o obj/gio_mem.o obj/gio_mem_snapshot.o obj/manifest_parser.o obj/manifest_setup.o obj/mount_channel.o obj/nacl_dep_qualify.o obj/nacl_exit.o obj/zlog.o obj/nacl_signal_64.o obj/nacl_signal_common.o obj/nacl_signal.o obj/nacl_switch_64.o obj/nacl_switch_to_app_64.o obj/nacl_syscall_64.o obj/nacl_syscall_hook.o obj/prefetch.o obj/name_service.o obj/preload.o obj/sel_addrspace.o obj/sel_ldr.o obj/sel_ldr_standard.o obj/sel_ldr_x86_64.o obj/sel_memory.o obj/sel_qualify.o obj/sel_rt.o obj/tramp_64.o obj/trap.o obj/etag.o obj/accounting.o
+OBJS=obj/elf_util.o obj/gio_mem.o obj/gio_mem_snapshot.o obj/manifest_parser.o obj/manifest_setup.o obj/mount_channel.o obj/nacl_dep_qualify.o obj/nacl_exit.o obj/zlog.o obj/nacl_signal_64.o obj/nacl_signal_common.o obj/nacl_signal.o obj/side_switch.o obj/switch_to_app.o obj/trap_syscall.o obj/syscall_hook.o obj/prefetch.o obj/name_service.o obj/preload.o obj/sel_addrspace.o obj/sel_ldr.o obj/sel_ldr_standard.o obj/sel_ldr_x86_64.o obj/sel_memory.o obj/sel_qualify.o obj/sel_rt.o obj/tramp.o obj/trap.o obj/etag.o obj/accounting.o
 CC=@gcc
 CXX=@g++
 
@@ -97,13 +97,13 @@ obj/manifest_setup.o: src/main/manifest_setup.c
 obj/manifest_parser.o: src/main/manifest_parser.c
 	$(CC) $(CCFLAGS1) -o $@ $^
 
-obj/nacl_switch_64.o: src/syscalls/nacl_switch_64.S
+obj/side_switch.o: src/syscalls/side_switch.S
 	$(CC) $(CCFLAGS2) -o $@ $^
 
-obj/nacl_syscall_64.o: src/syscalls/nacl_syscall_64.S
+obj/trap_syscall.o: src/syscalls/trap_syscall.S
 	$(CC) $(CCFLAGS2) -o $@ $^
 
-obj/tramp_64.o: src/syscalls/tramp_64.S
+obj/tramp.o: src/syscalls/tramp.S
 	$(CC) $(CCFLAGS2) -o $@ $^
 
 obj/zvm_main.o: src/main/zvm_main.c
@@ -115,7 +115,7 @@ obj/elf_util.o: src/loader/elf_util.c
 obj/nacl_signal_common.o: src/platform/nacl_signal_common.c
 	$(CC) $(CCFLAGS1) -o $@ $^
 
-obj/nacl_syscall_hook.o: src/syscalls/nacl_syscall_hook.c
+obj/syscall_hook.o: src/syscalls/syscall_hook.c
 	$(CC) $(CCFLAGS1) -o $@ $^
 
 obj/sel_addrspace.o: src/loader/sel_addrspace.c
@@ -130,7 +130,7 @@ obj/sel_ldr_standard.o: src/loader/sel_ldr_standard.c
 obj/sel_qualify.o: src/platform/sel_qualify.c
 	$(CC) $(CCFLAGS1) -o $@ $^
 
-obj/nacl_switch_to_app_64.o: src/syscalls/nacl_switch_to_app_64.c
+obj/switch_to_app.o: src/syscalls/switch_to_app.c
 	$(CC) $(CCFLAGS1) -o $@ $^
 
 obj/sel_ldr_x86_64.o: src/loader/sel_ldr_x86_64.c

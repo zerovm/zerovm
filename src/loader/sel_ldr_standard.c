@@ -28,7 +28,7 @@
 #include <sys/mman.h>
 #include "src/loader/sel_ldr_x86.h"
 #include "src/loader/elf_util.h"
-#include "src/syscalls/nacl_switch_to_app.h"
+#include "src/syscalls/switch_to_app.h"
 #include "src/platform/sel_memory.h"
 #include "src/loader/sel_addrspace.h"
 #include "src/main/manifest_setup.h"

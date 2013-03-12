@@ -24,7 +24,7 @@
  */
 #include "src/loader/sel_ldr.h"
 #include "src/main/nacl_globals.h"
-#include "src/syscalls/nacl_switch_to_app.h"
+#include "src/syscalls/switch_to_app.h"
 
 #define NORETURN_PTR NORETURN
 
