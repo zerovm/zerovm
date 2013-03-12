@@ -47,6 +47,7 @@ int GetValuesByKey(const char *key, char *values[], int capacity);
 /*
  * parse given string with the given delimiter
  * return number of the tokens, populate given array with them
+ * note: function is not re-enterable; value will be overwritten
  */
 int ParseValue(char *value, const char *delimiter, char *tokens[], int capacity);
 

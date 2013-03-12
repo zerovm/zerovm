@@ -27,7 +27,10 @@ enum ChannelSourceType GetChannelProtocol(const char *url);
 /* construct network channel and connect/bind it to specified address */
 int PrefetchChannelCtor(struct ChannelDesc* channel);
 
-/* finalize and deallocate network channel resources */
+/*
+ * finalize and deallocate network channel resources
+ * todo(d'b): rewrite the code after zmq_term will be fixed
+ */
 int PrefetchChannelDtor(struct ChannelDesc* channel);
 
 /*

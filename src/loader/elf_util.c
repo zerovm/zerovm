@@ -135,11 +135,6 @@ void NaClElfImageValidateElfHeader(struct NaClElfImage *image)
   ZLOGFAIL(EV_CURRENT != hdr->e_version, ENOEXEC, "bad elf version: %x", hdr->e_version);
 }
 
-/*
- * TODO(robertm): decouple validation from computation of static_text_end
- * and max_vaddr
- * todo(d'b): the function is too large, rewrite it
- */
 void NaClElfImageValidateProgramHeaders(
   struct NaClElfImage *image,
   uint8_t             addr_bits,

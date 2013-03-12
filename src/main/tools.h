@@ -28,7 +28,7 @@
 #include <glib.h>
 #include <unistd.h>
 #include <sys/stat.h>
-#include "src/platform/nacl_compiler_annotations.h"
+#include "src/main/nacl_base.h"
 #include "src/main/nacl_exit.h"
 #include "src/main/zlog.h"
 

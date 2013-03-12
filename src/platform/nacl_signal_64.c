@@ -24,15 +24,6 @@
 #include "src/platform/nacl_signal.h"
 #include "src/loader/sel_rt_64.h"
 
-/*
- * Definition of the POSIX ucontext_t for Linux can be found in:
- * /usr/src/include/sys/ucontext.h
- */
-
-/*
- * Fill a signal context structure from the raw platform dependent
- * signal information.
- */
 void NaClSignalContextFromHandler(struct NaClSignalContext *sigCtx, const void *rawCtx)
 {
   const ucontext_t *uctx = (const ucontext_t *)rawCtx;
@@ -65,10 +56,7 @@ void NaClSignalContextFromHandler(struct NaClSignalContext *sigCtx, const void *
   sigCtx->fs = (uint32_t)((mctx->gregs[REG_CSGSFS] >> 32) & 0xFFFF);
 #endif
 
-  /*
-   * TODO(noelallen) Pull from current context, since they must be
-   * the same.
-   */
+  /* TODO(noelallen) Pull from current context, since they must be the same */
   sigCtx->ds = 0;
   sigCtx->ss = 0;
 }

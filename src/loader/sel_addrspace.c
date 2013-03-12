@@ -203,9 +203,6 @@ void NaClAllocAddrSpace(struct NaClApp *nap)
     ZLOGS(LOG_DEBUG, "there is no hole between end of data and the beginning of stack");
 }
 
-/*
- * Apply memory protection to memory regions.
- */
 void NaClMemoryProtection(struct NaClApp *nap)
 {
   uintptr_t start_addr;

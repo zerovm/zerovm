@@ -115,12 +115,10 @@ static int GetChannelsAccounting(const struct NaClApp *nap, char *buf, int size)
       network_stats[PutsLimit], network_stats[PutSizeLimit]);  /* network channels output */
 }
 
-/* initialize accounting */
 void AccountingCtor(struct NaClApp *nap)
 {
 }
 
-/* finalize accounting. return string with statistics */
 void AccountingDtor(struct NaClApp *nap)
 {
   int offset = 0;
@@ -133,7 +131,6 @@ void AccountingDtor(struct NaClApp *nap)
   GetChannelsAccounting(nap, accounting + offset, BIG_ENOUGH_STRING - offset);
 }
 
-/* return accounting string */
 const char *GetAccountingInfo()
 {
   return (const char*)accounting;

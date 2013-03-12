@@ -28,15 +28,14 @@
  * files, to be reconstructed.)
  */
 
-#ifndef NATIVE_CLIENT_SRC_INCLUDE_PORTABILITY_H_
-#define NATIVE_CLIENT_SRC_INCLUDE_PORTABILITY_H_ 1
+#ifndef PORTABILITY_H_
+#define PORTABILITY_H_ 1
 
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/time.h>
 
 #include "src/main/nacl_base.h"
-#include "src/platform/nacl_compiler_annotations.h"
 
 #ifndef SIZE_T_MAX
 # define SIZE_T_MAX ((size_t) -1)
@@ -44,4 +43,4 @@
 
 #include <inttypes.h>
 
-#endif  /* NATIVE_CLIENT_SRC_INCLUDE_PORTABILITY_H_ */
+#endif  /* PORTABILITY_H_ */

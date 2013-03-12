@@ -119,7 +119,6 @@ static int NaClAttemptToExecuteData()
   return result;
 }
 
-/* We require DEP, so forward this call to the OS-specific check routine */
 int NaClCheckDEP()
 {
   return NaClAttemptToExecuteData();

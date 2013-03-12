@@ -59,10 +59,6 @@ ssize_t NaClSignalErrorMessage(const char *msg)
   return 0;
 }
 
-/*
- * Return non-zero if the signal context is currently executing in an
- * untrusted environment.
- */
 int NaClSignalContextIsUntrusted(const struct NaClSignalContext *sigCtx)
 {
   if(sigCtx->prog_ctr >= START_OF_USER_SPACE
@@ -70,7 +66,6 @@ int NaClSignalContextIsUntrusted(const struct NaClSignalContext *sigCtx)
   return 0;
 }
 
-/* d'b(REPORT): updated */
 enum NaClSignalResult NaClSignalHandleAll(int signum, void *ctx)
 {
   struct NaClSignalContext sigCtx;

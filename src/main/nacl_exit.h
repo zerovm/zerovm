@@ -23,8 +23,8 @@
  * This module implementes a platform specific exit and abort, to terminate
  * the process as quickly as possible when an exception is detected.
  */
-#ifndef NATIVE_CLIENT_SRC_SHARED_PLATFORM_NACL_EXIT_H_
-#define NATIVE_CLIENT_SRC_SHARED_PLATFORM_NACL_EXIT_H_ 1
+#ifndef NACL_EXIT_H_
+#define NACL_EXIT_H_ 1
 
 #include "src/main/nacl_base.h"
 
@@ -47,4 +47,4 @@ void SetExitCode(int code);
 
 EXTERN_C_END
 
-#endif /* NATIVE_CLIENT_SRC_SHARED_PLATFORM_NACL_EXIT_H_ */
+#endif /* NACL_EXIT_H_ */

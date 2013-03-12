@@ -58,8 +58,8 @@
  * http://en.wikipedia.org/wki/Executable_and_Linkable_Format
  */
 
-#ifndef NATIVE_CLIENT_SRC_INCLUDE_ELF_H_
-#define NATIVE_CLIENT_SRC_INCLUDE_ELF_H_ 1
+#ifndef ELF_H_
+#define ELF_H_ 1
 
 #include "src/platform/portability.h"
 #include "src/loader/elf_constants.h"
@@ -137,4 +137,4 @@ typedef Elf64_Phdr Elf_Phdr;
 
 EXTERN_C_END
 
-#endif  /* NATIVE_CLIENT_SRC_INCLUDE_ELF_H_ */
+#endif  /* ELF_H_ */

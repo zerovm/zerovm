@@ -310,12 +310,6 @@ static const char *FunctionNameById(int id)
   return "not supported";
 }
 
-/*
- * "One Ring" syscall main routine. the nacl syscalls replacement.
- * "args" is an array of syscall name and its arguments
- * note: since nacl patch two 1st arguments if they are pointers, arg[1] are not used
- * todo(d'b): check how nacl decide to patch arguments.
- */
 int32_t TrapHandler(struct NaClApp *nap, uint32_t args)
 {
   uint64_t *sys_args;

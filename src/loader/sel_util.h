@@ -22,8 +22,8 @@
 /*
  * NaCl Simple/secure ELF loader (NaCl SEL) misc utilities.
  */
-#ifndef NATIVE_CLIENT_SERVICE_RUNTIME_SEL_UTIL_H_
-#define NATIVE_CLIENT_SERVICE_RUNTIME_SEL_UTIL_H_ 1
+#ifndef SEL_UTIL_H_
+#define SEL_UTIL_H_ 1
 
 #include "src/main/nacl_config.h"
 
@@ -36,4 +36,4 @@ tick_t get_ticks();
 
 EXTERN_C_END
 
-#endif  /* NATIVE_CLIENT_SERVICE_RUNTIME_SEL_UTIL_H_ */
+#endif  /* SEL_UTIL_H_ */

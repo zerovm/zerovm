@@ -103,7 +103,6 @@ static void ParseURL(const struct ChannelDesc *channel, struct ChannelConnection
       && channel->limits[GetSizeLimit] ? BIND_MARK : CONNECT_MARK;
 }
 
-/* make url from the given record and return it through the "url" parameter */
 void MakeURL(char *url, const int32_t size,
     const struct ChannelDesc *channel, const struct ChannelConnection *record)
 {
@@ -141,11 +140,6 @@ void MakeURL(char *url, const int32_t size,
   ZLOG(LOG_INSANE, "url = %s", url);
 }
 
-/*
- * extract the channel connection information and store it into
- * the netlist hash table. on destruction all allocated memory will
- * be deallocated for key, value and hashtable itself
- */
 void StoreChannelConnectionInfo(const struct ChannelDesc *channel)
 {
   struct ChannelConnection *record;
@@ -162,7 +156,6 @@ void StoreChannelConnectionInfo(const struct ChannelDesc *channel)
   g_hash_table_insert(netlist, GUINT_TO_POINTER(MakeKey(record)), record);
 }
 
-/* take channel connection info by channel alias */
 struct ChannelConnection *GetChannelConnectionInfo(const struct ChannelDesc *channel)
 {
   struct ChannelConnection r; /* fake record */
@@ -315,7 +308,6 @@ static void DecodeParcel(const char *parcel, const uint32_t count)
   }
 }
 
-/* poll the name server and update netlist with port information */
 void ResolveChannels(struct NaClApp *nap, uint32_t all_binds, uint32_t all_connects)
 {
   char parcel[PARCEL_SIZE];
@@ -339,13 +331,6 @@ void ResolveChannels(struct NaClApp *nap, uint32_t all_binds, uint32_t all_conne
   DecodeParcel(parcel, parcel_size);
 }
 
-/*
- * initialize the name service table even if name service is not
- * specified because it is used to test channels engine errors
- * (still under construction) in the future if no name service
- * used the allocation can be removed. return name service object
- * or abort zerovm if failed
- */
 void NameServiceCtor()
 {
   struct ChannelDesc channel;
@@ -371,14 +356,12 @@ void NameServiceCtor()
   }
 }
 
-/* release name server resources */
 void NameServiceDtor()
 {
   g_hash_table_destroy(netlist);
   g_free(nameservice);
 }
 
-/* return 0 if name service is not constructed */
 int NameServiceSet()
 {
   return nameservice != NULL;

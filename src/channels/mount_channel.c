@@ -26,7 +26,6 @@
 #include "src/channels/prefetch.h"
 #include "src/channels/mount_channel.h"
 
-/* get string contain protocol name by channel source type */
 char *StringizeChannelSourceType(enum ChannelSourceType type)
 {
   char *prefix[] = CHANNEL_SOURCE_PREFIXES;
@@ -182,10 +181,6 @@ static void ChannelDtor(struct ChannelDesc *channel)
   }
 }
 
-/*
- * construct and initialize all channels
- * note: standard channels must be specified in manifest
- */
 void ChannelsCtor(struct NaClApp *nap)
 {
   int i;
@@ -233,7 +228,6 @@ void ChannelsCtor(struct NaClApp *nap)
   KickPrefetchChannels(nap);
 }
 
-/* finalize all channels and free memory */
 void ChannelsDtor(struct NaClApp *nap)
 {
   int i;

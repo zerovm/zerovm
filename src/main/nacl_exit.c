@@ -72,21 +72,18 @@ static void Finalizer(void)
   ZLogDtor();
 }
 
-/* set the text for "exit state" in report */
 void SetExitState(const char *state)
 {
   assert(state != NULL);
   zvm_state = state;
 }
 
-/* get the "exit state" message */
 const char *GetExitState()
 {
   assert(zvm_state != NULL);
   return zvm_state;
 }
 
-/* set zerovm exit code */
 void SetExitCode(int code)
 {
   /* only the 1st error matters */

@@ -22,17 +22,13 @@
 /*
  * NaCl Basic Common Definitions.
  */
-#ifndef NATIVE_CLIENT_SRC_INCLUDE_NACL_BASE_H_
-#define NATIVE_CLIENT_SRC_INCLUDE_NACL_BASE_H_ 1
+#ifndef NACL_BASE_H_
+#define NACL_BASE_H_ 1
 
 /*
  * putting extern "C" { } in header files make emacs want to indent
  * everything, which looks odd.  rather than putting in fancy syntax
  * recognition in c-mode, we just use the following macros.
- *
- * TODO: before releasing code, we should provide a defintion of a
- * function to be called from c-mode-hook that will make it easy to
- * follow our coding style (which we also need to document).
  */
 #ifdef __cplusplus
 # define EXTERN_C_BEGIN  extern "C" {
@@ -44,4 +40,10 @@
 # define EXTERN_C_END
 #endif
 
-#endif  /* NATIVE_CLIENT_SRC_INCLUDE_NACL_BASE_H_ */
+/* gcc only */
+#define INLINE __inline__
+#define UNREFERENCED_PARAMETER(P) do { (void) P; } while (0)
+#define NORETURN __attribute__((noreturn))
+#define NACL_WUR __attribute__((__warn_unused_result__))
+
+#endif  /* NACL_BASE_H_ */

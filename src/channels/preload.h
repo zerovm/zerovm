@@ -34,6 +34,7 @@ void PreloadAllocationDisable();
  */
 int PreloadChannelCtor(struct ChannelDesc* channel);
 
+/* (adjust and) close file associated with the channel */
 int PreloadChannelDtor(struct ChannelDesc* channel);
 
 /* return the file source type or ChannelSourceTypeNumber */

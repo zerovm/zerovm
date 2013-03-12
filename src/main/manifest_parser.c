@@ -38,7 +38,6 @@ static struct
   char *value;
 } *mft_ptr; /* array of pointers to keys/values */
 
-/* return value from manifest by given key */
 char* GetValueByKey(const char *key)
 {
   int i;
@@ -56,10 +55,6 @@ char* GetValueByKey(const char *key)
   return NULL;
 }
 
-/*
- * return number of found values from manifest by given key
- * the values pointers will be stored into provided array
- */
 int GetValuesByKey(const char *key, char *values[], int capacity)
 {
   int count = 0;
@@ -80,11 +75,6 @@ int GetValuesByKey(const char *key, char *values[], int capacity)
   return count;
 }
 
-/*
- * parse given string with the given delimiter
- * returns number of the non NULL tokens, populates given array with ALL tokens
- * note: function is not re-enterable; value will be overwritten
- */
 int ParseValue(char *value, const char *delimiter, char *tokens[], int capacity)
 {
   int count;
@@ -184,10 +174,6 @@ static int ParseManifest()
   return mft_count ? 0 : -1;
 }
 
-/*
- * parse given file name as zerovm' manifest
- * return 0 if successful, otherwise - negative error code
- */
 int ManifestCtor(const char *name)
 {
   int64_t mft_size;
@@ -219,7 +205,6 @@ int ManifestCtor(const char *name)
   return 0;
 }
 
-/* free resources used by manifest */
 void ManifestDtor()
 {
   assert(mft_data != NULL);

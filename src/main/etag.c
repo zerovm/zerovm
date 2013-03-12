@@ -25,7 +25,6 @@
 
 static int tag_engine_enabled = 0;
 
-/* etag engine construction */
 void TagEngineCtor()
 {
   tag_engine_enabled = 1;
@@ -37,16 +36,11 @@ void TagEngineDtor()
   tag_engine_enabled = 0;
 }
 
-/* return the etag_enabled state */
 int TagEngineEnabled()
 {
   return tag_engine_enabled;
 }
 
-/*
- * initialize and return the hash context or abort if failed
- * to avoid memory leak context must be freed after usage
- */
 void *TagCtor()
 {
   GChecksum *ctx;
@@ -56,16 +50,11 @@ void *TagCtor()
   return ctx;
 }
 
-/* deallocate tag context */
 void TagDtor(void *ctx)
 {
   g_checksum_free(ctx);
 }
 
-/*
- * calculates digest from the context. can be used consequently
- * note: "digest" must have enough space to hold the digest
- */
 void TagDigest(void *ctx, char *digest)
 {
   const char *hex;
@@ -77,10 +66,6 @@ void TagDigest(void *ctx, char *digest)
   g_checksum_free(tmp);
 }
 
-/*
- * update tag with the given buffer.
- * returns 0 if all ok or -1 if failed
- */
 void TagUpdate(void *ctx, const char *buffer, int32_t size)
 {
   assert(ctx != NULL);

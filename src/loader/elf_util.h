@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef NATIVE_CLIENT_SRC_TRUSTED_SERVICE_RUNTIME_ELF_UTIL_H__
-#define NATIVE_CLIENT_SRC_TRUSTED_SERVICE_RUNTIME_ELF_UTIL_H__ 1
+#ifndef ELF_UTIL_H__
+#define ELF_UTIL_H__ 1
 
 #include "src/platform/portability.h"
 #include "src/loader/sel_ldr.h"
@@ -34,6 +34,11 @@ struct NaClElfImage *NaClElfImageNew(struct Gio *gp);
 
 void NaClElfImageValidateElfHeader(struct NaClElfImage *image);
 
+/*
+ * TODO(robertm): decouple validation from computation of static_text_end
+ * and max_vaddr
+ * todo(d'b): the function is too large, rewrite it
+ */
 void NaClElfImageValidateProgramHeaders(
   struct NaClElfImage *image,
   uint8_t             addr_bits,
@@ -53,5 +58,4 @@ void NaClElfImageLoad(struct NaClElfImage *image,
 
 void NaClElfImageDelete(struct NaClElfImage *image);
 
-
-#endif  /* NATIVE_CLIENT_SRC_TRUSTED_SERVICE_RUNTIME_ELF_UTIL_H__ */
+#endif  /* ELF_UTIL_H__ */

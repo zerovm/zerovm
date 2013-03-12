@@ -25,8 +25,8 @@
  * NOTE: This header is ALSO included by assembler files and hence
  *       must not include any C code
  */
-#ifndef NATIVE_CLIENT_SERVICE_RUNTIME_NACL_CONFIG_H_
-#define NATIVE_CLIENT_SERVICE_RUNTIME_NACL_CONFIG_H_
+#ifndef NACL_CONFIG_H_
+#define NACL_CONFIG_H_
 
 #include "src/main/nacl_base.h"
 
@@ -104,7 +104,7 @@
 
 /*
  * Extra required space at the end of static text (and dynamic text,
- * if any).  The intent is to stop a thread from "walking off the end"
+ * if any). The intent is to stop a thread from "walking off the end"
  * of a text region into another.  Four bytes suffices for all
  * currently supported architectures (halt is one byte on x86-32 and
  * x86-64, and 4 bytes on ARM), but for x86 we want to provide
@@ -145,4 +145,4 @@
 #define END_OF_USER_SPACE (START_OF_USER_SPACE + FOURGIG + 2 * GUARDSIZE)
 #define LEAST_USER_HEAP_SIZE 8388608 /* d'b: 8mb */
 
-#endif  /* NATIVE_CLIENT_SERVICE_RUNTIME_NACL_CONFIG_H_ */
+#endif  /* NACL_CONFIG_H_ */

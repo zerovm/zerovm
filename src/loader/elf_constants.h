@@ -55,8 +55,8 @@
  * http://en.wikipedia.org/wki/Executable_and_Linkable_Format
  */
 
-#ifndef NATIVE_CLIENT_SRC_INCLUDE_ELF_CONSTANTS_H_
-#define NATIVE_CLIENT_SRC_INCLUDE_ELF_CONSTANTS_H_
+#ifndef ELF_CONSTANTS_H_
+#define ELF_CONSTANTS_H_
 
 #include "src/main/nacl_base.h"
 
@@ -135,4 +135,4 @@ EXTERN_C_BEGIN
 
 EXTERN_C_END
 
-#endif  /* NATIVE_CLIENT_SRC_INCLUDE_ELF_CONSTANTS_H_ */
+#endif  /* ELF_CONSTANTS_H_ */

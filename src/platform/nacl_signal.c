@@ -207,13 +207,6 @@ void NaClSignalHandlerFiniPlatform()
   NaClSignalStackFree(signal_stack);
 }
 
-/*
- * Check that signal handlers are not registered.  We want to
- * discourage Chrome or libraries from registering signal handlers
- * themselves, because those signal handlers are often not safe when
- * triggered from untrusted code.  For background, see:
- * http://code.google.com/p/nativeclient/issues/detail?id=1607
- */
 void NaClSignalAssertNoHandlers()
 {
   int i;

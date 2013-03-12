@@ -113,7 +113,13 @@ struct ChannelConnection *GetChannelConnectionInfo(const struct ChannelDesc *cha
 /* poll the name server and update netlist with port information */
 void ResolveChannels(struct NaClApp *nap, uint32_t binds, uint32_t connects);
 
-/* initialize name service */
+/*
+ * initialize the name service table even if name service is not
+ * specified because it is used to test channels engine errors
+ * (still under construction) in the future if no name service
+ * used the allocation can be removed. return name service object
+ * or abort zerovm if failed
+ */
 void NameServiceCtor();
 
 /* release name service */

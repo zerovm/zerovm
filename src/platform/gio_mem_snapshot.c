@@ -38,10 +38,6 @@ struct GioVtbl const  kGioMemoryFileSnapshotVtbl = {
   GioMemoryFileSnapshotDtor,
 };
 
-/*
- * d'b: refactored. read file into given object.
- * return 1 if success, 0 if failed
- */
 int GioMemoryFileSnapshotCtor(struct GioMemoryFileSnapshot *self, char *fn)
 {
   FILE *iop;

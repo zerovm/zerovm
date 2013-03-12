@@ -20,10 +20,10 @@
 #include <assert.h>
 #include <zmq.h>
 #include "src/main/manifest_parser.h"
-#include "src/main/manifest_setup.h" /* todo(d'b): remove it. defines system_manifest */
+#include "src/main/manifest_setup.h" /* todo(d'b): remove it. (system_manifest) */
 #include "src/channels/prefetch.h"
-#include "src/main/etag.h" /* ETAG_SIZE. corruption control */
-#include "src/main/nacl_globals.h" /* gnap */
+#include "src/main/etag.h"
+#include "src/main/nacl_globals.h" /* todo(d'b): remove it. (gnap) */
 #include "src/channels/name_service.h"
 
 static uint32_t channels_cnt = 0; /* needs for NetCtor/Dtor */
@@ -142,12 +142,6 @@ static void PrepareConnect(struct ChannelDesc* channel)
   }
 }
 
-/*
- * if name service is available then go through all available
- * channels, pick the network ones and connect them
- * note: if no name service is available quietly return - all channels
- * are already bound and connected due 1st pass
- */
 void KickPrefetchChannels(struct NaClApp *nap)
 {
   int i;
@@ -207,7 +201,6 @@ void KickPrefetchChannels(struct NaClApp *nap)
       return -1;\
     }
 
-/* return ChannelSourceType for network channels */
 #define CHECK_TRANSPORT(proto) \
   if(strncmp(url, prefix[proto], strlen(prefix[proto])) == 0) return proto;
 enum ChannelSourceType GetChannelProtocol(const char *url)
@@ -303,10 +296,6 @@ static INLINE void NetDtor()
   NameServiceDtor();
 }
 
-/*
- * preallocate network channel. needs 2nd pass to complete
- * the channel allocation (connect)
- */
 int PrefetchChannelCtor(struct ChannelDesc *channel)
 {
   int sock_type;
@@ -375,10 +364,6 @@ static INLINE void UpdateChannelState(struct ChannelDesc *channel)
     channel->eof = 1;
 }
 
-/*
- * fetch the data from the network channel
- * return number of received bytes or error code
- */
 int32_t FetchMessage(struct ChannelDesc *channel, char *buf, int32_t count)
 {
   int32_t readrest = count;
@@ -428,10 +413,6 @@ int32_t FetchMessage(struct ChannelDesc *channel, char *buf, int32_t count)
   return count - readrest;
 }
 
-/*
- * send the data to the network channel
- * return number of sent bytes or error code
- */
 int32_t SendMessage(struct ChannelDesc *channel, const char *buf, int32_t count)
 {
   int result;
@@ -499,10 +480,6 @@ int32_t SendMessage(struct ChannelDesc *channel, const char *buf, int32_t count)
   return count;
 }
 
-/*
- * finalize and deallocate network channel
- * todo(d'b): rewrite the code after zmq_term will be fixed
- */
 int PrefetchChannelDtor(struct ChannelDesc *channel)
 {
   char url[BIG_ENOUGH_SPACE];  /* debug purposes only */

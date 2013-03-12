@@ -19,9 +19,7 @@
  * limitations under the License.
  */
 
-/*
- * NaCl Simple/secure ELF loader (NaCl SEL).
- */
+/* NaCl Simple/secure ELF loader (NaCl SEL) */
 
 #ifndef __SEL_ADDRSPACE_H__
 #define __SEL_ADDRSPACE_H__ 1
@@ -30,9 +28,7 @@ struct NaClApp; /* fwd */
 
 void NaClAllocAddrSpace(struct NaClApp *nap);
 
-/*
- * Apply memory protection to memory regions.
- */
+/* Apply memory protection to memory regions */
 void NaClMemoryProtection(struct NaClApp *nap);
 
 #endif

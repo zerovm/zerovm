@@ -23,8 +23,8 @@
  * NaCl Server Runtime globals.
  */
 
-#ifndef NATIVE_CLIENT_SRC_TRUSTED_SERVICE_RUNTIME_NACL_GLOBALS_H__
-#define NATIVE_CLIENT_SRC_TRUSTED_SERVICE_RUNTIME_NACL_GLOBALS_H__
+#ifndef NACL_GLOBALS_H__
+#define NACL_GLOBALS_H__
 
 #include <stdint.h>
 
@@ -33,12 +33,11 @@ EXTERN_C_BEGIN
 struct NaClThreadContext;
 struct NaClApp;
 
-/* d'b: added global variables */
+/* global variables */
 struct NaClThreadContext    *nacl_user; /* user registers storage */
 struct NaClThreadContext    *nacl_sys; /* zerovm registers storage */
 struct NaClApp              *gnap; /* pointer to global NaClApp object */
-/* variables above will be initialized later */
 
 EXTERN_C_END
 
-#endif  /* NATIVE_CLIENT_SRC_TRUSTED_SERVICE_RUNTIME_NACL_GLOBALS_H__ */
+#endif  /* NACL_GLOBALS_H__ */

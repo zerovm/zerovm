@@ -23,8 +23,8 @@
  * NaCl Service Runtime
  */
 
-#ifndef SERVICE_RUNTIME_NACL_SWITCH_TO_APP_H__
-#define SERVICE_RUNTIME_NACL_SWITCH_TO_APP_H__ 1
+#ifndef SWITCH_TO_APP_H__
+#define SWITCH_TO_APP_H__ 1
 
 #include "src/loader/sel_ldr.h"
 #include "src/loader/sel_rt.h"
@@ -42,4 +42,4 @@ NORETURN void NaClSwitchToApp(struct NaClApp *nap, nacl_reg_t new_prog_ctr);
 
 EXTERN_C_END
 
-#endif
+#endif /* SWITCH_TO_APP_H__ */

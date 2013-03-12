@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef NATIVE_CLIENT_SERVICE_RUNTIME_NACL_SIGNAL_H__
-#define NATIVE_CLIENT_SERVICE_RUNTIME_NACL_SIGNAL_H__ 1
+#ifndef NACL_SIGNAL_H__
+#define NACL_SIGNAL_H__ 1
 
 /*
  * The nacl_signal module provides a platform independent mechanism for
@@ -59,19 +59,13 @@ void SetSignalHandling(int support_signals);
  */
 void NaClSignalHandlerInit(void);
 
-/*
- * Undoes the effect of NaClSignalHandlerInit().
- */
+/* Undoes the effect of NaClSignalHandlerInit() */
 void NaClSignalHandlerFini(void);
 
-/*
- * Assert that no signal handlers are registered.
- */
+/* Assert that no signal handlers are registered */
 void NaClSignalAssertNoHandlers(void);
 
-/*
- * Provides a signal safe method to write to stderr.
- */
+/* Provides a signal safe method to write to stderr */
 ssize_t NaClSignalErrorMessage(const char *str);
 
 /*
@@ -108,12 +102,10 @@ enum NaClSignalResult NaClSignalHandleAll(int signal_number, void *ctx);
  */
 enum NaClSignalResult NaClSignalHandlerFind(int signal_number, void *ctx);
 
-/*
- * Platform specific code. Do not call directly.
- */
+/* Platform specific code. Do not call directly */
 void NaClSignalHandlerInitPlatform(void);
 void NaClSignalHandlerFiniPlatform(void);
 
 EXTERN_C_END
 
-#endif  /* NATIVE_CLIENT_SERVICE_RUNTIME_NACL_SIGNAL_H__ */
+#endif  /* NACL_SIGNAL_H__ */

@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef SERVICE_RUNTIME_ARCH_X86_SEL_LDR_H__
-#define SERVICE_RUNTIME_ARCH_X86_SEL_LDR_H__ 1
+#ifndef SEL_LDR_X86_H__
+#define SEL_LDR_X86_H__ 1
 
 /* to make LDT_ENTRIES available */
 #include <asm/ldt.h>
@@ -33,4 +33,4 @@
 #define NACL_HALT_LEN       1           /* length of halt instruction */
 #define NACL_HALT_WORD      0xf4f4f4f4U
 
-#endif /* SERVICE_RUNTIME_ARCH_X86_SEL_LDR_H__ */
+#endif /* SEL_LDR_X86_H__ */

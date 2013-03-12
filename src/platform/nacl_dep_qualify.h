@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef NATIVE_CLIENT_SRC_TRUSTED_PLATFORM_QUALIFY_NACL_DEP_QUALIFY_H_
-#define NATIVE_CLIENT_SRC_TRUSTED_PLATFORM_QUALIFY_NACL_DEP_QUALIFY_H_
+#ifndef NACL_DEP_QUALIFY_H_
+#define NACL_DEP_QUALIFY_H_
 
 /*
  * Two of our target architectures (x86-64 and ARM) require that data not be
@@ -46,4 +46,4 @@ int NaClCheckDEP();
 
 EXTERN_C_END
 
-#endif  /* NATIVE_CLIENT_SRC_TRUSTED_PLATFORM_QUALIFY_NACL_DEP_QUALIFY_H_ */
+#endif  /* NACL_DEP_QUALIFY_H_ */

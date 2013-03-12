@@ -28,7 +28,6 @@ void PreloadAllocationDisable()
   disable_preallocation = 1;
 }
 
-/* return the file source type or ChannelSourceTypeNumber */
 enum ChannelSourceType GetChannelSource(const char *name)
 {
   struct stat fs;
@@ -51,7 +50,6 @@ enum ChannelSourceType GetChannelSource(const char *name)
   return ChannelRegular; /* not reachable */
 }
 
-/* (adjust and) close file associated with the channel */
 int PreloadChannelDtor(struct ChannelDesc* channel)
 {
   int i = 0;
@@ -190,10 +188,6 @@ static void RegularChannel(struct ChannelDesc* channel)
   ZLOGFAIL(channel->handle < 0, EFAULT, "preloaded file open error");
 }
 
-/*
- * preload given file to channel.
- * return 0 if success, otherwise negative errcode
- */
 int PreloadChannelCtor(struct ChannelDesc* channel)
 {
   assert(channel != NULL);

@@ -23,8 +23,8 @@
  * NaCl Signal Context
  */
 
-#ifndef __NATIVE_CLIENT_SERVICE_RUNTIME_ARCH_X86_64_NACL_SIGNAL_64_H__
-#define __NATIVE_CLIENT_SERVICE_RUNTIME_ARCH_X86_64_NACL_SIGNAL_64_H__ 1
+#ifndef NACL_SIGNAL_64_H__
+#define NACL_SIGNAL_64_H__ 1
 
 #include "src/platform/portability.h"
 
@@ -63,4 +63,4 @@ struct NaClSignalContext {
   uint32_t gs;
 };
 
-#endif /* __NATIVE_CLIENT_SERVICE_RUNTIME_ARCH_X86_64_NACL_SIGNAL_64_H__ */
+#endif /* NACL_SIGNAL_64_H__ */

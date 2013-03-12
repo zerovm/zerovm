@@ -21,13 +21,14 @@
 
 /*
  * NaCl Safety Macro Definitions
+ * todo(d'b): join with tools.h
  */
-#ifndef NATIVE_CLIENT_SRC_INCLUDE_NACL_MACROS_H_
-#define NATIVE_CLIENT_SRC_INCLUDE_NACL_MACROS_H_ 1
+#ifndef NACL_MACROS_H_
+#define NACL_MACROS_H_ 1
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "src/platform/nacl_compiler_annotations.h"
+#include "src/main/nacl_base.h"
 
 /*****************************************************************************
  * Safety macros                                                             *
@@ -160,9 +161,8 @@ static INLINE void *NaClArrayCheckHelper(void *arg) {
 /*****************************************************************************
  * Readability macros                                                        *
  ****************************************************************************/
-
 #define NACL_NANOS_PER_MICRO          (1000)
 #define NACL_MICROS_PER_MILLI         (1000)
 #define NACL_MICROS_PER_UNIT          (1000 * 1000)
 
-#endif  /* NATIVE_CLIENT_SRC_INCLUDE_NACL_MACROS_H_ */
+#endif  /* NACL_MACROS_H_ */

@@ -23,8 +23,8 @@
  * NaCl Simple/secure ELF loader (NaCl SEL).
  */
 
-#ifndef NATIVE_CLIENT_SRC_TRUSTED_SERVICE_RUNTIME_ARCH_X86_64_TRAMP_64_H__
-#define NATIVE_CLIENT_SRC_TRUSTED_SERVICE_RUNTIME_ARCH_X86_64_TRAMP_64_H__
+#ifndef TRAMP_64_H__
+#define TRAMP_64_H__
 /*
  * text addresses, not word aligned; these are .globl symbols from the
  * assembler source, and there is no type information associated with
@@ -40,4 +40,4 @@ extern char   NaClDispatchThunk;
 extern char   NaClDispatchThunk_jmp_target;
 extern char   NaClDispatchThunkEnd;
 
-#endif
+#endif /* TRAMP_64_H__ */

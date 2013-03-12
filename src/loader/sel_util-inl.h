@@ -23,8 +23,8 @@
  * NaCl Simple/secure ELF loader (NaCl SEL) misc utilities.  Inlined
  * functions.  Internal; do not include.
  */
-#ifndef NATIVE_CLIENT_SRC_TRUSTED_SERVICE_RUNTIME_SEL_UTIL_INL_H_
-#define NATIVE_CLIENT_SRC_TRUSTED_SERVICE_RUNTIME_SEL_UTIL_INL_H_ 1
+#ifndef SEL_UTIL_INL_H_
+#define SEL_UTIL_INL_H_ 1
 
 /*
  * NaClRoundPage is a bit of a misnomer -- it always rounds up to a
@@ -46,4 +46,4 @@ static INLINE size_t NaClTruncAllocPage(size_t  nbytes) {
 #define ROUNDDOWN_64K(a) ((a) & ~(NACL_MAP_PAGESIZE - 1LLU))
 #define ROUNDUP_64K(a) ROUNDDOWN_64K((a) + NACL_MAP_PAGESIZE - 1LLU)
 
-#endif  /* NATIVE_CLIENT_SRC_TRUSTED_SERVICE_RUNTIME_SEL_UTIL_INL_H_ */
+#endif  /* SEL_UTIL_INL_H_ */

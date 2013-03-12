@@ -23,8 +23,8 @@
  * NaCl Generic I/O interface.
  */
 
-#ifndef NATIVE_CLIENT_SRC_SHARED_GIO_GIO_H_
-#define NATIVE_CLIENT_SRC_SHARED_GIO_GIO_H_
+#ifndef GIO_H_
+#define GIO_H_
 
 /* is this needed? - maybe for size_t */
 #include "src/platform/portability.h"
@@ -141,7 +141,7 @@ int GioMemoryFileFlush(struct Gio *vself);
 
 int GioMemoryFileClose(struct Gio *vself);
 
-void  GioMemoryFileDtor(struct Gio  *vself);
+void GioMemoryFileDtor(struct Gio *vself);
 
 struct GioMemoryFileSnapshot {
   struct GioMemoryFile  base;
@@ -150,8 +150,8 @@ struct GioMemoryFileSnapshot {
 int GioMemoryFileSnapshotCtor(struct GioMemoryFileSnapshot  *self,
                               char                          *fn);
 
-void  GioMemoryFileSnapshotDtor(struct Gio                    *vself);
+void GioMemoryFileSnapshotDtor(struct Gio *vself);
 
 EXTERN_C_END
 
-#endif  /* NATIVE_CLIENT_SRC_SHARED_GIO_GIO_H_ */
+#endif  /* GIO_H_ */

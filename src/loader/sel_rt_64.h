@@ -23,8 +23,8 @@
  * NaCl Secure Runtime
  */
 
-#ifndef __NATIVE_CLIENT_SERVICE_RUNTIME_ARCH_X86_64_SEL_RT_64_H__
-#define __NATIVE_CLIENT_SERVICE_RUNTIME_ARCH_X86_64_SEL_RT_64_H__ 1
+#ifndef SEL_RT_64_H__
+#define SEL_RT_64_H__ 1
 
 #include "src/platform/portability.h"
 
@@ -102,4 +102,4 @@ void NaClSetThreadCtxSp(struct NaClThreadContext  *th_ctx, uintptr_t sp);
  * wrt %rsp.
  */
 
-#endif /* __NATIVE_CLIENT_SERVICE_RUNTIME_ARCH_X86_64_SEL_RT_64_H__ */
+#endif /* SEL_RT_64_H__ */

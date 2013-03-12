@@ -110,10 +110,6 @@ struct NaClPatchInfo *NaClPatchInfoCtor(struct NaClPatchInfo *self) {
   return self;
 }
 
-/*
- * This function is called by NaClLoadTrampoline and NaClLoadSpringboard to
- * patch a single memory location specified in NaClPatchInfo structure.
- */
 void  NaClApplyPatchToMemory(struct NaClPatchInfo  *patch) {
   size_t    i;
   size_t    offset;
@@ -150,12 +146,6 @@ void  NaClApplyPatchToMemory(struct NaClPatchInfo  *patch) {
   }
 }
 
-/*
- * Install syscall trampolines at all possible well-formed entry
- * points within the trampoline pages.  Many of these syscalls will
- * correspond to unimplemented system calls and will just abort the
- * program.
- */
 void  NaClLoadTrampoline(struct NaClApp *nap) {
   int         num_syscalls;
   int         i;
@@ -183,7 +173,6 @@ void  NaClLoadTrampoline(struct NaClApp *nap) {
   }
 }
 
-/* todo(d'b): replace spaces with format options and use macro */
 void NaClAppPrintDetails(struct NaClApp *nap, struct Gio *gp, int verbosity)
 {
   ZLOGS(verbosity, "NaClAppPrintDetails((struct NaClApp *) 0x%08lx,"

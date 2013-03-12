@@ -22,8 +22,8 @@
 /*
  * NaCl Simple/secure ELF loader (NaCl SEL) memory protection abstractions.
  */
-#ifndef NATIVE_CLIENT_SRC_TRUSTED_SERVICE_RUNTIME_SEL_MEMORY_H_
-#define NATIVE_CLIENT_SRC_TRUSTED_SERVICE_RUNTIME_SEL_MEMORY_H_ 1
+#ifndef SEL_MEMORY_H_
+#define SEL_MEMORY_H_ 1
 
 #ifdef __cplusplus
 extern "C" {
@@ -41,12 +41,18 @@ extern "C" {
 */
 #define MAX_RETRIES     1024
 
+/* d'b: a global function now */
 int NaCl_page_alloc_intern_flags(void   **p,
                                  size_t size,
                                  int    map_flags);
 void  NaCl_page_free(void     *p,
                      size_t   num_bytes);
 
+/*
+ * This is critical to make the text region non-writable, and the data
+ * region read/write but no exec.  Of course, some kernels do not
+ * respect the lack of PROT_EXEC.
+ */
 int   NaCl_mprotect(void          *addr,
                     size_t        len,
                     int           prot) NACL_WUR;
@@ -59,4 +65,4 @@ int   NaCl_madvise(void           *start,
 }
 #endif /* __cplusplus */
 
-#endif /*  NATIVE_CLIENT_SRC_TRUSTED_SERVICE_RUNTIME_SEL_MEMORY_H_ */
+#endif /*  SEL_MEMORY_H_ */

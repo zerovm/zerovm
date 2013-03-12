@@ -69,16 +69,6 @@ NORETURN void SwitchToApp(struct NaClApp  *nap, uintptr_t stack_ptr)
 # define SIZE_T_MAX     (~(size_t) 0)
 #endif
 
-/*
- * Fill from static_text_end to end of that page with halt
- * instruction, which is at least NACL_HALT_LEN in size when no
- * dynamic text is present.  Does not touch dynamic text region, which
- * should be pre-filled with HLTs.
- *
- * By adding NACL_HALT_SLED_SIZE, we ensure that the code region ends
- * with HLTs, just in case the CPU has a bug in which it fails to
- * check for running off the end of the x86 code segment.
- */
 void NaClFillEndOfTextRegion(struct NaClApp *nap) {
   size_t page_pad;
 
@@ -296,12 +286,6 @@ int NaClAddrIsValidEntryPt(struct NaClApp *nap, uintptr_t addr)
   return addr < nap->static_text_end;
 }
 
-/*
- * preconditions:
- * argc > 0, argc and argv table is consistent
- * envv may be NULL (this happens on MacOS/Cocoa
- * if envv is non-NULL it is 'consistent', null terminated etc.
- */
 int NaClCreateMainThread(struct NaClApp *nap)
 {
   /* Compute size of string tables for argv and envv */

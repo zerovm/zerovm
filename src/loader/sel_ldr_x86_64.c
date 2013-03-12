@@ -97,9 +97,6 @@ int NaClMakeDispatchThunk(struct NaClApp *nap)
   return retval;
 }
 
-/*
- * Install a syscall trampoline at target_addr.  NB: Thread-safe.
- */
 void NaClPatchOneTrampoline(struct NaClApp *nap, uintptr_t target_addr)
 {
   struct NaClPatchInfo patch_info;

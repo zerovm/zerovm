@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef NATIVE_CLIENT_SRC_TRUSTED_SERVICE_RUNTIME_SEL_QUALIFY_H_
-#define NATIVE_CLIENT_SRC_TRUSTED_SERVICE_RUNTIME_SEL_QUALIFY_H_
+#ifndef SEL_QUALIFY_H_
+#define SEL_QUALIFY_H_
 
 /*
  * We have several different ways of starting Native Client, but all of them
@@ -44,4 +44,4 @@ void NaClRunSelQualificationTests();
 
 EXTERN_C_END
 
-#endif  /* NATIVE_CLIENT_SRC_TRUSTED_SERVICE_RUNTIME_SEL_QUALIFY_H_ */
+#endif  /* SEL_QUALIFY_H_ */

@@ -92,10 +92,6 @@ static void ChrootJail()
 }
 #endif
 
-/*
- * "defense in depth". the last frontier of defense.
- * zerovm limits itself as much as possible
- */
 void LastDefenseLine(struct NaClApp *nap)
 {
   LowerOwnPriority();
@@ -404,7 +400,6 @@ static void SetSystemData(struct NaClApp *nap)
 }
 /* }} */
 
-/* construct system_manifest object and initialize it from manifest */
 void SystemManifestCtor(struct NaClApp *nap)
 {
   struct SystemManifest *policy;
@@ -452,10 +447,6 @@ void SystemManifestCtor(struct NaClApp *nap)
   SetSystemData(nap);
 }
 
-/*
- * deallocate memory, close files, free other resources.
- * note: can be invoked from any place
- */
 int SystemManifestDtor(struct NaClApp *nap)
 {
   assert(nap != NULL);
@@ -501,11 +492,6 @@ void ChannelsDigest(struct NaClApp *nap)
         (const char*) nap->system_manifest->channels[i].digest, TAG_DIGEST_SIZE);
 }
 
-/*
- * proxy awaits zerovm report from stdout
- * only signal safe functions should be used (printf is not safe)
- * but looks like snprintf() is safe
- */
 int ProxyReport(struct NaClApp *nap)
 {
   char report[BIG_ENOUGH_SPACE + 1];

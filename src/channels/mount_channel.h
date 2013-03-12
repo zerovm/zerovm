@@ -126,7 +126,7 @@ void ChannelsCtor(struct NaClApp *nap);
 /* close all channels, initialize it and update system_manifest */
 void ChannelsDtor(struct NaClApp *nap);
 
-/* get string contain protocol name by channel source type */
+/* get string containing protocol name by channel source type */
 char *StringizeChannelSourceType(enum ChannelSourceType type);
 
 EXTERN_C_END

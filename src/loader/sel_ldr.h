@@ -34,8 +34,8 @@
  * resultant program.
  */
 
-#ifndef NATIVE_CLIENT_SRC_TRUSTED_SERVICE_RUNTIME_SEL_LDR_H_
-#define NATIVE_CLIENT_SRC_TRUSTED_SERVICE_RUNTIME_SEL_LDR_H_ 1
+#ifndef SEL_LDR_H_
+#define SEL_LDR_H_ 1
 
 #include <stdint.h>
 
@@ -199,6 +199,7 @@ int NaClAppCtor(struct NaClApp *nap) NACL_WUR;
  */
 void NaClAppLoadFile(struct Gio *gp, struct NaClApp *nap);
 
+/* todo(d'b): replace spaces with format options and use macro */
 void  NaClAppPrintDetails(struct NaClApp  *nap,
                           struct Gio      *gp, int verbosity);
 
@@ -206,11 +207,17 @@ int NaClAddrIsValidEntryPt(struct NaClApp *nap,
                            uintptr_t      addr);
 
 /*
- * Used to launch user session. it is the same zerovm process
- * but sandboxed
+ * launch user session. preconditions: argc > 0, argc and argv table is
+ * consistent, envv may be NULL (this happens on MacOS/Cocoa if envv is
+ * non-NULL it is 'consistent', null terminated etc.
  */
 int NaClCreateMainThread(struct NaClApp     *nap) NACL_WUR;
 
+/*
+ * Install syscall trampolines at all possible well-formed entry points
+ * within the trampoline pages.  Many of these syscalls will correspond
+ * to unimplemented system calls and will just abort the program.
+ */
 void NaClLoadTrampoline(struct NaClApp *nap);
 
 static const uintptr_t kNaClBadAddress = (uintptr_t) -1;
@@ -221,10 +228,21 @@ void NaClFillMemoryRegionWithHalt(void *start, size_t size);
 
 void NaClFillTrampolineRegion(struct NaClApp *nap);
 
+/*
+ * Fill from static_text_end to end of that page with halt
+ * instruction, which is at least NACL_HALT_LEN in size when no
+ * dynamic text is present.  Does not touch dynamic text region, which
+ * should be pre-filled with HLTs.
+ *
+ * By adding NACL_HALT_SLED_SIZE, we ensure that the code region ends
+ * with HLTs, just in case the CPU has a bug in which it fails to
+ * check for running off the end of the x86 code segment.
+ */
 void NaClFillEndOfTextRegion(struct NaClApp *nap);
 
 int NaClMakeDispatchThunk(struct NaClApp *nap);
 
+/* Install a syscall trampoline at target_addr.  NB: Thread-safe. */
 void NaClPatchOneTrampoline(struct NaClApp *nap,
                             uintptr_t target_addr);
 /*
@@ -259,6 +277,10 @@ struct NaClPatchInfo {
 
 struct NaClPatchInfo *NaClPatchInfoCtor(struct NaClPatchInfo *self);
 
+/*
+ * This function is called by NaClLoadTrampoline and NaClLoadSpringboard to
+ * patch a single memory location specified in NaClPatchInfo structure.
+ */
 void NaClApplyPatchToMemory(struct NaClPatchInfo *patch);
 
 int NaClThreadContextCtor(struct NaClThreadContext  *ntcp,
@@ -269,4 +291,4 @@ int NaClThreadContextCtor(struct NaClThreadContext  *ntcp,
 
 EXTERN_C_END
 
-#endif  /* NATIVE_CLIENT_SRC_TRUSTED_SERVICE_RUNTIME_SEL_LDR_H_ */
+#endif  /* SEL_LDR_H_ */

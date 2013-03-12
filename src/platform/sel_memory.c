@@ -35,10 +35,6 @@ void NaCl_page_free(void *p, size_t size)
   ZLOGFAIL(munmap(p, size) == -1, errno, "NaCl_page_free: munmap() failed");
 }
 
-/*
- * NaCl_page_alloc_intern_flags
- * d'b: made global function
- */
 int NaCl_page_alloc_intern_flags(void **p, size_t size, int map_flags)
 {
   void *addr;
@@ -53,11 +49,6 @@ int NaCl_page_alloc_intern_flags(void **p, size_t size, int map_flags)
   return (NULL == addr) ? -ENOMEM : 0;
 }
 
-/*
- * This is critical to make the text region non-writable, and the data
- * region read/write but no exec.  Of course, some kernels do not
- * respect the lack of PROT_EXEC.
- */
 int NaCl_mprotect(void *addr, size_t len, int prot)
 {
   int ret = mprotect(addr, len, prot);
