@@ -49,8 +49,6 @@ enum NaClSignalResult {
  */
 typedef enum NaClSignalResult (*NaClSignalHandler)(int sig_num, void *ctx);
 
-void NaClSignalStackRegister(void *stack);
-
 /* with 0 signals handling is disabled */
 void SetSignalHandling(int support_signals);
 
@@ -62,19 +60,8 @@ void NaClSignalHandlerInit(void);
 /* Undoes the effect of NaClSignalHandlerInit() */
 void NaClSignalHandlerFini(void);
 
-/* Assert that no signal handlers are registered */
-void NaClSignalAssertNoHandlers(void);
-
 /* Provides a signal safe method to write to stderr */
 ssize_t NaClSignalErrorMessage(const char *str);
-
-/*
- * Add a signal handler to the front of the list.
- * Returns an id for the handler or returns 0 on failure.
- * This function is not thread-safe and should only be
- * called at startup.
- */
-int NaClSignalHandlerAdd(NaClSignalHandler func);
 
 /*
  * Fill a signal context structure from the raw platform dependent
@@ -82,18 +69,6 @@ int NaClSignalHandlerAdd(NaClSignalHandler func);
  */
 void NaClSignalContextFromHandler(struct NaClSignalContext *sigCtx,
                                   const void *rawCtx);
-
-/*
- * Return non-zero if the signal context is currently executing in an
- * untrusted environment.
- */
-int NaClSignalContextIsUntrusted(const struct NaClSignalContext *sigCtx);
-
-/*
- * A basic handler which will exit with -signal_number when
- * a signal is encountered.
- */
-enum NaClSignalResult NaClSignalHandleAll(int signal_number, void *ctx);
 
 /*
  * Traverse handler list, until a handler returns

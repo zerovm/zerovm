@@ -64,8 +64,9 @@ static int s_Signals[] = {
 };
 static struct sigaction s_OldActions[SIGNAL_COUNT];
 static void *signal_stack;
+static int busy = 0;
 
-void NaClSignalStackRegister(void *stack) {
+static void NaClSignalStackRegister(void *stack) {
   /*
    * If we set up signal handlers, we must ensure that any thread that
    * runs untrusted code has an alternate signal stack set up.  The
@@ -80,7 +81,7 @@ void NaClSignalStackRegister(void *stack) {
   ZLOGFAIL(sigaltstack(&st, NULL) == -1, errno, "Failed to register signal stack");
 }
 
-void NaClSignalStackUnregister(void)
+static void NaClSignalStackUnregister(void)
 {
   /*
    * Unregister the signal stack in case a fault occurs between the
@@ -125,7 +126,7 @@ static void NaClSignalStackAllocate(void **result)
   *result = stack;
 }
 
-void NaClSignalStackFree(void *stack)
+static void NaClSignalStackFree(void *stack)
 {
   assert(stack != NULL);
   ZLOGFAIL(munmap(stack, SIGNAL_STACK_SIZE + STACK_GUARD_SIZE) == -1,
@@ -167,13 +168,35 @@ static void FindAndRunHandler(int sig, siginfo_t *info, void *uc) {
 
 static void SignalCatch(int sig, siginfo_t *info, void *uc)
 {
+  busy = 1;
   FindAndRunHandler(sig, info, uc);
+}
+
+/* Assert that no signal handlers are registered */
+static void NaClSignalAssertNoHandlers()
+{
+  int i;
+
+  for(i = 0; i < SIGNAL_COUNT; i++)
+  {
+    int signum = s_Signals[i];
+    struct sigaction sa;
+
+    ZLOGFAIL(-1 == sigaction(signum, NULL, &sa), errno, "sigaction() call failed");
+
+    ZLOGFAIL((sa.sa_flags & SA_SIGINFO) != 0 ? sa.sa_sigaction != NULL
+        : (sa.sa_handler != SIG_DFL && sa.sa_handler != SIG_IGN), EFAULT,
+        "A signal handler is registered for signal %d. Did Breakpad register this?", signum);
+  }
 }
 
 void NaClSignalHandlerInitPlatform()
 {
   struct sigaction sa;
   int i;
+
+  /* fail if another handler(s) already registered */
+  NaClSignalAssertNoHandlers();
 
   memset(&sa, 0, sizeof(sa));
   sigemptyset(&sa.sa_mask);
@@ -189,8 +212,9 @@ void NaClSignalHandlerInitPlatform()
     ZLOGFAIL(0 != sigaction(s_Signals[i], &sa, &s_OldActions[i]),
         errno, "Failed to install handler for %d", s_Signals[i]);
 
-  /* allocate signal stack */
+  /* allocate and register signal stack */
   NaClSignalStackAllocate(&signal_stack);
+  NaClSignalStackRegister(signal_stack);
 }
 
 void NaClSignalHandlerFiniPlatform()
@@ -202,24 +226,10 @@ void NaClSignalHandlerFiniPlatform()
     ZLOGFAIL(0 != sigaction(s_Signals[i], &s_OldActions[i], NULL),
         errno, "Failed to unregister handler for %d", s_Signals[i]);
 
-  /* release signal stack */
-  NaClSignalStackUnregister();
-  NaClSignalStackFree(signal_stack);
-}
-
-void NaClSignalAssertNoHandlers()
-{
-  int i;
-
-  for(i = 0; i < SIGNAL_COUNT; i++)
+  /* release signal stack if not busy */
+  if(!busy)
   {
-    int signum = s_Signals[i];
-    struct sigaction sa;
-
-    ZLOGFAIL(-1 == sigaction(signum, NULL, &sa), errno, "sigaction() call failed");
-
-    ZLOGFAIL((sa.sa_flags & SA_SIGINFO) != 0 ? sa.sa_sigaction != NULL
-        : (sa.sa_handler != SIG_DFL && sa.sa_handler != SIG_IGN), EFAULT,
-        "A signal handler is registered for signal %d. Did Breakpad register this?", signum);
+    NaClSignalStackUnregister();
+    NaClSignalStackFree(signal_stack);
   }
 }

@@ -59,17 +59,25 @@ ssize_t NaClSignalErrorMessage(const char *msg)
   return 0;
 }
 
-int NaClSignalContextIsUntrusted(const struct NaClSignalContext *sigCtx)
+/*
+ * Return non-zero if the signal context is currently executing in an
+ * untrusted environment.
+ */
+static int NaClSignalContextIsUntrusted(const struct NaClSignalContext *sigCtx)
 {
   if(sigCtx->prog_ctr >= START_OF_USER_SPACE
       && sigCtx->prog_ctr < END_OF_USER_SPACE) return 1;
   return 0;
 }
 
-enum NaClSignalResult NaClSignalHandleAll(int signum, void *ctx)
+/*
+ * A basic handler which will exit with -signal_number when
+ * a signal is encountered.
+ */
+static enum NaClSignalResult NaClSignalHandleAll(int signum, void *ctx)
 {
   struct NaClSignalContext sigCtx;
-  static char msg[SIGNAL_STRLEN]; /* stack cannot be used */
+  char msg[SIGNAL_STRLEN];
 
   /*
    * Return an 8 bit error code which is -signal to
@@ -86,7 +94,13 @@ enum NaClSignalResult NaClSignalHandleAll(int signum, void *ctx)
   return NACL_SIGNAL_RETURN; /* unreachable */
 }
 
-int NaClSignalHandlerAdd(NaClSignalHandler func) {
+/*
+ * Add a signal handler to the front of the list.
+ * Returns an id for the handler or returns 0 on failure.
+ * This function is not thread-safe and should only be
+ * called at startup.
+ */
+static int NaClSignalHandlerAdd(NaClSignalHandler func) {
   int id = 0;
 
   ZLOGFAIL(func == NULL, EFAULT, FAILED_MSG);
