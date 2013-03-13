@@ -1,0 +1,4 @@
+rdtsc.nexe should not pass test with zerovm ncval and should pass with original
+nacl ncval
+
+note: the program is not working (will cause sigsegv)

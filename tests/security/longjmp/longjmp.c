@@ -4,9 +4,15 @@
  * be found in the LICENSE file.
  */
 
-#include <assert.h>
+#include "include/zvmlib.h"
 #include <setjmp.h>
-#include <stdio.h>
+
+#define assert(cond) \
+  if(!(cond)) \
+  { \
+    printf(STDERR, "assert failed at %d\n", __LINE__); \
+    zvm_exit(-1); \
+  }
 
 int func1(jmp_buf* env, int x) {
   if (x == 0) longjmp(*env, 1);

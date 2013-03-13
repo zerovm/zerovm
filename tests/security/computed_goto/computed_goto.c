@@ -3,9 +3,15 @@
  * Use of this source code is governed by a BSD-style license that can
  * be found in the LICENSE file.
  */
-
-#include <assert.h>
+#include "include/zvmlib.h"
 #include <stdio.h>
+
+#define assert(cond) \
+  if(!(cond)) \
+  { \
+    printf(STDERR, "assert failed at %d\n", __LINE__); \
+    zvm_exit(-1); \
+  }
 
 /* This tests for two former nacl-gcc bugs:
    Bug 1:  gcc outputs "jmp *%eax", which fails to validate.
