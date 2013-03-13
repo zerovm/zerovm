@@ -1,0 +1,39 @@
+#!/bin/sh
+filename=$(basename "$1")
+name="${filename%.*}"
+
+# help screen
+if [ -z $1 ]; then
+  echo usage: zgdb \<zvm module\>
+  echo example:
+  echo   zgfb hello.nexe
+  echo note: manifest should exist with the same name and \"manifest\" extesion
+  exit
+fi
+
+# check if nexe exist
+if [ ! -f $1 ]; then
+  echo $1 does not exist
+  exit
+fi
+
+# check if manifest exist
+if [ ! -f $name.manifest ]; then
+ echo $name.manifest does not exist
+  exit
+fi
+
+#create debug script
+echo set confirm off > debug.scp
+echo b NaClCreateMainThread >> debug.scp
+echo r >> debug.scp
+echo b main >> debug.scp
+echo add-symbol-file $1 0x440a00020000 >> debug.scp
+echo shell clear >> debug.scp
+echo c >> debug.scp
+echo d br >> debug.scp
+
+# run debug session
+gdb --command=debug.scp  --args $ZEROVM_ROOT/zerovm -seQ $name.manifest
+
+rm debug.scp
