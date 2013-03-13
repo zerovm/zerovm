@@ -28,12 +28,12 @@ echo set confirm off > debug.scp
 echo b NaClCreateMainThread >> debug.scp
 echo r >> debug.scp
 echo b main >> debug.scp
-echo add-symbol-file $1 0x440a00020000 >> debug.scp
+echo add-symbol-file $name.nexe 0x440a00020000 >> debug.scp
 echo shell clear >> debug.scp
 echo c >> debug.scp
 echo d br >> debug.scp
 
 # run debug session
-gdb --command=debug.scp  --args $ZEROVM_ROOT/zerovm -seQ $name.manifest
+gdb --command=debug.scp --args $ZEROVM_ROOT/zerovm -sQe3 $name.manifest
 
 rm debug.scp
