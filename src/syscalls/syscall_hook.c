@@ -29,9 +29,7 @@
 #include "src/main/manifest_setup.h"
 #include "src/syscalls/trap.h"
 
-/*
- * d'b: make syscall invoked from the untrusted code
- */
+/* serve trap invoked from the untrusted code */
 NORETURN void NaClSyscallCSegHook()
 {
   struct NaClApp *nap;
@@ -42,7 +40,7 @@ NORETURN void NaClSyscallCSegHook()
   uintptr_t sp_user;
   uintptr_t sp_sys;
 
-  /* d'b: nexe just invoked some syscall. increase syscalls counter */
+  /* restore trusted side environment */
   nap = gnap; /* restore NaClApp object */
   user = nacl_user; /* restore from global */
   sp_user = NaClGetThreadCtxSp(user);

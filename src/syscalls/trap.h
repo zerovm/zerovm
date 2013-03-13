@@ -37,7 +37,7 @@ EXTERN_C_BEGIN
  * 2nd parameter is a pointer to return value(s)
  * return 0 if successful, otherwise -errno
  *
- * notice about args: since nacl patch two 1st arguments if they are pointers,
+ * notice about args: since nacl patches two 1st arguments if they are pointers,
  * arg[1] should not be used
  */
 int32_t TrapHandler(struct NaClApp *nap, uint32_t args);
