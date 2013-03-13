@@ -38,7 +38,7 @@
 
 #define BADCMDLINE(msg) \
   do { \
-    printf("\033[2m\033[31m%s%s%s\033[0m", msg == NULL ? "" : msg, \
+    printf("%s%s%s", msg == NULL ? "" : msg, \
       msg == NULL ? "" : "\n", HELP_SCREEN); exit(EINVAL); \
   } while(0)
 
@@ -49,18 +49,18 @@ static int skip_validator = 0;
 /* log zerovm command line */
 static void ZVMCommandLine(int argc, char **argv)
 {
-  char cmd[BIG_ENOUGH_SPACE];
+  char cmd[BIG_ENOUGH_STRING];
   int offset = 0;
   int i;
 
   offset += sprintf(cmd, "zerovm command line:");
   for(i = 0; i < argc; ++i)
-    offset += g_snprintf(cmd + offset, BIG_ENOUGH_SPACE - offset, " %s", argv[i]);
+    offset += g_snprintf(cmd + offset, BIG_ENOUGH_STRING - offset, " %s", argv[i]);
 
   ZLOGS(LOG_DEBUG, "%s", cmd);
 }
 
-/* parse given command line and initialize NaClApp object */
+/* parse given command line, parse manifest and initialize NaClApp object */
 static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
 {
   int opt;
@@ -69,7 +69,7 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
   /* construct zlog with default verbosity */
   ZLogCtor(LOG_ERROR);
 
-  while((opt = getopt(argc, argv, "-PFe:QsSv:M:l:")) != -1)
+  while((opt = getopt(argc, argv, "-PFQsSv:M:l:e:")) != -1)
   {
     switch(opt)
     {
@@ -87,11 +87,16 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
         quit_after_load = 1;
         break;
       case 'e':
-        TagEngineCtor(ATOI(optarg));
+        if(TagEngineCtor(ATOI(optarg)) != 0)
+          BADCMDLINE("invalid etag level");
         nap->user_tag = TagCtor();
         break;
       case 'S':
-        /* d'b: disable signals handling */
+        /*
+         * todo(d'b): this one can fail w/o showing help. fix it! or,
+         * even better, remove it. zerovm always need to show report,
+         * and therefore always should catch signals
+         */
         SetSignalHandling(0);
         ZLOG(LOG_ERROR, "SIGNAL HANDLING DISABLED by -S");
         break;

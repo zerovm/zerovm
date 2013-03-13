@@ -25,10 +25,12 @@
 
 static int tag_engine_enabled = 0;
 
-void TagEngineCtor(int level)
+int TagEngineCtor(int level)
 {
-  ZLOGFAIL(level < 1 || level > 3, EFAULT, "invalid etag level %d", level);
+  if(level < 1 || level > 3) return -1;
+
   tag_engine_enabled = level;
+  return 0;
 }
 
 /* disable etag */

@@ -64,7 +64,7 @@ static int s_Signals[] = {
 };
 static struct sigaction s_OldActions[SIGNAL_COUNT];
 static void *signal_stack;
-static int busy = 0;
+static int busy = 1;
 
 static void NaClSignalStackRegister(void *stack) {
   /*
@@ -215,6 +215,7 @@ void NaClSignalHandlerInitPlatform()
   /* allocate and register signal stack */
   NaClSignalStackAllocate(&signal_stack);
   NaClSignalStackRegister(signal_stack);
+  busy = 0;
 }
 
 void NaClSignalHandlerFiniPlatform()

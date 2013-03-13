@@ -207,10 +207,7 @@ int ManifestCtor(const char *name)
 
 void ManifestDtor()
 {
-  assert(mft_data != NULL);
-  assert(mft_ptr != NULL);
-  assert(mft_count != 0);
-
+  /* it is safe to g_free NULL, so no assertions */
   g_free(mft_data);
   g_free(mft_ptr);
   mft_data = NULL;

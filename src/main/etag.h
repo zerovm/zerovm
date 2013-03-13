@@ -34,7 +34,7 @@
 #define MEMORY_ETAG_ENABLED (TagEngineEnabled() & 2)
 
 /* etag engine construction */
-void TagEngineCtor(int level);
+int TagEngineCtor(int level);
 
 /* disable etag */
 void TagEngineDtor();
