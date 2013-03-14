@@ -1,13 +1,8 @@
 This document describes the trap() call
 ------------------------------
 
-Trap is a part of zerovm. In the future trap will completely replace 
-the native NaCl syscall engine, except call forwarding part, a "trampoline"
-(see Google NaCl paper).
-
-Trap is a syscall number 0. Since nacl sdk knows nothing about
-syscall number 0, trap() is decorated as a pointer to a function with absolute
-address in the trampoline space (0x10000). This syscall accepts 1 argument:
+Trap is a syscall number 0 from trampoline and the only available syscall 
+(nacl syscalls not supported anymore). This syscall accepts 1 argument:
 uint64_t* and returns an int32_t value.
 
 Trap argument (can be treated as array of uint32_t) has the following structure:
@@ -15,17 +10,9 @@ arg[0] == function number (element of TrapCalls enum from "zvm.h")
 arg[1] == reserved (not used)
 arg[2] .. arg[N] = arguments to this function
 
-For now trap() supports the following functions:
+trap() supports the following functions:
   TrapRead
   TrapWrite
-  TrapSyscallback
-  TrapChannels
-  TrapChannelName
-  TrapAttributes
-  TrapMemSize
-  TrapHeapPtr
   TrapExit
   
-for the further information regarding trap functions see "api.txt"
-
-Notice: NaCl syscall NaClSysExit() currently uses TrapExit
+detailed information regarding trap functions can be found in "api.txt"

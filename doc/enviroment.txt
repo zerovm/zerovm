@@ -1,6 +1,6 @@
 this document describes user environment (custom attributes)
 ============================================================
- 
+(deprecated. user environment will be available via "/dev/nvram" and will not as main() argument) 
  
 This design replaces the old one: "ContentType", "TimeStamp", "XObjectMetaTag", "UserETag" -
 these keywords were removed from ZeroVM manifest.

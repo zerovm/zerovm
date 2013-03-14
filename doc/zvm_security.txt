@@ -4,34 +4,35 @@ This document describes ZeroVM security, how ZeroVM stands against possible atta
 We assume that original NaCl implementation is perfect and will analyze only the 
 ZeroVM features that can affect the system security.
 
-Syscallback
------------
-The most dangerous feature is the syscallback engine. User is allowed to set her own direct jump from 
-the trusted space to the untrusted code. To prevent security leaks zerovm analyzes the given 
-syscallback address. The address must point to a static or dynamic text, other addresses will
-be treated as invalid. The address must be modulo of 0x20 to prevent jumping to the middle of
-instruction. The address must not point to the segment end. In the current zerovm version all
-this checks already exist. Syscallback doesn't change the stack, registers or memory thus no data leak
-from the trusted space is possible.
-
 trap()
 ------
-The trap() engine contains several functions each of them can have bugs that lead to security
-vulnerability. Therefore each trap() function must have full test coverage.
+The trap() syscall contains several functions each of them can have bugs that lead to security
+vulnerability. Therefore each trap() function must have full test coverage. Tests can be
+found in repository folder /tests/functional/
 
 Other zerovm code
 -----------------
 Most dangerous are the functions that work when user application is running. These are: syscalls,
 nacl_syscall_64.S, nacl_switch_64.S nacl_syscall_hook.c and some other code. All this code should
-be covered with security tests.
+be covered with security tests. Some tests can be found in repository folder /tests/security 
 
-Syscalls
+Loader
 --------
-ZeroVM still uses several syscalls. Each syscall may possibly contain security vulnerability.
-Every existing ZeroVM syscall must be covered with security tests.
+ZeroVM has some changes in user module loading process:
+1. a new memory region added: user manifest. this is a read only memory area placed right 
+   before the user stack. user manifest contains information about channels, heap and stack
+2. all trampoline syscalls are disabled (except trap) and populated by the uniform pattern
+   calling always constant memory address 0x5afeca110000
+3. command line arguments, environment and modulle name is not available from the user stack
+   (actually it is avaiilable, but will be removed as soon as "/dev/nvram" will be added)
+   it is more safe to allow user module to parse all its command data on untrusted side.
+   appropriate support will be added to zerovm toolchain
+
+Network channels
+----------------
+to send user data from one session to other, zerovm uses zeromq library v2.2.x. 
 
 Manifest
 --------
 Current version of the manifest is treated as secure. User can only view/change specific fields. However
 security tests will be useful.
-

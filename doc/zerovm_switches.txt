@@ -3,33 +3,40 @@ This document describes ZeroVM command line switches
 
 ZeroVM command line switches:
 
-  ZeroVM lightweight VM manager, build 2012-12-29
-  Usage: <-M manifest_file> [-v #] [-l #] [-FSseQ]
+  ZeroVM lightweight VM manager, build 2013-03-12
+  Usage: <manifest_file> [-v#] [-l#] [-PFSseQ]
 
-   -M <file> load settings from manifest
-   -e enable the data oversight (etag)
+   <manifest_file> load settings from manifest
+   -e [level] enable the data control. 1 - channels, 2 - memory, 3 - both
    -l set a new storage limit (in Gb)
    -s skip validation
 
    (testing flags)
    -v [level] verbosity
-   -F fuzz testing; quit after loading NaCl app
+   -F fuzz testing; quit right before starting user app
    -S disable signal handling
    -Q disable platform qualification (dangerous!)
+   -P disable channels space preallocation
 
 
--M -- The manifest contains a set of control data for the executable. Obligatory switch.
+   -- The manifest contains a set of control data for the executable. Obligatory.
       More details about the manifest file can be found in the appropriate document on 
       github.com/ZeroVM/ZeroVM
 
--e -- enable etag engine to control data integrity. user encouraged to use this keyword.
+-e -- enable etag engine to control data integrity. the level must be specified. there
+      are following letag levels:
+      1 - calculate etag for all channels
+      2 - calculate etag for all user memory
+      3 - calculate etag both for all channels and user memory
 
 -l -- changes zerovm i/o hard limit. by default session only allowed to use 4gb
+      value should be in gigabytes 
 
 -s -- skips validation. used for "prevalidation" engine.
 
 -v -- controls verbosity of information in the ZeroVM log. writes ZeroVM 
       log to "var/log/syslog". it is not recommended to use values more than 2
+      possible values are 1..4
 
 -F -- specified NaCl application will be loaded but not run. used for 
       "prevalidation" engine.
@@ -38,13 +45,16 @@ ZeroVM command line switches:
 
 -Q -- will skip data execution test. This switch makes it possible to run ZeroVM 
       application on a platform with no "data execution" protection.
+      
+-P -- if specified zerovm will not allocate space for "write" channels connected
+      to local storage
 
 examples:
-  zerovm -v2 -Mtest.manifest
+  zerovm -v2 test.manifest
   starts zerovm with manifest "test.manifest" and "debug" verbosity
   
-  zerovm -e -Mtest.manifest
-  starts zerovm with manifest "test.manifest" with enabled etag
+  zerovm -e2 test.manifest
+  starts zerovm with manifest "test.manifest" with etagged memory
   
-  zerovm -F -Mtest.manifest
+  zerovm -F test.manifest
   loads nexe specified in "test.manifest" and exits with validator status

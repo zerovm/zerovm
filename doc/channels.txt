@@ -28,13 +28,13 @@ get_size -- limit on total amount of data to be read from this channel in bytes
 puts -- limit for writes allowed for this channel
 put_size -- limit on total amount of data to be written to this channel in bytes
 
-Fields available for the untrusted code:
-name -- the channel name (the alias from the manifest, /dev/something)
-type -- access type
+Fields available for the untrusted code (see api.txt):
 limits -- 4 limits for the channel
 size -- channel size. only available for random access channels
-handle -- not a real handle, just an index in the "channels" array
-    it is guaranteed that indices 0..2 represent stdin, stdout and stderr
+type -- access type
+name -- the channel name (the alias from the manifest)
+the indices in the channels array can be used as "handles". also it is guaranteed 
+that handles 0..2 represent stdin, stdout and stderr
 
 Channel access types: 
 0 - sequential read / sequential write (can be used as character device)
@@ -62,9 +62,9 @@ ex: Channel = path, /dev/stdout, 0, 0, 0, writes, bytes
 Channel is a file abstraction over the local files and network streams. Local files
 can have random access type, network streams are always sequential.
 
-All channels are opened before the guest starts and closed after guest ends. In case of
+All channels are opened before the session start and closed after session end. In case of
 the channels i/o error ZeroVM will not start. ZeroVM preallocates specified byte size
-for the local writable channels (if possible).
+for the local writable channels (this can be changed with -P switch, see zerovm_switches.txt).
 
 Network (socket based) channels
 -------------------------------
