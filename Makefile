@@ -31,7 +31,7 @@ create_dirs:
 	@mkdir obj -p
 
 zerovm: obj/zvm_main.o $(OBJS)
-	$(CXX) -o $@ $(CXXFLAGS2) $^ $(LIBS)
+	$(CC) -o $@ $(CXXFLAGS2) $^ $(LIBS)
 
 gcov: clean all
 	@lcov --directory . --base-directory=$(ZEROVM_ROOT) --capture --output-file app.info

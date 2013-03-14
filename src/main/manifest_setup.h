@@ -25,17 +25,17 @@ EXTERN_C_BEGIN
 
 #define HELP_SCREEN /* update command line switches here */\
     "\033[1m\033[37mZeroVM\033[0m lightweight VM manager, build 2013-03-14\n"\
-    "Usage: <manifest_file> [-v#] [-l#] [-PFSseQ]\n\n"\
-    " <manifest_file> load settings from manifest\n"\
-    " -e [level] enable the data control. 1 - channels, 2 - memory, 3 - both\n"\
+    "Usage: <manifest> [-e#] [-l#] [-v#] [-sFPSQ]\n\n"\
+    " <manifest> load settings from manifest file\n"\
+    " -e <level> enable the data control. where levels are\n"\
+    "    1 - channels, 2 - memory, 3 - both\n"\
     " -l set a new storage limit (in Gb)\n"\
-    " -s skip validation\n\n"\
-    " (testing flags)\n"\
-    " -v [level] verbosity\n"\
+    " -s skip validation\n"\
+    " -v <level> verbosity\n"\
     " -F fuzz testing; quit right before starting user app\n"\
-    " -S disable signal handling\n"\
+    " -P disable channels space preallocation\n"\
     " -Q disable platform qualification (dangerous!)\n"\
-    " -P disable channels space preallocation\n"
+    " -S disable signal handling\n"
 
 #define NEXE_PGM_NAME "loner" /* default argv[0] for nexe. deprecated */
 #define ZEROVM_PRIORITY 19

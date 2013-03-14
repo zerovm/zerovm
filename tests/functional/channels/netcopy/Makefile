@@ -9,7 +9,7 @@ all: $(NAME).o
 	@sed 's#PWD#$(PWD)#g' $(NAME)1.template > $(NAME)1.manifest
 	@sed 's#PWD#$(PWD)#g' $(NAME)2.template > $(NAME)2.manifest
 	@sed 's#PWD#$(PWD)#g' $(NAME)3.template > $(NAME)3.manifest
-	@dd if=/dev/urandom of=input.data bs=1048576 count=64
+	@dd if=/dev/urandom of=input.data bs=1048576 count=32 2> /dev/null
 	@$(ZEROVM_ROOT)/zerovm -e3 $(NAME)1.manifest&
 	@$(ZEROVM_ROOT)/zerovm -e3 $(NAME)2.manifest&
 	@$(ZEROVM_ROOT)/zerovm -e3 $(NAME)3.manifest
