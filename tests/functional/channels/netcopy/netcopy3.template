@@ -1,9 +1,9 @@
 =====================================================================
 == net copy functional test. 3rd collocutor
 =====================================================================
-Channel = tcp:2:, /dev/stdin, 0, 65536, 67108864, 0, 0
-Channel = PWD/output.data, /dev/stdout, 0, 0, 0, 65536, 67108864
-Channel = PWD/stderr3.log, /dev/stderr, 0, 0, 0, 4096, 65536
+Channel = tcp:2:, /dev/stdin, 0, 1073741824, 4294967296, 0, 0
+Channel = PWD/output.data, /dev/stdout, 0, 0, 0, 1073741824, 4294967296
+Channel = PWD/stderr3.log, /dev/stderr, 0, 0, 0, 1073741824, 4294967296
 
 =====================================================================
 == zerovm settings
@@ -12,5 +12,5 @@ Nexe = netcopy.nexe
 NodeName = copier3, 3
 NameServer = udp:127.0.0.1:54321
 MemMax = 33554432
-Timeout = 1
+Timeout = 10
 Version = 09082012
