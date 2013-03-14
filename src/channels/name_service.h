@@ -96,10 +96,6 @@ struct ChannelNSRecord
 };
 #pragma pack(pop)
 
-/* make url from the given record and return it through the "url" parameter */
-void MakeURL(char *url, const int32_t size,
-    const struct ChannelDesc *channel, const struct ChannelConnection *record);
-
 /*
  * extract the channel connection information and store it into
  * the netlist hash table. on destruction all allocated memory will

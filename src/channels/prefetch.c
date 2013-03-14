@@ -31,6 +31,44 @@ static void *context = NULL; /* zeromq context */
 static uint32_t binds = 0; /* "bind" channels number */
 static uint32_t connects = 0; /* "connect" channels number */
 
+/* make url from the given record and return it through the "url" parameter */
+static void MakeURL(char *url, const int32_t size,
+    const struct ChannelDesc *channel, const struct ChannelConnection *record)
+{
+  char host[BIG_ENOUGH_SPACE];
+
+  assert(url != NULL);
+  assert(record != NULL);
+  assert(channel != NULL);
+  assert(channel->name != NULL);
+
+  ZLOGFAIL(record->host == 0 && record->port != 0, EFAULT, "named host not supported");
+  ZLOGFAIL(size < 6, EFAULT, "too short url buffer");
+
+  /* create string containing ip or id as the host name */
+  switch(record->mark)
+  {
+    struct in_addr ip;
+    case BIND_MARK:
+      g_snprintf(host, BIG_ENOUGH_SPACE, "*");
+      break;
+    case CONNECT_MARK:
+    case OUTSIDER_MARK:
+      ip.s_addr = bswap_32(record->host);
+      g_snprintf(host, BIG_ENOUGH_SPACE, "%s", inet_ntoa(ip));
+      break;
+    default:
+      ZLOGFAIL(1, EFAULT, "unknown channel mark");
+      break;
+  }
+
+  /* construct url */
+  g_snprintf(url, size, "%s://%s:%u",
+      StringizeChannelSourceType(record->protocol), host, record->port);
+
+  ZLOG(LOG_INSANE, "url = %s", url);
+}
+
 /*
  * bind the given channel using info from netlist
  * returns not 0 if failed
@@ -418,17 +456,9 @@ int32_t SendMessage(struct ChannelDesc *channel, const char *buf, int32_t count)
   int result;
   int32_t writerest;
   int32_t flag;
-  char url[BIG_ENOUGH_SPACE];  /* debug purposes only */
 
   assert(channel != NULL);
   assert(buf != NULL);
-
-  /*
-   * log parameters and channel internals
-   * todo(d'b): remove MakeURL. at least for verbosity < then LOG_DEBUG
-   */
-  MakeURL(url, BIG_ENOUGH_SPACE, channel, GetChannelConnectionInfo(channel));
-  ZLOGS(LOG_DEBUG, "alias = %s, url = %s", channel->alias, url);
 
   /* write EOF as a multi-part message if etag enabled */
   flag = channel->eof ? ZMQ_SNDMORE : 0;

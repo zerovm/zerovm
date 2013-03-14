@@ -95,49 +95,13 @@ static void ParseURL(const struct ChannelDesc *channel, struct ChannelConnection
   record->protocol = GetChannelProtocol(tokens[0]);
   record->port = ATOI(tokens[2]);
   record->host = record->port == 0 ? ATOI(tokens[1]) : bswap_32(inet_addr(tokens[1]));
+
   ZLOGFAIL(record->host == 0 && record->port == 0, EFAULT, "invalid channel url");
 
   /* mark the channel as "bind", "connect" or "outsider" */
   if(record->port != 0) record->mark = OUTSIDER_MARK;
   else record->mark = channel->limits[GetsLimit]
       && channel->limits[GetSizeLimit] ? BIND_MARK : CONNECT_MARK;
-}
-
-void MakeURL(char *url, const int32_t size,
-    const struct ChannelDesc *channel, const struct ChannelConnection *record)
-{
-  char host[BIG_ENOUGH_SPACE];
-
-  assert(url != NULL);
-  assert(record != NULL);
-  assert(channel != NULL);
-  assert(channel->name != NULL);
-
-  ZLOGFAIL(record->host == 0 && record->port != 0, EFAULT, "named host not supported");
-  ZLOGFAIL(size < 6, EFAULT, "too short url buffer");
-
-  /* create string containing ip or id as the host name */
-  switch(record->mark)
-  {
-    struct in_addr ip;
-    case BIND_MARK:
-      g_snprintf(host, BIG_ENOUGH_SPACE, "*");
-      break;
-    case CONNECT_MARK:
-    case OUTSIDER_MARK:
-      ip.s_addr = bswap_32(record->host);
-      g_snprintf(host, BIG_ENOUGH_SPACE, "%s", inet_ntoa(ip));
-      break;
-    default:
-      ZLOGFAIL(1, EFAULT, "unknown channel mark");
-      break;
-  }
-
-  /* construct url */
-  g_snprintf(url, size, "%s://%s:%u",
-      StringizeChannelSourceType(record->protocol), host, record->port);
-
-  ZLOG(LOG_INSANE, "url = %s", url);
 }
 
 void StoreChannelConnectionInfo(const struct ChannelDesc *channel)
