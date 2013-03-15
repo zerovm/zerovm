@@ -2,8 +2,8 @@
 == computed goto test. the nexe has a weird (too large) rodata segment address
 =====================================================================
 Channel = /dev/null, /dev/stdin, 0, 65536, 4194304, 0, 0
-Channel = /dev/null, /dev/stdout, 0, 0, 0, 65536, 4194304
-Channel = /dev/null, /dev/stderr, 0, 0, 0, 65536, 4194304
+Channel = /dev/stdout, /dev/stdout, 0, 0, 0, 65536, 4194304
+Channel = /dev/stderr, /dev/stderr, 0, 0, 0, 65536, 4194304
 
 =====================================================================
 == control switches

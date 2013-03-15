@@ -9,7 +9,7 @@
 #define assert(cond) \
   if(!(cond)) \
   { \
-    printf(STDERR, "assert failed at %d\n", __LINE__); \
+    fprintf(STDERR, "assert failed at %d\n", __LINE__); \
     zvm_exit(-1); \
   }
 
