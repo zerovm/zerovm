@@ -58,7 +58,7 @@ int PreloadChannelDtor(struct ChannelDesc* channel)
 
   /* adjust the size of writable channels */
   if(channel->limits[PutSizeLimit] && channel->limits[PutsLimit])
-    i = ftruncate(channel->handle, channel->putpos);
+    i = ftruncate(channel->handle, channel->size);
 
   /* calculate digest and free the tag */
   if(CHANNELS_ETAG_ENABLED)

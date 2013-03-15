@@ -291,7 +291,7 @@ static int32_t ZVMWriteHandle(struct NaClApp *nap,
     UpdateChannelTag(channel, (const char*)sys_buffer, retcode);
 
     channel->putpos = offset + retcode;
-    channel->size = channel->type == SGetRPut ?
+    channel->size = (channel->type == SGetRPut) || (channel->type == RGetRPut) ?
         MAX(channel->size, channel->putpos) : channel->putpos;
     channel->getpos = channel->putpos;
   }
