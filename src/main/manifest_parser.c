@@ -38,72 +38,6 @@ static struct
   char *value;
 } *mft_ptr; /* array of pointers to keys/values */
 
-char* GetValueByKey(const char *key)
-{
-  int i;
-
-  /* check for a design error */
-  assert(key != NULL);
-  assert(mft_ptr != NULL);
-  assert(mft_count > 0);
-
-  for(i = 0; i < mft_count; ++i)
-  {
-    if(strcmp(key, mft_ptr[i].key) == 0)
-      return mft_ptr[i].value;
-  }
-  return NULL;
-}
-
-int GetValuesByKey(const char *key, char *values[], int capacity)
-{
-  int count = 0;
-  int i;
-
-  /* check for a design error */
-  assert(key != NULL);
-  assert(values != NULL);
-  assert(capacity > 0);
-  assert(mft_ptr != NULL);
-  assert(mft_count > 0);
-
-  /* populate array with found "value" strings */
-  for(i = 0; i < mft_count; ++i)
-    if(strcmp(key, mft_ptr[i].key) == 0 && count < capacity)
-      values[count++] = mft_ptr[i].value;
-
-  return count;
-}
-
-int ParseValue(char *value, const char *delimiter, char *tokens[], int capacity)
-{
-  int count;
-  int i;
-
-  /* control design errors */
-  assert(delimiter != NULL);
-  assert(tokens != NULL);
-  assert(capacity > 0);
-  assert(mft_ptr != NULL);
-  assert(mft_count > 0);
-
-  /* by design. useful */
-  if(value == NULL) return 0;
-
-  /* 1st token */
-  tokens[0] = strtok(value, delimiter);
-  count = tokens[0] != NULL ? 1 : 0;
-
-  /* the rest of tokens */
-  for(i = 1; i < capacity; ++i)
-  {
-    tokens[i] = strtok(NULL, delimiter);
-    if(tokens[i] != NULL) ++count;
-  }
-
-  return count;
-}
-
 /* remove leading and ending spaces from the given string */
 static char* cut_spaces(char *a)
 {
@@ -172,6 +106,72 @@ static int ParseManifest()
 
   /* return error if no recods were found */
   return mft_count ? 0 : -1;
+}
+
+char *GetValueByKey(const char *key)
+{
+  int i;
+
+  /* check for a design error */
+  assert(key != NULL);
+  assert(mft_ptr != NULL);
+  assert(mft_count > 0);
+
+  for(i = 0; i < mft_count; ++i)
+  {
+    if(strcmp(key, mft_ptr[i].key) == 0)
+      return mft_ptr[i].value;
+  }
+  return NULL;
+}
+
+int GetValuesByKey(const char *key, char *values[], int capacity)
+{
+  int count = 0;
+  int i;
+
+  /* check for a design error */
+  assert(key != NULL);
+  assert(values != NULL);
+  assert(capacity > 0);
+  assert(mft_ptr != NULL);
+  assert(mft_count > 0);
+
+  /* populate array with found "value" strings */
+  for(i = 0; i < mft_count; ++i)
+    if(strcmp(key, mft_ptr[i].key) == 0 && count < capacity)
+      values[count++] = mft_ptr[i].value;
+
+  return count;
+}
+
+int ParseValue(char *value, const char *delimiter, char *tokens[], int capacity)
+{
+  int count;
+  int i;
+
+  /* control design errors */
+  assert(delimiter != NULL);
+  assert(tokens != NULL);
+  assert(capacity > 0);
+  assert(mft_ptr != NULL);
+  assert(mft_count > 0);
+
+  /* by design. useful */
+  if(value == NULL) return 0;
+
+  /* 1st token */
+  tokens[0] = cut_spaces(strtok(value, delimiter));
+  count = tokens[0] != NULL ? 1 : 0;
+
+  /* the rest of tokens */
+  for(i = 1; i < capacity; ++i)
+  {
+    tokens[i] = cut_spaces(strtok(NULL, delimiter));
+    if(tokens[i] != NULL) ++count;
+  }
+
+  return count;
 }
 
 int ManifestCtor(const char *name)

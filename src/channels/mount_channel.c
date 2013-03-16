@@ -215,7 +215,7 @@ void ChannelsCtor(struct NaClApp *nap)
   for(i = 0; i < mft->channels_count; ++i)
   {
     char *tokens[CHANNEL_ATTRIBUTES + 1]; /* to detect wrong attributes number */
-    int count = ParseValue(values[i], ", \t", tokens, CHANNEL_ATTRIBUTES + 1);
+    int count = ParseValue(values[i], ",", tokens, CHANNEL_ATTRIBUTES + 1);
     ZLOGFAIL(count != CHANNEL_ATTRIBUTES, EFAULT, "invalid specification '%s'", values[i]);
 
     /* construct and initialize channel */
