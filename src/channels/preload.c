@@ -57,7 +57,8 @@ int PreloadChannelDtor(struct ChannelDesc* channel)
   assert(channel != NULL);
 
   /* adjust the size of writable channels */
-  if(channel->limits[PutSizeLimit] && channel->limits[PutsLimit])
+  if(channel->limits[PutSizeLimit] && channel->limits[PutsLimit]
+     && channel->source == ChannelRegular)
     i = ftruncate(channel->handle, channel->size);
 
   /* calculate digest and free the tag */
@@ -89,7 +90,6 @@ static void FailOnInvalidFileChannel(const struct ChannelDesc *channel)
 /* preload given character device to channel */
 static void CharacterChannel(struct ChannelDesc* channel)
 {
-  int desc;
   char *mode = NULL;
   int flags;
 
@@ -108,8 +108,8 @@ static void CharacterChannel(struct ChannelDesc* channel)
   }
 
   /* open file */
-  desc = open(channel->name, flags | O_NONBLOCK);
-  channel->socket = fdopen(desc, mode);
+  channel->handle = open(channel->name, flags | O_NONBLOCK);
+  channel->socket = fdopen(channel->handle, mode);
   ZLOGFAIL(channel->socket == NULL, errno, "cannot open channel %s", channel->name);
 
   /* set channel attributes */
