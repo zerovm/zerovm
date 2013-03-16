@@ -59,6 +59,7 @@ NORETURN static void SwitchToApp(struct NaClApp  *nap, uintptr_t stack_ptr)
   nacl_sys->rsp = NaClGetStackPtr();
 
   /* pass control to the nexe */
+  ZLOGS(LOG_ERROR, "SESSION STARTED");
   NaClSwitchToApp(nap, nacl_user->new_prog_ctr);
 
   ZLOGFAIL(1, EFAULT, "unreachable code reached");

@@ -35,7 +35,7 @@ static uint32_t connects = 0; /* "connect" channels number */
 static void MakeURL(char *url, const int32_t size,
     const struct ChannelDesc *channel, const struct ChannelConnection *record)
 {
-  char host[BIG_ENOUGH_SPACE];
+  char host[BIG_ENOUGH_STRING];
 
   assert(url != NULL);
   assert(record != NULL);
@@ -50,12 +50,12 @@ static void MakeURL(char *url, const int32_t size,
   {
     struct in_addr ip;
     case BIND_MARK:
-      g_snprintf(host, BIG_ENOUGH_SPACE, "*");
+      g_snprintf(host, BIG_ENOUGH_STRING, "*");
       break;
     case CONNECT_MARK:
     case OUTSIDER_MARK:
       ip.s_addr = bswap_32(record->host);
-      g_snprintf(host, BIG_ENOUGH_SPACE, "%s", inet_ntoa(ip));
+      g_snprintf(host, BIG_ENOUGH_STRING, "%s", inet_ntoa(ip));
       break;
     default:
       ZLOGFAIL(1, EFAULT, "unknown channel mark");
@@ -301,7 +301,7 @@ static INLINE void CloseChannels()
         uint32_t more;
         size_t more_size = sizeof more;
 
-        if(channel->socket == NULL ) continue;
+        if(channel->socket == NULL) continue;
 
         zmq_getsockopt(channel->socket, ZMQ_EVENTS, &more, &more_size);
         busy |= more != ZMQ_POLLOUT;
@@ -512,13 +512,13 @@ int32_t SendMessage(struct ChannelDesc *channel, const char *buf, int32_t count)
 
 int PrefetchChannelDtor(struct ChannelDesc *channel)
 {
-  char url[BIG_ENOUGH_SPACE];  /* debug purposes only */
+  char url[BIG_ENOUGH_STRING];  /* debug purposes only */
 
   assert(channel != NULL);
   assert(channel->socket != NULL);
 
   /* log parameters and channel internals */
-  MakeURL(url, BIG_ENOUGH_SPACE, channel, GetChannelConnectionInfo(channel));
+  MakeURL(url, BIG_ENOUGH_STRING, channel, GetChannelConnectionInfo(channel));
   ZLOGS(LOG_DEBUG, "alias = %s, url = %s", channel->alias, url);
 
   /* close "PUT" channel */

@@ -491,7 +491,7 @@ int ProxyReport(struct NaClApp *nap)
   assert(nap->system_manifest != NULL);
 
   /* tag user memory / channels if session successful */
-  if(TagEngineEnabled() && STREQ(OK_STATE, GetExitState()))
+  if(TagEngineEnabled())
   {
     if(CHANNELS_ETAG_ENABLED) ChannelsDigest(nap);
     if(MEMORY_ETAG_ENABLED) EtagMemoryChunk(nap);

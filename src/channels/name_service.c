@@ -69,8 +69,8 @@ INLINE static uint32_t MakeKey(const struct ChannelConnection *record)
  */
 static void ParseURL(const struct ChannelDesc *channel, struct ChannelConnection *record)
 {
-  char *buf[BIG_ENOUGH_SPACE], **tokens = buf;
-  char name[BIG_ENOUGH_SPACE];
+  char *buf[BIG_ENOUGH_STRING], **tokens = buf;
+  char name[BIG_ENOUGH_STRING];
 
   assert(channel != NULL);
   assert(channel->name != NULL);
@@ -80,8 +80,8 @@ static void ParseURL(const struct ChannelDesc *channel, struct ChannelConnection
   ZLOG(LOG_INSANE, "url = %s", channel->name);
 
   /* copy the channel name aside and parse it */
-  g_strlcpy(name, channel->name, BIG_ENOUGH_SPACE);
-  ParseValue(name, ":", tokens, BIG_ENOUGH_SPACE);
+  g_strlcpy(name, channel->name, BIG_ENOUGH_STRING);
+  ParseValue(name, ":", tokens, BIG_ENOUGH_STRING);
   assert(tokens[0] != NULL);
 
   /*

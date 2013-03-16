@@ -79,6 +79,11 @@ static enum NaClSignalResult NaClSignalHandleAll(int signum, void *ctx)
   struct NaClSignalContext sigCtx;
   char msg[SIGNAL_STRLEN];
 
+  /* todo(d'b): is it proper solution? */
+  static int busy = 0;
+  if(busy) return NACL_SIGNAL_RETURN;
+  busy = 1;
+
   /*
    * Return an 8 bit error code which is -signal to
    * simulate normal OS behavior

@@ -33,9 +33,9 @@ static int32_t ZVMExitHandle(struct NaClApp *nap, int32_t code)
   assert(nap != NULL);
 
   nap->system_manifest->user_ret_code = code;
-  ZLOGS(LOG_DEBUG, "Exit syscall handler: %d", code);
+  ZLOGS(LOG_ERROR, "SESSION RETURNED %d", code);
   SetExitState(OK_STATE);
-  NaClExit(code);
+  NaClExit(0);
 
   return 0; /* unreachable */
 }

@@ -45,6 +45,9 @@ const char *GetExitState();
 /* set zerovm exit code */
 void SetExitCode(int code);
 
+/* get zerovm exit code */
+int GetExitCode();
+
 EXTERN_C_END
 
 #endif /* NACL_EXIT_H_ */

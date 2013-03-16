@@ -164,7 +164,13 @@ static void ChannelDtor(struct ChannelDesc *channel)
       PreloadChannelDtor(channel);
       break;
     case ChannelTCP:
-      PrefetchChannelDtor(channel);
+      /*
+       * since there is no chance to finalize network channels
+       * in case if session crashed, the channel destructor just
+       * skips it
+       */
+      if(GetExitCode() == 0)
+        PrefetchChannelDtor(channel);
       break;
     case ChannelDirectory:
     case ChannelBlock:

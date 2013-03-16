@@ -92,6 +92,11 @@ void SetExitCode(int code)
   if(zvm_code == 0) zvm_code = code;
 }
 
+int GetExitCode()
+{
+  return zvm_code;
+}
+
 /* manage special signals. note: may change zvm_state */
 /* todo(d'b): remove this patch after reworking zvm signals */
 static void SpecSignals()
@@ -104,12 +109,20 @@ static void SpecSignals()
 
 void NaClExit(int err_code)
 {
-  /* patch */
-  if(err_code !=0) SpecSignals();
-
-  Finalizer();
   SetExitCode(err_code);
 
-  ZLOGIF(zvm_code != 0, "zerovm exited with error '%s'", strerror(zvm_code));
+  /*
+   * patch to show special messages instead of signals 24, 25
+   * and do not calculate etag if session failed
+   */
+  if(err_code != 0)
+  {
+    SpecSignals();
+    TagEngineDtor();
+    ZLOGS(LOG_ERROR, "SESSION OR HYPERVISOR FAILED WITH ERROR %d: %s",
+        err_code, strerror(zvm_code));
+  }
+
+  Finalizer();
   _exit(zvm_code);
 }
