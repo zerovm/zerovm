@@ -22,7 +22,7 @@
 
 #include "src/channels/mount_channel.h"
 
-#define CHANNEL_OPEN_FLAGS {O_RDONLY, O_RDWR | O_CREAT, O_RDWR | O_CREAT, -1, -1}
+#define CHANNEL_RIGHTS S_IRUSR | S_IWUSR
 #define DEV_NULL "/dev/null"
 
 /* disable space preallocation */

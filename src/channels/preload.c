@@ -76,6 +76,16 @@ int PreloadChannelDtor(struct ChannelDesc* channel)
   return i == 0 ? 0 : -1;
 }
 
+/* preallocate channel space if not disabled with "-P" */
+static void PreallocateChannel(struct ChannelDesc *channel)
+{
+  int i;
+
+  if(disable_preallocation) return;
+  i = ftruncate(channel->handle, channel->limits[PutSizeLimit]);
+  ZLOGFAIL(i == -1, errno, "cannot preallocate cdr channel");
+}
+
 /* test the channel for validity */
 static void FailOnInvalidFileChannel(const struct ChannelDesc *channel)
 {
@@ -120,10 +130,10 @@ static void CharacterChannel(struct ChannelDesc* channel)
 static void RegularChannel(struct ChannelDesc* channel)
 {
   uint32_t rw = 0;
-  int i;
 
   assert(channel != NULL);
   assert(channel->name != NULL);
+  ZLOG(LOG_DEBUG, "preload channel '%s'", channel->name);
 
   /* calculate the read/write type */
   rw |= channel->limits[GetsLimit] && channel->limits[GetSizeLimit];
@@ -131,23 +141,17 @@ static void RegularChannel(struct ChannelDesc* channel)
   switch(rw)
   {
     case 1: /* read only */
-      channel->handle = open(channel->name, O_RDONLY, S_IRWXU);
+      channel->handle = open(channel->name, O_RDONLY, CHANNEL_RIGHTS);
       ZLOGFAIL(channel->handle == -1, errno, "'%s' open error", channel->name);
       channel->size = GetFileSize((char*)channel->name);
       break;
 
     case 2: /* write only. existing file will be overwritten */
-      channel->handle = open(channel->name, O_WRONLY|O_CREAT|O_TRUNC, S_IRWXU);
+      channel->handle = open(channel->name, O_WRONLY|O_CREAT|O_TRUNC, CHANNEL_RIGHTS);
       ZLOGFAIL(channel->handle == -1, errno, "'%s' open error", channel->name);
       channel->size = 0;
-      if(STREQ(channel->name, DEV_NULL)) break;
-
-      /* preallocate channel space */
-      if(!disable_preallocation)
-      {
-        i = ftruncate(channel->handle, channel->limits[PutSizeLimit]);
-        ZLOGFAIL(i == -1, errno, "cannot preallocate '%s' channel", channel->alias);
-      }
+      if(!STREQ(channel->name, DEV_NULL))
+        PreallocateChannel(channel);
       break;
 
     case 3: /* cdr or full random access */
@@ -157,35 +161,26 @@ static void RegularChannel(struct ChannelDesc* channel)
           "sequential read / random write channels not supported");
 
       /* open the file and ensure that putpos is not greater than the file size */
-      channel->handle = open(channel->name, O_RDWR | O_CREAT, S_IRWXU);
+      channel->handle = open(channel->name, O_RDWR | O_CREAT, CHANNEL_RIGHTS);
       ZLOGFAIL(channel->handle == -1, errno, "'%s' open error", channel->name);
       channel->size = GetFileSize(channel->name);
       ZLOGFAIL(channel->putpos > channel->size, EFAULT,
-          "'%s' size is less then specified append position", channel->alias);
+          "'%s' size is less then specified append position", channel->name);
 
       /* file does not exist */
       if(channel->size == 0 && !STREQ(channel->name, DEV_NULL))
-      {
-        /* preallocate channel space */
-        if(!disable_preallocation)
-        {
-          i = ftruncate(channel->handle, channel->limits[PutSizeLimit]);
-          ZLOGFAIL(i == -1, errno, "cannot preallocate cdr channel");
-        }
-        break;
-      }
-
-      /* update the start of writing position */
-      channel->putpos = channel->type == RGetSPut ? channel->size : 0;
+        PreallocateChannel(channel);
+      /* existing file */
+      else
+        channel->putpos = channel->type == RGetSPut ? channel->size : 0;
       break;
 
-    case 0: /* inaccessible */
-    default: /* unreachable */
-      ZLOGFAIL(1, EPROTONOSUPPORT, "the channel '%s' not supported", channel->alias);
+    default:
+      ZLOGFAIL(1, EPROTONOSUPPORT, "the channel '%s' not supported", channel->name);
       break;
   }
 
-  ZLOGFAIL(channel->handle < 0, EFAULT, "preloaded file open error");
+  ZLOGFAIL(channel->handle < 0, EFAULT, "'%s' preload error", channel->name);
 }
 
 int PreloadChannelCtor(struct ChannelDesc* channel)
@@ -194,7 +189,7 @@ int PreloadChannelCtor(struct ChannelDesc* channel)
   assert(channel->name != NULL);
 
   /* check the given channel */
-  ZLOGS(LOG_DEBUG, "mounting channel '%s' to '%s'", channel->name, channel->alias);
+  ZLOG(LOG_DEBUG, "mounting channel '%s' to '%s'", channel->name, channel->alias);
   FailOnInvalidFileChannel(channel);
 
   /* set start position */
@@ -212,7 +207,8 @@ int PreloadChannelCtor(struct ChannelDesc* channel)
       CharacterChannel(channel);
       break;
     default:
-      ZLOGFAIL(1, EPROTONOSUPPORT, "the channel not supported");
+      ZLOGFAIL(1, EPROTONOSUPPORT, "invalid channel '%s' source type %d",
+          channel->name, channel->type);
       break;
   }
   return 0;
