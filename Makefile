@@ -80,7 +80,7 @@ clean_intermediate:
 
 install:
 	install -D -m 0755 zerovm ${ZVM_SDK_ROOT}/zerovm
-	install -D -m 0644 api/zvm.h ${ZVM_SDK_ROOT}/include/zvm.h
+	install -D -m 0644 api/zvm.h ${ZVM_SDK_ROOT}/api/zvm.h
 
 obj/mount_channel.o: src/channels/mount_channel.c
 	$(CC) $(CCFLAGS1) -o $@ $^
