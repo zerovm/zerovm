@@ -1,8 +1,17 @@
+define PREFIX_ERR
+
+Please set up ZVM_PREFIX env variable to the desired installation path
+Example: export ZVM_PREFIX=/opt/zerovm
+
+endef
+ifndef ZVM_PREFIX
+$(error $(PREFIX_ERR))
+endif
 FLAGS0=-fPIE -Wall -pedantic -Wno-long-long -fvisibility=hidden -fstack-protector --param ssp-buffer-size=4
 GLIB=`pkg-config --cflags glib-2.0`
 CCFLAGS0=-c -m64 -fPIC -D_GNU_SOURCE=1 -DVALIDATOR_NAME='"$(VALIDATOR_NAME)"' -I. $(GLIB)
 CXXFLAGS0=-m64 -Wno-variadic-macros $(GLIB)
-LIBS=-lzmq -lglib-2.0 -lvalidator
+LIBS=-L$(ZVM_PREFIX) -lzmq -lglib-2.0 -lvalidator
 TESTLIBS=-Llib/gtest -lgtest $(LIBS)
 
 CCFLAGS1=-std=gnu89 -Wdeclaration-after-statement $(FLAGS0) $(CCFLAGS0)
@@ -34,9 +43,9 @@ zerovm: obj/zvm_main.o $(OBJS)
 	$(CC) -o $@ $(CXXFLAGS2) $^ $(LIBS)
 
 gcov: clean all
-	@lcov --directory . --base-directory=$(ZEROVM_ROOT) --capture --output-file app.info
+	@lcov --directory . --base-directory=$(CURDIR) --capture --output-file app.info
 	@genhtml --output-directory cov_htmp app.info
-	@echo open $(ZEROVM_ROOT)/cov_htmp/index.html
+	@echo open $(CURDIR)/cov_htmp/index.html
 
 tests: test_compile
 	@echo == UNIT TESTS ========================================
@@ -77,8 +86,8 @@ clean_intermediate:
 	@echo unit tests has been deleted
 
 install:
-	install -D -m 0755 zerovm ${ZVM_SDK_ROOT}/zerovm
-	install -D -m 0644 api/zvm.h ${ZVM_SDK_ROOT}/api/zvm.h
+	install -D -m 0755 zerovm $(ZVM_PREFIX)/zerovm
+	install -D -m 0644 api/zvm.h $(ZVM_PREFIX)/api/zvm.h
 
 obj/mount_channel.o: src/channels/mount_channel.c
 	$(CC) $(CCFLAGS1) -o $@ $^
