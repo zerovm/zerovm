@@ -63,7 +63,7 @@ obj/unittest_main.o: tests/unit/unittest_main.cc
 tests/unit/service_runtime_tests: obj/sel_ldr_test.o obj/sel_memory_unittest.o obj/unittest_main.o $(OBJS)
 	$(CXX) $(CXXFLAGS2) -o $@ $^ $(TESTLIBS)
 
-.PHONY: clean clean_gcov clean_intermediate
+.PHONY: clean clean_gcov clean_intermediate install
 
 clean_gcov:
 	@find -name *.gcda -o -name *.gcno | xargs rm -f
@@ -77,6 +77,10 @@ clean_intermediate:
 	@rm -f tests/unit/manifest_parser_test tests/unit/service_runtime_tests obj/*
 	@echo intermediate files has been deleted
 	@echo unit tests has been deleted
+
+install:
+	install -D -m 0755 zerovm ${ZVM_SDK_ROOT}/zerovm
+	install -D -m 0644 api/zvm.h ${ZVM_SDK_ROOT}/include/zvm.h
 
 obj/mount_channel.o: src/channels/mount_channel.c
 	$(CC) $(CCFLAGS1) -o $@ $^

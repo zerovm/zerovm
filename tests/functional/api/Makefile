@@ -3,7 +3,6 @@ CCFLAGS=-n -s -nostartfiles -static -nostdlib
 
 all: $(NAME).o
 	$(ZVM_TOOLCHAIN)/bin/gcc -o $(NAME).nexe $(CCFLAGS) \
-	-T $(ZEROVM_ROOT)/tests/functional/include/elf64_nacl.x.static \
 	$(NAME).o $(ZEROVM_ROOT)/tests/functional/include/libzvmlib.a
 	@sed 's#PWD#$(PWD)#g' $(NAME).template > $(NAME).manifest
 	@$(ZEROVM_ROOT)/zerovm -e3 $(NAME).manifest
