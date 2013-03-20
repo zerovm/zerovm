@@ -302,25 +302,28 @@ static int32_t ZVMWriteHandle(struct NaClApp *nap,
   return retcode;
 }
 
+#define JAIL_CHECK \
+    uintptr_t sysaddr; \
+    int result; \
+\
+    assert(nap != NULL); \
+    assert(nap->system_manifest != NULL); \
+\
+    sysaddr = NaClUserToSysAddrNullOkay(nap, addr); \
+\
+    /* sanity check */ \
+    if(size <= 0) return -EINVAL; \
+    if(sysaddr < nap->mem_map[HeapIdx].start || \
+        sysaddr >= nap->mem_map[HeapIdx].end) return -EINVAL; \
+    if(sysaddr != ROUNDDOWN_64K(sysaddr)) return -EINVAL
+
 /*
  * validate given buffer and, if successful, change protection to
  * read / execute and return 0
  */
 static int32_t ZVMJailHandle(struct NaClApp *nap, uintptr_t addr, int32_t size)
 {
-  uintptr_t sysaddr;
-  int result;
-
-  assert(nap != NULL);
-  assert(nap->system_manifest != NULL);
-
-  sysaddr = NaClUserToSysAddrNullOkay(nap, addr);
-
-  /* sanity check */
-  if(size <= 0) return -EINVAL;
-  if(sysaddr < nap->mem_map[HeapIdx].start ||
-      sysaddr >= nap->mem_map[HeapIdx].end) return -EINVAL;
-  if(sysaddr != ROUNDDOWN_64K(sysaddr)) return -EINVAL;
+  JAIL_CHECK;
 
   /* validate */
   result = NaClSegmentValidates((uint8_t*)sysaddr, size, sysaddr);
@@ -336,19 +339,7 @@ static int32_t ZVMJailHandle(struct NaClApp *nap, uintptr_t addr, int32_t size)
 /* change protection to read / write and return 0 if successful */
 static int32_t ZVMUnjailHandle(struct NaClApp *nap, uintptr_t addr, int32_t size)
 {
-  uintptr_t sysaddr;
-  int result;
-
-  assert(nap != NULL);
-  assert(nap->system_manifest != NULL);
-
-  sysaddr = NaClUserToSysAddrNullOkay(nap, addr);
-
-  /* sanity check */
-  if(size <= 0) return -EINVAL;
-  if(sysaddr < nap->mem_map[HeapIdx].start ||
-      sysaddr >= nap->mem_map[HeapIdx].end) return -EINVAL;
-  if(sysaddr != ROUNDDOWN_64K(sysaddr)) return -EINVAL;
+  JAIL_CHECK;
 
   /* protect */
   result = NaCl_mprotect((void*)sysaddr, size, PROT_READ | PROT_WRITE);
@@ -356,6 +347,7 @@ static int32_t ZVMUnjailHandle(struct NaClApp *nap, uintptr_t addr, int32_t size
 
   return 0;
 }
+#undef JAIL_CHECK
 
 /* this function debug only. return function name by id */
 static const char *FunctionNameById(int id)

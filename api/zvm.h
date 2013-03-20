@@ -24,11 +24,11 @@
 /* zerovm system calls */
 enum TrapCalls
 {
-  TrapRead = 17770431,
-  TrapWrite = 17770432,
-  TrapJail = 17770433,
-  TrapUnjail = 17770434,
-  TrapExit = 17770441
+  TrapRead = 0x64616552,
+  TrapWrite = 0x74697257,
+  TrapJail = 0x6c69614a,
+  TrapUnjail = 0x6c6a6e55,
+  TrapExit = 0x74697845
 };
 
 /* channel types */
@@ -80,6 +80,10 @@ struct UserManifest
   TRAP((uint64_t[]){TrapRead, 0, desc, (uintptr_t)buffer, size, offset})
 #define zvm_pwrite(desc, buffer, size, offset) \
   TRAP((uint64_t[]){TrapWrite, 0, desc, (uintptr_t)buffer, size, offset})
+#define zvm_jail(buffer, size) \
+  TRAP((uint64_t[]){TrapJail, 0, (uintptr_t)buffer, size})
+#define zvm_unjail(buffer, size) \
+  TRAP((uint64_t[]){TrapUnjail, 0, (uintptr_t)buffer, size})
 #define zvm_exit(code) TRAP((uint64_t[]){TrapExit, 0, code})
 
 #endif /* ZVM_API_H__ */
