@@ -154,7 +154,8 @@ void NaClElfImageValidateProgramHeaders(
      * that x is off.
      */
   const Elf_Ehdr      *hdr = &image->ehdr;
-  int                 seen_seg[NACL_ARRAY_SIZE(nacl_phdr_check_data)];
+  /* d'b: avoid compiler warning */
+  int seen_seg[sizeof nacl_phdr_check_data / sizeof *nacl_phdr_check_data];
 
   int                 segnum;
   const Elf_Phdr      *php;
