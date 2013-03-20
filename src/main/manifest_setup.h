@@ -24,7 +24,7 @@ EXTERN_C_BEGIN
 #include "src/loader/sel_ldr.h"
 
 #define HELP_SCREEN /* update command line switches here */\
-    "\033[1m\033[37mZeroVM\033[0m lightweight VM manager, build 2013-03-16\n"\
+    "\033[1m\033[37mZeroVM\033[0m lightweight VM manager, build 2013-03-19\n"\
     "Usage: <manifest> [-e#] [-l#] [-v#] [-sFPSQ]\n\n"\
     " <manifest> load settings from manifest file\n"\
     " -e <level> enable the data control. where levels are\n"\
@@ -42,7 +42,6 @@ EXTERN_C_BEGIN
 #define ZEROVM_IO_LIMIT_UNIT 0x40000000l
 #define ZEROVM_IO_LIMIT 4*ZEROVM_IO_LIMIT_UNIT
 #define IOSTATS_SIZE 0X100
-#define DEFAULT_VALIDATOR_NAME "ncval"
 
 #define MANIFEST_VERSION "09082012"
 #define MFT_VERSION "Version"

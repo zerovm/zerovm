@@ -26,6 +26,9 @@
 #include "src/main/manifest_setup.h"
 #include "src/channels/prefetch.h"
 #include "src/main/nacl_globals.h"
+#include "src/platform/sel_memory.h"
+
+int NaClSegmentValidates(uint8_t* mbase, size_t size, uint32_t vbase);
 
 /* user exit. session is finished */
 static int32_t ZVMExitHandle(struct NaClApp *nap, int32_t code)
@@ -299,6 +302,61 @@ static int32_t ZVMWriteHandle(struct NaClApp *nap,
   return retcode;
 }
 
+/*
+ * validate given buffer and, if successful, change protection to
+ * read / execute and return 0
+ */
+static int32_t ZVMJailHandle(struct NaClApp *nap, uintptr_t addr, int32_t size)
+{
+  uintptr_t sysaddr;
+  int result;
+
+  assert(nap != NULL);
+  assert(nap->system_manifest != NULL);
+
+  sysaddr = NaClUserToSysAddrNullOkay(nap, addr);
+
+  /* sanity check */
+  if(size <= 0) return -EINVAL;
+  if(sysaddr < nap->mem_map[HeapIdx].start ||
+      sysaddr >= nap->mem_map[HeapIdx].end) return -EINVAL;
+  if(sysaddr != ROUNDDOWN_64K(sysaddr)) return -EINVAL;
+
+  /* validate */
+  result = NaClSegmentValidates((uint8_t*)sysaddr, size, sysaddr);
+  if(result == 0) return -EPERM;
+
+  /* protect */
+  result = NaCl_mprotect((void*)sysaddr, size, PROT_READ | PROT_EXEC);
+  if(result != 0) return -EACCES;
+
+  return 0;
+}
+
+/* change protection to read / write and return 0 if successful */
+static int32_t ZVMUnjailHandle(struct NaClApp *nap, uintptr_t addr, int32_t size)
+{
+  uintptr_t sysaddr;
+  int result;
+
+  assert(nap != NULL);
+  assert(nap->system_manifest != NULL);
+
+  sysaddr = NaClUserToSysAddrNullOkay(nap, addr);
+
+  /* sanity check */
+  if(size <= 0) return -EINVAL;
+  if(sysaddr < nap->mem_map[HeapIdx].start ||
+      sysaddr >= nap->mem_map[HeapIdx].end) return -EINVAL;
+  if(sysaddr != ROUNDDOWN_64K(sysaddr)) return -EINVAL;
+
+  /* protect */
+  result = NaCl_mprotect((void*)sysaddr, size, PROT_READ | PROT_WRITE);
+  if(result != 0) return -EACCES;
+
+  return 0;
+}
+
 /* this function debug only. return function name by id */
 static const char *FunctionNameById(int id)
 {
@@ -306,6 +364,8 @@ static const char *FunctionNameById(int id)
   {
     case TrapRead: return "TrapRead";
     case TrapWrite: return "TrapWrite";
+    case TrapJail: return "TrapJail";
+    case TrapUnjail: return "TrapUnjail";
     case TrapExit: return "TrapExit";
   }
   return "not supported";
@@ -338,6 +398,12 @@ int32_t TrapHandler(struct NaClApp *nap, uint32_t args)
     case TrapWrite:
       retcode = ZVMWriteHandle(nap,
           (int)sys_args[2], (char*)sys_args[3], (int32_t)sys_args[4], sys_args[5]);
+      break;
+    case TrapJail:
+      retcode = ZVMJailHandle(nap, (uintptr_t)sys_args[2], (int32_t)sys_args[3]);
+      break;
+    case TrapUnjail:
+      retcode = ZVMUnjailHandle(nap, (uintptr_t)sys_args[2], (int32_t)sys_args[3]);
       break;
     default:
       retcode = -EPERM;

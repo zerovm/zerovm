@@ -2,7 +2,8 @@ FLAGS0=-fPIE -Wall -pedantic -Wno-long-long -fvisibility=hidden -fstack-protecto
 GLIB=`pkg-config --cflags glib-2.0`
 CCFLAGS0=-c -m64 -fPIC -D_GNU_SOURCE=1 -DVALIDATOR_NAME='"$(VALIDATOR_NAME)"' -I. $(GLIB)
 CXXFLAGS0=-m64 -Wno-variadic-macros $(GLIB)
-LIBS=-lzmq -lglib-2.0
+LIBS=-lzmq -lglib-2.0 -lvalidator
+#LIBS=-lzmq -lglib-2.0
 TESTLIBS=-Llib/gtest -lgtest $(LIBS)
 
 CCFLAGS1=-std=gnu99 -Wdeclaration-after-statement $(FLAGS0) $(CCFLAGS0)
@@ -31,6 +32,7 @@ create_dirs:
 	@mkdir obj -p
 
 zerovm: obj/zvm_main.o $(OBJS)
+#	$(CC) -o $@ $(CXXFLAGS2) $^ $(LIBS) -shared
 	$(CC) -o $@ $(CXXFLAGS2) $^ $(LIBS)
 
 gcov: clean all

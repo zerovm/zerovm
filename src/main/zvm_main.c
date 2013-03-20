@@ -137,50 +137,43 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
   ZLOGFAIL(GetFileSize(nap->system_manifest->nexe) < 0, ENOENT, "nexe open error");
 }
 
-/*
- * set validation state according to zvm command line options
- * note: updates nap->validation_state
- */
+#define STATIC_TEXT_START ((uintptr_t)0x20000)
+int NaClSegmentValidates(uint8_t* mbase, size_t size, uint32_t vbase);
 static void ValidateNexe(struct NaClApp *nap)
 {
-  char *args[3] = {
-#ifdef VALIDATOR_NAME
-  sizeof(VALIDATOR_NAME) < 2 ?
-      DEFAULT_VALIDATOR_NAME : VALIDATOR_NAME
-#else
-      DEFAULT_VALIDATOR_NAME
-#endif
-  };
-  GError *error = NULL;
-  int exit_status = 0;
-  enum ValidationState {
-    ValidationOK,
-    ValidationFailed,
-    NotValidated
-  };
+  int status = 0; /* 0 = failed, 1 = successful */
+  int64_t static_size;
+  int64_t dynamic_size;
+  uint8_t* static_addr;
+  uint8_t* dynamic_addr;
 
-  assert(nap != NULL);
-  assert(nap->system_manifest != NULL);
+  assert((nap->static_text_end | nap->dynamic_text_start
+      | nap->dynamic_text_end | nap->mem_start) > 0);
 
-  /* skip validation? */
-  nap->validation_state = NotValidated;
-  if(skip_validator != 0) return;
+  /* skip validation if specified */
+  if(skip_validator)
+  {
+    nap->validation_state = 2;
+    return;
+  }
 
-  /* prepare command line and run it */
-  args[1] = nap->system_manifest->nexe;
+  /* static and dynamic text address / length */
+  static_size = nap->static_text_end -
+      NaClSysToUser(nap, nap->mem_start + STATIC_TEXT_START);
+  dynamic_size = nap->dynamic_text_end - nap->dynamic_text_start;
+  static_addr = (uint8_t*)NaClUserToSys(nap, STATIC_TEXT_START);
+  dynamic_addr = (uint8_t*)NaClUserToSys(nap, nap->dynamic_text_start);
 
-  ZLOGFAIL(g_spawn_sync(NULL, args, NULL,
-#ifdef VALIDATOR_NAME
-      (sizeof(VALIDATOR_NAME) < 2 ? G_SPAWN_SEARCH_PATH : 0) |
-#else
-      G_SPAWN_SEARCH_PATH |
-#endif
-      G_SPAWN_STDOUT_TO_DEV_NULL | G_SPAWN_STDERR_TO_DEV_NULL, NULL, NULL,
-      NULL, NULL, &exit_status, &error) == 0, EPERM, "cannot start validator");
+  /* validate static and dynamic text */
+  if(static_size > 0)
+    status = NaClSegmentValidates(static_addr, static_size, nap->initial_entry_pt);
+  if(dynamic_size > 0)
+    status &= NaClSegmentValidates(dynamic_addr, dynamic_size, nap->initial_entry_pt);
 
-  /* check the result */
-  nap->validation_state = exit_status == 0 ? ValidationOK : ValidationFailed;
-  ZLOGFAIL(nap->validation_state != ValidationOK, ENOEXEC, "validation failed");
+  /* set results */
+  nap->validation_state = 1;
+  ZLOGFAIL(status == 0, ENOEXEC, "validation failed");
+  nap->validation_state = 0;
 }
 
 int main(int argc, char **argv)
@@ -220,18 +213,19 @@ int main(int argc, char **argv)
 
   TIMER_REPORT(" constructing of memory snapshot");
 
+  /* validate nexe structure (check elf header and segments) */
+  ZLOGS(LOG_DEBUG, "Loading nacl file %s", nap->system_manifest->nexe);
+  NaClAppLoadFile((struct Gio *) &main_file, nap);
+  TIMER_REPORT(" loading user module");
+
   /* validate given nexe (ensure that text segment is safe) */
   ValidateNexe(nap);
   TIMER_REPORT(" validating of nacl module");
 
-  /* validate nexe structure (check elf header and segments) */
-  ZLOGS(LOG_DEBUG, "Loading nacl file %s", nap->system_manifest->nexe);
-  NaClAppLoadFile((struct Gio *) &main_file, nap);
-
+  /* free snapshot */
   if(-1 == (*((struct Gio *)&main_file)->vtbl->Close)((struct Gio *)&main_file))
     ZLOG(LOG_ERROR, "Error while closing '%s'", nap->system_manifest->nexe);
   (*((struct Gio *) &main_file)->vtbl->Dtor)((struct Gio *) &main_file);
-  TIMER_REPORT(" loading of nacl module");
 
   /* setup zerovm from manifest */
   SystemManifestCtor(nap);

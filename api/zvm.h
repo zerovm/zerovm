@@ -26,6 +26,8 @@ enum TrapCalls
 {
   TrapRead = 17770431,
   TrapWrite = 17770432,
+  TrapJail = 17770433,
+  TrapUnjail = 17770434,
   TrapExit = 17770441
 };
 
