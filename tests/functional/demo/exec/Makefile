@@ -1,4 +1,4 @@
-NAME=accounting
+NAME=exec
 CCFLAGS=-n -s -nostartfiles -nostdlib 
 
 all: $(NAME).c

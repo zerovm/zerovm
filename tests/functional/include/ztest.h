@@ -13,8 +13,11 @@ static int errcount = 0;
 #define ERRCOUNT errcount
 #endif
 
-#define UNREFERENCED_VAR(a) do { (void)a; } while(0)
+#define PAGESIZE 0x10000
+#define ROUNDDOWN_64K(a) ((a) & ~(PAGESIZE - 1LLU))
+#define ROUNDUP_64K(a) ROUNDDOWN_64K((a) + PAGESIZE - 1LLU)
 
+#define UNREFERENCED_VAR(a) do { (void)a; } while(0)
 #define UNREFERENCED_FUNCTION(f) do {if(0) f();} while(0)
 
 #define ZTEST(cond) \
