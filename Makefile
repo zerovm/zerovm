@@ -1,23 +1,23 @@
 define PREFIX_ERR
-
 Please set up ZVM_PREFIX env variable to the desired installation path
 Example: export ZVM_PREFIX=/opt/zerovm
-
 endef
+
 ifndef ZVM_PREFIX
 $(error $(PREFIX_ERR))
 endif
+
 FLAGS0=-fPIE -Wall -pedantic -Wno-long-long -fvisibility=hidden -fstack-protector --param ssp-buffer-size=4
 GLIB=`pkg-config --cflags glib-2.0`
 CCFLAGS0=-c -m64 -fPIC -D_GNU_SOURCE=1 -DVALIDATOR_NAME='"$(VALIDATOR_NAME)"' -I. $(GLIB)
 CXXFLAGS0=-m64 -Wno-variadic-macros $(GLIB)
-LIBS=-L$(ZVM_PREFIX) -lzmq -lglib-2.0 -lvalidator
-TESTLIBS=-Llib/gtest -lgtest $(LIBS)
+LIBS=-L$(ZVM_PREFIX) -lzmq -lglib-2.0 -lvalidator -Wl,-rpath,$(ZVM_PREFIX)
+TESTLIBS=-Llib/gtest -lgtest -Wl,-rpath,$(ZVM_PREFIX) $(LIBS)
 
 CCFLAGS1=-std=gnu89 -Wdeclaration-after-statement $(FLAGS0) $(CCFLAGS0)
 CCFLAGS2=-Wextra -Wswitch-enum -Wsign-compare $(CCFLAGS0)
 CXXFLAGS1=-c -std=c++98 -D_GNU_SOURCE=1 -I. -Ilib $(CXXFLAGS0) $(FLAGS0)
-CXXFLAGS2=-Wl,-z,noexecstack $(CXXFLAGS0) -Lobj -L/usr/lib64 -pie -Wl,-z,relro -Wl,-z,now
+CXXFLAGS2=-Wl,-z,noexecstack $(CXXFLAGS0) -Lobj -pie -Wl,-z,relro -Wl,-z,now
 
 all: CCFLAGS1 += -DNDEBUG -O2 -s
 all: CCFLAGS2 += -DNDEBUG -O2 -s
@@ -29,7 +29,6 @@ debug: CCFLAGS1 += -DDEBUG -g
 debug: CCFLAGS2 += -DDEBUG -g
 debug: CXXFLAGS1 := -DDEBUG -g $(CXXFLAGS1)
 debug: CXXFLAGS2 := -DDEBUG -g $(CXXFLAGS2)
-
 debug: create_dirs zerovm tests
 
 OBJS=obj/elf_util.o obj/gio_mem.o obj/gio_mem_snapshot.o obj/manifest_parser.o obj/manifest_setup.o obj/mount_channel.o obj/nacl_dep_qualify.o obj/nacl_exit.o obj/zlog.o obj/nacl_signal_64.o obj/nacl_signal_common.o obj/nacl_signal.o obj/side_switch.o obj/switch_to_app.o obj/trap_syscall.o obj/syscall_hook.o obj/prefetch.o obj/name_service.o obj/preload.o obj/sel_addrspace.o obj/sel_ldr.o obj/sel_ldr_standard.o obj/sel_ldr_x86_64.o obj/sel_memory.o obj/sel_qualify.o obj/sel_rt.o obj/tramp.o obj/trap.o obj/etag.o obj/accounting.o
@@ -48,7 +47,7 @@ gcov: clean all
 	@echo open $(CURDIR)/cov_htmp/index.html
 
 tests: test_compile
-	@echo == UNIT TESTS ========================================
+	@printf "UNIT TESTS %048o\n" 0
 	@cd tests/unit;\
 	./manifest_parser_test;\
 	./service_runtime_tests;\
