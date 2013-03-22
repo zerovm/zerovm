@@ -8,8 +8,6 @@
 #include "include/zvmlib.h"
 #include "include/ztest.h"
 
-/* from here a new test framework started {{ */
-
 static uint64_t *acgets;
 static uint64_t *acputs;
 static uint64_t *acgetsizes;
@@ -18,29 +16,14 @@ static uint64_t *acputsizes;
 /* allocates memory and resets counters */
 static int counters_ctor()
 {
-  int code;
-
   acgets = CALLOC(MANIFEST->channels_count, sizeof *acgets);
   acputs = CALLOC(MANIFEST->channels_count, sizeof *acputs);
   acgetsizes = CALLOC(MANIFEST->channels_count, sizeof *acgetsizes);
   acputsizes = CALLOC(MANIFEST->channels_count, sizeof *acputsizes);
 
   /* check allocation */
-  if(!acgets || !acputs || !acgetsizes || !acputsizes)
-  {
-    FPRINTF(STDERR, "cannot allocate counter(s)\n");
-    return -1;
-  }
+  ZFAIL(acgets && acputs && acgetsizes && acputsizes);
 
-  /*
-   * patch: since zerovm provides very primitive memory management
-   * and calloc doesn't work it is more safe to use memset
-   */
-  code = MANIFEST->channels_count * sizeof *acgets;
-  MEMSET(acgets, 0, code);
-  MEMSET(acputs, 0, code);
-  MEMSET(acgetsizes, 0, code);
-  MEMSET(acputsizes, 0, code);
   return 0;
 }
 
@@ -70,9 +53,8 @@ static void copy_channel(const char *out, const char *in)
   int code;
 
   /* check channels availability */
-  ZTEST(OPEN(in) >= 0);
-  ZTEST(OPEN(out) >= 0);
-  if(ERRCOUNT > 0) return;
+  ZFAIL(OPEN(in) >= 0);
+  ZFAIL(OPEN(out) >= 0);
 
   /* copy data */
   for(;;)
@@ -107,10 +89,6 @@ int main(int argc, char **argv)
   counters_dtor();
 
   /* count errors and exit with it */
-  if(ERRCOUNT > 0)
-    FPRINTF(STDERR, "TEST FAILED with %d errors\n", ERRCOUNT);
-  else
-    FPRINTF(STDERR, "TEST SUCCEED\n\n");
-
-  return ERRCOUNT;
+  ZREPORT;
+  return 0; /* prevent warning */
 }
