@@ -392,10 +392,10 @@ int32_t TrapHandler(struct NaClApp *nap, uint32_t args)
           (int)sys_args[2], (char*)sys_args[3], (int32_t)sys_args[4], sys_args[5]);
       break;
     case TrapJail:
-      retcode = ZVMJailHandle(nap, (uintptr_t)sys_args[2], (int32_t)sys_args[3]);
+      retcode = ZVMJailHandle(nap, (uint32_t)sys_args[2], (int32_t)sys_args[3]);
       break;
     case TrapUnjail:
-      retcode = ZVMUnjailHandle(nap, (uintptr_t)sys_args[2], (int32_t)sys_args[3]);
+      retcode = ZVMUnjailHandle(nap, (uint32_t)sys_args[2], (int32_t)sys_args[3]);
       break;
     default:
       retcode = -EPERM;

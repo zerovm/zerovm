@@ -1,4 +1,4 @@
-NAME=exec
+NAME=jail
 CCFLAGS=-n -s -nostartfiles -nostdlib 
 
 all: $(NAME).c

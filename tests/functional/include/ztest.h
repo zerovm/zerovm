@@ -31,4 +31,21 @@ static int errcount = 0;
     }\
   } while(0)
 
+/* count errors and exit with it */
+#define ZREPORT \
+  do { \
+    if(ERRCOUNT > 0) \
+      FPRINTF(STDERR, "TEST FAILED with %d errors\n", ERRCOUNT); \
+    else \
+      FPRINTF(STDERR, "TEST SUCCEED\n\n"); \
+    exit(ERRCOUNT); \
+  } while(0)
+
+/* works like ZTEST but ends the test execution after error */
+#define ZFAIL(cond) \
+  do { \
+    ZTEST(cond); \
+    if(!(cond)) ZREPORT; \
+  } while(0)
+
 #endif /* ZTEST_H_ */
