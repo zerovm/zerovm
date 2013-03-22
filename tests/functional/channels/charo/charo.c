@@ -55,10 +55,6 @@ int main(int argc, char **argv)
   ZTEST(PREAD(CHARO, buf, 10, 0) < 0);
 
   /* count errors and exit with it */
-  if(ERRCOUNT > 0)
-    FPRINTF(STDERR, "TEST FAILED with %d errors\n", ERRCOUNT);
-  else
-    FPRINTF(STDERR, "TEST SUCCEED\n\n");
-
-  return ERRCOUNT;
+  ZREPORT;
+  return 0;
 }

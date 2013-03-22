@@ -18,9 +18,7 @@ int main(int argc, char **argv)
 
   /*
    * todo: add more cases for
-   * (un)successfull writes to an empty channel
    * (un)successfull writes to not empty channel
-   * (un)successfull reads from an empty channel
    * (un)successfull reads from not empty channel
    */
 

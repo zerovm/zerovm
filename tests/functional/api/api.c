@@ -51,9 +51,6 @@ enum ChannelFields {
 };
 
 #define FOURGIG 0x100000000ULL
-#define PAGESIZE 0x10000
-#define ROUNDDOWN_64K(a) ((a) & ~(PAGESIZE - 1LLU))
-#define ROUNDUP_64K(a) ROUNDDOWN_64K((a) + PAGESIZE - 1LLU)
 
 /*
  * get control data and parse it to make part of manifest parser
@@ -157,10 +154,6 @@ int main(int argc, char **argv)
     test_channel(tokens[number]);
 
   /* count errors and exit with it */
-  if(ERRCOUNT > 0)
-    FPRINTF(STDERR, "TEST FAILED with %d errors\n", ERRCOUNT);
-  else
-    FPRINTF(STDERR, "TEST SUCCEED\n\n");
-
-  return ERRCOUNT;
+  ZREPORT;
+  return 0;
 }

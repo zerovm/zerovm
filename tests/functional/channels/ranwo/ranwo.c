@@ -12,7 +12,6 @@ int main(int argc, char **argv)
   char buf[BIG_ENOUGH];
 
   /* correct requests */
-  ERRCOUNT = 0;
   FPRINTF(STDERR, "TEST RANDOM WRITE ONLY CHANNEL\n");
   FPRINTF(STDERR, "channel size = %lld\n", MANIFEST->channels[OPEN(RANWO)].size);
   ZTEST(MANIFEST->channels[OPEN(RANWO)].size == 0);
@@ -53,10 +52,6 @@ int main(int argc, char **argv)
   ZTEST(PWRITE(RANWO, buf, 10, 0) < 0);
 
   /* count errors and exit with it */
-  if(ERRCOUNT > 0)
-    FPRINTF(STDERR, "TEST FAILED with %d errors\n", ERRCOUNT);
-  else
-    FPRINTF(STDERR, "TEST SUCCEED\n\n");
-
-  return ERRCOUNT;
+  ZREPORT;
+  return 0;
 }
