@@ -24,7 +24,7 @@ EXTERN_C_BEGIN
 #include "src/loader/sel_ldr.h"
 
 #define HELP_SCREEN /* update command line switches here */\
-    "\033[1m\033[37mZeroVM\033[0m lightweight VM manager, build 2013-03-22\n"\
+    "\033[1m\033[37mZeroVM\033[0m lightweight VM manager, build 2013-03-23\n"\
     "Usage: <manifest> [-e#] [-l#] [-v#] [-sFPSQ]\n\n"\
     " <manifest> load settings from manifest file\n"\
     " -e <level> enable the data control. where levels are\n"\
