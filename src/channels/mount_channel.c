@@ -26,6 +26,8 @@
 #include "src/channels/prefetch.h"
 #include "src/channels/mount_channel.h"
 
+static GData *aliases;
+
 char *StringizeChannelSourceType(enum ChannelSourceType type)
 {
   char *prefix[] = CHANNEL_SOURCE_PREFIXES;
@@ -80,6 +82,11 @@ static void ChannelCtor(struct NaClApp *nap, char **tokens)
   assert(nap->system_manifest != NULL);
   assert(nap->system_manifest->channels != NULL);
 
+  /* check alias for duplicates and update the list */
+  ZLOGFAIL(g_datalist_get_data(&aliases, tokens[ChannelAlias]) != NULL,
+      EFAULT, "%s is already allocated", tokens[ChannelAlias]);
+  g_datalist_set_data(&aliases, tokens[ChannelAlias], "");
+
   /*
    * pick the channel and check if the channel is available,
    * then allocate space to store the channel information
@@ -88,8 +95,6 @@ static void ChannelCtor(struct NaClApp *nap, char **tokens)
   ZLOGFAIL(index >= nap->system_manifest->channels_count,
       EFAULT, "uninitialized standard channels detected");
   channel = &nap->system_manifest->channels[index];
-  ZLOGFAIL(channel->mounted == MOUNTED, EFAULT,
-      "%s is already allocated", tokens[ChannelAlias]);
 
   /* set common general fields */
   channel->type = ATOI(tokens[ChannelAccessType]);
@@ -197,6 +202,10 @@ void ChannelsCtor(struct NaClApp *nap)
   assert(nap != NULL);
   assert(nap->system_manifest != NULL);
 
+  /* allocate list to detect duplicate channels aliases */
+  assert(aliases == NULL);
+  g_datalist_init(&aliases);
+
   /*
    * calculate channels count. maximum allowed (MAX_CHANNELS_NUMBER - 1)
    * channels, minimum - RESERVED_CHANNELS
@@ -225,6 +234,7 @@ void ChannelsCtor(struct NaClApp *nap)
     /* construct and initialize channel */
     ChannelCtor(nap, tokens);
   }
+  g_datalist_clear(&aliases);
 
   /* 2nd pass for the network channels if name service specified */
   KickPrefetchChannels(nap);
@@ -243,4 +253,5 @@ void ChannelsDtor(struct NaClApp *nap)
   for(i = 0; i < nap->system_manifest->channels_count; ++i)
     ChannelDtor(&nap->system_manifest->channels[i]);
   g_free(nap->system_manifest->channels);
+  if(aliases != NULL) g_datalist_clear(&aliases);
 }
