@@ -47,31 +47,25 @@ static enum ChannelSourceType GetSourceType(char *name)
   else
     type = GetChannelProtocol(name);
 
-  ZLOGFAIL(type == ChannelSourceTypeNumber, EPROTONOSUPPORT,
-      "can't detect source of %s", name);
+  ZLOGFAIL(type == ChannelSourceTypeNumber,
+      EPROTONOSUPPORT, "cannot detect source of %s", name);
   return type;
 }
 
-/* return the channel by channel type */
-static struct ChannelDesc* SelectNextChannel(struct NaClApp *nap, char *alias)
+/* return the channel index by channel alias */
+static int SelectNextChannel(struct NaClApp *nap, char *alias)
 {
   static int current_channel = RESERVED_CHANNELS;
-  struct ChannelDesc *channels;
 
   assert(nap != NULL);
   assert(nap->system_manifest != NULL);
   assert(nap->system_manifest->channels != NULL);
   assert(alias != NULL);
 
-  channels = nap->system_manifest->channels;
-
-  /* check for the standard names */
-  if(STREQ(alias, STDIN)) return &channels[STDIN_FILENO];
-  if(STREQ(alias, STDOUT)) return &channels[STDOUT_FILENO];
-  if(STREQ(alias, STDERR)) return &channels[STDERR_FILENO];
-
-  /* otherwise just return next channel */
-  return &channels[current_channel++];
+  if(STREQ(alias, STDIN)) return STDIN_FILENO;
+  if(STREQ(alias, STDOUT)) return STDOUT_FILENO;
+  if(STREQ(alias, STDERR)) return STDERR_FILENO;
+  return current_channel++;
 }
 
 /* construct and initialize the channel */
@@ -79,6 +73,7 @@ static void ChannelCtor(struct NaClApp *nap, char **tokens)
 {
   struct ChannelDesc *channel;
   int code = 1; /* means error */
+  int index;
 
   assert(nap != NULL);
   assert(tokens != NULL);
@@ -86,16 +81,20 @@ static void ChannelCtor(struct NaClApp *nap, char **tokens)
   assert(nap->system_manifest->channels != NULL);
 
   /*
-   * pick the channel and check if the channel is available
-   * channels must not have duplicate aliases
+   * pick the channel and check if the channel is available,
+   * then allocate space to store the channel information
    */
-  channel = SelectNextChannel(nap, tokens[ChannelAlias]);
-  ZLOGFAIL(channel->alias != NULL, EFAULT, "%s is already allocated", channel->alias);
+  index = SelectNextChannel(nap, tokens[ChannelAlias]);
+  ZLOGFAIL(index >= nap->system_manifest->channels_count,
+      EFAULT, "uninitialized standard channels detected");
+  channel = &nap->system_manifest->channels[index];
+  ZLOGFAIL(channel->mounted == MOUNTED, EFAULT,
+      "%s is already allocated", tokens[ChannelAlias]);
 
   /* set common general fields */
   channel->type = ATOI(tokens[ChannelAccessType]);
   ZLOGFAIL(channel->type < SGetSPut || channel->type > RGetRPut,
-      EFAULT, "invalid channel access type %d", channel->type);
+      EFAULT, "invalid access type for %s", tokens[ChannelAlias]);
   channel->name = tokens[ChannelName];
   channel->alias = tokens[ChannelAlias];
   channel->source = GetSourceType((char*)channel->name);
@@ -108,7 +107,7 @@ static void ChannelCtor(struct NaClApp *nap, char **tokens)
     memset(channel->control, 0, TAG_DIGEST_SIZE);
   }
 
-  /* limits and counters */
+  /* limits and counters. initialize all field explicitly */
   channel->limits[GetsLimit] = ATOI(tokens[ChannelGets]);
   channel->limits[GetSizeLimit] = ATOI(tokens[ChannelGetSize]);
   channel->limits[PutsLimit] = ATOI(tokens[ChannelPuts]);
@@ -140,11 +139,12 @@ static void ChannelCtor(struct NaClApp *nap, char **tokens)
     case ChannelEPGM:
     case ChannelUDP:
     default:
-      ZLOGFAIL(1, EPROTONOSUPPORT, "'%s': '%s' type isn't supported",
-          channel->name, StringizeChannelSourceType(channel->source));
+      ZLOGFAIL(1, EPROTONOSUPPORT, "%s has invalid type %s",
+          channel->alias, StringizeChannelSourceType(channel->source));
       break;
   }
-  ZLOGFAIL(code, EFAULT, "cannot allocate channel %s", channel->alias);
+  ZLOGFAIL(code, EFAULT, "cannot allocate %s", channel->alias);
+  channel->mounted = MOUNTED;
 }
 
 /* close channel and deallocate its resources */
@@ -153,7 +153,7 @@ static void ChannelDtor(struct ChannelDesc *channel)
   assert(channel != NULL);
 
   /* quit if channel isn't mounted */
-  if(channel->name == NULL) return;
+  if(channel->mounted != MOUNTED) return;
 
   switch(channel->source)
   {
@@ -165,9 +165,9 @@ static void ChannelDtor(struct ChannelDesc *channel)
       break;
     case ChannelTCP:
       /*
-       * since there is no chance to finalize network channels
-       * in case if session crashed, the channel destructor just
-       * skips it
+       * since there is a chance to hang up upon the network channels
+       * finalization in case if session crashed, the channel destructor
+       * just skips it
        */
       if(GetExitCode() == 0)
         PrefetchChannelDtor(channel);
@@ -181,10 +181,11 @@ static void ChannelDtor(struct ChannelDesc *channel)
     case ChannelEPGM:
     case ChannelUDP:
     default:
-      ZLOG(LOG_ERR, "'%s': '%s' type isn't supported",
-          channel->name, StringizeChannelSourceType(channel->source));
+      ZLOG(LOG_ERR, "%s has invalid type %s",
+          channel->alias, StringizeChannelSourceType(channel->source));
       break;
   }
+  channel->mounted = !MOUNTED;
 }
 
 void ChannelsCtor(struct NaClApp *nap)
@@ -203,32 +204,27 @@ void ChannelsCtor(struct NaClApp *nap)
   mft = nap->system_manifest;
   mft->channels_count =
       GetValuesByKey(MFT_CHANNEL, values, MAX_CHANNELS_NUMBER);
-  ZLOGFAIL(mft->channels_count >= MAX_CHANNELS_NUMBER, ENFILE,
-      "channels number reached maximum");
-  ZLOGFAIL(mft->channels_count < RESERVED_CHANNELS, EFAULT,
-      "not all standard channels are provided");
+  ZLOGFAIL(mft->channels_count >= MAX_CHANNELS_NUMBER,
+      ENFILE, "channels number reached maximum");
+  ZLOGFAIL(mft->channels_count < RESERVED_CHANNELS,
+      EFAULT, "not all standard channels are provided");
 
-  /* allocate memory for channels */
-  mft->channels = g_malloc0(mft->channels_count * sizeof(*mft->channels));
+  /* allocate memory for channels pointers */
+  mft->channels = g_malloc0(mft->channels_count * sizeof *mft->channels);
 
-  /* parse channels. 0..2 reserved for stdin/stdout/stderr */
+  /* parse and mount channels */
   for(i = 0; i < mft->channels_count; ++i)
   {
-    char *tokens[CHANNEL_ATTRIBUTES + 1]; /* to detect wrong attributes number */
+    char *tokens[CHANNEL_ATTRIBUTES + 1];
     int count = ParseValue(values[i], ",", tokens, CHANNEL_ATTRIBUTES + 1);
-    ZLOGFAIL(count != CHANNEL_ATTRIBUTES, EFAULT, "invalid specification '%s'", values[i]);
+
+    /* fail if invalid number of attributes detected */
+    ZLOGFAIL(count != CHANNEL_ATTRIBUTES, EFAULT,
+        "invalid channel specification: %s", values[i]);
 
     /* construct and initialize channel */
     ChannelCtor(nap, tokens);
   }
-
-  /* channels array validation */
-  for(i = 0; i < nap->system_manifest->channels_count; ++i)
-    ZLOGFAIL(nap->system_manifest->channels[i].name == NULL, EFAULT,
-        "the channels array must not have uninitialized elements");
-
-  ZLOGFAIL(nap->system_manifest->channels_count < RESERVED_CHANNELS, EFAULT,
-      "there were uninitialized standard channels");
 
   /* 2nd pass for the network channels if name service specified */
   KickPrefetchChannels(nap);

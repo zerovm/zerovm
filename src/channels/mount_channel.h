@@ -26,16 +26,14 @@
 
 EXTERN_C_BEGIN
 
-#define MAX_CHANNELS_NUMBER 6548
-
 /* name, id, access type, gets, getsize, puts, putsize */
 #define CHANNEL_ATTRIBUTES ChannelAttributesNumber
-
-/* stdin, stdout, stderr */
-#define RESERVED_CHANNELS 3
+#define MAX_CHANNELS_NUMBER 6548
 #define NET_BUFFER_SIZE 0x10000
+#define MOUNTED 1
 
 /* reserved zerovm channels names */
+#define RESERVED_CHANNELS 3
 #define STDIN "/dev/stdin"
 #define STDOUT "/dev/stdout"
 #define STDERR "/dev/stderr"
@@ -118,6 +116,7 @@ struct ChannelDesc
 
   /* added to serve sequential channels */
   int8_t eof; /* if not 0 the channel reached eof at the last operation */
+  int8_t mounted; /* MOUNTED or !MOUNTED */
 };
 
 /* construct all channels, initialize it and update system_manifest */

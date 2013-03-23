@@ -42,7 +42,8 @@ static void MakeURL(char *url, const int32_t size,
   assert(channel != NULL);
   assert(channel->name != NULL);
 
-  ZLOGFAIL(record->host == 0 && record->port != 0, EFAULT, "named host not supported");
+  ZLOGFAIL(record->host == 0 && record->port != 0,
+      EFAULT, "named hosts are not supported");
   ZLOGFAIL(size < 6, EFAULT, "too short url buffer");
 
   /* create string containing ip or id as the host name */
@@ -77,13 +78,13 @@ static void MakeURL(char *url, const int32_t size,
 static int DoBind(const struct ChannelDesc* channel)
 {
   struct ChannelConnection *record;
-  char buf[BIG_ENOUGH_SPACE], *url = buf;
+  char buf[BIG_ENOUGH_STRING], *url = buf;
 
   record = GetChannelConnectionInfo(channel);
   assert(record != NULL);
 
-  MakeURL(url, BIG_ENOUGH_SPACE, channel, record);
-  ZLOGS(LOG_DEBUG, "bind url = %s", url);
+  MakeURL(url, BIG_ENOUGH_STRING, channel, record);
+  ZLOGS(LOG_DEBUG, "bind url %s", url);
   return zmq_bind(channel->socket, url);
 }
 
@@ -106,7 +107,7 @@ static void PrepareBind(struct ChannelDesc *channel)
   if(!NameServiceSet())
   {
     result = DoBind(channel);
-    ZLOGFAIL(result != 0, EFAULT, "cannot bind the channel");
+    ZLOGFAIL(result != 0, EFAULT, "cannot bind %s", channel->alias);
     return;
   }
 
@@ -117,7 +118,7 @@ static void PrepareBind(struct ChannelDesc *channel)
   if(record->port != 0)
   {
     result = DoBind(channel);
-    ZLOGFAIL(result != 0, EFAULT, "cannot bind the channel");
+    ZLOGFAIL(result != 0, EFAULT, "cannot bind %s", channel->alias);
     return;
   }
 
@@ -133,7 +134,7 @@ static void PrepareBind(struct ChannelDesc *channel)
     if(result == 0) break;
   }
 
-  ZLOGFAIL(result != 0, EFAULT ,"cannot get the port to bind the channel");
+  ZLOGFAIL(result != 0, EFAULT ,"cannot get port to bind %s", channel->alias);
   ZLOGS(LOG_DEBUG, "host = %u, port = %u", record->host, record->port);
 }
 
@@ -145,13 +146,13 @@ static void PrepareBind(struct ChannelDesc *channel)
 static int DoConnect(struct ChannelDesc* channel)
 {
   struct ChannelConnection *record;
-  char buf[BIG_ENOUGH_SPACE], *url = buf;
+  char buf[BIG_ENOUGH_STRING], *url = buf;
 
   record = GetChannelConnectionInfo(channel);
   assert(record != NULL);
 
-  MakeURL(url, BIG_ENOUGH_SPACE, channel, record);
-  ZLOGS(LOG_DEBUG, "connect url = %s", url);
+  MakeURL(url, BIG_ENOUGH_STRING, channel, record);
+  ZLOGS(LOG_DEBUG, "connect url %s", url);
   return zmq_connect(channel->socket, url);
 }
 
@@ -176,7 +177,7 @@ static void PrepareConnect(struct ChannelDesc* channel)
     ZLOGFAIL(result != 0, EFAULT, "cannot set high water mark");
 
     result = DoConnect(channel);
-    ZLOGFAIL(result != 0, EFAULT, "cannot bind the channel");
+    ZLOGFAIL(result != 0, EFAULT, "cannot connect %s", channel->alias);
   }
 }
 
@@ -214,7 +215,7 @@ void KickPrefetchChannels(struct NaClApp *nap)
 
     /* bind or connect the channel and look at result */
     result = DoConnect(channel);
-    ZLOGFAIL(result != 0, EFAULT, "cannot connect socket to address");
+    ZLOGFAIL(result != 0, EFAULT, "cannot connect socket to %s", channel->alias);
   }
 
   /*
@@ -343,7 +344,7 @@ int PrefetchChannelCtor(struct ChannelDesc *channel)
   assert(channel->source == ChannelTCP);
 
   /* log parameters and channel internals */
-  ZLOGS(LOG_DEBUG, "alias = %s", channel->alias);
+  ZLOGS(LOG_DEBUG, "prefetch %s", channel->alias);
 
   /* explicitly reset network regarded fields */
   channel->socket = NULL;
@@ -357,7 +358,8 @@ int PrefetchChannelCtor(struct ChannelDesc *channel)
   sock_type = channel->limits[GetsLimit]
       && channel->limits[GetSizeLimit] ? ZMQ_PULL : ZMQ_PUSH;
   channel->socket = zmq_socket(context, sock_type);
-  ZLOGFAIL(channel->socket == NULL, EFAULT, "cannot obtain socket");
+  ZLOGFAIL(channel->socket == NULL, EFAULT,
+      "cannot get socket for %s", channel->alias);
 
   /* bind or connect the channel */
   if(sock_type == ZMQ_PUSH)
@@ -394,7 +396,7 @@ static INLINE void UpdateChannelState(struct ChannelDesc *channel)
     zmq_recv(channel->socket, &channel->msg, 0);
     channel->bufend = zmq_msg_size(&channel->msg);
     if(channel->bufend == 0) channel->eof = 1;
-    else ZLOG(LOG_ERROR, "invalid eof pattern detected");
+    else ZLOG(LOG_ERROR, "invalid eof detected on %s", channel->alias);
   }
 
   /* etag disabled */
@@ -519,7 +521,7 @@ int PrefetchChannelDtor(struct ChannelDesc *channel)
 
   /* log parameters and channel internals */
   MakeURL(url, BIG_ENOUGH_STRING, channel, GetChannelConnectionInfo(channel));
-  ZLOGS(LOG_DEBUG, "alias = %s, url = %s", channel->alias, url);
+  ZLOGS(LOG_DEBUG, "%s has url %s", channel->alias, url);
 
   /* close "PUT" channel */
   if(channel->limits[PutsLimit] && channel->limits[PutSizeLimit])
@@ -536,6 +538,8 @@ int PrefetchChannelDtor(struct ChannelDesc *channel)
     /* send eof */
     channel->eof = 1;
     SendMessage(channel, channel->digest, size);
+    ZLOGS(LOG_DEBUG, "%s closed with tag %s, putsize %ld",
+        channel->alias, channel->digest, channel->counters[PutSizeLimit]);
   }
 
   /* close "GET" channel */
@@ -564,16 +568,14 @@ int PrefetchChannelDtor(struct ChannelDesc *channel)
       /* raise the error if the data corrupted */
       if(memcmp(channel->control, channel->digest, TAG_DIGEST_SIZE) != 0)
       {
-        ZLOG(LOG_ERROR, "channel %s corrupted, tags = %s : %s",
+        ZLOG(LOG_ERROR, "%s corrupted, control: %s, local: %s",
             channel->alias, channel->control, channel->digest);
         SetExitState("data corrupted");
         SetExitCode(EPIPE);
       }
 
-      ZLOGS(LOG_DEBUG, "channel %s closed with tag = %s, getsize = %ld, "
-          "putsize = %ld", channel->alias, channel->digest,
-          channel->counters[GetSizeLimit], channel->counters[PutSizeLimit]);
-
+      ZLOGS(LOG_DEBUG, "%s closed with tag %s, getsize %ld",
+          channel->alias, channel->digest, channel->counters[GetSizeLimit]);
     }
 
     zmq_msg_close(&channel->msg);

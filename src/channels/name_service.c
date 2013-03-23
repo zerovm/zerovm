@@ -41,10 +41,13 @@ static struct ChannelConnection *nameservice = NULL;
 /* test the channel for validity */
 static void FailOnInvalidNetChannel(const struct ChannelDesc *channel)
 {
-  ZLOGFAIL(channel->source != ChannelTCP, EPROTONOSUPPORT, "protocol not supported");
-  ZLOGFAIL(channel->type != SGetSPut, EFAULT, "network channel must be sequential");
+  ZLOGFAIL(channel->source != ChannelTCP, EPROTONOSUPPORT,
+      "%s has invalid protocol %s", channel->alias, channel->source);
+  ZLOGFAIL(channel->type != SGetSPut, EFAULT,
+      "%s is a network channel and must be sequential", channel->alias);
   ZLOGFAIL(channel->limits[GetsLimit] && channel->limits[PutsLimit] != 0,
-      EFAULT, "network channel must be read-only or write-only");
+      EFAULT, "%s is a network channel and must be read-only or write-only",
+      channel->alias);
 }
 
 /*
@@ -59,7 +62,8 @@ INLINE static uint32_t MakeKey(const struct ChannelConnection *record)
   assert(record != NULL);
 
   result = ((uint32_t)record->mark)<<24 ^ record->host;
-  ZLOG(LOG_INSANE, "mark = %u, host = %u, result = %u", record->mark, record->host, result);
+  ZLOG(LOG_INSANE, "mark = %u, host = %u, result = %u",
+      record->mark, record->host, result);
   return result;
 }
 
@@ -67,7 +71,8 @@ INLINE static uint32_t MakeKey(const struct ChannelConnection *record)
  * parse the given channel name and initialize the record for the netlist table
  * return 0 if proper url found in the given channel and parsed without errors
  */
-static void ParseURL(const struct ChannelDesc *channel, struct ChannelConnection *record)
+static void ParseURL(const struct ChannelDesc *channel,
+    struct ChannelConnection *record)
 {
   char *buf[BIG_ENOUGH_STRING], **tokens = buf;
   char name[BIG_ENOUGH_STRING];
@@ -77,7 +82,7 @@ static void ParseURL(const struct ChannelDesc *channel, struct ChannelConnection
   assert(record != NULL);
   assert(channel->source == ChannelTCP);
 
-  ZLOG(LOG_INSANE, "url = %s", channel->name);
+  ZLOGS(LOG_INSANE, "for %s", channel->alias);
 
   /* copy the channel name aside and parse it */
   g_strlcpy(name, channel->name, BIG_ENOUGH_STRING);
@@ -96,7 +101,8 @@ static void ParseURL(const struct ChannelDesc *channel, struct ChannelConnection
   record->port = ATOI(tokens[2]);
   record->host = record->port == 0 ? ATOI(tokens[1]) : bswap_32(inet_addr(tokens[1]));
 
-  ZLOGFAIL(record->host == 0 && record->port == 0, EFAULT, "invalid channel url");
+  ZLOGFAIL(record->host == 0 && record->port == 0, EFAULT,
+      "%s has invalid url", channel->alias);
 
   /* mark the channel as "bind", "connect" or "outsider" */
   if(record->port != 0) record->mark = OUTSIDER_MARK;
@@ -114,7 +120,7 @@ void StoreChannelConnectionInfo(const struct ChannelDesc *channel)
   record = g_malloc(sizeof *record);
 
   /* prepare and store the channel connection record */
-  ZLOGS(LOG_DEBUG, "validating channel with alias '%s'", channel->alias);
+  ZLOGS(LOG_DEBUG, "validating %s", channel->alias);
   FailOnInvalidNetChannel(channel);
   ParseURL(channel, record);
   g_hash_table_insert(netlist, GUINT_TO_POINTER(MakeKey(record)), record);
@@ -166,14 +172,15 @@ static void NSRecordSerializer(gpointer key, gpointer value, gpointer buffer)
 
 /*
  * create parcel (in provided place) for the name server
- * return the real parcel size
+ * return the real parcel size. bswap_32 will work only on big endian
  */
-static int32_t ParcelCtor(const struct NaClApp *nap, char *parcel, const uint32_t size)
+static int32_t ParcelCtor(const struct NaClApp *nap,
+    char *parcel, const uint32_t size)
 {
   char *p = parcel; /* parcel pointer */
-  uint32_t node_id_network = bswap_32(nap->system_manifest->node_id); /* BIG ENDIAN */
-  uint32_t binds_network = bswap_32(binds); /* BIG ENDIAN */
-  uint32_t connects_network = bswap_32(connects); /* BIG ENDIAN */
+  uint32_t node_id_network = bswap_32(nap->system_manifest->node_id);
+  uint32_t binds_network = bswap_32(binds);
+  uint32_t connects_network = bswap_32(connects);
 
   /* asserts and checks */
   assert(parcel != NULL);
@@ -231,11 +238,11 @@ static int32_t SendParcel(char *parcel, const uint32_t size)
 
   /* send the parcel to the name server */
   result = sendto(ns_socket, parcel, size, 0, (void*)&ns, sizeof ns);
-  ZLOGFAIL(result == -1, errno, "failed to send the parcel to the name server");
+  ZLOGFAIL(result == -1, errno, "failed to send parcel to the name server");
 
   /* receive the parcel back */
   result = recvfrom(ns_socket, parcel, size, 0, (void*)&ns, &ns_len);
-  ZLOGFAIL(result == -1, errno, "failed to receive the parcel from the name server");
+  ZLOGFAIL(result == -1, errno, "failed to receive parcel from the name server");
   close(ns_socket);
 
   return result;
