@@ -1,5 +1,5 @@
 NAME=hello
-CCFLAGS=-n -s -nostartfiles -nostdlib 
+CCFLAGS=-n -s -nostartfiles -nostdlib
 
 all: $(NAME).c
 	@x86_64-nacl-gcc -o $(NAME).nexe $(CCFLAGS) -Wall -msse4.1 \
