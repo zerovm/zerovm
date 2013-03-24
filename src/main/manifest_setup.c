@@ -101,8 +101,8 @@ static void PreallocateUserMemory(struct NaClApp *nap)
   assert(nap->system_manifest != NULL);
 
   /* quit function if max_mem is not specified or invalid */
-  ZLOGFAIL(nap->heap_end == 0, ENOMEM, "user memory size invalid or not specified");
-  ZLOGFAIL(nap->heap_end > FOURGIG, ENOMEM, "user memory size is too large");
+  ZLOGFAIL(nap->heap_end == 0 || nap->heap_end > FOURGIG,
+      ENOMEM, "invalid memory size");
 
   /* calculate user heap size (must be allocated next to the data_end) */
   p = (void*)NaClRoundAllocPage(nap->data_end);

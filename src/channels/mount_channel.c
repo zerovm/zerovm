@@ -229,7 +229,8 @@ void ChannelsCtor(struct NaClApp *nap)
 
     /* fail if invalid number of attributes detected */
     ZLOGFAIL(count != CHANNEL_ATTRIBUTES, EFAULT,
-        "invalid channel specification: %s", values[i]);
+        "%s has %d attributes instead of %d", tokens[ChannelAlias],
+        count, CHANNEL_ATTRIBUTES);
 
     /* construct and initialize channel */
     ChannelCtor(nap, tokens);
