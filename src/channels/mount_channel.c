@@ -74,8 +74,9 @@ static int SelectNextChannel(struct NaClApp *nap, char *alias)
 static void ChannelCtor(struct NaClApp *nap, char **tokens)
 {
   struct ChannelDesc *channel;
-  int code = 1; /* means error */
+  int code = -1;
   int index;
+  int i;
 
   assert(nap != NULL);
   assert(tokens != NULL);
@@ -113,15 +114,14 @@ static void ChannelCtor(struct NaClApp *nap, char **tokens)
   }
 
   /* limits and counters. initialize all field explicitly */
-  channel->limits[GetsLimit] = ATOI(tokens[ChannelGets]);
-  channel->limits[GetSizeLimit] = ATOI(tokens[ChannelGetSize]);
-  channel->limits[PutsLimit] = ATOI(tokens[ChannelPuts]);
-  channel->limits[PutSizeLimit] = ATOI(tokens[ChannelPutSize]);
-  channel->counters[GetsLimit] = 0;
-  channel->counters[GetSizeLimit] = 0;
-  channel->counters[PutsLimit] = 0;
-  channel->counters[PutSizeLimit] = 0;
   channel->eof = 0;
+  for(i = 0; i < IOLimitsCount; ++i)
+  {
+    channel->counters[i] = 0;
+    channel->limits[i] = ATOI(tokens[i + ChannelGets]);
+    ZLOGFAIL(channel->limits[i] < 0, EFAULT,
+        "%s has invalid %dth limit", tokens[ChannelAlias], i);
+  }
 
   /* mount given channel */
   switch(channel->source)
