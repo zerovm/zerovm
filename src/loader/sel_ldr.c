@@ -158,7 +158,7 @@ void  NaClLoadTrampoline(struct NaClApp *nap) {
    * The last syscall entry point is reserved (nacl springboard code)
    */
   num_syscalls = ((NACL_TRAMPOLINE_END - NACL_SYSCALL_START_ADDR) / NACL_SYSCALL_BLOCK_SIZE) - 1;
-  ZLOGS(LOG_DEBUG, "num_syscalls = %d (0x%x)", num_syscalls, num_syscalls);
+  ZLOGS(LOG_INSANE, "num_syscalls = %d (0x%x)", num_syscalls, num_syscalls);
 
   addr = nap->mem_start + NACL_SYSCALL_START_ADDR;
   for (i = 0; i < num_syscalls; ++i)

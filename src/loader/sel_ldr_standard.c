@@ -59,7 +59,7 @@ NORETURN static void SwitchToApp(struct NaClApp  *nap, uintptr_t stack_ptr)
   nacl_sys->rsp = NaClGetStackPtr();
 
   /* pass control to the nexe */
-  ZLOGS(LOG_ERROR, "SESSION STARTED");
+  ZLOGS(LOG_DEBUG, "SESSION STARTED");
   NaClSwitchToApp(nap, nacl_user->new_prog_ctr);
 
   ZLOGFAIL(1, EFAULT, "unreachable code reached");
@@ -101,7 +101,7 @@ void static NaClFillEndOfTextRegion(struct NaClApp *nap) {
   ZLOGFAIL(page_pad < NACL_HALT_SLED_SIZE, EFAULT, FAILED_MSG);
   ZLOGFAIL(page_pad >= NACL_MAP_PAGESIZE + NACL_HALT_SLED_SIZE, EFAULT, FAILED_MSG);
 
-  ZLOGS(LOG_DEBUG, "Filling with halts: %08lx, %08lx bytes",
+  ZLOGS(LOG_INSANE, "Filling with halts: %08lx, %08lx bytes",
           nap->mem_start + nap->static_text_end, page_pad);
 
   NaClFillMemoryRegionWithHalt((void*)(nap->mem_start + nap->static_text_end), page_pad);
@@ -154,10 +154,10 @@ static void NaClCheckAddressSpaceLayoutSanity(struct NaClApp *nap,
     != nap->data_start, ENOEXEC, FAILED_MSG);
 }
 
-#define DUMP(a) ZLOGS(LOG_DEBUG, "%-24s = 0x%016x", #a, a)
+#define DUMP(a) ZLOGS(LOG_INSANE, "%-24s = 0x%016x", #a, a)
 static void NaClLogAddressSpaceLayout(struct NaClApp *nap)
 {
-  ZLOGS(LOG_DEBUG, "NaClApp addr space layout:");
+  ZLOGS(LOG_INSANE, "NaClApp addr space layout:");
   DUMP(nap->static_text_end);
   DUMP(nap->dynamic_text_start);
   DUMP(nap->dynamic_text_end);
@@ -224,7 +224,7 @@ void NaClAppLoadFile(struct Gio *gp, struct NaClApp *nap)
   nap->break_addr = max_vaddr;
   nap->data_end = max_vaddr;
 
-  ZLOGS(LOG_DEBUG, "Values from NaClElfImageValidateProgramHeaders:");
+  ZLOGS(LOG_INSANE, "Values from NaClElfImageValidateProgramHeaders:");
   DUMP(nap->rodata_start);
   DUMP(rodata_end);
   DUMP(nap->data_start);
@@ -289,7 +289,7 @@ void NaClAppLoadFile(struct Gio *gp, struct NaClApp *nap)
   ZLOGS(LOG_DEBUG, "Applying memory protection");
   NaClMemoryProtection(nap);
 
-  ZLOGS(LOG_DEBUG, "NaClAppLoadFile done; ");
+  ZLOGS(LOG_DEBUG, "NaClAppLoadFile done");
   NaClLogAddressSpaceLayout(nap);
 
   NaClElfImageDelete(image);
@@ -410,7 +410,7 @@ int NaClCreateMainThread(struct NaClApp *nap)
   /* write strings and char * arrays to stack */
   stack_ptr = (nap->mem_start + ((uintptr_t) 1U << nap->addr_bits) - size);
 
-  ZLOGS(LOG_DEBUG, "setting stack to : %016lx", stack_ptr);
+  ZLOGS(LOG_INSANE, "setting stack to : %016lx", stack_ptr);
 
   ZLOGFAIL(0 != (stack_ptr & NACL_STACK_ALIGN_MASK), EFAULT,
       "stack_ptr not aligned: %016x", stack_ptr);
@@ -425,7 +425,7 @@ int NaClCreateMainThread(struct NaClApp *nap)
   for(i = 0; i < argc; ++i)
   {
     *p++ = (uint32_t)NaClSysToUser(nap, (uintptr_t)strp);
-    ZLOGS(LOG_DEBUG, "copying arg %d %p -> %p", i, argv[i], strp);
+    ZLOGS(LOG_INSANE, "copying arg %d %p -> %p", i, argv[i], strp);
     strcpy(strp, argv[i]);
     strp += argv_len[i];
   }
@@ -434,7 +434,7 @@ int NaClCreateMainThread(struct NaClApp *nap)
   for(i = 0; i < envc; ++i)
   {
     *p++ = (uint32_t)NaClSysToUser(nap, (uintptr_t)strp);
-    ZLOGS(LOG_DEBUG, "copying env %d %p -> %p", i, envv[i], strp);
+    ZLOGS(LOG_INSANE, "copying env %d %p -> %p", i, envv[i], strp);
     strcpy(strp, envv[i]);
     strp += envv_len[i];
   }
@@ -458,7 +458,6 @@ int NaClCreateMainThread(struct NaClApp *nap)
   stack_ptr -= NACL_STACK_PAD_BELOW_ALIGN;
   memset((void *) stack_ptr, 0, NACL_STACK_PAD_BELOW_ALIGN);
 
-  ZLOGS(LOG_DEBUG, "system stack ptr: %016lx", stack_ptr);
   ZLOGS(LOG_DEBUG, "user stack ptr: %016lx", NaClSysToUserStackAddr(nap, stack_ptr));
 
   /* d'b: jump directly to user code instead of using thread launching */

@@ -51,7 +51,7 @@ int NaClMakeDispatchThunk(struct NaClApp *nap)
     goto cleanup;
   }
 
-  ZLOGS(LOG_DEBUG, "got addr 0x%lx", (uintptr_t) thunk_addr);
+  ZLOGS(LOG_DEBUG, "Thunk got address 0x%lx", (uintptr_t) thunk_addr);
   if(0 != (error = NaCl_mprotect(thunk_addr, NACL_MAP_PAGESIZE, PROT_READ | PROT_WRITE)))
   {
     ZLOG(LOG_ERROR, "NaCl_mprotect r/w failed, errno %d", -error);

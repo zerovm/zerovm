@@ -53,7 +53,7 @@ static void ZVMCommandLine(int argc, char **argv)
   int offset = 0;
   int i;
 
-  offset += sprintf(cmd, "zerovm command line:");
+  offset += sprintf(cmd, "ZeroVM command line:");
   for(i = 0; i < argc; ++i)
     offset += g_snprintf(cmd + offset, BIG_ENOUGH_STRING - offset, " %s", argv[i]);
 
@@ -81,7 +81,7 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
         break;
       case 's':
         skip_validator = 1;
-        ZLOG(LOG_ERROR, "VALIDATION DISABLED by -s");
+        ZLOGS(LOG_ERROR, "VALIDATION DISABLED by -s");
         break;
       case 'F':
         quit_after_load = 1;
@@ -98,7 +98,7 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
          * and therefore always should catch signals
          */
         SetSignalHandling(0);
-        ZLOG(LOG_ERROR, "SIGNAL HANDLING DISABLED by -S");
+        ZLOGS(LOG_ERROR, "SIGNAL HANDLING DISABLED by -S");
         break;
       case 'l':
         /* calculate hard limit in Gb and don't allow it less then "big enough" */
@@ -114,6 +114,7 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
         ZLOGS(LOG_ERROR, "PLATFORM QUALIFICATION DISABLED by -Q");
         break;
       case 'P':
+        ZLOGS(LOG_ERROR, "DISK SPACE PREALLOCATION DISABLED by -P");
         PreloadAllocationDisable();
         break;
       default:
@@ -206,21 +207,22 @@ int main(int argc, char **argv)
 
 #define TIMER_REPORT(msg) \
   do {\
-    ZLOGS(LOG_DEBUG, msg " took %.3f milliseconds",\
+    ZLOGS(LOG_DEBUG, "...TIMER: %s took %.3f milliseconds", msg,\
         g_timer_elapsed(timer, NULL) * NACL_MICROS_PER_MILLI);\
     g_timer_start(timer);\
   } while(0)
 
-  TIMER_REPORT(" constructing of memory snapshot");
+  TIMER_REPORT("constructing of memory snapshot");
 
   /* validate nexe structure (check elf header and segments) */
-  ZLOGS(LOG_DEBUG, "Loading nacl file %s", nap->system_manifest->nexe);
+  ZLOGS(LOG_DEBUG, "Loading %s", nap->system_manifest->nexe);
   NaClAppLoadFile((struct Gio *) &main_file, nap);
-  TIMER_REPORT(" loading user module");
+  TIMER_REPORT("loading user module");
 
   /* validate given nexe (ensure that text segment is safe) */
+  ZLOGS(LOG_DEBUG, "Validating %s", nap->system_manifest->nexe);
   ValidateNexe(nap);
-  TIMER_REPORT(" validating of nacl module");
+  TIMER_REPORT("validating user module");
 
   /* free snapshot */
   if(-1 == (*((struct Gio *)&main_file)->vtbl->Close)((struct Gio *)&main_file))
@@ -228,10 +230,12 @@ int main(int argc, char **argv)
   (*((struct Gio *) &main_file)->vtbl->Dtor)((struct Gio *) &main_file);
 
   /* setup zerovm from manifest */
+  ZLOGS(LOG_DEBUG, "Setting hypervisor");
   SystemManifestCtor(nap);
-  TIMER_REPORT(" setting hypervisor from manifest");
+  TIMER_REPORT("setting hypervisor from manifest");
 
   /* "defence in depth" call */
+  ZLOGS(LOG_DEBUG, "Last preparations");
   LastDefenseLine(nap);
 
   /* Make sure all the file buffers are flushed before entering the nexe */
@@ -246,7 +250,7 @@ int main(int argc, char **argv)
     SetExitState(OK_STATE);
     NaClExit(0);
   }
-  TIMER_REPORT(" last preparations");
+  TIMER_REPORT("last preparations");
 
   /* switch to the user code */
   ZLOGFAIL(!NaClCreateMainThread(nap), EFAULT, "switching to nexe failed");

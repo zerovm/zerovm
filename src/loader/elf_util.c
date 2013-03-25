@@ -85,7 +85,7 @@ static const struct NaClPhdrChecks nacl_phdr_check_data[] = {
 #define DUMP(m, f) do { ZLOGS(loglevel, #m " = %" f, elf_hdr->m); } while (0)
 static void NaClDumpElfHeader(int loglevel, Elf_Ehdr *elf_hdr)
 {
-  ZLOGS(LOG_DEBUG, "%020o (Elf header) %020o", 0, 0);
+  ZLOGS(loglevel, "%020o (Elf header) %020o", 0, 0);
 
   DUMP(e_ident+1, ".3s");
   DUMP(e_type, "#x");
@@ -167,17 +167,18 @@ void NaClElfImageValidateProgramHeaders(
    * nacl_phdr_check_data is small, so O(|check_data| * nap->elf_hdr.e_phum)
    * is okay.
    */
+  ZLOGS(LOG_DEBUG, "Validating program headers");
   memset(seen_seg, 0, sizeof seen_seg);
   for(segnum = 0; segnum < hdr->e_phnum; ++segnum)
   {
     php = &image->phdrs[segnum];
-    ZLOGS(LOG_DEBUG, "Looking at segment %d, type 0x%x, p_flags 0x%x",
+    ZLOGS(LOG_INSANE, "Looking at segment %d, type 0x%x, p_flags 0x%x",
         segnum, php->p_type, php->p_flags);
 
     if(0 == php->p_memsz)
     {
       /* We will not load this segment */
-      ZLOGS(LOG_DEBUG, "Ignoring empty segment");
+      ZLOGS(LOG_INSANE, "Ignoring empty segment");
       continue;
     }
 
@@ -190,13 +191,13 @@ void NaClElfImageValidateProgramHeaders(
     ZLOGFAIL(j == NACL_ARRAY_SIZE(nacl_phdr_check_data), ENOEXEC, "Segment %d "
         "is of unexpected type 0x%x, flag 0x%x", segnum, php->p_type, php->p_flags);
 
-    ZLOGS(LOG_DEBUG, "Matched nacl_phdr_check_data[%d]", j);
+    ZLOGS(LOG_INSANE, "Matched nacl_phdr_check_data[%d]", j);
     ZLOGFAIL(seen_seg[j], ENOEXEC, "Segment %d is a type that has been seen", segnum);
     seen_seg[j] = 1;
 
     if(PCA_IGNORE == nacl_phdr_check_data[j].action)
     {
-      ZLOGS(LOG_DEBUG, "Ignoring");
+      ZLOGS(LOG_INSANE, "Ignoring");
       continue;
     }
 
@@ -281,7 +282,7 @@ struct NaClElfImage *NaClElfImageNew(struct Gio *gp)
   ZLOGFAIL((*gp->vtbl->Read)(gp, &image.ehdr, sizeof image.ehdr) != sizeof image.ehdr,
       EIO, FAILED_MSG);
 
-  NaClDumpElfHeader(LOG_DEBUG, &image.ehdr);
+  NaClDumpElfHeader(LOG_INSANE, &image.ehdr);
 
   /* read program headers. fail if too many prog headers */
   ZLOGFAIL(image.ehdr.e_phnum > NACL_MAX_PROGRAM_HEADERS, ENOEXEC, FAILED_MSG);
@@ -303,9 +304,9 @@ struct NaClElfImage *NaClElfImageNew(struct Gio *gp)
   ZLOGFAIL((size_t)(*gp->vtbl->Read)(gp, &image.phdrs[0], image.ehdr.e_phnum * sizeof
       image.phdrs[0]) != (image.ehdr.e_phnum * sizeof image.phdrs[0]), EIO, FAILED_MSG);
 
-  ZLOGS(LOG_DEBUG, "%020o (elf segments) %020o", 0, 0);
+  ZLOGS(LOG_INSANE, "%020o (elf segments) %020o", 0, 0);
   for(cur_ph = 0; cur_ph < image.ehdr.e_phnum; ++cur_ph)
-    NaClDumpElfProgramHeader(LOG_DEBUG, &image.phdrs[cur_ph]);
+    NaClDumpElfProgramHeader(LOG_INSANE, &image.phdrs[cur_ph]);
 
   /* we delay allocating till the end to avoid cleanup code */
   /* fail if not enough memory for image meta data */
@@ -330,11 +331,11 @@ void NaClElfImageLoad(struct NaClElfImage *image,
     /* did we decide that we will load this segment earlier? */
     if(!image->loadable[segnum]) continue;
 
-    ZLOGS(LOG_DEBUG, "loading segment %d", segnum);
+    ZLOGS(LOG_INSANE, "loading segment %d", segnum);
 
     if(0 == php->p_filesz)
     {
-      ZLOGS(LOG_DEBUG, "zero-sized segment. ignoring...");
+      ZLOGS(LOG_INSANE, "zero-sized segment. ignoring...");
       continue;
     }
     end_vaddr = php->p_vaddr + php->p_filesz;
@@ -353,7 +354,7 @@ void NaClElfImageLoad(struct NaClElfImage *image,
 
     paddr = mem_start + php->p_vaddr;
 
-    ZLOGS(LOG_DEBUG, "Seek to position %d (0x%x)", php->p_offset, php->p_offset);
+    ZLOGS(LOG_INSANE, "Seek to position %d (0x%x)", php->p_offset, php->p_offset);
 
     /*
      * NB: php->p_offset may not be a valid off_t on 64-bit systems, but
@@ -363,7 +364,7 @@ void NaClElfImageLoad(struct NaClElfImage *image,
     ZLOGFAIL((*gp->vtbl->Seek)(gp, (off_t)php->p_offset, SEEK_SET) == (off_t)-1,
         ENOEXEC, "seek failure segment %d", segnum);
 
-    ZLOGS(LOG_DEBUG, "Reading %d (0x%x) bytes to address 0x%x",
+    ZLOGS(LOG_INSANE, "Reading %d (0x%x) bytes to address 0x%x",
         php->p_filesz, php->p_filesz, paddr);
 
     ZLOGFAIL((Elf_Word)(*gp->vtbl->Read)(gp, (void *)paddr, php->p_filesz) != php->p_filesz,

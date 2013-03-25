@@ -36,7 +36,7 @@ static int32_t ZVMExitHandle(struct NaClApp *nap, int32_t code)
   assert(nap != NULL);
 
   nap->system_manifest->user_ret_code = code;
-  ZLOGS(LOG_ERROR, "SESSION RETURNED %d", code);
+  ZLOGS(LOG_DEBUG, "SESSION RETURNED %d", code);
   SetExitState(OK_STATE);
   NaClExit(0);
 
