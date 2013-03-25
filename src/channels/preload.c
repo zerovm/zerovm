@@ -21,6 +21,11 @@
 #include "src/channels/mount_channel.h"
 #include "src/channels/preload.h"
 
+/* 0 = nil, 1 = r/o, 2 = w/o, 3 = r/w */
+#define RW_TYPE(channel) \
+  (((channel)->limits[GetsLimit] && (channel)->limits[GetSizeLimit]) \
+  | ((channel)->limits[PutsLimit] && (channel)->limits[PutSizeLimit]) << 1)
+
 static int disable_preallocation = 0;
 
 void PreloadAllocationDisable()
@@ -89,12 +94,20 @@ static void PreallocateChannel(struct ChannelDesc *channel)
 /* test the channel for validity */
 static void FailOnInvalidFileChannel(const struct ChannelDesc *channel)
 {
-  ZLOGFAIL(channel->source < ChannelRegular || channel->source > ChannelSocket,
-      EFAULT, "%s isn't file", channel->name);
+  /* check for supported source types */
+  switch(channel->source)
+  {
+    case ChannelRegular:
+    case ChannelCharacter:
+    case ChannelFIFO:
+      break;
+    default:
+      ZLOGFAIL(1, EFAULT, "%s cannot be mounted to %s", channel->name,
+          StringizeChannelSourceType(channel->source));
+      break;
+  }
+
   ZLOGFAIL(channel->name[0] != '/', EFAULT, "only absolute path allowed");
-  ZLOGFAIL(channel->source == ChannelCharacter
-      && (channel->limits[PutsLimit] && channel->limits[GetsLimit]),
-      EFAULT, "%s has invalid limits", channel->alias);
 }
 
 /* preload given character device to channel */
@@ -104,17 +117,22 @@ static void CharacterChannel(struct ChannelDesc* channel)
   int flags;
 
   assert(channel != NULL);
+  ZLOG(LOG_DEBUG, "preload character %s", channel->alias);
 
   /* calculate open mode */
-  if(channel->limits[PutsLimit] == 0)
+  switch(RW_TYPE(channel))
   {
-    mode = "rb";
-    flags = O_RDONLY;
-  }
-  else
-  {
-    mode = "wb";
-    flags = O_RDWR;
+    case 1:
+      mode = "rb";
+      flags = O_RDONLY;
+      break;
+    case 2:
+      mode = "wb";
+      flags = O_RDWR;
+      break;
+    default:
+      ZLOGFAIL(1, EINVAL, "%s has invalid i/o type", channel->alias);
+      break;
   }
 
   /* open file */
@@ -129,15 +147,10 @@ static void CharacterChannel(struct ChannelDesc* channel)
 /* preload given regular device to channel */
 static void RegularChannel(struct ChannelDesc* channel)
 {
-  uint32_t rw = 0;
-
   assert(channel != NULL);
-  ZLOG(LOG_DEBUG, "preload %s", channel->alias);
+  ZLOG(LOG_DEBUG, "preload regular %s", channel->alias);
 
-  /* calculate the read/write type */
-  rw |= channel->limits[GetsLimit] && channel->limits[GetSizeLimit];
-  rw |= (channel->limits[PutsLimit] && channel->limits[PutSizeLimit]) << 1;
-  switch(rw)
+  switch(RW_TYPE(channel))
   {
     case 1: /* read only */
       channel->handle = open(channel->name, O_RDONLY, CHANNEL_RIGHTS);
@@ -175,7 +188,7 @@ static void RegularChannel(struct ChannelDesc* channel)
       break;
 
     default:
-      ZLOGFAIL(1, EPROTONOSUPPORT, "%s cannot be mounted", channel->alias);
+      ZLOGFAIL(1, EINVAL, "%s has invalid i/o type", channel->alias);
       break;
   }
 
