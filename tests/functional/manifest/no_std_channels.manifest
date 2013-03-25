@@ -1,0 +1,16 @@
+=====================================================================
+== standard channels not specified
+=====================================================================
+Channel = /dev/null, channel1, 0, 0, 0, 16, 256
+Channel = /dev/null, channel2, 0, 0, 0, 16, 256
+Channel = /dev/null, channel3, 0, 0, 0, 16, 256
+Channel = /dev/null, channel4, 0, 0, 0, 16, 256
+
+=====================================================================
+== switches for zerovm. some of them used to control nexe, some
+== for the internal zerovm needs
+=====================================================================
+Version = 09082012
+Nexe = dummy.nexe
+MemMax = 33554432
+Timeout = 1
