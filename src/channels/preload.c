@@ -114,7 +114,7 @@ static void FailOnInvalidFileChannel(const struct ChannelDesc *channel)
 static void CharacterChannel(struct ChannelDesc* channel)
 {
   char *mode = NULL;
-  int flags;
+  int flags = 0;
 
   assert(channel != NULL);
   ZLOG(LOG_DEBUG, "preload character %s", channel->alias);
