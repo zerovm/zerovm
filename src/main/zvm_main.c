@@ -135,6 +135,7 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
   /* set available nap and manifest fields */
   assert(nap->system_manifest != NULL);
   nap->system_manifest->nexe = GetValueByKey(MFT_NEXE);
+  ZLOGFAIL(nap->system_manifest->nexe == NULL, EFAULT, "nexe not specified");
   ZLOGFAIL(GetFileSize(nap->system_manifest->nexe) < 0, ENOENT, "nexe open error");
 }
 

@@ -185,6 +185,7 @@ int ManifestCtor(const char *name)
   ZLOGFAIL(mft == NULL, errno, "cannot open manifest file %s", name);
   mft_size = GetFileSize(name);
   ZLOGFAIL(mft_size > MANIFEST_MAX, EFBIG, "manifest file exceeded the limit %d", mft_size);
+  ZLOGFAIL(mft_size == 0, EPERM, "manifest file is empty");
 
   /* allocate memory to hold manifest data */
   mft_data = g_malloc(mft_size + 1);
@@ -198,7 +199,7 @@ int ManifestCtor(const char *name)
 
   /* parse manifest */
   retcode = ParseManifest();
-  ZLOGFAIL(retcode, EFAULT, "cannot parse manifest");
+  ZLOGFAIL(retcode, EFAULT, "invalid manifest");
 
   /* close file and return */
   fclose(mft);
