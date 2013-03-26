@@ -40,6 +40,7 @@ NameServer
   udp - protocol
   127.0.0.1 - server ip address
   54321 - server port
+  note: it is possible to use integer ip representation instead of IPv4
   
 Channel
   (obligatory, 7 comma separated values)
@@ -58,7 +59,13 @@ Channel
     Channel = /dev/null, /dev/stdin, 0, 0, 0, 0, 0
     Channel = /dev/null, /dev/stdout, 0, 0, 0, 0, 0
     Channel = /dev/null, /dev/stderr, 0, 0, 0, 0, 0
-  network channels has same fields, but the very 1st one (trusted chanel name) has special form
+  network channels has same fields, but the very 1st one (trusted channel name) has special form:
+  protocol:address:port
+  where
+    protocol can be tcp (or udp for name server)
+    address is IPv4 or integer representaion of it
+    port is 16 bit integer or empty (if name server used)
+  
 Environment
   (comma separated values, will be deprecated soon)
   expects comma separated pairs: key, value. example:

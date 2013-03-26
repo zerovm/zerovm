@@ -51,6 +51,7 @@ EXTERN_C_BEGIN
 #define MFT_ETAG "NexeEtag"
 #define MFT_TIMEOUT "Timeout"
 #define MFT_NODE "NodeName"
+#define MFT_NAMESERVER "NameServer"
 #define MFT_ENVIRONMENT "Environment" /* deprecated */
 #define MFT_COMMANDLINE "CommandLine" /* deprecated */
 

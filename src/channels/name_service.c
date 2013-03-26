@@ -67,6 +67,23 @@ INLINE static uint32_t MakeKey(const struct ChannelConnection *record)
   return result;
 }
 
+/* convert ip address (or node id) to integer */
+static uint32_t ExtractHost(const char *strip)
+{
+  uint32_t result;
+
+  if(strchr(strip, '.') != NULL)
+  {
+    struct sockaddr_in sa;
+    result = inet_pton(AF_INET, strip, &sa.sin_addr);
+    result = result == 1 ? bswap_32(sa.sin_addr.s_addr) : 0;
+  }
+  else
+    result = ATOI(strip);
+
+  return result;
+}
+
 /*
  * parse the given channel name and initialize the record for the netlist table
  * return 0 if proper url found in the given channel and parsed without errors
@@ -99,10 +116,9 @@ static void ParseURL(const struct ChannelDesc *channel,
    */
   record->protocol = GetChannelProtocol(tokens[0]);
   record->port = ATOI(tokens[2]);
-  record->host = record->port == 0 ? ATOI(tokens[1]) : bswap_32(inet_addr(tokens[1]));
-
-  ZLOGFAIL(record->host == 0 && record->port == 0, EFAULT,
-      "%s has invalid url", channel->alias);
+  record->host = ExtractHost(tokens[1]);
+  ZLOGFAIL(record->host == 0, ENXIO,
+      "%s has invalid url %s", channel->alias, channel->name);
 
   /* mark the channel as "bind", "connect" or "outsider" */
   if(record->port != 0) record->mark = OUTSIDER_MARK;
@@ -312,7 +328,8 @@ void NameServiceCtor()
   /* get name service connection string if available */
   memset(&channel, 0, sizeof channel);
   channel.source = ChannelTCP;
-  channel.name = GetValueByKey("NameServer");
+  channel.alias = MFT_NAMESERVER;
+  channel.name = GetValueByKey(MFT_NAMESERVER);
 
   /* parse the given string and make url (static var) */
   if(channel.name != NULL)
