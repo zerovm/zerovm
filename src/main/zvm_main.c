@@ -65,6 +65,7 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
 {
   int opt;
   char *manifest_name = NULL;
+  int64_t nexe_size;
 
   /* construct zlog with default verbosity */
   ZLogCtor(LOG_ERROR);
@@ -136,7 +137,9 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
   assert(nap->system_manifest != NULL);
   nap->system_manifest->nexe = GetValueByKey(MFT_NEXE);
   ZLOGFAIL(nap->system_manifest->nexe == NULL, EFAULT, "nexe not specified");
-  ZLOGFAIL(GetFileSize(nap->system_manifest->nexe) < 0, ENOENT, "nexe open error");
+  nexe_size = GetFileSize(nap->system_manifest->nexe);
+  ZLOGFAIL(nexe_size < 0, ENOENT, "nexe open error");
+  ZLOGFAIL(nexe_size == 0 || nexe_size > LARGEST_NEXE, ENOENT, "too large nexe");
 }
 
 #define STATIC_TEXT_START ((uintptr_t)0x20000)
