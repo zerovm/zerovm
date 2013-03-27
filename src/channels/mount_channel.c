@@ -129,20 +129,11 @@ static void ChannelCtor(struct NaClApp *nap, char **tokens)
     case ChannelRegular:
     case ChannelCharacter:
     case ChannelFIFO:
-    case ChannelSocket:
       code = PreloadChannelCtor(channel);
       break;
     case ChannelTCP:
       code = PrefetchChannelCtor(channel);
       break;
-    case ChannelDirectory:
-    case ChannelBlock:
-    case ChannelLink:
-    case ChannelIPC:
-    case ChannelINPROC:
-    case ChannelPGM:
-    case ChannelEPGM:
-    case ChannelUDP:
     default:
       ZLOGFAIL(1, EPROTONOSUPPORT, "%s has invalid type %s",
           channel->alias, StringizeChannelSourceType(channel->source));
@@ -165,7 +156,6 @@ static void ChannelDtor(struct ChannelDesc *channel)
     case ChannelRegular:
     case ChannelCharacter:
     case ChannelFIFO:
-    case ChannelSocket:
       PreloadChannelDtor(channel);
       break;
     case ChannelTCP:
@@ -177,14 +167,6 @@ static void ChannelDtor(struct ChannelDesc *channel)
       if(GetExitCode() == 0)
         PrefetchChannelDtor(channel);
       break;
-    case ChannelDirectory:
-    case ChannelBlock:
-    case ChannelLink:
-    case ChannelIPC:
-    case ChannelINPROC:
-    case ChannelPGM:
-    case ChannelEPGM:
-    case ChannelUDP:
     default:
       ZLOG(LOG_ERR, "%s has invalid type %s",
           channel->alias, StringizeChannelSourceType(channel->source));

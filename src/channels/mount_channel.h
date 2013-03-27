@@ -58,7 +58,7 @@ enum ChannelSourceType {
   ChannelBlock, /* not supported */
   ChannelFIFO, /* not tested */
   ChannelLink, /* not supported */
-  ChannelSocket, /* not tested (ChannelIPC replacement) */
+  ChannelSocket, /* not supported */
   ChannelIPC, /* to remove */
   ChannelTCP, /* supported */
   ChannelINPROC, /* not supported */

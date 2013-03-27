@@ -215,7 +215,6 @@ int PreloadChannelCtor(struct ChannelDesc* channel)
       break;
     case ChannelCharacter:
     case ChannelFIFO:
-    case ChannelSocket:
       CharacterChannel(channel);
       break;
     default:
