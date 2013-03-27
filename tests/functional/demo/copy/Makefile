@@ -8,7 +8,7 @@ all: $(NAME).c
 	@sed 's#PWD#$(PWD)#g' $(NAME).template > $(NAME).manifest
 	@mkfifo input.data
 	@cp $(NAME).nexe input.data&
-	@zerovm -e3 $(NAME).manifest
+	@$(ZEROVM_ROOT)/zerovm -e3 $(NAME).manifest
 
 clean:
 	rm -f $(NAME).nexe $(NAME).o *.log *.data *.manifest

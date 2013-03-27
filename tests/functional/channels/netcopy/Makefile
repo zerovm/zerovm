@@ -10,9 +10,9 @@ all: $(NAME).c
 	@sed 's#PWD#$(PWD)#g' $(NAME)2.template > $(NAME)2.manifest
 	@sed 's#PWD#$(PWD)#g' $(NAME)3.template > $(NAME)3.manifest
 	@dd if=/dev/urandom of=input.data bs=1048576 count=32 2> /dev/null
-	@zerovm -e3 $(NAME)1.manifest&
-	@zerovm -e3 $(NAME)2.manifest&
-	@zerovm -e3 $(NAME)3.manifest
+	@$(ZEROVM_ROOT)/zerovm -e3 $(NAME)1.manifest&
+	@$(ZEROVM_ROOT)/zerovm -e3 $(NAME)2.manifest&
+	@$(ZEROVM_ROOT)/zerovm -e3 $(NAME)3.manifest
 
 clean:
 	rm -f $(NAME).nexe $(NAME).o *.log *.data *.manifest

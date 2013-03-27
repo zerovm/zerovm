@@ -7,7 +7,7 @@ all: $(NAME).c
 	$(ZEROVM_ROOT)/tests/functional/include/libzvmlib.a
 	@cp cdr_stubbed.stored cdr_stubbed.data
 	@sed 's#PWD#$(PWD)#g' $(NAME).template > $(NAME).manifest
-	@zerovm -e3 $(NAME).manifest
+	@$(ZEROVM_ROOT)/zerovm -e3 $(NAME).manifest
 
 clean:
 	rm -f $(NAME).nexe $(NAME).o *.log *.data *.manifest
