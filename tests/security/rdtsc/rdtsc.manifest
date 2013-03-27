@@ -1,0 +1,15 @@
+=====================================================================
+== rdtsc test. validation must fail
+=====================================================================
+Channel = /dev/null, /dev/stdin, 0, 999999, 999999, 0, 0
+Channel = /dev/stdout, /dev/stdout, 0, 0, 0, 999999, 999999
+Channel = /dev/stderr, /dev/stderr, 0, 0, 0, 999999, 999999
+
+=====================================================================
+== switches for zerovm. some of them used to control nexe, some
+== for the internal zerovm needs
+=====================================================================
+Version = 09082012
+Nexe = rdtsc.nexe
+MemMax = 33554432
+Timeout = 1
