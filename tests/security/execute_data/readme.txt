@@ -1,7 +1,3 @@
-todo:
-this is example of a bad behavior: zvm must not crash with "segmentation fault",
-but show a message like "data execution is prohibited".
-
 for now zerovm shows:
 This should fault... // message from the user module 
 validator state = 0

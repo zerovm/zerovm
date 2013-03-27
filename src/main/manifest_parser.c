@@ -39,7 +39,7 @@ static struct
 } *mft_ptr; /* array of pointers to keys/values */
 
 /* remove leading and ending spaces from the given string */
-static char* cut_spaces(char *a)
+static char *cut_spaces(char *a)
 {
   char *end;
   if (a == NULL) return a;
@@ -56,7 +56,7 @@ static char* cut_spaces(char *a)
 
 /* return string until '=' */
 /* todo(d'b): can be replaced with ParseValue() */
-static char* get_key(char *a)
+static char *get_key(char *a)
 {
   char *end;
   if(a == NULL) return a;

@@ -20,7 +20,7 @@
  */
 
 /*
- * This module implementes a platform specific exit and abort, to terminate
+ * This module implements a platform specific exit and abort, to terminate
  * the process as quickly as possible when an exception is detected.
  */
 #ifndef NACL_EXIT_H_

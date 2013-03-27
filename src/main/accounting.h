@@ -23,10 +23,10 @@
 #define STAT_FMT "%*d %*s %*c %*d %*d %*d %*d %*d %*u %*u %*u %*u %*u %lu %lu"
 
 /* initialize accounting */
-void AccountingCtor(struct NaClApp *nap);
+void AccountingCtor(const struct NaClApp *nap);
 
 /* finalize accounting. return string with statistics */
-void AccountingDtor(struct NaClApp *nap);
+void AccountingDtor(const struct NaClApp *nap);
 
 /* return accounting string */
 const char *GetAccountingInfo();

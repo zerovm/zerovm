@@ -24,7 +24,7 @@
 #include "src/main/manifest_setup.h"
 #include "src/channels/mount_channel.h"
 
-/* accounting folder name. NULL if not available */
+/* accounting folder name */
 static char accounting[BIG_ENOUGH_STRING] = DEFAULT_ACCOUNTING;
 
 /* populate "buf" with an extended accounting statistics, return string size */
@@ -108,17 +108,17 @@ static int GetChannelsAccounting(const struct NaClApp *nap, char *buf, int size)
 
   /* construct the accounting statistics string */
   return g_snprintf(buf, size, "%ld %ld %ld %ld %ld %ld %ld %ld",
-      local_stats[GetsLimit], local_stats[GetSizeLimit], /* local channels input */
-      local_stats[PutsLimit], local_stats[PutSizeLimit], /* local channels output */
-      network_stats[GetsLimit], network_stats[GetSizeLimit], /* network channels input */
-      network_stats[PutsLimit], network_stats[PutSizeLimit]);  /* network channels output */
+      local_stats[GetsLimit], local_stats[GetSizeLimit],
+      local_stats[PutsLimit], local_stats[PutSizeLimit],
+      network_stats[GetsLimit], network_stats[GetSizeLimit],
+      network_stats[PutsLimit], network_stats[PutSizeLimit]);
 }
 
-void AccountingCtor(struct NaClApp *nap)
+void AccountingCtor(const struct NaClApp *nap)
 {
 }
 
-void AccountingDtor(struct NaClApp *nap)
+void AccountingDtor(const struct NaClApp *nap)
 {
   int offset = 0;
 
