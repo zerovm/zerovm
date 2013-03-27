@@ -82,7 +82,7 @@ int PreloadChannelDtor(struct ChannelDesc* channel)
 }
 
 /* preallocate channel space if not disabled with "-P" */
-static void PreallocateChannel(struct ChannelDesc *channel)
+static void PreallocateChannel(const struct ChannelDesc *channel)
 {
   int i;
 

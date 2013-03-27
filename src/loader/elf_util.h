@@ -28,11 +28,11 @@
 struct NaClElfImage;
 struct Gio;
 
-uintptr_t NaClElfImageGetEntryPoint(struct NaClElfImage *image);
+uintptr_t NaClElfImageGetEntryPoint(const struct NaClElfImage *image);
 
 struct NaClElfImage *NaClElfImageNew(struct Gio *gp);
 
-void NaClElfImageValidateElfHeader(struct NaClElfImage *image);
+void NaClElfImageValidateElfHeader(const struct NaClElfImage *image);
 
 /*
  * TODO(robertm): decouple validation from computation of static_text_end
@@ -53,7 +53,7 @@ void NaClElfImageValidateProgramHeaders(
  * Loads an ELF executable before the address space's memory
  * protections have been set up by NaClMemoryProtection().
  */
-void NaClElfImageLoad(struct NaClElfImage *image,
+void NaClElfImageLoad(const struct NaClElfImage *image,
     struct Gio *gp, uint8_t addr_bits, uintptr_t mem_start);
 
 void NaClElfImageDelete(struct NaClElfImage *image);

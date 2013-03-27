@@ -107,7 +107,7 @@ void StoreChannelConnectionInfo(const struct ChannelDesc *channel);
 struct ChannelConnection *GetChannelConnectionInfo(const struct ChannelDesc *channel);
 
 /* poll the name server and update netlist with port information */
-void ResolveChannels(struct NaClApp *nap, uint32_t binds, uint32_t connects);
+void ResolveChannels(const struct NaClApp *nap, uint32_t binds, uint32_t connects);
 
 /*
  * initialize the name service table even if name service is not

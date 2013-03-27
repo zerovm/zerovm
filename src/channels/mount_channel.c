@@ -37,7 +37,7 @@ char *StringizeChannelSourceType(enum ChannelSourceType type)
 }
 
 /* return source type inferred from the source file (or url) */
-static enum ChannelSourceType GetSourceType(char *name)
+static enum ChannelSourceType GetSourceType(const char *name)
 {
   enum ChannelSourceType type;
 
@@ -55,13 +55,10 @@ static enum ChannelSourceType GetSourceType(char *name)
 }
 
 /* return the channel index by channel alias */
-static int SelectNextChannel(struct NaClApp *nap, char *alias)
+static int SelectNextChannel(const char *alias)
 {
   static int current_channel = RESERVED_CHANNELS;
 
-  assert(nap != NULL);
-  assert(nap->system_manifest != NULL);
-  assert(nap->system_manifest->channels != NULL);
   assert(alias != NULL);
 
   if(STREQ(alias, STDIN)) return STDIN_FILENO;
@@ -92,7 +89,7 @@ static void ChannelCtor(struct NaClApp *nap, char **tokens)
    * pick the channel and check if the channel is available,
    * then allocate space to store the channel information
    */
-  index = SelectNextChannel(nap, tokens[ChannelAlias]);
+  index = SelectNextChannel(tokens[ChannelAlias]);
   ZLOGFAIL(index >= nap->system_manifest->channels_count,
       EFAULT, "uninitialized standard channels detected");
   channel = &nap->system_manifest->channels[index];

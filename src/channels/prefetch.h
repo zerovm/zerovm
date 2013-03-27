@@ -51,6 +51,6 @@ int32_t SendMessage(struct ChannelDesc *channel, const char *buf, int32_t count)
  * note: if no name service is available quietly return - all channels
  * are already bound and connected due 1st pass
  */
-void KickPrefetchChannels(struct NaClApp *nap);
+void KickPrefetchChannels(const struct NaClApp *nap);
 
 #endif /* PREFETCH_H_ */

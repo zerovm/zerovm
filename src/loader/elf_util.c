@@ -83,7 +83,7 @@ static const struct NaClPhdrChecks nacl_phdr_check_data[] = {
 };
 
 #define DUMP(m, f) do { ZLOGS(loglevel, #m " = %" f, elf_hdr->m); } while (0)
-static void NaClDumpElfHeader(int loglevel, Elf_Ehdr *elf_hdr)
+static void NaClDumpElfHeader(int loglevel, const Elf_Ehdr *elf_hdr)
 {
   ZLOGS(loglevel, "%020o (Elf header) %020o", 0, 0);
 
@@ -106,7 +106,7 @@ static void NaClDumpElfHeader(int loglevel, Elf_Ehdr *elf_hdr)
 #undef DUMP
 
 #define DUMP(mem, f) do { ZLOGS(loglevel, "%s: %" f, #mem, phdr->mem); } while (0)
-static void NaClDumpElfProgramHeader(int loglevel, Elf_Phdr *phdr)
+static void NaClDumpElfProgramHeader(int loglevel, const Elf_Phdr *phdr)
 {
   DUMP(p_type, "x");
   DUMP(p_offset, "x");
@@ -123,7 +123,7 @@ static void NaClDumpElfProgramHeader(int loglevel, Elf_Phdr *phdr)
 }
 #undef  DUMP
 
-void NaClElfImageValidateElfHeader(struct NaClElfImage *image)
+void NaClElfImageValidateElfHeader(const struct NaClElfImage *image)
 {
   const Elf_Ehdr *hdr = &image->ehdr;
 
@@ -317,7 +317,7 @@ struct NaClElfImage *NaClElfImageNew(struct Gio *gp)
   return result;
 }
 
-void NaClElfImageLoad(struct NaClElfImage *image,
+void NaClElfImageLoad(const struct NaClElfImage *image,
     struct Gio *gp, uint8_t addr_bits, uintptr_t mem_start)
 {
   int               segnum;
@@ -377,6 +377,6 @@ void NaClElfImageDelete(struct NaClElfImage *image) {
   g_free(image);
 }
 
-uintptr_t NaClElfImageGetEntryPoint(struct NaClElfImage *image) {
+uintptr_t NaClElfImageGetEntryPoint(const struct NaClElfImage *image) {
   return image->ehdr.e_entry;
 }

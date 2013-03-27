@@ -32,7 +32,7 @@ static uint32_t binds = 0; /* "bind" channels number */
 static uint32_t connects = 0; /* "connect" channels number */
 
 /* make url from the given record and return it through the "url" parameter */
-static void MakeURL(char *url, const int32_t size,
+static void MakeURL(char *url, int32_t size,
     const struct ChannelDesc *channel, const struct ChannelConnection *record)
 {
   char host[BIG_ENOUGH_STRING];
@@ -92,7 +92,7 @@ static int DoBind(const struct ChannelDesc* channel)
  * prepare "bind" channel information for the name service
  * note: should be called before name service invocation
  */
-static void PrepareBind(struct ChannelDesc *channel)
+static void PrepareBind(const struct ChannelDesc *channel)
 {
   struct ChannelConnection *record;
   static uint16_t port = LOWEST_AVAILABLE_PORT;
@@ -181,7 +181,7 @@ static void PrepareConnect(struct ChannelDesc* channel)
   }
 }
 
-void KickPrefetchChannels(struct NaClApp *nap)
+void KickPrefetchChannels(const struct NaClApp *nap)
 {
   int i;
 

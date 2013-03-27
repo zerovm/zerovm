@@ -55,7 +55,7 @@ static void FailOnInvalidNetChannel(const struct ChannelDesc *channel)
  * using channel host id and channel mark (bind, connect or outsider)
  * note: even for channels marked as outsiders a key will be created
  */
-INLINE static uint32_t MakeKey(const struct ChannelConnection *record)
+static INLINE uint32_t MakeKey(const struct ChannelConnection *record)
 {
   uint32_t result;
 
@@ -191,7 +191,7 @@ static void NSRecordSerializer(gpointer key, gpointer value, gpointer buffer)
  * return the real parcel size. bswap_32 will work only on big endian
  */
 static int32_t ParcelCtor(const struct NaClApp *nap,
-    char *parcel, const uint32_t size)
+    char *parcel, uint32_t size)
 {
   char *p = parcel; /* parcel pointer */
   uint32_t node_id_network = bswap_32(nap->system_manifest->node_id);
@@ -236,7 +236,7 @@ static int32_t ParcelCtor(const struct NaClApp *nap,
  * return the actual parcel size
  * note: given parcel variable will be updated with the ns answer
  */
-static int32_t SendParcel(char *parcel, const uint32_t size)
+static int32_t SendParcel(char *parcel, uint32_t size)
 {
   int ns_socket;
   int32_t result;
@@ -265,7 +265,7 @@ static int32_t SendParcel(char *parcel, const uint32_t size)
 }
 
 /* decode the parcel and update netlist */
-static void DecodeParcel(const char *parcel, const uint32_t count)
+static void DecodeParcel(const char *parcel, uint32_t count)
 {
   uint32_t i;
   const struct ChannelNSRecord *records;
@@ -295,7 +295,7 @@ static void DecodeParcel(const char *parcel, const uint32_t count)
   }
 }
 
-void ResolveChannels(struct NaClApp *nap, uint32_t all_binds, uint32_t all_connects)
+void ResolveChannels(const struct NaClApp *nap, uint32_t all_binds, uint32_t all_connects)
 {
   char parcel[PARCEL_SIZE];
   int32_t parcel_size = PARCEL_SIZE;

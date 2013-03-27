@@ -40,7 +40,7 @@
  * d'b: alternative mechanism to pass control to user side
  * note: initializes "nacl_user" global
  */
-NORETURN static void SwitchToApp(struct NaClApp  *nap, uintptr_t stack_ptr)
+NORETURN static void SwitchToApp(struct NaClApp *nap, uintptr_t stack_ptr)
 {
   /* initialize "nacl_user" global */
   if(!nacl_user) nacl_user = g_malloc(sizeof(*nacl_user));
