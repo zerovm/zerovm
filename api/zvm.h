@@ -69,13 +69,31 @@ struct UserManifest
   struct ZVMChannel *channels;
 };
 
-/* pointer to the user manifest */
+/* pointer to the user manifest (read only memory area) */
 #define MANIFEST ((const struct UserManifest const *)*((uintptr_t*)0xFEFFFFFC))
 
-/* pointer to trap */
+/* trap pointer. internal helper. DO NOT use it! */
 #define TRAP ((int32_t (*)(uint64_t*))0x10000)
 
-/* trap functions */
+/*
+ * trap functions
+ *
+ * zvm_pread
+ *   read from "offset" position of "desc" channel "size" bytes to "buffer"
+ * zvm_pwrite
+ *   write to "offset" position of "desc" channel "size" bytes from "buffer"
+ * zvm_jail
+ *   validate "size" bytes from "buffer" and (if ok) protect it with read/exec
+ *   "buffer" should be 64kb aligned and point to heap
+ * zvm_unjail
+ *   protect "size" bytes from "buffer" with read/write
+ *   "buffer" should be 64kb aligned and point to heap
+ * zvm_exit
+ *   terminate program with "code"
+ *
+ * all trap functions return -errno code if error encountered, otherwise
+ * result equal to processed bytes or 0 (for (un)jail). exit does not return
+ */
 #define zvm_pread(desc, buffer, size, offset) \
   TRAP((uint64_t[]){TrapRead, 0, desc, (uintptr_t)buffer, size, offset})
 #define zvm_pwrite(desc, buffer, size, offset) \
