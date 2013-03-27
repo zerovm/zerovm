@@ -1,9 +1,7 @@
 #!/bin/sh
 
-if [ ! -s $ZEROVM_ROOT/tests/functional/include/libzvmlib.a ]; then
-  cd $ZEROVM_ROOT/tests/functional/include
-  make clean all
-fi
+cd $ZEROVM_ROOT/tests/functional/include
+make -s clean all
 
 for i in `find $ZEROVM_ROOT/tests -type d`; do
   if [ `pwd` = $i ]; then
