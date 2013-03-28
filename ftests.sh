@@ -9,7 +9,6 @@ for i in `find $ZEROVM_ROOT/tests -type d`; do
   fi
     cd $i
     if [ -f ./test.sh ]; then
-        echo $i
         ./test.sh
     fi
 done
