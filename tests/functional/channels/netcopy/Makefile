@@ -13,6 +13,8 @@ all: $(NAME).c
 	@$(ZEROVM_ROOT)/zerovm -e3 $(NAME)1.manifest&
 	@$(ZEROVM_ROOT)/zerovm -e3 $(NAME)2.manifest&
 	@$(ZEROVM_ROOT)/zerovm -e3 $(NAME)3.manifest
+	@pkill -f ns_server
 
 clean:
 	rm -f $(NAME).nexe $(NAME).o *.log *.data *.manifest
+

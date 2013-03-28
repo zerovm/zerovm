@@ -1,7 +1,7 @@
 #!/bin/sh
 
-for i in `find *.manifest`; do
-  zerovm $i > /dev/null
+for i in `ls *.manifest`; do
+  $ZEROVM_ROOT/zerovm $i > /dev/null
   if [ $? = 0 ]; then
     echo "\033[01;38m$i\033[00m test has \033[02;31mfailed\033[00m"
   else
