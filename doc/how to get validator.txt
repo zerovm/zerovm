@@ -1,4 +1,5 @@
 how to get standalone validator
+(deprecated. see validator project)
 
 1. download and install depot tools (as described in google chromium page):
    git clone https://git.chromium.org/chromium/tools/depot_tools.git

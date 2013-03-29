@@ -1,5 +1,5 @@
 =====================================================================
-== nexe from special device
+== nexe does not exist
 =====================================================================
 Channel = /dev/stdin, /dev/stdin, 0, 32, 32, 0, 0
 Channel = /dev/stdout, /dev/stdout, 0, 0, 0, 32, 32

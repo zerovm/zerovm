@@ -1,7 +1,7 @@
 =====================================================================
 == invalid channel path (not absolute path used)
 =====================================================================
-Channel = invalid_channel_file.manifest, /dev/stdin, 0, 32, 32, 0, 0
+Channel = invalid_channel_path.manifest, /dev/stdin, 0, 32, 32, 0, 0
 Channel = /dev/stdout, /dev/stdout, 0, 0, 0, 32, 32
 Channel = /dev/stderr, /dev/stderr, 0, 0, 0, 32, 32
 

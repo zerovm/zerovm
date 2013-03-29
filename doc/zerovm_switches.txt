@@ -3,20 +3,19 @@ This document describes ZeroVM command line switches
 
 ZeroVM command line switches:
 
-  ZeroVM lightweight VM manager, build 2013-03-12
-  Usage: <manifest_file> [-v#] [-l#] [-PFSseQ]
+  ZeroVM lightweight VM manager, build 2013-03-27
+  Usage: <manifest> [-e#] [-l#] [-v#] [-sFPSQ]
 
-   <manifest_file> load settings from manifest
-   -e [level] enable the data control. 1 - channels, 2 - memory, 3 - both
+   <manifest> load settings from manifest file
+   -e <level> enable the data control. where levels are
+      1 - channels, 2 - memory, 3 - both
    -l set a new storage limit (in Gb)
    -s skip validation
-
-   (testing flags)
-   -v [level] verbosity
+   -v <level> verbosity
    -F fuzz testing; quit right before starting user app
-   -S disable signal handling
-   -Q disable platform qualification (dangerous!)
    -P disable channels space preallocation
+   -Q disable platform qualification (dangerous!)
+   -S disable signal handling
 
 
    -- The manifest contains a set of control data for the executable. Obligatory.

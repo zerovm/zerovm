@@ -1,7 +1,7 @@
 =====================================================================
 == channel with all limits set to 0
 =====================================================================
-Channel = /home/bortoq/git/zerovm/tests/functional/manifest/nil_channel.manifest, /dev/stdin, 0, 0, 0, 0, 0
+Channel = /dev/stdin, /dev/stdin, 0, 0, 0, 0, 0
 Channel = /dev/stdout, /dev/stdout, 0, 0, 0, 32, 32
 Channel = /dev/stderr, /dev/stderr, 0, 0, 0, 32, 32
 
