@@ -6,11 +6,24 @@
  *
  * note: to simulate the "real" channel work the program reads
  * "random" amount of bytes
+ *
+ * update: to test 0mq put/get the program tries to slow down
+ * twice each next node
  */
 #include "include/zvmlib.h"
 #include "include/ztest.h"
 
 #define CHUNK_SIZE 0x10000
+
+/* since zerovm modules does not have a real sleep */
+#define LOOP_SIZE 0x100000LLU
+static void busy_loop(int factor)
+{
+  static uint64_t dummy = 0;
+  uint64_t loop = LOOP_SIZE * factor + 1;
+  while(--loop)
+    dummy *= loop;
+}
 
 int main(int argc, char **argv)
 {
@@ -18,16 +31,19 @@ int main(int argc, char **argv)
   int rsize = 0;
   int wsize = 0;
   int count = 0;
+  int factor = atoi(argv[0] + 6);
 
   UNREFERENCED_VAR(ERRCOUNT);
-  SRAND((int)argv[0][6]);
-  FPRINTF(STDERR, "seeded with %d\n", (int)argv[0][6]);
+  SRAND(factor);
+  FPRINTF(STDERR, "seeded with %d\n", factor);
 
   /* copy all data from STDIN to STDOUT */
   for(;;)
   {
     count = RAND() % sizeof buffer + 1;
     count = READ(STDIN, buffer, count);
+
+    busy_loop(factor);
 
     /* read error */
     if(count < 0)
