@@ -27,10 +27,8 @@ static void busy_loop(int factor)
 
 int main(int argc, char **argv)
 {
-  char buffer[CHUNK_SIZE];
   int rsize = 0;
   int wsize = 0;
-  int count = 0;
   int factor = atoi(argv[0] + 6);
 
   UNREFERENCED_VAR(ERRCOUNT);
@@ -40,8 +38,9 @@ int main(int argc, char **argv)
   /* copy all data from STDIN to STDOUT */
   for(;;)
   {
-    count = RAND() % sizeof buffer + 1;
-    count = READ(STDIN, buffer, count);
+    char buffer[CHUNK_SIZE];
+    int plan = RAND() % sizeof buffer + 1;
+    int count = READ(STDIN, buffer, plan);
 
     busy_loop(factor);
 
@@ -56,7 +55,7 @@ int main(int argc, char **argv)
     if(count == 0) break;
 
     rsize += count;
-    FPRINTF(STDERR, "%5d read, ", count);
+    FPRINTF(STDERR, "%5d(of %5d) read, ", count, plan);
 
     count = WRITE(STDOUT, buffer, count);
 

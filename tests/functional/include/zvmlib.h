@@ -59,7 +59,7 @@
 #define STRTOL(p, end, base) strtol(p, end, base)
 #define STRTOUL(p, end, base) strtoul(p, end, base)
 #define RAND() rand()
-#define SRAND(s) rand(s)
+#define SRAND(s) srand(s)
 #define OPEN(alias) handle(alias) /* will be fixed */
 #define CLOSE(handle)
 #define EXIT(code) zvm_exit(code)
