@@ -11,12 +11,12 @@
  * twice each next node
  */
 #include "include/zvmlib.h"
-#include "include/ztest.h"
 
 #define CHUNK_SIZE 0x10000
+#define BREAKIF(cond, ...) if(cond) {FPRINTF(STDERR, __VA_ARGS__); break;}
 
-/* since zerovm modules does not have a real sleep */
-#define LOOP_SIZE 0x100000LLU
+/* zerovm platform does not have a real sleep */
+#define LOOP_SIZE 0x20000LLU
 static void busy_loop(int factor)
 {
   static uint64_t dummy = 0;
@@ -31,7 +31,6 @@ int main(int argc, char **argv)
   int wsize = 0;
   int factor = atoi(argv[0] + 6);
 
-  UNREFERENCED_VAR(ERRCOUNT);
   SRAND(factor);
   FPRINTF(STDERR, "seeded with %d\n", factor);
 
@@ -40,39 +39,30 @@ int main(int argc, char **argv)
   {
     char buffer[CHUNK_SIZE];
     int plan = RAND() % sizeof buffer + 1;
+
+    /* read */
     int count = READ(STDIN, buffer, plan);
-
+    BREAKIF(count < 0, "read error %d\n", count);
     busy_loop(factor);
-
-    /* read error */
-    if(count < 0)
-    {
-      FPRINTF(STDERR, "read error %d\n", count);
-      break;
-    }
 
     /* eof */
     if(count == 0) break;
 
+    /* the read log */
     rsize += count;
     FPRINTF(STDERR, "%5d(of %5d) read, ", count, plan);
 
+    /* write */
     count = WRITE(STDOUT, buffer, count);
+    BREAKIF(count < 0, "write error %d\n", count);
 
-    /* write error */
-    if(count < 0)
-    {
-      FPRINTF(STDERR, "write error %d\n", count);
-      break;
-    }
-
+    /* the write log */
     FPRINTF(STDERR, "%5d written\n", count);
     wsize += count;
   }
 
   /* report results */
-  FPRINTF(STDERR, "\n");
-  FPRINTF(STDERR, "%d bytes has been read\n", rsize);
+  FPRINTF(STDERR, "\n%d bytes has been read\n", rsize);
   FPRINTF(STDERR, "%d bytes has been written\n", wsize);
 
   return rsize == wsize ? 0 : 1;
