@@ -44,8 +44,8 @@ static int64_t storage_limit = ZEROVM_IO_LIMIT;
 /* lower zerovm priority */
 static void LowerOwnPriority()
 {
-  ZLOGIF(setpriority(PRIO_PROCESS, 0, ZEROVM_PRIORITY) != 0,
-      "cannot lower zerovm priority");
+  ZLOGFAIL(setpriority(PRIO_PROCESS, 0, ZEROVM_PRIORITY) != 0,
+      errno, "cannot set zerovm priority");
 }
 
 int SetStorageLimit(int64_t a)
@@ -63,10 +63,33 @@ static void LimitOwnIO()
 
   assert(storage_limit > 0);
 
-  ZLOGIF(getrlimit(RLIMIT_FSIZE, &rl) != 0, "cannot get i/o limits");
+  ZLOGFAIL(getrlimit(RLIMIT_FSIZE, &rl) != 0, errno, "cannot get RLIMIT_FSIZE");
   rl.rlim_cur = storage_limit;
-  ZLOGIF(setrlimit(RLIMIT_FSIZE, &rl) != 0, "cannot set i/o limits");
+  ZLOGFAIL(setrlimit(RLIMIT_FSIZE, &rl) != 0, errno, "cannot set RLIMIT_FSIZE");
 }
+
+#if 0 /* disabled until 0mq removal */
+/* from the moment it is impossible to open files */
+static void LimitOwnFileHandles()
+{
+  struct rlimit rl;
+
+  ZLOGFAIL(getrlimit(RLIMIT_NOFILE, &rl) != 0, errno, "cannot get RLIMIT_NOFILE");
+  rl.rlim_cur = 0;
+  ZLOGFAIL(setrlimit(RLIMIT_NOFILE, &rl) != 0, errno, "cannot set RLIMIT_NOFILE");
+}
+
+/* from the moment it is impossible to create threads */
+static void LimitOwnThreads()
+{
+  struct rlimit rl;
+
+  ZLOGFAIL(getrlimit(RLIMIT_NPROC, &rl) != 0, errno, "cannot get RLIMIT_NPROC");
+  rl.rlim_max = 0;
+  rl.rlim_cur = 0;
+  ZLOGFAIL(setrlimit(RLIMIT_NPROC, &rl) != 0, errno, "cannot set RLIMIT_NPROC");
+}
+#endif
 
 /* set timeout. by design timeout must be specified in manifest */
 static void SetTimeout(struct SystemManifest *policy)
