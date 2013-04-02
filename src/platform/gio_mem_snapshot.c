@@ -45,7 +45,7 @@ int GioMemoryFileSnapshotCtor(struct GioMemoryFileSnapshot *self, char *fn)
   size_t size = GetFileSize(fn);
 
   ((struct Gio *) self)->vtbl = NULL;
-  if(size < 0) return 0;
+  if(size == (size_t)-1) return 0;
   iop = fopen(fn, "rb");
   buffer = g_malloc(size);
 

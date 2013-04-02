@@ -35,7 +35,6 @@ static int ReadSystemAccounting(const struct NaClApp *nap, char *buf, int size)
   uint64_t sys_time = 0;
   uint64_t ticks;
   pid_t pid;
-  int code;
   FILE *f;
   char path[BIG_ENOUGH_STRING];
 
@@ -52,6 +51,7 @@ static int ReadSystemAccounting(const struct NaClApp *nap, char *buf, int size)
   f = fopen(path, "r");
   if(f != NULL)
   {
+    int code;
     code = fscanf(f, STAT_FMT, &user_time, &sys_time);
     ZLOGIF(code != 2, "error %d occured while reading '%s'", errno, path);
     fclose(f);

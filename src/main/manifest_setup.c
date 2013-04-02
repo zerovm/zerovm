@@ -193,7 +193,6 @@ static void SetCustomAttributes(struct SystemManifest *policy)
 /* sets node_id in nap object and user argv[0] */
 static void SetNodeName(struct NaClApp *nap)
 {
-  int i;
   char *buf[BIG_ENOUGH_SPACE], **tokens = buf;
   char *pgm_name = GetValueByKey(MFT_NODE);
 
@@ -210,6 +209,7 @@ static void SetNodeName(struct NaClApp *nap)
   }
   else
   {
+    int i;
     i = ParseValue(pgm_name, ",", tokens, BIG_ENOUGH_SPACE);
     ZLOGFAIL(i != 2, EFAULT, "invalid NodeName specified");
     ZLOGFAIL(tokens[0] == NULL, EFAULT, "invalid node name");

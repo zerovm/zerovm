@@ -162,7 +162,6 @@ static int DoConnect(struct ChannelDesc* channel)
  */
 static void PrepareConnect(struct ChannelDesc* channel)
 {
-  int result;
   assert(channel != NULL);
 
   /* update netlist with the connection info */
@@ -171,6 +170,7 @@ static void PrepareConnect(struct ChannelDesc* channel)
   /* if no name service is available just use given url and return */
   if(!NameServiceSet())
   {
+    int result;
     uint64_t hwm = 1; /* high water mark for PUSH socket to block on sending */
 
     result = zmq_setsockopt(channel->socket, ZMQ_HWM, &hwm, sizeof hwm);
