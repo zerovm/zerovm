@@ -41,21 +41,6 @@
 /* hard limit for all zerovm i/o */
 static int64_t storage_limit = ZEROVM_IO_LIMIT;
 
-/* lower zerovm priority */
-static void LowerOwnPriority()
-{
-  ZLOGFAIL(setpriority(PRIO_PROCESS, 0, ZEROVM_PRIORITY) != 0,
-      errno, "cannot set zerovm priority");
-}
-
-int SetStorageLimit(int64_t a)
-{
-  if(a < 1) return -1;
-
-  storage_limit = a * ZEROVM_IO_LIMIT_UNIT;
-  return 0;
-}
-
 /* limit zerovm i/o */
 static void LimitOwnIO()
 {
@@ -66,6 +51,45 @@ static void LimitOwnIO()
   ZLOGFAIL(getrlimit(RLIMIT_FSIZE, &rl) != 0, errno, "cannot get RLIMIT_FSIZE");
   rl.rlim_cur = storage_limit;
   ZLOGFAIL(setrlimit(RLIMIT_FSIZE, &rl) != 0, errno, "cannot set RLIMIT_FSIZE");
+}
+
+/* set timeout. by design timeout must be specified in manifest */
+static void SetTimeout(struct SystemManifest *policy)
+{
+  struct rlimit rl;
+
+  assert(policy != NULL);
+
+  GET_INT_BY_KEY(policy->timeout, MFT_TIMEOUT);
+  ZLOGFAIL(policy->timeout < 1, EFAULT, "invalid or absent timeout");
+  rl.rlim_cur = policy->timeout;
+  rl.rlim_max = -1;
+  setrlimit(RLIMIT_CPU, &rl);
+  ZLOGFAIL(setrlimit(RLIMIT_CPU, &rl) != 0, errno, "cannot set timeout");
+}
+
+/* lower zerovm priority */
+static void LowerOwnPriority()
+{
+  ZLOGFAIL(setpriority(PRIO_PROCESS, 0, ZEROVM_PRIORITY) != 0,
+      errno, "cannot set zerovm priority");
+}
+
+/*
+ * give up privileges
+ * todo: instead of fail set group/user to nogroup/nobody
+ */
+static void GiveUpPrivileges()
+{
+  ZLOGFAIL(getuid() == 0, EPERM, "zerovm is not permitted to run as root");
+}
+
+int SetStorageLimit(int64_t a)
+{
+  if(a < 1) return -1;
+
+  storage_limit = a * ZEROVM_IO_LIMIT_UNIT;
+  return 0;
 }
 
 #if 0 /* disabled until 0mq removal */
@@ -91,26 +115,12 @@ static void LimitOwnThreads()
 }
 #endif
 
-/* set timeout. by design timeout must be specified in manifest */
-static void SetTimeout(struct SystemManifest *policy)
-{
-  struct rlimit rl;
-
-  assert(policy != NULL);
-
-  GET_INT_BY_KEY(policy->timeout, MFT_TIMEOUT);
-  ZLOGFAIL(policy->timeout < 1, EFAULT, "invalid or absent timeout");
-  rl.rlim_cur = policy->timeout;
-  rl.rlim_max = -1;
-  setrlimit(RLIMIT_CPU, &rl);
-  ZLOGFAIL(setrlimit(RLIMIT_CPU, &rl) != 0, errno, "cannot set timeout");
-}
-
 void LastDefenseLine(struct NaClApp *nap)
 {
-  LowerOwnPriority();
   LimitOwnIO();
   SetTimeout(nap->system_manifest);
+  LowerOwnPriority();
+  GiveUpPrivileges();
 }
 
 /* preallocate memory area of given size. abort if fail */
