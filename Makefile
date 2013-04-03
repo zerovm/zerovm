@@ -9,7 +9,7 @@ endif
 
 FLAGS0=-fPIE -Wall -pedantic -Wno-long-long -fvisibility=hidden -fstack-protector --param ssp-buffer-size=4
 GLIB=`pkg-config --cflags glib-2.0`
-CCFLAGS0=-c -m64 -fPIC -D_GNU_SOURCE=1 -DVALIDATOR_NAME='"$(VALIDATOR_NAME)"' -I. $(GLIB)
+CCFLAGS0=-c -m64 -fPIC -D_GNU_SOURCE=1 -I. $(GLIB)
 CXXFLAGS0=-m64 -Wno-variadic-macros $(GLIB)
 LIBS=-L$(ZVM_PREFIX) -lzmq -lglib-2.0 -lvalidator -Wl,-rpath,$(ZVM_PREFIX)
 TESTLIBS=-Llib/gtest -lgtest -Wl,-rpath,$(ZVM_PREFIX) $(LIBS)
