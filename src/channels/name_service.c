@@ -320,13 +320,12 @@ void ResolveChannels(const struct NaClApp *nap, uint32_t all_binds, uint32_t all
 
 void NameServiceCtor()
 {
-  struct ChannelDesc channel;
+  struct ChannelDesc channel = {0};
 
   netlist = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, free);
   ZLOGFAIL(netlist == NULL, EFAULT, "cannot allocate netlist");
 
   /* get name service connection string if available */
-  memset(&channel, 0, sizeof channel);
   channel.source = ChannelTCP;
   channel.alias = MFT_NAMESERVER;
   channel.name = GetValueByKey(MFT_NAMESERVER);

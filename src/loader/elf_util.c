@@ -155,7 +155,7 @@ void NaClElfImageValidateProgramHeaders(
      */
   const Elf_Ehdr      *hdr = &image->ehdr;
   /* d'b: avoid compiler warning */
-  int seen_seg[sizeof nacl_phdr_check_data / sizeof *nacl_phdr_check_data];
+  int seen_seg[sizeof nacl_phdr_check_data / sizeof *nacl_phdr_check_data] = {0};
 
   int                 segnum;
   const Elf_Phdr      *php;
@@ -168,7 +168,6 @@ void NaClElfImageValidateProgramHeaders(
    * is okay.
    */
   ZLOGS(LOG_DEBUG, "Validating program headers");
-  memset(seen_seg, 0, sizeof seen_seg);
   for(segnum = 0; segnum < hdr->e_phnum; ++segnum)
   {
     php = &image->phdrs[segnum];

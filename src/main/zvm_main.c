@@ -183,22 +183,18 @@ static void ValidateNexe(struct NaClApp *nap)
 
 int main(int argc, char **argv)
 {
-  struct NaClApp state, *nap = &state;
-  struct SystemManifest sys_mft;
+  struct NaClApp state = {0}, *nap = &state;
+  struct SystemManifest sys_mft = {0};
   struct GioMemoryFileSnapshot main_file;
   GTimer *timer;
 
   /* zerovm initialization */
-  memset(nap, 0, sizeof *nap);
   nap->system_manifest = &sys_mft;
-  memset(nap->system_manifest, 0, sizeof *nap->system_manifest);
   gnap = nap;
-
   ParseCommandLine(nap, argc, argv);
 
   /* We use the signal handler to verify a signal took place. */
   if(skip_qualification == 0) NaClRunSelQualificationTests();
-
   NaClSignalHandlerInit();
 
   /* initialize mem_map and set nap fields to default values */
