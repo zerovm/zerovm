@@ -41,11 +41,6 @@ create_dirs:
 zerovm: obj/zvm_main.o $(OBJS)
 	$(CC) -o $@ $(CXXFLAGS2) $^ $(LIBS)
 
-gcov: clean all
-	@lcov --directory . --base-directory=$(CURDIR) --capture --output-file app.info
-	@genhtml --output-directory cov_htmp app.info
-	@echo open $(CURDIR)/cov_htmp/index.html
-
 tests: test_compile
 	@printf "UNIT TESTS %048o\n" 0
 	@cd tests/unit;\
@@ -69,13 +64,9 @@ obj/unittest_main.o: tests/unit/unittest_main.cc
 tests/unit/service_runtime_tests: obj/sel_ldr_test.o obj/sel_memory_unittest.o obj/unittest_main.o $(OBJS)
 	$(CXX) $(CXXFLAGS2) -o $@ $^ $(TESTLIBS)
 
-.PHONY: clean clean_gcov clean_intermediate install
+.PHONY: clean clean_intermediate install
 
-clean_gcov:
-	@find -name *.gcda -o -name *.gcno | xargs rm -f
-	@rm cov_htmp -f -r
-
-clean: clean_gcov clean_intermediate
+clean: clean_intermediate
 	@rm -f zerovm
 	@echo ZeroVM has been deleted
 
