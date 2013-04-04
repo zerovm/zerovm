@@ -1,4 +1,9 @@
-rdtsc.nexe should not pass test with zerovm ncval and should pass with original
-nacl ncval
+rdtsc.nexe should not pass test with zerovm (or valz) and should pass 
+with original nacl ncval
 
-note: the program is not working (will cause sigsegv)
+should look like
+validator state = 1
+user return code = 0
+etag = disabled
+accounting = 0.00 0.00 16777216 0 0 0 0 0 0 0 0 0
+exit state = src/main/zvm_main.c 180: validation failed
