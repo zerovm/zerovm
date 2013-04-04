@@ -1,5 +1,5 @@
 NAME=hello
-CCFLAGS=-n -g3 -nostartfiles -nostdlib 
+CCFLAGS=-n -g3 -nostartfiles -nostdlib -fno-builtin
 
 all: $(NAME).c
 	@x86_64-nacl-gcc -o $(NAME).nexe $(CCFLAGS) -Wall -msse4.1 \

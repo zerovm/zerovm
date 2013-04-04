@@ -1,5 +1,5 @@
 NAME=lz4demo
-CCFLAGS=-n -s -nostartfiles -nostdlib
+CCFLAGS=-n -s -nostartfiles -nostdlib -fno-builtin
 
 all: $(NAME).c lz4.c
 	@x86_64-nacl-gcc -o $(NAME).nexe $(CCFLAGS) -Wall -msse4.1 \

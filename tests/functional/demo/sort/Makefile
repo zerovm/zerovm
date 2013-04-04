@@ -1,7 +1,7 @@
 NAME_1=generator.uint32_t
 NAME_2=sort_uint_proper_with_args
 NAME_3=tester.uint32_t
-CCFLAGS=-n -s -nostartfiles -nostdlib 
+CCFLAGS=-n -s -nostartfiles -nostdlib -fno-builtin
 
 all: $(NAME_1).c $(NAME_2).c $(NAME_3).c
 	@x86_64-nacl-gcc -o $(NAME_1).nexe $(CCFLAGS) -Wall -msse4.1 \

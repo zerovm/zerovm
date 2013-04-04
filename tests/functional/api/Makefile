@@ -1,5 +1,5 @@
 NAME=api
-CCFLAGS=-n -s -nostartfiles -nostdlib 
+CCFLAGS=-n -s -nostartfiles -nostdlib -fno-builtin
 
 all: $(NAME).c
 	@touch glib.h
