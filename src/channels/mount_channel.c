@@ -231,7 +231,12 @@ void ChannelsDtor(struct NaClApp *nap)
   if(nap->system_manifest->channels_count == 0) return;
 
   for(i = 0; i < nap->system_manifest->channels_count; ++i)
+  {
     ChannelDtor(&nap->system_manifest->channels[i]);
+    if(CHANNELS_ETAG_ENABLED)
+      TagUpdate(nap->user_tag,
+          (const char*)nap->system_manifest->channels[i].digest, TAG_DIGEST_SIZE);
+  }
   g_free(nap->system_manifest->channels);
   if(aliases != NULL) g_datalist_clear(&aliases);
 }

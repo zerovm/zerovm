@@ -501,18 +501,6 @@ static void EtagMemoryChunk(struct NaClApp *nap)
   }
 }
 
-/* updates user_tag (should be constructed) with all channels digests */
-static void ChannelsDigest(struct NaClApp *nap)
-{
-  int i;
-
-  assert(nap != NULL);
-
-  for(i = 0; i < nap->system_manifest->channels_count; ++i)
-    TagUpdate(nap->user_tag,
-        (const char*) nap->system_manifest->channels[i].digest, TAG_DIGEST_SIZE);
-}
-
 int ProxyReport(struct NaClApp *nap)
 {
   char report[BIG_ENOUGH_STRING];
@@ -526,7 +514,6 @@ int ProxyReport(struct NaClApp *nap)
   /* tag user memory / channels if session successful */
   if(TagEngineEnabled())
   {
-    if(CHANNELS_ETAG_ENABLED) ChannelsDigest(nap);
     if(MEMORY_ETAG_ENABLED) EtagMemoryChunk(nap);
     TagDigest(nap->user_tag, etag);
     TagDtor(nap->user_tag);
