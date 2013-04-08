@@ -38,7 +38,7 @@ static int CPUTest()
 {
   int r[4] = {0};
 
-  __asm("cpuid" : "=a"(r[0]), "=b"(r[1]), "=c"(r[2]), "=d"(r[3]) : "a"(1), "c"(0));
+  asm("cpuid" : "=a"(r[0]), "=b"(r[1]), "=c"(r[2]), "=d"(r[3]) : "a"(1), "c"(0));
   if((r[3] & (1 << 25)) == 0) return -1;
   if((r[2] & (1 << 28)) == 0) return 0;
   return 1;

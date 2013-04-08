@@ -66,8 +66,8 @@ static void Finalizer(void)
 {
   if(!STREQ(zvm_state, OK_STATE)) FinalDump(gnap);
 
-  AccountingDtor(gnap);
   SystemManifestDtor(gnap);
+  AccountingDtor(gnap);
   ProxyReport(gnap);
   TagEngineDtor();
   ZLogDtor();

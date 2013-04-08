@@ -26,7 +26,7 @@ nacl_reg_t NaClGetStackPtr(void)
 {
   nacl_reg_t rsp;
 
-  __asm__("mov %%rsp, %0" : "=r" (rsp) : );
+  asm("mov %%rsp, %0" : "=r" (rsp) : );
   return rsp;
 }
 
