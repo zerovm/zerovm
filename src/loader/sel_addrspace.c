@@ -23,10 +23,14 @@
  * NaCl Simple/secure ELF loader (NaCl SEL).
  */
 #include <errno.h>
+#include <assert.h>
 #include <sys/mman.h>
 #include "src/loader/sel_addrspace.h"
 #include "src/loader/sel_ldr.h"
 #include "src/platform/sel_memory.h"
+
+/* user memory size (84gb) */
+static size_t request_sz;
 
 /* protect bumpers (guarding space) */
 static void NaClMprotectGuards(struct NaClApp *nap)
@@ -53,67 +57,21 @@ static void NaClMprotectGuards(struct NaClApp *nap)
 }
 
 /*
- * NaClAllocatePow2AlignedMemory is for allocating a large amount of
- * memory of mem_sz bytes that must be address aligned, so that
- * log_alignment low-order address bits must be zero.
- *
- * Returns the aligned region on success, or NULL on failure.
+ * allocate a large amount of memory of mem_sz bytes that must
+ * be address aligned
  */
-static void *NaClAllocatePow2AlignedMemory(size_t mem_sz, size_t log_alignment)
+static void NaClAllocatePow2AlignedMemory(size_t mem_sz)
 {
-  uintptr_t pow2align;
-  size_t request_sz;
   void *mem_ptr;
-  uintptr_t orig_addr;
-  uintptr_t rounded_addr;
-  size_t extra;
 
-  pow2align = ((uintptr_t)1) << log_alignment;
-  request_sz = mem_sz + pow2align;
+  assert(mem_sz % NACL_MAP_PAGESIZE == 0);
+
+  request_sz = mem_sz;
   ZLOGS(LOG_INSANE, "%25s %016lx", " Ask:", request_sz);
 
   /* d'b: try to get the fixed address r15 (user base register) */
-  /*
-   * WARNING: mmap can overwrite the zerovm dynamically linked code.
-   * to prevent it the code should be linked statically
-   */
   mem_ptr = mmap(R15_CONST, request_sz, PROT_NONE, ABSOLUTE_MMAP, -1, (off_t)0);
-  if(MAP_FAILED == mem_ptr)
-  {
-    ZLOG(LOG_ERROR, "the base register absolute address allocation failed!"
-        " trying to allocate user space in NOT DETERMINISTIC WAY");
-    mem_ptr = mmap(NULL, request_sz, PROT_NONE, RELATIVE_MMAP, -1, (off_t)0);
-    ZLOGFAIL(MAP_FAILED == mem_ptr, ENOMEM, FAILED_MSG);
-  }
-
-  orig_addr = (uintptr_t)mem_ptr;
-  ZLOGS(LOG_INSANE, "%25s %016lx", "orig memory at", orig_addr);
-
-  rounded_addr = (orig_addr + (pow2align - 1)) & ~(pow2align - 1);
-  extra = rounded_addr - orig_addr;
-  if(0 != extra)
-  {
-    ZLOGS(LOG_INSANE, "%25s %016lx, %016lx", "Freeing front:", orig_addr, extra);
-    ZLOGFAIL(-1 == munmap((void *)orig_addr, extra), errno, "munmap front failed");
-  }
-
-  extra = pow2align - extra;
-  if(0 != extra)
-  {
-    ZLOGS(LOG_INSANE, "%25s %016lx, %016lx", "Freeing tail:", rounded_addr + mem_sz, extra);
-    ZLOGFAIL(-1 == munmap((void *)(rounded_addr + mem_sz), extra), errno, "munmap tail failed");
-  }
-
-  ZLOGS(LOG_INSANE, "%25s %016lx", "Aligned memory:", rounded_addr);
-
-  /*
-   * we could also mmap again at rounded_addr w/o MAP_NORESERVE etc to
-   * ensure that we have the memory, but that's better done in another
-   * utility function.  the semantics here is no paging space
-   * reserved, as in Windows MEM_RESERVE without MEM_COMMIT.
-   */
-
-  return (void *)rounded_addr;
+  ZLOGFAIL(R15_CONST != mem_ptr, errno, "cannot allocate user memory");
 }
 
 /*
@@ -130,28 +88,27 @@ static void *NaClAllocatePow2AlignedMemory(size_t mem_sz, size_t log_alignment)
  * If successful, the guard pages are not yet memory protected.  The
  * function NaClMprotectGuards must be called for the guard pages to
  * be active.
- *
- * update: abort zvm if failed
  */
 static void NaClAllocateSpace(void **mem, size_t addrsp_size)
 {
-  size_t mem_sz = 2 * GUARDSIZE + FOURGIG; /* 40G guard on each side */
-  size_t log_align = ALIGN_BITS;
-  void *mem_ptr;
+  assert(addrsp_size == FOURGIG);
 
+  /* 4gb + 40gb guard on each side */
   ZLOGS(LOG_INSANE, "NaClAllocateSpace(*, 0x%016lx bytes)", addrsp_size);
-  ZLOGFAIL(addrsp_size != FOURGIG, EFAULT, "addrsp_size != FOURGIG");
-
-  errno = 0;
-  mem_ptr = NaClAllocatePow2AlignedMemory(mem_sz, log_align);
-  ZLOGFAIL(NULL == mem_ptr, errno, "NaClAllocatePow2AlignedMemory failed");
+  NaClAllocatePow2AlignedMemory(2 * GUARDSIZE + FOURGIG);
 
   /*
    * The module lives in the middle FOURGIG of the allocated region --
    * we skip over an initial 40G guard.
    */
-  *mem = (void *)(((char *)mem_ptr) + GUARDSIZE);
+  *mem = (char*)R15_CONST + GUARDSIZE;
   ZLOGS(LOG_INSANE, "addr space at 0x%016lx", (uintptr_t)*mem);
+}
+
+void NaClFreeAddrSpace(struct NaClApp *nap)
+{
+  ZLOGIF(munmap(R15_CONST, request_sz) == -1,
+      "user memory deallocation failed with errno %d", errno);
 }
 
 void NaClAllocAddrSpace(struct NaClApp *nap)

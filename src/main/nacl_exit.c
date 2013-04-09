@@ -27,6 +27,7 @@
 #include "src/main/nacl_globals.h"
 #include "src/platform/nacl_signal.h"
 #include "src/main/accounting.h"
+#include "src/loader/sel_addrspace.h"
 #include "src/main/etag.h"
 
 static const char *zvm_state = UNKNOWN_STATE;
@@ -69,6 +70,7 @@ static void Finalizer(void)
   SystemManifestDtor(gnap);
   AccountingDtor(gnap);
   ProxyReport(gnap);
+  NaClFreeAddrSpace(gnap);
   TagEngineDtor();
   ZLogDtor();
   ManifestDtor();

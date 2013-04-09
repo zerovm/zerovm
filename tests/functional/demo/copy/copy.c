@@ -4,7 +4,7 @@
  */
 #include "include/zvmlib.h"
 
-int main(int argc, char **argv)
+void _start()
 {
   int i;
 
@@ -13,12 +13,12 @@ int main(int argc, char **argv)
   {
     char buf[BIG_ENOUGH];
 
-    i = READ(STDIN, buf, BIG_ENOUGH);
+    i = zvm_pread(0, buf, BIG_ENOUGH, 0);
     if(i <= 0) break;
 
-    WRITE(STDOUT, buf, i);
+    i = zvm_pwrite(1, buf, i, 0);
     if(i <= 0) break;
   };
 
-  return i;
+  zvm_exit(i);
 }

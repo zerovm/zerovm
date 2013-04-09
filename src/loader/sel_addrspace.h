@@ -26,6 +26,10 @@
 
 struct NaClApp; /* fwd */
 
+/* deallocate all user memory (84gb) */
+void NaClFreeAddrSpace(struct NaClApp *nap);
+
+/* allocate user memory chunk (84gb) */
 void NaClAllocAddrSpace(struct NaClApp *nap);
 
 /* Apply memory protection to memory regions */
