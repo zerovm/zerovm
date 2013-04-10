@@ -199,27 +199,8 @@ void NaClMemoryProtection(struct NaClApp *nap)
   SET_MEM_MAP_IDX(nap->mem_map[TextIdx], "Text",
       start_addr, region_size, PROT_READ | PROT_EXEC);
 
-  /*
-   * Page protections for this region have already been set up by
-   * nacl_text.c.
-   *
-   * todo(d'b): since text.c exists no more, protection should be set here
-   *
-   * We record the mapping for consistency with other fixed
-   * mappings, but the record is not actually used.  Overmapping is
-   * prevented by a separate range check, which is done by
-   * NaClSysCommonAddrRangeContainsExecutablePages_mu().
-   */
-  /*
-   * zerovm does not support dynamic text. the code below will check its
-   * existence, log information and fail if needed.
-   * todo(d'b): after the dynamic text support will be added or completely
-   * removed the block below should be rewritten or removed
-   */
-  start_addr = NaClUserToSys(nap, nap->dynamic_text_start);
+  /* zerovm does not support dynamic text directly (see trap (un)jail) */
   region_size = nap->dynamic_text_end - nap->dynamic_text_start;
-  ZLOGS(LOG_INSANE, "shm txt region start 0x%08x, size 0x%08x, end 0x%08x",
-      start_addr, region_size, start_addr + region_size);
   ZLOGFAIL(0 != region_size, ENOEXEC, "zerovm does not support dynamic text");
 
   if(0 != nap->rodata_start)

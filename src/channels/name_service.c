@@ -322,7 +322,7 @@ void NameServiceCtor()
 {
   struct ChannelDesc channel = {0};
 
-  netlist = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, free);
+  netlist = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, g_free);
   ZLOGFAIL(netlist == NULL, EFAULT, "cannot allocate netlist");
 
   /* get name service connection string if available */

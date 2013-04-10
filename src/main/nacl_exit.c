@@ -59,6 +59,13 @@ static void FinalDump(struct NaClApp *nap)
   NaClSignalHandlerFini();
 }
 
+/* release global variables */
+static void FreeGlobals()
+{
+  g_free(nacl_sys);
+  g_free(nacl_user);
+}
+
 /*
  * d'b: show dump (if needed). release resources, close channels.
  * note: use global nap because can be invoked from signal handler
@@ -71,6 +78,7 @@ static void Finalizer(void)
   AccountingDtor(gnap);
   ProxyReport(gnap);
   NaClFreeAddrSpace(gnap);
+  FreeGlobals();
   TagEngineDtor();
   ZLogDtor();
   ManifestDtor();

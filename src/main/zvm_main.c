@@ -253,6 +253,6 @@ int main(int argc, char **argv)
   TIMER_REPORT("last preparations");
 
   /* switch to the user code */
-  ZLOGFAIL(!NaClCreateMainThread(nap), EFAULT, "switching to nexe failed");
+  NaClCreateMainThread(nap);
   return EFAULT; /* unreachable */
 }

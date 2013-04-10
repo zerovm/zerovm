@@ -43,7 +43,8 @@
 NORETURN static void SwitchToApp(struct NaClApp *nap, uintptr_t stack_ptr)
 {
   /* initialize "nacl_user" global */
-  if(!nacl_user) nacl_user = g_malloc(sizeof(*nacl_user));
+  nacl_user = g_malloc(sizeof *nacl_user);
+  nacl_sys = g_malloc(sizeof *nacl_sys);
 
   /* construct "nacl_user" global */
   NaClThreadContextCtor(nacl_user, nap, nap->initial_entry_pt,
@@ -53,8 +54,6 @@ NORETURN static void SwitchToApp(struct NaClApp *nap, uintptr_t stack_ptr)
   nacl_user->new_prog_ctr = NaClUserToSys(nap, nap->initial_entry_pt);
 
   /* initialize "nacl_sys" global */
-  if(!nacl_sys) nacl_sys = g_malloc(sizeof(*nacl_sys));
-
   nacl_sys->rbp = NaClGetStackPtr();
   nacl_sys->rsp = NaClGetStackPtr();
 
@@ -296,10 +295,9 @@ void NaClAppLoadFile(struct Gio *gp, struct NaClApp *nap)
 }
 #undef DUMP
 
-int NaClCreateMainThread(struct NaClApp *nap)
+void NaClCreateMainThread(struct NaClApp *nap)
 {
   /* Compute size of string tables for argv and envv */
-  int                   retval;
   int                   envc;
   size_t                size;
   int                   auxv_entries;
@@ -324,7 +322,6 @@ int NaClCreateMainThread(struct NaClApp *nap)
   envv = (char const* const*)nap->system_manifest->envp;
   /* }} */
 
-  retval = 0;  /* fail */
   ZLOGFAIL(argc <= 0, EFAULT, FAILED_MSG);
   ZLOGFAIL(NULL == argv, EFAULT, FAILED_MSG);
 
@@ -389,23 +386,12 @@ int NaClCreateMainThread(struct NaClApp *nap)
     auxv_entries++;
 
   ptr_tbl_size = (sizeof(uint32_t) * ((3 + argc + 1 + envc + 1 + auxv_entries * 2)));
-
-  if(SIZE_T_MAX - size < ptr_tbl_size)
-  {
-    ZLOG(LOG_ERROR, "NaClCreateMainThread: ptr_tbl_size cause size of"
-        " argv / environment copy to overflow!?!");
-    retval = 0;
-    goto cleanup;
-  }
+  ZLOGFAIL(SIZE_T_MAX - size < ptr_tbl_size, EFAULT,
+      "ptr_tbl_size cause size of argv / environment copy to overflow!?!");
   size += ptr_tbl_size;
 
   size = (size + NACL_STACK_ALIGN_MASK) & ~NACL_STACK_ALIGN_MASK;
-
-  if(size > nap->stack_size)
-  {
-    retval = 0;
-    goto cleanup;
-  }
+  ZLOGFAIL(size > nap->stack_size, EFAULT, "stack cannot hold user data");
 
   /* write strings and char * arrays to stack */
   stack_ptr = (nap->mem_start + ((uintptr_t) 1U << nap->addr_bits) - size);
@@ -460,13 +446,8 @@ int NaClCreateMainThread(struct NaClApp *nap)
 
   ZLOGS(LOG_DEBUG, "user stack ptr: %016lx", NaClSysToUserStackAddr(nap, stack_ptr));
 
-  /* d'b: jump directly to user code instead of using thread launching */
-  SwitchToApp(nap, stack_ptr);
-
-  retval = 1;
-cleanup:
+  /* free args and environment storage than jump to user code */
   g_free(argv_len);
   g_free(envv_len);
-
-  return retval;
+  SwitchToApp(nap, stack_ptr);
 }

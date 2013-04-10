@@ -208,7 +208,7 @@ void  NaClAppPrintDetails(struct NaClApp  *nap,
  * consistent, envv may be NULL (this happens on MacOS/Cocoa if envv is
  * non-NULL it is 'consistent', null terminated etc.
  */
-int NaClCreateMainThread(struct NaClApp     *nap) NACL_WUR;
+void NaClCreateMainThread(struct NaClApp *nap);
 
 /*
  * Install syscall trampolines at all possible well-formed entry points
