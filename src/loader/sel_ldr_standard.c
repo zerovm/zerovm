@@ -446,8 +446,11 @@ void NaClCreateMainThread(struct NaClApp *nap)
 
   ZLOGS(LOG_DEBUG, "user stack ptr: %016lx", NaClSysToUserStackAddr(nap, stack_ptr));
 
-  /* free args and environment storage than jump to user code */
-  g_free(argv_len);
-  g_free(envv_len);
+  /*
+   * free args and environment storage than jump to user code
+   * todo: will be removed completely when /dev/nvram will available
+   * g_free(argv_len);
+   * g_free(envv_len);
+   */
   SwitchToApp(nap, stack_ptr);
 }

@@ -4,7 +4,7 @@ FLAGS0=-fPIE -Wall -pedantic -Wno-long-long -fvisibility=hidden -fstack-protecto
 GLIB=`pkg-config --cflags glib-2.0`
 CCFLAGS0=-c -m64 -fPIC -D_GNU_SOURCE=1 -I. $(GLIB)
 CXXFLAGS0=-m64 -Wno-variadic-macros $(GLIB)
-LIBS=-lzmq -lglib-2.0 -lvalidator 
+LIBS=-lzmq -lglib-2.0 -lvalidator
 TESTLIBS=-Llib/gtest -lgtest $(LIBS)
 
 CCFLAGS1=-std=gnu89 -Wdeclaration-after-statement $(FLAGS0) $(CCFLAGS0)
