@@ -1,18 +1,11 @@
-define PREFIX_ERR
-Please set up ZVM_PREFIX env variable to the desired installation path
-Example: export ZVM_PREFIX=/opt/zerovm
-endef
-
-ifndef ZVM_PREFIX
-$(error $(PREFIX_ERR))
-endif
-
+PREFIX ?= /usr/local
+DESTDIR ?=
 FLAGS0=-fPIE -Wall -pedantic -Wno-long-long -fvisibility=hidden -fstack-protector --param ssp-buffer-size=4
 GLIB=`pkg-config --cflags glib-2.0`
 CCFLAGS0=-c -m64 -fPIC -D_GNU_SOURCE=1 -I. $(GLIB)
 CXXFLAGS0=-m64 -Wno-variadic-macros $(GLIB)
-LIBS=-L$(ZVM_PREFIX) -lzmq -lglib-2.0 -lvalidator -Wl,-rpath,$(ZVM_PREFIX)
-TESTLIBS=-Llib/gtest -lgtest -Wl,-rpath,$(ZVM_PREFIX) $(LIBS)
+LIBS=-lzmq -lglib-2.0 -lvalidator 
+TESTLIBS=-Llib/gtest -lgtest $(LIBS)
 
 CCFLAGS1=-std=gnu89 -Wdeclaration-after-statement $(FLAGS0) $(CCFLAGS0)
 CCFLAGS2=-Wextra -Wswitch-enum -Wsign-compare $(CCFLAGS0)
@@ -76,8 +69,8 @@ clean_intermediate:
 	@echo unit tests has been deleted
 
 install:
-	install -D -m 0755 zerovm $(ZVM_PREFIX)/zerovm
-	install -D -m 0644 api/zvm.h $(ZVM_PREFIX)/api/zvm.h
+	install -D -m 0755 zerovm $(DESTDIR)$(PREFIX)/bin/zerovm
+	install -D -m 0644 api/zvm.h $(DESTDIR)$(PREFIX)/x86_64-nacl/include/zvm.h
 
 obj/mount_channel.o: src/channels/mount_channel.c
 	$(CC) $(CCFLAGS1) -o $@ $^
