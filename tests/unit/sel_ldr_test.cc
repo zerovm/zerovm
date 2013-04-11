@@ -7,8 +7,8 @@
  */
 
 #include "src/loader/sel_ldr.h"
-
 #include "gtest/gtest.h"
+#include "src/loader/sel_ldr_x86.h"
 
 //
 // There are several problems in how these tests are set up.
@@ -54,10 +54,21 @@ void SelLdrTest::TearDown() {
 }
 
 // set, get, setavail operations on the descriptor table
+// todo: test is almost useless and should be removed or updated
 TEST_F(SelLdrTest, DescTable) {
-  struct NaClApp app;
-  int ret_code;
+  struct NaClApp app = {0};
 
-  ret_code = NaClAppCtor(&app);
-  ASSERT_EQ(1, ret_code);
+  NaClAppCtor(&app);
+  ASSERT_EQ(NACL_MAX_ADDR_BITS, app.addr_bits);
+  ASSERT_EQ((uintptr_t)NACL_DEFAULT_STACK_MAX, app.stack_size);
+  ASSERT_EQ(0u, app.mem_start);
+  ASSERT_EQ(0u, app.dispatch_thunk);
+  ASSERT_EQ(0u, app.static_text_end);
+  ASSERT_EQ(0u, app.dynamic_text_start);
+  ASSERT_EQ(0u, app.dynamic_text_end);
+  ASSERT_EQ(0u, app.rodata_start);
+  ASSERT_EQ(0u, app.data_start);
+  ASSERT_EQ(0u, app.data_end);
+  ASSERT_EQ(0u, app.initial_entry_pt);
+  ASSERT_EQ(0u, app.user_entry_pt);
 }
