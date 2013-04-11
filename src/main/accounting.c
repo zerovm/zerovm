@@ -31,8 +31,10 @@ static char accounting[BIG_ENOUGH_STRING] = DEFAULT_ACCOUNTING;
 static int ReadSystemAccounting(const struct NaClApp *nap, char *buf, int size)
 {
   uint64_t user_time = 0;
-  int64_t memory_size = 0;
   uint64_t sys_time = 0;
+  uint64_t c_user_time = 0; /* 0mq network time */
+  uint64_t c_sys_time = 0; /* 0mq network time */
+  int64_t memory_size = 0;
   uint64_t ticks;
   pid_t pid;
   FILE *f;
@@ -52,8 +54,12 @@ static int ReadSystemAccounting(const struct NaClApp *nap, char *buf, int size)
   if(f != NULL)
   {
     int code;
-    code = fscanf(f, STAT_FMT, &user_time, &sys_time);
+    code = fscanf(f, STAT_FMT, &user_time, &sys_time, &c_user_time, &c_sys_time);
     ZLOGIF(code != 2, "error %d occured while reading '%s'", errno, path);
+
+    /* combine user times and system times */
+    user_time += c_user_time;
+    sys_time += c_sys_time;
     fclose(f);
   }
 

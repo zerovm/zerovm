@@ -20,7 +20,7 @@
 #define ACCOUNTING_H_
 
 #define DEFAULT_ACCOUNTING "not available"
-#define STAT_FMT "%*d %*s %*c %*d %*d %*d %*d %*d %*u %*u %*u %*u %*u %lu %lu"
+#define STAT_FMT "%*d %*s %*c %*d %*d %*d %*d %*d %*u %*u %*u %*u %*u %lu %lu %lu %lu"
 
 /* initialize accounting */
 void AccountingCtor(const struct NaClApp *nap);
