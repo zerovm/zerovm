@@ -431,6 +431,7 @@ void _start (uint32_t *info)
 {
   int argc = info[2];
   char **argv = (void *) &info[3];
+  char **envp = argv + argc + 1;
 
   /*
    * command line (with the program name) and environment
@@ -445,7 +446,7 @@ void _start (uint32_t *info)
   _init();
 
   /* call the user main and exit to zerovm */
-  zvm_exit(main(argc, argv, NULL));
+  zvm_exit(main(argc, argv, envp));
 }
 
 /*
