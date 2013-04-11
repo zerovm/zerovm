@@ -42,10 +42,6 @@
  */
 NORETURN static void SwitchToApp(struct NaClApp *nap, uintptr_t stack_ptr)
 {
-  /* initialize "nacl_user" global */
-  nacl_user = g_malloc(sizeof *nacl_user);
-  nacl_sys = g_malloc(sizeof *nacl_sys);
-
   /* construct "nacl_user" global */
   NaClThreadContextCtor(nacl_user, nap, nap->initial_entry_pt,
       NaClSysToUserStackAddr(nap, stack_ptr), 0);
@@ -446,11 +442,8 @@ void NaClCreateMainThread(struct NaClApp *nap)
 
   ZLOGS(LOG_DEBUG, "user stack ptr: %016lx", NaClSysToUserStackAddr(nap, stack_ptr));
 
-  /*
-   * free args and environment storage than jump to user code
-   * todo: will be removed completely when /dev/nvram will available
-   * g_free(argv_len);
-   * g_free(envv_len);
-   */
+  /* free args and environment storage than jump to user code */
+  g_free(argv_len);
+  g_free(envv_len);
   SwitchToApp(nap, stack_ptr);
 }

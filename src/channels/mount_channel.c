@@ -220,7 +220,7 @@ void ChannelsCtor(struct NaClApp *nap)
   KickPrefetchChannels(nap);
 }
 
-void ChannelsDtor(struct NaClApp *nap)
+void ChannelsFinalizer(struct NaClApp *nap)
 {
   int i;
 
@@ -228,7 +228,6 @@ void ChannelsDtor(struct NaClApp *nap)
   assert(nap != NULL);
   if(nap->system_manifest == NULL) return;
   if(nap->system_manifest->channels == NULL) return;
-  if(nap->system_manifest->channels_count == 0) return;
 
   for(i = 0; i < nap->system_manifest->channels_count; ++i)
   {
@@ -237,6 +236,15 @@ void ChannelsDtor(struct NaClApp *nap)
       TagUpdate(nap->user_tag,
           (const char*)nap->system_manifest->channels[i].digest, TAG_DIGEST_SIZE);
   }
-  g_free(nap->system_manifest->channels);
-  if(aliases != NULL) g_datalist_clear(&aliases);
+}
+
+void ChannelsDtor(struct NaClApp *nap)
+{
+  assert(nap != NULL);
+  if(nap->system_manifest != NULL)
+  {
+    g_free(nap->system_manifest->channels);
+    nap->system_manifest->channels = NULL;
+    if(aliases != NULL) g_datalist_clear(&aliases);
+  }
 }

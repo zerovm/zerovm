@@ -188,17 +188,15 @@ int main(int argc, char **argv)
   struct GioMemoryFileSnapshot main_file;
   GTimer *timer;
 
-  /* zerovm initialization */
+  /* initialize mem_map, globals and set nap fields to default values */
   nap->system_manifest = &sys_mft;
-  gnap = nap;
+  NaClAppCtor(nap);
+
   ParseCommandLine(nap, argc, argv);
 
   /* We use the signal handler to verify a signal took place. */
   if(skip_qualification == 0) NaClRunSelQualificationTests();
   NaClSignalHandlerInit();
-
-  /* initialize mem_map and set nap fields to default values */
-  ZLOGFAIL(NaClAppCtor(nap) == 0, EFAULT, "Error while constructing app state");
 
   /* read nexe into memory */
   timer = g_timer_new();

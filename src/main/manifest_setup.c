@@ -476,9 +476,7 @@ int SystemManifestDtor(struct NaClApp *nap)
 {
   assert(nap != NULL);
 
-  if(nap->system_manifest != NULL)
-    ChannelsDtor(nap);
-
+  ChannelsFinalizer(nap);
   return 0;
 }
 

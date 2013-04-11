@@ -176,8 +176,12 @@ struct NaClApp {
 /*
  * Initializes a NaCl application with the default parameters.
  * nap is a pointer to the NaCl object that is being filled in.
+ * assumes all fields already set to zeroes
  */
-int NaClAppCtor(struct NaClApp *nap) NACL_WUR;
+void NaClAppCtor(struct NaClApp *nap);
+
+/* free app memory and globals */
+void NaClAppDtor(struct NaClApp *nap);
 
 /*
  * Loads a NaCl ELF file into memory in preparation for running it.

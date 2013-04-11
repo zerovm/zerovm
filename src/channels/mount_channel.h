@@ -122,7 +122,10 @@ struct ChannelDesc
 /* construct all channels, initialize it and update system_manifest */
 void ChannelsCtor(struct NaClApp *nap);
 
-/* close all channels, initialize it and update system_manifest */
+/* close all channels, update tags */
+void ChannelsFinalizer(struct NaClApp *nap);
+
+/* free channels resources */
 void ChannelsDtor(struct NaClApp *nap);
 
 /* get string containing protocol name by channel source type */

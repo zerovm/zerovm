@@ -347,6 +347,7 @@ void NameServiceDtor()
 {
   g_hash_table_destroy(netlist);
   g_free(nameservice);
+  nameservice = NULL;
 }
 
 int NameServiceSet()

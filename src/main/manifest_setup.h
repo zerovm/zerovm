@@ -93,7 +93,7 @@ int SetStorageLimit(int64_t a);
 /* construct system_manifest object and initialize from manifest */
 void SystemManifestCtor(struct NaClApp *nap);
 
-/* deallocate memory, close files, free other resources. put everything in the place */
+/* close channels, free other resources */
 int SystemManifestDtor(struct NaClApp *nap);
 
 /*

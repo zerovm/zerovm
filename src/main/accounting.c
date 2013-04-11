@@ -55,7 +55,7 @@ static int ReadSystemAccounting(const struct NaClApp *nap, char *buf, int size)
   {
     int code;
     code = fscanf(f, STAT_FMT, &user_time, &sys_time, &c_user_time, &c_sys_time);
-    ZLOGIF(code != 2, "error %d occured while reading '%s'", errno, path);
+    ZLOGIF(code != 4, "error %d occured while reading '%s'", errno, path);
 
     /* combine user times and system times */
     user_time += c_user_time;

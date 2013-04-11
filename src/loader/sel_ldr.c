@@ -26,26 +26,26 @@
 #include "src/platform/gio.h"
 #include "src/loader/sel_ldr.h"
 #include "src/loader/sel_ldr_x86.h"
+#include "src/loader/sel_addrspace.h"
 #include "src/main/nacl_globals.h"
 
-int NaClAppCtor(struct NaClApp *nap)
+void NaClAppCtor(struct NaClApp *nap)
 {
   nap->addr_bits = NACL_MAX_ADDR_BITS;
   nap->stack_size = NACL_DEFAULT_STACK_MAX;
-  nap->mem_start = 0;
-  nap->dispatch_thunk = 0;
-  nap->static_text_end = 0;
-  nap->dynamic_text_start = 0;
-  nap->dynamic_text_end = 0;
-  nap->rodata_start = 0;
-  nap->data_start = 0;
-  nap->data_end = 0;
-  nap->initial_entry_pt = 0;
-  nap->user_entry_pt = 0;
 
-  memset(nap->mem_map, 0, sizeof nap->mem_map);
+  gnap = nap;
+  nacl_user = g_malloc(sizeof *nacl_user);
+  nacl_sys = g_malloc(sizeof *nacl_sys);
+}
 
-  return 1;
+void NaClAppDtor(struct NaClApp *nap)
+{
+  NaClFreeAddrSpace(nap);
+  g_free(nacl_sys);
+  g_free(nacl_user);
+  nacl_sys = NULL;
+  nacl_user = NULL;
 }
 
 /*

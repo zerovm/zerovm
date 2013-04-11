@@ -29,6 +29,7 @@
 #include "src/main/accounting.h"
 #include "src/loader/sel_addrspace.h"
 #include "src/main/etag.h"
+#include "src/channels/mount_channel.h"
 
 static const char *zvm_state = UNKNOWN_STATE;
 static int zvm_code = 0;
@@ -59,13 +60,6 @@ static void FinalDump(struct NaClApp *nap)
   NaClSignalHandlerFini();
 }
 
-/* release global variables */
-static void FreeGlobals()
-{
-  g_free(nacl_sys);
-  g_free(nacl_user);
-}
-
 /*
  * d'b: show dump (if needed). release resources, close channels.
  * note: use global nap because can be invoked from signal handler
@@ -74,14 +68,14 @@ static void Finalizer(void)
 {
   if(!STREQ(zvm_state, OK_STATE)) FinalDump(gnap);
 
-  SystemManifestDtor(gnap);
-  AccountingDtor(gnap);
-  ProxyReport(gnap);
-  NaClFreeAddrSpace(gnap);
-  FreeGlobals();
+  SystemManifestDtor(gnap); /* finalize channels */
+  AccountingDtor(gnap); /* get accounting */
+  ProxyReport(gnap); /* show report */
+  ChannelsDtor(gnap); /* free channels */
+  NaClAppDtor(gnap); /* free user space and globals */
   TagEngineDtor();
-  ZLogDtor();
-  ManifestDtor();
+  ZLogDtor(); /* close syslog */
+  ManifestDtor(); /* free manifest */
 }
 
 void SetExitState(const char *state)
