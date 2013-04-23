@@ -1,0 +1,15 @@
+=====================================================================
+== nexe from special device
+=====================================================================
+Channel = /dev/stdin, /dev/stdin, 0, 32, 32, 0, 0
+Channel = /dev/stdout, /dev/stdout, 0, 0, 0, 32, 32
+Channel = /dev/stderr, /dev/stderr, 0, 0, 0, 32, 32
+
+=====================================================================
+== switches for zerovm. some of them used to control nexe, some
+== for the internal zerovm needs
+=====================================================================
+Version = 09082012
+Nexe = /dev/zero
+MemMax = 33554432
+Timeout = 1
