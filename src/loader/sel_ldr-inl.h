@@ -75,40 +75,6 @@ static INLINE uintptr_t NaClUserToSysAddrNullOkay
   return uaddr + nap->mem_start;
 }
 
-static INLINE uintptr_t NaClUserToSysAddr(struct NaClApp  *nap,
-                                          uintptr_t       uaddr) {
-  if (0 == uaddr || ((uintptr_t) 1U << nap->addr_bits) <= uaddr) {
-    return kNaClBadAddress;
-  }
-  return uaddr + nap->mem_start;
-}
-
-/* todo(d'b): rewrite it to use in trap */
-static INLINE int NaClIsUserAddr(struct NaClApp  *nap,
-                                 uintptr_t       sysaddr) {
-  return nap->mem_start <= sysaddr &&
-         sysaddr < nap->mem_start + ((uintptr_t) 1U << nap->addr_bits);
-}
-
-static INLINE uintptr_t NaClUserToSysAddrRange(struct NaClApp  *nap,
-                                               uintptr_t       uaddr,
-                                               size_t          count) {
-  uintptr_t end_addr;
-
-  if (0 == uaddr) {
-    return kNaClBadAddress;
-  }
-  end_addr = uaddr + count;
-  if (end_addr < uaddr) {
-    /* unsigned wraparound */
-    return kNaClBadAddress;
-  }
-  if (((uintptr_t) 1U << nap->addr_bits) <= end_addr) {
-    return kNaClBadAddress;
-  }
-  return uaddr + nap->mem_start;
-}
-
 static INLINE uintptr_t NaClUserToSys(struct NaClApp *nap, uintptr_t uaddr)
 {
   ZLOGFAIL(0 == uaddr || ((uintptr_t) 1U << nap->addr_bits) <= uaddr, EFAULT,
@@ -128,23 +94,27 @@ static INLINE uintptr_t NaClSysToUser(struct NaClApp *nap, uintptr_t sysaddr)
 
 /* For x86-64 sandboxing, %rsp and %rbp are system addresses already */
 static INLINE uintptr_t NaClUserToSysStackAddr(struct NaClApp *nap,
-                                               uintptr_t      stackaddr) {
+                                               uintptr_t      stackaddr)
+{
   UNREFERENCED_PARAMETER(nap);
   return stackaddr;
 }
 
 static INLINE uintptr_t NaClSysToUserStackAddr(struct NaClApp *nap,
-                                               uintptr_t      stackaddr) {
+                                               uintptr_t      stackaddr)
+{
   UNREFERENCED_PARAMETER(nap);
   return stackaddr;
 }
 
-static INLINE uintptr_t NaClEndOfStaticText(struct NaClApp *nap) {
+static INLINE uintptr_t NaClEndOfStaticText(struct NaClApp *nap)
+{
   return nap->static_text_end;
 }
 
 static INLINE uintptr_t NaClSandboxCodeAddr(struct NaClApp *nap,
-                                            uintptr_t addr) {
+                                            uintptr_t addr)
+{
   return (((addr & ~(((uintptr_t) nap->bundle_size) - 1))
            & ((((uintptr_t) 1) << 32) - 1))
           + nap->mem_start);

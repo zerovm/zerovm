@@ -188,7 +188,7 @@ int main(int argc, char **argv)
   struct GioMemoryFileSnapshot main_file;
   GTimer *timer;
 
-  /* initialize mem_map, globals and set nap fields to default values */
+  /* initialize globals and set nap fields to default values */
   nap->system_manifest = &sys_mft;
   NaClAppCtor(nap);
 

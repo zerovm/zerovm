@@ -132,7 +132,7 @@ void StoreChannelConnectionInfo(const struct ChannelDesc *channel)
 
   assert(channel != NULL);
 
-  /* initiate the hash table if not yet */
+  /* allocate the hash table record */
   record = g_malloc(sizeof *record);
 
   /* prepare and store the channel connection record */

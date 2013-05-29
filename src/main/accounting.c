@@ -32,8 +32,8 @@ static int ReadSystemAccounting(const struct NaClApp *nap, char *buf, int size)
 {
   uint64_t user_time = 0;
   uint64_t sys_time = 0;
-  uint64_t c_user_time = 0; /* 0mq network time */
-  uint64_t c_sys_time = 0; /* 0mq network time */
+  uint64_t c_user_time = 0; /* network time */
+  uint64_t c_sys_time = 0; /* network time */
   int64_t memory_size = 0;
   uint64_t ticks;
   pid_t pid;

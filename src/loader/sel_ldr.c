@@ -48,30 +48,6 @@ void NaClAppDtor(struct NaClApp *nap)
   nacl_user = NULL;
 }
 
-/*
- * unaligned little-endian load.  precondition: nbytes should never be
- * more than 8.
- */
-static uint64_t NaClLoadMem(uintptr_t addr, size_t user_nbytes)
-{
-  uint64_t value = 0;
-
-  ZLOGFAIL(0 == user_nbytes || user_nbytes > 8, EFAULT, FAILED_MSG);
-
-  do
-  {
-    value = value << 8;
-    value |= ((uint8_t *)addr)[--user_nbytes];
-  } while(user_nbytes > 0);
-
-  return value;
-}
-
-static uint64_t NaClLoad64(uintptr_t addr)
-{
-  return NaClLoadMem(addr, sizeof(uint64_t));
-}
-
 /* unaligned little-endian store */
 static void NaClStoreMem(uintptr_t addr, size_t nbytes, uint64_t value)
 {
@@ -108,13 +84,9 @@ struct NaClPatchInfo *NaClPatchInfoCtor(struct NaClPatchInfo *self) {
 void  NaClApplyPatchToMemory(struct NaClPatchInfo  *patch) {
   size_t    i;
   size_t    offset;
-  int64_t   reloc;
   uintptr_t target_addr;
 
   memcpy((void *) patch->dst, (void *) patch->src, patch->nbytes);
-
-  reloc = patch->dst - patch->src;
-
 
   for (i = 0; i < patch->num_abs64; ++i) {
     offset = patch->abs64[i].target - patch->src;
@@ -132,12 +104,6 @@ void  NaClApplyPatchToMemory(struct NaClPatchInfo  *patch) {
     offset = patch->abs16[i].target - patch->src;
     target_addr = patch->dst + offset;
     NaClStore16(target_addr, (uint16_t) patch->abs16[i].value);
-  }
-
-  for (i = 0; i < patch->num_rel64; ++i) {
-    offset = patch->rel64[i] - patch->src;
-    target_addr = patch->dst + offset;
-    NaClStore64(target_addr, NaClLoad64(target_addr) - reloc);
   }
 }
 

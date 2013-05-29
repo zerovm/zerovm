@@ -22,6 +22,7 @@
 /*
  * NaCl Simple/secure ELF loader (NaCl SEL) misc utilities.  Inlined
  * functions.  Internal; do not include.
+ * d'b: remove extra macros
  */
 #ifndef SEL_UTIL_INL_H_
 #define SEL_UTIL_INL_H_ 1
