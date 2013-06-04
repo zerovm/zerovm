@@ -308,14 +308,14 @@ void NaClCreateMainThread(struct NaClApp *nap)
   /* d'b {{ */
   int                   argc;
   char                  **argv;
-  char const *const     *envv;
+  char                  **envv;
 
   assert(nap != NULL);
   assert(nap->system_manifest != NULL);
 
   argc = nap->system_manifest->cmd_line_size;
   argv = nap->system_manifest->cmd_line;
-  envv = (char const* const*)nap->system_manifest->envp;
+  envv = nap->system_manifest->envp;
   /* }} */
 
   ZLOGFAIL(argc <= 0, EFAULT, FAILED_MSG);
@@ -324,7 +324,7 @@ void NaClCreateMainThread(struct NaClApp *nap)
   envc = 0;
   if(NULL != envv)
   {
-    char const * const *pp;
+    char **pp;
     for(pp = envv; NULL != *pp; ++pp)
       ++envc;
   }
@@ -442,8 +442,18 @@ void NaClCreateMainThread(struct NaClApp *nap)
 
   ZLOGS(LOG_DEBUG, "user stack ptr: %016lx", NaClSysToUserStackAddr(nap, stack_ptr));
 
-  /* free args and environment storage than jump to user code */
+  /* free args and environment storage */
   g_free(argv_len);
   g_free(envv_len);
+  g_free(nap->system_manifest->cmd_line);
+  nap->system_manifest->cmd_line = NULL;
+  if(nap->system_manifest->envp)
+  {
+    for(i = 0; nap->system_manifest->envp[i]; ++i)
+      g_free(nap->system_manifest->envp[i]);
+    g_free(nap->system_manifest->envp);
+    nap->system_manifest->envp = NULL;
+  }
+
   SwitchToApp(nap, stack_ptr);
 }

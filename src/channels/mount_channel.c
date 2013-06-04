@@ -26,7 +26,25 @@
 #include "src/channels/prefetch.h"
 #include "src/channels/mount_channel.h"
 
-static GData *aliases;
+GTree *aliases;
+static int tree_reset = 0;
+
+/* if the fuinction called there is duplicate */
+static void DuplicateKey(gpointer key)
+{
+  if(tree_reset) return;
+  ZLOGFAIL(1, EFAULT, "%s is already allocated", key);
+}
+
+/* reset aliases tree */
+void ResetAliases()
+{
+  if(aliases == NULL) return;
+  tree_reset = 1; /* we want to remove data from the tree */
+  g_tree_destroy(aliases);
+  tree_reset = 0; /* set it back to "check mode" */
+  aliases = NULL;
+}
 
 char *StringizeChannelSourceType(enum ChannelSourceType type)
 {
@@ -81,9 +99,7 @@ static void ChannelCtor(struct NaClApp *nap, char **tokens)
   assert(nap->system_manifest->channels != NULL);
 
   /* check alias for duplicates and update the list */
-  ZLOGFAIL(g_datalist_get_data(&aliases, tokens[ChannelAlias]) != NULL,
-      EFAULT, "%s is already allocated", tokens[ChannelAlias]);
-  g_datalist_set_data(&aliases, tokens[ChannelAlias], "");
+  g_tree_insert(aliases, tokens[ChannelAlias], NULL);
 
   /*
    * pick the channel and check if the channel is available,
@@ -183,7 +199,8 @@ void ChannelsCtor(struct NaClApp *nap)
 
   /* allocate list to detect duplicate channels aliases */
   assert(aliases == NULL);
-  g_datalist_init(&aliases);
+  aliases = g_tree_new_full((GCompareDataFunc)strcmp,
+      NULL, (GDestroyNotify)DuplicateKey, NULL);
 
   /*
    * calculate channels count. maximum allowed (MAX_CHANNELS_NUMBER - 1)
@@ -214,7 +231,8 @@ void ChannelsCtor(struct NaClApp *nap)
     /* construct and initialize channel */
     ChannelCtor(nap, tokens);
   }
-  g_datalist_clear(&aliases);
+
+  ResetAliases();
 
   /* 2nd pass for the network channels if name service specified */
   KickPrefetchChannels(nap);
@@ -245,6 +263,6 @@ void ChannelsDtor(struct NaClApp *nap)
   {
     g_free(nap->system_manifest->channels);
     nap->system_manifest->channels = NULL;
-    if(aliases != NULL) g_datalist_clear(&aliases);
+    ResetAliases();
   }
 }

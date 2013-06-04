@@ -249,6 +249,7 @@ int main(int argc, char **argv)
     NaClExit(0);
   }
   TIMER_REPORT("last preparations");
+  g_timer_destroy(timer);
 
   /* switch to the user code */
   NaClCreateMainThread(nap);
