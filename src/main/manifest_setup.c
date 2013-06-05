@@ -56,16 +56,11 @@ static void LimitOwnIO()
 /* set timeout. by design timeout must be specified in manifest */
 static void SetTimeout(struct SystemManifest *policy)
 {
-  struct rlimit rl;
-
   assert(policy != NULL);
 
   GET_INT_BY_KEY(policy->timeout, MFT_TIMEOUT);
   ZLOGFAIL(policy->timeout < 1, EFAULT, "invalid or absent timeout");
-  rl.rlim_cur = policy->timeout;
-  rl.rlim_max = -1;
-  setrlimit(RLIMIT_CPU, &rl);
-  ZLOGFAIL(setrlimit(RLIMIT_CPU, &rl) != 0, errno, "cannot set timeout");
+  alarm(policy->timeout);
 }
 
 /* lower zerovm priority */

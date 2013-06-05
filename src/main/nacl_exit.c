@@ -105,7 +105,7 @@ int GetExitCode()
 /* todo(d'b): remove this patch after reworking zvm signals */
 static void SpecSignals()
 {
-  if(strstr(zvm_state, "Signal 24") != NULL)
+  if(strstr(zvm_state, "Signal 14") != NULL)
     SetExitState("session timeout");
   else if(strstr(zvm_state, "Signal 25") != NULL)
     SetExitState("disk quota exceeded");

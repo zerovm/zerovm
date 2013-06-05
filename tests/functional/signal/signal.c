@@ -1,9 +1,7 @@
 /*
  * invokes the signal specified by the 1st parameter of the command line
- * supported signals: 8, 11, 24
+ * supported signals: 8, 11, 14, 25
  * todo(d'b): add signals
- *   2 - Interrupt from keyboard
- *   25 - File size limit exceeded
  * update: it is possible to invoke almost any signal from makefile via pkill.
  *         it would be better to initiate signal from the user code, but zerovm
  *         can be also tested from outside
@@ -35,9 +33,9 @@ void signal_11()
 }
 
 /* CPU time limit exceeded */
-void signal_24()
+void signal_14()
 {
-  FPRINTF(STDERR, "invocation of signal #24\n");
+  FPRINTF(STDERR, "invocation of signal #14\n");
   for(;;);
 }
 
@@ -62,7 +60,7 @@ void signals_ctor(void (*signals[])())
 
   signals[8] = signal_8;
   signals[11] = signal_11;
-  signals[24] = signal_24;
+  signals[14] = signal_14;
   signals[25] = signal_25;
 }
 
