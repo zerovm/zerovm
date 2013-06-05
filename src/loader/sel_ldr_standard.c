@@ -291,169 +291,32 @@ void NaClAppLoadFile(struct Gio *gp, struct NaClApp *nap)
 }
 #undef DUMP
 
+/*
+ * the fixed user stack content is:
+ * 0x00000000, 0x00000000 -- NACL_STACK_PAD_BELOW_ALIGN
+ * 0x00000000 -- Cleanup function pointer, always NULL
+ * 0x00000000 -- environment strings count (envc)
+ * 0x00000001 -- arguments count (argc)
+ * 0xfffffff0 -- pointer to argv[0]
+ * 0x00000000 -- ending NULL for arguments
+ * 0x00000000 -- ending environment NULL
+ * 0x00000000 -- auxiliary AT_NULL
+ * 0x00000000 -- end marker
+ * 0x000000.. -- padding
+ * in a few words: the user stack content is valid but empty
+ */
 void NaClCreateMainThread(struct NaClApp *nap)
 {
-  /* Compute size of string tables for argv and envv */
-  int                   envc;
-  size_t                size;
-  int                   auxv_entries;
-  size_t                ptr_tbl_size;
-  int                   i;
-  uint32_t              *p;
-  char                  *strp;
-  size_t                *argv_len;
-  size_t                *envv_len;
-  uintptr_t             stack_ptr;
-
-  /* d'b {{ */
-  int                   argc;
-  char                  **argv;
-  char                  **envv;
+  uintptr_t stack_ptr;
 
   assert(nap != NULL);
-  assert(nap->system_manifest != NULL);
 
-  argc = nap->system_manifest->cmd_line_size;
-  argv = nap->system_manifest->cmd_line;
-  envv = nap->system_manifest->envp;
-  /* }} */
+  stack_ptr = nap->mem_start + ((uintptr_t)1U << nap->addr_bits);
+  stack_ptr -= STACK_USER_DATA_SIZE;
 
-  ZLOGFAIL(argc <= 0, EFAULT, FAILED_MSG);
-  ZLOGFAIL(NULL == argv, EFAULT, FAILED_MSG);
-
-  envc = 0;
-  if(NULL != envv)
-  {
-    char **pp;
-    for(pp = envv; NULL != *pp; ++pp)
-      ++envc;
-  }
-
-  envv_len = 0;
-  argv_len = g_malloc(argc * sizeof argv_len[0]);
-  envv_len = g_malloc(envc * sizeof envv_len[0]);
-
-  size = 0;
-
-  /*
-   * The following two loops cannot overflow.  The reason for this is
-   * that they are counting the number of bytes used to hold the
-   * NUL-terminated strings that comprise the argv and envv tables.
-   * If the entire address space consisted of just those strings, then
-   * the size variable would overflow; however, since there's the code
-   * space required to hold the code below (and we are not targetting
-   * Harvard architecture machines), at least one page holds code, not
-   * data.  We are assuming that the caller is non-adversarial and the
-   * code does not look like string data....
-   */
-
-  for(i = 0; i < argc; ++i)
-  {
-    argv_len[i] = strlen(argv[i]) + 1;
-    size += argv_len[i];
-  }
-
-  for(i = 0; i < envc; ++i)
-  {
-    envv_len[i] = strlen(envv[i]) + 1;
-    size += envv_len[i];
-  }
-
-  /*
-   * NaCl modules are ILP32, so the argv, envv pointers, as well as
-   * the terminating NULL pointers at the end of the argv/envv tables,
-   * are 32-bit values.  We also have the auxv to take into account.
-   *
-   * The argv and envv pointer tables came from trusted code and is
-   * part of memory.  Thus, by the same argument above, adding in
-   * "ptr_tbl_size" cannot possibly overflow the "size" variable since
-   * it is a size_t object.  However, the extra pointers for auxv and
-   * the space for argv could cause an overflow.  The fact that we
-   * used stack to get here etc means that ptr_tbl_size could not have
-   * overflowed.
-   *
-   * NB: the underlying OS would have limited the amount of space used
-   * for argv and envv -- on linux, it is ARG_MAX, or 128KB -- and
-   * hence the overflow check is for obvious auditability rather than
-   * for correctness.
-   */
-  auxv_entries = 1;
-  if(0 != nap->user_entry_pt)
-    auxv_entries++;
-
-  ptr_tbl_size = (sizeof(uint32_t) * ((3 + argc + 1 + envc + 1 + auxv_entries * 2)));
-  ZLOGFAIL(SIZE_T_MAX - size < ptr_tbl_size, EFAULT,
-      "ptr_tbl_size cause size of argv / environment copy to overflow!?!");
-  size += ptr_tbl_size;
-
-  size = (size + NACL_STACK_ALIGN_MASK) & ~NACL_STACK_ALIGN_MASK;
-  ZLOGFAIL(size > nap->stack_size, EFAULT, "stack cannot hold user data");
-
-  /* write strings and char * arrays to stack */
-  stack_ptr = (nap->mem_start + ((uintptr_t) 1U << nap->addr_bits) - size);
-
-  ZLOGS(LOG_INSANE, "setting stack to : %016lx", stack_ptr);
-
-  ZLOGFAIL(0 != (stack_ptr & NACL_STACK_ALIGN_MASK), EFAULT,
-      "stack_ptr not aligned: %016x", stack_ptr);
-
-  p = (uint32_t *) stack_ptr;
-  strp = (char *) stack_ptr + ptr_tbl_size;
-
-  *p++ = 0;  /* Cleanup function pointer, always NULL.  */
-  *p++ = envc;
-  *p++ = argc;
-
-  for(i = 0; i < argc; ++i)
-  {
-    *p++ = (uint32_t)NaClSysToUser(nap, (uintptr_t)strp);
-    ZLOGS(LOG_INSANE, "copying arg %d %p -> %p", i, argv[i], strp);
-    strcpy(strp, argv[i]);
-    strp += argv_len[i];
-  }
-  *p++ = 0;  /* argv[argc] is NULL.  */
-
-  for(i = 0; i < envc; ++i)
-  {
-    *p++ = (uint32_t)NaClSysToUser(nap, (uintptr_t)strp);
-    ZLOGS(LOG_INSANE, "copying env %d %p -> %p", i, envv[i], strp);
-    strcpy(strp, envv[i]);
-    strp += envv_len[i];
-  }
-  *p++ = 0; /* envp[envc] is NULL.  */
-
-  /* Push an auxv */
-  if(0 != nap->user_entry_pt)
-  {
-    *p++ = AT_ENTRY;
-    *p++ = (uint32_t)nap->user_entry_pt;
-  }
-  *p++ = AT_NULL;
-  *p++ = 0;
-
-  ZLOGFAIL((char*)p != (char*)stack_ptr + ptr_tbl_size, EFAULT, FAILED_MSG);
-
-  /*
-   * For x86, we adjust the stack pointer down to push a dummy return
-   * address.  This happens after the stack pointer alignment.
-   */
-  stack_ptr -= NACL_STACK_PAD_BELOW_ALIGN;
-  memset((void *) stack_ptr, 0, NACL_STACK_PAD_BELOW_ALIGN);
-
-  ZLOGS(LOG_DEBUG, "user stack ptr: %016lx", NaClSysToUserStackAddr(nap, stack_ptr));
-
-  /* free args and environment storage */
-  g_free(argv_len);
-  g_free(envv_len);
-  g_free(nap->system_manifest->cmd_line);
-  nap->system_manifest->cmd_line = NULL;
-  if(nap->system_manifest->envp)
-  {
-    for(i = 0; nap->system_manifest->envp[i]; ++i)
-      g_free(nap->system_manifest->envp[i]);
-    g_free(nap->system_manifest->envp);
-    nap->system_manifest->envp = NULL;
-  }
+  memset((void*)stack_ptr, 0, STACK_USER_DATA_SIZE);
+  ((uint32_t*)stack_ptr)[4] = 1;
+  ((uint32_t*)stack_ptr)[5] = 0xfffffff0;
 
   SwitchToApp(nap, stack_ptr);
 }

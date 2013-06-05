@@ -1,3 +1,5 @@
+# it fails sometime, i think, since "cp" have a little time
+# to finish copy before zerovm read it
 NAME=copy
 CCFLAGS=-n -s -nostartfiles -nostdlib -fno-builtin
 

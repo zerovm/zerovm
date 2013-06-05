@@ -130,9 +130,10 @@
  * System V Application Binary Interface, AMD64 Architecture Processor
  * Supplement, at http://www.x86-64.org/documentation/abi.pdf, section
  * 3.2.2 discusses stack alignment.
+ * d'b: since zerovm gave up the command line and environment support
+ * the user stack has now constant content 56 bytes long
  */
-#define NACL_STACK_ALIGN_MASK   (0xf)
-#define NACL_STACK_PAD_BELOW_ALIGN (8)
+#define STACK_USER_DATA_SIZE 56
 
 /* d'b: macro definitions for the user space allocation */
 #define FOURGIG     (((size_t) 1) << 32)

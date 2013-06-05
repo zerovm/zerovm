@@ -1,6 +1,10 @@
 #!/bin/sh
 
-printf "\033[01;38msignal handling\033[00m test has"
+# temporarily disabled since zerovm gave up command line support
+# printf "\033[01;38msignal handling\033[00m test has"
+printf "\033[01;38msignal handling\033[00m test has been temporarily disabled\n"
+exit
+
 make clean all > /dev/null 2>&1
 result=$(grep "FAILED" result.log | awk '{print $4}')
 if [ "" = "$result" ] && [ -s result.log ]; then

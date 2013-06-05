@@ -24,7 +24,7 @@ EXTERN_C_BEGIN
 #include "src/loader/sel_ldr.h"
 
 #define HELP_SCREEN /* update command line switches here */\
-    "\033[1m\033[37mZeroVM\033[0m lightweight VM manager, build 2013-06-05\n"\
+    "\033[1m\033[37mZeroVM\033[0m lightweight VM manager, build 2013-06-06\n"\
     "Usage: <manifest> [-e#] [-l#] [-v#] [-sFPSQ]\n\n"\
     " <manifest> load settings from manifest file\n"\
     " -e <level> enable the data control. where levels are\n"\
@@ -53,8 +53,6 @@ EXTERN_C_BEGIN
 #define MFT_TIMEOUT "Timeout"
 #define MFT_NODE "NodeName"
 #define MFT_NAMESERVER "NameServer"
-#define MFT_ENVIRONMENT "Environment" /* deprecated */
-#define MFT_COMMANDLINE "CommandLine" /* deprecated */
 
 struct SystemManifest
 {
@@ -67,11 +65,6 @@ struct SystemManifest
   char *nexe_etag; /* signature. reserved for a future */
   int32_t timeout; /* time user module allowed to run */
   int32_t user_ret_code; /* nexe return code */
-
-  /* variables for a nexe. deprecated */
-  int cmd_line_size; /* command line size for nexe. deprecated */
-  char **cmd_line; /* command line for nexe. deprecated */
-  char **envp; /* environment variables for user. deprecated */
 
   /* channels */
   int32_t channels_count; /* count of channels */

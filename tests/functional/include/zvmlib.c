@@ -426,8 +426,8 @@ static void _init()
 }
 
 /* the standard glibc prologue replacement */
-int main (int argc, char **argv, char **envp);
-void _start (uint32_t *info)
+int main(int argc, char **argv, char **envp);
+void _start(uint32_t *info)
 {
   int argc = info[2];
   char **argv = (void *) &info[3];

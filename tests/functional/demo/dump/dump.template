@@ -12,4 +12,4 @@ Channel = PWD/stderr.data, /dev/stderr, 0, 0, 0, 65536, 4194304
 Version = 09082012
 Nexe = dump.nexe
 MemMax = 33554432
-Timeout = 240
+Timeout = 2400

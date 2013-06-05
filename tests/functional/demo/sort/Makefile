@@ -1,3 +1,6 @@
+# doesn't work since from zerovm version 06.06.2013 the command line
+# arguments are not supported
+
 NAME_1=generator.uint32_t
 NAME_2=sort_uint_proper_with_args
 NAME_3=tester.uint32_t

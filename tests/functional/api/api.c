@@ -124,7 +124,6 @@ static void test_channel(char *token)
 int main(int argc, char **argv)
 {
   char *tokens[LOT_ENOUGH];
-  char *token;
   int number;
 
   /* get the control data */
@@ -133,17 +132,6 @@ int main(int argc, char **argv)
   /* check general information provided by zerovm */
   /* memory */
   check_memory();
-
-  /* node name */
-  token = GetValueByKey("NodeName");
-  if(token != NULL)
-  {
-    number = ParseValue(token, ", ", tokens, 2);
-    ZTEST(number == 2);
-    ZTEST(STRCMP(argv[0], tokens[0]) == 0);
-  }
-  else
-    ZTEST(STRCMP(argv[0], "loner") == 0);
 
   /* check channels number */
   number = GetValuesByKey("Channel", tokens, LOT_ENOUGH);

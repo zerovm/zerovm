@@ -148,111 +148,6 @@ static void PreallocateUserMemory(struct NaClApp *nap)
   nap->mem_map[HeapIdx].end += heap;
 }
 
-/* helper. sets custom user attributes for user */
-static void SetCustomAttributes(struct SystemManifest *policy)
-{
-  int i;
-  int count;
-  char *environment;
-  char *buf[BIG_ENOUGH_SPACE], **tokens = buf;
-
-  assert(policy != NULL);
-  assert(policy->envp == NULL);
-
-  /* get environment */
-  environment = GetValueByKey(MFT_ENVIRONMENT);
-  if(environment == NULL) return;
-
-  /* parse and check count of attributes */
-  count = ParseValue(environment, ", \t", tokens, BIG_ENOUGH_SPACE);
-  ZLOGFAIL(count % 2 != 0, EFAULT, "odd number of user environment variables");
-  ZLOGFAIL(count == 0, EFAULT, "invalid user environment");
-  ZLOGFAIL(count == BIG_ENOUGH_SPACE, EFAULT, "user environment exceeded the limit");
-
-  /* allocate space to hold string pointers */
-  count >>= 1;
-  policy->envp = g_malloc0((count + 1) * sizeof(*policy->envp));
-
-  /* construct array of environment variables */
-  for(i = 0; i < count; ++i)
-  {
-    char *key = *tokens++;
-    char *value = *tokens++;
-    int length = strlen(key) + strlen(value) + 1 + 1; /* + '=' + '\0' */
-
-    policy->envp[i] = g_malloc0((length + 1) * sizeof(*policy->envp[0]));
-    sprintf(policy->envp[i], "%s=%s", key, value);
-  }
-}
-
-/* sets node_id in nap object and user argv[0] */
-static void SetNodeName(struct NaClApp *nap)
-{
-  char *buf[BIG_ENOUGH_SPACE], **tokens = buf;
-  char *pgm_name = GetValueByKey(MFT_NODE);
-
-  assert(nap != NULL);
-  assert(nap->system_manifest != NULL);
-  assert(nap->system_manifest->cmd_line != NULL);
-  assert(nap->system_manifest->cmd_line_size > 0);
-
-  /* set the node name (0st parameter) and node id (n/a for the user) */
-  if(pgm_name == NULL)
-  {
-    nap->system_manifest->cmd_line[0] = NEXE_PGM_NAME;
-    nap->system_manifest->node_id = 0;
-  }
-  else
-  {
-    int i;
-    i = ParseValue(pgm_name, ",", tokens, BIG_ENOUGH_SPACE);
-    ZLOGFAIL(i != 2, EFAULT, "invalid NodeName specified");
-    ZLOGFAIL(tokens[0] == NULL, EFAULT, "invalid node name");
-    ZLOGFAIL(tokens[1] == NULL, EFAULT, "invalid node id");
-    nap->system_manifest->cmd_line[0] = tokens[0];
-    nap->system_manifest->node_id = ATOI(tokens[1]);
-    ZLOGFAIL(nap->system_manifest->node_id == 0, EFAULT, "node id must be > 0");
-  }
-
-  /* put node name and id to the log */
-  ZLOGS(LOG_DEBUG, "node name = %s, node id = %d",
-      nap->system_manifest->cmd_line[0], nap->system_manifest->node_id);
-}
-
-/* helper. sets command line parameters for the user */
-static void SetCommandLine(struct SystemManifest *policy)
-{
-  int i;
-  char *parameters;
-  char *buf[BIG_ENOUGH_SPACE], **tokens = buf;
-
-  assert(policy != NULL);
-  assert(policy->cmd_line == NULL);
-  assert(policy->cmd_line_size == 0);
-
-  /* get parameters */
-  parameters = GetValueByKey(MFT_COMMANDLINE);
-
-  /* if there is command line parse and check count of parameters */
-  if(parameters != NULL)
-  {
-    policy->cmd_line_size = ParseValue(parameters, " \t", tokens, BIG_ENOUGH_SPACE);
-    ZLOGFAIL(policy->cmd_line_size == 0, EFAULT, "invalid user parameters");
-    ZLOGFAIL(policy->cmd_line_size == BIG_ENOUGH_SPACE, EFAULT, "too long user command line");
-  }
-
-  /*
-   * allocate space to hold string pointers. 0st element reserved for argv[0].
-   * also, the last element should be NULL so 1 extra element must be reserved
-   */
-  ++policy->cmd_line_size;
-  policy->cmd_line = g_malloc0((policy->cmd_line_size + 1) * sizeof *policy->cmd_line);
-
-  /* populate command line arguments array with pointers */
-  for(i = 0; i < policy->cmd_line_size - 1; ++i)
-    policy->cmd_line[i + 1] = tokens[i];
-}
-
 /* todo(d'b): move it to sel_addrspace */
 /* should be kept in sync with api/zvm.h*/
 struct ChannelSerialized
@@ -423,6 +318,7 @@ static void SetSystemData(struct NaClApp *nap)
 void SystemManifestCtor(struct NaClApp *nap)
 {
   struct SystemManifest *policy;
+  char *node;
 
   /* check for design errors */
   assert(nap != NULL);
@@ -440,17 +336,14 @@ void SystemManifestCtor(struct NaClApp *nap)
   ZLOGFAIL(g_strcmp0(nap->system_manifest->version, MANIFEST_VERSION),
       EFAULT, "manifest version not supported");
 
-  /* user data (environment, command line) */
-  policy->envp = NULL;
-  SetCustomAttributes(policy);
-
-  /* prepare command line arguments for nexe */
-  policy->cmd_line = NULL;
-  policy->cmd_line_size = 0;
-  SetCommandLine(policy);
-
-  /* get node name and id */
-  SetNodeName(nap);
+  /* get node id */
+  node = GetValueByKey(MFT_NODE);
+  if(node != NULL)
+  {
+    int64_t id = ATOI(node);
+    ZLOGFAIL(id <= 0, EFAULT, "node id is invalid");
+    nap->system_manifest->node_id = id;
+  }
 
   /* construct and initialize all channels */
   ChannelsCtor(nap);
