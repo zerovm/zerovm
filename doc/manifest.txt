@@ -13,11 +13,11 @@ Nexe
 Channel
 MemMax
 Timeout
-NodeName
+NodeName (changed)
 NexeEtag
 NameServer
-Environment (will deprecated soon)
-CommandLine (will deprecated soon)
+Environment (deprecated)
+CommandLine (deprecated)
 
 Structure:
 - each valid line must contain exactly only one key and value(s) separated by exactly one '=' sign
@@ -67,7 +67,7 @@ Channel
     port is 16 bit integer or empty (if name server used)
   
 Environment
-  (comma separated values, will be deprecated soon)
+  (comma separated values, deprecated)
   expects comma separated pairs: key, value. example:
   Environment = TimeStamp, 1337012520, ContentType, utf-8
 Version
@@ -90,14 +90,14 @@ MemMax
   allocation syscalls due nexe runtime. MemMax should take in account that 16mb should be
   reserved for the user stack, 1mb+ - for nexe code and data, and some memory for system area
 CommandLine
-  (space separated values, will be deprecated soon)
+  (space separated values, deprecated)
   command line arguments for nexe
 NodeName
-  (2 comma separated values)
-  Specifies the node name (available for the untrusted code) and node id (not available 
-  for the untrusted code). The node id should be 32-bit unsigned integer.
+  (node id, should be > 0)
+  Specifies the node id (not available for the untrusted code). The node id should 
+  be positive 32-bit integer.
   Example:
-  NodeName = loner, 1
+  NodeName = 1
 
 Both keywords and values have size limit of 64kb. The manifest file size limited
 to 0x100000. The limitations can be changed in the future.

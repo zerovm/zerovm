@@ -13,6 +13,8 @@ arg[2] .. arg[N] = arguments to this function
 trap() supports the following functions:
   TrapRead
   TrapWrite
+  TrapJail
+  TrapUnjail
   TrapExit
   
 detailed information regarding trap functions can be found in "api.txt"

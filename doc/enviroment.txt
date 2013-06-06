@@ -1,26 +1,3 @@
 this document describes user environment (custom attributes)
 ============================================================
-(deprecated. user environment will be available via "/dev/nvram" and will not as main() argument) 
- 
-This design replaces the old one: "ContentType", "TimeStamp", "XObjectMetaTag", "UserETag" -
-these keywords were removed from ZeroVM manifest.
- 
-The new design provides a new manifest keyword: "Environment". The keyword uses a new format:
-keyword = value1, value2, value3, value4,.. 
-
-For example:
-Environment = TimeStamp, 1337012520, UserETag, 74ebada55, XObjectMetaTag, klaatu_barada_nikto
-
-Will be translated to user environment pairs:
-TimeStamp=1337012520
-UserETag=74ebada55
-XObjectMetaTag=klaatu_barada_nikto
-
-User program can access environment via main() arguments:
-int main(int argc, char **argv, char **envp)
-where "envp" is the array of asciiz strings. It is guaranteed that the last string 
-is NULL (just like "argv"). Also the user program can use ZeroVM API to read 
-an environment (see "api.txt").
-
-Some environment arguments are meant to be used by ZRT (and/or other libraries). 
-For instance "TimeStamp". ZeroVM, however doesn't control it.
+(deprecated. user environment now available via "/dev/nvram" see zerovm toolchain) 
