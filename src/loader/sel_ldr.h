@@ -209,11 +209,10 @@ void  NaClAppPrintDetails(struct NaClApp  *nap,
                           struct Gio      *gp, int verbosity);
 
 /*
- * launch user session. preconditions: argc > 0, argc and argv table is
- * consistent, envv may be NULL (this happens on MacOS/Cocoa if envv is
- * non-NULL it is 'consistent', null terminated etc.
+ * set an empty user stack and other context, then pass
+ * control to user code
  */
-void NaClCreateMainThread(struct NaClApp *nap);
+void CreateSession(struct NaClApp *nap);
 
 /*
  * Install syscall trampolines at all possible well-formed entry points

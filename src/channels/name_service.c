@@ -194,7 +194,7 @@ static int32_t ParcelCtor(const struct NaClApp *nap,
     char *parcel, uint32_t size)
 {
   char *p = parcel; /* parcel pointer */
-  uint32_t node_id_network = bswap_32(nap->system_manifest->node_id);
+  uint32_t node_id_network = bswap_32(nap->system_manifest->node);
   uint32_t binds_network = bswap_32(binds);
   uint32_t connects_network = bswap_32(connects);
 

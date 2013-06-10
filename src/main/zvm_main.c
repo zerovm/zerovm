@@ -135,7 +135,7 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
 
   /* set available nap and manifest fields */
   assert(nap->system_manifest != NULL);
-  nap->system_manifest->nexe = GetValueByKey(MFT_NEXE);
+  nap->system_manifest->nexe = GetValueByKey(MFT_PROGRAM);
   ZLOGFAIL(nap->system_manifest->nexe == NULL, EFAULT, "nexe not specified");
   nexe_size = GetFileSize(nap->system_manifest->nexe);
   ZLOGFAIL(nexe_size < 0, ENOENT, "nexe open error");
@@ -252,6 +252,6 @@ int main(int argc, char **argv)
   g_timer_destroy(timer);
 
   /* switch to the user code */
-  NaClCreateMainThread(nap);
+  CreateSession(nap);
   return EFAULT; /* unreachable */
 }

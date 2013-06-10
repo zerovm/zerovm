@@ -9,15 +9,13 @@ Manifest samples can be found in "samples" directory.
 
 list of available keywords:
 Version
-Nexe
+Program
 Channel
-MemMax
+Memory
 Timeout
-NodeName (changed)
-NexeEtag
+Node
+Etag
 NameServer
-Environment (deprecated)
-CommandLine (deprecated)
 
 Structure:
 - each valid line must contain exactly only one key and value(s) separated by exactly one '=' sign
@@ -27,23 +25,11 @@ Structure:
 - lines are delimited with EOL (unix or windows style)
 - invalid lines will be ignored
 - lines with unknown keywords (not mentioned below) will be ignored
-- some keywords expects complex values: comma separated values. for example, "Environment"
+- "Channel" expects complex values: comma separated fields 
 
 List of valid keywords:
-NameServer
-  (pseudo url)
-  the address of name server. name server resolves zerovm provided network channels.
-  only supported protocol is udp. notation used to specify the address is not standard
-  since 1. it is internal thing, 2. it is more simple to parse such pseudo url. the
-  same notation used for network channels.
-  NameServer = udp:127.0.0.1:54321
-  udp - protocol
-  127.0.0.1 - server ip address
-  54321 - server port
-  note: it is possible to use integer ip representation instead of IPv4
-  
 Channel
-  (obligatory, 7 comma separated values)
+  (obligatory, 7 comma separated fields strings and integers)
   Description of a channel. The order does matter. example:
   Channel = /home/dazo/git/zerovm/samples/sort/sort.stdout.log, /dev/stdout, 5, 0, 0, 99999999, 99999999
   where: 
@@ -66,39 +52,42 @@ Channel
     address is IPv4 or integer representaion of it
     port is 16 bit integer or empty (if name server used)
   
-Environment
-  (comma separated values, deprecated)
-  expects comma separated pairs: key, value. example:
-  Environment = TimeStamp, 1337012520, ContentType, utf-8
 Version
-  (obligatory, single value)
+  (obligatory, string)
   currently ZeroVM is not backward compatible with the older manifest versions.
   working version is 09082012
-Nexe
-  (obligatory, single value)
-  NaCl module to isolate and run, full path
-NexeEtag
-  (single value)
-  reserved
+Program
+  (obligatory, string)
+  NaCl module to validate and run, full path
 Timeout
-  (obligatory, single value)
+  (obligatory, unsigned 32-bit integer)
   time out in seconds. ZeroVM will stop user program and exit after the specified period
-MemMax
-  (single value)
+Memory
+  (obligatory, unsigned 32-bit integer)
   Specifies the memory size in bytes available for the user program. If specified
   ZeroVM will allocate all memory before nexe start and will not use real memory
   allocation syscalls due nexe runtime. MemMax should take in account that 16mb should be
   reserved for the user stack, 1mb+ - for nexe code and data, and some memory for system area
-CommandLine
-  (space separated values, deprecated)
-  command line arguments for nexe
-NodeName
-  (node id, should be > 0)
+NameServer
+  (optional, string)
+  the address of name server. name server resolves zerovm provided network channels.
+  only supported protocol is udp. notation used to specify the address is not standard
+  since 1. it is internal thing, 2. it is more simple to parse such pseudo url. the
+  same notation used for network channels.
+  NameServer = udp:127.0.0.1:54321
+  udp - protocol
+  127.0.0.1 - server ip address
+  54321 - server port
+  note: it is possible to use integer ip representation instead of IPv4
+Node
+  (optional, unsigned 32-bit integer)
   Specifies the node id (not available for the untrusted code). The node id should 
-  be positive 32-bit integer.
+  be greater then 0.
   Example:
   NodeName = 1
+Etag
+  (optional, single value)
+  reserved
 
 Both keywords and values have size limit of 64kb. The manifest file size limited
 to 0x100000. The limitations can be changed in the future.
- 

@@ -12,6 +12,7 @@ this document is under construction.
 - обработка сигналов
 - детерминизм
 - область системных данных пользователя
+- стек
 
 
 dictionary, bestiary (###):
@@ -304,4 +305,19 @@ exit state = ok
   GetSizeLimit: разрешенное для чтения количество байт
   PutsLimit: разрешенное количество записей
   PutSizeLimit: разрешенное для записей количество байт
+  
+стек
+  пользователю передается валидный но пустой стек. он содержит только пустую
+  командную строку (название программы - пустая строка) и пустое окружение.
+  более подробно:
+  0x00000000, 0x00000000 -- NACL_STACK_PAD_BELOW_ALIGN
+  0x00000000 -- Cleanup function pointer, always NULL
+  0x00000000 -- environment strings count (envc)
+  0x00000001 -- arguments count (argc)
+  0xfffffff0 -- pointer to argv[0]
+  0x00000000 -- ending NULL for arguments
+  0x00000000 -- ending environment NULL
+  0x00000000 -- auxiliary AT_NULL
+  0x00000000 -- end marker
+  0x000000.. -- padding
   

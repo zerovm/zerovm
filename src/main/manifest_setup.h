@@ -24,7 +24,7 @@ EXTERN_C_BEGIN
 #include "src/loader/sel_ldr.h"
 
 #define HELP_SCREEN /* update command line switches here */\
-    "\033[1m\033[37mZeroVM\033[0m lightweight VM manager, build 2013-06-06\n"\
+    "\033[1m\033[37mZeroVM\033[0m lightweight VM manager, build 2013-06-11\n"\
     "Usage: <manifest> [-e#] [-l#] [-v#] [-sFPSQ]\n\n"\
     " <manifest> load settings from manifest file\n"\
     " -e <level> enable the data control. where levels are\n"\
@@ -44,25 +44,25 @@ EXTERN_C_BEGIN
 #define IOSTATS_SIZE 0x100
 #define LARGEST_NEXE ZEROVM_IO_LIMIT_UNIT
 
-#define MANIFEST_VERSION "09082012"
+#define MANIFEST_VERSION "20130611"
 #define MFT_VERSION "Version"
-#define MFT_MEMORY "MemMax"
 #define MFT_CHANNEL "Channel"
-#define MFT_NEXE "Nexe"
-#define MFT_ETAG "NexeEtag"
+#define MFT_PROGRAM "Program"
+#define MFT_MEMORY "Memory"
 #define MFT_TIMEOUT "Timeout"
-#define MFT_NODE "NodeName"
 #define MFT_NAMESERVER "NameServer"
+#define MFT_NODE "Node"
+#define MFT_ETAG "Etag"
 
 struct SystemManifest
 {
   /* zerovm control */
   char *version; /* manifest version */
-  int node_id; /* own node id from manifest */
+  int node; /* own node id from manifest */
 
   /* nexe control */
   char *nexe; /* nexe file name */
-  char *nexe_etag; /* signature. reserved for a future */
+  char *etag; /* signature. reserved for a future */
   int32_t timeout; /* time user module allowed to run */
   int32_t user_ret_code; /* nexe return code */
 

@@ -36,30 +36,6 @@
 #include "src/main/zlog.h"
 #include "src/main/nacl_config.h"
 
-/*
- * d'b: alternative mechanism to pass control to user side
- * note: initializes "nacl_user" global
- */
-NORETURN static void SwitchToApp(struct NaClApp *nap, uintptr_t stack_ptr)
-{
-  /* construct "nacl_user" global */
-  NaClThreadContextCtor(nacl_user, nap, nap->initial_entry_pt,
-      NaClSysToUserStackAddr(nap, stack_ptr), 0);
-  nacl_user->sysret = nap->break_addr;
-  nacl_user->prog_ctr = NaClUserToSys(nap, nap->initial_entry_pt);
-  nacl_user->new_prog_ctr = NaClUserToSys(nap, nap->initial_entry_pt);
-
-  /* initialize "nacl_sys" global */
-  nacl_sys->rbp = NaClGetStackPtr();
-  nacl_sys->rsp = NaClGetStackPtr();
-
-  /* pass control to the nexe */
-  ZLOGS(LOG_DEBUG, "SESSION STARTED");
-  NaClSwitchToApp(nap, nacl_user->new_prog_ctr);
-
-  ZLOGFAIL(1, EFAULT, "unreachable code reached");
-}
-
 #if !defined(SIZE_T_MAX)
 # define SIZE_T_MAX     (~(size_t) 0)
 #endif
@@ -291,32 +267,32 @@ void NaClAppLoadFile(struct Gio *gp, struct NaClApp *nap)
 }
 #undef DUMP
 
-/*
- * the fixed user stack content is:
- * 0x00000000, 0x00000000 -- NACL_STACK_PAD_BELOW_ALIGN
- * 0x00000000 -- Cleanup function pointer, always NULL
- * 0x00000000 -- environment strings count (envc)
- * 0x00000001 -- arguments count (argc)
- * 0xfffffff0 -- pointer to argv[0]
- * 0x00000000 -- ending NULL for arguments
- * 0x00000000 -- ending environment NULL
- * 0x00000000 -- auxiliary AT_NULL
- * 0x00000000 -- end marker
- * 0x000000.. -- padding
- * in a few words: the user stack content is valid but empty
- */
-void NaClCreateMainThread(struct NaClApp *nap)
+NORETURN void CreateSession(struct NaClApp *nap)
 {
   uintptr_t stack_ptr;
 
   assert(nap != NULL);
 
+  /* set up user stack */
   stack_ptr = nap->mem_start + ((uintptr_t)1U << nap->addr_bits);
   stack_ptr -= STACK_USER_DATA_SIZE;
-
   memset((void*)stack_ptr, 0, STACK_USER_DATA_SIZE);
   ((uint32_t*)stack_ptr)[4] = 1;
   ((uint32_t*)stack_ptr)[5] = 0xfffffff0;
 
-  SwitchToApp(nap, stack_ptr);
+  /* construct "nacl_user" global */
+  NaClThreadContextCtor(nacl_user, nap, nap->initial_entry_pt,
+      NaClSysToUserStackAddr(nap, stack_ptr), 0);
+  nacl_user->sysret = nap->break_addr;
+  nacl_user->prog_ctr = NaClUserToSys(nap, nap->initial_entry_pt);
+  nacl_user->new_prog_ctr = NaClUserToSys(nap, nap->initial_entry_pt);
+
+  /* initialize "nacl_sys" global */
+  nacl_sys->rbp = NaClGetStackPtr();
+  nacl_sys->rsp = NaClGetStackPtr();
+
+  /* pass control to the nexe */
+  ZLOGS(LOG_DEBUG, "SESSION STARTED");
+  NaClSwitchToApp(nap, nacl_user->new_prog_ctr);
+  ZLOGFAIL(1, EFAULT, "unreachable code reached");
 }

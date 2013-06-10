@@ -87,29 +87,6 @@ int SetStorageLimit(int64_t a)
   return 0;
 }
 
-#if 0 /* disabled until 0mq removal */
-/* from the moment it is impossible to open files */
-static void LimitOwnFileHandles()
-{
-  struct rlimit rl;
-
-  ZLOGFAIL(getrlimit(RLIMIT_NOFILE, &rl) != 0, errno, "cannot get RLIMIT_NOFILE");
-  rl.rlim_cur = 0;
-  ZLOGFAIL(setrlimit(RLIMIT_NOFILE, &rl) != 0, errno, "cannot set RLIMIT_NOFILE");
-}
-
-/* from the moment it is impossible to create threads */
-static void LimitOwnThreads()
-{
-  struct rlimit rl;
-
-  ZLOGFAIL(getrlimit(RLIMIT_NPROC, &rl) != 0, errno, "cannot get RLIMIT_NPROC");
-  rl.rlim_max = 0;
-  rl.rlim_cur = 0;
-  ZLOGFAIL(setrlimit(RLIMIT_NPROC, &rl) != 0, errno, "cannot set RLIMIT_NPROC");
-}
-#endif
-
 void LastDefenseLine(struct NaClApp *nap)
 {
   LimitOwnIO();
@@ -328,7 +305,7 @@ void SystemManifestCtor(struct NaClApp *nap)
 
   /* get zerovm settings from manifest */
   policy->version = GetValueByKey(MFT_VERSION);
-  policy->nexe_etag = GetValueByKey(MFT_ETAG);
+  policy->etag = GetValueByKey(MFT_ETAG);
 
   /* check mandatory manifest keys */
   ZLOGFAIL(nap->system_manifest->version == NULL, EFAULT,
@@ -336,13 +313,12 @@ void SystemManifestCtor(struct NaClApp *nap)
   ZLOGFAIL(g_strcmp0(nap->system_manifest->version, MANIFEST_VERSION),
       EFAULT, "manifest version not supported");
 
-  /* get node id */
+  /* set node id */
   node = GetValueByKey(MFT_NODE);
   if(node != NULL)
   {
-    int64_t id = ATOI(node);
-    ZLOGFAIL(id <= 0, EFAULT, "node id is invalid");
-    nap->system_manifest->node_id = id;
+    nap->system_manifest->node = ATOI(node);
+    ZLOGFAIL(nap->system_manifest->node <= 0, EFAULT, "node id is invalid");
   }
 
   /* construct and initialize all channels */
