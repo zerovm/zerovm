@@ -418,6 +418,75 @@ inline int handle(const char *alias)
   return -1;
 }
 
+#if 0
+/* ### {{ */
+#define EOL "\r\n"
+#define ENVIRONMENT "/dev/nvram"
+#define ENVIRONMENT_MAX_SIZE 0x10000
+uint32_t *get_start_info()
+{
+//  char buffer[ENVIRONMENT_MAX_SIZE];
+  char *buffer = NULL;
+  char *strings = NULL;
+  uint32_t *info = NULL;
+  char *strings_start = NULL;
+  int handle = -1;
+  int i; /* indices of info and strings */
+
+  /* find "/dev/nvram" handle */
+  for(i = 3; i < MANIFEST->channels_count; ++i)
+  {
+    if(strcmp(MANIFEST->channels[i].name, ENVIRONMENT) == 0)
+    {
+      handle = i;
+      break;
+    }
+  }
+  if(handle < 0) goto fail;
+
+  /* allocate temporary buffer */
+  buffer = malloc(ENVIRONMENT_MAX_SIZE);
+  if(buffer == NULL) goto fail;
+
+  /* read nvram content and ensure the size */
+  i = zvm_pread(handle, buffer, ENVIRONMENT_MAX_SIZE, 0);
+  if(i == ENVIRONMENT_MAX_SIZE) goto fail;
+
+  /* allocate area to hold nvram information */
+  info = calloc(i, sizeof strings);
+  strings = calloc(i, sizeof *strings);
+  if(info == NULL || strings == NULL) goto fail;
+  strings_start = strings;
+
+  /* parse command line arguments */
+  buffer = strtok(buffer, EOL);
+  for(i = 3; buffer; ++i)
+  {
+    strcpy(strings, buffer);
+    info[i] = (uintptr_t)strings;
+    strings += strlen(buffer) + 1;
+
+    buffer = strtok(NULL, EOL);
+  }
+  info[2] = i;
+  info[i] = 0;
+
+  /* todo: parse environment */
+
+  /* adjust buffers size */
+  strings = realloc(strings, strings - strings_start);
+  info = realloc(info, i * sizeof *info);
+  return info;
+
+  fail:
+  free(buffer);
+  free(strings);
+  free(info);
+  return NULL;
+}
+#endif
+/* }} */
+
 /* initializer of zlib (replaces glibc prologue) */
 static void _init()
 {
@@ -430,14 +499,24 @@ int main(int argc, char **argv, char **envp);
 void _start(uint32_t *info)
 {
   int argc = info[2];
-  char **argv = (void *) &info[3];
+  char **argv = (void*)&info[3];
   char **envp = argv + argc + 1;
+//  int argc;
+//  char **argv;
+//  char **envp;
+//  uint32_t *p;
 
   /*
-   * command line (with the program name) and environment
-   * available via /dev/nvram channel. it can be read from
-   * argv/envp, however the support will be removed soon
+   * if the start information is available through the "/dev/nvram"
+   * channel, use it instead of the given argument
    */
+//  p = get_start_info();
+//  if(info != NULL) info = p;
+//
+//  /* set the main() arguments */
+//  argc = info[2];
+//  argv = (void*)&info[3];
+//  envp = argv + argc + 1;
 
   /* put marker to the bottom of the stack */
   *(uint64_t*)0xFF000000 = 0x716f74726f622764LLU;

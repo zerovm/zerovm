@@ -9,6 +9,7 @@
 #include "include/zvmlib.h"
 #include "include/ztest.h"
 
+#define DEFAULT_SIGNAL 11
 #define SIGNALS_NUMBER 64
 #define BIGFILE "quota.data"
 
@@ -67,18 +68,16 @@ void signals_ctor(void (*signals[])())
 int main(int argc, char **argv, char **envp)
 {
   void (*signals[SIGNALS_NUMBER])();
-  uint32_t signum = -1U;
+  uint32_t signum = DEFAULT_SIGNAL;
 
   /* constructor of signal raisers */
+  if(argc == 2)
+    signum = STRTOL(argv[1], NULL, 10);
   signals_ctor(signals);
 
   /* provoke the signal */
-  if(argc == 2)
-  {
-    signum = STRTOL(argv[1], NULL, 10);
-    if(signum < SIGNALS_NUMBER)
-      signals[signum]();
-  }
+  if(signum < SIGNALS_NUMBER)
+    signals[signum]();
 
   /* not reached if the signal handler invoked */
   FPRINTF(STDERR, "FAILED on signal #%u\n", signum);

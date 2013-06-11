@@ -184,7 +184,7 @@ int ManifestCtor(const char *name)
   mft = fopen(name, "r");
   ZLOGFAIL(mft == NULL, errno, "cannot open manifest file %s", name);
   mft_size = GetFileSize(name);
-  ZLOGFAIL(mft_size > MANIFEST_MAX, EFBIG, "manifest file exceeded the limit %d", mft_size);
+  ZLOGFAIL(mft_size > MANIFEST_MAX, EFBIG, "manifest file is too large: %d", mft_size);
   ZLOGFAIL(mft_size == 0, EPERM, "manifest file is empty");
 
   /* allocate memory to hold manifest data */

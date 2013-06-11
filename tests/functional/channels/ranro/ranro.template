@@ -10,7 +10,8 @@ Channel = PWD/ranro.data, /dev/ranro, 1, 32, 32, 0, 0
 == switches for zerovm. some of them used to control nexe, some
 == for the internal zerovm needs
 =====================================================================
-Version = 09082012
-Nexe = ranro.nexe
-MemMax = 33554432
+Version = 20130611
+Program = ranro.nexe
+Memory = 33554432
 Timeout = 1
+

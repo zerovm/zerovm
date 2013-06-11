@@ -10,7 +10,8 @@ Channel = PWD/seqwo.data, /dev/seqwo, 1, 0, 0, 32, 32
 == switches for zerovm. some of them used to control nexe, some
 == for the internal zerovm needs
 =====================================================================
-Version = 09082012
-Nexe = seqwo.nexe
-MemMax = 33554432
+Version = 20130611
+Program = seqwo.nexe
+Memory = 33554432
 Timeout = 1
+

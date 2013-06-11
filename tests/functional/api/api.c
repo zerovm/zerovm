@@ -79,14 +79,14 @@ void check_memory()
   int64_t heap_end;
 
   /* fail if memory is not set in manifest */
-  ZTEST(GetValueByKey("MemMax") != NULL);
+  ZTEST(GetValueByKey("Memory") != NULL);
 
   /* user manifest area size */
   umft_size = (uintptr_t)&MANIFEST->channels[MANIFEST->channels_count - 1].name;
   umft_size = (FOURGIG - MANIFEST->stack_size) - ROUNDDOWN_64K(umft_size);
 
   /* get memory size specified in manifest */
-  heap_end = ATOI(GetValueByKey("MemMax"));
+  heap_end = ATOI(GetValueByKey("Memory"));
   ZTEST(heap_end > 0);
 
   /* calculate approximate heap_ptr */

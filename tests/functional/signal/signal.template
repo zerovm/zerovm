@@ -12,11 +12,12 @@ Channel = PWD/quota.data, quota.data, 0, 0, 0, 5368709120, 5368709120
 == switches for zerovm. some of them used to control nexe, some
 == for the internal zerovm needs
 =====================================================================
-Version = 09082012
-Nexe = signal.nexe
-MemMax = 33554432
+Version = 20130611
+Program = signal.nexe
+Memory = 33554432
+Timeout = 1
 
 == available signals: 8, 11, 14, 25
 == (for #25[file quota] timeout have to be set to adequate value)
 CommandLine = 14
-Timeout = 1
+

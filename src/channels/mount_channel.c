@@ -148,7 +148,7 @@ static void ChannelCtor(struct NaClApp *nap, char **tokens)
       code = PrefetchChannelCtor(channel);
       break;
     default:
-      ZLOGFAIL(1, EPROTONOSUPPORT, "%s has invalid type %s",
+      ZLOGFAIL(1, EPROTONOSUPPORT, "%s has invalid type: %s",
           channel->alias, StringizeChannelSourceType(channel->source));
       break;
   }

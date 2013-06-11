@@ -9,6 +9,7 @@ Channel = /dev/stderr, /dev/stderr, 0, 0, 0, 32, 32
 == switches for zerovm. some of them used to control nexe, some
 == for the internal zerovm needs
 =====================================================================
-Nexe = dummy.nexe
-MemMax = 33554432
+Program = dummy.nexe
+Memory = 33554432
 Timeout = 1
+

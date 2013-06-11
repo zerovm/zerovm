@@ -9,7 +9,7 @@ Channel = PWD/result.log, /dev/stderr, 0, 0, 0, 65536, 4194304
 == switches for zerovm. some of them used to control nexe, some
 == for the internal zerovm needs
 =====================================================================
-Version = 09082012
-Nexe = accounting.nexe
-MemMax = 33554432
+Version = 20130611
+Program = accounting.nexe
+Memory = 33554432
 Timeout = 1
