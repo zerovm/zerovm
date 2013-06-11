@@ -9,6 +9,9 @@ all: $(NAME).c
 	@sed 's#PWD#$(PWD)#g' $(NAME)1.template > $(NAME)1.manifest
 	@sed 's#PWD#$(PWD)#g' $(NAME)2.template > $(NAME)2.manifest
 	@sed 's#PWD#$(PWD)#g' $(NAME)3.template > $(NAME)3.manifest
+	@echo copier1 > nvram1
+	@echo copier2 > nvram2
+	@echo copier3 > nvram3
 	@dd if=/dev/urandom of=input.data bs=1048576 count=32 2> /dev/null
 	@$(ZEROVM_ROOT)/zerovm -e3 $(NAME)1.manifest&
 	@$(ZEROVM_ROOT)/zerovm -e3 $(NAME)2.manifest&
@@ -16,5 +19,5 @@ all: $(NAME).c
 	@pkill -f ns_server
 
 clean:
-	rm -f $(NAME).nexe $(NAME).o *.log *.data *.manifest
+	rm -f $(NAME).nexe $(NAME).o *.log *.data *.manifest nvram*
 

@@ -4,6 +4,7 @@
 Channel = PWD/input.data, /dev/stdin, 0, 1073741824, 4294967296, 0, 0
 Channel = tcp:2:, /dev/stdout, 0, 0, 0, 1073741824, 4294967296
 Channel = PWD/stderr1.log, /dev/stderr, 0, 0, 0, 1073741824, 4294967296
+Channel = PWD/nvram1, /dev/nvram, 0, 1024, 8192, 0, 0
 
 =====================================================================
 == zerovm settings

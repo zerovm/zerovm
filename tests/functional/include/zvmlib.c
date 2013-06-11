@@ -418,74 +418,57 @@ inline int handle(const char *alias)
   return -1;
 }
 
-#if 0
-/* ### {{ */
-#define EOL "\r\n"
-#define ENVIRONMENT "/dev/nvram"
-#define ENVIRONMENT_MAX_SIZE 0x10000
+/* get command line and environment data from the channel */
+static int get_nvram_data(char *buffer)
+{
+  int i = OPEN(ENVIRONMENT);
+  i = zvm_pread(i, buffer, ENVIRONMENT_MAX_SIZE, 0);
+  return i == ENVIRONMENT_MAX_SIZE || i < 1 ? -1 : i;
+}
+
+#define FAILIF(cond) if(cond) {free(strings); free(info); return (void*)0xFFFFFFC8;}
+#define PARSE(buf) \
+  for(buffer = strtok(buf, EOL); buffer; ++i)\
+  {\
+    /* check for end of section */\
+    if(strcmp(buffer, END_OF_SECTION) == 0) break;\
+    strcpy(strings, buffer);\
+    info[i] = (uintptr_t)strings;\
+    strings += strlen(buffer) + 1; /* +1 for '\0' */\
+    buffer = strtok(NULL, EOL);\
+  }
+
 uint32_t *get_start_info()
 {
-//  char buffer[ENVIRONMENT_MAX_SIZE];
-  char *buffer = NULL;
+  char buf[ENVIRONMENT_MAX_SIZE], *buffer = buf;
   char *strings = NULL;
   uint32_t *info = NULL;
-  char *strings_start = NULL;
-  int handle = -1;
-  int i; /* indices of info and strings */
+  int i;
 
-  /* find "/dev/nvram" handle */
-  for(i = 3; i < MANIFEST->channels_count; ++i)
-  {
-    if(strcmp(MANIFEST->channels[i].name, ENVIRONMENT) == 0)
-    {
-      handle = i;
-      break;
-    }
-  }
-  if(handle < 0) goto fail;
-
-  /* allocate temporary buffer */
-  buffer = malloc(ENVIRONMENT_MAX_SIZE);
-  if(buffer == NULL) goto fail;
-
-  /* read nvram content and ensure the size */
-  i = zvm_pread(handle, buffer, ENVIRONMENT_MAX_SIZE, 0);
-  if(i == ENVIRONMENT_MAX_SIZE) goto fail;
+  /* get the data */
+  i = get_nvram_data(buffer);
+  FAILIF(i <= 0);
 
   /* allocate area to hold nvram information */
   info = calloc(i, sizeof strings);
   strings = calloc(i, sizeof *strings);
-  if(info == NULL || strings == NULL) goto fail;
-  strings_start = strings;
+  FAILIF(info == NULL || strings == NULL);
 
   /* parse command line arguments */
-  buffer = strtok(buffer, EOL);
-  for(i = 3; buffer; ++i)
-  {
-    strcpy(strings, buffer);
-    info[i] = (uintptr_t)strings;
-    strings += strlen(buffer) + 1;
-
-    buffer = strtok(NULL, EOL);
-  }
-  info[2] = i;
+  i = 1;
+  PARSE(buffer);
   info[i] = 0;
+  info[0] = i - 1;
 
-  /* todo: parse environment */
+  /* parse environment */
+  ++i;
+  PARSE(NULL);
 
-  /* adjust buffers size */
-  strings = realloc(strings, strings - strings_start);
-  info = realloc(info, i * sizeof *info);
+  /* todo: buffers sizes adjustment disabled since bget reallocate is lame */
   return info;
-
-  fail:
-  free(buffer);
-  free(strings);
-  free(info);
-  return NULL;
 }
-#endif
-/* }} */
+#undef PARSE
+#undef FAILIF
 
 /* initializer of zlib (replaces glibc prologue) */
 static void _init()
@@ -495,34 +478,24 @@ static void _init()
 }
 
 /* the standard glibc prologue replacement */
+/*
+ * the standard glibc prologue replacement. command line arguments
+ * and environment will be read from the "/dev/nvram" channel instead
+ * of "info" passed as _start argument
+ */
 int main(int argc, char **argv, char **envp);
 void _start(uint32_t *info)
 {
-  int argc = info[2];
-  char **argv = (void*)&info[3];
-  char **envp = argv + argc + 1;
-//  int argc;
-//  char **argv;
-//  char **envp;
-//  uint32_t *p;
+  /* initialize zerovm library */
+  _init();
 
-  /*
-   * if the start information is available through the "/dev/nvram"
-   * channel, use it instead of the given argument
-   */
-//  p = get_start_info();
-//  if(info != NULL) info = p;
-//
-//  /* set the main() arguments */
-//  argc = info[2];
-//  argv = (void*)&info[3];
-//  envp = argv + argc + 1;
+  uint32_t *p = get_start_info();
+  int argc = p[0];
+  char **argv = (void*)&p[1];
+  char **envp = (void*)&p[argc + 2];
 
   /* put marker to the bottom of the stack */
   *(uint64_t*)0xFF000000 = 0x716f74726f622764LLU;
-
-  /* initialize zerovm library */
-  _init();
 
   /* call the user main and exit to zerovm */
   zvm_exit(main(argc, argv, envp));

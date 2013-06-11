@@ -22,6 +22,11 @@
 #define STDOUT "/dev/stdout"
 #define STDERR "/dev/stderr"
 
+#define EOL "\r\n"
+#define END_OF_SECTION ";"
+#define ENVIRONMENT "/dev/nvram"
+#define ENVIRONMENT_MAX_SIZE 0x1000
+
 #define BIG_ENOUGH 0x10000
 
 /***************************************************
