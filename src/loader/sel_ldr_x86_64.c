@@ -20,6 +20,7 @@
  */
 
 #include <sys/mman.h>
+#include <assert.h>
 #include "src/main/zlog.h"
 #include "src/loader/sel_ldr.h"
 #include "src/platform/sel_memory.h"
@@ -28,36 +29,21 @@
 
 extern int NaClSyscallSeg(); /* d'b: defined in nacl_syscall_64.S */
 
-int NaClMakeDispatchThunk(struct NaClApp *nap)
+void NaClMakeDispatchThunk(struct NaClApp *nap)
 {
-  int                   retval = 0;  /* fail */
   int                   error;
-  void                  *thunk_addr = ((void*)0x5AFECA110000); /* d'b */
+  void                  *thunk_addr = THUNK_ADDR;
   struct NaClPatchInfo  patch_info;
   struct NaClPatch      jmp_target;
 
-  if(0 != nap->dispatch_thunk)
-  {
-    ZLOG(LOG_ERROR, "dispatch_thunk already initialized!");
-    return 1;
-  }
+  assert(nap->dispatch_thunk == 0);
 
   /* d'b: replaced with not randomized version */
   error = NaCl_page_alloc_intern_flags(&thunk_addr, NACL_MAP_PAGESIZE, 0);
-  if(0 != (error))
-  {
-    ZLOG(LOG_ERROR, "NaCl_page_alloc_intern_flags failed, errno %d", -error);
-    retval = 0;
-    goto cleanup;
-  }
+  ZLOGFAIL(error < 0, errno, "thunk allocation failed");
 
-  ZLOGS(LOG_DEBUG, "Thunk got address 0x%lx", (uintptr_t) thunk_addr);
-  if(0 != (error = NaCl_mprotect(thunk_addr, NACL_MAP_PAGESIZE, PROT_READ | PROT_WRITE)))
-  {
-    ZLOG(LOG_ERROR, "NaCl_mprotect r/w failed, errno %d", -error);
-    retval = 0;
-    goto cleanup;
-  }
+  error = NaCl_mprotect(thunk_addr, NACL_MAP_PAGESIZE, PROT_READ | PROT_WRITE);
+  ZLOGFAIL(error != 0, errno, "thunk r/w protection failed");
 
   NaClFillMemoryRegionWithHalt(thunk_addr, NACL_MAP_PAGESIZE);
 
@@ -73,28 +59,21 @@ int NaClMakeDispatchThunk(struct NaClApp *nap)
   patch_info.nbytes = (uintptr_t)&NaClDispatchThunkEnd - (uintptr_t)&NaClDispatchThunk;
   NaClApplyPatchToMemory(&patch_info);
 
-  if(0 != (error = NaCl_mprotect(thunk_addr, NACL_MAP_PAGESIZE, PROT_EXEC | PROT_READ)))
-  {
-    ZLOG(LOG_ERROR, "NaCl_mprotect r/x failed, errno %d", -error);
-    retval = 0;
-    goto cleanup;
-  }
-  retval = 1;
+  error = NaCl_mprotect(thunk_addr, NACL_MAP_PAGESIZE, PROT_EXEC | PROT_READ);
+  ZLOGFAIL(error != 0, errno, "thunk r/x protection failed");
 
-  cleanup:
-  if(0 == retval)
+  nap->dispatch_thunk = (uintptr_t)thunk_addr;
+}
+
+void NaClFreeDispatchThunk(struct NaClApp *nap)
+{
+  assert(nap != NULL);
+
+  if((void*)nap->dispatch_thunk != NULL)
   {
-    if(NULL != thunk_addr)
-    {
-      NaCl_page_free(thunk_addr, NACL_MAP_PAGESIZE);
-      thunk_addr = NULL;
-    }
+    NaCl_page_free((void*)nap->dispatch_thunk, NACL_MAP_PAGESIZE);
+    nap->dispatch_thunk = (uintptr_t)NULL;
   }
-  else
-  {
-    nap->dispatch_thunk = (uintptr_t)thunk_addr;
-  }
-  return retval;
 }
 
 void NaClPatchOneTrampoline(struct NaClApp *nap, uintptr_t target_addr)

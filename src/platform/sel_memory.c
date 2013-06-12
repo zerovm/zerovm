@@ -29,12 +29,6 @@
 #include <stdio.h>
 #include "src/main/zlog.h"
 
-void NaCl_page_free(void *p, size_t size)
-{
-  if(p == 0 || size == 0) return;
-  ZLOGFAIL(munmap(p, size) == -1, errno, "NaCl_page_free: munmap() failed");
-}
-
 int NaCl_page_alloc_intern_flags(void **p, size_t size, int map_flags)
 {
   void *addr;
@@ -47,6 +41,13 @@ int NaCl_page_alloc_intern_flags(void **p, size_t size, int map_flags)
   if(MAP_FAILED == addr) addr = NULL;
   if(NULL != addr) *p = addr;
   return (NULL == addr) ? -ENOMEM : 0;
+}
+
+int NaCl_page_free(void *p, size_t size)
+{
+  int ret = munmap(p, size);
+
+  return ret == -1 ? -errno : ret;
 }
 
 int NaCl_mprotect(void *addr, size_t len, int prot)

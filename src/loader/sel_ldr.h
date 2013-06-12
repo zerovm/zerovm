@@ -229,7 +229,9 @@ void NaClFillMemoryRegionWithHalt(void *start, size_t size);
 
 void NaClFillTrampolineRegion(struct NaClApp *nap);
 
-int NaClMakeDispatchThunk(struct NaClApp *nap);
+void NaClMakeDispatchThunk(struct NaClApp *nap);
+
+void NaClFreeDispatchThunk(struct NaClApp *nap);
 
 /* Install a syscall trampoline at target_addr.  NB: Thread-safe. */
 void NaClPatchOneTrampoline(struct NaClApp *nap,

@@ -73,6 +73,7 @@ static void Finalizer(void)
   ProxyReport(gnap); /* show report */
   ChannelsDtor(gnap); /* free channels */
   NaClAppDtor(gnap); /* free user space and globals */
+  NaClFreeDispatchThunk(gnap); /* free thunk */
   TagEngineDtor();
   ZLogDtor(); /* close syslog */
   ManifestDtor(); /* free manifest */

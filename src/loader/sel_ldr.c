@@ -112,7 +112,7 @@ void  NaClLoadTrampoline(struct NaClApp *nap) {
   int         i;
   uintptr_t   addr;
 
-  ZLOGFAIL(!NaClMakeDispatchThunk(nap), EFAULT, FAILED_MSG);
+  NaClMakeDispatchThunk(nap);
   NaClFillTrampolineRegion(nap);
 
   /*

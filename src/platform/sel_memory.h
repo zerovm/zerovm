@@ -42,24 +42,18 @@ extern "C" {
 #define MAX_RETRIES     1024
 
 /* d'b: a global function now */
-int NaCl_page_alloc_intern_flags(void   **p,
-                                 size_t size,
-                                 int    map_flags);
-void  NaCl_page_free(void     *p,
-                     size_t   num_bytes);
+int NaCl_page_alloc_intern_flags(void **p, size_t size, int map_flags);
+
+int NaCl_page_free(void *p, size_t num_bytes);
 
 /*
  * This is critical to make the text region non-writable, and the data
  * region read/write but no exec.  Of course, some kernels do not
  * respect the lack of PROT_EXEC.
  */
-int   NaCl_mprotect(void          *addr,
-                    size_t        len,
-                    int           prot) NACL_WUR;
+int NaCl_mprotect(void *addr, size_t len, int prot) NACL_WUR;
 
-int   NaCl_madvise(void           *start,
-                   size_t         length,
-                   int            advice) NACL_WUR;
+int NaCl_madvise(void *start, size_t length, int advice) NACL_WUR;
 
 #ifdef __cplusplus
 }

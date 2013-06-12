@@ -25,5 +25,6 @@
 #define NACL_MAX_ADDR_BITS  (32)
 #define NACL_HALT_OPCODE    0xf4
 #define NACL_HALT_LEN       1           /* length of halt instruction */
+#define THUNK_ADDR          ((void*)0x5AFECA110000)
 
 #endif /* SEL_LDR_X86_H__ */
