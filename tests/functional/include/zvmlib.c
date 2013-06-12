@@ -426,7 +426,7 @@ static int get_nvram_data(char *buffer)
   return i == ENVIRONMENT_MAX_SIZE || i < 1 ? -1 : i;
 }
 
-#define FAILIF(cond) if(cond) {free(strings); free(info); return (void*)0xFFFFFFC8;}
+#define FAILIF(cond) if(cond) {free(strings); free(info); return (void*)0xFFFFFFD8;}
 #define PARSE(buf) \
   for(buffer = strtok(buf, EOL); buffer; ++i)\
   {\

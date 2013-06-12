@@ -5,14 +5,14 @@
 Channel = /dev/null, /dev/stdin, 0, 999999, 999999, 0, 0
 Channel = /dev/stdout, /dev/stdout, 0, 0, 0, 999999, 999999
 Channel = /dev/stderr, /dev/stderr, 0, 0, 0, 999999, 999999
+Channel = PWD/nvram, /dev/nvram, 0, 999999, 999999, 0, 0
 
 =====================================================================
 == switches for zerovm. some of them used to control nexe, some
 == for the internal zerovm needs
 =====================================================================
-Version = 09082012
-Nexe = argv_envp.nexe
-MemMax = 33554432
+Version = 20130611
+Program = argv_envp.nexe
+Memory = 33554432
 Timeout = 1
-CommandLine = 1 2 3 4 5
-Environment = key1, value1, key2, value2, key3, value3, key4, value4
+

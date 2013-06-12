@@ -6,7 +6,8 @@ all: $(NAME).c
 	-O2 -I$(ZEROVM_ROOT) -I$(ZEROVM_ROOT)/tests/functional $^ \
 	$(ZEROVM_ROOT)/tests/functional/include/libzvmlib.a
 	@sed 's#PWD#$(PWD)#g' $(NAME).template > $(NAME).manifest
+	@echo signal\\n8 > nvram
 	@$(ZEROVM_ROOT)/zerovm -l1 -e3 $(NAME).manifest
 
 clean:
-	rm -f $(NAME).nexe $(NAME).o *.log *.data *.manifest
+	rm -f $(NAME).nexe $(NAME).o *.log *.data *.manifest nvram*

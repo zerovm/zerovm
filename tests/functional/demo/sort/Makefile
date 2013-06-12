@@ -19,6 +19,9 @@ all: $(NAME_1).c $(NAME_2).c $(NAME_3).c
 	@sed 's#PWD#$(PWD)#g' $(NAME_1).template > $(NAME_1).manifest
 	@sed 's#PWD#$(PWD)#g' $(NAME_2).template > $(NAME_2).manifest
 	@sed 's#PWD#$(PWD)#g' $(NAME_3).template > $(NAME_3).manifest
+	@echo generator\\n268435456 > nvram_generator
+	@echo sort\\n268435456 > nvram_sort
+	@echo tester\\n268435456 > nvram_tester
 	@printf "GENERATING %053o\n" 0
 	@$(ZEROVM_ROOT)/zerovm generator.uint32_t.manifest
 	@cat generator.stderr.log
@@ -31,4 +34,4 @@ all: $(NAME_1).c $(NAME_2).c $(NAME_3).c
 
 clean:
 	rm -f $(NAME_1).nexe $(NAME_1).o $(NAME_2).nexe $(NAME_2).o \
-	$(NAME_3).nexe $(NAME_3).o *.log *.data *.manifest
+	$(NAME_3).nexe $(NAME_3).o *.log *.data *.manifest nvram*

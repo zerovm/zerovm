@@ -9,8 +9,8 @@ Channel = /dev/null, /dev/stderr, 0, 0, 0, 999999, 999999
 == switches for zerovm. some of them used to control nexe, some
 == for the internal zerovm needs
 =====================================================================
-Version = 09082012
-Nexe = malloc.nexe
-NodeName = 1
-MemMax = 33554432
+Version = 20130611
+Program = malloc.nexe
+Memory = 33554432
 Timeout = 30
+

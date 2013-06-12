@@ -4,13 +4,14 @@
 Channel = PWD/sorted.data, /dev/stdin, 0, 268435456, 268435457, 0, 0
 Channel = /dev/null, /dev/stdout, 0, 0, 0, 268435456, 268435456
 Channel = PWD/tester.stderr.log, /dev/stderr, 0, 0, 0, 268435456, 268435456
+Channel = PWD/nvram_tester, /dev/nvram, 0, 1, 8192, 0, 0
 
 =====================================================================
 == switches for zerovm. some of them used to control nexe, some
 == for the internal zerovm needs
 =====================================================================
-Version = 09082012
-Nexe = tester.uint32_t.nexe
-CommandLine = 268435456
-Timeout = 30
-MemMax = 805306368
+Version = 20130611
+Program = tester.uint32_t.nexe
+Memory = 805306368
+Timeout = 120
+

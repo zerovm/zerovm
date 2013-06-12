@@ -25,7 +25,7 @@ fi
 
 #create debug script
 echo set confirm off > debug.scp
-echo b NaClCreateMainThread >> debug.scp
+echo b CreateSession >> debug.scp
 echo r >> debug.scp
 echo b main >> debug.scp
 echo add-symbol-file $name.nexe 0x440a00020000 >> debug.scp

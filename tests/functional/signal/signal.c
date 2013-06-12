@@ -74,6 +74,7 @@ int main(int argc, char **argv, char **envp)
   if(argc == 2)
     signum = STRTOL(argv[1], NULL, 10);
   signals_ctor(signals);
+  FPRINTF(STDERR, "signal #%u will be used\n", signum);
 
   /* provoke the signal */
   if(signum < SIGNALS_NUMBER)

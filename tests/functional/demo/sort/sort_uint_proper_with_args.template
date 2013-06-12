@@ -4,13 +4,14 @@
 Channel = PWD/unsorted.data, /dev/stdin, 0, 268435456, 268435456, 0, 0
 Channel = PWD/sorted.data, /dev/stdout, 0, 0, 0, 268435456, 268435456
 Channel = PWD/sort.stderr.log, /dev/stderr, 0, 0, 0, 268435456, 268435456
+Channel = PWD/nvram_sort, /dev/nvram, 0, 1, 8192, 0, 0
 
 =====================================================================
 == switches for zerovm. some of them used to control nexe, some
 == for the internal zerovm needs
 =====================================================================
-Version = 09082012
-Nexe = sort_uint_proper_with_args.nexe
-CommandLine = 268435456
-Timeout = 30
-MemMax = 805306368
+Version = 20130611
+Program = sort_uint_proper_with_args.nexe
+Memory = 805306368
+Timeout = 240
+
