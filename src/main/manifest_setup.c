@@ -295,13 +295,16 @@ static void SetSystemData(struct NaClApp *nap)
 static void ParseMemoryArgs(struct NaClApp *nap)
 {
   char *tokens[MEMORY_ATTRIBUTES + 1];
-  int count;
+  int i;
 
-  count = ParseValue(GetValueByKey(MFT_MEMORY), ",", tokens, MEMORY_ATTRIBUTES + 1);
-  ZLOGFAIL(count != MEMORY_ATTRIBUTES, EFAULT,
+  i = ParseValue(GetValueByKey(MFT_MEMORY), ",", tokens, MEMORY_ATTRIBUTES + 1);
+  ZLOGFAIL(i != MEMORY_ATTRIBUTES, EFAULT,
       "Memory has invalid number of arguments");
   nap->heap_end = ATOI(tokens[0]);
-  nap->mem_tag = ATOI(tokens[1]) == 0 ? NULL : TagCtor();
+
+  i = ATOI(tokens[1]);
+  ZLOGFAIL(i != 0 && i != 1, EFAULT, "Memory has invalid tag argument");
+  nap->mem_tag = i == 0 ? NULL : TagCtor();
 }
 
 void SystemManifestCtor(struct NaClApp *nap)
@@ -314,16 +317,7 @@ void SystemManifestCtor(struct NaClApp *nap)
   assert(nap->system_manifest != NULL);
 
   policy = nap->system_manifest;
-
-  /* get zerovm settings from manifest */
-  policy->version = GetValueByKey(MFT_VERSION);
   policy->etag = GetValueByKey(MFT_ETAG);
-
-  /* check mandatory manifest keys */
-  ZLOGFAIL(nap->system_manifest->version == NULL, EFAULT,
-      "the manifest version is not provided");
-  ZLOGFAIL(g_strcmp0(nap->system_manifest->version, MANIFEST_VERSION),
-      EFAULT, "manifest version not supported");
 
   /* set node id */
   node = GetValueByKey(MFT_NODE);

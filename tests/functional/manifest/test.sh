@@ -16,4 +16,4 @@ for i in `ls *.manifest`; do
   fi
 done
 
-rm dummy.nexe
+#rm dummy.nexe

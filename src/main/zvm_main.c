@@ -65,6 +65,7 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
 {
   int opt;
   char *manifest_name = NULL;
+  char *manifest_version = NULL;
   int64_t nexe_size;
 
   /* construct zlog with default verbosity */
@@ -127,6 +128,13 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
 
   /* parse manifest file specified in command line */
   ZLOGFAIL(ManifestCtor(manifest_name), EFAULT, "Invalid manifest '%s'", manifest_name);
+
+  /* check the manifest version */
+  manifest_version = GetValueByKey(MFT_VERSION);
+  ZLOGFAIL(manifest_version == NULL, EFAULT,
+      "the manifest version is not provided");
+  ZLOGFAIL(g_strcmp0(manifest_version, MANIFEST_VERSION),
+      EFAULT, "manifest version not supported");
 
   /* set available nap and manifest fields */
   assert(nap->system_manifest != NULL);
