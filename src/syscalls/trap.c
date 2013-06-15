@@ -70,15 +70,12 @@ static int ChannelIOMask(struct ChannelDesc *channel)
 static void UpdateChannelTag(struct ChannelDesc *channel,
     const char *buffer, int32_t size)
 {
-  /* skip if etag is not enabled */
-  if(!CHANNELS_ETAG_ENABLED) return;
-
   assert(channel != NULL);
   assert(buffer != NULL);
 
   /* update etag and log information */
-  if(size <= 0) return;
-  TagUpdate(channel->tag, buffer, size);
+  if(channel->tag != NULL && size > 0)
+    TagUpdate(channel->tag, buffer, size);
 }
 
 /*

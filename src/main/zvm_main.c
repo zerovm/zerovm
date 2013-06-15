@@ -70,7 +70,7 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
   /* construct zlog with default verbosity */
   ZLogCtor(LOG_ERROR);
 
-  while((opt = getopt(argc, argv, "-PFQsSv:M:l:e:")) != -1)
+  while((opt = getopt(argc, argv, "-PFQsSv:M:l:")) != -1)
   {
     switch(opt)
     {
@@ -82,15 +82,10 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
         break;
       case 's':
         skip_validator = 1;
-        ZLOGS(LOG_ERROR, "VALIDATION DISABLED by -s");
+        ZLOGS(LOG_ERROR, "VALIDATION DISABLED");
         break;
       case 'F':
         quit_after_load = 1;
-        break;
-      case 'e':
-        if(TagEngineCtor(ATOI(optarg)) != 0)
-          BADCMDLINE("invalid etag level");
-        nap->user_tag = TagCtor();
         break;
       case 'S':
         /*
@@ -99,7 +94,7 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
          * and therefore always should catch signals
          */
         SetSignalHandling(0);
-        ZLOGS(LOG_ERROR, "SIGNAL HANDLING DISABLED by -S");
+        ZLOGS(LOG_ERROR, "SIGNAL HANDLING DISABLED");
         break;
       case 'l':
         /* calculate hard limit in Gb and don't allow it less then "big enough" */
@@ -112,10 +107,10 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
         break;
       case 'Q':
         skip_qualification = 1;
-        ZLOGS(LOG_ERROR, "PLATFORM QUALIFICATION DISABLED by -Q");
+        ZLOGS(LOG_ERROR, "PLATFORM QUALIFICATION DISABLED");
         break;
       case 'P':
-        ZLOGS(LOG_ERROR, "DISK SPACE PREALLOCATION DISABLED by -P");
+        ZLOGS(LOG_ERROR, "DISK SPACE PREALLOCATION DISABLED");
         PreloadAllocationDisable();
         break;
       default:

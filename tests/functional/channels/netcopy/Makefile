@@ -13,9 +13,9 @@ all: $(NAME).c
 	@echo copier2 > nvram2
 	@echo copier3 > nvram3
 	@dd if=/dev/urandom of=input.data bs=1048576 count=32 2> /dev/null
-	@$(ZEROVM_ROOT)/zerovm -e3 $(NAME)1.manifest&
-	@$(ZEROVM_ROOT)/zerovm -e3 $(NAME)2.manifest&
-	@$(ZEROVM_ROOT)/zerovm -e3 $(NAME)3.manifest
+	@$(ZEROVM_ROOT)/zerovm $(NAME)1.manifest&
+	@$(ZEROVM_ROOT)/zerovm $(NAME)2.manifest&
+	@$(ZEROVM_ROOT)/zerovm $(NAME)3.manifest
 	@pkill -f ns_server
 
 clean:

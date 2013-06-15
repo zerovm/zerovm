@@ -23,27 +23,6 @@
 #include "src/main/tools.h"
 #include "src/main/etag.h"
 
-static int tag_engine_enabled = 0;
-
-int TagEngineCtor(int level)
-{
-  if(level < 1 || level > 3) return -1;
-
-  tag_engine_enabled = level;
-  return 0;
-}
-
-/* disable etag */
-void TagEngineDtor()
-{
-  tag_engine_enabled = 0;
-}
-
-int TagEngineEnabled()
-{
-  return tag_engine_enabled;
-}
-
 void *TagCtor()
 {
   GChecksum *ctx;

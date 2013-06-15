@@ -1,10 +1,10 @@
 =====================================================================
 == zerovm api test
 =====================================================================
-Channel = /dev/null, /dev/stdin, 0, 1024, 65536, 0, 0
-Channel = /dev/null, /dev/stdout, 0, 0, 0, 1024, 65536
-Channel = PWD/result.log, /dev/stderr, 0, 0, 0, 1024, 65536
-Channel = PWD/api.manifest, /dev/control, 1, 1024, 65536, 0, 0
+Channel = /dev/null, /dev/stdin, 0, 1, 1024, 65536, 0, 0
+Channel = /dev/null, /dev/stdout, 0, 1, 0, 0, 1024, 65536
+Channel = PWD/result.log, /dev/stderr, 0, 1, 0, 0, 1024, 65536
+Channel = PWD/api.manifest, /dev/control, 1, 1, 1024, 65536, 0, 0
 
 =====================================================================
 == switches for zerovm. some of them used to control nexe, some
@@ -12,6 +12,6 @@ Channel = PWD/api.manifest, /dev/control, 1, 1024, 65536, 0, 0
 =====================================================================
 Version = 20130611
 Program = api.nexe
-Memory = 33554432
+Memory = 33554432, 1
 Timeout = 1
 

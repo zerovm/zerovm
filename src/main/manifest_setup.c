@@ -105,7 +105,7 @@ static void PreallocateUserMemory(struct NaClApp *nap)
   assert(nap != NULL);
   assert(nap->system_manifest != NULL);
 
-  /* quit function if max_mem is not specified or invalid */
+  /* quit function if "Memory" is not specified or invalid */
   ZLOGFAIL(nap->heap_end == 0 || nap->heap_end > FOURGIG,
       ENOMEM, "invalid memory size");
 
@@ -292,6 +292,18 @@ static void SetSystemData(struct NaClApp *nap)
 }
 /* }} */
 
+static void ParseMemoryArgs(struct NaClApp *nap)
+{
+  char *tokens[MEMORY_ATTRIBUTES + 1];
+  int count;
+
+  count = ParseValue(GetValueByKey(MFT_MEMORY), ",", tokens, MEMORY_ATTRIBUTES + 1);
+  ZLOGFAIL(count != MEMORY_ATTRIBUTES, EFAULT,
+      "Memory has invalid number of arguments");
+  nap->heap_end = ATOI(tokens[0]);
+  nap->mem_tag = ATOI(tokens[1]) == 0 ? NULL : TagCtor();
+}
+
 void SystemManifestCtor(struct NaClApp *nap)
 {
   struct SystemManifest *policy;
@@ -329,7 +341,7 @@ void SystemManifestCtor(struct NaClApp *nap)
    * in raw because after chunk allocated there will be no free user memory
    * note: will set "heap_ptr"
    */
-  GET_INT_BY_KEY(nap->heap_end, MFT_MEMORY);
+  ParseMemoryArgs(nap);
   PreallocateUserMemory(nap);
 
   /* set user manifest in user space (new ZVM API) */
@@ -344,14 +356,15 @@ int SystemManifestDtor(struct NaClApp *nap)
   return 0;
 }
 
-/* updates user_tag (should be constructed) with memory chunk data */
-static void EtagMemoryChunk(struct NaClApp *nap)
+/* populate given buffer with memory tag digest and free mem_tag */
+static void GetMemoryDigest(struct NaClApp *nap, char *digest)
 {
   int i;
 
   assert(nap != NULL);
-  assert(MEMORY_ETAG_ENABLED != 0);
+  assert(nap->mem_tag != NULL);
 
+  /* calculate overall memory tag */
   for(i = 0; i < MemMapSize; ++i)
   {
     uintptr_t addr = nap->mem_map[i].start;
@@ -359,50 +372,50 @@ static void EtagMemoryChunk(struct NaClApp *nap)
 
     /* update user_etag skipping inaccessible pages */
     if(nap->mem_map[i].prot & PROT_READ)
-      TagUpdate(nap->user_tag, (const char*) addr, size);
+      TagUpdate(nap->mem_tag, (const char*) addr, size);
   }
+
+  /* get digest and destroy tag context */
+  TagDigest(nap->mem_tag, digest);
+  TagDtor(nap->mem_tag);
+  nap->mem_tag = NULL;
 }
 
-int ProxyReport(struct NaClApp *nap)
+void ProxyReport(struct NaClApp *nap)
 {
-  char report[BIG_ENOUGH_STRING];
-  char etag[TAG_DIGEST_SIZE] = TAG_ENGINE_DISABLED;
-  int length;
-  int i;
+  GString *report = g_string_sized_new(BIG_ENOUGH_STRING);
+  char mem_digest[TAG_DIGEST_SIZE];
 
   assert(nap != NULL);
   assert(nap->system_manifest != NULL);
 
-  /* tag user memory / channels if session successful */
-  if(TagEngineEnabled())
+  /* create the report */
+  g_string_append_printf(report, "%s%d\n", REPORT_VALIDATOR,
+      nap->validation_state);
+  g_string_append_printf(report, "%s%d\n", REPORT_RETCODE,
+      nap->system_manifest->user_ret_code);
+  g_string_append_printf(report, "%s", REPORT_ETAG);
+
+  if(nap->mem_tag == NULL
+      && (nap->channels_tag == NULL|| nap->channels_tag->len == 0))
+    g_string_append_printf(report, "%s", TAG_ENGINE_DISABLED);
+  else
   {
-    if(MEMORY_ETAG_ENABLED) EtagMemoryChunk(nap);
-    TagDigest(nap->user_tag, etag);
-    TagDtor(nap->user_tag);
+    if(nap->mem_tag != NULL)
+    {
+      GetMemoryDigest(nap, mem_digest);
+      g_string_append_printf(report, "%s ", mem_digest);
+    }
+    if(nap->channels_tag->len > 0)
+      g_string_append_printf(report, "%s", nap->channels_tag->str);
   }
 
-  /* for debugging purposes it is useful to see more advanced information */
-#ifdef DEBUG
-  length = g_snprintf(report, BIG_ENOUGH_STRING,
-      "validator state = %d\nuser return code = %d\netag = %s\naccounting = %s\n"
-      "exit state = %s\n", nap->validation_state,
-      nap->system_manifest->user_ret_code, etag, GetAccountingInfo(), GetExitState());
-#else
-  /* .. but for production zvm will switch to more brief output */
-  length = g_snprintf(report, BIG_ENOUGH_STRING, "%d\n%d\n%s\n%s\n%s\n",
-      nap->validation_state, nap->system_manifest->user_ret_code,
-      etag, GetAccountingInfo(), GetExitState());
-#endif
+  g_string_append_printf(report, "\n%s%s\n", REPORT_ACCOUNTING, GetAccountingInfo());
+  g_string_append_printf(report, "%s%s\n", REPORT_STATE, GetExitState());
 
-  /* give the report to proxy */
-  i = write(STDOUT_FILENO, report, length);
-
-  /* log the report */
-  length = g_snprintf(report, BIG_ENOUGH_STRING,
-      "validator state = %d, user return code = %d, etag = %s, accounting = %s, "
-      "exit state = %s", nap->validation_state,
-      nap->system_manifest->user_ret_code, etag, GetAccountingInfo(), GetExitState());
-  ZLOGS(LOG_DEBUG, "%s", report);
-
-  return i == length ? 0 : -1;
+  /* give the report to proxy, free resources */
+  ZLOGIF(write(STDOUT_FILENO, report->str, report->len) != report->len,
+      "cannot write report");
+  g_string_free(report, TRUE);
+  report = NULL;
 }

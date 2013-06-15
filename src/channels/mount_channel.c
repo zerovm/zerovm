@@ -119,7 +119,8 @@ static void ChannelCtor(struct NaClApp *nap, char **tokens)
   channel->source = GetSourceType((char*)channel->name);
 
   /* initialize the channel tag */
-  if(CHANNELS_ETAG_ENABLED)
+  channel->tag = NULL;
+  if(ATOI(tokens[ChannelTag]) == 1)
   {
     channel->tag = TagCtor();
     memset(channel->digest, 0, TAG_DIGEST_SIZE);
@@ -197,6 +198,9 @@ void ChannelsCtor(struct NaClApp *nap)
   assert(nap != NULL);
   assert(nap->system_manifest != NULL);
 
+  /* allocate string for tags */
+  nap->channels_tag = g_string_sized_new(BIG_ENOUGH_STRING);
+
   /* allocate list to detect duplicate channels aliases */
   assert(aliases == NULL);
   aliases = g_tree_new_full((GCompareDataFunc)strcmp,
@@ -244,15 +248,21 @@ void ChannelsFinalizer(struct NaClApp *nap)
 
   /* exit if channels are not constructed */
   assert(nap != NULL);
+
   if(nap->system_manifest == NULL) return;
   if(nap->system_manifest->channels == NULL) return;
 
   for(i = 0; i < nap->system_manifest->channels_count; ++i)
   {
-    ChannelDtor(&nap->system_manifest->channels[i]);
-    if(CHANNELS_ETAG_ENABLED)
-      TagUpdate(nap->user_tag,
-          (const char*)nap->system_manifest->channels[i].digest, TAG_DIGEST_SIZE);
+    struct ChannelDesc *channel = &nap->system_manifest->channels[i];
+    if(channel->tag != NULL)
+    {
+      ChannelDtor(channel);
+      g_string_append_printf(nap->channels_tag, "%s %s ",
+          channel->alias, channel->digest);
+    }
+    else
+      ChannelDtor(channel);
   }
 }
 
@@ -263,6 +273,9 @@ void ChannelsDtor(struct NaClApp *nap)
   {
     g_free(nap->system_manifest->channels);
     nap->system_manifest->channels = NULL;
+    if(nap->channels_tag != NULL)
+      g_string_free(nap->channels_tag, TRUE);
+    nap->channels_tag = NULL;
     ResetAliases();
   }
 }

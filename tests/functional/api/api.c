@@ -39,11 +39,12 @@
 #include "src/main/manifest_parser.c"
 
 #define CONTROL "/dev/control"
-#define CHANNEL_ATTRIBUTES_NUMBER 7
+#define CHANNEL_ATTRIBUTES_NUMBER 8
 enum ChannelFields {
   CFieldURI,
   CFieldAlias,
   CFieldType,
+  CFieldTag,
   CFieldGetsLimit,
   CFieldGetSizeLimit,
   CFieldPutsLimit,

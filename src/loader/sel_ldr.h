@@ -168,7 +168,8 @@ struct NaClApp {
   struct SystemManifest     *system_manifest;
   uintptr_t                 heap_end; /* end of user heap */
   int                       validation_state; /* needs for the report */
-  void                      *user_tag; /* tag context for memory and channels */
+  GString                   *channels_tag; /* all etag digests for report */
+  void                      *mem_tag; /* tag context for memory */
 
   /* former natp field */
   uint32_t                  sysret; /* syscall return code */

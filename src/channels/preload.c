@@ -67,10 +67,11 @@ int PreloadChannelDtor(struct ChannelDesc* channel)
     i = ftruncate(channel->handle, channel->size);
 
   /* calculate digest and free the tag */
-  if(CHANNELS_ETAG_ENABLED)
+  if(channel->tag != NULL)
   {
     TagDigest(channel->tag, channel->digest);
     TagDtor(channel->tag);
+    channel->tag = NULL;
   }
 
   ZLOGS(LOG_DEBUG, "%s closed with tag = %s, getsize = %ld, "

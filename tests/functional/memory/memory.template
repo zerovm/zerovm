@@ -1,9 +1,9 @@
 =====================================================================
 == memory management test
 =====================================================================
-Channel = /dev/null, /dev/stdin, 0, 16, 256, 0, 0
-Channel = /dev/null, /dev/stdout, 0, 0, 0, 16, 256
-Channel = PWD/result.log, /dev/stderr, 0, 0, 0, 65536, 1048576
+Channel = /dev/null, /dev/stdin, 0, 1, 16, 256, 0, 0
+Channel = /dev/null, /dev/stdout, 0, 1, 0, 0, 16, 256
+Channel = PWD/result.log, /dev/stderr, 0, 1, 0, 0, 65536, 1048576
 
 =====================================================================
 == switches for zerovm. some of them used to control nexe, some
@@ -15,5 +15,5 @@ Timeout = 30
 
 4294967296 = 4gb; 2147483648 = 2gb; 1073741824 = 1gb; 536870912 = 512mb;
 268435456 = 256mb; 134217728 = 128mb; 67108864 = 64mb; 33554432 = 32mb;
-Memory = 134217728
+Memory = 134217728, 1
 

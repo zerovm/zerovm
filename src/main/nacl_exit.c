@@ -74,7 +74,6 @@ static void Finalizer(void)
   ChannelsDtor(gnap); /* free channels */
   NaClAppDtor(gnap); /* free user space and globals */
   NaClFreeDispatchThunk(gnap); /* free thunk */
-  TagEngineDtor();
   ZLogDtor(); /* close syslog */
   ManifestDtor(); /* free manifest */
 }
@@ -123,7 +122,6 @@ void NaClExit(int err_code)
   if(err_code != 0)
   {
     SpecSignals();
-    TagEngineDtor();
     ZLOGS(LOG_ERROR, "SESSION OR HYPERVISOR FAILED WITH ERROR %d: %s",
         err_code, strerror(zvm_code));
   }

@@ -1,9 +1,9 @@
 =====================================================================
 == invalid node name
 =====================================================================
-Channel = /dev/stdin, /dev/stdin, 0, 32, 32, 0, 0
-Channel = /dev/stdout, /dev/stdout, 0, 0, 0, 32, 32
-Channel = /dev/stderr, /dev/stderr, 0, 0, 0, 32, 32
+Channel = /dev/stdin, /dev/stdin, 0, 1, 32, 32, 0, 0
+Channel = /dev/stdout, /dev/stdout, 0, 1, 0, 0, 32, 32
+Channel = /dev/stderr, /dev/stderr, 0, 1, 0, 0, 32, 32
 
 =====================================================================
 == switches for zerovm. some of them used to control nexe, some
@@ -11,7 +11,7 @@ Channel = /dev/stderr, /dev/stderr, 0, 0, 0, 32, 32
 =====================================================================
 Version = 20130611
 Program = dummy.nexe
-Memory = 33554432
+Memory = 33554432, 1
 Timeout = 1
 Node = usidramki
 

@@ -43,6 +43,7 @@ enum ChannelAttributes {
   ChannelName,
   ChannelAlias,
   ChannelAccessType,
+  ChannelTag,
   ChannelGets,
   ChannelGetSize,
   ChannelPuts,

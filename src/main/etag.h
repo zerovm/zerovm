@@ -27,23 +27,6 @@
 #define TAG_ENGINE_DISABLED "disabled"
 
 /*
- * calculate by mask. return 0 if disabled
- * 00000001 - channels etag enabled
- * 00000010 - memory etag enabled
- */
-#define CHANNELS_ETAG_ENABLED (TagEngineEnabled() & 1)
-#define MEMORY_ETAG_ENABLED (TagEngineEnabled() & 2)
-
-/* etag engine construction */
-int TagEngineCtor(int level);
-
-/* disable etag */
-void TagEngineDtor();
-
-/* return the etag_enabled state */
-int TagEngineEnabled();
-
-/*
  * initialize and return the hash context or abort if failed
  * to avoid memory leak context must be freed after usage
  */

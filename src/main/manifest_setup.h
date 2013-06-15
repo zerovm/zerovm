@@ -24,11 +24,9 @@ EXTERN_C_BEGIN
 #include "src/loader/sel_ldr.h"
 
 #define HELP_SCREEN /* update command line switches here */\
-    "\033[1m\033[37mZeroVM\033[0m lightweight VM manager, build 2013-06-11\n"\
+    "\033[1m\033[37mZeroVM\033[0m lightweight VM manager, build 2013-06-14\n"\
     "Usage: <manifest> [-e#] [-l#] [-v#] [-sFPSQ]\n\n"\
     " <manifest> load settings from manifest file\n"\
-    " -e <level> enable the data control. where levels are\n"\
-    "    1 - channels, 2 - memory, 3 - both\n"\
     " -l set a new storage limit (in Gb)\n"\
     " -s skip validation\n"\
     " -v <level> verbosity\n"\
@@ -37,7 +35,6 @@ EXTERN_C_BEGIN
     " -Q disable platform qualification (dangerous!)\n"\
     " -S disable signal handling\n"
 
-#define NEXE_PGM_NAME "loner" /* default argv[0] for nexe. deprecated */
 #define ZEROVM_PRIORITY 19
 #define ZEROVM_IO_LIMIT_UNIT 0x40000000l /* 1gb */
 #define ZEROVM_IO_LIMIT 4*ZEROVM_IO_LIMIT_UNIT /* 4gb */
@@ -53,6 +50,21 @@ EXTERN_C_BEGIN
 #define MFT_NAMESERVER "NameServer"
 #define MFT_NODE "Node"
 #define MFT_ETAG "Etag"
+#define MEMORY_ATTRIBUTES 2
+
+#ifdef DEBUG
+#define REPORT_VALIDATOR "validator state = "
+#define REPORT_RETCODE "user return code = "
+#define REPORT_ETAG "etag(s) = "
+#define REPORT_ACCOUNTING "accounting = "
+#define REPORT_STATE "exit state = "
+#else
+#define REPORT_VALIDATOR ""
+#define REPORT_RETCODE ""
+#define REPORT_ETAG ""
+#define REPORT_ACCOUNTING ""
+#define REPORT_STATE ""
+#endif
 
 struct SystemManifest
 {
@@ -93,7 +105,7 @@ int SystemManifestDtor(struct NaClApp *nap);
  * write report for the proxy and free used resources
  * return 0 if success, otherwise - non 0
  */
-int ProxyReport(struct NaClApp *nap);
+void ProxyReport(struct NaClApp *nap);
 
 EXTERN_C_END
 

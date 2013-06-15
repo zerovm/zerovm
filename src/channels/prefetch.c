@@ -387,7 +387,7 @@ static INLINE void UpdateChannelState(struct ChannelDesc *channel)
   zmq_getsockopt(channel->socket, ZMQ_RCVMORE, &more, &more_size);
 
   /* etag enabled */
-  if(more != 0 && channel->bufend == TAG_DIGEST_SIZE - 1 && CHANNELS_ETAG_ENABLED)
+  if(more != 0 && channel->bufend == TAG_DIGEST_SIZE - 1 && channel->tag != NULL)
   {
     /* store received digest */
     memcpy(channel->control, zmq_msg_data(&channel->msg), TAG_DIGEST_SIZE - 1);
@@ -400,7 +400,7 @@ static INLINE void UpdateChannelState(struct ChannelDesc *channel)
   }
 
   /* etag disabled */
-  if(more == 0 && channel->bufend == 0 && !TagEngineEnabled())
+  if(more == 0 && channel->bufend == 0 && channel->tag == NULL)
     channel->eof = 1;
 }
 
@@ -526,13 +526,14 @@ int PrefetchChannelDtor(struct ChannelDesc *channel)
   /* close "PUT" channel */
   if(channel->limits[PutsLimit] && channel->limits[PutSizeLimit])
   {
-    int size = CHANNELS_ETAG_ENABLED ? TAG_DIGEST_SIZE - 1 : 0;
+    int size = channel->tag != NULL ? TAG_DIGEST_SIZE - 1 : 0;
 
     /* prepare digest */
-    if(TagEngineEnabled())
+    if(channel->tag != NULL)
     {
       TagDigest(channel->tag, channel->digest);
       TagDtor(channel->tag);
+      channel->tag = NULL;
     }
 
     /* send eof */
@@ -554,16 +555,17 @@ int PrefetchChannelDtor(struct ChannelDesc *channel)
       channel->counters[GetSizeLimit] += size;
 
       /* update tag if enabled */
-      if(TagEngineEnabled())
+      if(channel->tag != NULL)
         TagUpdate(channel->tag, buf, size);
     }
 
     /* test integrity (if etag enabled) */
-    if(TagEngineEnabled())
+    if(channel->tag != NULL)
     {
       /* prepare digest */
       TagDigest(channel->tag, channel->digest);
       TagDtor(channel->tag);
+      channel->tag = NULL;
 
       /* raise the error if the data corrupted */
       if(memcmp(channel->control, channel->digest, TAG_DIGEST_SIZE) != 0)

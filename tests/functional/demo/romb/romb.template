@@ -1,9 +1,9 @@
 =====================================================================
 == (zerovm api) draw the geometric figure
 =====================================================================
-Channel = /dev/null, /dev/stdin, 0, 999999, 999999, 0, 0
-Channel = /dev/stdout, /dev/stdout, 0, 0, 0, 999999, 999999
-Channel = /dev/stderr, /dev/stderr, 0, 0, 0, 999999, 999999
+Channel = /dev/null, /dev/stdin, 0, 1, 999999, 999999, 0, 0
+Channel = /dev/stdout, /dev/stdout, 0, 1, 0, 0, 999999, 999999
+Channel = /dev/stderr, /dev/stderr, 0, 1, 0, 0, 999999, 999999
 
 =====================================================================
 == switches for zerovm. some of them used to control nexe, some
@@ -11,5 +11,5 @@ Channel = /dev/stderr, /dev/stderr, 0, 0, 0, 999999, 999999
 =====================================================================
 Version = 20130611
 Program = romb.nexe
-Memory = 33554432
+Memory = 33554432, 1
 Timeout = 1

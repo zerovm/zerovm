@@ -1,10 +1,10 @@
 =====================================================================
 == standard channels not specified
 =====================================================================
-Channel = /dev/null, channel1, 0, 0, 0, 16, 256
-Channel = /dev/null, channel2, 0, 0, 0, 16, 256
-Channel = /dev/null, channel3, 0, 0, 0, 16, 256
-Channel = /dev/null, channel4, 0, 0, 0, 16, 256
+Channel = /dev/null, channel1, 0, 1, 0, 0, 16, 256
+Channel = /dev/null, channel2, 0, 1, 0, 0, 16, 256
+Channel = /dev/null, channel3, 0, 1, 0, 0, 16, 256
+Channel = /dev/null, channel4, 0, 1, 0, 0, 16, 256
 
 =====================================================================
 == switches for zerovm. some of them used to control nexe, some
@@ -12,6 +12,6 @@ Channel = /dev/null, channel4, 0, 0, 0, 16, 256
 =====================================================================
 Version = 20130611
 Program = dummy.nexe
-Memory = 33554432
+Memory = 33554432, 1
 Timeout = 1
 
