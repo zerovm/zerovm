@@ -25,7 +25,7 @@ EXTERN_C_BEGIN
 
 #define HELP_SCREEN /* update command line switches here */\
     "\033[1m\033[37mZeroVM\033[0m lightweight VM manager, build 2013-06-15\n"\
-    "Usage: <manifest> [-e#] [-l#] [-v#] [-sFPSQ]\n\n"\
+    "Usage: <manifest> [-l#] [-v#] [-sFPSQ]\n\n"\
     " <manifest> load settings from manifest file\n"\
     " -l set a new storage limit (in Gb)\n"\
     " -s skip validation\n"\

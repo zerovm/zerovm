@@ -29,22 +29,23 @@ Structure:
 
 List of valid keywords:
 Channel
-  (obligatory, 7 comma separated fields strings and integers)
+  (obligatory, 8 comma separated fields strings and integers)
   Description of a channel. The order does matter. example:
   Channel = /home/dazo/git/zerovm/samples/sort/sort.stdout.log, /dev/stdout, 5, 0, 0, 99999999, 99999999
   where: 
     [1] trusted channel name (n/a for the user), 
     [2] untrusted channel name, 
     [3] access type, 
-    [4] gets limit, 
-    [5] get size limits, 
-    [6] puts limit, 
-    [7] put size limits
+    [4] etag disabled/enabled (0/1),
+    [5] gets limit, 
+    [6] get size limits, 
+    [7] puts limit, 
+    [8] put size limits
   Each manifest SHOULD have at least three Channel configuration entries for the standard devices: stdin, stdout, stderr
   Example (maps all channels to /dev/null):
-    Channel = /dev/null, /dev/stdin, 0, 0, 0, 0, 0
-    Channel = /dev/null, /dev/stdout, 0, 0, 0, 0, 0
-    Channel = /dev/null, /dev/stderr, 0, 0, 0, 0, 0
+    Channel = /dev/null, /dev/stdin, 0, 0, 0, 0, 0, 0
+    Channel = /dev/null, /dev/stdout, 0, 1, 0, 0, 0, 0
+    Channel = /dev/null, /dev/stderr, 0, 1, 0, 0, 0, 0
   network channels has same fields, but the very 1st one (trusted channel name) has special form:
   protocol:address:port
   where
@@ -55,7 +56,7 @@ Channel
 Version
   (obligatory, string)
   currently ZeroVM is not backward compatible with the older manifest versions.
-  working version is 09082012
+  working version is 20130611
 Program
   (obligatory, string)
   NaCl module to validate and run, full path
@@ -63,11 +64,12 @@ Timeout
   (obligatory, unsigned 32-bit integer)
   time out in seconds. ZeroVM will stop user program and exit after the specified period
 Memory
-  (obligatory, unsigned 32-bit integer)
-  Specifies the memory size in bytes available for the user program. If specified
+  (obligatory, 2 comma separated integers)
+  1st argument Specifies the memory size in bytes available for the user program. If specified
   ZeroVM will allocate all memory before nexe start and will not use real memory
   allocation syscalls due nexe runtime. MemMax should take in account that 16mb should be
   reserved for the user stack, 1mb+ - for nexe code and data, and some memory for system area
+  the 2nd argument is etag switch: 0 - disabled, 1 - enabled
 NameServer
   (optional, string)
   the address of name server. name server resolves zerovm provided network channels.

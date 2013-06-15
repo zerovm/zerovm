@@ -1,17 +1,17 @@
 ZeroVM channels description
 ---------------------------
 
-Channel = [host file name], [guest device name], [access type], [limit for reads], [limit for read bytes], [limit for writes], [limit for write bytes]
-ex.: Channel = /tmp/file.tmp, /dev/stderr, 0, 0, 0, 1048576, 1048576
+Channel = [host file name], [guest device name], [access type], [etag switch], [limit for reads], [limit for read bytes], [limit for writes], [limit for write bytes]
+ex.: Channel = /tmp/file.tmp, /dev/stderr, 0, 1, 0, 0, 1048576, 1048576
 
-Channel = [host device name], [guest device name], [access type], [limit for reads], [limit for read bytes], [limit for writes], [limit for write bytes]
-ex.: Channel = /dev/stdin, /dev/stdin, 0, 1073741824, 1073741824, 0, 0
+Channel = [host device name], [guest device name], [access type], [etag switch], [limit for reads], [limit for read bytes], [limit for writes], [limit for write bytes]
+ex.: Channel = /dev/stdin, /dev/stdin, 0, 1, 1073741824, 1073741824, 0, 0
 
-Channel = [host socket], [guest device name], [access type], [limit for reads], [limit for read bytes], [limit for writes], [limit for write bytes]
+Channel = [host socket], [guest device name], [access type], [etag switch], [limit for reads], [limit for read bytes], [limit for writes], [limit for write bytes]
 ex.: Channel = tcp:127.0.0.1:55431, /dev/in/some_host, 0, 1073741824, 1073741824, 0, 0
 
-Channel = [host identifier], [guest device name], [access type], [limit for reads], [limit for read bytes], [limit for writes], [limit for write bytes]
-ex.: Channel = tcp:21:, /dev/out/node21, 0, 0, 0, 1073741824, 1073741824
+Channel = [host identifier], [guest device name], [access type], [etag switch], [limit for reads], [limit for read bytes], [limit for writes], [limit for write bytes]
+ex.: Channel = tcp:21:, /dev/out/node21, 0, 0, 0, 0, 1073741824, 1073741824
 
 Channels are the key component of ZeroVM I/O subsystem
 On the host system side the channels are backed by the file system using either regular files or tcp sockets.
@@ -23,6 +23,7 @@ Channel fields passed via the manifest to ZeroVM (comma delimited, see examples 
 name -- can be a local file or device name or tcp socket or host identifier (see more on host identifiers below)
 alias -- device name for the user side. Must follow the device naming scheme: /dev/device-name
 type -- access type. Can be in 0..3 range
+etag -- etag switch. Can be in 0..1 range
 gets -- limit for reads allowed from this channel
 get_size -- limit on total amount of data to be read from this channel in bytes
 puts -- limit for writes allowed for this channel
@@ -42,6 +43,10 @@ Channel access types:
 2 - sequential read / random write
 3 - random read / random write
 
+etag switch:
+0 - etag disabled for the channel
+1 - etag enabled
+
 For now ZeroVM supports 6 kinds of channels (defined by combination of access type and 4 read/write limits):
 - sequential read only channel (access type 0, both write limits are 0)
 - random read only channel (access type 3, both write limits are 0)
@@ -55,9 +60,9 @@ There are 3 mandatory channels (standard c90 streams): stdin, stdout, stdout.
 The channels have well known device names "/dev/stdin", "/dev/stdout" and "/dev/stderr".
 You must have all 3 mandatory channels present in your manifest.
 /dev/stdin is a sequential read only channel
-ex: Channel = path, /dev/stdin, 0, reads, bytes, 0, 0
+ex: Channel = path, /dev/stdin, 0, 0, reads, bytes, 0, 0
 /dev/stdout and /dev/stderr are sequential write only channels
-ex: Channel = path, /dev/stdout, 0, 0, 0, writes, bytes
+ex: Channel = path, /dev/stdout, 0, 0, 0, 0, writes, bytes
 
 Channel is a file abstraction over the local files and network streams. Local files
 can have random access type, network streams are always sequential.
@@ -83,13 +88,13 @@ There is no support for unblocking reads for ZeroVM channels, it's by design.
 Example of bidirectional connection between two ZeroVM instances:
 Instance #1, IP addr 10.0.0.1
 
-Channel = tcp:10.0.0.1:34423, /dev/out/instance2, 0, 0, 0, 9999999, 9999999
-Channel = tcp:10.0.0.2:56645, /dev/in/instance2, 0, 9999999, 9999999, 0, 0
+Channel = tcp:10.0.0.1:34423, /dev/out/instance2, 0, 1, 0, 0, 9999999, 9999999
+Channel = tcp:10.0.0.2:56645, /dev/in/instance2, 0, 1, 9999999, 9999999, 0, 0
 
 Instance #2, IP addr 10.0.0.2
 
-Channel = tcp:10.0.0.1:34423, /dev/in/instance1, 0, 9999999, 9999999, 0, 0
-Channel = tcp:10.0.0.2:56645, /dev/out/instance1, 0, 0, 0, 9999999, 9999999
+Channel = tcp:10.0.0.1:34423, /dev/in/instance1, 0, 1, 9999999, 9999999, 0, 0
+Channel = tcp:10.0.0.2:56645, /dev/out/instance1, 0, 1, 0, 0, 9999999, 9999999
 
 Each read from read only network channel can result in zvm_eof indicator read.
 This means that the other party closed the channel, you will get the same zvm_eof 
@@ -124,15 +129,15 @@ NodeName = mapper-21, 34
 The two instance example (see above) will look like this:
 Instance #1
 
-Channel = tcp:2:, /dev/out/instance-2, 0, 0, 0, 9999999, 9999999
-Channel = tcp:2:, /dev/in/instance-2, 0, 9999999, 9999999, 0, 0
+Channel = tcp:2:, /dev/out/instance-2, 0, 0, 0, 0, 9999999, 9999999
+Channel = tcp:2:, /dev/in/instance-2, 0, 1, 9999999, 9999999, 0, 0
 NameServer = udp:10.0.0.254:5544
 NodeName = instance-1, 1
 
 Instance #2
 
-Channel = tcp:1:, /dev/in/instance-1, 0, 9999999, 9999999, 0, 0
-Channel = tcp:1:, /dev/out/instance-1, 0, 0, 0, 9999999, 9999999
+Channel = tcp:1:, /dev/in/instance-1, 0, 1, 9999999, 9999999, 0, 0
+Channel = tcp:1:, /dev/out/instance-1, 0, 0, 0, 0, 9999999, 9999999
 NameServer = udp:10.0.0.254:5544
 NodeName = instance-2, 2
 

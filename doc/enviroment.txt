@@ -1,3 +1,0 @@
-this document describes user environment (custom attributes)
-============================================================
-(deprecated. user environment now available via "/dev/nvram" see zerovm toolchain) 
