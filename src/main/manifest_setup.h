@@ -24,15 +24,14 @@ EXTERN_C_BEGIN
 #include "src/loader/sel_ldr.h"
 
 #define HELP_SCREEN /* update command line switches here */\
-    "\033[1m\033[37mZeroVM\033[0m lightweight VM manager, build 2013-06-15\n"\
+    "\033[1m\033[37mZeroVM\033[0m lightweight VM manager, build 2013-06-16\n"\
     "Usage: <manifest> [-l#] [-v#] [-sFPSQ]\n\n"\
-    " <manifest> load settings from manifest file\n"\
-    " -l set a new storage limit (in Gb)\n"\
+    " -l <gigabytes> file size limit (default 4Gb)\n"\
     " -s skip validation\n"\
-    " -v <level> verbosity\n"\
-    " -F fuzz testing; quit right before starting user app\n"\
+    " -v <0..3> log verbosity (default 0)\n"\
+    " -F quit right before starting user session\n"\
     " -P disable channels space preallocation\n"\
-    " -Q disable platform qualification (dangerous!)\n"\
+    " -Q disable platform qualification\n"\
     " -S disable signal handling\n"
 
 #define ZEROVM_PRIORITY 19
