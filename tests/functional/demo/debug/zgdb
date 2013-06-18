@@ -34,6 +34,6 @@ echo c >> debug.scp
 echo d br >> debug.scp
 
 # run debug session
-gdb --command=debug.scp --args $ZEROVM_ROOT/zerovm -sQe3 $name.manifest
+gdb --command=debug.scp --args $ZEROVM_ROOT/zerovm -sQ $name.manifest
 
 rm debug.scp

@@ -1,10 +1,5 @@
 /*
- * the zerovm api test
- * note: zvm api functions not tested for invalid arguments
- * since zerovm doesn't have user buffer validation. this issue
- * will be fixed either if check routine will be added to zvm
- * or if memory management will be completely moved to untrusted code
- * (in that case zvm will just need to check if pointer is in range)
+ * the zerovm api test. compares the zerovm manifest to the user manifest
  */
 #include "include/zvmlib.h"
 #include "include/ztest.h"
