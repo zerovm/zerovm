@@ -133,35 +133,36 @@ static void NaClSignalStackFree(void *stack)
       errno, "Failed to munmap() signal stack");
 }
 
-static void FindAndRunHandler(int sig, siginfo_t *info, void *uc) {
-  if (NaClSignalHandlerFind(sig, uc) == NACL_SIGNAL_SEARCH) {
-    int a;
+static void FindAndRunHandler(int sig, siginfo_t *info, void *uc)
+{
+  int i;
 
-    /* If we need to keep searching, try the old signal handler. */
-    for (a = 0; a < SIGNAL_COUNT; a++) {
-      /* If we handle this signal */
-      if (s_Signals[a] == sig) {
-        /* If this is a real sigaction pointer... */
-        if (s_OldActions[a].sa_flags & SA_SIGINFO) {
-          /* then call the old handler. */
-          s_OldActions[a].sa_sigaction(sig, info, uc);
-          break;
-        }
-        /* otherwise check if it is a real signal pointer */
-        if ((s_OldActions[a].sa_handler != SIG_DFL) &&
-            (s_OldActions[a].sa_handler != SIG_IGN)) {
-          /* and call the old signal. */
-          s_OldActions[a].sa_handler(sig);
-          break;
-        }
-        /*
-         * We matched the signal, but didn't handle it, so we emulate
-         * the default behavior which is to exit the app with the signal
-         * number as the error code.
-         */
-        NaClSignalErrorMessage("Failed to handle signal");
-        NaClExit(-sig);
-      }
+  if(NaClSignalHandlerFind(sig, uc) != NACL_SIGNAL_SEARCH) return;
+
+  /* If we need to keep searching, try the old signal handler */
+  for(i = 0; i < SIGNAL_COUNT; i++)
+  {
+    /* signal cannot be handled */
+    if(s_Signals[i] != sig)
+    {
+      char msg[SIGNAL_STRLEN];
+      g_snprintf(msg, SIGNAL_STRLEN, "Signal %d failed to be handled", sig);
+      SetExitState(msg);
+      NaClExit(EINTR);
+    }
+
+    /* If this is a real sigaction pointer call the old handler */
+    if(s_OldActions[i].sa_flags & SA_SIGINFO)
+    {
+      s_OldActions[i].sa_sigaction(sig, info, uc);
+      break;
+    }
+
+    /* otherwise check if it is a real signal pointer and call the old signal */
+    if((s_OldActions[i].sa_handler != SIG_DFL) && (s_OldActions[i].sa_handler != SIG_IGN))
+    {
+      s_OldActions[i].sa_handler(sig);
+      break;
     }
   }
 }

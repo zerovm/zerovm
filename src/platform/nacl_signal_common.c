@@ -40,25 +40,6 @@ static struct NaClSignalNode *s_FreeList = NULL;
 static struct NaClSignalNode s_SignalNodes[MAX_NACL_HANDLERS];
 static int handle_signals = 1;
 
-ssize_t NaClSignalErrorMessage(const char *msg)
-{
-  /*
-   * We cannot use NaClLog() in the context of a signal handler: it is
-   * too complex.  However, write() is signal-safe.
-   */
-  size_t len_t = strlen(msg);
-  int len = (int) len_t;
-
-  /*
-   * Write uses int not size_t, so we may wrap the length and/or
-   * generate a negative value.  Only print if it matches.
-   */
-  if ((len > 0) && (len_t == (size_t) len))
-    return (ssize_t) write(STDOUT_FILENO, msg, len);
-
-  return 0;
-}
-
 /*
  * Return non-zero if the signal context is currently executing in an
  * untrusted environment.
@@ -70,10 +51,7 @@ static int NaClSignalContextIsUntrusted(const struct NaClSignalContext *sigCtx)
   return 0;
 }
 
-/*
- * A basic handler which will exit with -signal_number when
- * a signal is encountered.
- */
+/* exit zerovm with "interrupted syscall" code and the message */
 static enum NaClSignalResult NaClSignalHandleAll(int signum, void *ctx)
 {
   struct NaClSignalContext sigCtx;
@@ -94,7 +72,6 @@ static enum NaClSignalResult NaClSignalHandleAll(int signum, void *ctx)
   g_snprintf(msg, SIGNAL_STRLEN, "Signal %d from %strusted code: Halting at 0x%012lX",
       signum, NaClSignalContextIsUntrusted(&sigCtx) ? "un" : "", sigCtx.prog_ctr);
   SetExitState(msg);
-
   NaClExit(EINTR);
   return NACL_SIGNAL_RETURN; /* unreachable */
 }

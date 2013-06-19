@@ -42,6 +42,7 @@ enum NaClSignalResult {
   NACL_SIGNAL_SKIP,     /* Skip our handlers and try OS */
   NACL_SIGNAL_RETURN    /* Skip all other handlers and return */
 };
+#define SIGNAL_STRLEN 64
 
 /*
  * Prototype for a signal handler.  The handler will receive the POSIX
@@ -59,9 +60,6 @@ void NaClSignalHandlerInit(void);
 
 /* Undoes the effect of NaClSignalHandlerInit() */
 void NaClSignalHandlerFini(void);
-
-/* Provides a signal safe method to write to stderr */
-ssize_t NaClSignalErrorMessage(const char *str);
 
 /*
  * Fill a signal context structure from the raw platform dependent

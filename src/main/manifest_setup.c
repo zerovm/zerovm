@@ -404,6 +404,10 @@ void ProxyReport(struct NaClApp *nap)
       g_string_append_printf(report, "%s", nap->channels_tag->str);
   }
 
+  /* remove ending " " if exist */
+  if(report->len > 0)
+    g_string_truncate(report, report->len - 1);
+
   g_string_append_printf(report, "\n%s%s\n", REPORT_ACCOUNTING, GetAccountingInfo());
   g_string_append_printf(report, "%s%s\n", REPORT_STATE, GetExitState());
 

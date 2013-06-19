@@ -37,7 +37,6 @@
 #define BIG_ENOUGH_SPACE 0x10000 /* ..size of the biggest stack variable */
 #define BIG_ENOUGH_STRING 1024 /* ..size of the random biggest string */
 #define INT32_STRLEN (11) /* enough space to place maximum int32 value + '\0' */
-#define SIGNAL_STRLEN (64) /* enough space to place zerovm state message */
 
 /* debug macro */
 #undef SHOWID
