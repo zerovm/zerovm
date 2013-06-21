@@ -110,9 +110,9 @@ static void PreallocateUserMemory(struct NaClApp *nap)
       ENOMEM, "invalid memory size");
 
   /* calculate user heap size (must be allocated next to the data_end) */
-  p = (void*)NaClRoundAllocPage(nap->data_end);
+  p = (void*)ROUNDUP_64K(nap->data_end);
   heap = nap->heap_end - nap->stack_size;
-  heap = NaClRoundAllocPage(heap) - NaClRoundAllocPage(nap->data_end);
+  heap = ROUNDUP_64K(heap) - ROUNDUP_64K(nap->data_end);
   ZLOGFAIL(heap <= LEAST_USER_HEAP_SIZE, ENOMEM, "user heap size is too small");
 
   /* since 4gb of user space is already allocated just set protection to the heap */

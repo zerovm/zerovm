@@ -124,18 +124,18 @@ void NaClAllocAddrSpace(struct NaClApp *nap)
   nap->mem_start = (uintptr_t) mem;
   ZLOGS(LOG_INSANE, "allocated memory at 0x%08x", nap->mem_start);
 
-  hole_start = NaClRoundAllocPage(nap->data_end);
+  hole_start = ROUNDUP_64K(nap->data_end);
 
   ZLOGFAIL(nap->stack_size >= ((uintptr_t) 1U) << nap->addr_bits,
       EFAULT, "NaClAllocAddrSpace: stack too large!");
   stack_start = (((uintptr_t) 1U) << nap->addr_bits) - nap->stack_size;
-  stack_start = NaClTruncAllocPage(stack_start);
+  stack_start = ROUNDUP_64K(stack_start);
 
   ZLOGFAIL(stack_start < hole_start, EFAULT,
       "Memory 'hole' between end of BSS and start of stack is negative in size");
 
   hole_size = stack_start - hole_start;
-  hole_size = NaClTruncAllocPage(hole_size);
+  hole_size = ROUNDUP_64K(hole_size);
 
   /*
    * mprotect and madvise unused data space to "free" it up, but
@@ -189,7 +189,7 @@ void NaClMemoryProtection(struct NaClApp *nap)
    * Immediately following that is the loaded text section.
    * These are collectively marked as PROT_READ | PROT_EXEC.
    */
-  region_size = NaClRoundPage(nap->static_text_end - NACL_SYSCALL_START_ADDR);
+  region_size = ROUNDUP_4K(nap->static_text_end - NACL_SYSCALL_START_ADDR);
   ZLOGS(LOG_INSANE, "Trampoline/text region start 0x%08x, size 0x%08x, end 0x%08x",
           start_addr, region_size, start_addr + region_size);
 
@@ -217,7 +217,7 @@ void NaClMemoryProtection(struct NaClApp *nap)
     else rodata_end = nap->break_addr;
 
     start_addr = NaClUserToSys(nap, nap->rodata_start);
-    region_size = NaClRoundPage(NaClRoundAllocPage(rodata_end)
+    region_size = ROUNDUP_4K(ROUNDUP_64K(rodata_end)
         - NaClSysToUser(nap, start_addr));
     ZLOGS(LOG_INSANE, "RO data region start 0x%08x, size 0x%08x, end 0x%08x",
         start_addr, region_size, start_addr + region_size);
@@ -236,7 +236,7 @@ void NaClMemoryProtection(struct NaClApp *nap)
   if(0 != nap->data_start)
   {
     start_addr = NaClUserToSys(nap, nap->data_start);
-    region_size = NaClRoundPage(NaClRoundAllocPage(nap->data_end)
+    region_size = ROUNDUP_4K(ROUNDUP_64K(nap->data_end)
         - NaClSysToUser(nap, start_addr));
     ZLOGS(LOG_INSANE, "RW data region start 0x%08x, size 0x%08x, end 0x%08x",
         start_addr, region_size, start_addr + region_size);
@@ -251,14 +251,14 @@ void NaClMemoryProtection(struct NaClApp *nap)
   /* stack is read/write but not execute */
   region_size = nap->stack_size;
   start_addr = NaClUserToSys(nap,
-      NaClTruncAllocPage(((uintptr_t) 1U << nap->addr_bits) - nap->stack_size));
+      ROUNDUP_64K(((uintptr_t) 1U << nap->addr_bits) - nap->stack_size));
   ZLOGS(LOG_INSANE, "RW stack region start 0x%08x, size 0x%08lx, end 0x%08x",
           start_addr, region_size, start_addr + region_size);
 
-  err = NaCl_mprotect((void *)start_addr, NaClRoundAllocPage(nap->stack_size),
+  err = NaCl_mprotect((void *)start_addr, ROUNDUP_64K(nap->stack_size),
       PROT_READ | PROT_WRITE);
   ZLOGFAIL(0 != err, err, FAILED_MSG);
 
   SET_MEM_MAP_IDX(nap->mem_map[StackIdx], "Stack",
-      start_addr, NaClRoundAllocPage(nap->stack_size), PROT_READ | PROT_WRITE);
+      start_addr, ROUNDUP_64K(nap->stack_size), PROT_READ | PROT_WRITE);
 }

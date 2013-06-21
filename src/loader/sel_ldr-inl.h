@@ -92,21 +92,6 @@ static INLINE uintptr_t NaClSysToUser(struct NaClApp *nap, uintptr_t sysaddr)
   return sysaddr - nap->mem_start;
 }
 
-/* For x86-64 sandboxing, %rsp and %rbp are system addresses already */
-static INLINE uintptr_t NaClUserToSysStackAddr(struct NaClApp *nap,
-                                               uintptr_t      stackaddr)
-{
-  UNREFERENCED_PARAMETER(nap);
-  return stackaddr;
-}
-
-static INLINE uintptr_t NaClSysToUserStackAddr(struct NaClApp *nap,
-                                               uintptr_t      stackaddr)
-{
-  UNREFERENCED_PARAMETER(nap);
-  return stackaddr;
-}
-
 static INLINE uintptr_t NaClEndOfStaticText(struct NaClApp *nap)
 {
   return nap->static_text_end;

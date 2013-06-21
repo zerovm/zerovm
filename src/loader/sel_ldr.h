@@ -47,7 +47,6 @@
 #include "src/main/zlog.h"
 #include "src/platform/gio.h"
 #include "src/main/nacl_config.h"
-#include "src/loader/sel_util-inl.h"
 #include "src/loader/sel_rt.h"
 #include "src/main/tools.h"
 #include "src/main/etag.h"

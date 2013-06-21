@@ -42,16 +42,15 @@ NORETURN void NaClSyscallCSegHook()
 
   /* restore trusted side environment */
   nap = gnap; /* restore NaClApp object */
-  user = nacl_user; /* restore from global */
+  user = nacl_user;
   sp_user = NaClGetThreadCtxSp(user);
-  sp_sys = NaClUserToSysStackAddr(nap, sp_user);
+  sp_sys = sp_user;
 
   /*
    * sp_sys points to the top of user stack where there is a retaddr to
    * trampoline slot
    */
   tramp_ret = *(uintptr_t *)sp_sys;
-  tramp_ret = NaClUserToSysStackAddr(nap, tramp_ret);
   sysnum = (tramp_ret - (nap->mem_start + NACL_SYSCALL_START_ADDR)) >> NACL_SYSCALL_BLOCK_SHIFT;
 
   /*

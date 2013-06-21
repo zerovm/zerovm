@@ -42,6 +42,11 @@
 #undef SHOWID
 #define SHOWID printf("%s: %d, %s\n", __FILE__, __LINE__, __func__)
 
+#define ROUNDDOWN_64K(a) ((a) & ~(NACL_MAP_PAGESIZE - 1LLU))
+#define ROUNDUP_64K(a) ROUNDDOWN_64K((a) + NACL_MAP_PAGESIZE - 1LLU)
+#define ROUNDDOWN_4K(a) ((a) & ~(NACL_PAGESIZE - 1LLU))
+#define ROUNDUP_4K(a) ROUNDDOWN_4K((a) + NACL_PAGESIZE - 1LLU)
+
 /* safe atoi(). NULL can be used. return 0 for NULL */
 static INLINE int64_t safe_atoi(const char *str)
 {

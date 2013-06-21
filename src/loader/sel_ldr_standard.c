@@ -67,7 +67,7 @@ void static NaClFillEndOfTextRegion(struct NaClApp *nap) {
       "Missing gap between text and rodata for halt_sled");
 
   /* No dynamic text exists.  Space for NACL_HALT_SLED_SIZE must exist */
-  page_pad = NaClRoundAllocPage(nap->static_text_end + NACL_HALT_SLED_SIZE)
+  page_pad = ROUNDUP_64K(nap->static_text_end + NACL_HALT_SLED_SIZE)
       - nap->static_text_end;
   ZLOGFAIL(page_pad < NACL_HALT_SLED_SIZE, EFAULT, FAILED_MSG);
   ZLOGFAIL(page_pad >= NACL_MAP_PAGESIZE + NACL_HALT_SLED_SIZE, EFAULT, FAILED_MSG);
@@ -101,7 +101,7 @@ static void NaClCheckAddressSpaceLayoutSanity(struct NaClApp *nap,
    * but is not last segment
    */
   else if(0 != nap->rodata_start)
-    ZLOGFAIL(NaClRoundAllocPage(rodata_end) != max_vaddr, ENOEXEC, FAILED_MSG);
+    ZLOGFAIL(ROUNDUP_64K(rodata_end) != max_vaddr, ENOEXEC, FAILED_MSG);
 
   /* fail if Read-only data segment overlaps data segment */
   if(0 != nap->rodata_start && 0 != nap->data_start)
@@ -109,19 +109,19 @@ static void NaClCheckAddressSpaceLayoutSanity(struct NaClApp *nap,
 
   /* fail if Text segment overlaps rodata segment */
   if(0 != nap->rodata_start)
-    ZLOGFAIL(NaClRoundAllocPage(NaClEndOfStaticText(nap)) > nap->rodata_start,
+    ZLOGFAIL(ROUNDUP_64K(NaClEndOfStaticText(nap)) > nap->rodata_start,
         ENOEXEC, FAILED_MSG);
   /* fail if No rodata segment, and text segment overlaps data segment */
   else if(0 != nap->data_start)
-    ZLOGFAIL(NaClRoundAllocPage(NaClEndOfStaticText(nap)) > nap->data_start,
+    ZLOGFAIL(ROUNDUP_64K(NaClEndOfStaticText(nap)) > nap->data_start,
         ENOEXEC, FAILED_MSG);
 
   /* fail if rodata_start not a multiple of allocation size */
-  ZLOGFAIL(0 != nap->rodata_start && NaClRoundAllocPage(nap->rodata_start)
+  ZLOGFAIL(0 != nap->rodata_start && ROUNDUP_64K(nap->rodata_start)
     != nap->rodata_start, ENOEXEC, FAILED_MSG);
 
   /* fail if data_start not a multiple of allocation size */
-  ZLOGFAIL(0 != nap->data_start && NaClRoundAllocPage(nap->data_start)
+  ZLOGFAIL(0 != nap->data_start && ROUNDUP_64K(nap->data_start)
     != nap->data_start, ENOEXEC, FAILED_MSG);
 }
 
@@ -158,7 +158,7 @@ void NaClAppLoadFile(struct Gio *gp, struct NaClApp *nap)
   /* fail if Address space too big */
   ZLOGFAIL(nap->addr_bits > NACL_MAX_ADDR_BITS, EFAULT, FAILED_MSG);
 
-  nap->stack_size = NaClRoundAllocPage(nap->stack_size);
+  nap->stack_size = ROUNDUP_64K(nap->stack_size);
 
   /* temporay object will be deleted at end of function */
   image = NaClElfImageNew(gp);
@@ -179,12 +179,12 @@ void NaClAppLoadFile(struct Gio *gp, struct NaClApp *nap)
   {
     if(0 == nap->rodata_start)
     {
-      if(NaClRoundAllocPage(max_vaddr) - max_vaddr < NACL_HALT_SLED_SIZE)
+      if(ROUNDUP_64K(max_vaddr) - max_vaddr < NACL_HALT_SLED_SIZE)
       {
         max_vaddr += NACL_MAP_PAGESIZE;
       }
     }
-    max_vaddr = NaClRoundAllocPage(max_vaddr);
+    max_vaddr = ROUNDUP_64K(max_vaddr);
   }
 
   /*
@@ -222,14 +222,14 @@ void NaClAppLoadFile(struct Gio *gp, struct NaClApp *nap)
    */
   ZLOGS(LOG_DEBUG, "Loading into memory");
   err = NaCl_mprotect((void *)(nap->mem_start + NACL_TRAMPOLINE_START),
-      NaClRoundAllocPage(nap->data_end) - NACL_TRAMPOLINE_START,
+      ROUNDUP_64K(nap->data_end) - NACL_TRAMPOLINE_START,
       PROT_READ | PROT_WRITE);
   ZLOGFAIL(0 != err, EFAULT, "Failed to make image pages writable. code 0x%x", err);
 
   NaClElfImageLoad(image, gp, nap->addr_bits, nap->mem_start);
 
   /* d'b: shared memory for the dynamic text disabled */
-  nap->dynamic_text_start = NaClRoundAllocPage(NaClEndOfStaticText(nap));
+  nap->dynamic_text_start = ROUNDUP_64K(NaClEndOfStaticText(nap));
   nap->dynamic_text_end = nap->dynamic_text_start;
 
   /*
@@ -281,8 +281,7 @@ NORETURN void CreateSession(struct NaClApp *nap)
   ((uint32_t*)stack_ptr)[5] = 0xfffffff0;
 
   /* construct "nacl_user" global */
-  NaClThreadContextCtor(nacl_user, nap, nap->initial_entry_pt,
-      NaClSysToUserStackAddr(nap, stack_ptr), 0);
+  NaClThreadContextCtor(nacl_user, nap, nap->initial_entry_pt, stack_ptr, 0);
   nacl_user->sysret = nap->break_addr;
   nacl_user->prog_ctr = NaClUserToSys(nap, nap->initial_entry_pt);
   nacl_user->new_prog_ctr = NaClUserToSys(nap, nap->initial_entry_pt);
