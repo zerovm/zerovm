@@ -10,65 +10,12 @@ For more information check out [ZeroVM.org](http://zerovm.org)
 Everything has been tested on Ubuntu 10.04 and Ubuntu 12.04. No issues with VMWare Player. 
 VirtualBox [doesn't support SSE4.1](https://www.virtualbox.org/ticket/8651), which is used by several of the provided samples.
 
-## Prerequisites
-### Install system prerequisites:
-    $ sudo apt-get install build-essential gcc-multilib g++-multilib libsdl1.2-dev texinfo libcrypto++-dev libssl-dev m4 lib32z1 uuid-dev
-
-### Set environment variables (add to ~/.bashrc or equivalent)
-    export NACL_SDK_ROOT=/some/path/to/nacl_sdk/pepper_23
-    export ZEROVM_ROOT=/some/path/to/zerovm
-    export ZRT_ROOT=/some/path/to/zrt
-    export ZVM_PREFIX=/opt/zerovm
-
-### Install zeromq & packages required by zeromq
-    $ wget http://download.zeromq.org/zeromq-2.2.0.tar.gz
-    $ tar xvfz zeromq-2.2.0.tar.gz
-    $ cd zeromq-2.2.0 && ./configure
-    $ make
-    $ sudo make install
-
-### Install NaCl SDK. 
-
-Consult the [NaCL installation docs][google-nacl-devcenter] for the exact procedure. The following process should work in most cases:
-
-    $ wget http://commondatastorage.googleapis.com/nativeclient-mirror/nacl/nacl_sdk/nacl_sdk.zip 
-    $ unzip nacl_sdk.zip && cd nacl_sdk 
-    $ ./naclsdk update pepper_23
-
-   Now you can use the newly installed custom GNU toolchain to build the attached samples or your own programs.
-   
-[google-nacl-devcenter]: https://developers.google.com/native-client/sdk/download
-
 ## Installing ZeroVM
 
-### Install the ZeroVM Validator
+### To install ZeroVM build environment see toolchain installation guide: [toolchain] (https://github.com/zerovm/toolchain/blob/master/README.md)
 
-Get the [validator][zerovm-validator]:
+Proceeed only after checking the link above.
 
-    $ git clone git://github.com/zerovm/validator.git && cd validator
-    $ make validator install
-    # OR
-    $ sudo -E make validator install
-
-[zerovm-validator]: https://github.com/zerovm/validator
-
-### Console installation (not needed if compiling from Eclipse):
-    
-    $ wget https://github.com/zerovm/zerovm/zipball/master
-    $ unzip master
-    $ mkdir zerovm
-    $ mv zerovm-zerovm-#######/* zerovm/
-    
-    # OR
-    
-    $ git clone git://github.com/zerovm/zerovm.git
-    
-    # THEN
-    
-    $ cd zerovm
-    $ make
-    $ sudo ldconfig
-    
 ### Eclispe CDT installation
    1. If your system doesn't have JRE, install a recent JRE. 
    2. Download Eclipse CDT from the [Eclipse download site][eclipse-dl]. No installation necessary, just unpack and run executable.
