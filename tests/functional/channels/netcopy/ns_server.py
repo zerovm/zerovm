@@ -31,14 +31,14 @@ while 1:
             bind_map.setdefault(alias, {})[h] = port
             print '%08x:%d <- %08x' % (alias, port, h)
             offset += 6
-        conn_map[alias] = ctypes.create_string_buffer(message[offset:])
+        conn_map[alias] = (connect_count, offset, message)
         peer_map.setdefault(alias, {})[0] = address[0]
         peer_map.setdefault(alias, {})[1] = address[1]
 
         if len(peer_map) == peers:
             for src in peer_map.iterkeys():
-                reply = conn_map[src]
-                offset = 0
+                (connect_count, offset, reply) = conn_map[src]
+                #offset = 0
                 #count = struct.unpack_from('!I', reply, offset)[0]
                 #offset += 4
                 for i in range(connect_count):
