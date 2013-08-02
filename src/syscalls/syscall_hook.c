@@ -22,18 +22,19 @@
 /*
  * NaCl service run-time.
  */
+#include <assert.h>
 #include <errno.h>
 #include "src/syscalls/switch_to_app.h"
-#include "src/main/nacl_globals.h"
+#include "src/loader/sel_ldr.h"
 #include "src/loader/sel_rt.h"
-#include "src/main/manifest_setup.h"
+#include "src/main/setup.h"
 #include "src/syscalls/trap.h"
 
 /* serve trap invoked from the untrusted code */
-NORETURN void NaClSyscallCSegHook()
+NORETURN void SyscallHook()
 {
   struct NaClApp *nap;
-  struct NaClThreadContext *user;
+  struct ThreadContext *user;
   uintptr_t tramp_ret;
   nacl_reg_t user_ret;
   size_t sysnum;
@@ -43,7 +44,7 @@ NORETURN void NaClSyscallCSegHook()
   /* restore trusted side environment */
   nap = gnap; /* restore NaClApp object */
   user = nacl_user;
-  sp_user = NaClGetThreadCtxSp(user);
+  sp_user = GetThreadCtxSp(user);
   sp_sys = sp_user;
 
   /*
@@ -66,7 +67,7 @@ NORETURN void NaClSyscallCSegHook()
    */
   sp_sys += NACL_SYSARGS_FIX;
   sp_user += NACL_SYSCALLRET_FIX;
-  NaClSetThreadCtxSp(user, sp_user);
+  SetThreadCtxSp(user, sp_user);
 
   /* fail if nacl syscall received */
   ZLOGFAIL(sysnum != 0, EINVAL, "nacl syscalls not supported (#%d received)", sysnum);
@@ -84,8 +85,6 @@ NORETURN void NaClSyscallCSegHook()
   user_ret = (nacl_reg_t)NaClSandboxCodeAddr(nap, (uintptr_t)user_ret);
 
   /* d'b: give control to the nexe */
-  NaClSwitchToApp(nap, user_ret);
-
-  /* NOTREACHED */
-  ZLOGFAIL(1, EFAULT, "NORETURN NaClSwitchToApp returned!?!");
+  SwitchToApp(nap, user_ret);
+  assert(0); /* NOTREACHED */
 }

@@ -61,8 +61,78 @@
 #ifndef ELF_H_
 #define ELF_H_ 1
 
-#include "src/platform/portability.h"
-#include "src/loader/elf_constants.h"
+#include <inttypes.h>
+
+#define EI_NIDENT       16   /* fwd, see rest of EI_* below */
+
+#define ET_NONE         0   /* no file type */
+#define ET_REL          1   /* relocatable file */
+#define ET_EXEC         2   /* executable file */
+#define ET_DYN          3   /* shared object file */
+#define ET_CORE         4   /* core file */
+
+/* all platforms (but x86_64) removed */
+#define EM_X86_64       62  /* x86-64 */
+
+#define EM_EXPECTED_BY_NACL EM_X86_64
+
+#define EV_NONE         0   /* invalid version */
+#define EV_CURRENT      1   /* current version */
+
+#define EI_MAG0         0   /* file identification */
+#define EI_MAG1         1   /* file identification */
+#define EI_MAG2         2   /* file identification */
+#define EI_MAG3         3   /* file identification */
+#define EI_CLASS        4   /* file class */
+#define EI_DATA         5   /* data encoding */
+#define EI_VERSION      6   /* file version */
+
+/*
+ * ELFMAG and SELFMAG are names/values from linux elf.h, for code usage
+ * compatibility.
+ */
+#define ELFMAG          "\177ELF"
+#define SELFMAG         4
+
+/* EI_CLASS values */
+#define ELFCLASSNONE    0
+#define ELFCLASS32      1
+#define ELFCLASS64      2
+
+/* EI_DATA values */
+#define ELFDATANONE     0
+#define ELFDATA2LSB     1
+#define ELFDATA2MSB     2
+
+#define PT_NULL       0           /* Unused entry */
+#define PT_LOAD       1           /* Loadable segment */
+#define PT_DYNAMIC    2           /* Dynamic linking tables */
+#define PT_INTERP     3           /* Program interpreter path name */
+#define PT_NOTE       4           /* Note section */
+#define PT_SHLIB      5           /* Reserved */
+#define PT_PHDR       6           /* Program header table */
+#define PT_LOOS       0x60000000  /* Environment-specific low */
+#define PT_HIOS       0x6fffffff  /* Environment-specific high */
+#define PT_LOPROC     0x70000000  /* Processor-specific low */
+#define PT_HIPROC     0x7fffffff  /* Processor-specific high */
+/*
+ * These are from linux elf.h, for code usage
+ * compatibility.
+ */
+#define PT_TLS        7
+#define PT_GNU_STACK  0x6474e551
+#define PT_GNU_EH_FRAME 0x6474e550      /* GCC .eh_frame_hdr segment */
+#define PT_GNU_RELRO    0x6474e552      /* Read-only after relocation */
+
+#define PF_X          1
+#define PF_W          2
+#define PF_R          4
+
+#define SHF_WRITE       0x1         /* Has writable data */
+#define SHF_ALLOC       0x2         /* Allocated in memory image of program */
+#define SHF_EXECINSTR   0x4         /* Contains executable instructions */
+#define SHF_MASKOS      0x0f000000  /* Environment-specific use */
+#define SHF_MASKPROC    0xf0000000  /* Processor-specific use */
 
 /* Define 64-bit specific types */
 typedef uint64_t  Elf64_Addr;    /* alignment 8 */

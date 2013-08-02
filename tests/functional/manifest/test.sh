@@ -8,6 +8,7 @@ R6b4ZY0AkeWjk5sTcJd33zW659YUX0tG8p7I6qfswpll4rGr1/iiZvRMEdffLomCf5JYLyZ0im/b
 Bh9o7Txim3uX4zraQMVNihfS7/+4iaDQ=="|base64 -d|lzma -dc>dummy.nexe
 
 for i in `ls *.manifest`; do
+#  echo $i
   $ZEROVM_ROOT/zerovm $i > /dev/null
   if [ $? = 0 ]; then
     echo "\033[01;38m$i\033[00m test has \033[02;31mfailed\033[00m"
@@ -16,4 +17,4 @@ for i in `ls *.manifest`; do
   fi
 done
 
-#rm dummy.nexe
+rm dummy.nexe

@@ -18,64 +18,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #include <assert.h>
 #include <sys/mman.h>
 #include "src/main/etag.h"
 #include "src/syscalls/trap.h"
-#include "src/main/manifest_setup.h"
-#include "src/channels/prefetch.h"
-#include "src/main/nacl_globals.h"
+#include "src/channels/channel.h"
+#include "src/main/report.h"
+#include "src/loader/sel_ldr.h"
+#include "src/main/manifest.h"
 #include "src/platform/sel_memory.h"
-
-int NaClSegmentValidates(uint8_t* mbase, size_t size, uint32_t vbase);
+#include "src/main/setup.h"
 
 /* user exit. session is finished */
 static int32_t ZVMExitHandle(struct NaClApp *nap, int32_t code)
 {
   assert(nap != NULL);
 
-  nap->system_manifest->user_ret_code = code;
-  ZLOGS(LOG_DEBUG, "SESSION RETURNED %d", code);
-  SetExitState(OK_STATE);
-  NaClExit(0);
+  SetUserCode(code);
+  if(GetExitCode() == 0)
+    SetExitState(OK_STATE);
+  ZLOGS(LOG_DEBUG, "SESSION %d RETURNED %d", nap->manifest->node, code);
+  ReportDtor(0);
 
   return 0; /* unreachable */
-}
-
-/*
- * returns mask of the channel accessibility considering if the channel
- * exceeded limits and cannot be read (and/or) write
- * 0x0 - inaccessible channel
- * 0x1 - read only
- * 0x2 - write only
- * 0x3 - read/write
- * note: for the cdr 0x1 means the channel exceeded write limit
- */
-static int ChannelIOMask(struct ChannelDesc *channel)
-{
-  uint32_t rw = 0;
-  int64_t puts_rest = channel->limits[PutsLimit] - channel->counters[PutsLimit];
-  int64_t putsize_rest = channel->limits[PutSizeLimit] - channel->counters[PutSizeLimit];
-  int64_t gets_rest = channel->limits[GetsLimit] - channel->counters[GetsLimit];
-  int64_t getsize_rest = channel->limits[GetSizeLimit] - channel->counters[GetSizeLimit];
-
-  rw |= gets_rest && getsize_rest;
-  rw |= (puts_rest && putsize_rest) << 1;
-
-  return rw;
-}
-
-/* updates channel tag */
-static void UpdateChannelTag(struct ChannelDesc *channel,
-    const char *buffer, int32_t size)
-{
-  assert(channel != NULL);
-  assert(buffer != NULL);
-
-  /* update etag and log information */
-  if(channel->tag != NULL && size > 0)
-    TagUpdate(channel->tag, buffer, size);
 }
 
 /*
@@ -117,17 +82,17 @@ static int32_t ZVMReadHandle(struct NaClApp *nap,
   int32_t retcode = -1;
 
   assert(nap != NULL);
-  assert(nap->system_manifest != NULL);
-  assert(nap->system_manifest->channels != NULL);
+  assert(nap->manifest != NULL);
+  assert(nap->manifest->channels != NULL);
 
   /* check the channel number */
-  if(ch < 0 || ch >= nap->system_manifest->channels_count)
+  if(ch < 0 || ch >= nap->manifest->channels->len)
   {
     ZLOGS(LOG_DEBUG, "channel_id=%d, buffer=0x%lx, size=%d, offset=%ld",
         ch, (intptr_t)buffer, size, offset);
     return -EINVAL;
   }
-  channel = &nap->system_manifest->channels[ch];
+  channel = CH_CH(nap->manifest, ch);
   ZLOGS(LOG_DEBUG, "channel %s, buffer=0x%lx, size=%d, offset=%ld",
       channel->alias, (intptr_t)buffer, size, offset);
 
@@ -136,10 +101,10 @@ static int32_t ZVMReadHandle(struct NaClApp *nap,
   sys_buffer = (char*)NaClUserToSys(nap, (uintptr_t) buffer);
 
   /* ignore user offset for sequential access read */
-  if(CHANNEL_SEQ_READABLE(channel))
+  if(CH_SEQ_READABLE(channel))
     offset = channel->getpos;
   else
-    /* prevent reading beyond the end of the random access channels */
+  /* prevent reading beyond the end of the random access channels */
     size = MIN(channel->size - offset, size);
 
   /* check arguments sanity */
@@ -153,7 +118,7 @@ static int32_t ZVMReadHandle(struct NaClApp *nap,
   /* check limits */
   if(channel->counters[GetsLimit] >= channel->limits[GetsLimit])
     return -EDQUOT;
-  if(CHANNEL_RND_READABLE(channel))
+  if(CH_RND_READABLE(channel))
     if(offset >= channel->limits[PutSizeLimit] - channel->counters[PutSizeLimit]
       + channel->size) return -EINVAL;
 
@@ -163,32 +128,13 @@ static int32_t ZVMReadHandle(struct NaClApp *nap,
   if(size < 1) return -EDQUOT;
 
   /* read data and update position */
-  switch(channel->source)
-  {
-    case ChannelRegular:
-      retcode = pread(channel->handle, sys_buffer, (size_t)size, (off_t)offset);
-      if(retcode == -1) retcode = -errno;
-      break;
-    case ChannelCharacter:
-    case ChannelFIFO:
-     retcode = fread(sys_buffer, 1, (size_t)size, (FILE*)channel->socket);
-      if(retcode == -1) retcode = -errno;
-      break;
-    case ChannelTCP:
-      retcode = FetchMessage(channel, sys_buffer, size);
-      if(retcode == -1) retcode = -EIO;
-      break;
-    default: /* design error */
-      ZLOGFAIL(1, EFAULT, "invalid channel source");
-      break;
-  }
+  retcode = ChannelRead(channel, sys_buffer, (size_t)size, (off_t)offset);
 
   /* update the channel counter, size, position and tag */
   ++channel->counters[GetsLimit];
   if(retcode > 0)
   {
     channel->counters[GetSizeLimit] += retcode;
-    UpdateChannelTag(channel, (const char*)sys_buffer, retcode);
 
     /*
      * current get cursor. must be updated if channel have seq get
@@ -197,16 +143,8 @@ static int32_t ZVMReadHandle(struct NaClApp *nap,
     channel->getpos = offset + retcode;
 
     /* if channel have random put update put cursor. not allowed for cdr */
-    if(CHANNEL_RND_WRITEABLE(channel)) channel->putpos = offset + retcode;
+    if(CH_RND_WRITEABLE(channel)) channel->putpos = offset + retcode;
   }
-
-  /*
-   * set eof if 0 bytes has been read. it is safe because
-   * 1. if user asked for a 0 bytes control will not reach this code
-   * 2. if user asked more then 0 bytes and got 0 that means end of data
-   * 3. if quota exceeded user will get an error before an actual read
-   */
-  if(retcode == 0) channel->eof = 1;
 
   return retcode;
 }
@@ -224,17 +162,17 @@ static int32_t ZVMWriteHandle(struct NaClApp *nap,
   int32_t retcode = -1;
 
   assert(nap != NULL);
-  assert(nap->system_manifest != NULL);
-  assert(nap->system_manifest->channels != NULL);
+  assert(nap->manifest != NULL);
+  assert(nap->manifest->channels != NULL);
 
   /* check the channel number */
-  if(ch < 0 || ch >= nap->system_manifest->channels_count)
+  if(ch < 0 || ch >= nap->manifest->channels->len)
   {
     ZLOGS(LOG_DEBUG, "channel_id=%d, buffer=0x%lx, size=%d, offset=%ld",
         ch, (intptr_t)buffer, size, offset);
     return -EINVAL;
   }
-  channel = &nap->system_manifest->channels[ch];
+  channel = CH_CH(nap->manifest, ch);
   ZLOGS(LOG_DEBUG, "channel %s, buffer=0x%lx, size=%d, offset=%ld",
       channel->alias, (intptr_t)buffer, size, offset);
 
@@ -243,7 +181,7 @@ static int32_t ZVMWriteHandle(struct NaClApp *nap,
   sys_buffer = (char*)NaClUserToSys(nap, (uintptr_t) buffer);
 
   /* ignore user offset for sequential access write */
-  if(CHANNEL_SEQ_WRITEABLE(channel)) offset = channel->putpos;
+  if(CH_SEQ_WRITEABLE(channel)) offset = channel->putpos;
 
   /* check arguments sanity */
   if(size == 0) return 0; /* success. user has read 0 bytes */
@@ -255,39 +193,20 @@ static int32_t ZVMWriteHandle(struct NaClApp *nap,
     return -EDQUOT;
   tail = channel->limits[PutSizeLimit] - channel->counters[PutSizeLimit];
   if(offset >= channel->limits[PutSizeLimit] &&
-      !CHANNEL_READABLE(channel)) return -EINVAL;
+      !((CH_RW_TYPE(channel) & 1) == 1)) return -EINVAL;
+
   if(offset >= channel->size + tail) return -EINVAL;
   if(size > tail) size = tail;
   if(size < 1) return -EDQUOT;
 
   /* write data and update position */
-  switch(channel->source)
-  {
-    case ChannelRegular:
-      retcode = pwrite(channel->handle, sys_buffer, (size_t)size, (off_t)offset);
-      if(retcode == -1) retcode = -errno;
-      break;
-    case ChannelCharacter:
-    case ChannelFIFO:
-      retcode = fwrite(sys_buffer, 1, (size_t)size, (FILE*)channel->socket);
-      if(retcode == -1) retcode = -errno;
-      break;
-    case ChannelTCP:
-      retcode = SendMessage(channel, sys_buffer, size);
-      if(retcode == -1) retcode = -EIO;
-      break;
-    default: /* design error */
-      ZLOGFAIL(1, EFAULT, "invalid channel source");
-      break;
-  }
+  retcode = ChannelWrite(channel, sys_buffer, (size_t)size, (off_t)offset);
 
   /* update the channel counter, size, position and tag */
   ++channel->counters[PutsLimit];
   if(retcode > 0)
   {
     channel->counters[PutSizeLimit] += retcode;
-    UpdateChannelTag(channel, (const char*)sys_buffer, retcode);
-
     channel->putpos = offset + retcode;
     channel->size = (channel->type == SGetRPut) || (channel->type == RGetRPut) ?
         MAX(channel->size, channel->putpos) : channel->putpos;
@@ -302,7 +221,7 @@ static int32_t ZVMWriteHandle(struct NaClApp *nap,
     int result; \
 \
     assert(nap != NULL); \
-    assert(nap->system_manifest != NULL); \
+    assert(nap->manifest != NULL); \
 \
     sysaddr = NaClUserToSysAddrNullOkay(nap, addr); \
 \
@@ -364,7 +283,7 @@ int32_t TrapHandler(struct NaClApp *nap, uint32_t args)
   int retcode = 0;
 
   assert(nap != NULL);
-  assert(nap->system_manifest != NULL);
+  assert(nap->manifest != NULL);
 
   /*
    * translate address from user space to system

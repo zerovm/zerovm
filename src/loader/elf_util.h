@@ -19,28 +19,27 @@
  * limitations under the License.
  */
 
-#ifndef ELF_UTIL_H__
-#define ELF_UTIL_H__ 1
+#ifndef ELF_UTIL_H_
+#define ELF_UTIL_H_ 1
 
-#include "src/platform/portability.h"
 #include "src/loader/sel_ldr.h"
 
-struct NaClElfImage;
+struct ElfImage;
 struct Gio;
 
-uintptr_t NaClElfImageGetEntryPoint(const struct NaClElfImage *image);
+uintptr_t ElfImageGetEntryPoint(const struct ElfImage *image);
 
-struct NaClElfImage *NaClElfImageNew(struct Gio *gp);
+struct ElfImage *ElfImageNew(struct Gio *gp);
 
-void NaClElfImageValidateElfHeader(const struct NaClElfImage *image);
+void ValidateElfHeader(const struct ElfImage *image);
 
 /*
  * TODO(robertm): decouple validation from computation of static_text_end
  * and max_vaddr
  * todo(d'b): the function is too large, rewrite it
  */
-void NaClElfImageValidateProgramHeaders(
-  struct NaClElfImage *image,
+void ValidateProgramHeaders(
+  struct ElfImage *image,
   uint8_t             addr_bits,
   uintptr_t           *static_text_end,
   uintptr_t           *rodata_start,
@@ -53,9 +52,9 @@ void NaClElfImageValidateProgramHeaders(
  * Loads an ELF executable before the address space's memory
  * protections have been set up by NaClMemoryProtection().
  */
-void NaClElfImageLoad(const struct NaClElfImage *image,
+void ElfImageLoad(const struct ElfImage *image,
     struct Gio *gp, uint8_t addr_bits, uintptr_t mem_start);
 
-void NaClElfImageDelete(struct NaClElfImage *image);
+void ElfImageDelete(struct ElfImage *image);
 
-#endif  /* ELF_UTIL_H__ */
+#endif  /* ELF_UTIL_H_ */

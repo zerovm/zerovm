@@ -25,10 +25,8 @@
  * NOTE: This header is ALSO included by assembler files and hence
  *       must not include any C code
  */
-#ifndef NACL_CONFIG_H_
-#define NACL_CONFIG_H_
-
-#include "src/main/nacl_base.h"
+#ifndef CONFIG_H_
+#define CONFIG_H_
 
 /* maximum number of elf program headers allowed. */
 #define NACL_MAX_PROGRAM_HEADERS  128
@@ -66,10 +64,6 @@
  * addr16/data16 attacks.
  */
 #define NACL_SYSCALL_START_ADDR       (16 << NACL_PAGESHIFT)
-
-/* Macro for the start address of a specific trampoline.  */
-#define NACL_SYSCALL_ADDR(syscall_number) \
-    (NACL_SYSCALL_START_ADDR + (syscall_number << NACL_SYSCALL_BLOCK_SHIFT))
 
 /*
  * Syscall trampoline code have a block size that may differ from the
@@ -138,12 +132,11 @@
 /* d'b: macro definitions for the user space allocation */
 #define FOURGIG     (((size_t) 1) << 32)
 #define GUARDSIZE   (10 * FOURGIG)
-#define ALIGN_BITS  (32)
 #define R15_CONST   ((void*)0x440000000000) /* d'b: base address to mmap to */
 #define RELATIVE_MMAP (MAP_ANONYMOUS | MAP_NORESERVE | MAP_PRIVATE) /* d'b */
 #define ABSOLUTE_MMAP (RELATIVE_MMAP | MAP_FIXED) /* d'b */
 #define START_OF_USER_SPACE ((uintptr_t)R15_CONST)
 #define END_OF_USER_SPACE (START_OF_USER_SPACE + FOURGIG + 2 * GUARDSIZE)
-#define LEAST_USER_HEAP_SIZE 8388608 /* d'b: 8mb */
+#define LEAST_USER_HEAP_SIZE (8*1024*1024)
 
-#endif  /* NACL_CONFIG_H_ */
+#endif  /* CONFIG_H_ */

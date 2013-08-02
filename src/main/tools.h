@@ -28,15 +28,31 @@
 #include <glib.h>
 #include <unistd.h>
 #include <sys/stat.h>
-#include "src/main/nacl_base.h"
-#include "src/main/nacl_exit.h"
-#include "src/main/zlog.h"
 
-#define MANIFEST_MAX 0x100000 /* limit for the manifest size */
-#define KEYWORD_SIZE_MAX 256
-#define BIG_ENOUGH_SPACE 0x10000 /* ..size of the biggest stack variable */
-#define BIG_ENOUGH_STRING 1024 /* ..size of the random biggest string */
-#define INT32_STRLEN (11) /* enough space to place maximum int32 value + '\0' */
+/*
+ * putting extern "C" { } in header files make emacs want to indent
+ * everything, which looks odd.  rather than putting in fancy syntax
+ * recognition in c-mode, we just use the following macros.
+ */
+#ifdef __cplusplus
+# define EXTERN_C_BEGIN  extern "C" {
+# define EXTERN_C_END    }
+
+/* Mark this function as not throwing beyond */
+#else
+# define EXTERN_C_BEGIN
+# define EXTERN_C_END
+#endif
+
+/* gcc only */
+#define INLINE __inline__
+#define UNREFERENCED_PARAMETER(P) do { (void) P; } while (0)
+#define NORETURN __attribute__((noreturn))
+#define NACL_WUR __attribute__((__warn_unused_result__))
+
+/* size of the random biggest string */
+#define BIG_ENOUGH_STRING 1024
+#define MICROS_PER_MILLI 1000
 
 /* debug macro */
 #undef SHOWID
@@ -47,26 +63,10 @@
 #define ROUNDDOWN_4K(a) ((a) & ~(NACL_PAGESIZE - 1LLU))
 #define ROUNDUP_4K(a) ROUNDDOWN_4K((a) + NACL_PAGESIZE - 1LLU)
 
-/* safe atoi(). NULL can be used. return 0 for NULL */
-static INLINE int64_t safe_atoi(const char *str)
-{
-  return (str == NULL) ? 0 : g_ascii_strtoll(str, NULL, 10);
-}
-#define ATOI(str) safe_atoi(str)
-
-/* safe streq(). NULL can be used. return 1 when a == b */
-static INLINE int safe_streq(const char *a, const char *b)
-{
-  return g_strcmp0(a, b) == 0;
-}
-#define STREQ(a, b) safe_streq((a), (b))
+/* safe atoi(). return 0 for NULL */
+#define ATOI(str) ((str == NULL) ? 0 : g_ascii_strtoll(str, NULL, 0))
 
 /* return size of given file or negative error code */
-static INLINE int64_t GetFileSize(const char *name)
-{
-  struct stat fs;
-  int handle = open(name, O_RDONLY);
-  return fstat(handle, &fs), close(handle) ? -1 : fs.st_size;
-}
+int64_t GetFileSize(const char *name);
 
 #endif /* TOOLS_H_ */

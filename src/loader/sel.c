@@ -26,15 +26,14 @@
 #include <errno.h>
 #include <glib.h>
 #include <sys/mman.h>
-#include "src/loader/sel_ldr_x86.h"
 #include "src/loader/elf_util.h"
 #include "src/syscalls/switch_to_app.h"
 #include "src/platform/sel_memory.h"
 #include "src/loader/sel_addrspace.h"
-#include "src/main/manifest_setup.h"
-#include "src/main/nacl_globals.h"
+#include "src/main/setup.h"
+#include "src/loader/sel_ldr.h"
 #include "src/main/zlog.h"
-#include "src/main/nacl_config.h"
+#include "src/main/config.h"
 
 #if !defined(SIZE_T_MAX)
 # define SIZE_T_MAX     (~(size_t) 0)
@@ -50,7 +49,8 @@
  * with HLTs, just in case the CPU has a bug in which it fails to
  * check for running off the end of the x86 code segment.
  */
-void static NaClFillEndOfTextRegion(struct NaClApp *nap) {
+void static FillEndOfTextRegion(struct NaClApp *nap)
+{
   size_t page_pad;
 
   /*
@@ -75,12 +75,12 @@ void static NaClFillEndOfTextRegion(struct NaClApp *nap) {
   ZLOGS(LOG_INSANE, "Filling with halts: %08lx, %08lx bytes",
           nap->mem_start + nap->static_text_end, page_pad);
 
-  NaClFillMemoryRegionWithHalt((void*)(nap->mem_start + nap->static_text_end), page_pad);
+  FillMemoryRegionWithHalt((void*)(nap->mem_start + nap->static_text_end), page_pad);
   nap->static_text_end += page_pad;
 }
 
 /* Basic address space layout sanity check */
-static void NaClCheckAddressSpaceLayoutSanity(struct NaClApp *nap,
+static void CheckAddressSpaceLayoutSanity(struct NaClApp *nap,
     uintptr_t rodata_end, uintptr_t data_end, uintptr_t max_vaddr)
 {
   /* fail if Data segment exists, but is not last segment */
@@ -91,11 +91,11 @@ static void NaClCheckAddressSpaceLayoutSanity(struct NaClApp *nap,
    *
    * Here is why it is unreachable:
    *
-   * NaClPhdrChecks checks the test segment starting address.  The
+   * PhdrChecks checks the test segment starting address.  The
    * only allowed loaded segments are text, data, and rodata.
    * Thus unless the rodata is in the trampoline region, it must
-   * be after the text.  And NaClElfImageValidateProgramHeaders
-   * ensures that all segments start after the trampoline region.
+   * be after the text.  And ValidateProgramHeaders ensures that
+   * all segments start after the trampoline region.
    *
    * d'b: fail if no data segment. read-only data segment exists
    * but is not last segment
@@ -126,7 +126,7 @@ static void NaClCheckAddressSpaceLayoutSanity(struct NaClApp *nap,
 }
 
 #define DUMP(a) ZLOGS(LOG_INSANE, "%-24s = 0x%016x", #a, a)
-static void NaClLogAddressSpaceLayout(struct NaClApp *nap)
+static void LogAddressSpaceLayout(struct NaClApp *nap)
 {
   ZLOGS(LOG_INSANE, "NaClApp addr space layout:");
   DUMP(nap->static_text_end);
@@ -138,21 +138,20 @@ static void NaClLogAddressSpaceLayout(struct NaClApp *nap)
   DUMP(nap->break_addr);
   DUMP(nap->initial_entry_pt);
   DUMP(nap->user_entry_pt);
-  DUMP(nap->bundle_size);
 }
 
-int NaClAddrIsValidEntryPt(struct NaClApp *nap, uintptr_t addr)
+static int AddrIsValidEntryPt(struct NaClApp *nap, uintptr_t addr)
 {
-  if(0 != (addr & (nap->bundle_size - 1))) return 0;
+  if(0 != (addr & (NACL_INSTR_BLOCK_SIZE - 1))) return 0;
   return addr < nap->static_text_end;
 }
 
-void NaClAppLoadFile(struct Gio *gp, struct NaClApp *nap)
+void AppLoadFile(struct Gio *gp, struct NaClApp *nap)
 {
   uintptr_t rodata_end;
   uintptr_t data_end;
   uintptr_t max_vaddr;
-  struct NaClElfImage *image = NULL;
+  struct ElfImage *image = NULL;
   int err;
 
   /* fail if Address space too big */
@@ -161,10 +160,10 @@ void NaClAppLoadFile(struct Gio *gp, struct NaClApp *nap)
   nap->stack_size = ROUNDUP_64K(nap->stack_size);
 
   /* temporay object will be deleted at end of function */
-  image = NaClElfImageNew(gp);
-  NaClElfImageValidateElfHeader(image);
+  image = ElfImageNew(gp);
+  ValidateElfHeader(image);
 
-  NaClElfImageValidateProgramHeaders(image, nap->addr_bits, &nap->static_text_end,
+  ValidateProgramHeaders(image, nap->addr_bits, &nap->static_text_end,
       &nap->rodata_start, &rodata_end, &nap->data_start, &data_end, &max_vaddr);
 
   /*
@@ -195,26 +194,23 @@ void NaClAppLoadFile(struct Gio *gp, struct NaClApp *nap)
   nap->break_addr = max_vaddr;
   nap->data_end = max_vaddr;
 
-  ZLOGS(LOG_INSANE, "Values from NaClElfImageValidateProgramHeaders:");
+  ZLOGS(LOG_INSANE, "Values from ValidateProgramHeaders:");
   DUMP(nap->rodata_start);
   DUMP(rodata_end);
   DUMP(nap->data_start);
   DUMP(data_end);
   DUMP(max_vaddr);
 
-  /* We now support only one bundle size.  */
-  nap->bundle_size = NACL_INSTR_BLOCK_SIZE;
-
-  nap->initial_entry_pt = NaClElfImageGetEntryPoint(image);
-  NaClLogAddressSpaceLayout(nap);
+  nap->initial_entry_pt = ElfImageGetEntryPoint(image);
+  LogAddressSpaceLayout(nap);
 
   /* Bad program entry point address */
-  ZLOGFAIL(!NaClAddrIsValidEntryPt(nap, nap->initial_entry_pt), ENOEXEC, FAILED_MSG);
+  ZLOGFAIL(!AddrIsValidEntryPt(nap, nap->initial_entry_pt), ENOEXEC, FAILED_MSG);
 
-  NaClCheckAddressSpaceLayoutSanity(nap, rodata_end, data_end, max_vaddr);
+  CheckAddressSpaceLayoutSanity(nap, rodata_end, data_end, max_vaddr);
 
   ZLOGS(LOG_DEBUG, "Allocating address space");
-  NaClAllocAddrSpace(nap);
+  AllocAddrSpace(nap);
 
   /*
    * Make sure the static image pages are marked writable before we try
@@ -226,14 +222,14 @@ void NaClAppLoadFile(struct Gio *gp, struct NaClApp *nap)
       PROT_READ | PROT_WRITE);
   ZLOGFAIL(0 != err, EFAULT, "Failed to make image pages writable. code 0x%x", err);
 
-  NaClElfImageLoad(image, gp, nap->addr_bits, nap->mem_start);
+  ElfImageLoad(image, gp, nap->addr_bits, nap->mem_start);
 
   /* d'b: shared memory for the dynamic text disabled */
   nap->dynamic_text_start = ROUNDUP_64K(NaClEndOfStaticText(nap));
   nap->dynamic_text_end = nap->dynamic_text_start;
 
   /*
-   * NaClFillEndOfTextRegion will fill with halt instructions the
+   * FillEndOfTextRegion will fill with halt instructions the
    * padding space after the static text region.
    *
    * Shm-backed dynamic text space was filled with halt instructions
@@ -242,13 +238,13 @@ void NaClAppLoadFile(struct Gio *gp, struct NaClApp *nap)
    * allocation page).  static_text_end is updated to include the
    * padding.
    */
-  NaClFillEndOfTextRegion(nap);
+  FillEndOfTextRegion(nap);
 
   ZLOGS(LOG_DEBUG, "Initializing arch switcher");
-  NaClInitSwitchToApp(nap);
+  InitSwitchToApp(nap);
 
   ZLOGS(LOG_DEBUG, "Installing trampoline");
-  NaClLoadTrampoline(nap);
+  LoadTrampoline(nap);
 
   /*
    * NaClMemoryProtect also initializes the mem_map w/ information
@@ -258,12 +254,12 @@ void NaClAppLoadFile(struct Gio *gp, struct NaClApp *nap)
    * non-writable.
    */
   ZLOGS(LOG_DEBUG, "Applying memory protection");
-  NaClMemoryProtection(nap);
+  MemoryProtection(nap);
 
-  ZLOGS(LOG_DEBUG, "NaClAppLoadFile done");
-  NaClLogAddressSpaceLayout(nap);
+  ZLOGS(LOG_DEBUG, "AppLoadFile done");
+  LogAddressSpaceLayout(nap);
 
-  NaClElfImageDelete(image);
+  ElfImageDelete(image);
 }
 #undef DUMP
 
@@ -281,17 +277,17 @@ NORETURN void CreateSession(struct NaClApp *nap)
   ((uint32_t*)stack_ptr)[5] = 0xfffffff0;
 
   /* construct "nacl_user" global */
-  NaClThreadContextCtor(nacl_user, nap, nap->initial_entry_pt, stack_ptr, 0);
+  ThreadContextCtor(nacl_user, nap, nap->initial_entry_pt, stack_ptr, 0);
   nacl_user->sysret = nap->break_addr;
   nacl_user->prog_ctr = NaClUserToSys(nap, nap->initial_entry_pt);
   nacl_user->new_prog_ctr = NaClUserToSys(nap, nap->initial_entry_pt);
 
   /* initialize "nacl_sys" global */
-  nacl_sys->rbp = NaClGetStackPtr();
-  nacl_sys->rsp = NaClGetStackPtr();
+  nacl_sys->rbp = GetStackPtr();
+  nacl_sys->rsp = GetStackPtr();
 
   /* pass control to the nexe */
-  ZLOGS(LOG_DEBUG, "SESSION STARTED");
-  NaClSwitchToApp(nap, nacl_user->new_prog_ctr);
-  ZLOGFAIL(1, EFAULT, "unreachable code reached");
+  ZLOGS(LOG_DEBUG, "SESSION %d STARTED", nap->manifest->node);
+  SwitchToApp(nap, nacl_user->new_prog_ctr);
+  assert(0);
 }

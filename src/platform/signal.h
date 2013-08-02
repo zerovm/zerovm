@@ -19,8 +19,8 @@
  * limitations under the License.
  */
 
-#ifndef NACL_SIGNAL_H__
-#define NACL_SIGNAL_H__ 1
+#ifndef SIGNAL_H__
+#define SIGNAL_H__ 1
 
 /*
  * The nacl_signal module provides a platform independent mechanism for
@@ -30,14 +30,13 @@
  * to and from architecture dependent CPU state structures.
  */
 
-#include "src/platform/nacl_signal_64.h"
 #include "src/loader/sel_rt.h"
 
 EXTERN_C_BEGIN
 
 struct NaClApp;
 
-enum NaClSignalResult {
+enum SignalResult {
   NACL_SIGNAL_SEARCH,   /* Try our handler or OS */
   NACL_SIGNAL_SKIP,     /* Skip our handlers and try OS */
   NACL_SIGNAL_RETURN    /* Skip all other handlers and return */
@@ -48,7 +47,7 @@ enum NaClSignalResult {
  * Prototype for a signal handler.  The handler will receive the POSIX
  * signal number and an opaque platform dependent signal object.
  */
-typedef enum NaClSignalResult (*NaClSignalHandler)(int sig_num, void *ctx);
+typedef enum SignalResult (*SignalHandler)(int sig_num, void *ctx);
 
 /* with 0 signals handling is disabled */
 void SetSignalHandling(int support_signals);
@@ -56,29 +55,22 @@ void SetSignalHandling(int support_signals);
 /*
  * Register process-wide signal handlers.
  */
-void NaClSignalHandlerInit(void);
+void SignalHandlerInit(void);
 
-/* Undoes the effect of NaClSignalHandlerInit() */
-void NaClSignalHandlerFini(void);
-
-/*
- * Fill a signal context structure from the raw platform dependent
- * signal information.
- */
-void NaClSignalContextFromHandler(struct NaClSignalContext *sigCtx,
-                                  const void *rawCtx);
+/* Undoes the effect of SignalHandlerInit() */
+void SignalHandlerFini(void);
 
 /*
  * Traverse handler list, until a handler returns
  * NACL_SIGNAL_RETURN, or the list is exhausted, in which case
  * the signal is passed to the OS.
  */
-enum NaClSignalResult NaClSignalHandlerFind(int signal_number, void *ctx);
+enum SignalResult SignalHandlerFind(int signal_number, void *ctx);
 
 /* Platform specific code. Do not call directly */
-void NaClSignalHandlerInitPlatform(void);
-void NaClSignalHandlerFiniPlatform(void);
+void SignalHandlerInitPlatform(void);
+void SignalHandlerFiniPlatform(void);
 
 EXTERN_C_END
 
-#endif  /* NACL_SIGNAL_H__ */
+#endif /* SIGNAL_H__ */

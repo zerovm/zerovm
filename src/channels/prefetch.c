@@ -18,212 +18,88 @@
  */
 
 #include <assert.h>
+#include <arpa/inet.h> /* convert ip <-> int */
 #include <zmq.h>
-#include "src/main/manifest_parser.h"
-#include "src/main/manifest_setup.h" /* todo(d'b): remove it. (system_manifest) */
+#include "src/main/manifest.h"
+#include "src/main/report.h"
 #include "src/channels/prefetch.h"
 #include "src/main/etag.h"
-#include "src/main/nacl_globals.h" /* todo(d'b): remove it. (gnap) */
-#include "src/channels/name_service.h"
+#include "src/channels/channel.h"
 
-static uint32_t channels_cnt = 0; /* needs for NetCtor/Dtor */
+#define LOWEST_AVAILABLE_PORT 49152
+#define NET_BUFFER_SIZE 0x10000
+
+/* todo: find more neat solution than put it twice */
+#define XARRAY(a) static char *ARRAY_##a[] = {a};
+#define X(a) #a,
+  XARRAY(PROTOCOLS)
+#undef X
+
 static void *context = NULL; /* zeromq context */
-static uint32_t binds = 0; /* "bind" channels number */
-static uint32_t connects = 0; /* "connect" channels number */
+static char control_digest[TAG_DIGEST_SIZE];
 
-/* make url from the given record and return it through the "url" parameter */
-static void MakeURL(char *url, int32_t size,
-    const struct ChannelDesc *channel, const struct ChannelConnection *record)
+char *GetControlDigest()
 {
-  char host[BIG_ENOUGH_STRING];
+  return control_digest;
+}
 
-  assert(url != NULL);
-  assert(record != NULL);
-  assert(channel != NULL);
-  assert(channel->name != NULL);
+/* make url from (Connection*) and return it through the "url" parameter */
+static void MakeURL(struct ChannelDesc *channel, int n, char *url, int32_t size)
+{
+  char host[BIG_ENOUGH_STRING] = "*";
 
-  ZLOGFAIL(record->host == 0 && record->port != 0,
-      EFAULT, "named hosts are not supported");
-  ZLOGFAIL(size < 6, EFAULT, "too short url buffer");
-
-  /* create string containing ip or id as the host name */
-  switch(record->mark)
+  /* create string with host */
+  if(IS_WO(channel) || IS_IPHOST(CH_FLAGS(channel, n)))
   {
     struct in_addr ip;
-    case BIND_MARK:
-      g_snprintf(host, BIG_ENOUGH_STRING, "*");
-      break;
-    case CONNECT_MARK:
-    case OUTSIDER_MARK:
-      ip.s_addr = bswap_32(record->host);
-      g_snprintf(host, BIG_ENOUGH_STRING, "%s", inet_ntoa(ip));
-      break;
-    default:
-      ZLOGFAIL(1, EFAULT, "unknown channel mark");
-      break;
+    ip.s_addr = CH_HOST(channel, n);
+    g_snprintf(host, BIG_ENOUGH_STRING, "%s", inet_ntoa(ip));
   }
 
   /* construct url */
   g_snprintf(url, size, "%s://%s:%u",
-      StringizeChannelSourceType(record->protocol), host, record->port);
+      g_ascii_strdown(XSTR(PROTOCOLS, CH_PROTO(channel, n)), -1),
+      host, CH_PORT(channel, n));
 
   ZLOG(LOG_INSANE, "url = %s", url);
 }
 
-/*
- * bind the given channel using info from netlist
- * returns not 0 if failed
- * note: replaces PrepareBind if no name service available
- */
-static int DoBind(const struct ChannelDesc* channel)
+/* bind the RO source */
+static void Bind(struct ChannelDesc *channel, int n)
 {
-  struct ChannelConnection *record;
-  char buf[BIG_ENOUGH_STRING], *url = buf;
-
-  record = GetChannelConnectionInfo(channel);
-  assert(record != NULL);
-
-  MakeURL(url, BIG_ENOUGH_STRING, channel, record);
-  ZLOGS(LOG_DEBUG, "bind url %s", url);
-  return zmq_bind(channel->socket, url);
-}
-
-/*
- * prepare "bind" channel information for the name service
- * note: should be called before name service invocation
- */
-static void PrepareBind(const struct ChannelDesc *channel)
-{
-  struct ChannelConnection *record;
+  struct Connection *c = CH_SOURCE(channel, n);
   static uint16_t port = LOWEST_AVAILABLE_PORT;
-  int result = 1;
+  char buf[BIG_ENOUGH_STRING], *url = buf;
+  int result = -1;
 
-  assert(channel != NULL);
-
-  /* update netlist with the connection info */
-  StoreChannelConnectionInfo(channel);
-
-  /* if no name service is available just use given url and return */
-  if(!NameServiceSet())
-  {
-    result = DoBind(channel);
-    ZLOGFAIL(result != 0, EFAULT, "cannot bind %s", channel->alias);
-    return;
-  }
-
-  record = GetChannelConnectionInfo(channel);
-  assert(record != NULL);
-
-  /* in case channel has port assigned (full url) bind it and return */
-  if(record->port != 0)
-  {
-    result = DoBind(channel);
-    ZLOGFAIL(result != 0, EFAULT, "cannot bind %s", channel->alias);
-    return;
-  }
-
-  /*
-   * if channel does not have port pick up the port in the loop
-   * todo(d'b): check upcoming zmq version for port 0 binding
-   */
-  assert(record != NULL);
+  /* loop will end anyway after "port" overflow */
   for(;port >= LOWEST_AVAILABLE_PORT; ++port)
   {
-    record->port = port;
-    result = DoBind(channel);
-    if(result == 0) break;
+    if(!IS_IPHOST(c->flags)) c->port = port;
+    MakeURL(channel, n, url, BIG_ENOUGH_STRING);
+    result = zmq_bind(CH_HANDLE(channel, n), url);
+    if(result == 0 || IS_IPHOST(c->flags)) break;
   }
 
-  ZLOGFAIL(result != 0, EFAULT ,"cannot get port to bind %s", channel->alias);
-  ZLOGS(LOG_DEBUG, "host = %u, port = %u", record->host, record->port);
+  ZLOG(LOG_DEBUG, "host = %u, port = %u", c->host, c->port);
+  ZLOGFAIL(result != 0, EFAULT, "cannot bind %s %d: %s", channel->alias, n,
+      strerror(errno));
 }
 
-/*
- * connect the given channel using info from netlist
- * returns not 0 if failed
- * note: replaces PrepareConnect if no name service available
- */
-static int DoConnect(struct ChannelDesc* channel)
+/* connect the WO source */
+static void Connect(struct ChannelDesc *channel, int n)
 {
-  struct ChannelConnection *record;
+  int result;
   char buf[BIG_ENOUGH_STRING], *url = buf;
+  uint64_t hwm = 1; /* high water mark to block on sending */
 
-  record = GetChannelConnectionInfo(channel);
-  assert(record != NULL);
+  result = zmq_setsockopt(CH_HANDLE(channel, n), ZMQ_HWM, &hwm, sizeof hwm);
+  ZLOGFAIL(result != 0, EFAULT, "cannot set high water mark");
 
-  MakeURL(url, BIG_ENOUGH_STRING, channel, record);
-  ZLOGS(LOG_DEBUG, "connect url %s", url);
-  return zmq_connect(channel->socket, url);
-}
-
-/*
- * prepare "connect" channel information for the name service
- * note: will be called before name service invocation
- */
-static void PrepareConnect(struct ChannelDesc* channel)
-{
-  assert(channel != NULL);
-
-  /* update netlist with the connection info */
-  StoreChannelConnectionInfo(channel);
-
-  /* if no name service is available just use given url and return */
-  if(!NameServiceSet())
-  {
-    int result;
-    uint64_t hwm = 1; /* high water mark for PUSH socket to block on sending */
-
-    result = zmq_setsockopt(channel->socket, ZMQ_HWM, &hwm, sizeof hwm);
-    ZLOGFAIL(result != 0, EFAULT, "cannot set high water mark");
-
-    result = DoConnect(channel);
-    ZLOGFAIL(result != 0, EFAULT, "cannot connect %s", channel->alias);
-  }
-}
-
-void KickPrefetchChannels(const struct NaClApp *nap)
-{
-  int i;
-
-  /* quietly return if no name service specified */
-  if(!NameServiceSet()) return;
-
-  assert(nap != NULL);
-  assert(nap->system_manifest != NULL);
-
-  /* exchange channel information with the name server */
-  ResolveChannels(nap, binds, connects);
-
-  /* make connections */
-  for(i = 0; i < nap->system_manifest->channels_count; ++i)
-  {
-    int result;
-    struct ChannelDesc *channel = &nap->system_manifest->channels[i];
-    struct ChannelConnection *record;
-
-    assert(channel != NULL);
-
-    /* skip all channels except the network "connect" ones */
-    if(channel->source != ChannelTCP) continue;
-
-    /* get the channel connection information */
-    record = GetChannelConnectionInfo(channel);
-    assert(record != NULL);
-
-    /* only the "connect" channels need to be processed */
-    if(record->mark != CONNECT_MARK) continue;
-
-    /* bind or connect the channel and look at result */
-    result = DoConnect(channel);
-    ZLOGFAIL(result != 0, EFAULT, "cannot connect socket to %s", channel->alias);
-  }
-
-  /*
-   * temporary fix (the lost 1st messsage) to allow 0mq to complete
-   * the connection procedure. 1 millisecond should be enough
-   * todo(d'b): replace it with the channels readiness check
-   */
-  usleep(PREPOLL_WAIT);
+  MakeURL(channel, n, url, BIG_ENOUGH_STRING);
+  ZLOGS(LOG_DEBUG, "connect url %s to %s %d", url, channel->alias, n);
+  result = zmq_connect(CH_HANDLE(channel, n), url);
+  ZLOGFAIL(result != 0, EFAULT, "cannot connect %s", channel->alias);
 }
 
 /*
@@ -240,171 +116,52 @@ void KickPrefetchChannels(const struct NaClApp *nap)
       return -1;\
     }
 
-#define CHECK_TRANSPORT(proto) \
-  if(strncmp(url, prefix[proto], strlen(prefix[proto])) == 0) return proto;
-enum ChannelSourceType GetChannelProtocol(const char *url)
-{
-  char *prefix[] = CHANNEL_SOURCE_PREFIXES;
-  assert(url != NULL);
-
-  CHECK_TRANSPORT(ChannelIPC);
-  CHECK_TRANSPORT(ChannelTCP);
-  CHECK_TRANSPORT(ChannelINPROC);
-  CHECK_TRANSPORT(ChannelPGM);
-  CHECK_TRANSPORT(ChannelEPGM);
-  CHECK_TRANSPORT(ChannelUDP);
-  return ChannelSourceTypeNumber;
-}
-#undef CHECK_TRANSPORT
-
 /*
  * initiate networking (if there are network channels)
  * note: will run only once on the 1st channel construction
  */
-static INLINE void NetCtor()
+void NetCtor(const struct Manifest *manifest)
 {
-  /* context will be get at the very 1st call */
-  if(channels_cnt++) return;
-
   /* get zmq context */
   context = zmq_init(1);
   ZLOGFAIL(context == NULL, EFAULT, "cannot initialize zeromq context");
-
-  /* initialize name service */
-  NameServiceCtor();
 }
 
-/*
- * close all "push" channels manually after EOF's sent
- * note: temporary fix for zmq_term(). can be removed after zeromq
- *   team will fix it.
- * note: global nap object has been used. but it is ok since the patch
- *   is temporary
- * todo(d'b): remove this function
- */
-static INLINE void CloseChannels()
+/* finalize networking */
+void NetDtor(struct Manifest *manifest)
 {
-  extern struct NaClApp *gnap;
-  struct ChannelDesc *channels = gnap->system_manifest->channels;
-  int busy;
-
-  do
-  {
-    int i;
-    busy = 0;
-
-    for(i = 0; i < gnap->system_manifest->channels_count; ++i)
-    {
-      struct ChannelDesc *channel = &channels[i];
-      if(channel->source == ChannelTCP && channel->limits[PutsLimit] != 0
-          && channel->limits[PutSizeLimit] != 0)
-      {
-        uint32_t more;
-        size_t more_size = sizeof more;
-
-        if(channel->socket == NULL) continue;
-
-        zmq_getsockopt(channel->socket, ZMQ_EVENTS, &more, &more_size);
-        busy |= more != ZMQ_POLLOUT;
-        if(more == ZMQ_POLLOUT)
-        {
-          zmq_close(channel->socket);
-          channel->socket = NULL;
-        }
-      }
-    }
-  } while(busy);
-}
-
-/*
- * finalize networking (if there are network channels)
- * note: will run only once. should be called from channel destructor
- */
-static INLINE void NetDtor()
-{
-  /* context will be destroyed at the last call */
-  if(--channels_cnt) return;
-
-  /* temporary fix to make zmq_term() working */
-  CloseChannels();
-
   /* terminate context */
   zmq_term(context);
-
-  /* release name service */
-  NameServiceDtor();
+  context = NULL;
 }
 
-int PrefetchChannelCtor(struct ChannelDesc *channel)
-{
-  int sock_type;
-
-  /* check for the design errors */
-  assert(channel != NULL);
-  assert(channel->source == ChannelTCP);
-
-  /* log parameters and channel internals */
-  ZLOGS(LOG_DEBUG, "prefetch %s", channel->alias);
-
-  /* explicitly reset network regarded fields */
-  channel->socket = NULL;
-  channel->bufend = 0;
-  channel->bufpos = 0;
-
-  /* open zmq socket. will run only 1st time */
-  NetCtor();
-
-  /* choose connection type and open socket */
-  sock_type = channel->limits[GetsLimit]
-      && channel->limits[GetSizeLimit] ? ZMQ_PULL : ZMQ_PUSH;
-  channel->socket = zmq_socket(context, sock_type);
-  ZLOGFAIL(channel->socket == NULL, EFAULT,
-      "cannot get socket for %s", channel->alias);
-
-  /* bind or connect the channel */
-  if(sock_type == ZMQ_PUSH)
-  {
-    PrepareConnect(channel);
-    ++connects;
-  }
-  else
-  {
-    int result = zmq_msg_init(&channel->msg);
-    ZMQ_TEST_STATE(result, &channel->msg);
-    PrepareBind(channel);
-    ++binds;
-  }
-
-  return 0;
-}
-
-/* check and update channel EOF state and etag */
-static INLINE void UpdateChannelState(struct ChannelDesc *channel)
+static void UpdateChannelState(struct ChannelDesc *channel, int n)
 {
   int64_t more = 0;
   size_t more_size = sizeof more;
+  struct Connection *c = CH_SOURCE(channel, n);
 
-  zmq_getsockopt(channel->socket, ZMQ_RCVMORE, &more, &more_size);
+  zmq_getsockopt(c->handle, ZMQ_RCVMORE, &more, &more_size);
 
-  /* etag enabled */
-  if(more != 0 && channel->bufend == TAG_DIGEST_SIZE - 1 && channel->tag != NULL)
+  /* etagged eof received */
+  if(more != 0 && channel->bufend == TAG_DIGEST_SIZE && channel->tag != NULL)
   {
-    /* store received digest */
-    memcpy(channel->control, zmq_msg_data(&channel->msg), TAG_DIGEST_SIZE - 1);
+    memcpy(control_digest, zmq_msg_data(channel->msg), TAG_DIGEST_SIZE);
 
     /* receive the zero part */
-    zmq_recv(channel->socket, &channel->msg, 0);
-    channel->bufend = zmq_msg_size(&channel->msg);
-    if(channel->bufend == 0) channel->eof = 1;
-    else ZLOG(LOG_ERROR, "invalid eof detected on %s", channel->alias);
+    zmq_recv(c->handle, channel->msg, 0);
+    channel->bufend = zmq_msg_size(channel->msg);
+    ZLOGIF(channel->bufend != 0, "%s has invalid eof", channel->alias);
+    channel->eof = 1;
   }
 
-  /* etag disabled */
+  /* simple eof received */
   if(more == 0 && channel->bufend == 0 && channel->tag == NULL)
     channel->eof = 1;
 }
 
-int32_t FetchMessage(struct ChannelDesc *channel, char *buf, int32_t count)
+/* receive data from the network source */
+int32_t FetchMessage(struct ChannelDesc *channel, int n, char *buf, int32_t count)
 {
   int32_t readrest = count;
   int32_t toread = 0;
@@ -430,22 +187,22 @@ int32_t FetchMessage(struct ChannelDesc *channel, char *buf, int32_t count)
       int result;
 
       /* re-initialize message and rewind the channel buffer */
-      zmq_msg_close(&channel->msg);
+      zmq_msg_close(channel->msg);
       channel->bufpos = 0;
-      result = zmq_msg_init(&channel->msg);
-      ZMQ_TEST_STATE(result, &channel->msg);
+      result = zmq_msg_init(channel->msg);
+      ZMQ_TEST_STATE(result, channel->msg);
 
       /* read the next message */
-      result = zmq_recv(channel->socket, &channel->msg, 0);
-      ZMQ_TEST_STATE(result, &channel->msg);
-      channel->bufend = zmq_msg_size(&channel->msg);
+      result = zmq_recv(CH_HANDLE(channel, n), channel->msg, 0);
+      ZMQ_TEST_STATE(result, channel->msg);
+      channel->bufend = zmq_msg_size(channel->msg);
 
-      UpdateChannelState(channel);
+      UpdateChannelState(channel, n);
       continue;
     }
 
     /* there is the data to take */
-    memcpy(buf, (char*)zmq_msg_data(&channel->msg) + channel->bufpos, toread);
+    memcpy(buf, (char*)zmq_msg_data(channel->msg) + channel->bufpos, toread);
     channel->bufpos += toread;
     buf += toread;
   }
@@ -453,7 +210,8 @@ int32_t FetchMessage(struct ChannelDesc *channel, char *buf, int32_t count)
   return count - readrest;
 }
 
-int32_t SendMessage(struct ChannelDesc *channel, const char *buf, int32_t count)
+/* write to network source */
+int32_t SendMessage(struct ChannelDesc *channel, int n, const char *buf, int32_t count)
 {
   int result;
   int32_t writerest;
@@ -479,17 +237,17 @@ int32_t SendMessage(struct ChannelDesc *channel, const char *buf, int32_t count)
      */
 
     /* create the message */
-    result = zmq_msg_init_size(&channel->msg, towrite);
-    ZMQ_TEST_STATE(result, &channel->msg);
-    memcpy(zmq_msg_data(&channel->msg), buf, towrite);
+    result = zmq_msg_init_size(channel->msg, towrite);
+    ZMQ_TEST_STATE(result, channel->msg);
+    memcpy(zmq_msg_data(channel->msg), buf, towrite);
 
     /* send the message */
-    result = zmq_send(channel->socket, &channel->msg, flag);
-    ZMQ_TEST_STATE(result, &channel->msg);
+    result = zmq_send(CH_HANDLE(channel, n), channel->msg, flag);
+    ZMQ_TEST_STATE(result, channel->msg);
 
     /* destroy the message (caring about EOF) */
     buf += towrite;
-    if(channel->eof == 0) zmq_msg_close(&channel->msg);
+    if(channel->eof == 0) zmq_msg_close(channel->msg);
   }
 
   /* if sending EOF */
@@ -498,94 +256,127 @@ int32_t SendMessage(struct ChannelDesc *channel, const char *buf, int32_t count)
     /* create the message if didn't */
     if(count == 0)
     {
-      result = zmq_msg_init(&channel->msg);
-      ZMQ_TEST_STATE(result, &channel->msg);
+      result = zmq_msg_init(channel->msg);
+      ZMQ_TEST_STATE(result, channel->msg);
     }
 
-    result = zmq_msg_init_size(&channel->msg, 0);
-    ZMQ_TEST_STATE(result, &channel->msg);
-    result = zmq_send(channel->socket, &channel->msg, 0);
-    ZMQ_TEST_STATE(result, &channel->msg);
-    zmq_msg_close(&channel->msg);
+    result = zmq_msg_init_size(channel->msg, 0);
+    ZMQ_TEST_STATE(result, channel->msg);
+    result = zmq_send(CH_HANDLE(channel, n), channel->msg, 0);
+    ZMQ_TEST_STATE(result, channel->msg);
+    zmq_msg_close(channel->msg);
   }
 
   return count;
 }
 
-int PrefetchChannelDtor(struct ChannelDesc *channel)
+void PrefetchChannelCtor(struct ChannelDesc *channel, int n)
 {
-  char url[BIG_ENOUGH_STRING];  /* debug purposes only */
+  int sock_type;
+  struct Connection *c;
 
+  assert(context != NULL);
   assert(channel != NULL);
-  assert(channel->socket != NULL);
+  assert(n < channel->source->len);
 
   /* log parameters and channel internals */
-  MakeURL(url, BIG_ENOUGH_STRING, channel, GetChannelConnectionInfo(channel));
+  c = CH_SOURCE(channel, n);
+  ZLOGS(LOG_DEBUG, "prefetch %s %d", channel->alias, n);
+
+  /* explicitly reset network regarded fields */
+  c->handle = NULL;
+  channel->bufend = 0;
+  channel->bufpos = 0;
+
+  /* choose socket type */
+  ZLOGFAIL((uint32_t)CH_RW_TYPE(channel) - 1 > 1, EFAULT, "invalid i/o type");
+  CH_FLAGS(channel, n) |= (CH_RW_TYPE(channel) - 1) << 1;
+  sock_type = IS_RO(channel) ? ZMQ_PULL : ZMQ_PUSH;
+
+  /* open source (0mq socket) */
+  c->handle = zmq_socket(context, sock_type);
+  ZLOGFAIL(c->handle == NULL, EFAULT,
+      "cannot get socket for %s %d", channel->alias, n);
+
+  /* allocate one message per channel */
+  if(channel->msg == NULL)
+  {
+    int result;
+    channel->msg = g_malloc(sizeof(zmq_msg_t));
+    result = zmq_msg_init(channel->msg);
+    ZLOGFAIL(result != 0, EFAULT, "cannot init message");
+  }
+
+  /* bind or connect the channel */
+  sock_type == ZMQ_PULL ? Bind(channel, n) : Connect(channel, n);
+}
+
+/* close network source */
+void PrefetchChannelDtor(struct ChannelDesc *channel, int n)
+{
+  char url[BIG_ENOUGH_STRING]; /* debug purposes only */
+
+  assert(context != NULL);
+  assert(channel != NULL);
+  assert(n < channel->source->len);
+
+  /* log parameters and channel internals */
+  MakeURL(channel, n, url, BIG_ENOUGH_STRING);
   ZLOGS(LOG_DEBUG, "%s has url %s", channel->alias, url);
 
-  /* close "PUT" channel */
-  if(channel->limits[PutsLimit] && channel->limits[PutSizeLimit])
+  /* "eof" mounted source if session is not broken */
+  if(channel->msg != NULL && CH_HANDLE(channel, n) != NULL)
   {
-    int size = channel->tag != NULL ? TAG_DIGEST_SIZE - 1 : 0;
-
-    /* prepare digest */
-    if(channel->tag != NULL)
+    /* close "PUT" source (send eof) */
+    if(IS_WO(channel))
     {
-      TagDigest(channel->tag, channel->digest);
-      TagDtor(channel->tag);
-      channel->tag = NULL;
-    }
+      int dig_size = 0;
+      char digest[TAG_DIGEST_SIZE + 1];
 
-    /* send eof */
-    channel->eof = 1;
-    SendMessage(channel, channel->digest, size);
-    ZLOGS(LOG_DEBUG, "%s closed with tag %s, putsize %ld",
-        channel->alias, channel->digest, channel->counters[PutSizeLimit]);
-  }
-
-  /* close "GET" channel */
-  if(channel->limits[GetsLimit] && channel->limits[GetSizeLimit])
-  {
-    /* wind the channel to the end */
-    while(channel->eof == 0)
-    {
-      char buf[NET_BUFFER_SIZE];
-      int32_t size = FetchMessage(channel, buf, NET_BUFFER_SIZE);
-      ++channel->counters[GetsLimit];
-      channel->counters[GetSizeLimit] += size;
-
-      /* update tag if enabled */
+      /* prepare and send local digest */
       if(channel->tag != NULL)
-        TagUpdate(channel->tag, buf, size);
-    }
-
-    /* test integrity (if etag enabled) */
-    if(channel->tag != NULL)
-    {
-      /* prepare digest */
-      TagDigest(channel->tag, channel->digest);
-      TagDtor(channel->tag);
-      channel->tag = NULL;
-
-      /* raise the error if the data corrupted */
-      if(memcmp(channel->control, channel->digest, TAG_DIGEST_SIZE) != 0)
       {
-        ZLOG(LOG_ERROR, "%s corrupted, control: %s, local: %s",
-            channel->alias, channel->control, channel->digest);
-        SetExitState("data corrupted");
-        SetExitCode(EPIPE);
+        TagDigest(channel->tag, digest);
+        dig_size = TAG_DIGEST_SIZE;
       }
+      channel->eof = 1;
+      SendMessage(channel, n, digest, dig_size);
+      ZLOGS(LOG_DEBUG, "%s closed with tag %s, putsize %ld",
+          channel->alias, digest, channel->counters[PutSizeLimit]);
 
-      ZLOGS(LOG_DEBUG, "%s closed with tag %s, getsize %ld",
-          channel->alias, channel->digest, channel->counters[GetSizeLimit]);
+      /*
+       * if the last message is not delivered send another one in blocking
+       * mode. when unblocked, the last message sent and socket can be closed
+       * todo: the patch can be removed when 0mq zmq_term will be fixed
+       */
+      do
+      {
+        struct Connection *c = CH_SOURCE(channel, n);
+        int result;
+        uint32_t flag = 0;
+        size_t fsize = sizeof flag;
+
+        /* check if there is unsent message */
+        result = zmq_getsockopt(c->handle, ZMQ_EVENTS, &flag, &fsize);
+        ZLOGIF(result == -1, "error closing %s %d", channel->alias, n);
+        if(flag & ZMQ_POLLOUT) break;
+
+        /* send empty message message in blocking mode */
+        zmq_msg_init_size(channel->msg, 0);
+        zmq_send(c->handle, channel->msg, 0);
+      } while(0);
     }
-
-    zmq_msg_close(&channel->msg);
-    zmq_close(channel->socket);
   }
 
-  /* will destroy context and netlist after all network channels closed */
-  NetDtor();
+  /* free message */
+  if(channel->msg != NULL)
+  {
+    zmq_msg_close(channel->msg);
+    g_free(channel->msg);
+    channel->msg = NULL;
+  }
 
-  return 0;
+  /* close source */
+  if(CH_HANDLE(channel, n) != NULL)
+    zmq_close(CH_HANDLE(channel, n));
 }

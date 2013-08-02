@@ -1,9 +1,6 @@
 /*
- * Copyright 2009 The Native Client Authors. All rights reserved.
- * Use of this source code is governed by a BSD-style license that can
- * be found in the LICENSE file.
- */
-/*
+ * name service for network channels
+ *
  * Copyright (c) 2012, LiteStack, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,13 +15,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifndef NSERVICE_H_
+#define NSERVICE_H_
 
-#ifndef SEL_LDR_X86_H__
-#define SEL_LDR_X86_H__ 1
+/*
+ * todo: find the neat solution to calculate (10915)
+ * ((PARCEL_SIZE - sizeof(struct NSParcel)) / sizeof(struct NSRecord) + 1)
+ */
+#define MAX_CHANNELS_NUMBER 10915
 
-#define NACL_MAX_ADDR_BITS  (32)
-#define NACL_HALT_OPCODE    0xf4
-#define NACL_HALT_LEN       1           /* length of halt instruction */
-#define THUNK_ADDR          ((void*)0x5AFECA110000)
+/* initialize name service and update channels information */
+void NameServiceCtor(struct Manifest *manifest, uint32_t b, uint32_t c);
 
-#endif /* SEL_LDR_X86_H__ */
+/* close name service */
+void NameServiceDtor();
+
+#endif

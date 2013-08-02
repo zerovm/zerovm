@@ -22,7 +22,7 @@
 #include <errno.h>
 #include "src/loader/sel_ldr.h"
 
-nacl_reg_t NaClGetStackPtr(void)
+nacl_reg_t GetStackPtr(void)
 {
   nacl_reg_t rsp;
 
@@ -30,28 +30,28 @@ nacl_reg_t NaClGetStackPtr(void)
   return rsp;
 }
 
-uintptr_t NaClGetThreadCtxSp(struct NaClThreadContext  *th_ctx)
+uintptr_t GetThreadCtxSp(struct ThreadContext *th_ctx)
 {
-  return (uintptr_t) th_ctx->rsp;
+  return (uintptr_t)th_ctx->rsp;
 }
 
-void NaClSetThreadCtxSp(struct NaClThreadContext  *th_ctx, uintptr_t sp)
+void SetThreadCtxSp(struct ThreadContext *th_ctx, uintptr_t sp)
 {
-  th_ctx->rsp = (nacl_reg_t) sp;
+  th_ctx->rsp = (nacl_reg_t)sp;
 }
 
-int NaClThreadContextCtor(struct NaClThreadContext  *ntcp,
-                          struct NaClApp            *nap,
-                          nacl_reg_t                prog_ctr,
-                          nacl_reg_t                stack_ptr,
-                          uint32_t                  tls_idx)
+int ThreadContextCtor(struct ThreadContext *ntcp,
+                      struct NaClApp       *nap,
+                      nacl_reg_t           prog_ctr,
+                      nacl_reg_t           stack_ptr,
+                      uint32_t             tls_idx)
 {
   ntcp->rax = 0;
   ntcp->rbx = 0;
   ntcp->rcx = 0;
   ntcp->rdx = 0;
 
-  ntcp->rbp = stack_ptr;  /* must be a valid stack addr! */
+  ntcp->rbp = stack_ptr; /* must be a valid stack addr! */
   ntcp->rsi = 0;
   ntcp->rdi = 0;
   ntcp->rsp = stack_ptr;

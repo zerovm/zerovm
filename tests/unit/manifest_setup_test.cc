@@ -10,7 +10,7 @@
 #include "api/zvm.h"
 #include "src/loader/sel_ldr.h"
 
-#include "src/main/manifest_parser.h"
+#include "src/main/manifest.h"
 #include "src/main/manifest_setup.h"
 
 /*

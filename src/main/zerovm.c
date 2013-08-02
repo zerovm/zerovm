@@ -26,12 +26,13 @@
 #include <errno.h>
 #include <glib.h>
 #include "src/platform/gio.h"
-#include "src/main/nacl_globals.h"
-#include "src/platform/nacl_signal.h"
+#include "src/loader/sel_ldr.h"
+#include "src/platform/signal.h"
 #include "src/main/etag.h"
-#include "src/main/manifest_parser.h"
-#include "src/main/manifest_setup.h"
-#include "src/platform/sel_qualify.h"
+#include "src/main/manifest.h"
+#include "src/main/setup.h"
+#include "src/main/report.h"
+#include "src/platform/qualify.h"
 #include "src/main/accounting.h"
 #include "src/platform/nacl_macros.h"
 #include "src/channels/preload.h" /* for PreloadAllocationDisable() */
@@ -47,7 +48,7 @@ static int quit_after_load = 0;
 static int skip_validator = 0;
 
 /* log zerovm command line */
-static void ZVMCommandLine(int argc, char **argv)
+static void CommandLine(int argc, char **argv)
 {
   char cmd[BIG_ENOUGH_STRING];
   int offset = 0;
@@ -65,7 +66,6 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
 {
   int opt;
   char *manifest_name = NULL;
-  char *manifest_version = NULL;
   int64_t nexe_size;
 
   /* construct zlog with default verbosity */
@@ -121,32 +121,19 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
   }
 
   /* show zerovm command line */
-  ZVMCommandLine(argc, argv);
-
-  /* last chance to find command line errors */
-  if(manifest_name == NULL) BADCMDLINE(NULL);
+  CommandLine(argc, argv);
 
   /* parse manifest file specified in command line */
-  ZLOGFAIL(ManifestCtor(manifest_name), EFAULT, "Invalid manifest '%s'", manifest_name);
-
-  /* check the manifest version */
-  manifest_version = GetValueByKey(MFT_VERSION);
-  ZLOGFAIL(manifest_version == NULL, EFAULT,
-      "the manifest version is not provided");
-  ZLOGFAIL(g_strcmp0(manifest_version, MANIFEST_VERSION),
-      EFAULT, "manifest version not supported");
+  if(manifest_name == NULL) BADCMDLINE(NULL);
+  nap->manifest = ManifestCtor(manifest_name);
 
   /* set available nap and manifest fields */
-  assert(nap->system_manifest != NULL);
-  nap->system_manifest->nexe = GetValueByKey(MFT_PROGRAM);
-  ZLOGFAIL(nap->system_manifest->nexe == NULL, EFAULT, "nexe not specified");
-  nexe_size = GetFileSize(nap->system_manifest->nexe);
+  ZLOGFAIL(nap->manifest->program == NULL, EFAULT, "program not specified");
+  nexe_size = GetFileSize(nap->manifest->program);
   ZLOGFAIL(nexe_size < 0, ENOENT, "nexe open error");
-  ZLOGFAIL(nexe_size == 0 || nexe_size > LARGEST_NEXE, ENOENT, "too large nexe");
+  ZLOGFAIL(nexe_size == 0 || nexe_size > LARGEST_NEXE, ENOENT, "too large program");
 }
 
-#define STATIC_TEXT_START ((uintptr_t)0x20000)
-int NaClSegmentValidates(uint8_t* mbase, size_t size, uint32_t vbase);
 static void ValidateNexe(struct NaClApp *nap)
 {
   int status = 0; /* 0 = failed, 1 = successful */
@@ -161,15 +148,15 @@ static void ValidateNexe(struct NaClApp *nap)
   /* skip validation if specified */
   if(skip_validator)
   {
-    nap->validation_state = 2;
+    SetValidationState(2);
     return;
   }
 
   /* static and dynamic text address / length */
   static_size = nap->static_text_end -
-      NaClSysToUser(nap, nap->mem_start + STATIC_TEXT_START);
+      NaClSysToUser(nap, nap->mem_start + NACL_TRAMPOLINE_END);
   dynamic_size = nap->dynamic_text_end - nap->dynamic_text_start;
-  static_addr = (uint8_t*)NaClUserToSys(nap, STATIC_TEXT_START);
+  static_addr = (uint8_t*)NaClUserToSys(nap, NACL_TRAMPOLINE_END);
   dynamic_addr = (uint8_t*)NaClUserToSys(nap, nap->dynamic_text_start);
 
   /* validate static and dynamic text */
@@ -179,68 +166,75 @@ static void ValidateNexe(struct NaClApp *nap)
     status &= NaClSegmentValidates(dynamic_addr, dynamic_size, nap->initial_entry_pt);
 
   /* set results */
-  nap->validation_state = 1;
+  SetValidationState(1);
   ZLOGFAIL(status == 0, ENOEXEC, "validation failed");
-  nap->validation_state = 0;
+  SetValidationState(0);
 }
 
 int main(int argc, char **argv)
 {
   struct NaClApp state = {0}, *nap = &state;
-  struct SystemManifest sys_mft = {0};
   struct GioMemoryFileSnapshot main_file;
   GTimer *timer;
 
   /* initialize globals and set nap fields to default values */
-  nap->system_manifest = &sys_mft;
+  ReportCtor();
   NaClAppCtor(nap);
 
   ParseCommandLine(nap, argc, argv);
 
   /* We use the signal handler to verify a signal took place. */
-  if(skip_qualification == 0) NaClRunSelQualificationTests();
-  NaClSignalHandlerInit();
+  if(skip_qualification == 0) RunSelQualificationTests();
+  SignalHandlerInit();
 
   /* read nexe into memory */
   timer = g_timer_new();
-  ZLOGFAIL(0 == GioMemoryFileSnapshotCtor(&main_file, nap->system_manifest->nexe),
-      ENOENT, "Cannot open '%s'. %s", nap->system_manifest->nexe, strerror(errno));
+  ZLOGFAIL(0 == GioMemoryFileSnapshotCtor(&main_file, nap->manifest->program),
+      ENOENT, "Cannot open '%s'. %s", nap->manifest->program, strerror(errno));
 
 #define TIMER_REPORT(msg) \
   do {\
     ZLOGS(LOG_DEBUG, "...TIMER: %s took %.3f milliseconds", msg,\
-        g_timer_elapsed(timer, NULL) * NACL_MICROS_PER_MILLI);\
+        g_timer_elapsed(timer, NULL) * MICROS_PER_MILLI);\
     g_timer_start(timer);\
   } while(0)
 
   TIMER_REPORT("constructing of memory snapshot");
 
   /* validate nexe structure (check elf header and segments) */
-  ZLOGS(LOG_DEBUG, "Loading %s", nap->system_manifest->nexe);
-  NaClAppLoadFile((struct Gio *) &main_file, nap);
+  ZLOGS(LOG_DEBUG, "Loading %s", nap->manifest->program);
+  AppLoadFile((struct Gio *) &main_file, nap);
   TIMER_REPORT("loading user module");
 
   /* validate given nexe (ensure that text segment is safe) */
-  ZLOGS(LOG_DEBUG, "Validating %s", nap->system_manifest->nexe);
+  ZLOGS(LOG_DEBUG, "Validating %s", nap->manifest->program);
   ValidateNexe(nap);
   TIMER_REPORT("validating user module");
 
   /* free snapshot */
   if(-1 == (*((struct Gio *)&main_file)->vtbl->Close)((struct Gio *)&main_file))
-    ZLOG(LOG_ERROR, "Error while closing '%s'", nap->system_manifest->nexe);
+    ZLOG(LOG_ERROR, "Error while closing '%s'", nap->manifest->program);
   (*((struct Gio *) &main_file)->vtbl->Dtor)((struct Gio *) &main_file);
 
-  /* setup zerovm from manifest */
-  ZLOGS(LOG_DEBUG, "Setting hypervisor");
-  SystemManifestCtor(nap);
-  TIMER_REPORT("setting hypervisor from manifest");
+  /* construct and initialize all channels */
+  ChannelsCtor(nap->manifest);
+  TIMER_REPORT("channels mounting");
+
+  /*
+   * allocate "whole memory chunk" if specified. should be the last allocation
+   * in raw because after chunk allocated there will be no free user memory
+   * note: will set "heap_ptr"
+   */
+  PreallocateUserMemory(nap);
+  TIMER_REPORT("user memory preallocation");
+
+  /* set user manifest in user space (new ZVM API) */
+  SetSystemData(nap);
+  TIMER_REPORT("serialization of manifest to user space");
 
   /* "defence in depth" call */
   ZLOGS(LOG_DEBUG, "Last preparations");
   LastDefenseLine(nap);
-
-  /* Make sure all the file buffers are flushed before entering the nexe */
-  fflush((FILE*) NULL);
 
   /* start accounting */
   AccountingCtor(nap);
@@ -249,12 +243,13 @@ int main(int argc, char **argv)
   if(quit_after_load)
   {
     SetExitState(OK_STATE);
-    NaClExit(0);
+    ReportDtor(0);
   }
   TIMER_REPORT("last preparations");
   g_timer_destroy(timer);
 
   /* switch to the user code */
+  fflush((FILE*) NULL); /* flush all buffers */
   CreateSession(nap);
   return EFAULT; /* unreachable */
 }

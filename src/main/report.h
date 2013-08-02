@@ -1,9 +1,4 @@
 /*
- * Copyright 2011 The Native Client Authors. All rights reserved.
- * Use of this source code is governed by a BSD-style license that can
- * be found in the LICENSE file.
- */
-/*
  * Copyright (c) 2012, LiteStack, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,18 +18,29 @@
  * This module implements a platform specific exit and abort, to terminate
  * the process as quickly as possible when an exception is detected.
  */
-#ifndef NACL_EXIT_H_
-#define NACL_EXIT_H_ 1
+#ifndef EXIT_H_
+#define EXIT_H_ 1
 
-#include "src/main/nacl_base.h"
+#include "src/main/tools.h"
 
 #define UNKNOWN_STATE "unknown error, see syslog"
 #define OK_STATE "ok"
 
-EXTERN_C_BEGIN
+#ifdef DEBUG
+#define REPORT_VALIDATOR "validator state = "
+#define REPORT_RETCODE "user return code = "
+#define REPORT_ETAG "etag(s) = "
+#define REPORT_ACCOUNTING "accounting = "
+#define REPORT_STATE "exit state = "
+#else
+#define REPORT_VALIDATOR ""
+#define REPORT_RETCODE ""
+#define REPORT_ETAG ""
+#define REPORT_ACCOUNTING ""
+#define REPORT_STATE ""
+#endif
 
-/* exit zerovm. if code != 0 log it */
-void NaClExit(int code);
+EXTERN_C_BEGIN
 
 /* set the text for "exit state" in report */
 void SetExitState(const char *state);
@@ -48,6 +54,30 @@ void SetExitCode(int code);
 /* get zerovm exit code */
 int GetExitCode();
 
+/* set user session exit code */
+void SetUserCode(int code);
+
+/* get user session exit code */
+int GetUserCode();
+
+/* set validation state */
+void SetValidationState(int state);
+
+/* get validation state */
+int GetValidationState();
+
+/* add tag digest with given name */
+void ReportTag(char *name, void *tag);
+
+/* initialize report internals */
+void ReportCtor();
+
+/*
+ * exit zerovm. if code != 0 log it and show dump. release resources
+ * note: use global nap because can be invoked from signal handler
+ */
+void ReportDtor(int code);
+
 EXTERN_C_END
 
-#endif /* NACL_EXIT_H_ */
+#endif /* EXIT_H_ */

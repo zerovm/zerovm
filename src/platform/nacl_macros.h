@@ -28,7 +28,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "src/main/nacl_base.h"
+#include "src/main/tools.h"
 
 /*****************************************************************************
  * Safety macros                                                             *
@@ -157,12 +157,5 @@ static INLINE void *NaClArrayCheckHelper(void *arg) {
 #define NACL_ASSERT_SAME_SIZE(t1, t2) \
   do { char tested_types_are_not_the_same_size[sizeof(t1) == sizeof(t2)]; \
        (void) tested_types_are_not_the_same_size; } while (0)
-
-/*****************************************************************************
- * Readability macros                                                        *
- ****************************************************************************/
-#define NACL_NANOS_PER_MICRO          (1000)
-#define NACL_MICROS_PER_MILLI         (1000)
-#define NACL_MICROS_PER_UNIT          (1000 * 1000)
 
 #endif  /* NACL_MACROS_H_ */

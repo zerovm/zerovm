@@ -25,11 +25,12 @@
 #ifndef SEL_RT_H__
 #define SEL_RT_H__ 1
 
-#include "src/platform/portability.h"
+#include <inttypes.h>
+#include "src/main/tools.h"
 
 typedef uint64_t  nacl_reg_t;  /* general purpose register type */
 
-struct NaClThreadContext {
+struct ThreadContext {
   nacl_reg_t  rax,  rbx,  rcx,  rdx,  rbp,  rsi,  rdi,  rsp;
   /*          0x0,  0x8, 0x10, 0x18, 0x20, 0x28, 0x30, 0x38 */
   nacl_reg_t  r8,     r9,  r10,  r11,  r12,  r13,  r14,  r15;
@@ -48,8 +49,8 @@ struct NaClThreadContext {
 };
 /* 0xa8 */
 
-uintptr_t NaClGetThreadCtxSp(struct NaClThreadContext  *th_ctx);
-void NaClSetThreadCtxSp(struct NaClThreadContext  *th_ctx, uintptr_t sp);
+uintptr_t GetThreadCtxSp(struct ThreadContext  *th_ctx);
+void SetThreadCtxSp(struct ThreadContext *th_ctx, uintptr_t sp);
 
 /*
  * Argument passing convention in AMD64, from
@@ -101,6 +102,6 @@ void NaClSetThreadCtxSp(struct NaClThreadContext  *th_ctx, uintptr_t sp);
  * wrt %rsp.
  */
 
-nacl_reg_t NaClGetStackPtr(void);
+nacl_reg_t GetStackPtr(void);
 
 #endif /* SEL_RT_H__ */

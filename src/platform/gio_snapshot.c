@@ -38,6 +38,13 @@ struct GioVtbl const  kGioMemoryFileSnapshotVtbl = {
   GioMemoryFileSnapshotDtor,
 };
 
+int64_t GetFileSize(const char *name)
+{
+  struct stat fs;
+  int handle = open(name, O_RDONLY);
+  return fstat(handle, &fs), close(handle) ? -1 : fs.st_size;
+}
+
 int GioMemoryFileSnapshotCtor(struct GioMemoryFileSnapshot *self, char *fn)
 {
   FILE *iop;
@@ -62,9 +69,9 @@ int GioMemoryFileSnapshotCtor(struct GioMemoryFileSnapshot *self, char *fn)
   return 1;
 }
 
-void GioMemoryFileSnapshotDtor(struct Gio                     *vself) {
-  struct GioMemoryFileSnapshot  *self = (struct GioMemoryFileSnapshot *)
-      vself;
+void GioMemoryFileSnapshotDtor(struct Gio *vself)
+{
+  struct GioMemoryFileSnapshot *self = (struct GioMemoryFileSnapshot *) vself;
   g_free(self->base.buffer);
   GioMemoryFileDtor(vself);
 }

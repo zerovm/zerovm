@@ -20,7 +20,7 @@
 #define ZLOG_H_
 
 #include <syslog.h>
-#include "src/main/nacl_base.h"
+#include "src/main/tools.h"
 
 EXTERN_C_BEGIN
 

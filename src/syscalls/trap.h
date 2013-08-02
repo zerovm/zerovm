@@ -20,7 +20,7 @@
 #define TRAP_H_
 
 #include "src/loader/sel_ldr.h"
-#include "src/channels/mount_channel.h"
+#include "src/channels/channel.h"
 
 EXTERN_C_BEGIN
 
@@ -41,16 +41,6 @@ EXTERN_C_BEGIN
  * arg[1] should not be used
  */
 int32_t TrapHandler(struct NaClApp *nap, uint32_t args);
-
-/* macros use channel type and limits */
-#define CHANNEL_READABLE(channel) ((ChannelIOMask(channel) & 1) == 1)
-#define CHANNEL_WRITEABLE(channel) ((ChannelIOMask(channel) & 2) == 2)
-
-/* macros use only channel type */
-#define CHANNEL_SEQ_READABLE(channel) (channel->type == 0 || channel->type == 2)
-#define CHANNEL_SEQ_WRITEABLE(channel) (channel->type == 0 || channel->type == 1)
-#define CHANNEL_RND_READABLE(channel) (channel->type == 1 || channel->type == 3)
-#define CHANNEL_RND_WRITEABLE(channel) (channel->type == 2 || channel->type == 3)
 
 EXTERN_C_END
 

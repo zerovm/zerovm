@@ -21,14 +21,14 @@
 
 /*
  * This code gets executed when switching from a 64-bit nacl module to
- * the 64-bit service. NaClSyscallSeg is the lcall target from the
+ * the 64-bit service. SyscallSeg is the lcall target from the
  * syscall trampoline code, and this code is responsible for figuring
  * out the identity of the thread, saving the user registers, finish
  * restoring the segment registers (and getting out of the sandbox),
  * and actually invoking the C system call handler code.
  */
 
-#include "src/main/nacl_config.h"
+#include "src/main/config.h"
 
 /*
  * On untrusted stack:
@@ -41,10 +41,10 @@
  * using MS Studio (NACL_WINDOWS).
  */
         .text
-        .globl  IDENTIFIER(NaClGetStackPtr)
-        .globl  IDENTIFIER(NaClSyscallSeg)
-        HIDDEN(NaClSyscallSeg)
-IDENTIFIER(NaClSyscallSeg):
+        .globl  IDENTIFIER(GetStackPtr)
+        .globl  IDENTIFIER(SyscallSeg)
+        HIDDEN(SyscallSeg)
+IDENTIFIER(SyscallSeg):
         cld
 
         /*
@@ -65,7 +65,7 @@ IDENTIFIER(NaClSyscallSeg):
 
         /* rax, rdi, rsi, rdx, rcx, r8, r9 are usable for scratch */
 
-        /* check NaClThreadContext in sel_rt_64.h for the offsets */
+        /* check ThreadContext in sel_rt_64.h for the offsets */
         leaq    IDENTIFIER(nacl_user)(%rip), %rdx
         movq    (%rdx), %rdx
 
@@ -107,11 +107,11 @@ IDENTIFIER(NaClSyscallSeg):
          * nacl_switch_to_app_64.c handles this.
          */
         movq    %rax, %rdi
-        call    IDENTIFIER(NaClSyscallCSegHook)
+        call    IDENTIFIER(SyscallHook)
         hlt
 
         /*
-         * untrusted stack after call to NaClSyscallCSegHook:
+         * untrusted stack after call to SyscallHook:
          *
          * 0x20   0x8 return-addr-to-caller-of-trampoline
          * 0x18   0x0 return-addr-to-trampoline (essentially syscall number)
@@ -122,7 +122,7 @@ IDENTIFIER(NaClSyscallSeg):
          * 0x04 -0x14 rsi
          * 0x00 -0x18 rdi
          *
-         * trusted stack after call to NaClSyscallCSegHook:
+         * trusted stack after call to SyscallHook:
          *
          *      return addr (to the hlt)
          */

@@ -20,6 +20,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
+#include "src/main/zlog.h"
 #include "src/main/tools.h"
 #include "src/main/etag.h"
 
@@ -50,11 +51,8 @@ void TagDigest(void *ctx, char *digest)
 
 void TagUpdate(void *ctx, const char *buffer, int64_t size)
 {
-  assert(ctx != NULL);
   assert(buffer != NULL);
-  assert(size >= 0);
 
-  /* update the context with a new data */
-  if(size > 0)
-    g_checksum_update(ctx, (const guchar*)buffer, size);
+  if(ctx == NULL || size <= 0) return;
+  g_checksum_update(ctx, (const guchar*)buffer, size);
 }

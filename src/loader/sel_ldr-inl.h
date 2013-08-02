@@ -67,6 +67,7 @@
  * 0 is a valid user address.)
  */
 #include "src/main/zlog.h"
+#include "src/main/setup.h"
 
 /* d'b: no checks, just does the work */
 static INLINE uintptr_t NaClUserToSysAddrNullOkay
@@ -100,7 +101,7 @@ static INLINE uintptr_t NaClEndOfStaticText(struct NaClApp *nap)
 static INLINE uintptr_t NaClSandboxCodeAddr(struct NaClApp *nap,
                                             uintptr_t addr)
 {
-  return (((addr & ~(((uintptr_t) nap->bundle_size) - 1))
+  return (((addr & ~(((uintptr_t)NACL_INSTR_BLOCK_SIZE) - 1))
            & ((((uintptr_t) 1) << 32) - 1))
           + nap->mem_start);
 }

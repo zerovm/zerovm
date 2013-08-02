@@ -19,31 +19,21 @@
  * limitations under the License.
  */
 
-#ifndef NACL_DEP_QUALIFY_H_
-#define NACL_DEP_QUALIFY_H_
+/* check platform and exit zerovm if check not passed */
 
-/*
- * Two of our target architectures (x86-64 and ARM) require that data not be
- * executable for our sandbox to hold.  Every vendor calls this something
- * different.  For the purposes of platform qualification, we use the term
- * 'data execution prevention,' or DEP.
- *
- * This file presents the common interface for DEP-check routines.  The
- * implementations differ greatly across platforms and architectures.  See the
- * notes on each function for details on where implementations live.
- */
-
-#include <stddef.h>
-#include "src/main/nacl_base.h"
+#ifndef QUALIFY_H_
+#define QUALIFY_H_
 
 EXTERN_C_BEGIN
 
 /*
- * Checks that Data Execution Prevention is working as required by the
- * architecture.  On some architectures this is a no-op.
+ * Runs the Platform Qualification tests required for safe sel startup.  This
+ * may be a subset of the full set of PQ tests: it includes the tests that are
+ * important enough to check at every startup, and tests that check aspects of
+ * the system that may be subject to change.
  */
-int NaClCheckDEP();
+void RunSelQualificationTests();
 
 EXTERN_C_END
 
-#endif  /* NACL_DEP_QUALIFY_H_ */
+#endif  /* QUALIFY_H_ */

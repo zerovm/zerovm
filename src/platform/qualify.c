@@ -29,12 +29,13 @@
 #include <stdint.h>
 #include <signal.h>
 #include <glib.h>
-#include "src/platform/nacl_dep_qualify.h"
+#include "src/main/zlog.h"
+#include "src/platform/qualify.h"
 #include "src/platform/nacl_macros.h"
 
 /*
  * A void nullary function.  We generate functions of this type in the heap and
- * stack to prove that we cannot call them.  See NaClGenerateThunk, below.
+ * stack to prove that we cannot call them.  See GenerateThunk, below.
  */
 typedef void (*nacl_void_thunk)();
 
@@ -76,7 +77,7 @@ static void restore_signals()
  * NOTE: the implementation of this function is architecture-specific, and can
  * be found beneath arch/ in this directory.
  */
-static nacl_void_thunk NaClGenerateThunk(char *buf, size_t size_in_bytes)
+static nacl_void_thunk GenerateThunk(char *buf, size_t size_in_bytes)
 {
   /* Place a "ret" at buf */
   if (size_in_bytes < 1) return 0;
@@ -93,7 +94,7 @@ static nacl_void_thunk NaClGenerateThunk(char *buf, size_t size_in_bytes)
 }
 
 /* Returns 1 if Data Execution Prevention is present and working */
-static int NaClAttemptToExecuteData()
+static int AttemptToExecuteData()
 {
   int result;
   char *thunk_buffer = g_malloc(64);
@@ -101,7 +102,7 @@ static int NaClAttemptToExecuteData()
 
   /* d'b: small fixes */
   if(thunk_buffer == NULL) return 0;
-  thunk = NaClGenerateThunk(thunk_buffer, 64);
+  thunk = GenerateThunk(thunk_buffer, 64);
   setup_signals();
 
   if(0 == sigsetjmp(try_state, 1))
@@ -119,7 +120,7 @@ static int NaClAttemptToExecuteData()
   return result;
 }
 
-int NaClCheckDEP()
+void RunSelQualificationTests()
 {
-  return NaClAttemptToExecuteData();
+  ZLOGFAIL(!AttemptToExecuteData(), EFAULT, "dep not supported");
 }

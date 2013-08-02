@@ -20,10 +20,8 @@
 #ifndef PRELOAD_H_
 #define PRELOAD_H_
 
-#include "src/channels/mount_channel.h"
-
-#define CHANNEL_RIGHTS S_IRUSR | S_IWUSR
-#define DEV_NULL "/dev/null"
+#include "api/zvm.h"
+#include "src/channels/channel.h"
 
 /* disable space preallocation */
 void PreloadAllocationDisable();
@@ -32,12 +30,9 @@ void PreloadAllocationDisable();
  * preload given file to channel.
  * return 0 if success, otherwise negative errcode
  */
-int PreloadChannelCtor(struct ChannelDesc* channel);
+void PreloadChannelCtor(struct ChannelDesc* channel, int n);
 
 /* (adjust and) close file associated with the channel */
-int PreloadChannelDtor(struct ChannelDesc* channel);
+int PreloadChannelDtor(struct ChannelDesc* channel, int n);
 
-/* return the file source type or ChannelSourceTypeNumber */
-enum ChannelSourceType GetChannelSource(const char *name);
-
-#endif /* PRELOAD_H_ */
+#endif

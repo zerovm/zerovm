@@ -21,11 +21,11 @@
 
 /*
  * This code gets executed when switching from the 64-bit service
- * runtime to a 32-bit nacl module. NaClSwitch has one parameter only,
+ * runtime to a 32-bit nacl module. Switch has one parameter only,
  * which is a struct passed by reference.
  */
 
-#include "src/main/nacl_config.h"
+#include "src/main/config.h"
 
         /*
          * This function does not return.  Thus, we need to preserve
@@ -146,5 +146,5 @@ MACROENTRY
         jmp     *%rcx
 ENDMACRO
 
-        switcher NaClSwitchSSE, 0
-        switcher NaClSwitchAVX, 1
+        switcher SwitchSSE, 0
+        switcher SwitchAVX, 1

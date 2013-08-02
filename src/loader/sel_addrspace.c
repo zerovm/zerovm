@@ -30,10 +30,10 @@
 #include "src/platform/sel_memory.h"
 
 /* user memory size (84gb) */
-static size_t request_sz;
+static size_t request_sz = 0;
 
 /* protect bumpers (guarding space) */
-static void NaClMprotectGuards(struct NaClApp *nap)
+static void MprotectGuards(struct NaClApp *nap)
 {
   int err;
 
@@ -60,7 +60,7 @@ static void NaClMprotectGuards(struct NaClApp *nap)
  * allocate a large amount of memory of mem_sz bytes that must
  * be address aligned
  */
-static void NaClAllocatePow2AlignedMemory(size_t mem_sz)
+static void AllocatePow2AlignedMemory(size_t mem_sz)
 {
   void *mem_ptr;
 
@@ -86,16 +86,16 @@ static void NaClAllocatePow2AlignedMemory(size_t mem_sz)
  * contiguous with the allocated address space.
  *
  * If successful, the guard pages are not yet memory protected.  The
- * function NaClMprotectGuards must be called for the guard pages to
- * be active.
+ * function MprotectGuards must be called for the guard pages to be
+ * active.
  */
-static void NaClAllocateSpace(void **mem, size_t addrsp_size)
+static void AllocateSpace(void **mem, size_t addrsp_size)
 {
   assert(addrsp_size == FOURGIG);
 
   /* 4gb + 40gb guard on each side */
-  ZLOGS(LOG_INSANE, "NaClAllocateSpace(*, 0x%016lx bytes)", addrsp_size);
-  NaClAllocatePow2AlignedMemory(2 * GUARDSIZE + FOURGIG);
+  ZLOGS(LOG_INSANE, "AllocateSpace(*, 0x%016lx bytes)", addrsp_size);
+  AllocatePow2AlignedMemory(2 * GUARDSIZE + FOURGIG);
 
   /*
    * The module lives in the middle FOURGIG of the allocated region --
@@ -105,21 +105,23 @@ static void NaClAllocateSpace(void **mem, size_t addrsp_size)
   ZLOGS(LOG_INSANE, "addr space at 0x%016lx", (uintptr_t)*mem);
 }
 
-void NaClFreeAddrSpace(struct NaClApp *nap)
+void FreeAddrSpace(struct NaClApp *nap)
 {
+  /* exit if memory was not allocated */
+  if(request_sz == 0) return;
   ZLOGIF(munmap(R15_CONST, request_sz) == -1,
       "user memory deallocation failed with errno %d", errno);
 }
 
-void NaClAllocAddrSpace(struct NaClApp *nap)
+void AllocAddrSpace(struct NaClApp *nap)
 {
   void        *mem;
   uintptr_t   hole_start;
   size_t      hole_size;
   uintptr_t   stack_start;
 
-  ZLOGS(LOG_INSANE, "calling NaClAllocateSpace(*,0x%016x)", ((size_t)1 << nap->addr_bits));
-  NaClAllocateSpace(&mem, (uintptr_t) 1U << nap->addr_bits);
+  ZLOGS(LOG_INSANE, "calling AllocateSpace(*,0x%016x)", ((size_t)1 << nap->addr_bits));
+  AllocateSpace(&mem, (uintptr_t) 1U << nap->addr_bits);
 
   nap->mem_start = (uintptr_t) mem;
   ZLOGS(LOG_INSANE, "allocated memory at 0x%08x", nap->mem_start);
@@ -127,7 +129,7 @@ void NaClAllocAddrSpace(struct NaClApp *nap)
   hole_start = ROUNDUP_64K(nap->data_end);
 
   ZLOGFAIL(nap->stack_size >= ((uintptr_t) 1U) << nap->addr_bits,
-      EFAULT, "NaClAllocAddrSpace: stack too large!");
+      EFAULT, "AllocAddrSpace: stack too large!");
   stack_start = (((uintptr_t) 1U) << nap->addr_bits) - nap->stack_size;
   stack_start = ROUNDUP_64K(stack_start);
 
@@ -160,7 +162,7 @@ void NaClAllocAddrSpace(struct NaClApp *nap)
     ZLOGS(LOG_INSANE, "there is no hole between end of data and the beginning of stack");
 }
 
-void NaClMemoryProtection(struct NaClApp *nap)
+void MemoryProtection(struct NaClApp *nap)
 {
   uintptr_t start_addr;
   size_t    region_size;
@@ -171,7 +173,7 @@ void NaClMemoryProtection(struct NaClApp *nap)
    * This enables NULL pointer checking, and provides additional protection
    * against addr16/data16 prefixed operations being used for attacks.
    *
-   * NaClMprotectGuards also sets up guard pages outside of the
+   * MprotectGuards also sets up guard pages outside of the
    * virtual address space of the NaClApp -- for the ARM and x86-64
    * where data sandboxing only sandbox memory writes and not reads,
    * we need to ensure that certain addressing modes that might
@@ -181,7 +183,7 @@ void NaClMemoryProtection(struct NaClApp *nap)
    */
 
   ZLOGS(LOG_INSANE, "Protecting guard pages for 0x%08x", nap->mem_start);
-  NaClMprotectGuards(nap);
+  MprotectGuards(nap);
 
   start_addr = nap->mem_start + NACL_SYSCALL_START_ADDR;
   /*

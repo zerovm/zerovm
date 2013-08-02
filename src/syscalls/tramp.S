@@ -42,7 +42,7 @@
  * based on which compiler was used for the service_runtime.
  */
 
-#include "src/main/nacl_config.h"
+#include "src/main/config.h"
 
         .text
         .globl IDENTIFIER(NaCl_trampoline_code)
@@ -53,19 +53,19 @@ IDENTIFIER(NaCl_trampoline_code):
 HIDDEN(NaCl_trampoline_call_target)
 IDENTIFIER(NaCl_trampoline_call_target):
         call *%rax
-        /* call IDENTIFIER(NaClSyscallSeg) */
+        /* call IDENTIFIER(SyscallSeg) */
         hlt
         .globl IDENTIFIER(NaCl_trampoline_code_end)
 HIDDEN(NaCl_trampoline_code_end)
 IDENTIFIER(NaCl_trampoline_code_end):
 
         /*
-         * NaClDispatchThunk to NaClDispatchThunkEnd below is a code template
+         * DispatchThunk to DispatchThunkEnd below is a code template
          * for dynamically patched code.  The trampoline code will call to
-         * it, and the dispatch thunk will jump to NaClSyscallSeg which is the
+         * it, and the dispatch thunk will jump to SyscallSeg which is the
          * actual syscall handler.  The rationale for this double trampoline
          * is that the trampoline code above is readable by the untrusted
-         * NaCl module, and by doing this we hide the address of NaClSyscallSeg
+         * NaCl module, and by doing this we hide the address of SyscallSeg
          * from the untrusted code.  The dispatch thunk can be relatively
          * easily randomized, and if the trusted code were built with
          * Address Space Layout Randomization enabled, would not leak ASLR
@@ -83,7 +83,7 @@ IDENTIFIER(NaClDispatchThunk):
 HIDDEN(NaClDispatchThunk_jmp_target)
 IDENTIFIER(NaClDispatchThunk_jmp_target):
         jmp *%rax
-        /* jmp IDENTIFIER(NaClSyscallSeg) */
+        /* jmp IDENTIFIER(SyscallSeg) */
         .globl IDENTIFIER(NaClDispatchThunkEnd)
 HIDDEN(NaClDispatchThunkEnd)
 IDENTIFIER(NaClDispatchThunkEnd):

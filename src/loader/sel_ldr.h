@@ -44,16 +44,47 @@
 #define AT_ENTRY        9   /* Entry point of the executable */
 #define AT_SYSINFO      32  /* System call entry point */
 
+/* from sel_ldr_x86.h */
+#define NACL_MAX_ADDR_BITS  (32)
+#define NACL_HALT_OPCODE    0xf4
+#define NACL_HALT_LEN       1 /* length of halt instruction */
+#define THUNK_ADDR          ((void*)0x5AFECA110000)
+
 #include "src/main/zlog.h"
 #include "src/platform/gio.h"
-#include "src/main/nacl_config.h"
+#include "src/main/config.h"
 #include "src/loader/sel_rt.h"
 #include "src/main/tools.h"
 #include "src/main/etag.h"
+#include "src/main/manifest.h"
 
 EXTERN_C_BEGIN
 
 #define NACL_DEFAULT_STACK_MAX  (16 << 20)  /* main thread stack */
+
+/*
+ * new user memory data types {{
+ */
+#if 0
+/* element of the memory map */
+typedef struct {
+  char *name; /* block name */
+  uintptr_t start; /* block start. system address */
+  uintptr_t end; /* block end (for ease). system address */
+  int64_t size; /* bytes */
+  int prot; /* protection */
+} MemoryBlock;
+
+/* user memory descriptor */
+typedef struct {
+    int64_t size;
+    void *tag;
+    GPtrArray *map; /* array of (MemoryBlock*) */
+} MemoryDesc;
+#endif
+/*
+ * }}
+ */
 
 /*
  * helper macro. _element should be nap->mem_map[index], _addr - block
@@ -108,8 +139,6 @@ struct NaClApp {
    */
   uintptr_t                 mem_start;
 
-  uintptr_t                 dispatch_thunk;
-
   /* only used for ET_EXEC:  for CS restriction */
   uintptr_t                 static_text_end;  /* relative to mem_start */
   /* ro after app starts. memsz from phdr */
@@ -151,28 +180,21 @@ struct NaClApp {
   uintptr_t                 initial_entry_pt;
   uintptr_t                 user_entry_pt;
 
-  /*
-   * bundle_size is the bundle alignment boundary for validation (16
-   * or 32), so int is okay.  This value must be a power of 2.
-   * todo(d'b): can be replaced with define. only need for NaClSandboxCodeAddr
-   */
-  int                       bundle_size;
-
   /* user memory map */
   struct MemBlock           mem_map[MemMapSize];
 
-  uintptr_t                 break_addr;   /* user addr */
+  uintptr_t                 break_addr; /* user addr */
   /* data_end <= break_addr is an invariant */
 
-  struct SystemManifest     *system_manifest;
   uintptr_t                 heap_end; /* end of user heap */
-  int                       validation_state; /* needs for the report */
-  GString                   *channels_tag; /* all etag digests for report */
-  void                      *mem_tag; /* tag context for memory */
-
-  /* former natp field */
-  uint32_t                  sysret; /* syscall return code */
+  uint32_t                  sysret; /* syscall return code (from natp) */
+  struct Manifest           *manifest;
 };
+
+/* global variables */
+struct ThreadContext    *nacl_user; /* user registers storage */
+struct ThreadContext    *nacl_sys;  /* zerovm registers storage */
+struct NaClApp              *gnap;      /* pointer to global NaClApp object */
 
 /*
  * Initializes a NaCl application with the default parameters.
@@ -202,11 +224,10 @@ void NaClAppDtor(struct NaClApp *nap);
  * self-modifying code / data writes and automatically invalidate the
  * cache lines.
  */
-void NaClAppLoadFile(struct Gio *gp, struct NaClApp *nap);
+void AppLoadFile(struct Gio *gp, struct NaClApp *nap);
 
 /* todo(d'b): replace spaces with format options and use macro */
-void  NaClAppPrintDetails(struct NaClApp  *nap,
-                          struct Gio      *gp, int verbosity);
+void PrintAppDetails(struct NaClApp *nap, struct Gio *gp, int verbosity);
 
 /*
  * set an empty user stack and other context, then pass
@@ -219,63 +240,21 @@ void CreateSession(struct NaClApp *nap);
  * within the trampoline pages.  Many of these syscalls will correspond
  * to unimplemented system calls and will just abort the program.
  */
-void NaClLoadTrampoline(struct NaClApp *nap);
+void LoadTrampoline(struct NaClApp *nap);
 
 static const uintptr_t kNaClBadAddress = (uintptr_t) -1;
 
 #include "src/loader/sel_ldr-inl.h"
 
-void NaClFillMemoryRegionWithHalt(void *start, size_t size);
+void FillMemoryRegionWithHalt(void *start, size_t size);
 
-void NaClFillTrampolineRegion(struct NaClApp *nap);
+void FreeDispatchThunk();
 
-void NaClMakeDispatchThunk(struct NaClApp *nap);
-
-void NaClFreeDispatchThunk(struct NaClApp *nap);
-
-/* Install a syscall trampoline at target_addr.  NB: Thread-safe. */
-void NaClPatchOneTrampoline(struct NaClApp *nap,
-                            uintptr_t target_addr);
-/*
- * target is an absolute address in the source region.  the patch code
- * will figure out the corresponding address in the destination region
- * and modify as appropriate.  this makes it easier to specify, since
- * the target is typically the address of some symbol from the source
- * template.
- */
-struct NaClPatch {
-  uintptr_t           target;
-  uint64_t            value;
-};
-
-struct NaClPatchInfo {
-  uintptr_t           dst;
-  uintptr_t           src;
-  size_t              nbytes;
-
-  struct NaClPatch    *abs16;
-  size_t              num_abs16;
-
-  struct NaClPatch    *abs32;
-  size_t              num_abs32;
-
-  struct NaClPatch    *abs64;
-  size_t              num_abs64;
-};
-
-struct NaClPatchInfo *NaClPatchInfoCtor(struct NaClPatchInfo *self);
-
-/*
- * This function is called by NaClLoadTrampoline and NaClLoadSpringboard to
- * patch a single memory location specified in NaClPatchInfo structure.
- */
-void NaClApplyPatchToMemory(struct NaClPatchInfo *patch);
-
-int NaClThreadContextCtor(struct NaClThreadContext  *ntcp,
-                          struct NaClApp            *nap,
-                          nacl_reg_t                prog_ctr,
-                          nacl_reg_t                stack_ptr,
-                          uint32_t                  tls_info);
+int ThreadContextCtor(struct ThreadContext  *ntcp,
+                      struct NaClApp        *nap,
+                      nacl_reg_t            prog_ctr,
+                      nacl_reg_t            stack_ptr,
+                      uint32_t              tls_info);
 
 EXTERN_C_END
 

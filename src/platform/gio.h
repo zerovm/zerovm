@@ -22,19 +22,16 @@
 /*
  * NaCl Generic I/O interface.
  */
-
 #ifndef GIO_H_
 #define GIO_H_
 
-/* is this needed? - maybe for size_t */
-#include "src/platform/portability.h"
-
 #include <stdarg.h>
 #include <stdio.h>
+#include "src/main/tools.h"
 
 EXTERN_C_BEGIN
 
-struct Gio;  /* fwd */
+struct Gio; /* fwd */
 
 /*
  * In the generic I/O package, -1 is used consistently to indicate
@@ -125,17 +122,11 @@ struct GioMemoryFile {
 
 void GioMemoryFileCtor(struct GioMemoryFile *self, char *buffer, size_t len);
 
-ssize_t GioMemoryFileRead(struct Gio  *vself,
-                          void        *buf,
-                          size_t      count);
+ssize_t GioMemoryFileRead(struct Gio *vself, void *buf, size_t count);
 
-ssize_t GioMemoryFileWrite(struct Gio *vself,
-                           const void *buf,
-                           size_t     count);
+ssize_t GioMemoryFileWrite(struct Gio *vself, const void *buf, size_t count);
 
-off_t GioMemoryFileSeek(struct Gio  *vself,
-                        off_t       offset,
-                        int         whence);
+off_t GioMemoryFileSeek(struct Gio *vself, off_t offset, int whence);
 
 int GioMemoryFileFlush(struct Gio *vself);
 
@@ -144,11 +135,10 @@ int GioMemoryFileClose(struct Gio *vself);
 void GioMemoryFileDtor(struct Gio *vself);
 
 struct GioMemoryFileSnapshot {
-  struct GioMemoryFile  base;
+  struct GioMemoryFile base;
 };
 
-int GioMemoryFileSnapshotCtor(struct GioMemoryFileSnapshot  *self,
-                              char                          *fn);
+int GioMemoryFileSnapshotCtor(struct GioMemoryFileSnapshot *self, char *fn);
 
 void GioMemoryFileSnapshotDtor(struct Gio *vself);
 

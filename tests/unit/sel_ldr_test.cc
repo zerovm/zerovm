@@ -8,7 +8,6 @@
 
 #include "src/loader/sel_ldr.h"
 #include "gtest/gtest.h"
-#include "src/loader/sel_ldr_x86.h"
 
 //
 // There are several problems in how these tests are set up.
@@ -62,7 +61,6 @@ TEST_F(SelLdrTest, DescTable) {
   ASSERT_EQ(NACL_MAX_ADDR_BITS, app.addr_bits);
   ASSERT_EQ((uintptr_t)NACL_DEFAULT_STACK_MAX, app.stack_size);
   ASSERT_EQ(0u, app.mem_start);
-  ASSERT_EQ(0u, app.dispatch_thunk);
   ASSERT_EQ(0u, app.static_text_end);
   ASSERT_EQ(0u, app.dynamic_text_start);
   ASSERT_EQ(0u, app.dynamic_text_end);

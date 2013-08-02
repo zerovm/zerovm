@@ -23,8 +23,8 @@
 #include <assert.h>
 #include <signal.h>
 #include <sys/mman.h>
-#include "src/platform/nacl_signal.h"
-#include "src/main/nacl_globals.h"
+#include "src/platform/signal.h"
+#include "src/main/report.h"
 #include "src/loader/sel_ldr.h"
 
 /*
@@ -62,11 +62,13 @@ static int s_Signals[] = {
   /* reserved for the snapshot engine */
   SIGPWR
 };
+
 static struct sigaction s_OldActions[SIGNAL_COUNT];
 static void *signal_stack;
 static int busy = 1;
 
-static void NaClSignalStackRegister(void *stack) {
+static void SignalStackRegister(void *stack)
+{
   /*
    * If we set up signal handlers, we must ensure that any thread that
    * runs untrusted code has an alternate signal stack set up.  The
@@ -81,7 +83,7 @@ static void NaClSignalStackRegister(void *stack) {
   ZLOGFAIL(sigaltstack(&st, NULL) == -1, errno, "Failed to register signal stack");
 }
 
-static void NaClSignalStackUnregister(void)
+static void SignalStackUnregister(void)
 {
   /*
    * Unregister the signal stack in case a fault occurs between the
@@ -97,11 +99,11 @@ static void NaClSignalStackUnregister(void)
 }
 
 /*
- * Allocates a stack suitable for passing to NaClSignalStackRegister(),
+ * Allocates a stack suitable for passing to SignalStackRegister(),
  * for use as a stack for signal handlers. This can be called in any
  * thread. Stores the result in *result;
  */
-static void NaClSignalStackAllocate(void **result)
+static void SignalStackAllocate(void **result)
 {
   /*
    * We use mmap() to allocate the signal stack for two reasons:
@@ -126,7 +128,7 @@ static void NaClSignalStackAllocate(void **result)
   *result = stack;
 }
 
-static void NaClSignalStackFree(void *stack)
+static void SignalStackFree(void *stack)
 {
   assert(stack != NULL);
   ZLOGFAIL(munmap(stack, SIGNAL_STACK_SIZE + STACK_GUARD_SIZE) == -1,
@@ -137,7 +139,7 @@ static void FindAndRunHandler(int sig, siginfo_t *info, void *uc)
 {
   int i;
 
-  if(NaClSignalHandlerFind(sig, uc) != NACL_SIGNAL_SEARCH) return;
+  if(SignalHandlerFind(sig, uc) != NACL_SIGNAL_SEARCH) return;
 
   /* If we need to keep searching, try the old signal handler */
   for(i = 0; i < SIGNAL_COUNT; i++)
@@ -148,7 +150,7 @@ static void FindAndRunHandler(int sig, siginfo_t *info, void *uc)
       char msg[SIGNAL_STRLEN];
       g_snprintf(msg, SIGNAL_STRLEN, "Signal %d failed to be handled", sig);
       SetExitState(msg);
-      NaClExit(EINTR);
+      ReportDtor(EINTR);
     }
 
     /* If this is a real sigaction pointer call the old handler */
@@ -174,7 +176,7 @@ static void SignalCatch(int sig, siginfo_t *info, void *uc)
 }
 
 /* Assert that no signal handlers are registered */
-static void NaClSignalAssertNoHandlers()
+static void SignalAssertNoHandlers()
 {
   int i;
 
@@ -191,13 +193,13 @@ static void NaClSignalAssertNoHandlers()
   }
 }
 
-void NaClSignalHandlerInitPlatform()
+void SignalHandlerInitPlatform()
 {
   struct sigaction sa;
   int i;
 
   /* fail if another handler(s) already registered */
-  NaClSignalAssertNoHandlers();
+  SignalAssertNoHandlers();
 
   memset(&sa, 0, sizeof(sa));
   sigemptyset(&sa.sa_mask);
@@ -214,24 +216,23 @@ void NaClSignalHandlerInitPlatform()
         errno, "Failed to install handler for %d", s_Signals[i]);
 
   /* allocate and register signal stack */
-  NaClSignalStackAllocate(&signal_stack);
-  NaClSignalStackRegister(signal_stack);
+  SignalStackAllocate(&signal_stack);
+  SignalStackRegister(signal_stack);
   busy = 0;
 }
 
-void NaClSignalHandlerFiniPlatform()
+void SignalHandlerFiniPlatform()
 {
   int i;
 
   /* Remove all handlers */
   for(i = 0; i < SIGNAL_COUNT; i++)
-    ZLOGFAIL(0 != sigaction(s_Signals[i], &s_OldActions[i], NULL),
-        errno, "Failed to unregister handler for %d", s_Signals[i]);
+    sigaction(s_Signals[i], &s_OldActions[i], NULL);
 
   /* release signal stack if not busy */
   if(!busy)
   {
-    NaClSignalStackUnregister();
-    NaClSignalStackFree(signal_stack);
+    SignalStackUnregister();
+    SignalStackFree(signal_stack);
   }
 }

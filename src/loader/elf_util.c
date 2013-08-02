@@ -31,13 +31,13 @@
 #include "src/platform/sel_memory.h"
 
 /* private */
-struct NaClElfImage {
+struct ElfImage {
   Elf_Ehdr  ehdr;
   Elf_Phdr  phdrs[NACL_MAX_PROGRAM_HEADERS];
   int       loadable[NACL_MAX_PROGRAM_HEADERS];
 };
 
-enum NaClPhdrCheckAction {
+enum PhdrCheckAction {
   PCA_NONE,
   PCA_TEXT_CHECK,
   PCA_RODATA,
@@ -45,10 +45,10 @@ enum NaClPhdrCheckAction {
   PCA_IGNORE  /* ignore this segment. */
 };
 
-struct NaClPhdrChecks {
+struct PhdrChecks {
   Elf_Word                  p_type;
   Elf_Word                  p_flags;  /* rwx */
-  enum NaClPhdrCheckAction  action;
+  enum PhdrCheckAction  action;
   int                       required;  /* only for text for now */
   Elf_Addr                  p_vaddr;  /* if non-zero, vaddr must be this */
 };
@@ -56,7 +56,7 @@ struct NaClPhdrChecks {
 /*
  * Other than empty segments, these are the only ones that are allowed.
  */
-static const struct NaClPhdrChecks nacl_phdr_check_data[] = {
+static const struct PhdrChecks phdr_check_data[] = {
   /* phdr */
   { PT_PHDR, PF_R, PCA_IGNORE, 0, 0, },
   /* text */
@@ -82,8 +82,8 @@ static const struct NaClPhdrChecks nacl_phdr_check_data[] = {
   { PT_NULL, PF_R, PCA_IGNORE, 0, 0},
 };
 
-#define DUMP(m, f) do { ZLOGS(loglevel, #m " = %" f, elf_hdr->m); } while (0)
-static void NaClDumpElfHeader(int loglevel, const Elf_Ehdr *elf_hdr)
+#define DUMP(m, f) ZLOGS(loglevel, #m " = %" f, elf_hdr->m)
+static void DumpElfHeader(int loglevel, const Elf_Ehdr *elf_hdr)
 {
   ZLOGS(loglevel, "%020o (Elf header) %020o", 0, 0);
 
@@ -105,8 +105,8 @@ static void NaClDumpElfHeader(int loglevel, const Elf_Ehdr *elf_hdr)
 }
 #undef DUMP
 
-#define DUMP(mem, f) do { ZLOGS(loglevel, "%s: %" f, #mem, phdr->mem); } while (0)
-static void NaClDumpElfProgramHeader(int loglevel, const Elf_Phdr *phdr)
+#define DUMP(mem, f) ZLOGS(loglevel, "%s: %" f, #mem, phdr->mem)
+static void DumpElfProgramHeader(int loglevel, const Elf_Phdr *phdr)
 {
   DUMP(p_type, "x");
   DUMP(p_offset, "x");
@@ -123,7 +123,7 @@ static void NaClDumpElfProgramHeader(int loglevel, const Elf_Phdr *phdr)
 }
 #undef  DUMP
 
-void NaClElfImageValidateElfHeader(const struct NaClElfImage *image)
+void ValidateElfHeader(const struct ElfImage *image)
 {
   const Elf_Ehdr *hdr = &image->ehdr;
 
@@ -135,8 +135,8 @@ void NaClElfImageValidateElfHeader(const struct NaClElfImage *image)
   ZLOGFAIL(EV_CURRENT != hdr->e_version, ENOEXEC, "bad elf version: %x", hdr->e_version);
 }
 
-void NaClElfImageValidateProgramHeaders(
-  struct NaClElfImage *image,
+void ValidateProgramHeaders(
+  struct ElfImage     *image,
   uint8_t             addr_bits,
   uintptr_t           *static_text_end,
   uintptr_t           *rodata_start,
@@ -155,18 +155,14 @@ void NaClElfImageValidateProgramHeaders(
      */
   const Elf_Ehdr      *hdr = &image->ehdr;
   /* d'b: avoid compiler warning */
-  int seen_seg[sizeof nacl_phdr_check_data / sizeof *nacl_phdr_check_data] = {0};
-
+  int seen_seg[sizeof phdr_check_data / sizeof *phdr_check_data] = {0};
   int                 segnum;
   const Elf_Phdr      *php;
   size_t              j;
 
   *max_vaddr = NACL_TRAMPOLINE_END;
 
-  /*
-   * nacl_phdr_check_data is small, so O(|check_data| * nap->elf_hdr.e_phum)
-   * is okay.
-   */
+  /* phdr_check_data is small, so O(|check_data| * nap->elf_hdr.e_phum) is ok */
   ZLOGS(LOG_DEBUG, "Validating program headers");
   for(segnum = 0; segnum < hdr->e_phnum; ++segnum)
   {
@@ -181,29 +177,29 @@ void NaClElfImageValidateProgramHeaders(
       continue;
     }
 
-    for(j = 0; j < NACL_ARRAY_SIZE(nacl_phdr_check_data); ++j)
+    for(j = 0; j < NACL_ARRAY_SIZE(phdr_check_data); ++j)
     {
-      if(php->p_type == nacl_phdr_check_data[j].p_type
-          && php->p_flags == nacl_phdr_check_data[j].p_flags) break;
+      if(php->p_type == phdr_check_data[j].p_type
+          && php->p_flags == phdr_check_data[j].p_flags) break;
     }
 
-    ZLOGFAIL(j == NACL_ARRAY_SIZE(nacl_phdr_check_data), ENOEXEC, "Segment %d "
+    ZLOGFAIL(j == NACL_ARRAY_SIZE(phdr_check_data), ENOEXEC, "Segment %d "
         "is of unexpected type 0x%x, flag 0x%x", segnum, php->p_type, php->p_flags);
 
-    ZLOGS(LOG_INSANE, "Matched nacl_phdr_check_data[%d]", j);
+    ZLOGS(LOG_INSANE, "Matched phdr_check_data[%d]", j);
     ZLOGFAIL(seen_seg[j], ENOEXEC, "Segment %d is a type that has been seen", segnum);
     seen_seg[j] = 1;
 
-    if(PCA_IGNORE == nacl_phdr_check_data[j].action)
+    if(PCA_IGNORE == phdr_check_data[j].action)
     {
       ZLOGS(LOG_INSANE, "Ignoring");
       continue;
     }
 
     /* We will load this segment later. Do the sanity checks. */
-    ZLOGFAIL(0 != nacl_phdr_check_data[j].p_vaddr && (nacl_phdr_check_data[j].p_vaddr
+    ZLOGFAIL(0 != phdr_check_data[j].p_vaddr && (phdr_check_data[j].p_vaddr
         != php->p_vaddr), ENOEXEC, "Segment %d: bad virtual address: 0x%08x, "
-        "expected 0x%08x", segnum, php->p_vaddr, nacl_phdr_check_data[j].p_vaddr);
+        "expected 0x%08x", segnum, php->p_vaddr, phdr_check_data[j].p_vaddr);
 
     ZLOGFAIL(php->p_vaddr < NACL_TRAMPOLINE_END, ENOEXEC,
         "Segment %d: virtual address 0x%08x too low", segnum, php->p_vaddr);
@@ -232,7 +228,7 @@ void NaClElfImageValidateProgramHeaders(
     if(*max_vaddr < php->p_vaddr + php->p_memsz)
       *max_vaddr = php->p_vaddr + php->p_memsz;
 
-    switch(nacl_phdr_check_data[j].action)
+    switch(phdr_check_data[j].action)
     {
       case PCA_NONE:
         break;
@@ -254,8 +250,8 @@ void NaClElfImageValidateProgramHeaders(
   }
 
   /* check if ELF executable missing a required segment (text) */
-  for(j = 0; j < NACL_ARRAY_SIZE(nacl_phdr_check_data); ++j)
-    ZLOGFAIL(nacl_phdr_check_data[j].required && !seen_seg[j], ENOEXEC, FAILED_MSG);
+  for(j = 0; j < NACL_ARRAY_SIZE(phdr_check_data); ++j)
+    ZLOGFAIL(phdr_check_data[j].required && !seen_seg[j], ENOEXEC, FAILED_MSG);
 
   /*
    * Memory allocation will use NaClRoundPage(nap->break_addr), but
@@ -266,11 +262,11 @@ void NaClElfImageValidateProgramHeaders(
    */
 }
 
-struct NaClElfImage *NaClElfImageNew(struct Gio *gp)
+struct ElfImage *ElfImageNew(struct Gio *gp)
 {
-  struct NaClElfImage *result;
-  struct NaClElfImage image;
-  int                 cur_ph;
+  struct ElfImage *result;
+  struct ElfImage image;
+  int             cur_ph;
 
   memset(image.loadable, 0, sizeof image.loadable);
 
@@ -281,7 +277,7 @@ struct NaClElfImage *NaClElfImageNew(struct Gio *gp)
   ZLOGFAIL((*gp->vtbl->Read)(gp, &image.ehdr, sizeof image.ehdr) != sizeof image.ehdr,
       EIO, FAILED_MSG);
 
-  NaClDumpElfHeader(LOG_INSANE, &image.ehdr);
+  DumpElfHeader(LOG_INSANE, &image.ehdr);
 
   /* read program headers. fail if too many prog headers */
   ZLOGFAIL(image.ehdr.e_phnum > NACL_MAX_PROGRAM_HEADERS, ENOEXEC, FAILED_MSG);
@@ -305,7 +301,7 @@ struct NaClElfImage *NaClElfImageNew(struct Gio *gp)
 
   ZLOGS(LOG_INSANE, "%020o (elf segments) %020o", 0, 0);
   for(cur_ph = 0; cur_ph < image.ehdr.e_phnum; ++cur_ph)
-    NaClDumpElfProgramHeader(LOG_INSANE, &image.phdrs[cur_ph]);
+    DumpElfProgramHeader(LOG_INSANE, &image.phdrs[cur_ph]);
 
   /* we delay allocating till the end to avoid cleanup code */
   /* fail if not enough memory for image meta data */
@@ -316,7 +312,7 @@ struct NaClElfImage *NaClElfImageNew(struct Gio *gp)
   return result;
 }
 
-void NaClElfImageLoad(const struct NaClElfImage *image,
+void ElfImageLoad(const struct ElfImage *image,
     struct Gio *gp, uint8_t addr_bits, uintptr_t mem_start)
 {
   int               segnum;
@@ -372,10 +368,12 @@ void NaClElfImageLoad(const struct NaClElfImage *image,
   }
 }
 
-void NaClElfImageDelete(struct NaClElfImage *image) {
+void ElfImageDelete(struct ElfImage *image)
+{
   g_free(image);
 }
 
-uintptr_t NaClElfImageGetEntryPoint(const struct NaClElfImage *image) {
+uintptr_t ElfImageGetEntryPoint(const struct ElfImage *image)
+{
   return image->ehdr.e_entry;
 }

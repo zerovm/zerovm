@@ -19,38 +19,37 @@
 #ifndef PREFETCH_H_
 #define PREFETCH_H_
 
-#include "src/channels/mount_channel.h"
+#include "src/channels/channel.h"
+#include "src/main/manifest.h"
 
-/* return ChannelSourceType for network channels */
-enum ChannelSourceType GetChannelProtocol(const char *url);
+/* get control_digest for the last read RO source reached eof */
+char *GetControlDigest();
+
+/* prepare network context */
+void NetCtor(const struct Manifest *manifest);
+
+/* deallocate network context */
+void NetDtor(struct Manifest *manifest);
 
 /* construct network channel and connect/bind it to specified address */
-int PrefetchChannelCtor(struct ChannelDesc* channel);
+void PrefetchChannelCtor(struct ChannelDesc *channel, int n);
 
 /*
  * finalize and deallocate network channel resources
  * todo(d'b): rewrite the code after zmq_term will be fixed
  */
-int PrefetchChannelDtor(struct ChannelDesc* channel);
+void PrefetchChannelDtor(struct ChannelDesc *channel, int n);
 
 /*
  * fetch the data from the network channel
  * return number of received bytes or negative error code
  */
-int32_t FetchMessage(struct ChannelDesc *channel, char *buf, int32_t count);
+int32_t FetchMessage(struct ChannelDesc *channel, int n, char *buf, int32_t count);
 
 /*
  * send the data to the network channel
  * return number of sent bytes or negative error code
  */
-int32_t SendMessage(struct ChannelDesc *channel, const char *buf, int32_t count);
-
-/*
- * if name service is available then go through all available
- * channels, pick the network ones and connect them
- * note: if no name service is available quietly return - all channels
- * are already bound and connected due 1st pass
- */
-void KickPrefetchChannels(const struct NaClApp *nap);
+int32_t SendMessage(struct ChannelDesc *channel, int n, const char *buf, int32_t count);
 
 #endif /* PREFETCH_H_ */

@@ -22,7 +22,7 @@
 #include <assert.h>
 #include <glib.h>
 #include "src/main/tools.h"
-#include "src/main/nacl_exit.h"
+#include "src/main/report.h"
 #include "src/main/zlog.h"
 
 static int verbosity = 0;
@@ -79,5 +79,5 @@ void FailIf(int cond, int err, char const *fmt, ...)
 {
   ZLO(!cond);
   SetExitState(msg);
-  NaClExit(err);
+  ReportDtor(err);
 }

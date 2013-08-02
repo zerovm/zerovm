@@ -23,12 +23,11 @@
  * NaCl Service Runtime, C-level context switch code.
  */
 #include "src/loader/sel_ldr.h"
-#include "src/main/nacl_globals.h"
 #include "src/syscalls/switch_to_app.h"
 
 #define NORETURN_PTR NORETURN
 
-static NORETURN_PTR void (*NaClSwitch)(struct NaClThreadContext *context);
+static NORETURN_PTR void (*ContextSwitch)(struct ThreadContext *context);
 
 /*
  * d'b: a new cpu detection routine. just distinguish nosse/sse/avx
@@ -44,21 +43,21 @@ static int CPUTest()
   return 1;
 }
 
-void NaClInitSwitchToApp(struct NaClApp *nap)
+void InitSwitchToApp(struct NaClApp *nap)
 {
   int cpu = CPUTest();
 
   UNREFERENCED_PARAMETER(nap);
   ZLOGFAIL(cpu == -1, EFAULT, "zerovm needs SSE CPU");
-  NaClSwitch = cpu == 0 ? NaClSwitchSSE : NaClSwitchAVX;
+  ContextSwitch = cpu == 0 ? SwitchSSE : SwitchAVX;
   ZLOGS(LOG_DEBUG, "%s cpu detected", cpu == 0 ? "SSE" : "AVX");
 }
 
 /* switch to the nacl module (untrusted content) */
-NORETURN void NaClSwitchToApp(struct NaClApp *nap, nacl_reg_t new_prog_ctr)
+NORETURN void SwitchToApp(struct NaClApp *nap, nacl_reg_t new_prog_ctr)
 {
   nacl_user->new_prog_ctr = new_prog_ctr;
   nacl_user->sysret = nap->sysret;
 
-  NaClSwitch(nacl_user);
+  ContextSwitch(nacl_user);
 }

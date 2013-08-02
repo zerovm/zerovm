@@ -21,8 +21,8 @@
 #include <glib.h>
 #include "src/loader/sel_ldr.h"
 #include "src/main/accounting.h"
-#include "src/main/manifest_setup.h"
-#include "src/channels/mount_channel.h"
+#include "src/main/setup.h"
+#include "src/channels/channel.h"
 
 /* accounting folder name */
 static char accounting[BIG_ENOUGH_STRING] = DEFAULT_ACCOUNTING;
@@ -40,9 +40,7 @@ static int ReadSystemAccounting(const struct NaClApp *nap, char *buf, int size)
   FILE *f;
   char path[BIG_ENOUGH_STRING];
 
-  assert(nap != NULL);
   assert(buf != NULL);
-  assert(nap->system_manifest != NULL);
   assert(size > 0);
 
   /* get time information */
@@ -74,41 +72,42 @@ static int ReadSystemAccounting(const struct NaClApp *nap, char *buf, int size)
 /* get internal i/o information from channels counters */
 static int GetChannelsAccounting(const struct NaClApp *nap, char *buf, int size)
 {
-  int64_t network_stats[IOLimitsCount] = {0};
-  int64_t local_stats[IOLimitsCount] = {0};
+  int64_t network_stats[LimitsNumber] = {0};
+  int64_t local_stats[LimitsNumber] = {0};
   int i;
 
-  assert(nap != NULL);
-  assert(nap->system_manifest != NULL);
   assert(buf != NULL);
   assert(size != 0);
 
   /* gather all channels statistics */
-  for(i = 0; i < nap->system_manifest->channels_count; ++i)
+  for(i = 0; i < nap->manifest->channels->len; ++i)
   {
-    struct ChannelDesc *channel = &nap->system_manifest->channels[i];
+    struct ChannelDesc *channel = CH_CH(nap->manifest, i);
     int64_t *stats = NULL;
     int j;
 
-    /* select proper stats array */
-    switch(channel->source)
+    /*
+     * select proper array. channels with mixed source types
+     * cannot be properly accounted and will be accounted by
+     * the 1st source type
+     */
+    switch(CH_PROTO(channel, 0))
     {
-      case ChannelRegular:
-      case ChannelCharacter:
-      case ChannelFIFO:
+      case ProtoRegular:
+      case ProtoCharacter:
+      case ProtoFIFO:
         stats = local_stats;
         break;
-      case ChannelTCP:
+      case ProtoTCP:
         stats = network_stats;
         break;
       default:
-        ZLOG(LOG_ERR, "'%s': source type '%s' not supported",
-            channel->name, StringizeChannelSourceType(channel->source));
+        ZLOG(LOG_ERR, "%s has invalid source type %s", channel->alias);
         buf = DEFAULT_ACCOUNTING;
         return sizeof DEFAULT_ACCOUNTING;
     }
 
-    for(j = 0; j < IOLimitsCount; ++j)
+    for(j = 0; j < LimitsNumber; ++j)
       stats[j] += channel->counters[j];
   }
 
@@ -129,6 +128,8 @@ void AccountingDtor(const struct NaClApp *nap)
   int offset = 0;
 
   assert(nap != NULL);
+
+  if(nap->manifest == NULL || nap->manifest->channels == NULL) return;
 
   offset = ReadSystemAccounting(nap, accounting, BIG_ENOUGH_STRING);
   strncat(accounting, " ", 1);

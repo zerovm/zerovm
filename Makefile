@@ -1,6 +1,6 @@
 PREFIX ?= /usr/local
 DESTDIR ?=
-FLAGS0=-fPIE -Wall -pedantic -Wno-long-long -fvisibility=hidden -fstack-protector --param ssp-buffer-size=4
+FLAGS0=-fPIE -Wall -Wno-long-long -fvisibility=hidden -fstack-protector --param ssp-buffer-size=4
 GLIB=`pkg-config --cflags glib-2.0`
 CCFLAGS0=-c -m64 -fPIC -D_GNU_SOURCE=1 -I. $(GLIB)
 CXXFLAGS0=-m64 -Wno-variadic-macros $(GLIB)
@@ -24,14 +24,14 @@ debug: CXXFLAGS1 := -DDEBUG -g $(CXXFLAGS1)
 debug: CXXFLAGS2 := -DDEBUG -g $(CXXFLAGS2)
 debug: create_dirs zerovm tests
 
-OBJS=obj/elf_util.o obj/gio_mem.o obj/gio_mem_snapshot.o obj/manifest_parser.o obj/manifest_setup.o obj/mount_channel.o obj/nacl_dep_qualify.o obj/nacl_exit.o obj/zlog.o obj/nacl_signal_64.o obj/nacl_signal_common.o obj/nacl_signal.o obj/side_switch.o obj/switch_to_app.o obj/trap_syscall.o obj/syscall_hook.o obj/prefetch.o obj/name_service.o obj/preload.o obj/sel_addrspace.o obj/sel_ldr.o obj/sel_ldr_standard.o obj/sel_ldr_x86_64.o obj/sel_memory.o obj/sel_qualify.o obj/sel_rt.o obj/tramp.o obj/trap.o obj/etag.o obj/accounting.o
+OBJS=obj/elf_util.o obj/gio.o obj/gio_snapshot.o obj/manifest.o obj/setup.o obj/channel.o obj/qualify.o obj/report.o obj/zlog.o obj/signal_common.o obj/signal.o obj/to_app.o obj/switch_to_app.o obj/to_trap.o obj/syscall_hook.o obj/prefetch.o obj/nservice.o obj/preload.o obj/sel_addrspace.o obj/sel_ldr.o obj/sel.o obj/sel_memory.o obj/sel_rt.o obj/tramp.o obj/trap.o obj/etag.o obj/accounting.o
 CC=@gcc
 CXX=@g++
 
 create_dirs:
 	@mkdir obj -p
 
-zerovm: obj/zvm_main.o $(OBJS)
+zerovm: obj/zerovm.o $(OBJS)
 	$(CC) -o $@ $(CXXFLAGS2) $^ $(LIBS)
 
 tests: test_compile
@@ -72,13 +72,13 @@ install:
 	install -D -m 0755 zerovm $(DESTDIR)$(PREFIX)/bin/zerovm
 	install -D -m 0644 api/zvm.h $(DESTDIR)$(PREFIX)/x86_64-nacl/include/zvm.h
 
-obj/mount_channel.o: src/channels/mount_channel.c
+obj/channel.o: src/channels/channel.c
 	$(CC) $(CCFLAGS1) -o $@ $^
 
 obj/prefetch.o: src/channels/prefetch.c
 	$(CC) $(CCFLAGS1) -o $@ $^
 
-obj/name_service.o: src/channels/name_service.c
+obj/nservice.o: src/channels/nservice.c
 	$(CC) $(CCFLAGS1) -o $@ $^
 
 obj/preload.o: src/channels/preload.c
@@ -87,28 +87,28 @@ obj/preload.o: src/channels/preload.c
 obj/trap.o: src/syscalls/trap.c
 	$(CC) $(CCFLAGS1) -o $@ $^
 
-obj/manifest_setup.o: src/main/manifest_setup.c
+obj/setup.o: src/main/setup.c
 	$(CC) $(CCFLAGS1) -o $@ $^
 
-obj/manifest_parser.o: src/main/manifest_parser.c
+obj/manifest.o: src/main/manifest.c
 	$(CC) $(CCFLAGS1) -o $@ $^
 
-obj/side_switch.o: src/syscalls/side_switch.S
+obj/to_app.o: src/syscalls/to_app.S
 	$(CC) $(CCFLAGS2) -o $@ $^
 
-obj/trap_syscall.o: src/syscalls/trap_syscall.S
+obj/to_trap.o: src/syscalls/to_trap.S
 	$(CC) $(CCFLAGS2) -o $@ $^
 
 obj/tramp.o: src/syscalls/tramp.S
 	$(CC) $(CCFLAGS2) -o $@ $^
 
-obj/zvm_main.o: src/main/zvm_main.c
+obj/zerovm.o: src/main/zerovm.c
 	$(CC) $(CCFLAGS1) -o $@ $^
 
 obj/elf_util.o: src/loader/elf_util.c
 	$(CC) $(CCFLAGS1) -o $@ $^
 
-obj/nacl_signal_common.o: src/platform/nacl_signal_common.c
+obj/signal_common.o: src/platform/signal_common.c
 	$(CC) $(CCFLAGS1) -o $@ $^
 
 obj/syscall_hook.o: src/syscalls/syscall_hook.c
@@ -120,16 +120,10 @@ obj/sel_addrspace.o: src/loader/sel_addrspace.c
 obj/sel_ldr.o: src/loader/sel_ldr.c
 	$(CC) $(CCFLAGS1) -o $@ $^
 
-obj/sel_ldr_standard.o: src/loader/sel_ldr_standard.c
-	$(CC) $(CCFLAGS1) -o $@ $^
-
-obj/sel_qualify.o: src/platform/sel_qualify.c
+obj/sel.o: src/loader/sel.c
 	$(CC) $(CCFLAGS1) -o $@ $^
 
 obj/switch_to_app.o: src/syscalls/switch_to_app.c
-	$(CC) $(CCFLAGS1) -o $@ $^
-
-obj/sel_ldr_x86_64.o: src/loader/sel_ldr_x86_64.c
 	$(CC) $(CCFLAGS1) -o $@ $^
 
 obj/sel_rt.o: src/loader/sel_rt.c
@@ -138,25 +132,22 @@ obj/sel_rt.o: src/loader/sel_rt.c
 obj/sel_memory.o: src/platform/sel_memory.c
 	$(CC) $(CCFLAGS1) -o $@ $^
 
-obj/nacl_signal.o: src/platform/nacl_signal.c
+obj/signal.o: src/platform/signal.c
 	$(CC) $(CCFLAGS1) -o $@ $^
 
-obj/nacl_signal_64.o: src/platform/nacl_signal_64.c
+obj/qualify.o: src/platform/qualify.c
 	$(CC) $(CCFLAGS1) -o $@ $^
 
-obj/nacl_dep_qualify.o: src/platform/nacl_dep_qualify.c
-	$(CC) $(CCFLAGS1) -o $@ $^
-
-obj/nacl_exit.o: src/main/nacl_exit.c
+obj/report.o: src/main/report.c
 	$(CC) $(CCFLAGS1) -o $@ $^
 
 obj/zlog.o: src/main/zlog.c
 	$(CC) $(CCFLAGS1) -o $@ $^
 
-obj/gio_mem.o: src/platform/gio_mem.c
+obj/gio.o: src/platform/gio.c
 	$(CC) $(CCFLAGS1) -o $@ $^
 
-obj/gio_mem_snapshot.o: src/platform/gio_mem_snapshot.c
+obj/gio_snapshot.o: src/platform/gio_snapshot.c
 	$(CC) $(CCFLAGS1) -o $@ $^
 
 obj/etag.o: src/main/etag.c

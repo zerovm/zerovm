@@ -6,7 +6,6 @@
 
 // Testing NativeClient cross-platfom memory management functions
 #include <sys/mman.h>
-#include "src/platform/portability.h"
 #include "src/main/zlog.h"
 #include "src/platform/sel_memory.h"
 

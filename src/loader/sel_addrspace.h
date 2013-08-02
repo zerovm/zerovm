@@ -21,18 +21,18 @@
 
 /* NaCl Simple/secure ELF loader (NaCl SEL) */
 
-#ifndef __SEL_ADDRSPACE_H__
-#define __SEL_ADDRSPACE_H__ 1
+#ifndef SEL_ADDRSPACE_H_
+#define SEL_ADDRSPACE_H_ 1
 
 struct NaClApp; /* fwd */
 
 /* deallocate all user memory (84gb) */
-void NaClFreeAddrSpace(struct NaClApp *nap);
+void FreeAddrSpace(struct NaClApp *nap);
 
 /* allocate user memory chunk (84gb) */
-void NaClAllocAddrSpace(struct NaClApp *nap);
+void AllocAddrSpace(struct NaClApp *nap);
 
 /* Apply memory protection to memory regions */
-void NaClMemoryProtection(struct NaClApp *nap);
+void MemoryProtection(struct NaClApp *nap);
 
 #endif

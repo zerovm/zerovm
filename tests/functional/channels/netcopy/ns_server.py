@@ -31,7 +31,7 @@ while 1:
             bind_map.setdefault(alias, {})[h] = port
             print '%08x:%d <- %08x' % (alias, port, h)
             offset += 6
-        conn_map[alias] = (connect_count, offset, message)
+        conn_map[alias] = (connect_count, offset, ctypes.create_string_buffer(message))
         peer_map.setdefault(alias, {})[0] = address[0]
         peer_map.setdefault(alias, {})[1] = address[1]
 
@@ -41,6 +41,7 @@ while 1:
                 #offset = 0
                 #count = struct.unpack_from('!I', reply, offset)[0]
                 #offset += 4
+		print [connect_count, offset]
                 for i in range(connect_count):
                     h = struct.unpack_from('!I', reply, offset)[0]
                     port = bind_map[h][src]

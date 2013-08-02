@@ -32,30 +32,29 @@ enum TrapCalls
 };
 
 /* channel types */
-enum AccessType
-{
+enum ChannelType {
   SGetSPut, /* sequential read, sequential write */
   RGetSPut, /* random read, sequential write */
   SGetRPut, /* sequential read, random write */
   RGetRPut /* random read, random write */
 };
 
+
 /* channel limits */
-enum IOLimits
-{
+enum ChannelLimits {
   GetsLimit,
   GetSizeLimit,
   PutsLimit,
   PutSizeLimit,
-  IOLimitsCount
+  LimitsNumber
 };
 
 /* channel descriptor */
 struct ZVMChannel
 {
-  int64_t limits[IOLimitsCount];
+  int64_t limits[LimitsNumber];
   int64_t size; /* 0 for sequential channels */
-  enum AccessType type;
+  enum ChannelType type;
   char *name;
 };
 

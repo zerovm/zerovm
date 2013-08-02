@@ -16,27 +16,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* todo(d'b): should merge into sel_addrspace, sel_ldr, nacl_exit e.t.c. */
 #include <assert.h>
 #include <time.h>
 #include <sys/resource.h> /* timeout, process priority */
 #include <sys/mman.h>
 #include <glib.h>
 #include "src/loader/sel_ldr.h"
-#include "src/main/etag.h"
 #include "src/platform/sel_memory.h"
-#include "src/main/manifest_parser.h"
-#include "src/main/manifest_setup.h"
-#include "src/channels/mount_channel.h"
-#include "src/main/accounting.h"
+#include "src/main/manifest.h"
+#include "src/main/setup.h"
+#include "src/channels/channel.h"
 #include "src/main/tools.h"
-
-/* get integer value by key from the manifest. 0 if not found */
-#define GET_INT_BY_KEY(var, str) \
-  do {\
-    char *p = GetValueByKey(str);\
-    var = p == NULL ? 0 : g_ascii_strtoll(p, NULL, 10);\
-  } while(0)
 
 /* hard limit for all zerovm i/o */
 static int64_t storage_limit = ZEROVM_IO_LIMIT;
@@ -54,13 +44,12 @@ static void LimitOwnIO()
 }
 
 /* set timeout. by design timeout must be specified in manifest */
-static void SetTimeout(struct SystemManifest *policy)
+static void SetTimeout(struct Manifest *manifest)
 {
-  assert(policy != NULL);
+  assert(manifest != NULL);
 
-  GET_INT_BY_KEY(policy->timeout, MFT_TIMEOUT);
-  ZLOGFAIL(policy->timeout < 1, EFAULT, "invalid or absent timeout");
-  alarm(policy->timeout);
+  ZLOGFAIL(manifest->timeout < 1, EFAULT, "invalid timeout %d", manifest->timeout);
+  alarm(manifest->timeout);
 }
 
 /* lower zerovm priority */
@@ -90,28 +79,27 @@ int SetStorageLimit(int64_t a)
 void LastDefenseLine(struct NaClApp *nap)
 {
   LimitOwnIO();
-  SetTimeout(nap->system_manifest);
+  SetTimeout(nap->manifest);
   LowerOwnPriority();
   GiveUpPrivileges();
 }
 
-/* preallocate memory area of given size. abort if fail */
-static void PreallocateUserMemory(struct NaClApp *nap)
+void PreallocateUserMemory(struct NaClApp *nap)
 {
   uintptr_t i;
   int64_t heap;
   void *p;
 
   assert(nap != NULL);
-  assert(nap->system_manifest != NULL);
+  assert(nap->manifest != NULL);
 
   /* quit function if "Memory" is not specified or invalid */
-  ZLOGFAIL(nap->heap_end == 0 || nap->heap_end > FOURGIG,
+  ZLOGFAIL(nap->manifest->mem_size <= 0 || nap->manifest->mem_size > FOURGIG,
       ENOMEM, "invalid memory size");
 
   /* calculate user heap size (must be allocated next to the data_end) */
   p = (void*)ROUNDUP_64K(nap->data_end);
-  heap = nap->heap_end - nap->stack_size;
+  heap = nap->manifest->mem_size - nap->stack_size;
   heap = ROUNDUP_64K(heap) - ROUNDUP_64K(nap->data_end);
   ZLOGFAIL(heap <= LEAST_USER_HEAP_SIZE, ENOMEM, "user heap size is too small");
 
@@ -129,7 +117,7 @@ static void PreallocateUserMemory(struct NaClApp *nap)
 /* should be kept in sync with api/zvm.h*/
 struct ChannelSerialized
 {
-  int64_t limits[IOLimitsCount];
+  int64_t limits[LimitsNumber];
   int64_t size;
   uint32_t type;
   uint32_t name;
@@ -175,7 +163,7 @@ static uintptr_t AlignAndProtect(uintptr_t area, int64_t size, int prot)
 }
 
 /*
- * copy given name before the given area making it writeable 1st
+ * copy given name before the given area making it writable 1st
  * return a new pointer to name preceding area
  */
 static void *CopyDown(void *area, char *name)
@@ -217,10 +205,9 @@ static void ProtectUserManifest(struct NaClApp *nap, void *mft)
       nap->mem_map[HeapIdx].end - nap->mem_map[HeapIdx].start;
 }
 
-/* serialize system data to user space */
-static void SetSystemData(struct NaClApp *nap)
+void SetSystemData(struct NaClApp *nap)
 {
-  struct SystemManifest *manifest;
+  struct Manifest *manifest;
   struct ChannelSerialized *channels;
   struct UserManifestSerialized *user_manifest;
   void *ptr; /* pointer to the user manifest area */
@@ -228,10 +215,10 @@ static void SetSystemData(struct NaClApp *nap)
   int i;
 
   assert(nap != NULL);
-  assert(nap->system_manifest != NULL);
-  assert(nap->system_manifest->channels != NULL);
+  assert(nap->manifest != NULL);
+  assert(nap->manifest->channels != NULL);
 
-  manifest = nap->system_manifest;
+  manifest = nap->manifest;
 
   /*
    * 1. calculate channels array size (w/o aliases)
@@ -239,13 +226,13 @@ static void SetSystemData(struct NaClApp *nap)
    * 3. calculate pointer to user manifest
    * 4. calculate pointer to channels array
    */
-  size = manifest->channels_count * CHANNEL_STRUCT_SIZE;
+  size = manifest->channels->len * CHANNEL_STRUCT_SIZE;
   size += USER_MANIFEST_STRUCT_SIZE + USER_PTR_SIZE;
   ptr = (void*)(FOURGIG - nap->stack_size - size);
   user_manifest = (void*)NaClUserToSys(nap, (uintptr_t)ptr);
   channels = (void*)((uintptr_t)&user_manifest->channels + USER_PTR_SIZE);
 
-  /* make the 1st page of user manifest writeable */
+  /* make the 1st page of user manifest writable */
   CopyDown((void*)NaClUserToSys(nap, FOURGIG - nap->stack_size), "");
   ptr = user_manifest;
 
@@ -253,20 +240,20 @@ static void SetSystemData(struct NaClApp *nap)
   SetUserManifestPtr(nap, user_manifest);
 
   /* serialize channels */
-  for(i = 0; i < manifest->channels_count; ++i)
+  for(i = 0; i < manifest->channels->len; ++i)
   {
     /* limits */
     int j;
-    for(j = 0; j < IOLimitsCount; ++j)
-      channels[i].limits[j] = manifest->channels[i].limits[j];
+    for(j = 0; j < LimitsNumber; ++j)
+      channels[i].limits[j] = CH_CH(manifest, i)->limits[j];
 
     /* type and size */
-    channels[i].type = (int32_t)manifest->channels[i].type;
+    channels[i].type = (int32_t)CH_CH(manifest, i)->type;
     channels[i].size = channels[i].type == SGetSPut
-        ? 0 : manifest->channels[i].size;
+        ? 0 : CH_CH(manifest, i)->size;
 
     /* alias */
-    ptr = CopyDown(ptr, manifest->channels[i].alias);
+    ptr = CopyDown(ptr, CH_CH(manifest, i)->alias);
     channels[i].name = NaClSysToUser(nap, (uintptr_t)ptr);
   }
 
@@ -284,136 +271,10 @@ static void SetSystemData(struct NaClApp *nap)
   /* serialize the rest of the user manifest records */
   user_manifest->heap_ptr = nap->break_addr;
   user_manifest->stack_size = nap->stack_size;
-  user_manifest->channels_count = manifest->channels_count;
+  user_manifest->channels_count = manifest->channels->len;
   user_manifest->channels = NaClSysToUser(nap, (uintptr_t)channels);
 
   /* make the user manifest read only */
   ProtectUserManifest(nap, ptr);
 }
 /* }} */
-
-static void ParseMemoryArgs(struct NaClApp *nap)
-{
-  char *tokens[MEMORY_ATTRIBUTES + 1];
-  int i;
-
-  i = ParseValue(GetValueByKey(MFT_MEMORY), ",", tokens, MEMORY_ATTRIBUTES + 1);
-  ZLOGFAIL(i != MEMORY_ATTRIBUTES, EFAULT,
-      "Memory has invalid number of arguments");
-  nap->heap_end = ATOI(tokens[0]);
-
-  i = ATOI(tokens[1]);
-  ZLOGFAIL(i != 0 && i != 1, EFAULT, "Memory has invalid tag argument");
-  nap->mem_tag = i == 0 ? NULL : TagCtor();
-}
-
-void SystemManifestCtor(struct NaClApp *nap)
-{
-  struct SystemManifest *policy;
-  char *node;
-
-  /* check for design errors */
-  assert(nap != NULL);
-  assert(nap->system_manifest != NULL);
-
-  policy = nap->system_manifest;
-  policy->etag = GetValueByKey(MFT_ETAG);
-
-  /* set node id */
-  node = GetValueByKey(MFT_NODE);
-  if(node != NULL)
-  {
-    nap->system_manifest->node = ATOI(node);
-    ZLOGFAIL(nap->system_manifest->node <= 0, EFAULT, "node id is invalid");
-  }
-
-  /* construct and initialize all channels */
-  ChannelsCtor(nap);
-
-  /*
-   * allocate "whole memory chunk" if specified. should be the last allocation
-   * in raw because after chunk allocated there will be no free user memory
-   * note: will set "heap_ptr"
-   */
-  ParseMemoryArgs(nap);
-  PreallocateUserMemory(nap);
-
-  /* set user manifest in user space (new ZVM API) */
-  SetSystemData(nap);
-}
-
-int SystemManifestDtor(struct NaClApp *nap)
-{
-  assert(nap != NULL);
-
-  ChannelsFinalizer(nap);
-  return 0;
-}
-
-/* populate given buffer with memory tag digest and free mem_tag */
-static void GetMemoryDigest(struct NaClApp *nap, char *digest)
-{
-  int i;
-
-  assert(nap != NULL);
-  assert(nap->mem_tag != NULL);
-
-  /* calculate overall memory tag */
-  for(i = 0; i < MemMapSize; ++i)
-  {
-    uintptr_t addr = nap->mem_map[i].start;
-    int64_t size = nap->mem_map[i].size;
-
-    /* update user_etag skipping inaccessible pages */
-    if(nap->mem_map[i].prot & PROT_READ)
-      TagUpdate(nap->mem_tag, (const char*) addr, size);
-  }
-
-  /* get digest and destroy tag context */
-  TagDigest(nap->mem_tag, digest);
-  TagDtor(nap->mem_tag);
-  nap->mem_tag = NULL;
-}
-
-void ProxyReport(struct NaClApp *nap)
-{
-  GString *report = g_string_sized_new(BIG_ENOUGH_STRING);
-  char mem_digest[TAG_DIGEST_SIZE];
-
-  assert(nap != NULL);
-  assert(nap->system_manifest != NULL);
-
-  /* create the report */
-  g_string_append_printf(report, "%s%d\n", REPORT_VALIDATOR,
-      nap->validation_state);
-  g_string_append_printf(report, "%s%d\n", REPORT_RETCODE,
-      nap->system_manifest->user_ret_code);
-  g_string_append_printf(report, "%s", REPORT_ETAG);
-
-  if(nap->mem_tag == NULL
-      && (nap->channels_tag == NULL|| nap->channels_tag->len == 0))
-    g_string_append_printf(report, "%s", TAG_ENGINE_DISABLED);
-  else
-  {
-    if(nap->mem_tag != NULL)
-    {
-      GetMemoryDigest(nap, mem_digest);
-      g_string_append_printf(report, "%s ", mem_digest);
-    }
-    if(nap->channels_tag->len > 0)
-      g_string_append_printf(report, "%s", nap->channels_tag->str);
-  }
-
-  /* remove ending " " if exist */
-  if(report->len > 0)
-    g_string_truncate(report, report->len - 1);
-
-  g_string_append_printf(report, "\n%s%s\n", REPORT_ACCOUNTING, GetAccountingInfo());
-  g_string_append_printf(report, "%s%s\n", REPORT_STATE, GetExitState());
-
-  /* give the report to proxy, free resources */
-  ZLOGIF(write(STDOUT_FILENO, report->str, report->len) != report->len,
-      "cannot write report");
-  g_string_free(report, TRUE);
-  report = NULL;
-}

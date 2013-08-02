@@ -23,7 +23,12 @@
 
 /* G_CHECKSUM_MD5, G_CHECKSUM_SHA1, G_CHECKSUM_SHA256 */
 #define TAG_ENCRYPTION G_CHECKSUM_SHA1
-#define TAG_DIGEST_SIZE 40 + 1 /* without '\0': 32, 40, 64 */
+#define TAG_DIGEST_SIZE 40 /* without '\0': 32, 40, 64 */
+
+#if 0 /* todo: how to have it due compile time? */
+#define TAG_DIGEST_SIZE 2*g_checksum_type_get_length(TAG_ENCRYPTION)
+#endif
+
 #define TAG_ENGINE_DISABLED "disabled"
 
 /*
@@ -41,10 +46,7 @@ void TagDtor(void *ctx);
  */
 void TagDigest(void *ctx, char *digest);
 
-/*
- * update etag with the given buffer.
- * returns 0 if all ok or -1 if failed
- */
+/* update etag with the given buffer */
 void TagUpdate(void *ctx, const char *buffer, int64_t size);
 
 #endif /* ETAG_H_ */
