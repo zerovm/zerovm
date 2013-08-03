@@ -49,7 +49,8 @@ struct ThreadContext {
 };
 /* 0xa8 */
 
-uintptr_t GetThreadCtxSp(struct ThreadContext  *th_ctx);
+uintptr_t GetThreadCtxSp(struct ThreadContext *th_ctx);
+
 void SetThreadCtxSp(struct ThreadContext *th_ctx, uintptr_t sp);
 
 /*

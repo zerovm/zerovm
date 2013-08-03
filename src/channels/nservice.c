@@ -15,13 +15,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <glib.h>
 #include <arpa/inet.h> /* ip <-> int */
 #include <assert.h>
 #include <errno.h>
-#include "src/main/tools.h"
-#include "src/main/zlog.h"
-#include "src/main/manifest.h"
 #include "src/channels/channel.h"
 #include "src/channels/nservice.h"
 

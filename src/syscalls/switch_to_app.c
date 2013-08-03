@@ -22,7 +22,6 @@
 /*
  * NaCl Service Runtime, C-level context switch code.
  */
-#include "src/loader/sel_ldr.h"
 #include "src/syscalls/switch_to_app.h"
 
 #define NORETURN_PTR NORETURN

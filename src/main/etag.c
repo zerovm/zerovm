@@ -17,11 +17,8 @@
  * limitations under the License.
  */
 
-#include <stdio.h>
-#include <string.h>
 #include <assert.h>
 #include "src/main/zlog.h"
-#include "src/main/tools.h"
 #include "src/main/etag.h"
 
 void *TagCtor()

@@ -16,10 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <sys/fcntl.h>
 #include <assert.h>
-#include <glib.h>
-#include "src/channels/channel.h"
 #include "src/channels/preload.h"
 
 #define CHANNEL_RIGHTS S_IRUSR | S_IWUSR

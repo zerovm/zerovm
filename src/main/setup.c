@@ -17,16 +17,12 @@
  * limitations under the License.
  */
 #include <assert.h>
-#include <time.h>
-#include <sys/resource.h> /* timeout, process priority */
+#include <sys/resource.h>
 #include <sys/mman.h>
-#include <glib.h>
 #include "src/loader/sel_ldr.h"
 #include "src/platform/sel_memory.h"
-#include "src/main/manifest.h"
 #include "src/main/setup.h"
 #include "src/channels/channel.h"
-#include "src/main/tools.h"
 
 /* hard limit for all zerovm i/o */
 static int64_t storage_limit = ZEROVM_IO_LIMIT;

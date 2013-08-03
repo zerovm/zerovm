@@ -63,46 +63,43 @@
 
 #include <inttypes.h>
 
-#define EI_NIDENT       16   /* fwd, see rest of EI_* below */
-
-#define ET_NONE         0   /* no file type */
-#define ET_REL          1   /* relocatable file */
-#define ET_EXEC         2   /* executable file */
-#define ET_DYN          3   /* shared object file */
-#define ET_CORE         4   /* core file */
+#define EI_NIDENT     16 /* fwd, see rest of EI_* below */
+#define ET_NONE       0  /* no file type */
+#define ET_REL        1  /* relocatable file */
+#define ET_EXEC       2  /* executable file */
+#define ET_DYN        3  /* shared object file */
+#define ET_CORE       4  /* core file */
 
 /* all platforms (but x86_64) removed */
-#define EM_X86_64       62  /* x86-64 */
-
+#define EM_X86_64     62 /* x86-64 */
 #define EM_EXPECTED_BY_NACL EM_X86_64
 
-#define EV_NONE         0   /* invalid version */
-#define EV_CURRENT      1   /* current version */
-
-#define EI_MAG0         0   /* file identification */
-#define EI_MAG1         1   /* file identification */
-#define EI_MAG2         2   /* file identification */
-#define EI_MAG3         3   /* file identification */
-#define EI_CLASS        4   /* file class */
-#define EI_DATA         5   /* data encoding */
-#define EI_VERSION      6   /* file version */
+#define EV_NONE       0  /* invalid version */
+#define EV_CURRENT    1  /* current version */
+#define EI_MAG0       0  /* file identification */
+#define EI_MAG1       1  /* file identification */
+#define EI_MAG2       2  /* file identification */
+#define EI_MAG3       3  /* file identification */
+#define EI_CLASS      4  /* file class */
+#define EI_DATA       5  /* data encoding */
+#define EI_VERSION    6  /* file version */
 
 /*
  * ELFMAG and SELFMAG are names/values from linux elf.h, for code usage
  * compatibility.
  */
-#define ELFMAG          "\177ELF"
-#define SELFMAG         4
+#define ELFMAG        "\177ELF"
+#define SELFMAG       4
 
 /* EI_CLASS values */
-#define ELFCLASSNONE    0
-#define ELFCLASS32      1
-#define ELFCLASS64      2
+#define ELFCLASSNONE  0
+#define ELFCLASS32    1
+#define ELFCLASS64    2
 
 /* EI_DATA values */
-#define ELFDATANONE     0
-#define ELFDATA2LSB     1
-#define ELFDATA2MSB     2
+#define ELFDATANONE   0
+#define ELFDATA2LSB   1
+#define ELFDATA2MSB   2
 
 #define PT_NULL       0           /* Unused entry */
 #define PT_LOAD       1           /* Loadable segment */
@@ -121,18 +118,18 @@
  */
 #define PT_TLS        7
 #define PT_GNU_STACK  0x6474e551
-#define PT_GNU_EH_FRAME 0x6474e550      /* GCC .eh_frame_hdr segment */
-#define PT_GNU_RELRO    0x6474e552      /* Read-only after relocation */
+#define PT_GNU_EH_FRAME 0x6474e550 /* GCC .eh_frame_hdr segment */
+#define PT_GNU_RELRO  0x6474e552   /* Read-only after relocation */
 
 #define PF_X          1
 #define PF_W          2
 #define PF_R          4
 
-#define SHF_WRITE       0x1         /* Has writable data */
-#define SHF_ALLOC       0x2         /* Allocated in memory image of program */
-#define SHF_EXECINSTR   0x4         /* Contains executable instructions */
-#define SHF_MASKOS      0x0f000000  /* Environment-specific use */
-#define SHF_MASKPROC    0xf0000000  /* Processor-specific use */
+#define SHF_WRITE     0x1        /* Has writable data */
+#define SHF_ALLOC     0x2        /* Allocated in memory image of program */
+#define SHF_EXECINSTR 0x4        /* Contains executable instructions */
+#define SHF_MASKOS    0x0f000000 /* Environment-specific use */
+#define SHF_MASKPROC  0xf0000000 /* Processor-specific use */
 
 /* Define 64-bit specific types */
 typedef uint64_t  Elf64_Addr;    /* alignment 8 */
@@ -169,26 +166,24 @@ typedef struct {
   Elf64_Off     p_offset;
   Elf64_Addr    p_vaddr;
   Elf64_Addr    p_paddr;
-  Elf64_Xword    p_filesz;
-  Elf64_Xword    p_memsz;
-  Elf64_Xword    p_align;
+  Elf64_Xword   p_filesz;
+  Elf64_Xword   p_memsz;
+  Elf64_Xword   p_align;
 } Elf64_Phdr;
 
 /* Define 64-bit section headers. */
 typedef struct {
-  Elf64_Word  sh_name;
-  Elf64_Word  sh_type;
-  Elf64_Xword  sh_flags;
-  Elf64_Addr  sh_addr;
-  Elf64_Off   sh_offset;
-  Elf64_Xword  sh_size;
-  Elf64_Word  sh_link;
-  Elf64_Word  sh_info;
-  Elf64_Xword  sh_addralign;
-  Elf64_Xword  sh_entsize;
+  Elf64_Word    sh_name;
+  Elf64_Word    sh_type;
+  Elf64_Xword   sh_flags;
+  Elf64_Addr    sh_addr;
+  Elf64_Off     sh_offset;
+  Elf64_Xword   sh_size;
+  Elf64_Word    sh_link;
+  Elf64_Word    sh_info;
+  Elf64_Xword   sh_addralign;
+  Elf64_Xword   sh_entsize;
 } Elf64_Shdr;
-
-EXTERN_C_BEGIN
 
 /* Define sub architecture neutral types */
 typedef Elf64_Addr   Elf_Addr;
@@ -205,6 +200,4 @@ typedef Elf64_Ehdr Elf_Ehdr;
 /* Define a neutral form of a program header. */
 typedef Elf64_Phdr Elf_Phdr;
 
-EXTERN_C_END
-
-#endif  /* ELF_H_ */
+#endif /* ELF_H_ */

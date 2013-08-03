@@ -16,12 +16,7 @@
  * limitations under the License.
  */
 
-#include <stdio.h>
-#include <string.h>
-#include <stdarg.h>
 #include <assert.h>
-#include <glib.h>
-#include "src/main/tools.h"
 #include "src/main/report.h"
 #include "src/main/zlog.h"
 

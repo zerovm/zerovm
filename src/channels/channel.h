@@ -19,7 +19,6 @@
 #ifndef CHANNEL_H_
 #define CHANNEL_H_
 
-#include <zmq.h>
 #include "api/zvm.h"
 #include "src/main/etag.h"
 #include "src/main/manifest.h"

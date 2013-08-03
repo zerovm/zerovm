@@ -25,12 +25,8 @@
  */
 
 #include <setjmp.h>
-#include <stdlib.h>
 #include <stdint.h>
-#include <signal.h>
-#include <glib.h>
 #include "src/main/zlog.h"
-#include "src/platform/qualify.h"
 #include "src/platform/nacl_macros.h"
 
 /*

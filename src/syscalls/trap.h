@@ -19,16 +19,7 @@
 #ifndef TRAP_H_
 #define TRAP_H_
 
-#include "src/loader/sel_ldr.h"
-#include "src/channels/channel.h"
-
 EXTERN_C_BEGIN
-
-/*
- * jump/call alignement of untrusted code. will prevent jumping into
- * the middle of instruction and execution of uncontrolled code sequence
- */
-#define OP_ALIGNEMENT 0x20
 
 /*
  * single syscall allowed in zerovm. all service available via trap functions

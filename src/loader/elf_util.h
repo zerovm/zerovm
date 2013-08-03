@@ -40,13 +40,13 @@ void ValidateElfHeader(const struct ElfImage *image);
  */
 void ValidateProgramHeaders(
   struct ElfImage *image,
-  uint8_t             addr_bits,
-  uintptr_t           *static_text_end,
-  uintptr_t           *rodata_start,
-  uintptr_t           *rodata_end,
-  uintptr_t           *data_start,
-  uintptr_t           *data_end,
-  uintptr_t           *max_vaddr);
+  uint8_t         addr_bits,
+  uintptr_t       *static_text_end,
+  uintptr_t       *rodata_start,
+  uintptr_t       *rodata_end,
+  uintptr_t       *data_start,
+  uintptr_t       *data_end,
+  uintptr_t       *max_vaddr);
 
 /*
  * Loads an ELF executable before the address space's memory

@@ -23,21 +23,11 @@
  * NaCl Simple/secure ELF loader (NaCl SEL).
  */
 #include <assert.h>
-#include <errno.h>
-#include <glib.h>
 #include <sys/mman.h>
 #include "src/loader/elf_util.h"
 #include "src/syscalls/switch_to_app.h"
 #include "src/platform/sel_memory.h"
 #include "src/loader/sel_addrspace.h"
-#include "src/main/setup.h"
-#include "src/loader/sel_ldr.h"
-#include "src/main/zlog.h"
-#include "src/main/config.h"
-
-#if !defined(SIZE_T_MAX)
-# define SIZE_T_MAX     (~(size_t) 0)
-#endif
 
 /*
  * Fill from static_text_end to end of that page with halt
@@ -289,5 +279,5 @@ NORETURN void CreateSession(struct NaClApp *nap)
   /* pass control to the nexe */
   ZLOGS(LOG_DEBUG, "SESSION %d STARTED", nap->manifest->node);
   SwitchToApp(nap, nacl_user->new_prog_ctr);
-  assert(0);
+  ZLOGFAIL(1, EFAULT, "the unreachable has been reached");
 }

@@ -39,52 +39,18 @@
 
 #include <stdint.h>
 
-/* Keys for auxiliary vector (auxv). */
-#define AT_NULL         0   /* Terminating item in auxv array */
-#define AT_ENTRY        9   /* Entry point of the executable */
-#define AT_SYSINFO      32  /* System call entry point */
-
 /* from sel_ldr_x86.h */
-#define NACL_MAX_ADDR_BITS  (32)
-#define NACL_HALT_OPCODE    0xf4
-#define NACL_HALT_LEN       1 /* length of halt instruction */
-#define THUNK_ADDR          ((void*)0x5AFECA110000)
+#define NACL_DEFAULT_STACK_MAX (16 << 20) /* untrusted stack */
+#define NACL_MAX_ADDR_BITS (32)
+#define NACL_HALT_OPCODE   0xf4
+#define NACL_HALT_LEN      1 /* length of halt instruction */
 
-#include "src/main/zlog.h"
 #include "src/platform/gio.h"
 #include "src/main/config.h"
 #include "src/loader/sel_rt.h"
-#include "src/main/tools.h"
-#include "src/main/etag.h"
 #include "src/main/manifest.h"
 
 EXTERN_C_BEGIN
-
-#define NACL_DEFAULT_STACK_MAX  (16 << 20)  /* main thread stack */
-
-/*
- * new user memory data types {{
- */
-#if 0
-/* element of the memory map */
-typedef struct {
-  char *name; /* block name */
-  uintptr_t start; /* block start. system address */
-  uintptr_t end; /* block end (for ease). system address */
-  int64_t size; /* bytes */
-  int prot; /* protection */
-} MemoryBlock;
-
-/* user memory descriptor */
-typedef struct {
-    int64_t size;
-    void *tag;
-    GPtrArray *map; /* array of (MemoryBlock*) */
-} MemoryDesc;
-#endif
-/*
- * }}
- */
 
 /*
  * helper macro. _element should be nap->mem_map[index], _addr - block

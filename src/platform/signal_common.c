@@ -19,15 +19,9 @@
  * limitations under the License.
  */
 
-#include <signal.h>
-#include <glib.h>
-#include <sys/ucontext.h>
 #include "src/platform/signal.h"
-#include "src/main/setup.h"
 #include "src/main/report.h"
 #include "src/loader/sel_ldr.h"
-#include "src/loader/sel_rt.h"
-#include "src/main/zlog.h"
 
 #define MAX_HANDLERS 16
 
@@ -136,7 +130,7 @@ static enum SignalResult SignalHandleAll(int signum, void *ctx)
   struct SignalContext sigCtx;
   char msg[SIGNAL_STRLEN];
 
-  /* todo(d'b): is it proper solution? */
+  /* todo(d'b): is it a proper solution? */
   static int busy = 0;
   if(busy) return NACL_SIGNAL_RETURN;
   busy = 1;

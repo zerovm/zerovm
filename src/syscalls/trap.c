@@ -20,12 +20,8 @@
  */
 #include <assert.h>
 #include <sys/mman.h>
-#include "src/main/etag.h"
-#include "src/syscalls/trap.h"
 #include "src/channels/channel.h"
 #include "src/main/report.h"
-#include "src/loader/sel_ldr.h"
-#include "src/main/manifest.h"
 #include "src/platform/sel_memory.h"
 #include "src/main/setup.h"
 

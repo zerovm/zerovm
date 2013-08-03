@@ -25,9 +25,9 @@
 #ifndef SEL_MEMORY_H_
 #define SEL_MEMORY_H_ 1
 
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
+#include "src/main/tools.h"
+
+EXTERN_C_BEGIN
 
 /* d'b: a global function now */
 int NaCl_page_alloc_intern_flags(void **p, size_t size, int map_flags);
@@ -43,8 +43,6 @@ int NaCl_mprotect(void *addr, size_t len, int prot) NACL_WUR;
 
 int NaCl_madvise(void *start, size_t length, int advice) NACL_WUR;
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
+EXTERN_C_END
 
 #endif /*  SEL_MEMORY_H_ */

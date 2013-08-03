@@ -22,10 +22,8 @@
 /*
  * NaCl Simple/secure ELF loader (NaCl SEL).
  */
-#include <errno.h>
 #include <assert.h>
 #include <sys/mman.h>
-#include "src/loader/sel_addrspace.h"
 #include "src/loader/sel_ldr.h"
 #include "src/platform/sel_memory.h"
 

@@ -67,7 +67,6 @@
  * 0 is a valid user address.)
  */
 #include "src/main/zlog.h"
-#include "src/main/setup.h"
 
 /* d'b: no checks, just does the work */
 static INLINE uintptr_t NaClUserToSysAddrNullOkay

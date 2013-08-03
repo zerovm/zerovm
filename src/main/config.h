@@ -29,10 +29,9 @@
 #define CONFIG_H_
 
 /* maximum number of elf program headers allowed. */
-#define NACL_MAX_PROGRAM_HEADERS  128
+#define NACL_MAX_PROGRAM_HEADERS 128
 
 /*
- * d'b: taken from "src/include/nacl_asm.h"
  * macros to provide uniform access to identifiers from assembly due
  * to different C -> asm name mangling conventions and other platform-specific
  * requirements
@@ -45,14 +44,14 @@
  * -falign-functions -falign-labels -and nacl-align.
  */
 #define NACL_BLOCK_SHIFT 5
-#define NACL_INSTR_BLOCK_SIZE         (1 << NACL_BLOCK_SHIFT)
+#define NACL_INSTR_BLOCK_SIZE    (1 << NACL_BLOCK_SHIFT)
 
 /* this must be a multiple of the system page size */
-#define NACL_PAGESHIFT                12
-#define NACL_PAGESIZE                 (1U << NACL_PAGESHIFT)
+#define NACL_PAGESHIFT           12
+#define NACL_PAGESIZE            (1U << NACL_PAGESHIFT)
 
-#define NACL_MAP_PAGESHIFT            16
-#define NACL_MAP_PAGESIZE             (1U << NACL_MAP_PAGESHIFT)
+#define NACL_MAP_PAGESHIFT       16
+#define NACL_MAP_PAGESIZE        (1U << NACL_MAP_PAGESHIFT)
 
 #if NACL_MAP_PAGESHIFT < NACL_PAGESHIFT
 # error "NACL_MAP_PAGESHIFT smaller than NACL_PAGESHIFT"
@@ -63,7 +62,7 @@
  * The first 64KB (16 pages) are inaccessible.  On x86, this is to prevent
  * addr16/data16 attacks.
  */
-#define NACL_SYSCALL_START_ADDR       (16 << NACL_PAGESHIFT)
+#define NACL_SYSCALL_START_ADDR  (16 << NACL_PAGESHIFT)
 
 /*
  * Syscall trampoline code have a block size that may differ from the
@@ -76,8 +75,8 @@
  * points for a 16-byte aligned ELF will not be able to jump into the
  * middle of the trampoline code.
  */
-#define NACL_SYSCALL_BLOCK_SHIFT      5
-#define NACL_SYSCALL_BLOCK_SIZE       (1 << NACL_SYSCALL_BLOCK_SHIFT)
+#define NACL_SYSCALL_BLOCK_SHIFT 5
+#define NACL_SYSCALL_BLOCK_SIZE  (1 << NACL_SYSCALL_BLOCK_SHIFT)
 
 /*
  * the extra space for the trampoline syscall code and the thread
@@ -90,11 +89,11 @@
  * NACL_TRAMPOLINE_END gives the address of the first byte after the
  * trampolines.
  */
-#define NACL_NULL_REGION_SHIFT  16
-#define NACL_TRAMPOLINE_START   (1 << NACL_NULL_REGION_SHIFT)
-#define NACL_TRAMPOLINE_SHIFT   16
-#define NACL_TRAMPOLINE_SIZE    (1 << NACL_TRAMPOLINE_SHIFT)
-#define NACL_TRAMPOLINE_END     (NACL_TRAMPOLINE_START + NACL_TRAMPOLINE_SIZE)
+#define NACL_NULL_REGION_SHIFT   16
+#define NACL_TRAMPOLINE_START    (1 << NACL_NULL_REGION_SHIFT)
+#define NACL_TRAMPOLINE_SHIFT    16
+#define NACL_TRAMPOLINE_SIZE     (1 << NACL_TRAMPOLINE_SHIFT)
+#define NACL_TRAMPOLINE_END      (NACL_TRAMPOLINE_START + NACL_TRAMPOLINE_SIZE)
 
 /*
  * Extra required space at the end of static text (and dynamic text,
@@ -115,11 +114,11 @@
  * HALTs will cause the untrusted thread to abort, and take down the
  * whole NaCl app.
  */
-#define NACL_HALT_SLED_SIZE     32
+#define NACL_HALT_SLED_SIZE      32
 
-#define NACL_USERRET_FIX        (0x8)
-#define NACL_SYSARGS_FIX        (-0x18)
-#define NACL_SYSCALLRET_FIX     (0x10)
+#define NACL_USERRET_FIX         (0x8)
+#define NACL_SYSARGS_FIX         (-0x18)
+#define NACL_SYSCALLRET_FIX      (0x10)
 /*
  * System V Application Binary Interface, AMD64 Architecture Processor
  * Supplement, at http://www.x86-64.org/documentation/abi.pdf, section
@@ -127,14 +126,14 @@
  * d'b: since zerovm gave up the command line and environment support
  * the user stack has now constant content 56 bytes long
  */
-#define STACK_USER_DATA_SIZE 56
+#define STACK_USER_DATA_SIZE     56
 
 /* d'b: macro definitions for the user space allocation */
 #define FOURGIG     (((size_t) 1) << 32)
 #define GUARDSIZE   (10 * FOURGIG)
-#define R15_CONST   ((void*)0x440000000000) /* d'b: base address to mmap to */
-#define RELATIVE_MMAP (MAP_ANONYMOUS | MAP_NORESERVE | MAP_PRIVATE) /* d'b */
-#define ABSOLUTE_MMAP (RELATIVE_MMAP | MAP_FIXED) /* d'b */
+#define R15_CONST   ((void*)0x440000000000)
+#define RELATIVE_MMAP (MAP_ANONYMOUS | MAP_NORESERVE | MAP_PRIVATE)
+#define ABSOLUTE_MMAP (RELATIVE_MMAP | MAP_FIXED)
 #define START_OF_USER_SPACE ((uintptr_t)R15_CONST)
 #define END_OF_USER_SPACE (START_OF_USER_SPACE + FOURGIG + 2 * GUARDSIZE)
 #define LEAST_USER_HEAP_SIZE (8*1024*1024)

@@ -46,10 +46,10 @@ EXTERN_C_BEGIN
 /* develop fix for verbosity level names */
 #undef LOG_DEBUG
 
-#define LOG_INSANE  (3) /* shows everything, slows down logging */
-#define LOG_DEBUG   (2) /* shows calls history */
-#define LOG_ERROR   (1) /* mandatory message */
-#define LOG_FATAL   (0) /* for completeness. not used */
+#define LOG_INSANE 3 /* shows everything, slows down logging */
+#define LOG_DEBUG  2 /* shows calls history */
+#define LOG_ERROR  1 /* mandatory message */
+#define LOG_FATAL  0 /* for completeness. not used */
 
 /* initialize syslog with verbosity */
 void ZLogCtor(int v);

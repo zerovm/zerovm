@@ -26,7 +26,7 @@
  * The nacl_signal module provides a platform independent mechanism for
  * trapping signals encountered while running a Native Client executable.
  * Signal handlers can be installed which will receive a POSIX signal number
- * and a platform dependent signal object.  Accessors are provided to convert
+ * and a platform dependent signal object. Accessors are provided to convert
  * to and from architecture dependent CPU state structures.
  */
 

@@ -19,10 +19,7 @@
 #ifndef MANIFEST_H__
 #define MANIFEST_H__ 1
 
-#include <glib.h>
-#include <stdint.h>
 #include "api/zvm.h"
-#include "src/main/tools.h"
 #include "src/loader/sel_ldr.h"
 
 EXTERN_C_BEGIN

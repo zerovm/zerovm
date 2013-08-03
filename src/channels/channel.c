@@ -18,11 +18,8 @@
 
 #include <assert.h>
 #include <glib.h>
-#include "src/main/etag.h"
 #include "src/loader/sel_ldr.h"
-#include "src/main/setup.h"
 #include "src/main/report.h"
-#include "src/main/manifest.h"
 #include "src/channels/preload.h"
 #include "src/channels/prefetch.h"
 #include "src/channels/nservice.h"

@@ -20,11 +20,7 @@
 #include <assert.h>
 #include <arpa/inet.h> /* convert ip <-> int */
 #include <zmq.h>
-#include "src/main/manifest.h"
-#include "src/main/report.h"
 #include "src/channels/prefetch.h"
-#include "src/main/etag.h"
-#include "src/channels/channel.h"
 
 #define LOWEST_AVAILABLE_PORT 49152
 #define NET_BUFFER_SIZE 0x10000

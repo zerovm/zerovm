@@ -17,11 +17,8 @@
  */
 
 #include <assert.h>
-#include <errno.h>
-#include <glib.h>
 #include "src/loader/sel_ldr.h"
 #include "src/main/accounting.h"
-#include "src/main/setup.h"
 #include "src/channels/channel.h"
 
 /* accounting folder name */

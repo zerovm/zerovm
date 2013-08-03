@@ -22,12 +22,7 @@
 /*
  * NaCl service run-time.
  */
-#include <assert.h>
-#include <errno.h>
 #include "src/syscalls/switch_to_app.h"
-#include "src/loader/sel_ldr.h"
-#include "src/loader/sel_rt.h"
-#include "src/main/setup.h"
 #include "src/syscalls/trap.h"
 
 /* serve trap invoked from the untrusted code */
@@ -86,5 +81,5 @@ NORETURN void SyscallHook()
 
   /* d'b: give control to the nexe */
   SwitchToApp(nap, user_ret);
-  assert(0); /* NOTREACHED */
+  ZLOGFAIL(1, EFAULT, "the unreachable has been reached");
 }

@@ -25,7 +25,6 @@
 #ifndef GIO_H_
 #define GIO_H_
 
-#include <stdarg.h>
 #include <stdio.h>
 #include "src/main/tools.h"
 

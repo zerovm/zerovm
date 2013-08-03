@@ -27,8 +27,6 @@
 #define SWITCH_TO_APP_H__ 1
 
 #include "src/loader/sel_ldr.h"
-#include "src/loader/sel_rt.h"
-/* get nacl_reg_t */
 
 EXTERN_C_BEGIN
 

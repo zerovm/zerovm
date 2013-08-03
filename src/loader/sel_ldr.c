@@ -24,12 +24,12 @@
  */
 #include <sys/mman.h>
 #include <assert.h>
-#include "src/main/zlog.h"
-#include "src/platform/gio.h"
 #include "src/loader/sel_ldr.h"
 #include "src/loader/sel_addrspace.h"
 #include "src/platform/sel_memory.h"
 #include "src/loader/tramp.h"
+
+#define THUNK_ADDR ((void*)0x5AFECA110000)
 
 /*
  * target is an absolute address in the source region.  the patch code

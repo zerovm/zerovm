@@ -24,9 +24,7 @@
  * todo(d'b): since zvm only works on linux x86 64 the wrappers bellow
  * useless. remove whole class.
  */
-#include <errno.h>
 #include <sys/mman.h>
-#include <stdio.h>
 #include "src/main/zlog.h"
 
 int NaCl_page_alloc_intern_flags(void **p, size_t size, int map_flags)

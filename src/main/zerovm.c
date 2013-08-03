@@ -23,19 +23,13 @@
  */
 
 #include <assert.h>
-#include <errno.h>
-#include <glib.h>
-#include "src/platform/gio.h"
-#include "src/loader/sel_ldr.h"
 #include "src/platform/signal.h"
-#include "src/main/etag.h"
-#include "src/main/manifest.h"
 #include "src/main/setup.h"
 #include "src/main/report.h"
 #include "src/platform/qualify.h"
 #include "src/main/accounting.h"
 #include "src/platform/nacl_macros.h"
-#include "src/channels/preload.h" /* for PreloadAllocationDisable() */
+#include "src/channels/preload.h"
 
 #define BADCMDLINE(msg) \
   do { \

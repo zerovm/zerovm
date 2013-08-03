@@ -14,15 +14,11 @@
  * limitations under the License.
  */
 
-#include <errno.h>
 #include <assert.h>
-#include <glib.h>
 #include <sys/mman.h>
 #include "src/main/report.h"
-#include "src/loader/sel_ldr.h"
 #include "src/platform/signal.h"
 #include "src/main/accounting.h"
-#include "src/main/etag.h"
 #include "src/channels/channel.h"
 
 static int zvm_code = 0;

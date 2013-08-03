@@ -25,13 +25,8 @@
 /*
  * manifest parser. input: manifest file name. output: manifest structure
  */
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <errno.h>
 #include <assert.h>
 #include <arpa/inet.h> /* convert ip to int */
-#include "src/main/zlog.h"
 #include "src/main/manifest.h"
 #include "src/channels/channel.h"
 

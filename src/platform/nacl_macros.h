@@ -21,12 +21,11 @@
 
 /*
  * NaCl Safety Macro Definitions
- * todo(d'b): join with tools.h
+ * todo(d'b): clean and join with tools.h
  */
 #ifndef NACL_MACROS_H_
 #define NACL_MACROS_H_ 1
 
-#include <stdio.h>
 #include <stdlib.h>
 #include "src/main/tools.h"
 

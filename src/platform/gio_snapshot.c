@@ -23,11 +23,7 @@
  * NaCl Generic I/O interface implementation: in-memory snapshot of a file.
  */
 
-#include <sys/stat.h>
-#include <glib.h>
 #include "src/platform/gio.h"
-#include "src/main/zlog.h"
-#include "src/main/tools.h"
 
 struct GioVtbl const  kGioMemoryFileSnapshotVtbl = {
   GioMemoryFileRead,

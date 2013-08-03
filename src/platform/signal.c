@@ -19,16 +19,14 @@
  * limitations under the License.
  */
 
-#include <errno.h>
 #include <assert.h>
-#include <signal.h>
 #include <sys/mman.h>
 #include "src/platform/signal.h"
 #include "src/main/report.h"
 #include "src/loader/sel_ldr.h"
 
 /*
- * This module is based on the Posix signal model.  See:
+ * This module is based on the Posix signal model. See:
  * http://www.opengroup.org/onlinepubs/009695399/functions/sigaction.html
  */
 

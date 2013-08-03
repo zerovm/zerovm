@@ -22,8 +22,6 @@
 /*
  * NaCl Generic I/O interface implementation: memory buffer-based I/O.
  */
-#include <string.h>
-#include <errno.h>
 #include "src/platform/gio.h"
 
 /*
