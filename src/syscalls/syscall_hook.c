@@ -20,7 +20,7 @@
  */
 
 /*
- * NaCl service run-time.
+ * restore trusted context and call trap()
  */
 #include "src/syscalls/switch_to_app.h"
 #include "src/syscalls/trap.h"
@@ -47,7 +47,8 @@ NORETURN void SyscallHook()
    * trampoline slot
    */
   tramp_ret = *(uintptr_t *)sp_sys;
-  sysnum = (tramp_ret - (nap->mem_start + NACL_SYSCALL_START_ADDR)) >> NACL_SYSCALL_BLOCK_SHIFT;
+  sysnum = (tramp_ret - (nap->mem_start + NACL_SYSCALL_START_ADDR))
+      >> NACL_SYSCALL_BLOCK_SHIFT;
 
   /*
    * getting user return address (the address where we need to return after
@@ -65,7 +66,7 @@ NORETURN void SyscallHook()
   SetThreadCtxSp(user, sp_user);
 
   /* fail if nacl syscall received */
-  ZLOGFAIL(sysnum != 0, EINVAL, "nacl syscalls not supported (#%d received)", sysnum);
+  ZLOGFAIL(sysnum != 0, EINVAL, "nacl syscall #%d received", sysnum);
 
   /*
    * syscall_args must point to the first argument of a system call.

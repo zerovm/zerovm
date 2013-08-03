@@ -20,8 +20,10 @@
  */
 
 /*
- * NaCl Simple/secure ELF loader (NaCl SEL) memory protection abstractions.
+ * NaCl Simple/secure ELF loader (NaCl SEL) memory protection / allocation
+ * abstractions.
  */
+
 #ifndef SEL_MEMORY_H_
 #define SEL_MEMORY_H_ 1
 

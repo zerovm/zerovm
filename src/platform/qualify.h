@@ -19,7 +19,10 @@
  * limitations under the License.
  */
 
-/* check platform and exit zerovm if check not passed */
+/*
+ * POSIX-specific routines for verifying that Data Execution Prevention is
+ * functional.
+ */
 
 #ifndef QUALIFY_H_
 #define QUALIFY_H_

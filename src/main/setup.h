@@ -1,5 +1,5 @@
 /*
- * manifest setup API, zerovm help screen, useful defines
+ * zerovm help screen, "last line" defense and user manifest serializer
  *
  * Copyright (c) 2012, LiteStack, Inc.
  *
@@ -24,7 +24,7 @@ EXTERN_C_BEGIN
 #include "src/loader/sel_ldr.h"
 
 #define HELP_SCREEN /* update command line switches here */\
-    "\033[1m\033[37mZeroVM\033[0m lightweight VM manager, build 2013-08-02\n"\
+    "\033[1m\033[37mZeroVM\033[0m lightweight VM manager, build 2013-08-03\n"\
     "Usage: <manifest> [-l#] [-v#] [-sFPSQ]\n\n"\
     " -l <gigabytes> file size limit (default 4Gb)\n"\
     " -s skip validation\n"\

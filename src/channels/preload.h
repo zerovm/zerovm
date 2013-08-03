@@ -1,6 +1,5 @@
 /*
  * preload given file to channel
- * note: with this class we make paging engine
  *
  * Copyright (c) 2012, LiteStack, Inc.
  *

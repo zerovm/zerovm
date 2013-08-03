@@ -28,7 +28,7 @@
 #include "src/main/config.h"
 
         /*
-         * This function does not return.  Thus, we need to preserve
+         * This function does not return. Thus, we need to preserve
          * any callee-saved registers.
          */
 

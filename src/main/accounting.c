@@ -1,6 +1,4 @@
 /*
- * accounting of the user resources: local i/o, network i/o, cpu and memory
- *
  * Copyright (c) 2012, LiteStack, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");

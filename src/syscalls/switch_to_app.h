@@ -20,7 +20,7 @@
  */
 
 /*
- * NaCl Service Runtime
+ * NaCl Service Runtime, C-level context switch code.
  */
 
 #ifndef SWITCH_TO_APP_H__

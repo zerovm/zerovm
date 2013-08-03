@@ -1,5 +1,5 @@
 /*
- * manifest_parse.h
+ * zerovm manifest (de)serializer
  *
  * Copyright (c) 2012, LiteStack, Inc.
  *

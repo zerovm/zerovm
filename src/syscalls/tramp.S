@@ -48,7 +48,7 @@
         .globl IDENTIFIER(NaCl_trampoline_code)
 HIDDEN(NaCl_trampoline_code)
 IDENTIFIER(NaCl_trampoline_code):
-        mov $0xdeadbeefcafebabe, %rax
+        mov $0x657a696c6167656c, %rax
         .globl IDENTIFIER(NaCl_trampoline_call_target)
 HIDDEN(NaCl_trampoline_call_target)
 IDENTIFIER(NaCl_trampoline_call_target):
@@ -78,7 +78,7 @@ IDENTIFIER(NaCl_trampoline_code_end):
         .globl IDENTIFIER(NaClDispatchThunk)
 HIDDEN(NaClDispatchThunk)
 IDENTIFIER(NaClDispatchThunk):
-        mov $0xdeadbeefcafebabe, %rax
+        mov $0x736962616e6e6163, %rax
         .globl IDENTIFIER(NaClDispatchThunk_jmp_target)
 HIDDEN(NaClDispatchThunk_jmp_target)
 IDENTIFIER(NaClDispatchThunk_jmp_target):

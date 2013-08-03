@@ -19,14 +19,11 @@
  * limitations under the License.
  */
 
-/*******************************************************************************
- *
- * DO NOT INCLUDE EXCEPT FROM sel_ldr.h and sel_ldr-inl.c
- *
+/*
+ * DO NOT INCLUDE EXCEPT FROM sel_ldr.h
  * THERE CANNOT BE ANY MULTIPLE INCLUSION GUARDS IN ORDER FOR
  * sel_ldr-inl.c TO WORK.
- *
- ******************************************************************************/
+ */
 
 /*
  * Routines to translate addresses between user and "system" or
@@ -46,26 +43,10 @@
  *
  * The non-*Addr* versions abort the program rather than return an
  * error indication.
+ *
+ * 0 is not a good error indicator, since 0 is a valid user address
  */
 
-/*
- * address translation routines.  after a NaClApp is started, the
- * member variables accessed by these routines are read-only, so no
- * locking is needed to use these functions, as long as the NaClApp
- * structure doesn't get destructed/deallocated.
- *
- * the first is used internally when a NULL pointer is okay, typically
- * for address manipulation.
- *
- * the next two are for syscalls to do address translation, e.g., for
- * system calls; -1 indicates an error, so the syscall can return
- * EINVAL or EFAULT or whatever is appropriate.
- *
- * the latter two interfaces are for use everywhere else in the loader
- * / service runtime and will log a fatal error and abort the process
- * when an error is detected.  (0 is not a good error indicator, since
- * 0 is a valid user address.)
- */
 #include "src/main/zlog.h"
 
 /* d'b: no checks, just does the work */
@@ -79,7 +60,6 @@ static INLINE uintptr_t NaClUserToSys(struct NaClApp *nap, uintptr_t uaddr)
 {
   ZLOGFAIL(0 == uaddr || ((uintptr_t) 1U << nap->addr_bits) <= uaddr, EFAULT,
       "uaddr 0x%08lx, addr space %d bits", uaddr, nap->addr_bits);
-
   return uaddr + nap->mem_start;
 }
 
@@ -97,10 +77,8 @@ static INLINE uintptr_t NaClEndOfStaticText(struct NaClApp *nap)
   return nap->static_text_end;
 }
 
-static INLINE uintptr_t NaClSandboxCodeAddr(struct NaClApp *nap,
-                                            uintptr_t addr)
+static INLINE uintptr_t NaClSandboxCodeAddr(struct NaClApp *nap, uintptr_t addr)
 {
   return (((addr & ~(((uintptr_t)NACL_INSTR_BLOCK_SIZE) - 1))
-           & ((((uintptr_t) 1) << 32) - 1))
-          + nap->mem_start);
+           & ((((uintptr_t) 1) << 32) - 1)) + nap->mem_start);
 }

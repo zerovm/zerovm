@@ -1,4 +1,6 @@
 /*
+ * finalizer, report and exit
+ *
  * Copyright (c) 2012, LiteStack, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,10 +16,6 @@
  * limitations under the License.
  */
 
-/*
- * This module implements a platform specific exit and abort, to terminate
- * the process as quickly as possible when an exception is detected.
- */
 #ifndef EXIT_H_
 #define EXIT_H_ 1
 

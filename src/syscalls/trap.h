@@ -1,5 +1,5 @@
 /*
- * trap.h
+ * "single syscall" engine. this is the replacement for nacl multiple syscalls
  *
  * Copyright (c) 2012, LiteStack, Inc.
  *
@@ -22,8 +22,6 @@
 EXTERN_C_BEGIN
 
 /*
- * single syscall allowed in zerovm. all service available via trap functions
- *
  * 1st parameter is a pointer to the command (function, arg1, argv2,..)
  * 2nd parameter is a pointer to return value(s)
  * return 0 if successful, otherwise -errno

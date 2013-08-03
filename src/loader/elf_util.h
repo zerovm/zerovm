@@ -18,6 +18,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/*
+ * NaCl helper functions to deal with elf images
+ */
 
 #ifndef ELF_UTIL_H_
 #define ELF_UTIL_H_ 1

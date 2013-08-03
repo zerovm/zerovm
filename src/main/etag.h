@@ -1,5 +1,6 @@
 /*
- * etag engine api
+ * routines to calculate hashes. should be constructed from the command
+ * line parser
  *
  * Copyright (c) 2012, LiteStack, Inc.
  *

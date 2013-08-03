@@ -19,9 +19,6 @@
  * limitations under the License.
  */
 
-/*
- * NaCl Simple/secure ELF loader (NaCl SEL).
- */
 #include <assert.h>
 #include <sys/mman.h>
 #include "src/loader/elf_util.h"

@@ -19,11 +19,6 @@
  * limitations under the License.
  */
 
-/*
- * POSIX-specific routines for verifying that Data Execution Prevention is
- * functional.
- */
-
 #include <setjmp.h>
 #include <stdint.h>
 #include "src/main/zlog.h"

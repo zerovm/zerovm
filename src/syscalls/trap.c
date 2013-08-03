@@ -1,9 +1,4 @@
 /*
- * "single syscall" engine
- * this is the replacement for nacl multiple syscalls. however hypervisor
- * still uses trampoline engine to translate invocations to system from
- * the user space
- *
  * Copyright (c) 2012, LiteStack, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");

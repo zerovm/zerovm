@@ -1,6 +1,4 @@
 /*
- * zerovm manifest parser
- *
  * the manifest file format: key = value. parser ignores white spaces
  * each line can only contain single key=value
  *

@@ -19,9 +19,6 @@
  * limitations under the License.
  */
 
-/*
- * NaCl helper functions to deal with elf images
- */
 #include "src/platform/nacl_macros.h"
 #include "src/loader/elf.h"
 #include "src/loader/elf_util.h"
