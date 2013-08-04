@@ -25,15 +25,14 @@ EXTERN_C_BEGIN
 
 #define HELP_SCREEN /* update command line switches here */\
     "\033[1m\033[37mZeroVM\033[0m lightweight VM manager, build 2013-08-04\n"\
-    "Usage: <manifest> [-l#] [-v#] [-stFPSQ]\n\n"\
+    "Usage: <manifest> [-l#] [-v#] [-stFPQ]\n\n"\
     " -l <gigabytes> file size limit (default 4Gb)\n"\
     " -s skip validation\n"\
-    " -t do not show report\n"\
+    " -t report to log instead of stdout\n"\
     " -v <0..3> log verbosity (default 0)\n"\
     " -F quit right before starting user session\n"\
     " -P disable channels space preallocation\n"\
-    " -Q disable platform qualification\n"\
-    " -S disable signal handling\n"
+    " -Q disable platform qualification\n"
 
 #define ZEROVM_PRIORITY 19
 #define ZEROVM_IO_LIMIT_UNIT 0x40000000l /* 1gb */

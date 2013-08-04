@@ -65,7 +65,7 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
   /* construct zlog with default verbosity */
   ZLogCtor(LOG_ERROR);
 
-  while((opt = getopt(argc, argv, "-PFQsStv:M:l:")) != -1)
+  while((opt = getopt(argc, argv, "-PFQstv:M:l:")) != -1)
   {
     switch(opt)
     {
@@ -84,15 +84,6 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
         break;
       case 't':
         HideReport();
-        break;
-      case 'S':
-        /*
-         * todo(d'b): this one can fail w/o showing help. fix it! or,
-         * even better, remove it. zerovm always need to show report,
-         * and therefore always should catch signals
-         */
-        SetSignalHandling(0);
-        ZLOGS(LOG_ERROR, "SIGNAL HANDLING DISABLED");
         break;
       case 'l':
         /* calculate hard limit in Gb and don't allow it less then "big enough" */

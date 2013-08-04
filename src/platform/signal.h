@@ -49,9 +49,6 @@ enum SignalResult {
  */
 typedef enum SignalResult (*SignalHandler)(int sig_num, void *ctx);
 
-/* with 0 signals handling is disabled */
-void SetSignalHandling(int support_signals);
-
 /*
  * Register process-wide signal handlers.
  */

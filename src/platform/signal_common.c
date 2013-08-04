@@ -69,7 +69,6 @@ struct SignalContext {
 static struct SignalNode *s_FirstHandler = NULL;
 static struct SignalNode *s_FreeList = NULL;
 static struct SignalNode s_SignalNodes[MAX_HANDLERS];
-static int handle_signals = 1;
 
 /*
  * Return non-zero if the signal context is currently executing in an
@@ -199,17 +198,9 @@ enum SignalResult SignalHandlerFind(int signal, void *ctx)
   return result;
 }
 
-void SetSignalHandling(int a)
-{
-  handle_signals = a;
-}
-
 void SignalHandlerInit()
 {
   int a;
-
-  /* return if signals handling is not enabled */
-  if(!handle_signals) return;
 
   /* Build the free list */
   for(a = 0; a < MAX_HANDLERS; a++)
@@ -225,11 +216,9 @@ void SignalHandlerInit()
   SignalHandlerAdd(SignalHandleAll);
 }
 
+/* We try to lock, but since we are shutting down, we ignore failures */
 void SignalHandlerFini()
 {
-  /* return if signals handling is not enabled */
-  if(!handle_signals) return;
 
-  /* We try to lock, but since we are shutting down, we ignore failures. */
   SignalHandlerFiniPlatform();
 }
