@@ -108,26 +108,6 @@ struct Manifest *ManifestCtor(const char *name);
  */
 void ManifestDtor(struct Manifest *manifest);
 
-/*
- * serialize manifest to user space. the target address
- * and size isn't known but it is known that the data should
- * be placed right before the user stack. therefore the function
- * returns the pointer and size of created user manifest
- * todo: implement it
- */
-void UserManifest(struct Manifest *manifest);
-
-/*
- * serialize to snapshot
- * todo: implement it
- */
-void Freeze(struct Manifest *manifest);
-
-/*
- * de-serialize from snapshot
- * todo: implement it
- */
-void UnFreeze(struct Manifest *manifest);
 EXTERN_C_END
 
 #endif

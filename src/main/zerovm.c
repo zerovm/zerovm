@@ -65,7 +65,7 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
   /* construct zlog with default verbosity */
   ZLogCtor(LOG_ERROR);
 
-  while((opt = getopt(argc, argv, "-PFQsSv:M:l:")) != -1)
+  while((opt = getopt(argc, argv, "-PFQsStv:M:l:")) != -1)
   {
     switch(opt)
     {
@@ -81,6 +81,9 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
         break;
       case 'F':
         quit_after_load = 1;
+        break;
+      case 't':
+        HideReport();
         break;
       case 'S':
         /*

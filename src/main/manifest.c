@@ -420,15 +420,3 @@ void ManifestDtor(struct Manifest *manifest)
   g_free(manifest->program);
   g_free(manifest);
 }
-
-void UserManifest(struct Manifest *manifest)
-{
-}
-
-void Freeze(struct Manifest *manifest)
-{
-}
-
-void UnFreeze(struct Manifest *manifest)
-{
-}

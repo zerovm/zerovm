@@ -40,6 +40,9 @@
 
 EXTERN_C_BEGIN
 
+/* put report to syslog instead of stdout */
+void HideReport();
+
 /* set the text for "exit state" in report */
 void SetExitState(const char *state);
 

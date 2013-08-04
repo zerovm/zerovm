@@ -24,10 +24,11 @@ EXTERN_C_BEGIN
 #include "src/loader/sel_ldr.h"
 
 #define HELP_SCREEN /* update command line switches here */\
-    "\033[1m\033[37mZeroVM\033[0m lightweight VM manager, build 2013-08-03\n"\
-    "Usage: <manifest> [-l#] [-v#] [-sFPSQ]\n\n"\
+    "\033[1m\033[37mZeroVM\033[0m lightweight VM manager, build 2013-08-04\n"\
+    "Usage: <manifest> [-l#] [-v#] [-stFPSQ]\n\n"\
     " -l <gigabytes> file size limit (default 4Gb)\n"\
     " -s skip validation\n"\
+    " -t do not show report\n"\
     " -v <0..3> log verbosity (default 0)\n"\
     " -F quit right before starting user session\n"\
     " -P disable channels space preallocation\n"\
@@ -36,7 +37,7 @@ EXTERN_C_BEGIN
 
 #define ZEROVM_PRIORITY 19
 #define ZEROVM_IO_LIMIT_UNIT 0x40000000l /* 1gb */
-#define ZEROVM_IO_LIMIT 4*ZEROVM_IO_LIMIT_UNIT /* 4gb */
+#define ZEROVM_IO_LIMIT 4 * ZEROVM_IO_LIMIT_UNIT /* 4gb */
 #define LARGEST_NEXE ZEROVM_IO_LIMIT_UNIT
 
 /* validator function from libvalidator.so */

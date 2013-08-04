@@ -26,6 +26,12 @@ static int user_code = 0;
 static int validation_state = 0;
 static const char *zvm_state = UNKNOWN_STATE;
 static GString *digests = NULL; /* cumulative etags */
+static int hide_report = 0; /* if not 0 report to syslog */
+
+void HideReport()
+{
+  hide_report = 1;
+}
 
 void SetExitState(const char *state)
 {
@@ -147,10 +153,11 @@ void ReportCtor()
 static void Report(struct NaClApp *nap)
 {
   GString *report = g_string_sized_new(BIG_ENOUGH_STRING);
+  char *eol = hide_report ? "; " : "\n";
 
   /* report validator state and user return code */
-  g_string_append_printf(report, "%s%d\n", REPORT_VALIDATOR, GetValidationState());
-  g_string_append_printf(report, "%s%d\n", REPORT_RETCODE, GetUserCode());
+  g_string_append_printf(report, "%s%d%s", REPORT_VALIDATOR, GetValidationState(), eol);
+  g_string_append_printf(report, "%s%d%s", REPORT_RETCODE, GetUserCode(), eol);
 
   /* add memory digest to cumulative digests if asked */
   if(nap != NULL && nap->manifest != NULL)
@@ -161,15 +168,19 @@ static void Report(struct NaClApp *nap)
   g_string_append_printf(report, "%s", REPORT_ETAG);
   g_string_append_printf(report, "%s", digests->len == 0
       ? TAG_ENGINE_DISABLED : digests->str);
-  g_strchomp(report->str);
+  g_string_truncate(report, report->len - 1);
 
   /* report accounting and session message */
-  g_string_append_printf(report, "\n%s%s\n", REPORT_ACCOUNTING, GetAccountingInfo());
-  g_string_append_printf(report, "%s%s\n", REPORT_STATE, GetExitState());
+  g_string_append_printf(report, "%s%s%s%s", eol, REPORT_ACCOUNTING, GetAccountingInfo(), eol);
+  g_string_append_printf(report, "%s%s%s", REPORT_STATE, GetExitState(), eol);
 
-  /* output report and free resources */
-  ZLOGIF(write(STDOUT_FILENO, report->str, report->len) != report->len,
-      "report write error %d: %s", errno, strerror(errno));
+  /* output report */
+  if(hide_report)
+    ZLOGS(LOG_ERROR, "%s", report->str);
+  else
+    ZLOGIF(write(STDOUT_FILENO, report->str, report->len) != report->len,
+        "report write error %d: %s", errno, strerror(errno));
+
   g_string_free(report, TRUE);
   g_string_free(digests, TRUE);
 }
