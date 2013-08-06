@@ -41,7 +41,6 @@
 #define VALUE_DELIMITER ","
 #define TOKEN_DELIMITER ";"
 #define CONNECTION_DELIMITER ":"
-#define PATH_DELIMITER "/"
 
 #define XARRAY(a) static char *ARRAY_##a[] = {a};
 #define X(a) #a,
@@ -247,8 +246,9 @@ static void ParseName(char *name, GPtrArray *names)
   {
     struct File *f;
     ZLOGFAIL(tokens[1] != NULL, EFAULT, "invalid channel name");
-    ZLOGFAIL(!g_str_has_prefix(name, PATH_DELIMITER), EFAULT,
-        "only absolute path channels allowed");
+    ZLOGFAIL(!g_path_is_absolute(name), EFAULT,
+        "only absolute path channels are allowed");
+
 
     f = g_malloc0(sizeof *f);
     f->protocol = ProtoRegular; /* just in case (will be set later) */
