@@ -21,17 +21,14 @@
 #define ETAG_H_
 
 #include <stdint.h>
+#include <glib.h>
 
-#if TAG_ENCRYPTION == G_CHECKSUM_MD5
-#define TAG_DIGEST_SIZE 32
-#elif TAG_ENCRYPTION == G_CHECKSUM_SHA1
-#define TAG_DIGEST_SIZE 40
-#elif TAG_ENCRYPTION == G_CHECKSUM_SHA256
-#define TAG_DIGEST_SIZE 64
-#else
-#error "unknown encryption type for TAG_ENCRYPTION"
-#endif
+/* compile time check if TAG_ENCRYPTION is specified and has sane value */
+typedef char _1[TAG_ENCRYPTION];
+typedef int _2[-(sizeof(_1) > G_CHECKSUM_SHA256)];
 
+/* glib instead of macro have function returning digest size */
+#define TAG_DIGEST_SIZE (8 * sizeof(_1) * sizeof(_1) + 32)
 #define TAG_ENGINE_DISABLED "disabled"
 
 /*
