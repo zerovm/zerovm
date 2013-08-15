@@ -315,7 +315,7 @@ void PrefetchChannelDtor(struct ChannelDesc *channel, int n)
 
   /* log parameters and channel internals */
   MakeURL(channel, n, url, BIG_ENOUGH_STRING);
-  ZLOGS(LOG_DEBUG, "%s has url %s", channel->alias, url);
+  ZLOGS(LOG_DEBUG, "closing %s with url %s", channel->alias, url);
 
   /* "eof" mounted source if session is not broken */
   if(channel->msg != NULL && CH_HANDLE(channel, n) != NULL)
@@ -361,8 +361,8 @@ void PrefetchChannelDtor(struct ChannelDesc *channel, int n)
     }
   }
 
-  /* free message */
-  if(channel->msg != NULL)
+  /* free message only when the last source reached */
+  if(channel->msg != NULL && channel->source->len - n == 1)
   {
     zmq_msg_close(channel->msg);
     g_free(channel->msg);
