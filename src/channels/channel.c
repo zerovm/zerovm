@@ -87,7 +87,7 @@ int32_t ChannelRead(struct ChannelDesc *channel,
       case ProtoTCP:
         /* todo: FetchMessage doesn't return -1 in case of error. fix it */
         net_channel = 1;
-        result = FetchMessage(channel, n, b[n], size);
+        result = FetchData(channel, n, b[n], size);
         if(result == -1) result = -EIO;
 
         /*
@@ -177,7 +177,7 @@ int32_t ChannelWrite(struct ChannelDesc *channel,
         if(result == -1) result = -errno;
         break;
       case ProtoTCP:
-        result = SendMessage(channel, n, buffer, size);
+        result = SendData(channel, n, buffer, size);
         if(result == -1) result = -EIO;
         break;
       default: /* design error */
@@ -337,7 +337,8 @@ void ChannelsCtor(struct Manifest *manifest)
   g_ptr_array_sort(manifest->channels, (GCompareFunc)OrderUser);
 
   /* check if all standard channels are specified */
-  ZLOGFAIL(g_strcmp0(CH_CH(manifest, STDERR_FILENO)->alias, STDERR),
+  ZLOGFAIL(manifest->channels->len <= STDERR_FILENO
+      || g_strcmp0(CH_CH(manifest, STDERR_FILENO)->alias, STDERR),
       EFAULT, "missing standard channels in manifest");
 
   ResetAliases();

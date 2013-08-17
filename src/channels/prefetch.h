@@ -44,12 +44,12 @@ void PrefetchChannelDtor(struct ChannelDesc *channel, int n);
  * fetch the data from the network channel
  * return number of received bytes or negative error code
  */
-int32_t FetchMessage(struct ChannelDesc *channel, int n, char *buf, int32_t count);
+int32_t FetchData(struct ChannelDesc *channel, int n, char *buf, int32_t count);
 
 /*
  * send the data to the network channel
  * return number of sent bytes or negative error code
  */
-int32_t SendMessage(struct ChannelDesc *channel, int n, const char *buf, int32_t count);
+int32_t SendData(struct ChannelDesc *channel, int n, const char *buf, int32_t count);
 
 #endif /* PREFETCH_H_ */
