@@ -271,6 +271,12 @@ static int OrderMount(const struct ChannelDesc **a, const struct ChannelDesc **b
   return 0; /* local sources does not matter */
 }
 
+/* order channels to dismounting sequence ("connects" before "binds") */
+static int OrderDismount(const struct ChannelDesc **a, const struct ChannelDesc **b)
+{
+  return OrderMount(b, a);
+}
+
 /*
  * order channels for user manifest
  * 1st 3 channels should be stdin, stdout, stderr
@@ -358,6 +364,8 @@ void ChannelsDtor(struct Manifest *manifest)
   /* exit if channels are not constructed */
   if(manifest == NULL || manifest->channels == NULL) return;
 
+  /* reverse the sort order and close channels */
+  g_ptr_array_sort(manifest->channels, (GCompareFunc)OrderDismount);
   for(i = 0; i < manifest->channels->len; ++i)
   {
     struct ChannelDesc *channel = CH_CH(manifest, i);
