@@ -30,6 +30,7 @@
 #include "src/main/accounting.h"
 #include "src/platform/nacl_macros.h"
 #include "src/channels/preload.h"
+#include "src/main/snapshot.h"
 
 #define BADCMDLINE(msg) \
   do { \
@@ -76,6 +77,7 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
         manifest_name = optarg;
         break;
       case 's':
+        SetValidationState(2);
         skip_validator = 1;
         ZLOGS(LOG_ERROR, "VALIDATION DISABLED");
         break;
@@ -116,10 +118,11 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
   nap->manifest = ManifestCtor(manifest_name);
 
   /* set available nap and manifest fields */
-  ZLOGFAIL(nap->manifest->program == NULL, EFAULT, "program not specified");
-  nexe_size = GetFileSize(nap->manifest->program);
+  ZLOGFAIL(nap->manifest->load == NULL, EFAULT, "file to load not specified");
+  nexe_size = GetFileSize(nap->manifest->load);
   ZLOGFAIL(nexe_size < 0, ENOENT, "nexe open error");
-  ZLOGFAIL(nexe_size == 0 || nexe_size > LARGEST_NEXE, ENOENT, "too large program");
+  ZLOGFAIL(nexe_size == 0 || nexe_size > LARGEST_NEXE,
+      ENOENT, "too large file to load");
 }
 
 static void ValidateNexe(struct NaClApp *nap)
@@ -132,13 +135,6 @@ static void ValidateNexe(struct NaClApp *nap)
 
   assert((nap->static_text_end | nap->dynamic_text_start
       | nap->dynamic_text_end | nap->mem_start) > 0);
-
-  /* skip validation if specified */
-  if(skip_validator)
-  {
-    SetValidationState(2);
-    return;
-  }
 
   /* static and dynamic text address / length */
   static_size = nap->static_text_end -
@@ -159,6 +155,13 @@ static void ValidateNexe(struct NaClApp *nap)
   SetValidationState(0);
 }
 
+#define TIMER_REPORT(msg) \
+  do {\
+    ZLOGS(LOG_DEBUG, "...TIMER: %s took %.3f milliseconds", msg,\
+        g_timer_elapsed(timer, NULL) * MICROS_PER_MILLI);\
+    g_timer_start(timer);\
+  } while(0)
+
 int main(int argc, char **argv)
 {
   struct NaClApp state = {0}, *nap = &state;
@@ -175,33 +178,29 @@ int main(int argc, char **argv)
   if(skip_qualification == 0) RunSelQualificationTests();
   SignalHandlerInit();
 
-  /* read nexe into memory */
+  /* read "file to load" into memory */
   timer = g_timer_new();
-  ZLOGFAIL(0 == GioMemoryFileSnapshotCtor(&main_file, nap->manifest->program),
-      ENOENT, "Cannot open '%s'. %s", nap->manifest->program, strerror(errno));
+  ZLOGFAIL(0 == GioMemoryFileSnapshotCtor(&main_file, nap->manifest->load),
+      ENOENT, "Cannot open '%s'. %s", nap->manifest->load, strerror(errno));
+  TIMER_REPORT("memory snapshot construction");
 
-#define TIMER_REPORT(msg) \
-  do {\
-    ZLOGS(LOG_DEBUG, "...TIMER: %s took %.3f milliseconds", msg,\
-        g_timer_elapsed(timer, NULL) * MICROS_PER_MILLI);\
-    g_timer_start(timer);\
-  } while(0)
-
-  TIMER_REPORT("constructing of memory snapshot");
-
-  /* validate nexe structure (check elf header and segments) */
-  ZLOGS(LOG_DEBUG, "Loading %s", nap->manifest->program);
-  AppLoadFile((struct Gio *) &main_file, nap);
-  TIMER_REPORT("loading user module");
+  /* load session image or elf */
+  ZLOGS(LOG_DEBUG, "Loading %s", nap->manifest->load);
+  if(IsSessionImage((struct Gio *)&main_file) == 0)
+    LoadSession((struct Gio *)&main_file, nap);
+  else
+    /* validate elf structure (check header and segments) */
+    AppLoadFile((struct Gio *)&main_file, nap);
+  TIMER_REPORT("user module loading");
 
   /* validate given nexe (ensure that text segment is safe) */
-  ZLOGS(LOG_DEBUG, "Validating %s", nap->manifest->program);
-  ValidateNexe(nap);
-  TIMER_REPORT("validating user module");
+  ZLOGS(LOG_DEBUG, "Validating %s", nap->manifest->load);
+  if(!skip_validator) ValidateNexe(nap);
+  TIMER_REPORT("user module validation");
 
   /* free snapshot */
   if(-1 == (*((struct Gio *)&main_file)->vtbl->Close)((struct Gio *)&main_file))
-    ZLOG(LOG_ERROR, "Error while closing '%s'", nap->manifest->program);
+    ZLOG(LOG_ERROR, "Error while closing '%s'", nap->manifest->load);
   (*((struct Gio *) &main_file)->vtbl->Dtor)((struct Gio *) &main_file);
 
   /* construct and initialize all channels */
