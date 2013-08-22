@@ -30,7 +30,7 @@
 #include "src/main/accounting.h"
 #include "src/platform/nacl_macros.h"
 #include "src/channels/preload.h"
-#include "src/main/snapshot.h"
+//#include "src/main/snapshot.h"
 
 #define BADCMDLINE(msg) \
   do { \
@@ -186,9 +186,9 @@ int main(int argc, char **argv)
 
   /* load session image or elf */
   ZLOGS(LOG_DEBUG, "Loading %s", nap->manifest->load);
-  if(IsSessionImage((struct Gio *)&main_file) == 0)
-    LoadSession((struct Gio *)&main_file, nap);
-  else
+//  if(IsSessionImage((struct Gio *)&main_file) == 0)
+//    LoadSession((struct Gio *)&main_file, nap);
+//  else
     /* validate elf structure (check header and segments) */
     AppLoadFile((struct Gio *)&main_file, nap);
   TIMER_REPORT("user module loading");
