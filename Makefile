@@ -2,7 +2,8 @@ PREFIX ?= /usr/local
 DESTDIR ?=
 FLAGS0=-fPIE -Wall -Wno-long-long -fvisibility=hidden -fstack-protector --param ssp-buffer-size=4
 GLIB=`pkg-config --cflags glib-2.0`
-CCFLAGS0=-c -m64 -fPIC -D_GNU_SOURCE=1 -DTAG_ENCRYPTION=G_CHECKSUM_SHA1 -I. $(GLIB)
+TAG_ENCRYPTION ?= G_CHECKSUM_SHA1
+CCFLAGS0=-c -m64 -fPIC -D_GNU_SOURCE=1 -DTAG_ENCRYPTION=$(TAG_ENCRYPTION) -I. $(GLIB)
 
 CXXFLAGS0=-m64 -Wno-variadic-macros $(GLIB)
 LIBS=-lzmq -lglib-2.0 -lvalidator
