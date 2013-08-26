@@ -7,6 +7,11 @@
 
 #define SEQRO "/dev/seqro"
 
+/* TODO: replace it by the right include */
+#define EINVAL 22
+
+const char* target = "It is the read only target for the read";
+
 int main(int argc, char **argv)
 {
   char buf[BIG_ENOUGH];
@@ -27,6 +32,19 @@ int main(int argc, char **argv)
   ZTEST(PREAD(SEQRO, NULL, 1, 0) < 0);
   ZTEST(PREAD(SEQRO, NULL, 1, MANIFEST->channels[OPEN(SEQRO)].size - 1) < 0);
   ZTEST(PREAD(SEQRO, NULL, 0, -1) < 0);
+
+  /* incorrect requests: read only buffer */
+  ZTEST(PREAD(SEQRO, target, 0, 0) == -EINVAL);
+  ZTEST(PREAD(SEQRO, target, 0, 1) == -EINVAL);
+  ZTEST(PREAD(SEQRO, target, 1, 0) == -EINVAL);
+  ZTEST(PREAD(SEQRO, target, 1,
+              MANIFEST->channels[OPEN(SEQRO)].size - 1) == -EINVAL);
+  ZTEST(PREAD(SEQRO, target, 0, -1) == -EINVAL);
+
+  /* incorrect requests: read only memory: MANIFEST */
+  ZTEST(PREAD(SEQRO, MANIFEST->channels[OPEN(SEQRO)].name, 0, 0) == -EINVAL);
+  ZTEST(PREAD(SEQRO, MANIFEST->channels[OPEN(SEQRO)].name, 0, 1) == -EINVAL);
+  ZTEST(PREAD(SEQRO, MANIFEST->channels[OPEN(SEQRO)].name, 1, 0) == -EINVAL);
 
   /* incorrect requests: size */
   ZTEST(PREAD(SEQRO, buf, -1, 0) < 0);
