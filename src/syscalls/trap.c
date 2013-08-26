@@ -88,7 +88,7 @@ static int32_t ZVMReadHandle(struct NaClApp *nap,
       channel->alias, (intptr_t)buffer, size, offset);
 
   /* check buffer and convert address */
-  if(CheckRAMAccess(nap, (uintptr_t)buffer, size, PROT_READ) == -1) return -EINVAL;
+  if(CheckRAMAccess(nap, (uintptr_t)buffer, size, PROT_WRITE) == -1) return -EINVAL;
   sys_buffer = (char*)NaClUserToSys(nap, (uintptr_t) buffer);
 
   /* ignore user offset for sequential access read */
