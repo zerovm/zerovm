@@ -38,6 +38,7 @@
   } while(0)
 
 static int skip_qualification = 0;
+static int skip_validation = 0;
 static int quit_after_load = 0;
 
 /* log zerovm command line */
@@ -75,7 +76,7 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
         manifest_name = optarg;
         break;
       case 's':
-        SetValidationState(2);
+        skip_validation = 1;
         ZLOGS(LOG_ERROR, "VALIDATION DISABLED");
         break;
       case 'F':
@@ -185,7 +186,7 @@ int main(int argc, char **argv)
 
   /* validate given nexe (ensure that text segment is safe) */
   ZLOGS(LOG_DEBUG, "Validating %s", nap->manifest->program);
-  if(GetValidationState() != 2) ValidateNexe(nap);
+  if(!skip_validation) ValidateNexe(nap);
   TIMER_REPORT("validating user module");
 
   /* free snapshot */

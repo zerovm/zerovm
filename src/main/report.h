@@ -46,9 +46,6 @@ void HideReport();
 /* set the text for "exit state" in report */
 void SetExitState(const char *state);
 
-/* get the "exit state" message */
-const char *GetExitState();
-
 /* set zerovm exit code */
 void SetExitCode(int code);
 
@@ -58,14 +55,8 @@ int GetExitCode();
 /* set user session exit code */
 void SetUserCode(int code);
 
-/* get user session exit code */
-int GetUserCode();
-
 /* set validation state (0 - passed, 1 - failed, 2 - disabled) */
 void SetValidationState(int state);
-
-/* get validation state */
-int GetValidationState();
 
 /* add tag digest with given name */
 void ReportTag(char *name, void *tag);

@@ -23,7 +23,7 @@
 
 static int zvm_code = 0;
 static int user_code = 0;
-static int validation_state = 0;
+static int validation_state = 2;
 static const char *zvm_state = UNKNOWN_STATE;
 static GString *digests = NULL; /* cumulative etags */
 static int hide_report = 0; /* if not 0 report to syslog */
@@ -37,12 +37,6 @@ void SetExitState(const char *state)
 {
   assert(state != NULL);
   zvm_state = state;
-}
-
-const char *GetExitState()
-{
-  assert(zvm_state != NULL);
-  return zvm_state;
 }
 
 void SetExitCode(int code)
@@ -61,23 +55,13 @@ void SetUserCode(int code)
   user_code = code;
 }
 
-int GetUserCode()
-{
-  return user_code;
-}
-
 void SetValidationState(int state)
 {
   validation_state = state;
 }
 
-int GetValidationState()
-{
-  return validation_state;
-}
-
 /* manage special signals. note: may change zvm_state */
-/* todo(d'b): remove this patch after reworking zvm signals */
+/* todo(d'b): remove the patch after reworking zvm signals */
 static void SpecSignals()
 {
   if(strstr(zvm_state, "Signal 14") != NULL)
@@ -156,8 +140,8 @@ static void Report(struct NaClApp *nap)
   char *eol = hide_report ? "; " : "\n";
 
   /* report validator state and user return code */
-  g_string_append_printf(report, "%s%d%s", REPORT_VALIDATOR, GetValidationState(), eol);
-  g_string_append_printf(report, "%s%d%s", REPORT_RETCODE, GetUserCode(), eol);
+  g_string_append_printf(report, "%s%d%s", REPORT_VALIDATOR, validation_state, eol);
+  g_string_append_printf(report, "%s%d%s", REPORT_RETCODE, user_code, eol);
 
   /* add memory digest to cumulative digests if asked */
   if(nap != NULL && nap->manifest != NULL)
@@ -172,7 +156,7 @@ static void Report(struct NaClApp *nap)
 
   /* report accounting and session message */
   g_string_append_printf(report, "%s%s%s%s", eol, REPORT_ACCOUNTING, GetAccountingInfo(), eol);
-  g_string_append_printf(report, "%s%s%s", REPORT_STATE, GetExitState(), eol);
+  g_string_append_printf(report, "%s%s%s", REPORT_STATE, zvm_state, eol);
 
   /* output report */
   if(hide_report)
