@@ -39,7 +39,6 @@
 
 static int skip_qualification = 0;
 static int quit_after_load = 0;
-static int skip_validator = 0;
 
 /* log zerovm command line */
 static void CommandLine(int argc, char **argv)
@@ -76,7 +75,7 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
         manifest_name = optarg;
         break;
       case 's':
-        skip_validator = 1;
+        SetValidationState(2);
         ZLOGS(LOG_ERROR, "VALIDATION DISABLED");
         break;
       case 'F':
@@ -133,13 +132,6 @@ static void ValidateNexe(struct NaClApp *nap)
   assert((nap->static_text_end | nap->dynamic_text_start
       | nap->dynamic_text_end | nap->mem_start) > 0);
 
-  /* skip validation if specified */
-  if(skip_validator)
-  {
-    SetValidationState(2);
-    return;
-  }
-
   /* static and dynamic text address / length */
   static_size = nap->static_text_end -
       NaClSysToUser(nap, nap->mem_start + NACL_TRAMPOLINE_END);
@@ -159,6 +151,12 @@ static void ValidateNexe(struct NaClApp *nap)
   SetValidationState(0);
 }
 
+#define TIMER_REPORT(msg) \
+  do {\
+    ZLOGS(LOG_DEBUG, "...TIMER: %s took %.3f milliseconds", msg,\
+        g_timer_elapsed(timer, NULL) * MICROS_PER_MILLI);\
+    g_timer_start(timer);\
+  } while(0)
 int main(int argc, char **argv)
 {
   struct NaClApp state = {0}, *nap = &state;
@@ -168,25 +166,16 @@ int main(int argc, char **argv)
   /* initialize globals and set nap fields to default values */
   ReportCtor();
   NaClAppCtor(nap);
-
   ParseCommandLine(nap, argc, argv);
 
   /* We use the signal handler to verify a signal took place. */
   if(skip_qualification == 0) RunSelQualificationTests();
   SignalHandlerInit();
 
-  /* read nexe into memory */
+  /* read elf into memory */
   timer = g_timer_new();
   ZLOGFAIL(0 == GioMemoryFileSnapshotCtor(&main_file, nap->manifest->program),
       ENOENT, "Cannot open '%s'. %s", nap->manifest->program, strerror(errno));
-
-#define TIMER_REPORT(msg) \
-  do {\
-    ZLOGS(LOG_DEBUG, "...TIMER: %s took %.3f milliseconds", msg,\
-        g_timer_elapsed(timer, NULL) * MICROS_PER_MILLI);\
-    g_timer_start(timer);\
-  } while(0)
-
   TIMER_REPORT("constructing of memory snapshot");
 
   /* validate nexe structure (check elf header and segments) */
@@ -196,7 +185,7 @@ int main(int argc, char **argv)
 
   /* validate given nexe (ensure that text segment is safe) */
   ZLOGS(LOG_DEBUG, "Validating %s", nap->manifest->program);
-  ValidateNexe(nap);
+  if(GetValidationState() != 2) ValidateNexe(nap);
   TIMER_REPORT("validating user module");
 
   /* free snapshot */

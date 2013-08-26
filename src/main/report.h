@@ -61,7 +61,7 @@ void SetUserCode(int code);
 /* get user session exit code */
 int GetUserCode();
 
-/* set validation state */
+/* set validation state (0 - passed, 1 - failed, 2 - disabled) */
 void SetValidationState(int state);
 
 /* get validation state */
