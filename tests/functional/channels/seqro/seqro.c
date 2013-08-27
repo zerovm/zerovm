@@ -18,7 +18,7 @@ int main(int argc, char **argv)
 
   /* correct requests */
   FPRINTF(STDERR, "TEST SEQUENTIAL READ ONLY CHANNEL\n");
-  FPRINTF(STDERR, "channel size = %lld\n", MANIFEST->channels[OPEN(SEQRO)].size);
+  FPRINTF(STDERR, "channel size = %ld\n", MANIFEST->channels[OPEN(SEQRO)].size);
   ZTEST(MANIFEST->channels[OPEN(SEQRO)].size == 0);
   ZTEST(PREAD(SEQRO, buf, 0, 0) == 0);
   ZTEST(PREAD(SEQRO, buf, 0, 1) == 0);

@@ -77,7 +77,7 @@ int main(int argc, char **argv)
   ERRCOUNT = 0;
   FPRINTF(STDERR, "TEST STUBBED CDR\n");
   eofpos = MANIFEST->channels[OPEN(STDCDR_STUBBED)].size;
-  FPRINTF(STDERR, "%s size = %lld\n",
+  FPRINTF(STDERR, "%s size = %ld\n",
       MANIFEST->channels[OPEN(STDCDR_STUBBED)].name, eofpos);
   MSG_OK(STDCDR_STUBBED, "01234");
   MSG_OK(STDCDR_STUBBED, "567");

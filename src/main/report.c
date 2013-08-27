@@ -134,14 +134,15 @@ void ReportCtor()
 }
 
 /* part of report class dtor */
+#define REPORT g_string_append_printf
 static void Report(struct NaClApp *nap)
 {
-  GString *report = g_string_sized_new(BIG_ENOUGH_STRING);
+  GString *r = g_string_sized_new(BIG_ENOUGH_STRING);
   char *eol = hide_report ? "; " : "\n";
 
   /* report validator state and user return code */
-  g_string_append_printf(report, "%s%d%s", REPORT_VALIDATOR, validation_state, eol);
-  g_string_append_printf(report, "%s%d%s", REPORT_RETCODE, user_code, eol);
+  REPORT(r, "%s%d%s", REPORT_VALIDATOR, validation_state, eol);
+  REPORT(r, "%s%d%s", REPORT_RETCODE, user_code, eol);
 
   /* add memory digest to cumulative digests if asked */
   if(nap != NULL && nap->manifest != NULL)
@@ -149,23 +150,23 @@ static void Report(struct NaClApp *nap)
       ReportTag(STDRAM, GetMemoryDigest(nap));
 
   /* report tags digests and remove ending " " if exist */
-  g_string_append_printf(report, "%s", REPORT_ETAG);
-  g_string_append_printf(report, "%s", digests->len == 0
+  REPORT(r, "%s", REPORT_ETAG);
+  REPORT(r, "%s", digests->len == 0
       ? TAG_ENGINE_DISABLED : digests->str);
-  g_string_truncate(report, report->len - 1);
+  g_string_truncate(r, r->len - 1);
 
   /* report accounting and session message */
-  g_string_append_printf(report, "%s%s%s%s", eol, REPORT_ACCOUNTING, GetAccountingInfo(), eol);
-  g_string_append_printf(report, "%s%s%s", REPORT_STATE, zvm_state, eol);
+  REPORT(r, "%s%s%s%s", eol, REPORT_ACCOUNTING, GetAccountingInfo(), eol);
+  REPORT(r, "%s%s%s", REPORT_STATE, zvm_state, eol);
 
   /* output report */
   if(hide_report)
-    ZLOGS(LOG_ERROR, "%s", report->str);
+    ZLOGS(LOG_ERROR, "%s", r->str);
   else
-    ZLOGIF(write(STDOUT_FILENO, report->str, report->len) != report->len,
+    ZLOGIF(write(STDOUT_FILENO, r->str, r->len) != r->len,
         "report write error %d: %s", errno, strerror(errno));
 
-  g_string_free(report, TRUE);
+  g_string_free(r, TRUE);
   g_string_free(digests, TRUE);
 }
 

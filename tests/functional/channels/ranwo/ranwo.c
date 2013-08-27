@@ -13,7 +13,7 @@ int main(int argc, char **argv)
 
   /* correct requests */
   FPRINTF(STDERR, "TEST RANDOM WRITE ONLY CHANNEL\n");
-  FPRINTF(STDERR, "channel size = %lld\n", MANIFEST->channels[OPEN(RANWO)].size);
+  FPRINTF(STDERR, "channel size = %ld\n", MANIFEST->channels[OPEN(RANWO)].size);
   ZTEST(MANIFEST->channels[OPEN(RANWO)].size == 0);
   ZTEST(PWRITE(RANWO, buf, 0, 0) == 0);
 

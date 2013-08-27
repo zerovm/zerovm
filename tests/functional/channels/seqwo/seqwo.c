@@ -13,7 +13,7 @@ int main(int argc, char **argv)
 
   /* correct requests */
   FPRINTF(STDERR, "TEST SEQUENTIAL WRITE ONLY CHANNEL\n");
-  FPRINTF(STDERR, "channel size = %lld\n", MANIFEST->channels[OPEN(SEQWO)].size);
+  FPRINTF(STDERR, "channel size = %ld\n", MANIFEST->channels[OPEN(SEQWO)].size);
   ZTEST(MANIFEST->channels[OPEN(SEQWO)].size == 0);
   ZTEST(PWRITE(SEQWO, buf, 0, 0) == 0);
   ZTEST(PWRITE(SEQWO, buf, 0, 1) == 0);
