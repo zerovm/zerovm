@@ -60,16 +60,6 @@ void SetValidationState(int state)
   validation_state = state;
 }
 
-/* manage special signals. note: may change zvm_state */
-/* todo(d'b): remove the patch after reworking zvm signals */
-static void SpecSignals()
-{
-  if(strstr(zvm_state, "Signal 14") != NULL)
-    SetExitState("session timeout");
-  else if(strstr(zvm_state, "Signal 25") != NULL)
-    SetExitState("disk quota exceeded");
-}
-
 /* log user memory map */
 static void LogMemMap(struct NaClApp *nap, int verbosity)
 {
@@ -174,19 +164,14 @@ void ReportDtor(int zvm_ret)
 {
   SetExitCode(zvm_ret);
 
-  /*
-   * patch to show special messages instead of signals 24, 25
-   * and do not calculate etag if session failed
-   */
+  /* broken session */
   if(zvm_code != 0)
   {
-    SpecSignals();
     ZLOGS(LOG_ERROR, "SESSION %d FAILED WITH ERROR %d: %s",
         gnap->manifest == NULL ? 0 : gnap->manifest->node,
         zvm_code, strerror(zvm_code));
+    FinalDump(gnap);
   }
-
-  if(zvm_code != 0) FinalDump(gnap);
 
   AccountingDtor(gnap);
   ChannelsDtor(gnap->manifest);
