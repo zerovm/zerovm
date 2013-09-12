@@ -22,9 +22,6 @@
 #include "src/channels/channel.h"
 #include "src/main/manifest.h"
 
-/* get control_digest for the last read RO source reached eof */
-char *GetControlDigest();
-
 /* prepare network context */
 void NetCtor(const struct Manifest *manifest);
 
@@ -40,11 +37,14 @@ void PrefetchChannelCtor(struct ChannelDesc *channel, int n);
  */
 void PrefetchChannelDtor(struct ChannelDesc *channel, int n);
 
-/*
- * fetch the data from the network channel
- * return number of received bytes or negative error code
- */
-int32_t FetchData(struct ChannelDesc *channel, int n, char *buf, int32_t count);
+/* return already available data of the channel */
+char *MessageData(struct ChannelDesc *channel);
+
+/* receive a new message and update channel with it */
+void FetchMessage(struct ChannelDesc *channel, int n);
+
+/* deallocate channel message */
+void FreeMessage(struct ChannelDesc *channel);
 
 /*
  * send the data to the network channel

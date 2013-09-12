@@ -33,7 +33,8 @@
 /*
  * On untrusted stack:
  *      return-addr-to-caller-of-trampoline
- *      return-addr-to-trampoline (essentially syscall number)
+ *      return-addr-to-trampoline (essentially syscall number which is
+ *      always should be 0)
  *
  * This code must save the syscall arguments so that they can be
  * accessed in an uniformed way, regardless of whether the service

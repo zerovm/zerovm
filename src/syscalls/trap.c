@@ -70,7 +70,6 @@ static int32_t ZVMReadHandle(struct NaClApp *nap,
   struct ChannelDesc *channel;
   int64_t tail;
   char *sys_buffer;
-  int32_t retcode = -1;
 
   assert(nap != NULL);
   assert(nap->manifest != NULL);
@@ -118,26 +117,8 @@ static int32_t ZVMReadHandle(struct NaClApp *nap,
   if(size > tail) size = tail;
   if(size < 1) return -EDQUOT;
 
-  /* read data and update position */
-  retcode = ChannelRead(channel, sys_buffer, (size_t)size, (off_t)offset);
-
-  /* update the channel counter, size, position and tag */
-  ++channel->counters[GetsLimit];
-  if(retcode > 0)
-  {
-    channel->counters[GetSizeLimit] += retcode;
-
-    /*
-     * current get cursor. must be updated if channel have seq get
-     * but there is nothing wrong to update it even it have random get
-     */
-    channel->getpos = offset + retcode;
-
-    /* if channel have random put update put cursor. not allowed for cdr */
-    if(CH_RND_WRITEABLE(channel)) channel->putpos = offset + retcode;
-  }
-
-  return retcode;
+  /* read data */
+  return ChannelRead(channel, sys_buffer, (size_t)size, (off_t)offset);
 }
 
 /*
@@ -150,7 +131,6 @@ static int32_t ZVMWriteHandle(struct NaClApp *nap,
   struct ChannelDesc *channel;
   int64_t tail;
   const char *sys_buffer;
-  int32_t retcode = -1;
 
   assert(nap != NULL);
   assert(nap->manifest != NULL);
@@ -190,21 +170,8 @@ static int32_t ZVMWriteHandle(struct NaClApp *nap,
   if(size > tail) size = tail;
   if(size < 1) return -EDQUOT;
 
-  /* write data and update position */
-  retcode = ChannelWrite(channel, sys_buffer, (size_t)size, (off_t)offset);
-
-  /* update the channel counter, size, position and tag */
-  ++channel->counters[PutsLimit];
-  if(retcode > 0)
-  {
-    channel->counters[PutSizeLimit] += retcode;
-    channel->putpos = offset + retcode;
-    channel->size = (channel->type == SGetRPut) || (channel->type == RGetRPut) ?
-        MAX(channel->size, channel->putpos) : channel->putpos;
-    channel->getpos = channel->putpos;
-  }
-
-  return retcode;
+  /* write data */
+  return ChannelWrite(channel, sys_buffer, (size_t)size, (off_t)offset);
 }
 
 #define JAIL_CHECK \

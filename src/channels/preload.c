@@ -26,26 +26,28 @@ void PreloadAllocationDisable()
   disable_preallocation = 1;
 }
 
-static enum ChannelType GetChannelSource(const char *name)
+/* detect and set source type */
+#define SET(f, p) if(f(fs.st_mode)) CH_PROTO(channel, n) = Proto##p; else
+static void SetChannelSource(struct ChannelDesc *channel, int n)
 {
   struct stat fs;
 
-  assert(name != NULL);
+  assert(channel != NULL);
+  assert(CH_NAME(channel, n) != NULL);
 
-  /* get the file statistics */
-  if(stat(name, &fs) < 0) return ProtoRegular;
-
-  /* calculate the file source type */
-  if(S_ISREG(fs.st_mode)) return ProtoRegular;
-  if(S_ISDIR(fs.st_mode)) return ProtoDirectory;
-  if(S_ISCHR(fs.st_mode)) return ProtoCharacter;
-  if(S_ISBLK(fs.st_mode)) return ProtoBlock;
-  if(S_ISFIFO(fs.st_mode)) return ProtoFIFO;
-  if(S_ISLNK(fs.st_mode)) return ProtoLink;
-  if(S_ISSOCK(fs.st_mode)) return ProtoSocket;
-
-  ZLOGFAIL(1, EFAULT, "cannot detect source type of %s", name);
-  return -1; /* not reachable */
+  /*
+   * get the file statistics and calculate the source type (if file
+   * is not exist it will be regular)
+   */
+  if(stat(CH_NAME(channel, n), &fs) < 0) CH_PROTO(channel, n) = ProtoRegular; else
+  SET(S_ISREG, Regular)
+  SET(S_ISDIR, Directory)
+  SET(S_ISCHR, Character)
+  SET(S_ISBLK, Block)
+  SET(S_ISFIFO, FIFO)
+  SET(S_ISLNK, Link)
+  SET(S_ISSOCK, Socket)
+  ZLOGFAIL(1, EFAULT, "cannot detect source type of %s", CH_NAME(channel, n));
 }
 
 int PreloadChannelDtor(struct ChannelDesc *channel, int n)
@@ -185,10 +187,7 @@ void PreloadChannelCtor(struct ChannelDesc *channel, int n)
   ZLOG(LOG_DEBUG, "mounting file %s to alias %s",
       CH_NAME(channel, n), channel->alias);
 
-  /* set start position */
-  channel->getpos = 0;
-  channel->putpos = 0;
-  CH_PROTO(channel, n) = GetChannelSource(CH_NAME(channel, n));
+  SetChannelSource(channel, n);
 
   switch(CH_PROTO(channel, n))
   {

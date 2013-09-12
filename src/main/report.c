@@ -27,6 +27,7 @@ static int validation_state = 2;
 static const char *zvm_state = UNKNOWN_STATE;
 static GString *digests = NULL; /* cumulative etags */
 static int hide_report = 0; /* if not 0 report to syslog */
+static char *debug_string = NULL;
 
 void HideReport()
 {
@@ -58,6 +59,16 @@ void SetUserCode(int code)
 void SetValidationState(int state)
 {
   validation_state = state;
+}
+
+void SetDebugString(const char *s)
+{
+  debug_string = g_strdup(s);
+}
+
+char *GetDebugString()
+{
+  return debug_string;
 }
 
 /* log user memory map */
@@ -148,6 +159,7 @@ static void Report(struct NaClApp *nap)
   /* report accounting and session message */
   REPORT(r, "%s%s%s%s", eol, REPORT_ACCOUNTING, GetAccountingInfo(), eol);
   REPORT(r, "%s%s%s", REPORT_STATE, zvm_state, eol);
+  REPORT(r, "%s%s", REPORT_DEBUG, eol);
 
   /* output report */
   if(hide_report)
@@ -158,6 +170,7 @@ static void Report(struct NaClApp *nap)
 
   g_string_free(r, TRUE);
   g_string_free(digests, TRUE);
+  g_free(debug_string);
 }
 
 void ReportDtor(int zvm_ret)

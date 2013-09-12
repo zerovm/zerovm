@@ -226,6 +226,5 @@ void SignalHandlerInit()
 /* We try to lock, but since we are shutting down, we ignore failures */
 void SignalHandlerFini()
 {
-
   SignalHandlerFiniPlatform();
 }

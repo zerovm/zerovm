@@ -10,7 +10,6 @@ Channel = /dev/null, /dev/stderr, 0, 0, 0, 0, 65536, 65536
 == for the internal zerovm needs
 =====================================================================
 Version = 20130611
-Load = copy.nexe
-Save = copy.zimg
+Program = copy.nexe
 Memory = 134217728, 0
 Timeout = 999999

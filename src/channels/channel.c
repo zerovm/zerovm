@@ -23,8 +23,14 @@
 #include "src/channels/nservice.h"
 #include "src/channels/channel.h"
 
-#define PREPOLL_WAIT 1000 /* 1 millisecond */
+#define PURE_EVIL 500
 
+/*
+ * array of read buffers. WARNING: buffers[0] should not be allocated
+ * since it always will point to the user buffer for optimization reason
+ */
+static GPtrArray *buffers = NULL;
+static uint32_t buffers_size = 0; /* size of buffers */
 GTree *aliases;
 static int tree_reset = 0;
 static uint32_t binds = 0; /* "bind" sources number */
@@ -46,114 +52,215 @@ static void ResetAliases()
   aliases = NULL;
 }
 
-int32_t ChannelRead(struct ChannelDesc *channel,
-    char *buffer, size_t size, off_t offset)
+/*
+ * skip obsolete messages/bytes until the source will be in sync with
+ * the channel position. IMPORTANT! should only be used for "sequential
+ * read" channels (because of getpos)
+ */
+static void SyncSource(struct ChannelDesc *channel, int n)
 {
-  int n;
-  int eof = channel->eof; /* store *source* eof state here */
-  int32_t result = -1;
-  int net_channel = 0; /* will be set if channel has network source(s) */
-  int good = -1; /* buffer index (and helper) containing proper data */
-  char **b = g_alloca(channel->source->len * sizeof *b);
+  if(!CH_SEQ_READABLE(channel)) return;
 
-  assert(channel->eof == 0);
+  ZLOGS(LOG_DEBUG, "%s;%d before skip pos = %ld, getpos = %ld",
+      channel->alias, n, CH_SOURCE(channel, n)->pos, channel->getpos);
 
-  for(n = 0; n < channel->source->len; ++n)
+  /* if source is a pipe read (*->getpos - *->pos) bytes */
+  if(CH_PROTO(channel, n) == ProtoFIFO || CH_PROTO(channel, n) == ProtoCharacter)
   {
-    int j;
-
-    /*
-     * get a new buffer if a good match not found, otherwise reuse the old one
-     * for the very 1st buffer given "buffer" should be used because it is
-     * most probable that source will not have errors
-     */
-    if(n > 0)
-      b[n] = good < 0 ? g_malloc(size) : b[good == 0 ? 1 : 0];
-    else
-      b[0] = buffer;
-
-    /* read data from the source to b[i] */
-    switch(CH_PROTO(channel, n))
+    int result;
+    while(CH_SOURCE(channel, n)->pos < channel->getpos)
     {
-      case ProtoRegular:
-        result = pread(GPOINTER_TO_INT(CH_HANDLE(channel, n)), b[n], size, offset);
-        if(result == -1) result = -errno;
-        break;
-      case ProtoCharacter:
-      case ProtoFIFO:
-        result = fread(b[n], 1, size, CH_HANDLE(channel, n));
-        if(result == -1) result = -errno;
-        break;
-      case ProtoTCP:
-        /* todo: FetchMessage doesn't return -1 in case of error. fix it */
-        net_channel = 1;
-        result = FetchData(channel, n, b[n], size);
-        if(result == -1) result = -EIO;
-
-        /*
-         * channel can have more then one network source and if eof reached
-         * FetchMessage() will not try to read. therefore to avoid skipping
-         * read the source, channel->eof reset to 0 and actual eof status
-         * stored to local variable to be restored later
-         */
-        ZLOGFAIL(eof > channel->eof, EPIPE, "%s out of sync", channel->alias);
-        eof = channel->eof;
-        channel->eof = 0;
-        break;
-      default: /* design error */
-        ZLOGFAIL(1, EFAULT, "invalid channel source");
-        break;
+      result = fread(buffers->pdata[n], 1,
+          channel->getpos - CH_SOURCE(channel, n)->pos, CH_HANDLE(channel, n));
+      ZLOGFAIL(result < 0, EIO, "%s %d: %s", channel->alias, n, strerror(errno));
+      CH_SOURCE(channel, n)->pos += result;
     }
-
-    /* compare buffers or skip the loop if a good match already found */
-    if(good >= 0) continue;
-    for(j = 0; j < n; ++j)
-      if(memcmp(b[j], b[n], size) == 0)
-      {
-        good = j;
-        break;
-      }
   }
 
-  /* restore channel eof */
-  channel->eof = eof;
+  /* if source is a network get over (*->getpos - *->pos) bytes */
+  else if(IS_NETWORK(CH_PROTO(channel, n)))
+  {
+    while(CH_SOURCE(channel, n)->pos < channel->getpos && !channel->eof)
+    {
+      FetchMessage(channel, n);
+      CH_SOURCE(channel, n)->pos += channel->bufend;
+    }
+  }
 
-  /* FAIL session if all sources failed */
-  ZLOGFAIL(good < 0 && channel->source->len > 1, EIO,
-      "%s failed to read", channel->alias);
+  /* no need to sync with regular files, just set (*->getpos to *->pos) */
+  else
+    CH_SOURCE(channel, n)->pos = channel->getpos;
 
-  /*
-   * set eof if 0 bytes has been read. it is safe because
-   * 1. if user asked for a 0 bytes control will not reach this code
-   * 2. if user asked more then 0 bytes and got 0 that means end of data
-   * 3. if quota exceeded user will get an error before an actual read
-   */
-  if(result == 0) channel->eof = 1;
+  ZLOGS(LOG_DEBUG, "%s;%d skipped pos = %ld, getpos = %ld",
+      channel->alias, n, CH_SOURCE(channel, n)->pos, channel->getpos);
+  ZLOGFAIL(CH_SOURCE(channel, n)->pos != channel->getpos,
+      EPIPE, "%s %d is out of sync", channel->alias, n);
+}
 
-  /* copy to buffer proper data or skip */
+/* get chunk of data from source. data will be put to "buffers" */
+static int32_t GetDataChunk(struct ChannelDesc *channel, int n,
+    size_t size, off_t offset)
+{
+  int32_t result = 0;
+
+  switch(CH_PROTO(channel, n))
+  {
+    case ProtoRegular:
+      result = pread(GPOINTER_TO_INT(CH_HANDLE(channel, n)),
+          buffers->pdata[n], size, offset);
+      if(result == -1) result = -errno;
+      break;
+    case ProtoCharacter:
+    case ProtoFIFO:
+      result = fread(buffers->pdata[n], 1, size, CH_HANDLE(channel, n));
+      if(result == -1) result = -errno;
+      break;
+    case ProtoTCP:
+      /* get another message if it already exhausted */
+      if(channel->bufend - channel->bufpos == 0)
+        FetchMessage(channel, n);
+
+      /* copy data from the message to buffers */
+      if(channel->eof == 0)
+      {
+        result = MIN(size, channel->bufend - channel->bufpos);
+        memcpy(buffers->pdata[n], MessageData(channel) + channel->bufpos, result);
+        channel->bufpos += result;
+      }
+      break;
+    default: /* design error */
+      ZLOGFAIL(1, EFAULT, "invalid channel source");
+      break;
+  }
+
+  /* update the source position */
   if(result > 0)
-    if(channel->source->len > 1 && good > 0)
-      memcpy(buffer, b[good], result);
-  TagUpdate(channel->tag, buffer, result);
+    CH_SOURCE(channel, n)->pos += result;
 
-  /* if eof reached check tagged channel */
-  if(eof && channel->tag != NULL && net_channel)
+  if(result == 0)
+    if(CH_SEQ_READABLE(channel)) channel->eof = 1;
+  return result;
+}
+
+/* check EOF digest for network source */
+static void TestEOFDigest(struct ChannelDesc *channel, int n)
+{
+  if(channel->tag != NULL)
   {
     char digest[TAG_DIGEST_SIZE + 1];
+    char *control = MessageData(channel);
 
     TagDigest(channel->tag, digest);
-    if(0 != memcmp(GetControlDigest(), digest, TAG_DIGEST_SIZE))
+    if(0 != memcmp(control, digest, TAG_DIGEST_SIZE))
     {
       SetExitState("data corrupted");
       SetExitCode(EPIPE);
-      ZLOG(LOG_ERROR, "%s %d corrupted upon eof", channel->alias, n);
+      ZLOG(LOG_ERROR, "%s %d corrupted upon eof %s:%s", channel->alias, n, digest, control);
+    }
+  }
+}
+
+/*
+ * return the 1st valid source in the raw or -1
+ * todo: implement a new logic to choose the 1st available source
+ */
+static int GetFirstSource(struct ChannelDesc *channel)
+{
+  int n;
+
+  for(n = 0; n < channel->source->len; ++n)
+    if(IS_VALID(CH_FLAGS(channel, n))) return n;
+  return -1;
+}
+
+int32_t ChannelRead(struct ChannelDesc *channel,
+    char *buffer, size_t size, off_t offset)
+{
+  int32_t result = -1;
+  int good = -1; /* index of buffer with proper data */
+  int readrest = size;
+  int toread;
+  int n;
+
+  assert(buffers != NULL);
+  assert(channel != NULL);
+  assert(channel->source->len > 0);
+
+  /* read "size" bytes or until channel EOF */
+  while(readrest > 0 && !channel->eof)
+  {
+    int first = GetFirstSource(channel);
+    toread = MIN(readrest, BUFFER_SIZE);
+    good = -1;
+
+    ZLOGFAIL(first < 0, EIO, "all %s sources failed", channel->alias);
+    for(n = first; n < channel->source->len && good < 0 && !channel->eof; ++n)
+    {
+      int j;
+
+      /* choose "zero copy" source */
+      buffers->pdata[first] = buffer;
+
+      /* get next data portion */
+      if(!IS_VALID(CH_FLAGS(channel, n))) continue;
+      SyncSource(channel, n);
+      result = GetDataChunk(channel, n, toread, offset);
+
+      /* todo: hide magic number. invalidate source in case of error */
+      if(result < 0)
+      {
+        CH_FLAGS(channel, n) |= 8;
+        continue;
+      }
+
+      /* compare buffers */
+      for(j = first; j < n; ++j)
+      {
+        /* skip invalid source buffer */
+        if(!IS_VALID(CH_FLAGS(channel, n))) continue;
+        if(memcmp(buffers->pdata[j], buffers->pdata[n], result) == 0)
+        {
+          good = j;
+          break;
+        }
+      }
+    }
+
+    /* fail session if chunk broken and cannot be restored */
+    ZLOGFAIL(!channel->eof && good < 0 && channel->source->len > 1,
+        EIO, "%s failed to read", channel->alias);
+    ZLOGFAIL(result < 0 && channel->source->len == 1,
+        EIO, "%s failed to read", channel->alias);
+
+    /* copy verified data to buffer and shift the position */
+    if(good > first)
+      memcpy(buffer, buffers->pdata[good], result);
+    buffer += result;
+    offset += result;
+    readrest -= result;
+
+    /* accounting (1st part) */
+    if(result > 0)
+    {
+      /* if channel have random put update put cursor. not allowed for cdr */
+      if(CH_RND_WRITEABLE(channel)) channel->putpos = offset;
+      channel->counters[GetSizeLimit] += result;
+      channel->getpos = offset;
     }
   }
 
-  /* free resources */
-  for(n = 1; n <= good + 1; ++n)
-    g_free(b[n]);
+  /* update tag and return actual data size */
+  result = size - readrest;
+  buffer -= result;
+  TagUpdate(channel->tag, buffer, result);
 
+  /* extra corruption check for network source on EOF */
+  good = GetFirstSource(channel);
+  if(channel->eof && IS_NETWORK(CH_PROTO(channel, good)))
+    TestEOFDigest(channel, good);
+
+  /* accounting (2nd part) */
+  ++channel->counters[GetsLimit];
   return result;
 }
 
@@ -186,47 +293,19 @@ int32_t ChannelWrite(struct ChannelDesc *channel,
     }
   }
 
+  /* update the channel counter, size, position and tag */
+  ++channel->counters[PutsLimit];
+  if(result > 0)
+  {
+    channel->counters[PutSizeLimit] += result;
+    channel->putpos = offset + result;
+    channel->size = (channel->type == SGetRPut) || (channel->type == RGetRPut) ?
+        MAX(channel->size, channel->putpos) : channel->putpos;
+    channel->getpos = channel->putpos;
+  }
+
   TagUpdate(channel->tag, buffer, result);
   return result;
-}
-
-/* mount the channel sources */
-static void ChannelCtor(struct ChannelDesc *channel)
-{
-  int i;
-
-  assert(channel != NULL);
-
-  /* check alias for duplicates and update the list */
-  g_tree_insert(aliases, channel->alias, NULL);
-
-  ZLOGFAIL(channel->type > RGetRPut, EFAULT,
-      "%s has invalid type %d", channel->alias, channel->type);
-
-  /* mount given channel sources */
-  for(i = 0; i < channel->source->len; ++i)
-    if(IS_FILE(CH_PROTO(channel, i)))
-      PreloadChannelCtor(channel, i);
-    else
-      PrefetchChannelCtor(channel, i);
-}
-
-/* close channel and deallocate its resources */
-static void ChannelDtor(struct ChannelDesc *channel)
-{
-  int i;
-
-  assert(channel != NULL);
-
-  /* quit if channel isn't mounted (no handles added) */
-  if(channel->source->len == 0) return;
-
-  /* free channel */
-  for(i = 0; i < channel->source->len; ++i)
-    if(IS_FILE(CH_PROTO(channel, i)))
-      PreloadChannelDtor(channel, i);
-    else
-      PrefetchChannelDtor(channel, i);
 }
 
 /* get network sources statistics (RO - binds, WO - connects) */
@@ -234,10 +313,12 @@ static void CountNetSources(const struct ChannelDesc *channel,
     uint32_t *binds_number, uint32_t *connects_number)
 {
   int i;
+
   for(i = 0; i < channel->source->len; ++i)
   {
     struct Connection *c = CH_SOURCE(channel, i);
 
+    /* update binds/connects statistics */
     if(IS_NETWORK(c->protocol))
     {
       if(IS_WO(channel)) ++*connects_number;
@@ -293,6 +374,12 @@ static int OrderUser(const struct ChannelDesc **a, const struct ChannelDesc **b)
   return 0; /* the order for other channels does not matter */
 }
 
+/* to sort sources, network sources before local */
+static int OrderSources(const struct Connection **a, const struct Connection **b)
+{
+  return IS_FILE((*a)->protocol) - IS_FILE((*b)->protocol);
+}
+
 /* get numbers of "binds" and "connects" sources */
 static void GetNetworkStatistics(const struct Manifest *manifest)
 {
@@ -300,6 +387,60 @@ static void GetNetworkStatistics(const struct Manifest *manifest)
 
   for(i = 0; i < manifest->channels->len; ++i)
     CountNetSources(CH_CH(manifest, i), &binds, &connects);
+}
+
+/* mount the channel sources */
+static void ChannelCtor(struct ChannelDesc *channel)
+{
+  int i;
+
+  assert(channel != NULL);
+
+  /* check alias for duplicates and update the list */
+  g_tree_insert(aliases, channel->alias, NULL);
+
+  ZLOGFAIL(channel->type > RGetRPut, EFAULT,
+      "%s has invalid type %d", channel->alias, channel->type);
+
+  /* mount given channel sources */
+  for(i = 0; i < channel->source->len; ++i)
+    if(IS_FILE(CH_PROTO(channel, i)))
+      PreloadChannelCtor(channel, i);
+    else
+      PrefetchChannelCtor(channel, i);
+
+  /* sort sources if channel is RO */
+  if(IS_RO(channel))
+    g_ptr_array_sort(channel->source, (GCompareFunc)OrderSources);
+
+  /* update "buffers" size for "read" channels */
+  if(IS_RO(channel) || IS_RW(channel))
+    if(channel->source->len > buffers_size)
+      buffers_size = channel->source->len;
+}
+
+/* close channel and deallocate its resources */
+static void ChannelDtor(struct ChannelDesc *channel)
+{
+  int i;
+
+  assert(channel != NULL);
+
+  /* quit if channel isn't mounted (no handles added) */
+  if(channel->source->len == 0) return;
+
+  /* free channel */
+  for(i = 0; i < channel->source->len; ++i)
+    if(IS_FILE(CH_PROTO(channel, i)))
+      PreloadChannelDtor(channel, i);
+    else
+      PrefetchChannelDtor(channel, i);
+
+  /*
+   * message cannot be safely deallocated until 0mq context closed
+   * since message can still be in use
+   */
+  FreeMessage(channel);
 }
 
 void ChannelsCtor(struct Manifest *manifest)
@@ -349,12 +490,19 @@ void ChannelsCtor(struct Manifest *manifest)
 
   ResetAliases();
 
+  /* allocate read buffers reserving index 0 for "zero copy" */
+  buffers = g_ptr_array_new();
+  g_ptr_array_add(buffers, NULL);
+  for(i = 1; i < buffers_size; ++i)
+    g_ptr_array_add(buffers, g_malloc(BUFFER_SIZE));
+
   /*
-   * temporary fix (the lost 1st message issue) to allow 0mq to complete
-   * the connection procedure. 1 millisecond should be enough
-   * todo(d'b): replace it with the channels readiness check
+   * todo(d'b): 0mq can drop 1st message if 0mq connection procedure
+   * is not complete. this is the temporary fix. should be removed asap
+   * because it means zerovm startup latency. NOTE: only need if the
+   * session have network channels
    */
-  usleep(PREPOLL_WAIT);
+  if(binds + connects > 0) usleep(PURE_EVIL);
 }
 
 void ChannelsDtor(struct Manifest *manifest)
@@ -373,6 +521,10 @@ void ChannelsDtor(struct Manifest *manifest)
     ChannelDtor(channel);
   }
   ResetAliases();
+
+  /* release read buffers */
+  if(buffers != NULL)
+    g_ptr_array_free(buffers, TRUE);
 
   /* release prefetch class */
   NetDtor(manifest);

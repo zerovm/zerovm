@@ -320,7 +320,6 @@ static void Channel(struct Manifest *manifest, char *value)
     channel->limits[i] = ToInt(tokens[i + Gets]);
     ZLOGFAIL(channel->limits[i] < 0, EFAULT,
         "negative limits for %s", channel->alias);
-    channel->counters[i] = 0;
   }
 
   /* append a new channel */

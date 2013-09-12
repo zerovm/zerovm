@@ -30,12 +30,14 @@
 #define REPORT_ETAG "etag(s) = "
 #define REPORT_ACCOUNTING "accounting = "
 #define REPORT_STATE "exit state = "
+#define REPORT_DEBUG GetDebugString()
 #else
 #define REPORT_VALIDATOR ""
 #define REPORT_RETCODE ""
 #define REPORT_ETAG ""
 #define REPORT_ACCOUNTING ""
 #define REPORT_STATE ""
+#define REPORT_DEBUG ""
 #endif
 
 EXTERN_C_BEGIN
@@ -57,6 +59,12 @@ void SetUserCode(int code);
 
 /* set validation state (0 - passed, 1 - failed, 2 - disabled) */
 void SetValidationState(int state);
+
+/* set zerovm command line for debug purposes */
+void SetDebugString(const char *s);
+
+/* get zerovm command line */
+char *GetDebugString();
 
 /* add tag digest with given name */
 void ReportTag(char *name, void *tag);

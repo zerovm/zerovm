@@ -82,8 +82,7 @@ static void StoreMem(uintptr_t addr, size_t nbytes, uint64_t value)
 }
 
 #define GENERIC_STORE(bits) \
-  static void Store ## bits(uintptr_t addr, \
-                                uint ## bits ## _t v) { \
+  static void Store ## bits(uintptr_t addr, uint ## bits ## _t v) { \
     StoreMem(addr, sizeof(uint ## bits ## _t), v); \
   }
 

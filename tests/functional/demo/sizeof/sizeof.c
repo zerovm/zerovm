@@ -12,24 +12,53 @@
 #include <stdio.h>
 #endif
 
+#define DUMP(s) printf("%24s = %lu\n", #s, s)
+#define REM(s) printf("\n/* %22s */\n", #s)
+
+typedef enum {_} ENUM;
+typedef struct {int _;} STRUCT;
+typedef union {int _;} UNION;
+
 int main()
 {
-  printf("size of char = %d\n", (int)sizeof(char));
-  printf("size of unsigned char = %d\n", (int)sizeof(unsigned char));
-  printf("size of short = %d\n", (int)sizeof(short));
-  printf("size of unsigned short = %d\n", (int)sizeof(unsigned short));
-  printf("size of int = %d\n", (int)sizeof(int));
-  printf("size of unsigned int = %d\n", (int)sizeof(unsigned int));
-  printf("size of long = %d\n", (int)sizeof(long));
-  printf("size of unsigned long = %d\n", (int)sizeof(unsigned long));
-  printf("size of long long = %d\n", (int)sizeof(long long));
-  printf("size of unsigned long long = %d\n", (int)sizeof(unsigned long long));
-  printf("size of float = %d\n", (int)sizeof(float));
-  printf("size of double = %d\n", (int)sizeof(double));
-  printf("size of long double = %d\n", (int)sizeof(long double));
-  printf("size of void = %d\n", (int)sizeof(void));
-  printf("size of void* = %d\n", (int)sizeof(void*));
-  printf("size of enum = %d\n", (int)sizeof(enum {A}));
+  REM(pointers);
+  DUMP(sizeof(char*));
+  DUMP(sizeof(unsigned char*));
+  DUMP(sizeof(int*));
+  DUMP(sizeof(unsigned int*));
+  DUMP(sizeof(long*));
+  DUMP(sizeof(unsigned long*));
+  DUMP(sizeof(void*));
+  DUMP(sizeof(float*));
+  DUMP(sizeof(double*));
+  DUMP(sizeof(long double*));
+  DUMP(sizeof(long long*));
 
+  REM(main types);
+  DUMP(sizeof(char));
+  DUMP(sizeof(unsigned char));
+  DUMP(sizeof(int));
+  DUMP(sizeof(unsigned int));
+  DUMP(sizeof(long));
+  DUMP(sizeof(unsigned long));
+  DUMP(sizeof(void));
+  DUMP(sizeof(float));
+  DUMP(sizeof(double));
+  DUMP(sizeof(long double));
+  DUMP(sizeof(long long));
+
+  REM(custom examples);
+  DUMP(sizeof(ENUM));
+  DUMP(sizeof(STRUCT));
+  DUMP(sizeof(UNION));
+  DUMP(sizeof(main));
+  DUMP(sizeof(&main));
+  DUMP(sizeof(&&label));
+  DUMP(sizeof("1234567"));
+  DUMP(sizeof('1'));
+  DUMP(sizeof(1));
+  DUMP(sizeof(1LL));
+  DUMP(sizeof(char[0]));
+label:
   return 0;
 }

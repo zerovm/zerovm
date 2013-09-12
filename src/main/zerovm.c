@@ -48,10 +48,11 @@ static void CommandLine(int argc, char **argv)
   int offset = 0;
   int i;
 
-  offset += sprintf(cmd, "ZeroVM command line:");
+  offset += sprintf(cmd, "command =");
   for(i = 0; i < argc; ++i)
     offset += g_snprintf(cmd + offset, BIG_ENOUGH_STRING - offset, " %s", argv[i]);
 
+  SetDebugString(cmd);
   ZLOGS(LOG_DEBUG, "%s", cmd);
 }
 

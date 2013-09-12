@@ -25,6 +25,9 @@
 
 EXTERN_C_BEGIN
 
+/* net buffer size depends on it */
+#define BUFFER_SIZE 0x10000
+
 /* zerovm channels names */
 #define STDIN "/dev/stdin"
 #define STDOUT "/dev/stdout"
@@ -34,6 +37,7 @@ EXTERN_C_BEGIN
 #define IS_NETWORK(proto) (proto < ProtoRegular)
 #define IS_FILE(proto) (!IS_NETWORK(proto))
 #define IS_IPHOST(flags) (flags & 1)
+#define IS_VALID(flags) (!(flags & 8))
 
 /* CH_RW_TYPE returns 0..3 */
 #define IS_NIL(channel) (CH_RW_TYPE(channel) == 0)

@@ -51,19 +51,28 @@ EXTERN_C_BEGIN
   XENUM(PROTOCOLS)
 #undef X
 
+/*
+ * short "flags" description:
+ * 0:    id/ip. 0 means id specified by "Channel" field, 1 - ip4
+ * 1..2: r/w source type: 0 - inaccessible, 1 - RO, 2 - WO, 3 - RW
+ * 3:    0 means channel is valid, 1 - invalid
+ */
 /* network channel description */
 struct Connection {
   uint8_t protocol; /* XTYPE(PROTOCOLS) */
   void *handle; /* pointer to (0mq) socket */
+  int64_t pos; /* position */
+  uint8_t flags;
   uint16_t port;
   uint32_t host;
-  uint8_t flags; /* bits: 0 - host id/ip, 1 - r/w */
 };
 
 /* local channel description */
 struct File {
   uint8_t protocol; /* XTYPE(PROTOCOLS) */
   void *handle; /* (int*) or (FILE*) */
+  int64_t pos; /* position */
+  uint8_t flags;
   char *name;
 };
 
@@ -80,8 +89,8 @@ struct ChannelDesc {
   /* constructor initialize it */
   void *msg; /* network message container */
   int64_t size; /* file size (or 0) */
-  int64_t getpos; /* source read position */
-  int64_t putpos; /* source write position */
+  int64_t getpos; /* channel read position */
+  int64_t putpos; /* channel write position */
   int32_t bufpos; /* index of the 1st available byte in the buffer */
   int32_t bufend; /* index of the 1st unavailable byte in the buffer */
   int64_t counters[LimitsNumber];
