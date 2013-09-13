@@ -44,13 +44,12 @@ static int quit_after_load = 0;
 /* log zerovm command line */
 static void CommandLine(int argc, char **argv)
 {
-  char cmd[BIG_ENOUGH_STRING];
-  int offset = 0;
   int i;
+  char cmd[BIG_ENOUGH_STRING];
+  int pos = sprintf(cmd, "command =");
 
-  offset += sprintf(cmd, "command =");
   for(i = 0; i < argc; ++i)
-    offset += g_snprintf(cmd + offset, BIG_ENOUGH_STRING - offset, " %s", argv[i]);
+    pos += g_snprintf(cmd + pos, BIG_ENOUGH_STRING - pos, " %s", argv[i]);
 
   SetDebugString(cmd);
   ZLOGS(LOG_DEBUG, "%s", cmd);
@@ -65,6 +64,7 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
 
   /* construct zlog with default verbosity */
   ZLogCtor(LOG_ERROR);
+  CommandLine(argc, argv);
 
   while((opt = getopt(argc, argv, "-PFQstv:M:l:")) != -1)
   {
@@ -88,12 +88,12 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
         break;
       case 'l':
         /* calculate hard limit in Gb and don't allow it less then "big enough" */
-        if(SetStorageLimit(ATOI(optarg)) != 0)
+        if(SetStorageLimit(ToInt(optarg)) != 0)
           BADCMDLINE("invalid storage limit");
         break;
       case 'v':
         ZLogDtor();
-        ZLogCtor(ATOI(optarg));
+        ZLogCtor(ToInt(optarg));
         break;
       case 'Q':
         skip_qualification = 1;
@@ -108,9 +108,6 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
         break;
     }
   }
-
-  /* show zerovm command line */
-  CommandLine(argc, argv);
 
   /* parse manifest file specified in command line */
   if(manifest_name == NULL) BADCMDLINE(NULL);

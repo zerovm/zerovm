@@ -122,15 +122,11 @@ static void GetManifestData(const char *name, char *buf)
   fclose(h);
 }
 
-/* check the string and convert it to int */
-/* todo: extract to tools.h */
-static int64_t ToInt(char *a)
+int64_t ToInt(char *a)
 {
   int64_t result;
 
   errno = 0;
-  assert(a != NULL);
-
   a = g_strstrip(a);
   result = g_ascii_strtoll(a, &a, 0);
   ZLOGFAIL(*a != '\0' || errno != 0, EFAULT, "invalid numeric value '%s'", a);
@@ -260,7 +256,7 @@ static void ParseName(char *name, GPtrArray *names)
   {
     struct Connection *c = g_malloc0(sizeof *c);
 
-    /* todo: fix "invalid_name_server_type.manifest" bug here */
+    /* todo(d'b): fix "invalid_name_server_type.manifest" bug here */
     ZLOGFAIL(tokens[ConnectionTokensNumber] != NULL || tokens[Host] == NULL,
         EFAULT, "invalid channel url");
 
@@ -274,7 +270,7 @@ static void ParseName(char *name, GPtrArray *names)
   g_strfreev(tokens);
 }
 
-/* todo: it is ugly. solution needed */
+/* todo(d'b): it is ugly. solution needed */
 static void NameServer(struct Manifest *manifest, char *value)
 {
   GPtrArray *dummy = g_ptr_array_new();
@@ -298,7 +294,7 @@ static void Channel(struct Manifest *manifest, char *value)
   /* get tokens from channel description */
   tokens = g_strsplit(value, VALUE_DELIMITER, ChannelTokensNumber);
 
-  /* todo: fix "invalid numeric value ', 0'" bug here */
+  /* todo(d'b): fix "invalid numeric value ', 0'" bug here */
   ZLOGFAIL(tokens[ChannelTokensNumber] != NULL || tokens[PutSize] == NULL,
       EFAULT, "invalid channel tokens number");
 

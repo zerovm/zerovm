@@ -54,8 +54,7 @@ static void ResetAliases()
 
 /*
  * skip obsolete messages/bytes until the source will be in sync with
- * the channel position. IMPORTANT! should only be used for "sequential
- * read" channels (because of getpos)
+ * the channel position. works only for channels with sequential read
  */
 static void SyncSource(struct ChannelDesc *channel, int n)
 {
@@ -162,7 +161,7 @@ static void TestEOFDigest(struct ChannelDesc *channel, int n)
 
 /*
  * return the 1st valid source in the raw or -1
- * todo: implement a new logic to choose the 1st available source
+ * todo(d'b): implement a new logic to choose the 1st available source
  */
 static int GetFirstSource(struct ChannelDesc *channel)
 {
@@ -205,11 +204,9 @@ int32_t ChannelRead(struct ChannelDesc *channel,
       if(!IS_VALID(CH_FLAGS(channel, n))) continue;
       SyncSource(channel, n);
       result = GetDataChunk(channel, n, toread, offset);
-
-      /* todo: hide magic number. invalidate source in case of error */
       if(result < 0)
       {
-        CH_FLAGS(channel, n) |= 8;
+        CH_FLAGS(channel, n) |= FLAG_VALID_MASK;
         continue;
       }
 

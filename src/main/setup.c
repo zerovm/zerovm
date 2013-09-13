@@ -57,7 +57,7 @@ static void LowerOwnPriority()
 
 /*
  * give up privileges
- * todo: instead of fail set group/user to nogroup/nobody
+ * todo(d'b): instead of fail set group/user to nogroup/nobody
  */
 static void GiveUpPrivileges()
 {

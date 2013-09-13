@@ -24,7 +24,7 @@
 #define LOWEST_AVAILABLE_PORT 49152
 #define NET_BUFFER_SIZE BUFFER_SIZE
 
-/* todo: find more neat solution than put it twice */
+/* todo(d'b): find more neat solution than put it twice */
 #define XARRAY(a) static char *ARRAY_##a[] = {a};
 #define X(a) #a,
   XARRAY(PROTOCOLS)
@@ -95,7 +95,6 @@ static void Connect(struct ChannelDesc *channel, int n)
   ZMQ_FAIL(zmq_connect(h, url));
 }
 
-/* initiate networking (if there are network channels) */
 void NetCtor(const struct Manifest *manifest)
 {
   /* get zmq context */
@@ -103,7 +102,6 @@ void NetCtor(const struct Manifest *manifest)
   ZLOGFAIL(context == NULL, EFAULT, "cannot initialize zeromq context");
 }
 
-/* finalize networking (terminate context) */
 void NetDtor(struct Manifest *manifest)
 {
   int64_t linger = 1;
@@ -117,7 +115,6 @@ void NetDtor(struct Manifest *manifest)
   context = NULL;
 }
 
-/* wrapper around zmq_msg_data */
 char *MessageData(struct ChannelDesc *channel)
 {
   return (char*)zmq_msg_data(channel->msg);
@@ -139,7 +136,6 @@ static void GetMessage(struct ChannelDesc *channel, int n)
   channel->bufpos = 0;
 }
 
-/* get the next message or eof. updates channel->msg (and ->buf*) */
 void FetchMessage(struct ChannelDesc *channel, int n)
 {
   ZLOG(LOG_DEBUG, "entered %s:%d", channel->alias, n);

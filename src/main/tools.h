@@ -52,17 +52,10 @@
 #define BIG_ENOUGH_STRING 1024
 #define MICROS_PER_MILLI 1000
 
-/* debug macro */
-#undef SHOWID
-#define SHOWID printf("%s: %d, %s\n", __FILE__, __LINE__, __func__)
-
 #define ROUNDDOWN_64K(a) ((a) & ~(NACL_MAP_PAGESIZE - 1LLU))
 #define ROUNDUP_64K(a) ROUNDDOWN_64K((a) + NACL_MAP_PAGESIZE - 1LLU)
 #define ROUNDDOWN_4K(a) ((a) & ~(NACL_PAGESIZE - 1LLU))
 #define ROUNDUP_4K(a) ROUNDDOWN_4K((a) + NACL_PAGESIZE - 1LLU)
-
-/* safe atoi(). return 0 for NULL */
-#define ATOI(str) ((str == NULL) ? 0 : g_ascii_strtoll(str, NULL, 0))
 
 /* return size of given file or negative error code */
 int64_t GetFileSize(const char *name);

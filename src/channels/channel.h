@@ -34,10 +34,11 @@ EXTERN_C_BEGIN
 #define STDERR "/dev/stderr"
 #define STDRAM "/dev/memory"
 
+#define FLAG_VALID_MASK 8
 #define IS_NETWORK(proto) (proto < ProtoRegular)
 #define IS_FILE(proto) (!IS_NETWORK(proto))
 #define IS_IPHOST(flags) (flags & 1)
-#define IS_VALID(flags) (!(flags & 8))
+#define IS_VALID(flags) (!(flags & FLAG_VALID_MASK))
 
 /* CH_RW_TYPE returns 0..3 */
 #define IS_NIL(channel) (CH_RW_TYPE(channel) == 0)
@@ -57,7 +58,7 @@ EXTERN_C_BEGIN
 #define CH_PORT(channel, n) (CH_SOURCE(channel, n))->port
 #define CH_FLAGS(channel, n) (CH_SOURCE(channel, n))->flags
 
-/* todo: rewrite it or remove it */
+/* todo(d'b): rewrite it or remove it */
 #define CH_SEQ_READABLE(channel) (channel->type == 0 || channel->type == 2)
 #define CH_SEQ_WRITEABLE(channel) (channel->type == 0 || channel->type == 1)
 #define CH_RND_READABLE(channel) (channel->type == 1 || channel->type == 3)

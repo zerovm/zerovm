@@ -117,6 +117,9 @@ struct Manifest *ManifestCtor(const char *name);
  */
 void ManifestDtor(struct Manifest *manifest);
 
+/* convert string to integer, fail if string is invalid */
+int64_t ToInt(char *a);
+
 EXTERN_C_END
 
 #endif
