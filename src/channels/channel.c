@@ -52,50 +52,6 @@ static void ResetAliases()
   aliases = NULL;
 }
 
-/*
- * skip obsolete messages/bytes until the source will be in sync with
- * the channel position. works only for channels with sequential read
- */
-static void SyncSource(struct ChannelDesc *channel, int n)
-{
-  if(!CH_SEQ_READABLE(channel)) return;
-
-  ZLOGS(LOG_DEBUG, "%s;%d before skip pos = %ld, getpos = %ld",
-      channel->alias, n, CH_SOURCE(channel, n)->pos, channel->getpos);
-
-  /* if source is a pipe read (*->getpos - *->pos) bytes */
-  if(CH_PROTO(channel, n) == ProtoFIFO || CH_PROTO(channel, n) == ProtoCharacter)
-  {
-    int result;
-    while(CH_SOURCE(channel, n)->pos < channel->getpos)
-    {
-      result = fread(buffers->pdata[n], 1,
-          channel->getpos - CH_SOURCE(channel, n)->pos, CH_HANDLE(channel, n));
-      ZLOGFAIL(result < 0, EIO, "%s %d: %s", channel->alias, n, strerror(errno));
-      CH_SOURCE(channel, n)->pos += result;
-    }
-  }
-
-  /* if source is a network get over (*->getpos - *->pos) bytes */
-  else if(IS_NETWORK(CH_PROTO(channel, n)))
-  {
-    while(CH_SOURCE(channel, n)->pos < channel->getpos && !channel->eof)
-    {
-      FetchMessage(channel, n);
-      CH_SOURCE(channel, n)->pos += channel->bufend;
-    }
-  }
-
-  /* no need to sync with regular files, just set (*->getpos to *->pos) */
-  else
-    CH_SOURCE(channel, n)->pos = channel->getpos;
-
-  ZLOGS(LOG_DEBUG, "%s;%d skipped pos = %ld, getpos = %ld",
-      channel->alias, n, CH_SOURCE(channel, n)->pos, channel->getpos);
-  ZLOGFAIL(CH_SOURCE(channel, n)->pos != channel->getpos,
-      EPIPE, "%s %d is out of sync", channel->alias, n);
-}
-
 /* get chunk of data from source. data will be put to "buffers" */
 static int32_t GetDataChunk(struct ChannelDesc *channel, int n,
     size_t size, off_t offset)
@@ -150,11 +106,22 @@ static void TestEOFDigest(struct ChannelDesc *channel, int n)
     char *control = MessageData(channel);
 
     TagDigest(channel->tag, digest);
+
+    /* ### searching for bug {{*/
+    if(*control == '\0' && channel->bufend > 0)
+    {
+      ZLOG(LOG_ERROR, "invalid eof tag received");
+      SetExitState("invalid eof tag received");
+      SetExitCode(EPIPE);
+      return;
+    }
+    /* }} */
+
     if(0 != memcmp(control, digest, TAG_DIGEST_SIZE))
     {
       SetExitState("data corrupted");
       SetExitCode(EPIPE);
-      ZLOG(LOG_ERROR, "%s %d corrupted upon eof %s:%s", channel->alias, n, digest, control);
+      ZLOG(LOG_ERROR, "%s %d corrupted upon eof", channel->alias, n);
     }
   }
 }
@@ -266,6 +233,9 @@ int32_t ChannelWrite(struct ChannelDesc *channel,
 {
   int n;
   int32_t result = -1;
+
+  ZLOG(LOG_DEBUG, "channel %s, buffer=0x%lx, size=%d, offset=%ld",
+      channel->alias, (intptr_t)buffer, size, offset);
 
   for(n = 0; n < channel->source->len; ++n)
   {

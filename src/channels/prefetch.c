@@ -20,7 +20,7 @@
 #include "src/channels/prefetch.h"
 #include "src/main/report.h"
 
-#define LINGER 1
+#define LINGER 50
 #define LOWEST_AVAILABLE_PORT 49152
 #define NET_BUFFER_SIZE BUFFER_SIZE
 
@@ -104,12 +104,8 @@ void NetCtor(const struct Manifest *manifest)
 
 void NetDtor(struct Manifest *manifest)
 {
-  int64_t linger = 1;
-
   /* don't terminate if session is broken */
   if(GetExitCode() != 0) return;
-  if(zmq_setsockopt(socket, ZMQ_AFFINITY, &linger, sizeof linger))
-    return;
 
   zmq_term(context);
   context = NULL;
@@ -160,7 +156,9 @@ void FetchMessage(struct ChannelDesc *channel, int n)
 /* send message "channel->msg" */
 static void SendMessage(struct ChannelDesc *channel, int n)
 {
+  ZLOG(LOG_DEBUG, "send to source %s;%d", channel->alias, n);
   ZMQ_FAIL(zmq_send(CH_HANDLE(channel, n), channel->msg, 0));
+  ZLOG(LOG_DEBUG, "done");
 }
 
 int32_t SendData(struct ChannelDesc *channel, int n, const char *buf, int32_t count)
@@ -171,6 +169,8 @@ int32_t SendData(struct ChannelDesc *channel, int n, const char *buf, int32_t co
   assert(buf != NULL);
 
   /* send a buffer through the multiple messages */
+  ZLOG(LOG_DEBUG, "channel %s, buffer=0x%lx, size=%d",
+      channel->alias, (intptr_t)buf, count);
   for(writerest = count; writerest > 0; writerest -= NET_BUFFER_SIZE)
   {
     int32_t towrite = MIN(writerest, NET_BUFFER_SIZE);
@@ -192,6 +192,47 @@ int32_t SendData(struct ChannelDesc *channel, int n, const char *buf, int32_t co
   }
 
   return count;
+}
+
+void SyncSource(struct ChannelDesc *channel, int n)
+{
+  if(!CH_SEQ_READABLE(channel)) return;
+
+  ZLOGS(LOG_DEBUG, "%s;%d before skip pos = %ld, getpos = %ld",
+      channel->alias, n, CH_SOURCE(channel, n)->pos, channel->getpos);
+
+  /* if source is a pipe read (*->getpos - *->pos) bytes */
+  if(CH_PROTO(channel, n) == ProtoFIFO || CH_PROTO(channel, n) == ProtoCharacter)
+  {
+    int result;
+    while(CH_SOURCE(channel, n)->pos < channel->getpos)
+    {
+      char buf[BUFFER_SIZE];
+      result = fread(buf, 1, channel->getpos - CH_SOURCE(channel, n)->pos,
+          CH_HANDLE(channel, n));
+      ZLOGFAIL(result < 0, EIO, "%s %d: %s", channel->alias, n, strerror(errno));
+      CH_SOURCE(channel, n)->pos += result;
+    }
+  }
+
+  /* if source is a network get over (*->getpos - *->pos) bytes */
+  else if(IS_NETWORK(CH_PROTO(channel, n)))
+  {
+    while(CH_SOURCE(channel, n)->pos < channel->getpos && !channel->eof)
+    {
+      FetchMessage(channel, n);
+      CH_SOURCE(channel, n)->pos += channel->bufend;
+    }
+  }
+
+  /* no need to sync with regular files, just set (*->getpos to *->pos) */
+  else
+    CH_SOURCE(channel, n)->pos = channel->getpos;
+
+  ZLOGS(LOG_DEBUG, "%s;%d skipped pos = %ld, getpos = %ld",
+      channel->alias, n, CH_SOURCE(channel, n)->pos, channel->getpos);
+  ZLOGFAIL(CH_SOURCE(channel, n)->pos != channel->getpos,
+      EPIPE, "%s;%d is out of sync", channel->alias, n);
 }
 
 void PrefetchChannelCtor(struct ChannelDesc *channel, int n)
@@ -269,8 +310,18 @@ void PrefetchChannelDtor(struct ChannelDesc *channel, int n)
   /* "fast forward" RO source until eof */
   else
   {
-    while(channel->eof == 0)
-      FetchMessage(channel, n);
+    /*
+     * todo(d'b): this is a temporary solution. complete solution can be
+     * implemented when daemon/proxy will be able to terminate zerovm by
+     * request for instance when cluster is already done except "sending"
+     * reserve node (reported as useless by "receiving" node(s))
+     */
+    if(CH_SOURCE(channel, n)->pos < channel->getpos)
+    {
+      channel->eof = 0;
+      SyncSource(channel, n);
+      FetchMessage(channel, n); /* reach EOF */
+    }
     digest = MessageData(channel);
   }
 

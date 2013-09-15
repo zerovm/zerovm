@@ -43,6 +43,12 @@ char *MessageData(struct ChannelDesc *channel);
 /* receive a new message and update channel with it */
 void FetchMessage(struct ChannelDesc *channel, int n);
 
+/*
+ * skip obsolete messages/bytes until the source will be in sync with
+ * the channel position. works only for channels with sequential read
+ */
+void SyncSource(struct ChannelDesc *channel, int n);
+
 /* deallocate channel message */
 void FreeMessage(struct ChannelDesc *channel);
 
