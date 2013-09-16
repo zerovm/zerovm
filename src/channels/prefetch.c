@@ -20,7 +20,7 @@
 #include "src/channels/prefetch.h"
 #include "src/main/report.h"
 
-#define LINGER -1 /* time to send. -1: infinite, 0: no wait, 1+ ms */
+#define LINGER 1 /* time to send. -1: infinite, 0: no wait, 1+ ms */
 #define LOWEST_AVAILABLE_PORT 49152
 #define NET_BUFFER_SIZE BUFFER_SIZE
 
