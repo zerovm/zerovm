@@ -401,7 +401,7 @@ static void ChannelDtor(struct ChannelDesc *channel)
 
 void ChannelsCtor(struct Manifest *manifest)
 {
-  int i;
+  int i = 0;
 
   assert(manifest != NULL);
 
@@ -424,16 +424,16 @@ void ChannelsCtor(struct Manifest *manifest)
   /* construct prefetch class before usage */
   NetCtor(manifest);
 
-  /* mount "binds" number of channels from 0 index */
-  for(i = 0; i < binds; ++i)
-    ChannelCtor(CH_CH(manifest, i));
+  /* mount RO channels */
+  while(IS_RO(CH_CH(manifest, i)))
+    ChannelCtor(CH_CH(manifest, i++));
 
   /* ask for name service */
   NameServiceCtor(manifest, binds, connects);
   NameServiceDtor();
 
-  /* mount the rest of channels ("connect" ones) */
-  for(i = binds; i < manifest->channels->len; ++i)
+  /* mount the rest of channels */
+  for(; i < manifest->channels->len; ++i)
     ChannelCtor(CH_CH(manifest, i));
 
   /* reorder channels for user manifest */
