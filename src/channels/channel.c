@@ -106,17 +106,6 @@ static void TestEOFDigest(struct ChannelDesc *channel, int n)
     char *control = MessageData(channel);
 
     TagDigest(channel->tag, digest);
-
-    /* ### searching for bug {{*/
-    if(*control == '\0' && channel->bufend > 0)
-    {
-      ZLOG(LOG_ERROR, "invalid eof tag received");
-      SetExitState("invalid eof tag received");
-      SetExitCode(EPIPE);
-      return;
-    }
-    /* }} */
-
     if(0 != memcmp(control, digest, TAG_DIGEST_SIZE))
     {
       SetExitState("data corrupted");

@@ -20,7 +20,7 @@
 #include "src/channels/prefetch.h"
 #include "src/main/report.h"
 
-#define LINGER 50
+#define LINGER -1 /* time to send. -1: infinite, 0: no wait, 1+ ms */
 #define LOWEST_AVAILABLE_PORT 49152
 #define NET_BUFFER_SIZE BUFFER_SIZE
 
@@ -156,9 +156,7 @@ void FetchMessage(struct ChannelDesc *channel, int n)
 /* send message "channel->msg" */
 static void SendMessage(struct ChannelDesc *channel, int n)
 {
-  ZLOG(LOG_DEBUG, "send to source %s;%d", channel->alias, n);
   ZMQ_FAIL(zmq_send(CH_HANDLE(channel, n), channel->msg, 0));
-  ZLOG(LOG_DEBUG, "done");
 }
 
 int32_t SendData(struct ChannelDesc *channel, int n, const char *buf, int32_t count)
@@ -272,8 +270,8 @@ void PrefetchChannelCtor(struct ChannelDesc *channel, int n)
 void PrefetchChannelDtor(struct ChannelDesc *channel, int n)
 {
   char url[BIG_ENOUGH_STRING]; /* debug purposes only */
-  char buf[TAG_DIGEST_SIZE + 1] = {0}, *digest = buf;
-  int dig_size = 0;
+  char buf[TAG_DIGEST_SIZE + 1] = "disabled", *digest = buf;
+  int dsize = 0;
 
   /* skip source closing if session is broken */
   if(GetExitCode() != 0) return;
@@ -288,26 +286,29 @@ void PrefetchChannelDtor(struct ChannelDesc *channel, int n)
   MakeURL(channel, n, url, BIG_ENOUGH_STRING);
   ZLOGS(LOG_DEBUG, "closing %s with url %s", channel->alias, url);
 
-  /* close WO source (send eof) */
+  /* close WO source (send EOF) */
   if(IS_WO(channel))
   {
-    /* send 1st part of eof */
+    /* 1st EOF part */
+    channel->eof = 1;
     ZMQ_FAIL(zmq_msg_init_data(channel->msg, digest, 0, NULL, NULL));
     SendMessage(channel, n);
-    ZMQ_FAIL(zmq_msg_close(channel->msg));
 
-    /* send the last part of eof */
+    /* last EOF part */
     if(channel->tag != NULL)
     {
       TagDigest(channel->tag, digest);
-      dig_size = TAG_DIGEST_SIZE;
+      dsize = TAG_DIGEST_SIZE;
     }
-    ZMQ_FAIL(zmq_msg_init_data(channel->msg, digest, dig_size, NULL, NULL));
+    ZMQ_FAIL(zmq_msg_init_data(channel->msg, digest, dsize, NULL, NULL));
+    SendMessage(channel, n);
+
+    /* dummy message to avoid #197 */
+    ZMQ_FAIL(zmq_msg_init_data(channel->msg, digest, 0, NULL, NULL));
     SendMessage(channel, n);
     ZMQ_FAIL(zmq_msg_close(channel->msg));
-    channel->eof = 1;
   }
-  /* "fast forward" RO source until eof */
+  /* close RO source "fast forward" to EOF */
   else
   {
     /*
