@@ -2,6 +2,7 @@ import socket
 import sys
 import struct
 import ctypes
+from time import sleep
 
 peers = int(sys.argv[1])
 port = 0
@@ -41,7 +42,7 @@ while 1:
                 #offset = 0
                 #count = struct.unpack_from('!I', reply, offset)[0]
                 #offset += 4
-		print [connect_count, offset]
+                print [connect_count, offset]
                 for i in range(connect_count):
                     h = struct.unpack_from('!I', reply, offset)[0]
                     port = bind_map[h][src]
@@ -49,6 +50,8 @@ while 1:
                     offset += 6
                 s.sendto(reply, (peer_map[src][0], peer_map[src][1]))
                 print ['sending to: ', peer_map[src][0], peer_map[src][1]]
+            sleep(0.5)
+            exit(0)
     except (KeyboardInterrupt, SystemExit):
         exit(1)
 
