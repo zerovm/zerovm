@@ -50,7 +50,7 @@ while 1:
                     offset += 6
                 s.sendto(reply, (peer_map[src][0], peer_map[src][1]))
                 print ['sending to: ', peer_map[src][0], peer_map[src][1]]
-            sleep(0.5)
+            sleep(2)
             exit(0)
     except (KeyboardInterrupt, SystemExit):
         exit(1)

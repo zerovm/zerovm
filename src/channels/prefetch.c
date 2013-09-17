@@ -309,7 +309,10 @@ void PrefetchChannelDtor(struct ChannelDesc *channel, int n)
     /* dummy message to avoid #197 */
     ZMQ_ERR(zmq_msg_init_data(channel->msg, digest, 0, NULL, NULL));
     SendMessage(channel, n);
-    FreeMessage(channel);
+
+    /* only for the last source */
+    if(n == channel->source->len - 1)
+      FreeMessage(channel);
   }
   /* close RO source, "fast forward" to EOF if needed */
   else

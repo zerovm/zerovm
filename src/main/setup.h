@@ -24,7 +24,7 @@ EXTERN_C_BEGIN
 #include "src/loader/sel_ldr.h"
 
 #define HELP_SCREEN /* update command line switches here */\
-    "\033[1m\033[37mZeroVM\033[0m lightweight VM manager, build 2013-09-16\n"\
+    "\033[1m\033[37mZeroVM\033[0m lightweight VM manager, build 2013-09-17\n"\
     "Usage: <manifest> [-l#] [-v#] [-stFPQ]\n\n"\
     " -l <gigabytes> file size limit (default 4Gb)\n"\
     " -s skip validation\n"\
