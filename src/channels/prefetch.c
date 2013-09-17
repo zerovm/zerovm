@@ -121,6 +121,7 @@ void FreeMessage(struct ChannelDesc *channel)
   if(GetExitCode() != 0) return;
   if(channel->msg == NULL) return;
 
+  ZLOGS(LOG_DEBUG, "FreeMessage of %s;%d", channel->alias);
   result = zmq_msg_close(channel->msg);
   g_free(channel->msg);
   channel->msg = NULL;
@@ -160,6 +161,7 @@ void FetchMessage(struct ChannelDesc *channel, int n)
 /* send message "channel->msg" */
 static void SendMessage(struct ChannelDesc *channel, int n)
 {
+  ZLOGS(LOG_DEBUG, "SendMessage to %s;%d", channel->alias, n);
   ZMQ_ERR(zmq_send(CH_HANDLE(channel, n), channel->msg, 0));
 }
 
