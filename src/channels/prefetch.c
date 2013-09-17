@@ -20,7 +20,7 @@
 #include "src/channels/prefetch.h"
 #include "src/main/report.h"
 
-#define LINGER -1 /* time to send. -1: infinite, 0: no wait, 1+ ms */
+#define LINGER -1 /* send timeout. -1: infinite(default), 0+: wait 0+ms */
 #define LOWEST_AVAILABLE_PORT 49152
 #define NET_BUFFER_SIZE BUFFER_SIZE
 #define ZMQ_ERR(code) ZLOGIF(code, "failed: %s", zmq_strerror(zmq_errno()))
@@ -81,11 +81,13 @@ static void Connect(struct ChannelDesc *channel, int n)
 {
   char url[BIG_ENOUGH_STRING];
   uint64_t hwm = 1;
-  int linger = LINGER;
   void *h = CH_HANDLE(channel, n);
 
-  /* disable linger and block on send */
+#if LINGER >= 0
+  int linger = LINGER;
   ZMQ_ERR(zmq_setsockopt(h, ZMQ_LINGER, &linger, sizeof linger));
+#endif
+
   ZMQ_ERR(zmq_setsockopt(h, ZMQ_HWM, &hwm, sizeof hwm));
   MakeURL(channel, n, url, BIG_ENOUGH_STRING);
   ZLOGS(LOG_DEBUG, "connect url %s to %s;%d", url, channel->alias, n);
@@ -104,7 +106,11 @@ void NetDtor(struct Manifest *manifest)
   /* don't terminate if session is broken */
   if(GetExitCode() != 0) return;
 
-//  zmq_term(context);
+  /*
+   * todo(d'b): temporary disabled until the "hanging problem"
+   * will be solved
+   * zmq_term(context);
+   */
   context = NULL;
 }
 
@@ -132,7 +138,7 @@ void FreeMessage(struct ChannelDesc *channel)
 static void GetMessage(struct ChannelDesc *channel, int n)
 {
   assert(channel->eof == 0);
-  ZLOG(LOG_DEBUG, "entered %s;%d", channel->alias, n);
+  ZLOGS(LOG_DEBUG, "GetMessage of %s;%d", channel->alias, n);
 
   /* receive the next message and rewind buffer */
   ZMQ_ERR(zmq_recv(CH_HANDLE(channel, n), channel->msg, 0));
@@ -142,7 +148,7 @@ static void GetMessage(struct ChannelDesc *channel, int n)
 
 void FetchMessage(struct ChannelDesc *channel, int n)
 {
-  ZLOG(LOG_DEBUG, "entered %s;%d", channel->alias, n);
+  ZLOGS(LOG_DEBUG, "FetchMessage of %s;%d", channel->alias, n);
 
   /* get message */
   GetMessage(channel, n);
