@@ -137,7 +137,6 @@ void FreeMessage(struct ChannelDesc *channel)
 /* get the next message. updates channel->msg (and indices) */
 static void GetMessage(struct ChannelDesc *channel, int n)
 {
-  assert(channel->eof == 0);
   ZLOGS(LOG_DEBUG, "GetMessage of %s;%d", channel->alias, n);
 
   /* receive the next message and rewind buffer */
@@ -151,6 +150,7 @@ void FetchMessage(struct ChannelDesc *channel, int n)
   ZLOGS(LOG_DEBUG, "FetchMessage of %s;%d", channel->alias, n);
 
   /* get message */
+  if(channel->eof) return;
   GetMessage(channel, n);
 
   /* if EOF detected get the 2nd part */
@@ -325,6 +325,15 @@ void PrefetchChannelDtor(struct ChannelDesc *channel, int n)
   /* close RO source, "fast forward" to EOF if needed */
   else
   {
+    /* read until EOF (to avoid hanging sending session) */
+    for(; channel->eof == 0; FetchMessage(channel, n))
+    {
+      channel->getpos += channel->bufend;
+      channel->counters[GetSizeLimit] = channel->getpos;
+      ++channel->counters[GetsLimit];
+      CH_SOURCE(channel, n)->pos = channel->getpos;
+    }
+
     /*
      * todo(d'b): this is a temporary solution. complete solution can be
      * implemented when daemon/proxy will be able to terminate zerovm by
@@ -337,6 +346,7 @@ void PrefetchChannelDtor(struct ChannelDesc *channel, int n)
       SyncSource(channel, n);
       FetchMessage(channel, n);
     }
+
     channel->eof = 0;
     digest = MessageData(channel);
     GetMessage(channel, n); /* get dummy message (#197) */

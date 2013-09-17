@@ -177,6 +177,11 @@ int32_t ChannelRead(struct ChannelDesc *channel,
           break;
         }
       }
+
+      /* accounting */
+      ++channel->counters[GetsLimit];
+      if(result > 0)
+        channel->counters[GetSizeLimit] += result;
     }
 
     /* fail session if chunk broken and cannot be restored */
@@ -192,14 +197,9 @@ int32_t ChannelRead(struct ChannelDesc *channel,
     offset += result;
     readrest -= result;
 
-    /* accounting (1st part) */
-    if(result > 0)
-    {
-      /* if channel have random put update put cursor. not allowed for cdr */
-      if(CH_RND_WRITEABLE(channel)) channel->putpos = offset;
-      channel->counters[GetSizeLimit] += result;
-      channel->getpos = offset;
-    }
+    /* update get position and put position (except CDR) */
+    if(CH_RND_WRITEABLE(channel)) channel->putpos = offset;
+    channel->getpos = offset;
   }
 
   /* update tag and return actual data size */
@@ -211,9 +211,6 @@ int32_t ChannelRead(struct ChannelDesc *channel,
   good = GetFirstSource(channel);
   if(channel->eof && IS_NETWORK(CH_PROTO(channel, good)))
     TestEOFDigest(channel, good);
-
-  /* accounting (2nd part) */
-  ++channel->counters[GetsLimit];
   return result;
 }
 
@@ -232,34 +229,31 @@ int32_t ChannelWrite(struct ChannelDesc *channel,
     {
       case ProtoRegular:
         result = pwrite(GPOINTER_TO_INT(CH_HANDLE(channel, n)), buffer, size, offset);
-        if(result == -1) result = -errno;
         break;
       case ProtoCharacter:
       case ProtoFIFO:
         result = fwrite(buffer, 1, size, CH_HANDLE(channel, n));
-        if(result == -1) result = -errno;
         break;
       case ProtoTCP:
         result = SendData(channel, n, buffer, size);
-        if(result == -1) result = -EIO;
         break;
       default: /* design error */
         ZLOGFAIL(1, EFAULT, "invalid channel source %s;%d", channel->alias, n);
         break;
     }
-  }
 
-  /* update the channel counter, size, position and tag */
-  ++channel->counters[PutsLimit];
-  if(result > 0)
-  {
+    /* update the channel counter, size, position and tag */
+    ZLOGFAIL(result < 0, EIO, "%s;%d failed to write: %s",
+        channel->alias, n, strerror(errno));
+    ++channel->counters[PutsLimit];
     channel->counters[PutSizeLimit] += result;
-    channel->putpos = offset + result;
-    channel->size = (channel->type == SGetRPut) || (channel->type == RGetRPut) ?
-        MAX(channel->size, channel->putpos) : channel->putpos;
-    channel->getpos = channel->putpos;
   }
 
+  /* update cursors and size */
+  channel->putpos = offset + result;
+  channel->size = (channel->type == SGetRPut) || (channel->type == RGetRPut) ?
+      MAX(channel->size, channel->putpos) : channel->putpos;
+  channel->getpos = channel->putpos;
   TagUpdate(channel->tag, buffer, result);
   return result;
 }
