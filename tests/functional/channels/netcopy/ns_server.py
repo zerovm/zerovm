@@ -52,6 +52,6 @@ while 1:
                 print ['sending to: ', peer_map[src][0], peer_map[src][1]]
             sleep(2)
             exit(0)
-    except (KeyboardInterrupt, SystemExit):
+    except (KeyboardInterrupt):
         exit(1)
 
