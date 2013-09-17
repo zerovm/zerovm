@@ -104,7 +104,7 @@ void NetDtor(struct Manifest *manifest)
   /* don't terminate if session is broken */
   if(GetExitCode() != 0) return;
 
-  zmq_term(context);
+//  zmq_term(context);
   context = NULL;
 }
 
@@ -121,7 +121,7 @@ void FreeMessage(struct ChannelDesc *channel)
   if(GetExitCode() != 0) return;
   if(channel->msg == NULL) return;
 
-  ZLOGS(LOG_DEBUG, "FreeMessage of %s;%d", channel->alias);
+  ZLOGS(LOG_DEBUG, "FreeMessage of %s", channel->alias);
   result = zmq_msg_close(channel->msg);
   g_free(channel->msg);
   channel->msg = NULL;
