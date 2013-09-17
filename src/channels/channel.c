@@ -84,7 +84,7 @@ static int32_t GetDataChunk(struct ChannelDesc *channel, int n,
       }
       break;
     default: /* design error */
-      ZLOGFAIL(1, EFAULT, "invalid channel source");
+      ZLOGFAIL(1, EFAULT, "invalid channel source %s;n", channel->alias, n);
       break;
   }
 
@@ -110,7 +110,7 @@ static void TestEOFDigest(struct ChannelDesc *channel, int n)
     {
       SetExitState("data corrupted");
       SetExitCode(EPIPE);
-      ZLOG(LOG_ERROR, "%s %d corrupted upon eof", channel->alias, n);
+      ZLOG(LOG_ERROR, "%s;%d corrupted upon eof", channel->alias, n);
     }
   }
 }
@@ -244,7 +244,7 @@ int32_t ChannelWrite(struct ChannelDesc *channel,
         if(result == -1) result = -EIO;
         break;
       default: /* design error */
-        ZLOGFAIL(1, EFAULT, "invalid channel source");
+        ZLOGFAIL(1, EFAULT, "invalid channel source %s;%d", channel->alias, n);
         break;
     }
   }

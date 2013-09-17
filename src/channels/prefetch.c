@@ -72,7 +72,7 @@ static void Bind(struct ChannelDesc *channel, int n)
   }
 
   ZLOG(LOG_DEBUG, "host = %u, port = %u", c->host, c->port);
-  ZLOGFAIL(result != 0, EFAULT, "cannot bind %s %d: %s", channel->alias, n,
+  ZLOGFAIL(result != 0, EFAULT, "cannot bind %s;%d: %s", channel->alias, n,
       strerror(errno));
 }
 
@@ -88,7 +88,7 @@ static void Connect(struct ChannelDesc *channel, int n)
   ZMQ_ERR(zmq_setsockopt(h, ZMQ_LINGER, &linger, sizeof linger));
   ZMQ_ERR(zmq_setsockopt(h, ZMQ_HWM, &hwm, sizeof hwm));
   MakeURL(channel, n, url, BIG_ENOUGH_STRING);
-  ZLOGS(LOG_DEBUG, "connect url %s to %s %d", url, channel->alias, n);
+  ZLOGS(LOG_DEBUG, "connect url %s to %s;%d", url, channel->alias, n);
   ZMQ_ERR(zmq_connect(h, url));
 }
 
@@ -131,7 +131,7 @@ void FreeMessage(struct ChannelDesc *channel)
 static void GetMessage(struct ChannelDesc *channel, int n)
 {
   assert(channel->eof == 0);
-  ZLOG(LOG_DEBUG, "entered %s:%d", channel->alias, n);
+  ZLOG(LOG_DEBUG, "entered %s;%d", channel->alias, n);
 
   /* receive the next message and rewind buffer */
   ZMQ_ERR(zmq_recv(CH_HANDLE(channel, n), channel->msg, 0));
@@ -141,7 +141,7 @@ static void GetMessage(struct ChannelDesc *channel, int n)
 
 void FetchMessage(struct ChannelDesc *channel, int n)
 {
-  ZLOG(LOG_DEBUG, "entered %s:%d", channel->alias, n);
+  ZLOG(LOG_DEBUG, "entered %s;%d", channel->alias, n);
 
   /* get message */
   GetMessage(channel, n);
@@ -172,8 +172,8 @@ int32_t SendData(struct ChannelDesc *channel, int n, const char *buf, int32_t co
   assert(buf != NULL);
 
   /* send a buffer through the multiple messages */
-  ZLOG(LOG_DEBUG, "channel %s, buffer=0x%lx, size=%d",
-      channel->alias, (intptr_t)buf, count);
+  ZLOG(LOG_DEBUG, "channel %s;%d, buffer=0x%lx, size=%d",
+      channel->alias, n, (intptr_t)buf, count);
   for(writerest = count; writerest > 0; writerest -= NET_BUFFER_SIZE)
   {
     int32_t towrite = MIN(writerest, NET_BUFFER_SIZE);
@@ -212,7 +212,7 @@ void SyncSource(struct ChannelDesc *channel, int n)
       char buf[BUFFER_SIZE];
       result = fread(buf, 1, channel->getpos - CH_SOURCE(channel, n)->pos,
           CH_HANDLE(channel, n));
-      ZLOGFAIL(result < 0, EIO, "%s %d: %s", channel->alias, n, strerror(errno));
+      ZLOGFAIL(result < 0, EIO, "%s;%d: %s", channel->alias, n, strerror(errno));
       CH_SOURCE(channel, n)->pos += result;
     }
   }
@@ -248,7 +248,7 @@ void PrefetchChannelCtor(struct ChannelDesc *channel, int n)
 
   /* log parameters and channel internals */
   c = CH_SOURCE(channel, n);
-  ZLOGS(LOG_DEBUG, "prefetch %s %d", channel->alias, n);
+  ZLOGS(LOG_DEBUG, "prefetch %s;%d", channel->alias, n);
 
   /* choose socket type */
   ZLOGFAIL((uint32_t)CH_RW_TYPE(channel) - 1 > 1, EFAULT, "invalid i/o type");
@@ -258,7 +258,7 @@ void PrefetchChannelCtor(struct ChannelDesc *channel, int n)
   /* open source (0mq socket) */
   c->handle = zmq_socket(context, sock_type);
   ZLOGFAIL(c->handle == NULL, EFAULT,
-      "cannot get socket for %s %d", channel->alias, n);
+      "cannot get socket for %s;%d", channel->alias, n);
 
   /* allocate one message per channel */
   if(channel->msg == NULL)
@@ -287,7 +287,7 @@ void PrefetchChannelDtor(struct ChannelDesc *channel, int n)
 
   /* log parameters and channel internals */
   MakeURL(channel, n, url, BIG_ENOUGH_STRING);
-  ZLOGS(LOG_DEBUG, "closing %s with url %s", channel->alias, url);
+  ZLOGS(LOG_DEBUG, "closing %s;%d with url %s", channel->alias, n, url);
 
   /* close WO source (send EOF) */
   if(IS_WO(channel))
@@ -339,5 +339,5 @@ void PrefetchChannelDtor(struct ChannelDesc *channel, int n)
   /* close source */
   ZMQ_ERR(zmq_close(CH_HANDLE(channel, n)));
   CH_HANDLE(channel, n) = NULL;
-  ZLOGS(LOG_DEBUG, "%s closed with tag %s", url, digest);
+  ZLOGS(LOG_DEBUG, "%s closed", url);
 }
