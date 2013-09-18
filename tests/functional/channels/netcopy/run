@@ -1,0 +1,7 @@
+#!/bin/sh
+python $ZEROVM_ROOT/ns_server.py 3 54321&
+usleep 50
+$ZEROVM_ROOT/zerovm netcopy1.manifest&
+$ZEROVM_ROOT/zerovm netcopy2.manifest&
+$ZEROVM_ROOT/zerovm netcopy3.manifest
+pkill -9 -f ns_server.py
