@@ -1,0 +1,15 @@
+=====================================================================
+== copy data from the input channel to the output channel
+=====================================================================
+Channel = tcp:127.0.0.1:50002, /dev/stdin, 0, 0, 1073741824, 1073741824, 0, 0
+Channel = /dev/stdout, /dev/stdout, 0, 0, 0, 0, 1073741824, 1073741824
+Channel = /dev/null, /dev/stderr, 0, 0, 0, 0, 65536, 65536
+
+=====================================================================
+== switches for zerovm. some of them used to control nexe, some
+== for the internal zerovm needs
+=====================================================================
+Version = 20130611
+Program = copy.nexe
+Memory = 134217728, 0
+Timeout = 999999

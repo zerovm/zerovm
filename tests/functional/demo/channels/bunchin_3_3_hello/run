@@ -1,0 +1,18 @@
+#!/bin/bash
+echo hello
+$ZEROVM_ROOT/zerovm hello.manifest&
+
+echo copy1
+$ZEROVM_ROOT/zerovm copy1.manifest&
+echo copy2
+$ZEROVM_ROOT/zerovm copy2.manifest&
+echo copy3
+$ZEROVM_ROOT/zerovm copy3.manifest&
+
+echo copy01
+$ZEROVM_ROOT/zerovm copy01.manifest&
+echo copy02
+$ZEROVM_ROOT/zerovm copy02.manifest&
+echo copy03
+$ZEROVM_ROOT/zerovm copy03.manifest
+
