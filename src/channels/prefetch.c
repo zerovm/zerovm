@@ -187,16 +187,10 @@ int32_t SendData(struct ChannelDesc *channel, int n, const char *buf, int32_t co
     int32_t towrite = MIN(writerest, NET_BUFFER_SIZE);
 
     /* create the message */
-    if(writerest == towrite)
-    {
-      ZMQ_ERR(zmq_msg_init_size(channel->msg, towrite));
-      memcpy(MessageData(channel), buf, towrite);
-    }
-    /* create the message (zero-copy) */
-    else
-      ZMQ_ERR(zmq_msg_init_data(channel->msg, (void*)buf, towrite, NULL, NULL));
+    ZMQ_ERR(zmq_msg_init_size(channel->msg, towrite));
+    memcpy(MessageData(channel), buf, towrite);
 
-    /* send and free the message */
+    /* send the message */
     SendMessage(channel, n);
     buf += towrite;
   }
