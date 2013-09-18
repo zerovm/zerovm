@@ -37,7 +37,7 @@ struct SignalNode {
  * abi context (GDB ordered context), and a signal context interchangably.
  * In addition, we use common names for the stack and program counter to
  * allow functions which use them to avoid conditional compilation.
- * todo(d'b): it almost the duplicate of struct ThreadContext. there can be only one.
+ * TODO(d'b): it almost the duplicate of struct ThreadContext. there can be only one.
  */
 struct SignalContext {
   uint64_t rax;
@@ -129,7 +129,7 @@ static enum SignalResult SignalHandleAll(int signum, void *ctx)
   struct SignalContext sigCtx;
   char msg[SIGNAL_STRLEN];
 
-  /* todo(d'b): is it a proper solution? */
+  /* TODO(d'b): is it a proper solution? */
   static int busy = 0;
   if(busy) return NACL_SIGNAL_RETURN;
   busy = 1;

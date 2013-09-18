@@ -192,7 +192,7 @@ void NaClAppDtor(struct NaClApp *nap);
  */
 void AppLoadFile(struct Gio *gp, struct NaClApp *nap);
 
-/* todo(d'b): replace spaces with format options and use macro */
+/* TODO(d'b): replace spaces with format options and use macro */
 void PrintAppDetails(struct NaClApp *nap, struct Gio *gp, int verbosity);
 
 /*

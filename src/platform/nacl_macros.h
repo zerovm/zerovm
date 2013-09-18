@@ -21,7 +21,7 @@
 
 /*
  * NaCl Safety Macro Definitions
- * todo(d'b): clean and join with tools.h
+ * TODO(d'b): clean and join with tools.h
  */
 #ifndef NACL_MACROS_H_
 #define NACL_MACROS_H_ 1
