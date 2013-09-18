@@ -194,5 +194,6 @@ void ReportDtor(int zvm_ret)
   FreeDispatchThunk();
   ZLogDtor();
 
+  fflush(NULL);
   _exit(zvm_code);
 }
