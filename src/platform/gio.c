@@ -115,7 +115,7 @@ off_t GioMemoryFileSeek(struct Gio *vself, off_t offset, int whence)
   /**
    * on error, new_pos should be SIZE_T_MAX. On overflow it will either
    * be greater than self->len, or will have wrapped around.
-   * TODO (ilewis): Detect wraparound and return an error.
+   * TODO(ilewis): Detect wraparound and return an error.
    */
   if(new_pos > self->len)
   {

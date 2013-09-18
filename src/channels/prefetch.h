@@ -33,7 +33,7 @@ void PrefetchChannelCtor(struct ChannelDesc *channel, int n);
 
 /*
  * finalize and deallocate network channel resources
- * todo(d'b): rewrite the code after zmq_term will be fixed
+ * TODO(d'b): rewrite the code after zmq_term will be fixed
  */
 void PrefetchChannelDtor(struct ChannelDesc *channel, int n);
 

@@ -57,7 +57,7 @@ static void LowerOwnPriority()
 
 /*
  * give up privileges
- * todo(d'b): instead of fail set group/user to nogroup/nobody
+ * TODO(d'b): instead of fail set group/user to nogroup/nobody
  */
 static void GiveUpPrivileges()
 {
@@ -109,7 +109,7 @@ void PreallocateUserMemory(struct NaClApp *nap)
   nap->mem_map[HeapIdx].end += heap;
 }
 
-/* todo(d'b): move it to sel_addrspace */
+/* TODO(d'b): move it to sel_addrspace */
 /* should be kept in sync with api/zvm.h*/
 struct ChannelSerialized
 {
@@ -195,7 +195,7 @@ static void ProtectUserManifest(struct NaClApp *nap, void *mft)
   /*
    * patch: change the heap size to correct value. the user manifest
    * contains the different heap start (it does not include r/w data)
-   * todo(d'b): fix it by adding a new memory region
+   * TODO(d'b): fix it by adding a new memory region
    */
   nap->mem_map[HeapIdx].size =
       nap->mem_map[HeapIdx].end - nap->mem_map[HeapIdx].start;

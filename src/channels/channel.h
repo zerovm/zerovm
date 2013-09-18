@@ -58,7 +58,7 @@ EXTERN_C_BEGIN
 #define CH_PORT(channel, n) (CH_SOURCE(channel, n))->port
 #define CH_FLAGS(channel, n) (CH_SOURCE(channel, n))->flags
 
-/* todo(d'b): rewrite it or remove it */
+/* TODO(d'b): rewrite it or remove it */
 #define CH_SEQ_READABLE(channel) (channel->type == 0 || channel->type == 2)
 #define CH_SEQ_WRITEABLE(channel) (channel->type == 0 || channel->type == 1)
 #define CH_RND_READABLE(channel) (channel->type == 1 || channel->type == 3)

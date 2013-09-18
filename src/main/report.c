@@ -186,8 +186,8 @@ void ReportDtor(int zvm_ret)
     FinalDump(gnap);
   }
 
-  AccountingDtor(gnap);
   ChannelsDtor(gnap->manifest);
+  AccountingDtor(gnap);
   Report(gnap);
   NaClAppDtor(gnap); /* free user space and globals */
   ManifestDtor(gnap->manifest); /* dispose manifest and channels */

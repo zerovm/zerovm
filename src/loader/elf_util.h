@@ -39,7 +39,7 @@ void ValidateElfHeader(const struct ElfImage *image);
 /*
  * TODO(robertm): decouple validation from computation of static_text_end
  * and max_vaddr
- * todo(d'b): the function is too large, rewrite it
+ * TODO(d'b): the function is too large, rewrite it
  */
 void ValidateProgramHeaders(
   struct ElfImage *image,

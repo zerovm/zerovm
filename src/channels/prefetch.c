@@ -25,7 +25,7 @@
 #define NET_BUFFER_SIZE BUFFER_SIZE
 #define ZMQ_ERR(code) ZLOGIF(code, "failed: %s", zmq_strerror(zmq_errno()))
 
-/* todo(d'b): find more neat solution than put it twice */
+/* TODO(d'b): find more neat solution than put it twice */
 #define XARRAY(a) static char *ARRAY_##a[] = {a};
 #define X(a) #a,
   XARRAY(PROTOCOLS)
@@ -107,8 +107,8 @@ void NetDtor(struct Manifest *manifest)
   if(GetExitCode() != 0) return;
 
   /*
-   * todo(d'b): temporary disabled until the "hanging problem"
-   * will be solved
+   * TODO(d'b): temporary disabled until the "hanging problem" will be
+   * solved. WARNING: there is memory leak until zmq_term commented out!
    * zmq_term(context);
    */
   context = NULL;
@@ -325,31 +325,27 @@ void PrefetchChannelDtor(struct ChannelDesc *channel, int n)
   /* close RO source, "fast forward" to EOF if needed */
   else
   {
-    /* read until EOF (to avoid hanging sending session) */
-    for(; channel->eof == 0; FetchMessage(channel, n))
-    {
-      channel->getpos += channel->bufend;
-      channel->counters[GetSizeLimit] = channel->getpos;
-      ++channel->counters[GetsLimit];
-      CH_SOURCE(channel, n)->pos = channel->getpos;
-    }
-
     /*
-     * todo(d'b): this is a temporary solution. complete solution can be
+     * TODO(d'b): this is a temporary solution. complete solution can be
      * implemented when daemon/proxy will be able to terminate zerovm by
      * request for instance when cluster is already done except "sending"
      * reserve node (reported as useless by "receiving" node(s))
      */
     if(CH_SOURCE(channel, n)->pos < channel->getpos)
-    {
       channel->eof = 0;
-      SyncSource(channel, n);
-      FetchMessage(channel, n);
+
+    /* read until EOF (to avoid hanging sending session) */
+    for(; channel->eof == 0; FetchMessage(channel, n))
+    {
+      if(n == 0) channel->getpos += channel->bufend;
+      CH_SOURCE(channel, n)->pos += channel->bufend;
+      channel->counters[GetSizeLimit] += channel->bufend;
+      ++channel->counters[GetsLimit];
     }
 
+    /* get dummy message (#197) */
     channel->eof = 0;
-    digest = MessageData(channel);
-    GetMessage(channel, n); /* get dummy message (#197) */
+    GetMessage(channel, n);
     channel->eof = 1;
     /* message will be deallocated later */
   }

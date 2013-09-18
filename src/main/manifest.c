@@ -256,7 +256,7 @@ static void ParseName(char *name, GPtrArray *names)
   {
     struct Connection *c = g_malloc0(sizeof *c);
 
-    /* todo(d'b): fix "invalid_name_server_type.manifest" bug here */
+    /* TODO(d'b): fix "invalid_name_server_type.manifest" bug here */
     ZLOGFAIL(tokens[ConnectionTokensNumber] != NULL || tokens[Host] == NULL,
         EFAULT, "invalid channel url");
 
@@ -270,7 +270,7 @@ static void ParseName(char *name, GPtrArray *names)
   g_strfreev(tokens);
 }
 
-/* todo(d'b): it is ugly. solution needed */
+/* TODO(d'b): it is ugly. solution needed */
 static void NameServer(struct Manifest *manifest, char *value)
 {
   GPtrArray *dummy = g_ptr_array_new();
@@ -294,7 +294,7 @@ static void Channel(struct Manifest *manifest, char *value)
   /* get tokens from channel description */
   tokens = g_strsplit(value, VALUE_DELIMITER, ChannelTokensNumber);
 
-  /* todo(d'b): fix "invalid numeric value ', 0'" bug here */
+  /* TODO(d'b): fix "invalid numeric value ', 0'" bug here */
   ZLOGFAIL(tokens[ChannelTokensNumber] != NULL || tokens[PutSize] == NULL,
       EFAULT, "invalid channel tokens number");
 

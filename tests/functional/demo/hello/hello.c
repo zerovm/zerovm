@@ -2,7 +2,12 @@
  * this sample is a simple demonstration of zerovm.
  * the "hello world" program as usual.
  */
+#ifdef __ZEROVM__
 #include "include/zvmlib.h"
+#else
+#include <stdio.h>
+#define STDERR stderr
+#endif
 
 int main()
 {

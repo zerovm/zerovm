@@ -35,7 +35,7 @@
 
 /*
  * parcel will have at least 1 record or will not send
- * todo(d'b): to prevent the structure padding the pragma was used
+ * TODO(d'b): to prevent the structure padding the pragma was used
  * develop some more portable way (casting to array is ugly)
  */
 

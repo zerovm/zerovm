@@ -19,7 +19,7 @@
 #define NSERVICE_H_
 
 /*
- * todo(d'b): find the neat solution to calculate (10915)
+ * TODO(d'b): find the neat solution to calculate (10915)
  * ((PARCEL_SIZE - sizeof(struct NSParcel)) / sizeof(struct NSRecord) + 1)
  */
 #define MAX_CHANNELS_NUMBER 10915

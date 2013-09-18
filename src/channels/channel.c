@@ -117,7 +117,7 @@ static void TestEOFDigest(struct ChannelDesc *channel, int n)
 
 /*
  * return the 1st valid source in the raw or -1
- * todo(d'b): implement a new logic to choose the 1st available source
+ * TODO(d'b): implement a new logic to choose the 1st available source
  */
 static int GetFirstSource(struct ChannelDesc *channel)
 {
@@ -447,7 +447,7 @@ void ChannelsCtor(struct Manifest *manifest)
     g_ptr_array_add(buffers, g_malloc(BUFFER_SIZE));
 
   /*
-   * todo(d'b): 0mq can drop 1st message if 0mq connection procedure
+   * TODO(d'b): 0mq can drop 1st message if 0mq connection procedure
    * is not complete. this is the temporary fix. should be removed asap
    * because it means zerovm startup latency. NOTE: only need if the
    * session have network channels
