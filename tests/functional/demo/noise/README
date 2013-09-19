@@ -1,0 +1,2 @@
+generate pseudorandom numbers and write it to /dev/stdout. will work
+until timeout or channel limit reached

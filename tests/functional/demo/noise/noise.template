@@ -1,0 +1,16 @@
+=====================================================================
+== generate random data
+=====================================================================
+Channel = /dev/null, /dev/stdin, 0, 0, 1, 1, 0, 0
+Channel = PWD/output.data, /dev/stdout, 0, 0, 0, 0, 0x1000000, 0x100000000
+Channel = /dev/null, /dev/stderr, 0, 0, 0, 0, 1, 1
+
+=====================================================================
+== switches for zerovm. some of them used to control nexe, some
+== for the internal zerovm needs
+=====================================================================
+Version = 20130611
+Program = noise.nexe
+Memory = 33554432, 0
+Timeout = 1
+
