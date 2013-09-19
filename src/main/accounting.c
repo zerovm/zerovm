@@ -17,10 +17,36 @@
 #include <assert.h>
 #include "src/loader/sel_ldr.h"
 #include "src/main/accounting.h"
-#include "src/channels/channel.h"
+#include "src/main/manifest.h"
 
 /* accounting folder name */
 static char accounting[BIG_ENOUGH_STRING] = DEFAULT_ACCOUNTING;
+static int64_t network_stats[LimitsNumber] = {0};
+static int64_t local_stats[LimitsNumber] = {0};
+
+/* count i/o statistics */
+static void CountBytes(struct Connection *c, int size, int index)
+{
+  int64_t *acc;
+
+  assert(c != NULL);
+  assert(size >= 0);
+
+  /* update statistics */
+  acc = IS_FILE(c->protocol) ? local_stats : network_stats;
+  acc[index + 1] += size;
+  ++acc[index];
+}
+
+void CountGet(struct Connection *c, int size)
+{
+  CountBytes(c, size, GetsLimit);
+}
+
+void CountPut(struct Connection *c, int size)
+{
+  CountBytes(c, size, PutsLimit);
+}
 
 /* populate "buf" with an extended accounting statistics, return string size */
 static int ReadSystemAccounting(const struct NaClApp *nap, char *buf, int size)
@@ -61,52 +87,12 @@ static int ReadSystemAccounting(const struct NaClApp *nap, char *buf, int size)
 
   /* construct and return the result */
   return g_snprintf(buf, size, "%.2f %.2f %ld %ld",
-      (float)sys_time / ticks, (float)user_time / ticks, memory_size, (int64_t)0);
+      (float)sys_time / ticks, (float)user_time / ticks, memory_size, 0L);
 }
 
-/* get internal i/o information from channels counters */
-static int GetChannelsAccounting(const struct NaClApp *nap, char *buf, int size)
+/* prepare string with i/o information */
+static int GetChannelsAccounting(char *buf, int size)
 {
-  int64_t network_stats[LimitsNumber] = {0};
-  int64_t local_stats[LimitsNumber] = {0};
-  int i;
-
-  assert(buf != NULL);
-  assert(size != 0);
-
-  /* gather all channels statistics */
-  for(i = 0; i < nap->manifest->channels->len; ++i)
-  {
-    struct ChannelDesc *channel = CH_CH(nap->manifest, i);
-    int64_t *stats = NULL;
-    int j;
-
-    /*
-     * select proper array. channels with mixed source types
-     * cannot be properly accounted and will be accounted by
-     * the 1st source type
-     */
-    switch(CH_PROTO(channel, 0))
-    {
-      case ProtoRegular:
-      case ProtoCharacter:
-      case ProtoFIFO:
-        stats = local_stats;
-        break;
-      case ProtoTCP:
-        stats = network_stats;
-        break;
-      default:
-        ZLOG(LOG_ERR, "%s has invalid source type %s", channel->alias);
-        buf = DEFAULT_ACCOUNTING;
-        return sizeof DEFAULT_ACCOUNTING;
-    }
-
-    for(j = 0; j < LimitsNumber; ++j)
-      stats[j] += channel->counters[j];
-  }
-
-  /* construct the accounting statistics string */
   return g_snprintf(buf, size, "%ld %ld %ld %ld %ld %ld %ld %ld",
       local_stats[GetsLimit], local_stats[GetSizeLimit],
       local_stats[PutsLimit], local_stats[PutSizeLimit],
@@ -129,7 +115,7 @@ void AccountingDtor(const struct NaClApp *nap)
   offset = ReadSystemAccounting(nap, accounting, BIG_ENOUGH_STRING);
   strncat(accounting, " ", 1);
   ++offset;
-  GetChannelsAccounting(nap, accounting + offset, BIG_ENOUGH_STRING - offset);
+  GetChannelsAccounting(accounting + offset, BIG_ENOUGH_STRING - offset);
 }
 
 const char *GetAccountingInfo()

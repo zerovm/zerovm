@@ -18,6 +18,7 @@
 #include <arpa/inet.h> /* convert ip <-> int */
 #include <zmq.h>
 #include "src/channels/prefetch.h"
+#include "src/main/accounting.h"
 #include "src/main/report.h"
 
 #define LINGER -1 /* send timeout. -1: infinite(default), 0+: wait 0+ms */
@@ -333,8 +334,7 @@ void PrefetchChannelDtor(struct ChannelDesc *channel, int n)
     {
       if(n == 0) channel->getpos += channel->bufend;
       CH_SOURCE(channel, n)->pos += channel->bufend;
-      channel->counters[GetSizeLimit] += channel->bufend;
-      ++channel->counters[GetsLimit];
+      CountGet(CH_SOURCE(channel, n), channel->bufend);
     }
 
     /* get dummy message (#197) */

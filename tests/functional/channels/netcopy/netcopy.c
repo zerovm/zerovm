@@ -12,7 +12,7 @@
  */
 #include "include/zvmlib.h"
 
-#define CHUNK_SIZE 0x10000
+#define CHUNK_SIZE 0x100000
 #define BREAKIF(cond, ...) if(cond) {FPRINTF(STDERR, __VA_ARGS__); break;}
 
 /* zerovm platform does not have a real sleep */
@@ -38,7 +38,8 @@ int main(int argc, char **argv)
   for(;;)
   {
     char buffer[CHUNK_SIZE];
-    int plan = RAND() % sizeof buffer + 1;
+//    int plan = RAND() % sizeof buffer + 1;
+    int plan = (rand() * rand()) % sizeof buffer + 1;
 
     /* read */
     int count = READ(STDIN, buffer, plan);

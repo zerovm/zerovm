@@ -19,6 +19,8 @@
 #ifndef ACCOUNTING_H_
 #define ACCOUNTING_H_
 
+#include "src/channels/channel.h"
+
 #define DEFAULT_ACCOUNTING "not available"
 #define STAT_FMT "%*d %*s %*c %*d %*d %*d %*d %*d %*u %*u %*u %*u %*u %lu %lu %lu %lu"
 
@@ -30,5 +32,11 @@ void AccountingDtor(const struct NaClApp *nap);
 
 /* return accounting string */
 const char *GetAccountingInfo();
+
+/* update get statistics */
+void CountGet(struct Connection *c, int size);
+
+/* update put statistics */
+void CountPut(struct Connection *c, int size);
 
 #endif /* ACCOUNTING_H_ */

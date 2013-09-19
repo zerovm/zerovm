@@ -18,6 +18,7 @@
 #include <glib.h>
 #include "src/loader/sel_ldr.h"
 #include "src/main/report.h"
+#include "src/main/accounting.h"
 #include "src/channels/preload.h"
 #include "src/channels/prefetch.h"
 #include "src/channels/nservice.h"
@@ -181,9 +182,7 @@ int32_t ChannelRead(struct ChannelDesc *channel,
       }
 
       /* accounting */
-      ++channel->counters[GetsLimit];
-      if(result > 0)
-        channel->counters[GetSizeLimit] += result;
+      CountGet(CH_SOURCE(channel, n), result);
     }
 
     /* fail session if chunk broken and cannot be restored */
@@ -213,6 +212,11 @@ int32_t ChannelRead(struct ChannelDesc *channel,
   good = GetFirstSource(channel);
   if(channel->eof && IS_NETWORK(CH_PROTO(channel, good)))
     TestEOFDigest(channel, good);
+
+  /* update user i/o counters */
+  ++channel->counters[GetsLimit];
+  if(result > 0)
+    channel->counters[GetSizeLimit] += result;
   return result;
 }
 
@@ -244,11 +248,10 @@ int32_t ChannelWrite(struct ChannelDesc *channel,
         break;
     }
 
-    /* update the channel counter, size, position and tag */
+    /* accounting */
     ZLOGFAIL(result < 0, EIO, "%s;%d failed to write: %s",
         channel->alias, n, strerror(errno));
-    ++channel->counters[PutsLimit];
-    channel->counters[PutSizeLimit] += result;
+    CountPut(CH_SOURCE(channel, n), result);
   }
 
   /* update cursors and size */
@@ -257,6 +260,11 @@ int32_t ChannelWrite(struct ChannelDesc *channel,
       MAX(channel->size, channel->putpos) : channel->putpos;
   channel->getpos = channel->putpos;
   TagUpdate(channel->tag, buffer, result);
+
+  /* update user i/o counters */
+  ++channel->counters[PutsLimit];
+  if(result > 0)
+    channel->counters[PutSizeLimit] += result;
   return result;
 }
 
