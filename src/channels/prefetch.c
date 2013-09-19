@@ -312,6 +312,7 @@ void PrefetchChannelDtor(struct ChannelDesc *channel, int n)
     /* dummy message to avoid #197 */
     ZMQ_ERR(zmq_msg_init_data(channel->msg, digest, 0, NULL, NULL));
     SendMessage(channel, n);
+    CountPut(CH_SOURCE(channel, n), 0);
 
     /* only for the last source */
     if(n == channel->source->len - 1)
