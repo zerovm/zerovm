@@ -100,10 +100,12 @@ static int32_t GetDataChunk(struct ChannelDesc *channel, int n,
 /* check EOF digest for network source */
 static void TestEOFDigest(struct ChannelDesc *channel, int n)
 {
-  if(channel->tag != NULL)
+  if(channel->tag != NULL && channel->bufend > 0)
   {
     char digest[TAG_DIGEST_SIZE + 1];
     char *control = MessageData(channel);
+
+    assert(channel->bufend == TAG_DIGEST_SIZE);
 
     TagDigest(channel->tag, digest);
     if(0 != memcmp(control, digest, TAG_DIGEST_SIZE))
