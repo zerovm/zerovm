@@ -94,31 +94,17 @@ static void PreallocateChannel(const struct ChannelDesc *channel, int n)
 /* preload given character/FIFO device to channel */
 static void CharacterChannel(struct ChannelDesc* channel, int n)
 {
-  char *mode = NULL;
-  int flags = 0;
+  char *mode[] = {NULL, "rb", "wb"};
+  int flags[] = {0, O_RDONLY, O_RDWR};
   int h;
 
   ZLOG(LOG_DEBUG, "preload character %s", channel->alias);
-
-  /* calculate open mode */
-  switch(CH_RW_TYPE(channel))
-  {
-    case 1:
-      mode = "rb";
-      flags = O_RDONLY;
-      break;
-    case 2:
-      mode = "wb";
-      flags = O_RDWR;
-      break;
-    default:
-      ZLOGFAIL(1, EINVAL, "%s has invalid i/o type", channel->alias);
-      break;
-  }
+  ZLOGFAIL(!IS_RO(channel) && !IS_WO(channel), EINVAL,
+      "%s has invalid i/o type", channel->alias);
 
   /* open file */
-  h = open(CH_NAME(channel, n), flags);
-  CH_HANDLE(channel, n) = fdopen(h, mode);
+  h = open(CH_NAME(channel, n), flags[CH_RW_TYPE(channel)]);
+  CH_HANDLE(channel, n) = fdopen(h, mode[CH_RW_TYPE(channel)]);
   ZLOGFAIL(CH_HANDLE(channel, n) == NULL, errno,
       "cannot open %s", CH_NAME(channel, n));
 

@@ -33,8 +33,8 @@
 
 #define BADCMDLINE(msg) \
   do { \
-    printf("%s%s%s", msg == NULL ? "" : msg, \
-      msg == NULL ? "" : "\n", HELP_SCREEN); exit(EINVAL); \
+    printf(HELP_SCREEN, msg == NULL ? "" : msg, \
+        msg == NULL ? "" : "\n", TAG_ENCRYPTION); exit(EINVAL); \
   } while(0)
 
 static int skip_qualification = 0;
