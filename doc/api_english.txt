@@ -1,0 +1,172 @@
+this document describes zerovm user api
+(up to date 2013-10-20, needs editing)
+
+definition, enumerations
+-----------------------------------------------------------------------
+enum AccessType - access type. belongs to channels (see channels.txt)
+  SGetSPut - sequential read and write
+  RGetSPut - random read and sequential write
+  SGetRPut - sequential read and random write
+  RGetRPut - random read and random write
+
+enum IOLimits - i/o limitations. belongs to channels (see channels.txt)
+  GetsLimit - available reads number
+  GetSizeLimit - number of bytes can be read
+  PutsLimit - available writes number
+  PutSizeLimit - number of bytes can be written
+
+enum TrapCalls - Trap functions (see trap.txt)
+  TrapRead - read from channel
+  TrapWrite - write to channel
+  TrapExit - terminate user program
+  TrapJail - validation of the memory block. if validation was successful
+             memory block will be marked "read only" and "executable"
+  TrapUnjail - memory block will be marked "read/write"
+
+zerovm data types
+-----------------------------------------------------------------------
+struct ZVMChannel - channel record (see channels.txt)
+  limits - i/o limitations (see enum IOLimits)
+  size - the channel size. is not defined for the sequential channels
+  type - access type (see above "enum AccessType")
+  name - the channel name
+
+nacl syscalls
+-----------------------------------------------------------------------
+  no support
+
+zerovm api functions
+-----------------------------------------------------------------------
+  zerovm has the only system call - trap. trap address is 0 in nacl
+  trampoline (0x10000 in user address space). trap supports 5 functions
+  (see enum TrapCalls above). user encouaraged to use wrappers defined
+  in api/zvm.h:
+
+  zvm_pread(desc, buffer, size, offset)
+  reads from channel "desc" to memory addressed by "buffer" "size" bytes.
+  if the channel is random read, "offset" specifies the channel position
+  to read, otherwise "offset" will be ignored. the function returns 0 if
+  eof reached and -errno in case of error
+
+  zvm_pwrite(desc, buffer, size, offset)
+  writes to channel "desc" from memory addressed by "buffer" "size" bytes
+  if the channel is random write, "offset" specifies the channel position
+  to write, otherwise "offset" will be ignored. the function returns 0 if
+  eof reached and -errno in case of error
+
+  zvm_jail(buffer, size)
+  invokes validator for "buffer" of given "size". the "buffer" pointer
+  should be aligned to mmap page size (64kb). if validation complete
+  successfully memory area specified by "buffer" and "size" will be
+  marked as "read only" and "executable". in case of error the function
+  will return -errno
+
+  zvm_unjail(buffer, size)
+  marks given "buffer" of "size" bytes as "read/write". the "buffer"
+  pointer should be aligned to mmap page size (64kb)
+
+  zvm_exit(code)
+  terminates the program with "code"
+
+variables
+-----------------------------------------------------------------------
+struct UserManifest
+  heap_ptr - the beginning of the user heap
+  heap_size - user heap size in bytes
+  stack_size - user tack size in bytes
+  channels_count - the channels number (there are 3 always available 
+    channels: 0..2)
+  channels - array of struct ZVMChannel (see struct ZVMChannel above)
+    for available channels
+  
+  user program have an access to the MANIFEST (definition) containing all
+  information mentioned above. the MANIFEST memory area is read only
+
+channels
+-----------------------------------------------------------------------
+  the channels implements the file abstraction over host i/o. channels can
+  wrap network connections, pipes, character devices and regular files.
+  the number of channels is constant during the user session. it is
+  guaranteed that session have 3 standard channels: 0 - /dev/stdin,
+  1 - /dev/stdout, 2 - /dev/stderr. for further details about channels
+  see channels.txt
+
+  special (guaranteed) channels:
+  /dev/stdin - standard input. record 0 in MANIFEST->channels. usually
+    it is read only channel with sequential access. however system manifest
+    can redefine it to any type
+  /dev/stdout - standard output. record 1 in MANIFEST->channels. usually
+    it is write only channel with sequential access. however system manifest
+    can redefine it to any type
+  /dev/stderr - standard error. record 2 in MANIFEST->channels. usually
+    it is write only channel with sequential access. however system manifest
+    can redefine it to any type
+          
+  channel types:
+  - sequential read only
+  - random read only
+  - sequential write only
+  - random write only
+  - appendable (cdr). random read / sequential write channel. if the channel
+    is not empty the 1st write position follows the last byte
+  - random read / write
+
+  size of channel and end of channel:
+  size defined for channels with random access (see "size" field in struct 
+  ZVMChannel). channels with sequential access does not have size, but eof.
+  zvm_pread will return 0 if end of channel reached. note: end of channel
+  accounted against limits. for example, if channel read limited to 10 bytes
+  and file mounted to channel is 10 bytes long, user will not able to read eof.
+  instead of eof (0) user will get quota exceeded (-122)
+
+  TO DELETE {{
+  multiplexed channels (multichannels)
+  channels can have more than 1 source in the "name" field (see channel 
+  definition in channel.txt). reading from mulichannel means comparison
+  of data from diferent sources. if at least two of them contain same data
+  read operation successful and data avalable for the user, otherwise
+  (all sources)..
+  }}
+
+  recommendations
+  - user program can work faster if data will be read/written with big chunks
+    (especially in sequential channels)
+  - it is suggested to use buffers aligned to 0x10000 bound
+
+memory
+-----------------------------------------------------------------------
+  there are 3 MANIFEST fields available for the user: stack_size, heap_ptr
+  and heap_size. the names are selfexplaning. note: since MANIFEST is read
+  only, it is very unhealthy to use it after memory management initialized
+  these fields are for system/zrt use only
+
+command line
+-----------------------------------------------------------------------
+  command line accessible via "/dev/nvram". however this is not the part
+  of zerovm api. for the further details see toolchain/zrt documentation
+
+environment variables
+-----------------------------------------------------------------------
+  environment variables accessible via "/dev/nvram". however this is
+  not the part of zerovm api. for the further details see toolchain/zrt
+  documentation
+
+trap, trampoline and everything else (to know, but not to use)
+-----------------------------------------------------------------------
+  trampoline - read only system area of 64kb size containing nacl syscalls.
+    one element size 0x20. further information can be found in google
+    documentation
+  trap - syscall number 0 (not used by the nacl). should not be used directly
+
+terminology
+-----------------------------------------------------------------------
+  system manifest - text file passed to zerovm. contains description of
+    the user session: channels, node id, memory size e.t.c.
+  user manifest - read only memory with part of system manifest available
+    for the user (see struct UserManifest).
+    
+api usage
+-----------------------------------------------------------------------
+  examples can be found in zerovm repository in the tests/functional/demo
+  folder
+
