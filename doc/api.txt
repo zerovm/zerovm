@@ -1,173 +1,172 @@
-ATTENTION (please help!):
-this document should be traslated to english as soon as possible
+this document describes zerovm user api
+(up to date 2013-10-20, needs editing)
 
-этот документ описывает пользовательский api zerovm
+definition, enumerations
+-----------------------------------------------------------------------
+enum AccessType - access type. belongs to channels (see channels.txt)
+  SGetSPut - sequential read and write
+  RGetSPut - random read and sequential write
+  SGetRPut - sequential read and random write
+  RGetRPut - random read and random write
 
-макроопределения, перечисления
-------------------------------
-enum AccessType - тип доступа. атрибут используется в описании каналов (см. "каналы") 
-  SGetSPut - последовательное чтение и последовательная запись
-  RGetSPut - произвольное чтение и последовательная запись
-  SGetRPut - последовательное чтение и произвольная запись
-  RGetRPut - произвольный доступ на чтение и запись.
+enum IOLimits - i/o limitations. belongs to channels (see channels.txt)
+  GetsLimit - available reads number
+  GetSizeLimit - number of bytes can be read
+  PutsLimit - available writes number
+  PutSizeLimit - number of bytes can be written
 
-enum IOLimits - ограничения доступа. атрибут используется в описании каналов (см. "каналы")
-  GetsLimit - разрешенное количество чтений
-  GetSizeLimit - количество байт которое может быть прочитано
-  PutsLimit - разрешенное количество записей
-  PutSizeLimit - количество байт которое может быть записано
+enum TrapCalls - Trap functions (see trap.txt)
+  TrapRead - read from channel
+  TrapWrite - write to channel
+  TrapExit - terminate user program
+  TrapJail - validation of the memory block. if validation was successful
+             memory block will be marked "read only" and "executable"
+  TrapUnjail - memory block will be marked "read/write"
 
-enum TrapCalls - функции trap (см. "функции")
-  TrapRead - чтение из канала
-  TrapWrite - запись в канал
-  TrapExit - завершение пользовательской программы
-  TrapJail - валидация блока памяти и, в случае успеха, изменение его прав с чтение/запись
-             на чтение/исполнение 
-  TrapUnjail - изменение прав блока памяти на чтение/запись
+zerovm data types
+-----------------------------------------------------------------------
+struct ZVMChannel - channel record (see channels.txt)
+  limits - i/o limitations (see enum IOLimits)
+  size - the channel size. is not defined for the sequential channels
+  type - access type (see above "enum AccessType")
+  name - the channel name
 
-типы данных zerovm api
------------------------
-struct ZVMChannel - описание канала (см. "каналы")
-  limits - ограничения канала (см. enum IOLimits)
-  size - размер канала. не установлено для каналов последовательного доступа
-  type - тип доступа (см. "enum AccessType")
-  name - имя канала
+nacl syscalls
+-----------------------------------------------------------------------
+  no support
 
-вызовы nacl (nacl syscalls)
----------------------------
-  не поддерживаются 
+zerovm api functions
+-----------------------------------------------------------------------
+  zerovm has the only system call - trap. trap address is 0 in nacl
+  trampoline (0x10000 in user address space). trap supports 5 functions
+  (see enum TrapCalls above). user encouaraged to use wrappers defined
+  in api/zvm.h:
 
-функции zerovm api
-------------------
-  в zerovm существует единственный системный вызов - trap, соответствующий нулевому адресу 
-  в таблице trampoline . trap обслуживает 3 функцим (см. enum TrapCalls). для доступа 
-  к этому сервису рекомендуется использовать "обертки" определенные в api/zvm.h:
-  
   zvm_pread(desc, buffer, size, offset)
-  читает из канала с номером "desc" в область памяти "buffer" "size" байт. если канал 
-  имеет произвольный доступ на чтение, "offset" указывает позицию в канале с которой 
-  производится чтение. для канала последовательного доступа значение offset игнорируется.
-  возвращает количество прочитанных байт, 0 - в случае конца канала или -errno при 
-  возникновении ошибки (errno коды могут быть получены man errno).
+  reads from channel "desc" to memory addressed by "buffer" "size" bytes.
+  if the channel is random read, "offset" specifies the channel position
+  to read, otherwise "offset" will be ignored. the function returns 0 if
+  eof reached and -errno in case of error
 
   zvm_pwrite(desc, buffer, size, offset)
-  пишет в канал с номером "desc" из области памяти "buffer" "size" байт. если канал 
-  имеет произвольный доступ на запись "offset" указывает позицию в канале в которую 
-  производится запись. для канала последовательного доступа значение offset игнорируется.
-  возвращает количество записанных байт, или -errno при возникновении ошибки 
-  (errno коды могут быть получены man errno).
+  writes to channel "desc" from memory addressed by "buffer" "size" bytes
+  if the channel is random write, "offset" specifies the channel position
+  to write, otherwise "offset" will be ignored. the function returns 0 if
+  eof reached and -errno in case of error
 
   zvm_jail(buffer, size)
-  вызывает валидатор для буфера указанного размера. указатель буфера должен быть
-  выровнен на границу страницы (64кб). при успешном завершении валидации буфер
-  помечается как "исполняемый"/"для чтения" и может быть вызван с соблюдением
-  ограничения nacl sfi. если валидатор отверг содержимое буфера, функция возвращает
-  ошибку
+  invokes validator for "buffer" of given "size". the "buffer" pointer
+  should be aligned to mmap page size (64kb). if validation complete
+  successfully memory area specified by "buffer" and "size" will be
+  marked as "read only" and "executable". in case of error the function
+  will return -errno
 
   zvm_unjail(buffer, size)
-  помечает переданный буфер как доступный для чтения и записи (код из буфера 
-  исполнять нельзя). указатель буфера должен быть выровнен на границу 
-  страницы (64кб)
+  marks given "buffer" of "size" bytes as "read/write". the "buffer"
+  pointer should be aligned to mmap page size (64kb)
 
   zvm_exit(code)
-  завершает программу с указанным кодом
+  terminates the program with "code"
 
-переменные
-----------
+variables
+-----------------------------------------------------------------------
 struct UserManifest
-  heap_ptr - начало доступной памяти (кучи) пользовательской программы
-  heap_size - размер кучи в байтах
-  stack_size - размер стека в байтах 
-  channels_count - количество доступных каналов (3 канала: 0..2 доступны всегда)
-  channels - массив структур доступных каналов (см. "struct ZVMChannel")
+  heap_ptr - the beginning of the user heap
+  heap_size - user heap size in bytes
+  stack_size - user tack size in bytes
+  channels_count - the channels number (there are 3 always available 
+    channels: 0..2)
+  channels - array of struct ZVMChannel (see struct ZVMChannel above)
+    for available channels
   
-  пользовательской программе доступно макроопределение MANIFEST указывающее 
-  на область содержащую вышеперечисленную информацию и доступную только для
-  чтения.
+  user program have an access to the MANIFEST (definition) containing all
+  information mentioned above. the MANIFEST memory area is read only
 
-каналы
-------
-  каналы реализуют файловую абстракцию над доступными zerovm средствами ввода/вывода. в данный
-  момент это локальные файлы и сетевые соединения. количество доступных каналов неизменно для
-  сеанса работы и известно сразу после инициалиции zerovm api (см. "zvm_init"). более подробную
-  информацию об атрибутах каналов можно получить из "struct ZVMChannel". для обслуживания каналов
-  предназначена часть функций trap (см. "функции"). гарантируется наличие 3х стандартных каналов:
-  stdin, stdout, stderr.
+channels
+-----------------------------------------------------------------------
+  the channels implements the file abstraction over host i/o. channels can
+  wrap network connections, pipes, character devices and regular files.
+  the number of channels is constant during the user session. it is
+  guaranteed that session have 3 standard channels: 0 - /dev/stdin,
+  1 - /dev/stdout, 2 - /dev/stderr. for further details about channels
+  see channels.txt
 
-  специальные каналы:
-  stdin - стандартный ввод. канал последовательного доступа. только чтение.
-          доступен по индексу 0 в MANIFES->channels
-  stdout - стандартный вывод. канал последовательного доступа. только запись.
-          доступен по индексу 1 в MANIFES->channels
-  stderr - стандартный вывод ошибок. канал последовательного доступа. только запись.
-          доступен по индексу 2 в MANIFES->channels
+  special (guaranteed) channels:
+  /dev/stdin - standard input. record 0 in MANIFEST->channels. usually
+    it is read only channel with sequential access. however system manifest
+    can redefine it to any type
+  /dev/stdout - standard output. record 1 in MANIFEST->channels. usually
+    it is write only channel with sequential access. however system manifest
+    can redefine it to any type
+  /dev/stderr - standard error. record 2 in MANIFEST->channels. usually
+    it is write only channel with sequential access. however system manifest
+    can redefine it to any type
           
-  реализована поддержка каналов следующих типов:
-  - только для чтения последовательного доступа
-  - только для чтения произвольного доступа
-  - только для записи последовательного доступа
-  - только для записи произвольного доступа
-  - appendable (cdr). канал имеющий произвольный доступ на чтение и последовательный доступ
-    при записи. кроме того если канал имеет ненулевую длину, начальная позиция записи
-    указывает на байт следующий за последним
-  - канал произвольного доступа для чтения и записи
+  channel types:
+  - sequential read only
+  - random read only
+  - sequential write only
+  - random write only
+  - appendable (cdr). random read / sequential write channel. if the channel
+    is not empty the 1st write position follows the last byte
+  - random read / write
+
+  size of channel and end of channel:
+  size defined for channels with random access (see "size" field in struct 
+  ZVMChannel). channels with sequential access does not have size, but eof.
+  zvm_pread will return 0 if end of channel reached. note: end of channel
+  accounted against limits. for example, if channel read limited to 10 bytes
+  and file mounted to channel is 10 bytes long, user will not able to read eof.
+  instead of eof (0) user will get quota exceeded (-122)
+
+  TO DELETE {{
+  multiplexed channels (multichannels)
+  channels can have more than 1 source in the "name" field (see channel 
+  definition in channel.txt). reading from mulichannel means comparison
+  of data from diferent sources. if at least two of them contain same data
+  read operation successful and data avalable for the user, otherwise
+  (all sources)..
+  }}
+
+  recommendations
+  - user program can work faster if data will be read/written with big chunks
+    (especially in sequential channels)
+  - it is suggested to use buffers aligned to 0x10000 bound
+
+memory
+-----------------------------------------------------------------------
+  there are 3 MANIFEST fields available for the user: stack_size, heap_ptr
+  and heap_size. the names are selfexplaning. note: since MANIFEST is read
+  only, it is very unhealthy to use it after memory management initialized
+  these fields are for system/zrt use only
+
+command line
+-----------------------------------------------------------------------
+  command line accessible via "/dev/nvram". however this is not the part
+  of zerovm api. for the further details see toolchain/zrt documentation
+
+environment variables
+-----------------------------------------------------------------------
+  environment variables accessible via "/dev/nvram". however this is
+  not the part of zerovm api. for the further details see toolchain/zrt
+  documentation
+
+trap, trampoline and everything else (to know, but not to use)
+-----------------------------------------------------------------------
+  trampoline - read only system area of 64kb size containing nacl syscalls.
+    one element size 0x20. further information can be found in google
+    documentation
+  trap - syscall number 0 (not used by the nacl). should not be used directly
+
+terminology
+-----------------------------------------------------------------------
+  system manifest - text file passed to zerovm. contains description of
+    the user session: channels, node id, memory size e.t.c.
+  user manifest - read only memory with part of system manifest available
+    for the user (see struct UserManifest).
     
-  длина каналов и признак конца канала:
-  для каналов произвольного доступа определена длина канала (количество байт канала), 
-  описывается полем "size" (см. struct ZVMChannel). для каналов последовательного доступа
-  поле "size" не определено, однако для каналов "для чтения" при достижении конца канала
-  функцией zvm_pread возвращается 0
-  примечание: 
-  признак конца канала является специальным символом и учитывается limits. т.о.
-  если через канал последовательного доступа разрешено прочесть 10 байт и файл к которому
-  подключен канал содержит 10 байт, то прочесть признак конца канала невозможно. при попытке
-  чтения будет возвращена ошибка превышения квоты
-  
-  синхронизированные каналы (задаются системным манифестом)
-  каналы считаются синхронизированными если один канал читает данные которые пишет 
-  другой канал. операция чтения в читающем канале блокируется до тех пор пока связанный 
-  записывающий канал не поместит запрошенное количество байт. синхронизированные каналы 
-  могут быть только последовательными. на этапе выполнения программы невозможно знать
-  является ли канал синхронизированным.
-  примечание: zerovm не гарантирует корректную работу в случае если синхронизированные 
-  каналы управляются одним узлом.
-  примечание: zerovm не гарантирует корректную работу в случае если произведена попытка
-  синхронизировать более двух каналов.
+api usage
+-----------------------------------------------------------------------
+  examples can be found in zerovm repository in the tests/functional/demo
+  folder
 
-  рекомендации
-  - при работе с каналами лучше буферизовать ввод/вывод. это ускоряет работу программы. 
-  - желательно выравнивать буфер на границу 0x10000
-
-работа с памятью
-----------------
-  пользователю доступны 3 поля MANIFEST: stack_size, heap_ptr и heap_size, 
-  которые определяют размер стека, а также местоположение и размер кучи. 
-  пользователь может распоряжаться этими областями памяти по своему усмотрению
-
-командная строка
-----------------
-  командная строка доступна через специальный канал "/dev/nvram"
-  argc и argv еще поддерживаются, но это может быть отменено в любой момент
-
-переменные окружения
---------------------
-  переменные окружения доступны через специальный канал "/dev/nvram"
-  envp еще поддерживаются, но это может быть отменено в любой момент
-
-trap, trampoline и все остальное, что надо знать и не надо использовать.
-------------------------------------------------------------------------
-  trampoline - системная область содержащая таблицу nacl syscalls. размер одного
-      элемента - 0x20 байт. область недоступна для записи. более подробная
-      информация доступна в документах google nacl
-  trap - syscall с номером 0. используется для вызова функций (см. enum TrapCalls)
-      рекомендуется использовать обертки (см. "функции") вместо прямого вызова trap
-
-использованные соглашения / термины
------------------------------------
-системный манифест - манифест управляющий поведением zerovm
-пользовательский манифест - информация из системного манифеста доступная пользователю
-    (см. struct UserManifest)
-    
-примеры использования api
--------------------------
-примеры доступны из репозитория zerovm и находятся в папке tests/functional/demo 
