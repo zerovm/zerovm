@@ -1,11 +1,11 @@
 This document describes manifest for ZeroVM NaCl application.
-update: a new design
+(up to date 2013-10-20, needs editing)
 -------------------------------------------------------------
 
-
 Description:
-The manifest is a text file which must be provided in order to run a NaCl application inside ZeroVM. 
-Manifest samples can be found in "samples" directory.
+The manifest is a text file which must be provided in order to run a NaCl
+application inside ZeroVM. Manifest samples can be found in "samples"
+directory.
 
 list of available keywords:
 Version
@@ -18,41 +18,45 @@ Etag
 NameServer
 
 Structure:
-- each valid line must contain exactly only one key and value(s) separated by exactly one '=' sign
-- both key and value may contain spaces
-- key and value case does matter: "key" and "KeY" are treated as a different keywords
+- each valid line must contain exactly only one key and value(s) separated
+  by exactly one '=' sign
+- value may contain spaces
+- key and value case does matter: "key" and "KeY" are treated as a different
+  keywords
 - spaces around key/value will be ignored
 - lines are delimited with EOL (unix or windows style)
 - invalid lines will be ignored
 - lines with unknown keywords (not mentioned below) will be ignored
-- "Channel" expects complex values: comma separated fields 
+- integer fields can use octal, decimal and hexadecimal notation
+- "Channel" expects complex values: comma and semicolon separated fields 
 
 List of valid keywords:
 Channel
   (obligatory, 8 comma separated fields strings and integers)
   Description of a channel. The order does matter. example:
-  Channel = /home/dazo/git/zerovm/samples/sort/sort.stdout.log, /dev/stdout, 5, 0, 0, 99999999, 99999999
+  Channel = /home/user/sort.log, /dev/stdout, 0, 1, 0, 0, 0x100, 0x1000
   where: 
-    [1] trusted channel name (n/a for the user), 
-    [2] untrusted channel name, 
-    [3] access type, 
-    [4] etag disabled/enabled (0/1),
-    [5] gets limit, 
-    [6] get size limits, 
-    [7] puts limit, 
+    [1] trusted channel name (n/a for the user),
+    [2] untrusted channel name,
+    [3] access type (0..3),
+    [4] etag disabled/enabled (0..1),
+    [5] gets limit,
+    [6] get size limits,
+    [7] puts limit,
     [8] put size limits
-  Each manifest SHOULD have at least three Channel configuration entries for the standard devices: stdin, stdout, stderr
+  Each manifest should have at least three channels configuration entries for
+  the standard devices: /dev/stdin, /dev/stdout, /dev/stderr
   Example (maps all channels to /dev/null):
-    Channel = /dev/null, /dev/stdin, 0, 0, 0, 0, 0, 0
-    Channel = /dev/null, /dev/stdout, 0, 1, 0, 0, 0, 0
-    Channel = /dev/null, /dev/stderr, 0, 1, 0, 0, 0, 0
-  network channels has same fields, but the very 1st one (trusted channel name) has special form:
-  protocol:address:port
+    Channel = /dev/null, /dev/stdin, 0, 0, 1, 1, 0, 0
+    Channel = /dev/null, /dev/stdout, 0, 1, 0, 0, 1, 1
+    Channel = /dev/null, /dev/stderr, 0, 1, 0, 0, 1, 1
+  network channels has same fields, but the very 1st one (trusted channel 
+  name) has special form: protocol:address:port
   where
     protocol can be tcp (or udp for name server)
     address is IPv4 or integer representaion of it
     port is 16 bit integer or empty (if name server used)
-  
+
 Version
   (obligatory, string)
   currently ZeroVM is not backward compatible with the older manifest versions.
@@ -61,35 +65,37 @@ Program
   (obligatory, string)
   NaCl module to validate and run, full path
 Timeout
-  (obligatory, unsigned 32-bit integer)
-  time out in seconds. ZeroVM will stop user program and exit after the specified period
+  (obligatory, 32-bit integer)
+  time out in seconds. ZeroVM will stop user program and exit after the
+  specified period. valid values are 1..2147483647
 Memory
-  (obligatory, 2 comma separated integers)
-  1st argument Specifies the memory size in bytes available for the user program. If specified
-  ZeroVM will allocate all memory before nexe start and will not use real memory
-  allocation syscalls due nexe runtime. MemMax should take in account that 16mb should be
-  reserved for the user stack, 1mb+ - for nexe code and data, and some memory for system area
+  (obligatory, two 32-bit comma separated integers)
+  1st argument specifies the memory size in bytes available for the user
+  program. If specified ZeroVM will allocate all memory before nexe start
+  and will not use real memory allocation syscalls during nexe runtime.
+  "Memory" should take in account that 16mb should be reserved for the user
+  stack, 1mb+ - for nexe code and data, and some memory for system area.
   the 2nd argument is etag switch: 0 - disabled, 1 - enabled
 NameServer
   (optional, string)
-  the address of name server. name server resolves zerovm provided network channels.
-  only supported protocol is udp. notation used to specify the address is not standard
-  since 1. it is internal thing, 2. it is more simple to parse such pseudo url. the
-  same notation used for network channels.
-  NameServer = udp:127.0.0.1:54321
+  the address of name server. name server resolves zerovm provided network
+  channels. only supported protocol is udp. notation used to specify the
+  address is not standard since 1. it is internal thing, 2. it is more simple
+  to parse such pseudo url. the same notation used for network channels.
+  ex.: NameServer = udp:127.0.0.1:54321
   udp - protocol
   127.0.0.1 - server ip address
   54321 - server port
   note: it is possible to use integer ip representation instead of IPv4
 Node
   (optional, unsigned 32-bit integer)
-  Specifies the node id (not available for the untrusted code). The node id should 
-  be greater then 0.
-  Example:
-  NodeName = 1
+  Specifies the node id (not available for the untrusted code). The node 
+  id should be in 1..2147483647 range
+  ex.: Node = 1
 Etag
-  (optional, single value)
+  (optional)
   reserved
 
-Both keywords and values have size limit of 64kb. The manifest file size limited
-to 0x100000. The limitations can be changed in the future.
+Both keywords and values have size limit of 0x2000. The manifest file size
+limited to 0x80000. value limited to 16 tokens. The limitations can be
+changed in the future.
