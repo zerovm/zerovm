@@ -91,7 +91,7 @@ static void PreallocateChannel(const struct ChannelDesc *channel, int n)
   ZLOGFAIL(code == -1, errno, "cannot preallocate %s", channel->alias);
 }
 
-/* preload given character device to channel */
+/* preload given character/FIFO device to channel */
 static void CharacterChannel(struct ChannelDesc* channel, int n)
 {
   char *mode = NULL;
@@ -117,7 +117,7 @@ static void CharacterChannel(struct ChannelDesc* channel, int n)
   }
 
   /* open file */
-  h = open(CH_NAME(channel, n), flags | O_NONBLOCK);
+  h = open(CH_NAME(channel, n), flags);
   CH_HANDLE(channel, n) = fdopen(h, mode);
   ZLOGFAIL(CH_HANDLE(channel, n) == NULL, errno,
       "cannot open %s", CH_NAME(channel, n));
