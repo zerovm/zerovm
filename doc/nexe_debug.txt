@@ -1,5 +1,5 @@
 there is debugging script calling gdb from zerovm toolchain
-
+(move it to zerovm toolchain)
 ------------------------------------------------------------
 #!/bin/sh
 filename=$(basename "$1")

@@ -1,19 +1,19 @@
 This document describes ZeroVM command line switches
+(up to date 2013-10-20, needs editing)
 ----------------------------------------------------
 
 ZeroVM command line switches:
 
-  ZeroVM lightweight VM manager, build 2013-03-27
-  Usage: <manifest> [-l#] [-v#] [-sFPSQ]
+  ZeroVM tag1 lightweight VM manager, build 2013-09-20
+  Usage: <manifest> [-l#] [-v#] [-stFPQ]
 
-   <manifest> load settings from manifest file
-   -l set a new storage limit (in Gb)
+   -l <gigabytes> file size limit (default 4Gb)
    -s skip validation
-   -v <level> verbosity
-   -F fuzz testing; quit right before starting user app
+   -t report to log instead of stdout
+   -v <0..3> log verbosity (default 0)
+   -F quit right before starting user session
    -P disable channels space preallocation
-   -Q disable platform qualification (dangerous!)
-   -S disable signal handling
+   -Q disable platform qualification
 
 
    -- The manifest contains a set of control data for the executable. Obligatory.
@@ -25,6 +25,8 @@ ZeroVM command line switches:
 
 -s -- skips validation. used for "prevalidation" engine.
 
+-t -- puts report into syslog instead of /dev/stdout
+
 -v -- controls verbosity of information in the ZeroVM log. writes ZeroVM 
       log to "var/log/syslog". it is not recommended to use values more than 2
       possible values are 1..4
@@ -32,20 +34,19 @@ ZeroVM command line switches:
 -F -- specified NaCl application will be loaded but not run. used for 
       "prevalidation" engine.
 
--S -- will prevent the signals handlers installation. not recommended to use.
+-P -- if specified zerovm will not allocate space for "write" channels connected
+      to local storage
 
 -Q -- will skip data execution test. This switch makes it possible to run ZeroVM 
       application on a platform with no "data execution" protection.
       
--P -- if specified zerovm will not allocate space for "write" channels connected
-      to local storage
-
 examples:
   zerovm -v2 test.manifest
   starts zerovm with manifest "test.manifest" and "debug" verbosity
   
-  zerovm -e2 test.manifest
-  starts zerovm with manifest "test.manifest" with etagged memory
+  zerovm -QPst test.manifest
+  starts zerovm with manifest "test.manifest" skipping validation, storage
+  preallocation, platform qualification. report will be put into syslog
   
   zerovm -F test.manifest
-  loads nexe specified in "test.manifest" and exits with validator status
+  loads program specified in "test.manifest" and exits with validator status
