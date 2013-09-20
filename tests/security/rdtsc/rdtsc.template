@@ -1,15 +1,16 @@
 =====================================================================
 == rdtsc test
 =====================================================================
-Channel = /dev/null, /dev/stdin, 0, 999999, 999999, 0, 0
-Channel = /dev/null, /dev/stdout, 0, 0, 0, 999999, 999999
-Channel = /dev/null, /dev/stderr, 0, 0, 0, 999999, 999999
+Channel = /dev/null, /dev/stdin, 0, 0, 1, 1, 0, 0
+Channel = /dev/null, /dev/stdout, 0, 0, 0, 0, 1, 1
+Channel = /dev/null, /dev/stderr, 0, 0, 0, 0, 1, 1
 
 =====================================================================
 == switches for zerovm. some of them used to control nexe, some
 == for the internal zerovm needs
 =====================================================================
-Version = 09082012
-Nexe = rdtsc.nexe
-MemMax = 33554432
+Version = 20130611
+Program = rdtsc.nexe
+Memory = 0x2000000, 0
 Timeout = 1
+

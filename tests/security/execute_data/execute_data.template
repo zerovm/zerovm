@@ -1,15 +1,15 @@
 =====================================================================
 == "execute data" test
 =====================================================================
-Channel = /dev/null, /dev/stdin, 0, 65536, 4194304, 0, 0
-Channel = /dev/stdout, /dev/stdout, 0, 0, 0, 65536, 4194304
-Channel = /dev/null, /dev/stderr, 0, 0, 0, 65536, 4194304
+Channel = /dev/null, /dev/stdin, 0, 0, 65536, 4194304, 0, 0
+Channel = /dev/stdout, /dev/stdout, 0, 0, 0, 0, 65536, 4194304
+Channel = /dev/null, /dev/stderr, 0, 0, 0, 0, 65536, 4194304
 
 =====================================================================
 == control switches
 =====================================================================
-Version = 09082012
-Nexe = execute_data.nexe
-MemMax = 33554432
+Version = 20130611
+Program = execute_data.nexe
+Memory = 0x2000000, 0
 Timeout = 1
 
