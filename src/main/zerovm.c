@@ -191,6 +191,7 @@ int main(int argc, char **argv)
   if(-1 == (*((struct Gio *)&main_file)->vtbl->Close)((struct Gio *)&main_file))
     ZLOG(LOG_ERROR, "Error while closing '%s'", nap->manifest->program);
   (*((struct Gio *) &main_file)->vtbl->Dtor)((struct Gio *) &main_file);
+  TIMER_REPORT("deallocating snapshot");
 
   /* construct and initialize all channels */
   ChannelsCtor(nap->manifest);

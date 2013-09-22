@@ -83,7 +83,7 @@ static int32_t ZVMReadHandle(struct NaClApp *nap,
     return -EINVAL;
   }
   channel = CH_CH(nap->manifest, ch);
-  ZLOGS(LOG_DEBUG, "channel %s, buffer=0x%lx, size=%d, offset=%ld",
+  ZLOGS(LOG_INSANE, "channel %s, buffer=0x%lx, size=%d, offset=%ld",
       channel->alias, (intptr_t)buffer, size, offset);
 
   /* check buffer and convert address */
@@ -144,7 +144,7 @@ static int32_t ZVMWriteHandle(struct NaClApp *nap,
     return -EINVAL;
   }
   channel = CH_CH(nap->manifest, ch);
-  ZLOGS(LOG_DEBUG, "channel %s, buffer=0x%lx, size=%d, offset=%ld",
+  ZLOGS(LOG_INSANE, "channel %s, buffer=0x%lx, size=%d, offset=%ld",
       channel->alias, (intptr_t)buffer, size, offset);
 
   /* check buffer and convert address */

@@ -138,7 +138,7 @@ void FreeMessage(struct ChannelDesc *channel)
 /* get the next message. updates channel->msg (and indices) */
 static void GetMessage(struct ChannelDesc *channel, int n)
 {
-  ZLOGS(LOG_DEBUG, "GetMessage of %s;%d", channel->alias, n);
+  ZLOGS(LOG_INSANE, "GetMessage of %s;%d", channel->alias, n);
 
   /* receive the next message and rewind buffer */
   ZMQ_ERR(zmq_recv(CH_HANDLE(channel, n), channel->msg, 0));
@@ -148,7 +148,7 @@ static void GetMessage(struct ChannelDesc *channel, int n)
 
 void FetchMessage(struct ChannelDesc *channel, int n)
 {
-  ZLOGS(LOG_DEBUG, "FetchMessage of %s;%d", channel->alias, n);
+  ZLOGS(LOG_INSANE, "FetchMessage of %s;%d", channel->alias, n);
 
   /* get message */
   if(channel->eof) return;
@@ -168,7 +168,7 @@ void FetchMessage(struct ChannelDesc *channel, int n)
 /* send message "channel->msg" */
 static void SendMessage(struct ChannelDesc *channel, int n)
 {
-  ZLOGS(LOG_DEBUG, "SendMessage to %s;%d", channel->alias, n);
+  ZLOGS(LOG_INSANE, "SendMessage to %s;%d", channel->alias, n);
   ZMQ_ERR(zmq_send(CH_HANDLE(channel, n), channel->msg, 0));
 }
 
@@ -181,7 +181,7 @@ int32_t SendData(struct ChannelDesc *channel, int n, const char *buf, int32_t co
   assert(buf != NULL);
 
   /* send a buffer through the multiple messages */
-  ZLOG(LOG_DEBUG, "channel %s;%d, buffer=0x%lx, size=%d",
+  ZLOG(LOG_INSANE, "channel %s;%d, buffer=0x%lx, size=%d",
       channel->alias, n, (intptr_t)buf, count);
   for(writerest = count; writerest > 0; writerest -= NET_BUFFER_SIZE)
   {
@@ -203,7 +203,7 @@ void SyncSource(struct ChannelDesc *channel, int n)
 {
   if(!CH_SEQ_READABLE(channel)) return;
 
-  ZLOGS(LOG_DEBUG, "%s;%d before skip pos = %ld, getpos = %ld",
+  ZLOGS(LOG_INSANE, "%s;%d before skip pos = %ld, getpos = %ld",
       channel->alias, n, CH_SOURCE(channel, n)->pos, channel->getpos);
 
   /* if source is a pipe read (*->getpos - *->pos) bytes */
@@ -234,7 +234,7 @@ void SyncSource(struct ChannelDesc *channel, int n)
   else
     CH_SOURCE(channel, n)->pos = channel->getpos;
 
-  ZLOGS(LOG_DEBUG, "%s;%d skipped pos = %ld, getpos = %ld",
+  ZLOGS(LOG_INSANE, "%s;%d skipped pos = %ld, getpos = %ld",
       channel->alias, n, CH_SOURCE(channel, n)->pos, channel->getpos);
   ZLOGFAIL(CH_SOURCE(channel, n)->pos != channel->getpos,
       EPIPE, "%s;%d is out of sync", channel->alias, n);

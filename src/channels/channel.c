@@ -226,7 +226,7 @@ int32_t ChannelWrite(struct ChannelDesc *channel,
   int n;
   int32_t result = -1;
 
-  ZLOG(LOG_DEBUG, "channel %s, buffer=0x%lx, size=%d, offset=%ld",
+  ZLOG(LOG_INSANE, "channel %s, buffer=0x%lx, size=%d, offset=%ld",
       channel->alias, (intptr_t)buffer, size, offset);
 
   for(n = 0; n < channel->source->len; ++n)
@@ -426,7 +426,8 @@ void ChannelsCtor(struct Manifest *manifest)
   GetNetworkStatistics(manifest);
 
   /* construct prefetch class before usage */
-  NetCtor(manifest);
+  if(binds + connects > 0)
+    NetCtor(manifest);
 
   /* mount RO channels */
   while(IS_RO(CH_CH(manifest, i)))
@@ -487,5 +488,6 @@ void ChannelsDtor(struct Manifest *manifest)
     g_ptr_array_free(buffers, TRUE);
 
   /* release prefetch class */
-  NetDtor(manifest);
+  if(binds + connects > 0)
+    NetDtor(manifest);
 }

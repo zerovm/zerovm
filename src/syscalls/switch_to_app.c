@@ -34,23 +34,9 @@
 #define NORETURN_PTR NORETURN
 static NORETURN_PTR void (*ContextSwitch)(struct ThreadContext *context);
 
-/*
- * interface to cpuid instruction
- * input:  eax = func, ecx = 0
- * output: eax = r[0], ebx = r[1], ecx = r[2], edx = r[3]
- */
-static inline void cpuid(int r[4], int func)
-{
-  asm("cpuid" : "=a"(r[0]), "=b"(r[1]), "=c"(r[2]), "=d"(r[3]) : "a"(func), "c"(0));
-}
-
-/* interface to xgetbv instruction */
-static inline int64_t xgetbv(int ctr)
-{
-  uint32_t a, d;
-  asm("xgetbv" : "=a"(a),"=d"(d) : "c"(ctr));
-  return a | (((uint64_t)d) << 32);
-}
+/* CPUID. "r" should be int[4], "func" = eax */
+#define CPUID(r, func) \
+    asm("cpuid" : "=a"(r[0]), "=b"(r[1]), "=c"(r[2]), "=d"(r[3]) : "a"(func), "c"(0))
 
 /*
  * find supported instruction set, return value:
@@ -66,35 +52,38 @@ static inline int64_t xgetbv(int ctr)
  */
 static int CPUTest(void)
 {
+  uint32_t a, d;
   int r[4] = {0};
 
-  cpuid(r, 0);
+  CPUID(r, 0);
   if(r[0] == 0) return 0;
-  cpuid(r, 1);
+  CPUID(r, 1);
 
-#define CPU_BIT(reg, bit, result) \
+#define TEST_CPU(reg, bit, result) \
   do {if((r[(reg)] & (1 << (bit))) == 0) return(result);} while(0)
 
-  CPU_BIT(3, 0, 0);
-  CPU_BIT(3, 23, 0);
-  CPU_BIT(3, 15, 0);
-  CPU_BIT(3, 24, 0);
-  CPU_BIT(3, 25, 0);
-  CPU_BIT(3, 26, 1);
-  CPU_BIT(2, 0, 2);
-  CPU_BIT(2, 9, 3);
-  CPU_BIT(2, 19, 4);
-  CPU_BIT(2, 23, 5);
-  CPU_BIT(2, 20, 5);
-  CPU_BIT(2, 27, 6);
-  if((xgetbv(0) & 6) != 6) return 6;
-  CPU_BIT(2, 28, 6);
+  TEST_CPU(3, 0, 0);
+  TEST_CPU(3, 23, 0);
+  TEST_CPU(3, 15, 0);
+  TEST_CPU(3, 24, 0);
+  TEST_CPU(3, 25, 0);
+  TEST_CPU(3, 26, 1);
+  TEST_CPU(2, 0, 2);
+  TEST_CPU(2, 9, 3);
+  TEST_CPU(2, 19, 4);
+  TEST_CPU(2, 23, 5);
+  TEST_CPU(2, 20, 5);
+  TEST_CPU(2, 27, 6);
 
-  cpuid(r, 7);
-  CPU_BIT(1, 5, 7);
+  asm("xgetbv" : "=a"(a),"=d"(d) : "c"(0));
+  if(((a | (((uint64_t)d) << 32)) & 6) != 6) return 6;
+
+  TEST_CPU(2, 28, 6);
+  CPUID(r, 7);
+  TEST_CPU(1, 5, 7);
 
   return 8;
-#undef CPU_BIT
+#undef TEST_CPU
 }
 
 void InitSwitchToApp(struct NaClApp *nap)
