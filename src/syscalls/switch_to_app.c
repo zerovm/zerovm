@@ -19,34 +19,97 @@
  * limitations under the License.
  */
 
+#include <stdbool.h>
+#include <stdint.h>
+#include <assert.h>
 #include "src/syscalls/switch_to_app.h"
 
-#define NORETURN_PTR NORETURN
+/* AMD instruction sets */
+#ifdef __XOP__
+# include <x86intrin.h> /* AMD XOP (GNU) */
+#elif defined (__SSE4A__) /* AMD SSE4A */
+# include <ammintrin.h>
+#endif
 
+#define NORETURN_PTR NORETURN
 static NORETURN_PTR void (*ContextSwitch)(struct ThreadContext *context);
 
 /*
- * d'b: a new cpu detection routine. just distinguish nosse/sse/avx
- * returns -1 if cpu has no sse, 0 for sse and 1 for avx spu
+ * interface to cpuid instruction
+ * input:  eax = func, ecx = 0
+ * output: eax = r[0], ebx = r[1], ecx = r[2], edx = r[3]
  */
-static int CPUTest()
+static inline void cpuid(int r[4], int func)
+{
+  asm("cpuid" : "=a"(r[0]), "=b"(r[1]), "=c"(r[2]), "=d"(r[3]) : "a"(func), "c"(0));
+}
+
+/* interface to xgetbv instruction */
+static inline int64_t xgetbv(int ctr)
+{
+  uint32_t a, d;
+  asm("xgetbv" : "=a"(a),"=d"(d) : "c"(ctr));
+  return a | (((uint64_t)d) << 32);
+}
+
+/*
+ * find supported instruction set, return value:
+ * 0           = 80386 instruction set
+ * 1  or above = SSE (XMM) (not testing for O.S. support)
+ * 2  or above = SSE2
+ * 3  or above = SSE3
+ * 4  or above = SSSE3 (Supplementary SSE3)
+ * 5  or above = SSE4.1
+ * 6  or above = SSE4.2
+ * 7  or above = AVX
+ * 8  or above = AVX2
+ */
+static int CPUTest(void)
 {
   int r[4] = {0};
 
-  asm("cpuid" : "=a"(r[0]), "=b"(r[1]), "=c"(r[2]), "=d"(r[3]) : "a"(1), "c"(0));
-  if((r[3] & (1 << 25)) == 0) return -1;
-  if((r[2] & (1 << 28)) == 0) return 0;
-  return 1;
+  cpuid(r, 0);
+  if(r[0] == 0) return 0;
+  cpuid(r, 1);
+
+#define CPU_BIT(reg, bit, result) \
+  do {if((r[(reg)] & (1 << (bit))) == 0) return(result);} while(0)
+
+  CPU_BIT(3, 0, 0);
+  CPU_BIT(3, 23, 0);
+  CPU_BIT(3, 15, 0);
+  CPU_BIT(3, 24, 0);
+  CPU_BIT(3, 25, 0);
+  CPU_BIT(3, 26, 1);
+  CPU_BIT(2, 0, 2);
+  CPU_BIT(2, 9, 3);
+  CPU_BIT(2, 19, 4);
+  CPU_BIT(2, 23, 5);
+  CPU_BIT(2, 20, 5);
+  CPU_BIT(2, 27, 6);
+  if((xgetbv(0) & 6) != 6) return 6;
+  CPU_BIT(2, 28, 6);
+
+  cpuid(r, 7);
+  CPU_BIT(1, 5, 7);
+
+  return 8;
+#undef CPU_BIT
 }
 
 void InitSwitchToApp(struct NaClApp *nap)
 {
   int cpu = CPUTest();
+  char *name[] = {"no SSE", "SSE", "SSE2", "SSE3", "Supplementary SSE3",
+                  "SSE4.1", "SSE4.2", "AVX", "AVX2 or better"};
 
   UNREFERENCED_PARAMETER(nap);
-  ZLOGFAIL(cpu == -1, EFAULT, "zerovm needs SSE CPU");
-  ContextSwitch = cpu == 0 ? SwitchSSE : SwitchAVX;
-  ZLOGS(LOG_DEBUG, "%s cpu detected", cpu == 0 ? "SSE" : "AVX");
+  assert((unsigned)cpu < sizeof name);
+
+  ZLOGS(LOG_DEBUG, "%s cpu detected", name[cpu]);
+  ZLOGFAIL(cpu == 0, EFAULT, "zerovm needs at least SSE CPU");
+  ZLOGIF(cpu > 7, "zerovm running on CPU with partial support. UNSAFE!");
+  ContextSwitch = cpu < 7 ? SwitchSSE : SwitchAVX;
 }
 
 /* switch to the nacl module (untrusted content) */
