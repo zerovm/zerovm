@@ -19,7 +19,7 @@
  * limitations under the License.
  */
 
-#include "src/platform/nacl_macros.h"
+#include "src/main/tools.h"
 #include "src/loader/elf.h"
 #include "src/loader/elf_util.h"
 
@@ -170,13 +170,13 @@ void ValidateProgramHeaders(
       continue;
     }
 
-    for(j = 0; j < NACL_ARRAY_SIZE(phdr_check_data); ++j)
+    for(j = 0; j < ARRAY_SIZE_SAFE(phdr_check_data); ++j)
     {
       if(php->p_type == phdr_check_data[j].p_type
           && php->p_flags == phdr_check_data[j].p_flags) break;
     }
 
-    ZLOGFAIL(j == NACL_ARRAY_SIZE(phdr_check_data), ENOEXEC, "Segment %d "
+    ZLOGFAIL(j == ARRAY_SIZE_SAFE(phdr_check_data), ENOEXEC, "Segment %d "
         "is of unexpected type 0x%x, flag 0x%x", segnum, php->p_type, php->p_flags);
 
     ZLOGS(LOG_INSANE, "Matched phdr_check_data[%d]", j);
@@ -243,7 +243,7 @@ void ValidateProgramHeaders(
   }
 
   /* check if ELF executable missing a required segment (text) */
-  for(j = 0; j < NACL_ARRAY_SIZE(phdr_check_data); ++j)
+  for(j = 0; j < ARRAY_SIZE_SAFE(phdr_check_data); ++j)
     ZLOGFAIL(phdr_check_data[j].required && !seen_seg[j], ENOEXEC, FAILED_MSG);
 
   /*

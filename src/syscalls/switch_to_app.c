@@ -22,6 +22,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <assert.h>
+#include "src/main/tools.h"
 #include "src/syscalls/switch_to_app.h"
 
 /* AMD instruction sets */
@@ -93,7 +94,7 @@ void InitSwitchToApp(struct NaClApp *nap)
                   "SSE4.1", "SSE4.2", "AVX", "AVX2 or better"};
 
   UNREFERENCED_PARAMETER(nap);
-  assert((unsigned)cpu < sizeof name);
+  assert((unsigned)cpu < ARRAY_SIZE_SAFE(name));
 
   ZLOGS(LOG_DEBUG, "%s cpu detected", name[cpu]);
   ZLOGFAIL(cpu == 0, EFAULT, "zerovm needs at least SSE CPU");

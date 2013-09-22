@@ -23,6 +23,7 @@
 #include <sys/mman.h>
 #include "src/platform/signal.h"
 #include "src/main/report.h"
+#include "src/main/tools.h"
 #include "src/loader/sel_ldr.h"
 
 /*
@@ -43,7 +44,7 @@
 #define SIGNAL_STACK_SIZE (SIGSTKSZ + 4096)
 #define STACK_GUARD_SIZE NACL_PAGESIZE
 
-#define SIGNAL_COUNT (sizeof s_Signals / sizeof *s_Signals)
+#define SIGNAL_COUNT ARRAY_SIZE(s_Signals)
 static int s_Signals[] = {
   SIGINT, SIGQUIT, SIGILL, SIGTRAP, SIGBUS, SIGFPE,
   SIGSEGV, SIGSTKFLT, SIGABRT, SIGXFSZ, SIGXCPU,

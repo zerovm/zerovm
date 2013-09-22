@@ -28,7 +28,7 @@
 #include "src/main/report.h"
 #include "src/platform/qualify.h"
 #include "src/main/accounting.h"
-#include "src/platform/nacl_macros.h"
+#include "src/main/tools.h"
 #include "src/channels/preload.h"
 
 #define BADCMDLINE(msg) \

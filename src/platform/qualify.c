@@ -22,7 +22,7 @@
 #include <setjmp.h>
 #include <stdint.h>
 #include "src/main/zlog.h"
-#include "src/platform/nacl_macros.h"
+#include "src/main/tools.h"
 
 /*
  * A void nullary function.  We generate functions of this type in the heap and
@@ -80,7 +80,7 @@ static nacl_void_thunk GenerateThunk(char *buf, size_t size_in_bytes)
    * guaranteed to be the same size.  For our platforms this is fine, but we
    * verify at compile time anyway before tricking the compiler:
    */
-  NACL_ASSERT_SAME_SIZE(char *, nacl_void_thunk);
+  ASSERT_SAME_SIZE(char *, nacl_void_thunk);
   return (nacl_void_thunk) (uintptr_t) buf;
 }
 

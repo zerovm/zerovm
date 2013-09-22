@@ -21,12 +21,13 @@
 
 #include "api/zvm.h"
 #include "src/loader/sel_ldr.h"
+#include "src/main/tools.h"
 
 EXTERN_C_BEGIN
 
 /* x-macro helpers */
 #define XTYPE(a) enum ENUM_##a
-#define XSIZE(a) (sizeof ARRAY_##a / sizeof *ARRAY_##a)
+#define XSIZE(a) ARRAY_SIZE(ARRAY_##a)
 #define XSTR(a, c) ARRAY_##a[c]
 
 /* (x-macro): channels protocols */
