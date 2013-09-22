@@ -24,8 +24,6 @@
 #include "src/channels/nservice.h"
 #include "src/channels/channel.h"
 
-#define PURE_EVIL 500
-
 /*
  * array of read buffers. WARNING: buffers[0] should not be allocated
  * since it always will point to the user buffer for optimization reason
@@ -448,7 +446,6 @@ void ChannelsCtor(struct Manifest *manifest)
   ZLOGFAIL(manifest->channels->len <= STDERR_FILENO
       || g_strcmp0(CH_CH(manifest, STDERR_FILENO)->alias, STDERR),
       EFAULT, "missing standard channels in manifest");
-
   ResetAliases();
 
   /* allocate read buffers reserving index 0 for "zero copy" */
@@ -456,14 +453,6 @@ void ChannelsCtor(struct Manifest *manifest)
   g_ptr_array_add(buffers, NULL);
   for(i = 1; i < buffers_size; ++i)
     g_ptr_array_add(buffers, g_malloc(BUFFER_SIZE));
-
-  /*
-   * TODO(d'b): 0mq can drop 1st message if 0mq connection procedure
-   * is not complete. this is the temporary fix. should be removed asap
-   * because it means zerovm startup latency. NOTE: only need if the
-   * session have network channels
-   */
-  if(binds + connects > 0) usleep(PURE_EVIL);
 }
 
 void ChannelsDtor(struct Manifest *manifest)
