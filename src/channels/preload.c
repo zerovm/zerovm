@@ -76,7 +76,7 @@ int PreloadChannelDtor(struct ChannelDesc *channel, int n)
       fclose(CH_HANDLE(channel, n));
   }
 
-  g_ptr_array_remove(channel->source, CH_SOURCE(channel, n));
+  g_ptr_array_remove(channel->source, CH_FILE(channel, n));
   return -(code != 0);
 }
 

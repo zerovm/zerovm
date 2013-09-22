@@ -397,7 +397,7 @@ void ManifestDtor(struct Manifest *manifest)
     for(j = 0; j < channel->source->len; ++j)
     {
       struct File *file = g_ptr_array_index(channel->source, j);
-      if(IS_FILE(file->protocol))
+      if(IS_FILE(file))
         g_free(file->name);
       g_free(file);
     }

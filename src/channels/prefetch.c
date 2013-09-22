@@ -40,7 +40,7 @@ static void MakeURL(struct ChannelDesc *channel, int n, char *url, int32_t size)
   char host[BIG_ENOUGH_STRING] = "*";
 
   /* create string with host */
-  if(IS_WO(channel) || IS_IPHOST(CH_FLAGS(channel, n)))
+  if(IS_WO(channel) || IS_IPHOST(CH_CONN(channel, n)))
   {
     struct in_addr ip;
     ip.s_addr = CH_HOST(channel, n);
@@ -58,7 +58,7 @@ static void MakeURL(struct ChannelDesc *channel, int n, char *url, int32_t size)
 /* bind the RO source */
 static void Bind(struct ChannelDesc *channel, int n)
 {
-  struct Connection *c = CH_SOURCE(channel, n);
+  struct Connection *c = CH_CONN(channel, n);
   static uint16_t port = LOWEST_AVAILABLE_PORT;
   char url[BIG_ENOUGH_STRING];
   int result = -1;
@@ -66,10 +66,10 @@ static void Bind(struct ChannelDesc *channel, int n)
   /* loop will end anyway after "port" overflow */
   for(;port >= LOWEST_AVAILABLE_PORT; ++port)
   {
-    if(!IS_IPHOST(c->flags)) c->port = port;
+    if(!IS_IPHOST(c)) c->port = port;
     MakeURL(channel, n, url, BIG_ENOUGH_STRING);
     result = zmq_bind(CH_HANDLE(channel, n), url);
-    if(result == 0 || IS_IPHOST(c->flags)) break;
+    if(result == 0 || IS_IPHOST(c)) break;
   }
 
   ZLOG(LOG_DEBUG, "host = %u, port = %u", c->host, c->port);
@@ -204,39 +204,39 @@ void SyncSource(struct ChannelDesc *channel, int n)
   if(!CH_SEQ_READABLE(channel)) return;
 
   ZLOGS(LOG_INSANE, "%s;%d before skip pos = %ld, getpos = %ld",
-      channel->alias, n, CH_SOURCE(channel, n)->pos, channel->getpos);
+      channel->alias, n, CH_CONN(channel, n)->pos, channel->getpos);
 
   /* if source is a pipe read (*->getpos - *->pos) bytes */
   if(CH_PROTO(channel, n) == ProtoFIFO || CH_PROTO(channel, n) == ProtoCharacter)
   {
     int result;
-    while(CH_SOURCE(channel, n)->pos < channel->getpos)
+    while(CH_CONN(channel, n)->pos < channel->getpos)
     {
       char buf[BUFFER_SIZE];
-      result = fread(buf, 1, channel->getpos - CH_SOURCE(channel, n)->pos,
+      result = fread(buf, 1, channel->getpos - CH_CONN(channel, n)->pos,
           CH_HANDLE(channel, n));
       ZLOGFAIL(result < 0, EIO, "%s;%d: %s", channel->alias, n, strerror(errno));
-      CH_SOURCE(channel, n)->pos += result;
+      CH_CONN(channel, n)->pos += result;
     }
   }
 
   /* if source is a network get over (*->getpos - *->pos) bytes */
-  else if(IS_NETWORK(CH_PROTO(channel, n)))
+  else if(IS_NETWORK(CH_CONN(channel, n)))
   {
-    while(CH_SOURCE(channel, n)->pos < channel->getpos && !channel->eof)
+    while(CH_CONN(channel, n)->pos < channel->getpos && !channel->eof)
     {
       FetchMessage(channel, n);
-      CH_SOURCE(channel, n)->pos += channel->bufend;
+      CH_CONN(channel, n)->pos += channel->bufend;
     }
   }
 
   /* no need to sync with regular files, just set (*->getpos to *->pos) */
   else
-    CH_SOURCE(channel, n)->pos = channel->getpos;
+    CH_CONN(channel, n)->pos = channel->getpos;
 
   ZLOGS(LOG_INSANE, "%s;%d skipped pos = %ld, getpos = %ld",
-      channel->alias, n, CH_SOURCE(channel, n)->pos, channel->getpos);
-  ZLOGFAIL(CH_SOURCE(channel, n)->pos != channel->getpos,
+      channel->alias, n, CH_CONN(channel, n)->pos, channel->getpos);
+  ZLOGFAIL(CH_CONN(channel, n)->pos != channel->getpos,
       EPIPE, "%s;%d is out of sync", channel->alias, n);
 }
 
@@ -250,7 +250,7 @@ void PrefetchChannelCtor(struct ChannelDesc *channel, int n)
   assert(n < channel->source->len);
 
   /* log parameters and channel internals */
-  c = CH_SOURCE(channel, n);
+  c = CH_CONN(channel, n);
   ZLOGS(LOG_DEBUG, "prefetch %s;%d", channel->alias, n);
 
   /* choose socket type */
@@ -312,7 +312,7 @@ void PrefetchChannelDtor(struct ChannelDesc *channel, int n)
     /* dummy message to avoid #197 */
     ZMQ_ERR(zmq_msg_init_data(channel->msg, digest, 0, NULL, NULL));
     SendMessage(channel, n);
-    CountPut(CH_SOURCE(channel, n), 0);
+    CountPut(CH_CONN(channel, n), 0);
 
     /* only for the last source */
     if(n == channel->source->len - 1)
@@ -327,15 +327,15 @@ void PrefetchChannelDtor(struct ChannelDesc *channel, int n)
      * request for instance when cluster is already done except "sending"
      * reserve node (reported as useless by "receiving" node(s))
      */
-    if(CH_SOURCE(channel, n)->pos < channel->getpos)
+    if(CH_CONN(channel, n)->pos < channel->getpos)
       channel->eof = 0;
 
     /* read until EOF (to avoid hanging sending session) */
     for(; channel->eof == 0; FetchMessage(channel, n))
     {
       if(n == 0) channel->getpos += channel->bufend;
-      CH_SOURCE(channel, n)->pos += channel->bufend;
-      CountGet(CH_SOURCE(channel, n), channel->bufend);
+      CH_CONN(channel, n)->pos += channel->bufend;
+      CountGet(CH_CONN(channel, n), channel->bufend);
     }
 
     /* get dummy message (#197) */

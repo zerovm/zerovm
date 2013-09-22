@@ -33,7 +33,7 @@ static void CountBytes(struct Connection *c, int size, int index)
   assert(size >= 0);
 
   /* update statistics */
-  acc = IS_FILE(c->protocol) ? local_stats : network_stats;
+  acc = IS_FILE(c) ? local_stats : network_stats;
   acc[index + 1] += size;
   ++acc[index];
 }

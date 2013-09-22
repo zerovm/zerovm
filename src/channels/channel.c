@@ -89,7 +89,7 @@ static int32_t GetDataChunk(struct ChannelDesc *channel, int n,
 
   /* update the source position */
   if(result > 0)
-    CH_SOURCE(channel, n)->pos += result;
+    CH_FILE(channel, n)->pos += result;
 
   if(result == 0)
     if(CH_SEQ_READABLE(channel)) channel->eof = 1;
@@ -125,7 +125,7 @@ static int GetFirstSource(struct ChannelDesc *channel)
   int n;
 
   for(n = 0; n < channel->source->len; ++n)
-    if(IS_VALID(CH_FLAGS(channel, n))) return n;
+    if(IS_VALID(CH_FILE(channel, n))) return n;
   return -1;
 }
 
@@ -158,7 +158,7 @@ int32_t ChannelRead(struct ChannelDesc *channel,
       buffers->pdata[first] = buffer;
 
       /* get next data portion */
-      if(!IS_VALID(CH_FLAGS(channel, n))) continue;
+      if(!IS_VALID(CH_FILE(channel, n))) continue;
       SyncSource(channel, n);
       result = GetDataChunk(channel, n, toread, offset);
       if(result < 0)
@@ -171,7 +171,7 @@ int32_t ChannelRead(struct ChannelDesc *channel,
       for(j = first; j < n; ++j)
       {
         /* skip invalid source buffer */
-        if(!IS_VALID(CH_FLAGS(channel, n))) continue;
+        if(!IS_VALID(CH_FILE(channel, n))) continue;
         if(memcmp(buffers->pdata[j], buffers->pdata[n], result) == 0)
         {
           good = j;
@@ -180,7 +180,7 @@ int32_t ChannelRead(struct ChannelDesc *channel,
       }
 
       /* accounting */
-      CountGet(CH_SOURCE(channel, n), result);
+      CountGet(CH_CONN(channel, n), result);
     }
 
     /* fail session if chunk broken and cannot be restored */
@@ -208,7 +208,7 @@ int32_t ChannelRead(struct ChannelDesc *channel,
 
   /* extra corruption check for network source on EOF */
   good = GetFirstSource(channel);
-  if(channel->eof && IS_NETWORK(CH_PROTO(channel, good)))
+  if(channel->eof && IS_NETWORK(CH_FILE(channel, good)))
     TestEOFDigest(channel, good);
 
   /* update user i/o counters */
@@ -249,7 +249,7 @@ int32_t ChannelWrite(struct ChannelDesc *channel,
     /* accounting */
     ZLOGFAIL(result < 0, EIO, "%s;%d failed to write: %s",
         channel->alias, n, strerror(errno));
-    CountPut(CH_SOURCE(channel, n), result);
+    CountPut(CH_CONN(channel, n), result);
   }
 
   /* update cursors and size */
@@ -274,10 +274,10 @@ static void CountNetSources(const struct ChannelDesc *channel,
 
   for(i = 0; i < channel->source->len; ++i)
   {
-    struct Connection *c = CH_SOURCE(channel, i);
+    struct Connection *c = CH_CONN(channel, i);
 
     /* update binds/connects statistics */
-    if(IS_NETWORK(c->protocol))
+    if(IS_NETWORK(c))
     {
       if(IS_WO(channel)) ++*connects_number;
       else ++*binds_number;
@@ -335,7 +335,7 @@ static int OrderUser(const struct ChannelDesc **a, const struct ChannelDesc **b)
 /* to sort sources, network sources before local */
 static int OrderSources(const struct Connection **a, const struct Connection **b)
 {
-  return IS_FILE((*a)->protocol) - IS_FILE((*b)->protocol);
+  return IS_FILE(*a) - IS_FILE(*b);
 }
 
 /* get numbers of "binds" and "connects" sources */
@@ -362,7 +362,7 @@ static void ChannelCtor(struct ChannelDesc *channel)
 
   /* mount given channel sources */
   for(i = 0; i < channel->source->len; ++i)
-    if(IS_FILE(CH_PROTO(channel, i)))
+    if(IS_FILE(CH_FILE(channel, i)))
       PreloadChannelCtor(channel, i);
     else
       PrefetchChannelCtor(channel, i);
@@ -389,7 +389,7 @@ static void ChannelDtor(struct ChannelDesc *channel)
 
   /* free channel */
   for(i = 0; i < channel->source->len; ++i)
-    if(IS_FILE(CH_PROTO(channel, i)))
+    if(IS_FILE(CH_FILE(channel, i)))
       PreloadChannelDtor(channel, i);
     else
       PrefetchChannelDtor(channel, i);

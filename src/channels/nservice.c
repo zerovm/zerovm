@@ -59,14 +59,14 @@ struct NSParcel
 /* get next bind/connect source */
 #define NEXT_SRC() \
     do { \
-      c = CH_SOURCE(CH_CH(manifest, m), n++); \
+      c = CH_CONN(CH_CH(manifest, m), n++); \
       if(n == CH_CH(manifest, m)->source->len) \
       { \
         ++m; \
         n = 0; \
         continue; \
       } \
-    } while(c->protocol != ProtoTCP && IS_IPHOST(c->flags))
+    } while(c->protocol != ProtoTCP && IS_IPHOST(c))
 
 /* serialize channels data to the parcel. return parcel and its "size" */
 static void *ParcelCtor(const struct Manifest *manifest,

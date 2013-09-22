@@ -35,10 +35,10 @@ EXTERN_C_BEGIN
 #define STDRAM "/dev/memory"
 
 #define FLAG_VALID_MASK 8
-#define IS_NETWORK(proto) (proto < ProtoRegular)
-#define IS_FILE(proto) (!IS_NETWORK(proto))
-#define IS_IPHOST(flags) (flags & 1)
-#define IS_VALID(flags) (!(flags & FLAG_VALID_MASK))
+#define IS_NETWORK(c) ((c)->protocol < ProtoRegular)
+#define IS_FILE(c) (!IS_NETWORK(c))
+#define IS_IPHOST(c) ((c)->flags & 1)
+#define IS_VALID(c) (!((c)->flags & FLAG_VALID_MASK))
 
 /* CH_RW_TYPE returns 0..3 */
 #define IS_NIL(channel) (CH_RW_TYPE(channel) == 0)
@@ -49,20 +49,20 @@ EXTERN_C_BEGIN
     (((channel)->limits[GetsLimit] && (channel)->limits[GetSizeLimit]) \
     | ((channel)->limits[PutsLimit] && (channel)->limits[PutSizeLimit]) << 1)
 
-#define CH_CH(manifest, n) ((struct ChannelDesc*)g_ptr_array_index(manifest->channels, n))
-#define CH_SOURCE(channel, n) ((struct Connection*)g_ptr_array_index(channel->source, n))
-#define CH_HANDLE(channel, n) (CH_SOURCE(channel, n))->handle
-#define CH_PROTO(channel, n) (CH_SOURCE(channel, n))->protocol
-#define CH_NAME(channel, n) ((struct File*)CH_SOURCE(channel, n))->name
-#define CH_HOST(channel, n) (CH_SOURCE(channel, n))->host
-#define CH_PORT(channel, n) (CH_SOURCE(channel, n))->port
-#define CH_FLAGS(channel, n) (CH_SOURCE(channel, n))->flags
+#define CH_CH(manifest, n) ((struct ChannelDesc*)manifest->channels->pdata[n])
+#define CH_FILE(channel, n) ((struct File*)channel->source->pdata[n])
+#define CH_CONN(channel, n) ((struct Connection*)channel->source->pdata[n])
+#define CH_HANDLE(channel, n) (CH_FILE(channel, n))->handle
+#define CH_PROTO(channel, n) (CH_FILE(channel, n))->protocol
+#define CH_FLAGS(channel, n) (CH_FILE(channel, n))->flags
+#define CH_NAME(channel, n) (CH_FILE(channel, n))->name
+#define CH_HOST(channel, n) (CH_CONN(channel, n))->host
+#define CH_PORT(channel, n) (CH_CONN(channel, n))->port
 
-/* TODO(d'b): rewrite it or remove it */
-#define CH_SEQ_READABLE(channel) (channel->type == 0 || channel->type == 2)
-#define CH_SEQ_WRITEABLE(channel) (channel->type == 0 || channel->type == 1)
-#define CH_RND_READABLE(channel) (channel->type == 1 || channel->type == 3)
-#define CH_RND_WRITEABLE(channel) (channel->type == 2 || channel->type == 3)
+#define CH_SEQ_READABLE(channel) (((channel)->type & 1) == 0)
+#define CH_SEQ_WRITEABLE(channel) (((channel)->type & 2) == 0)
+#define CH_RND_READABLE(channel) (((channel)->type & 1) == 1)
+#define CH_RND_WRITEABLE(channel) (((channel)->type & 2) == 2)
 
 /* construct all channels, initialize it and update system_manifest */
 void ChannelsCtor(struct Manifest *manifest);
