@@ -34,14 +34,7 @@ EXTERN_C_BEGIN
 #define ZLOGIF ZLogTag(__FILE__, __LINE__), LogIf
 #define ZLOGFAIL ZLogTag(__FILE__, __LINE__), FailIf
 #define ZLOGS ZLogTag(NULL, 0), ZLog
-
 #define FAILED_MSG "check failed"
-#define ZLOG_NAME "ZeroVM"
-#define ZLOG_OPTIONS (LOG_CONS | LOG_PID | LOG_NDELAY)
-#define ZLOG_FACILITY LOG_USER
-#define ZLOG_PRIORITY LOG_ERROR
-#define TAG_FORMAT "%s %d: "
-#define LOG_MSG_LIMIT 0x1000
 
 /* develop fix for verbosity level names */
 #undef LOG_DEBUG

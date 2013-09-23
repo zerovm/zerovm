@@ -21,7 +21,7 @@
 #include "src/main/setup.h"
 
 /* user exit. session is finished */
-static int32_t ZVMExitHandle(struct NaClApp *nap, int32_t code)
+static void ZVMExitHandle(struct NaClApp *nap, int32_t code)
 {
   assert(nap != NULL);
 
@@ -30,8 +30,6 @@ static int32_t ZVMExitHandle(struct NaClApp *nap, int32_t code)
     SetExitState(OK_STATE);
   ZLOGS(LOG_DEBUG, "SESSION %d RETURNED %d", nap->manifest->node, code);
   ReportDtor(0);
-
-  return 0; /* unreachable */
 }
 
 /*
@@ -253,7 +251,7 @@ int32_t TrapHandler(struct NaClApp *nap, uint32_t args)
   switch(*sys_args)
   {
     case TrapExit:
-      retcode = ZVMExitHandle(nap, (int32_t) sys_args[2]);
+      ZVMExitHandle(nap, (int32_t) sys_args[2]);
       break;
     case TrapRead:
       retcode = ZVMReadHandle(nap,

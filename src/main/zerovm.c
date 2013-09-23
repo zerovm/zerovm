@@ -55,14 +55,14 @@ static void CommandLine(int argc, char **argv)
   ZLOGS(LOG_DEBUG, "%s", cmd);
 }
 
-/* parse given command line, parse manifest and initialize NaClApp object */
+/* parse given command line, manifest and initialize NaClApp object */
 static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
 {
   int opt;
   char *manifest_name = NULL;
   int64_t nexe_size;
 
-  /* construct zlog with default verbosity */
+  /* construct logger with default verbosity */
   ZLogCtor(LOG_ERROR);
   CommandLine(argc, argv);
 
@@ -87,7 +87,6 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
         HideReport();
         break;
       case 'l':
-        /* calculate hard limit in Gb and don't allow it less then "big enough" */
         if(SetStorageLimit(ToInt(optarg)) != 0)
           BADCMDLINE("invalid storage limit");
         break;
@@ -120,7 +119,7 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
   ZLOGFAIL(nexe_size == 0 || nexe_size > LARGEST_NEXE, ENOENT, "too large program");
 }
 
-static void ValidateNexe(struct NaClApp *nap)
+static void ValidateProgram(struct NaClApp *nap)
 {
   int status = 0; /* 0 = failed, 1 = successful */
   int64_t static_size;
@@ -177,14 +176,14 @@ int main(int argc, char **argv)
       ENOENT, "Cannot open '%s'. %s", nap->manifest->program, strerror(errno));
   TIMER_REPORT("constructing of memory snapshot");
 
-  /* validate nexe structure (check elf header and segments) */
+  /* validate program structure (check elf header and segments) */
   ZLOGS(LOG_DEBUG, "Loading %s", nap->manifest->program);
   AppLoadFile((struct Gio *) &main_file, nap);
   TIMER_REPORT("loading user module");
 
-  /* validate given nexe (ensure that text segment is safe) */
+  /* validate given program (ensure that text segment is safe) */
   ZLOGS(LOG_DEBUG, "Validating %s", nap->manifest->program);
-  if(!skip_validation) ValidateNexe(nap);
+  if(!skip_validation) ValidateProgram(nap);
   TIMER_REPORT("validating user module");
 
   /* free snapshot */
@@ -193,23 +192,22 @@ int main(int argc, char **argv)
   (*((struct Gio *) &main_file)->vtbl->Dtor)((struct Gio *) &main_file);
   TIMER_REPORT("deallocating snapshot");
 
-  /* construct and initialize all channels */
+  /* initialize all channels */
   ChannelsCtor(nap->manifest);
   TIMER_REPORT("channels mounting");
 
   /*
-   * allocate "whole memory chunk" if specified. should be the last allocation
-   * in raw because after chunk allocated there will be no free user memory
-   * note: will set "heap_ptr"
+   * allocate user heap. should be the last allocation in raw because
+   * after heap allocated there will be no free user memory
    */
   PreallocateUserMemory(nap);
   TIMER_REPORT("user memory preallocation");
 
-  /* set user manifest in user space (new ZVM API) */
+  /* set user manifest in user space */
   SetSystemData(nap);
   TIMER_REPORT("serialization of manifest to user space");
 
-  /* "defence in depth" call */
+  /* "defense in depth" call */
   ZLOGS(LOG_DEBUG, "Last preparations");
   LastDefenseLine(nap);
 
@@ -225,8 +223,8 @@ int main(int argc, char **argv)
   TIMER_REPORT("last preparations");
   g_timer_destroy(timer);
 
-  /* switch to the user code */
-  fflush((FILE*) NULL); /* flush all buffers */
+  /* switch to the user code flushing all buffers */
+  fflush((FILE*) NULL);
   CreateSession(nap);
   return EFAULT; /* unreachable */
 }

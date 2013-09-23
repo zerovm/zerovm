@@ -63,7 +63,7 @@
 #define ROUNDDOWN_4K(a) ((a) & ~(NACL_PAGESIZE - 1LLU))
 #define ROUNDUP_4K(a) ROUNDDOWN_4K((a) + NACL_PAGESIZE - 1LLU)
 
-/* from nacl_macros.h () */
+/* from nacl_macros.h */
 #define ARRAY_SIZE(arr) ((sizeof arr)/sizeof arr[0])
 #define ARRAY_SIZE_SAFE(arr) (NaClArrayCheckHelper( \
     __builtin_types_compatible_p(__typeof__(&arr[0]), \

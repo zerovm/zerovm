@@ -24,7 +24,7 @@
 static int zvm_code = 0;
 static int user_code = 0;
 static int validation_state = 2;
-static const char *zvm_state = UNKNOWN_STATE;
+static char *zvm_state = NULL;
 static GString *digests = NULL; /* cumulative etags */
 static int hide_report = 0; /* if not 0 report to syslog */
 static char *debug_string = NULL;
@@ -36,8 +36,8 @@ void HideReport()
 
 void SetExitState(const char *state)
 {
-  assert(state != NULL);
-  zvm_state = state;
+  g_free(zvm_state);
+  zvm_state = g_strdup(state);
 }
 
 void SetExitCode(int code)
@@ -157,6 +157,7 @@ static void Report(struct NaClApp *nap)
   g_string_truncate(r, r->len - 1);
 
   /* report accounting and session message */
+  if(zvm_state == NULL) zvm_state = UNKNOWN_STATE;
   REPORT(r, "%s%s%s%s", eol, REPORT_ACCOUNTING, GetAccountingInfo(), eol);
   REPORT(r, "%s%s%s", REPORT_STATE, zvm_state, eol);
   REPORT(r, "%s%s", REPORT_DEBUG, eol);
@@ -171,6 +172,7 @@ static void Report(struct NaClApp *nap)
   g_string_free(r, TRUE);
   g_string_free(digests, TRUE);
   g_free(debug_string);
+  g_free(zvm_state);
 }
 
 void ReportDtor(int zvm_ret)

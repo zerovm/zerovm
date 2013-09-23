@@ -109,9 +109,12 @@ static void TestEOFDigest(struct ChannelDesc *channel, int n)
     TagDigest(channel->tag, digest);
     if(0 != memcmp(control, digest, TAG_DIGEST_SIZE))
     {
-      SetExitState("data corrupted");
+      char msg[BIG_ENOUGH_STRING];
+      g_snprintf(msg, BIG_ENOUGH_STRING,
+          "%s;%d corrupted upon eof", channel->alias, n);
+      SetExitState(msg);
       SetExitCode(EPIPE);
-      ZLOG(LOG_ERROR, "%s;%d corrupted upon eof", channel->alias, n);
+      ZLOG(LOG_ERROR, msg);
     }
   }
 }
