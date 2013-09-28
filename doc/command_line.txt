@@ -25,11 +25,14 @@ ZeroVM command line switches:
 
 -s -- skips validation. used for "prevalidation" engine.
 
--t -- puts report into syslog instead of /dev/stdout
+-t -- specifies report mode. valid arguments <0..2> 
+      0 - put final report into /dev/stdout (default)
+      1 - put final report into syslog
+      2 - enable fast reports and put it with final report into /dev/stdout
 
 -v -- controls verbosity of information in the ZeroVM log. writes ZeroVM 
       log to "var/log/syslog". it is not recommended to use values more than 2
-      possible values are 1..4
+      possible values are <0..3>
 
 -F -- specified NaCl application will be loaded but not run. used for 
       "prevalidation" engine.
