@@ -41,17 +41,15 @@ static int skip_qualification = 0;
 static int skip_validation = 0;
 static int quit_after_load = 0;
 
-/* log zerovm command line */
+/* log zerovm command line. note: delegates g_string_free to report */
 static void CommandLine(int argc, char **argv)
 {
-  int i;
-  char cmd[BIG_ENOUGH_STRING];
-  int pos = sprintf(cmd, "command =");
+  GString *cmd = g_string_new("command =");
 
-  for(i = 0; i < argc; ++i)
-    pos += g_snprintf(cmd + pos, BIG_ENOUGH_STRING - pos, " %s", argv[i]);
+  while(*argv != NULL)
+    g_string_append_printf(cmd, " %s", *argv++);
 
-  SetDebugString(cmd);
+  SetCmdString(cmd);
   ZLOGS(LOG_DEBUG, "%s", cmd);
 }
 
@@ -60,13 +58,13 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
 {
   int opt;
   char *manifest_name = NULL;
-  int64_t nexe_size;
+  int64_t psize;
 
   /* construct logger with default verbosity */
   ZLogCtor(LOG_ERROR);
   CommandLine(argc, argv);
 
-  while((opt = getopt(argc, argv, "-PFQstv:M:l:")) != -1)
+  while((opt = getopt(argc, argv, "-PFQst:v:M:l:")) != -1)
   {
     switch(opt)
     {
@@ -84,7 +82,7 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
         quit_after_load = 1;
         break;
       case 't':
-        HideReport();
+        ReportMode(ToInt(optarg));
         break;
       case 'l':
         if(SetStorageLimit(ToInt(optarg)) != 0)
@@ -114,9 +112,9 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
 
   /* set available nap and manifest fields */
   ZLOGFAIL(nap->manifest->program == NULL, EFAULT, "program not specified");
-  nexe_size = GetFileSize(nap->manifest->program);
-  ZLOGFAIL(nexe_size < 0, ENOENT, "nexe open error");
-  ZLOGFAIL(nexe_size == 0 || nexe_size > LARGEST_NEXE, ENOENT, "too large program");
+  psize = GetFileSize(nap->manifest->program);
+  ZLOGFAIL(psize < 0, ENOENT, "nexe open error");
+  ZLOGFAIL(psize == 0 || psize > LARGEST_NEXE, ENOENT, "too large program");
 }
 
 static void ValidateProgram(struct NaClApp *nap)
@@ -210,9 +208,6 @@ int main(int argc, char **argv)
   /* "defense in depth" call */
   ZLOGS(LOG_DEBUG, "Last preparations");
   LastDefenseLine(nap);
-
-  /* start accounting */
-  AccountingCtor(nap);
 
   /* quit if fuzz testing specified */
   if(quit_after_load)

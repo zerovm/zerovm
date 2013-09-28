@@ -273,6 +273,8 @@ int32_t TrapHandler(struct NaClApp *nap, uint32_t args)
       break;
   }
 
+  /* report and return */
+  FastReport();
   ZLOGS(LOG_DEBUG, "%s returned %d", FunctionNameById(sys_args[0]), retcode);
   return retcode;
 }

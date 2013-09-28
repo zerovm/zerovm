@@ -15,14 +15,17 @@
  */
 
 #include <assert.h>
+#include <time.h>
 #include "src/loader/sel_ldr.h"
 #include "src/main/accounting.h"
 #include "src/main/manifest.h"
 
-/* accounting folder name */
-static char accounting[BIG_ENOUGH_STRING] = DEFAULT_ACCOUNTING;
+#define FMT "%*d %*s %*c %*d %*d %*d %*d %*d %*u %*u %*u %*u %*u %lu %lu %lu %lu"
+
 static int64_t network_stats[LimitsNumber] = {0};
 static int64_t local_stats[LimitsNumber] = {0};
+static float user_time = 0;
+static float sys_time = 0;
 
 /* count i/o statistics */
 static void CountBytes(struct Connection *c, int size, int index)
@@ -48,21 +51,18 @@ void CountPut(struct Connection *c, int size)
   CountBytes(c, size, PutsLimit);
 }
 
-/* populate "buf" with an extended accounting statistics, return string size */
-static int ReadSystemAccounting(const struct NaClApp *nap, char *buf, int size)
+/* get I/O and CPU time */
+static void SystemAccounting()
 {
-  uint64_t user_time = 0;
-  uint64_t sys_time = 0;
-  uint64_t c_user_time = 0; /* network time */
-  uint64_t c_sys_time = 0; /* network time */
-  int64_t memory_size = 0;
-  uint64_t ticks;
-  pid_t pid;
-  FILE *f;
   char path[BIG_ENOUGH_STRING];
-
-  assert(buf != NULL);
-  assert(size > 0);
+  uint64_t utime = 0;
+  uint64_t stime = 0;
+  uint64_t nutime = 0; /* network time */
+  uint64_t nstime = 0; /* network time */
+  float ticks;
+  pid_t pid;
+  int code;
+  FILE *f;
 
   /* get time information */
   ticks = sysconf(_SC_CLK_TCK);
@@ -70,55 +70,38 @@ static int ReadSystemAccounting(const struct NaClApp *nap, char *buf, int size)
   g_snprintf(path, BIG_ENOUGH_STRING, "/proc/%d/stat", pid);
 
   f = fopen(path, "r");
-  if(f != NULL)
-  {
-    int code;
-    code = fscanf(f, STAT_FMT, &user_time, &sys_time, &c_user_time, &c_sys_time);
-    ZLOGIF(code != 4, "error %d occured while reading '%s'", errno, path);
+  if(f == NULL) return;
+  code = fscanf(f, FMT, &utime, &stime, &nutime, &nstime);
+  ZLOGIF(code != 4, "error %d occurred while reading '%s'", errno, path);
 
-    /* combine user times and system times */
-    user_time += c_user_time;
-    sys_time += c_sys_time;
-    fclose(f);
-  }
-
-  /* get memory information */
-  memory_size = nap->heap_end + nap->stack_size;
-
-  /* construct and return the result */
-  return g_snprintf(buf, size, "%.2f %.2f %ld %ld",
-      (float)sys_time / ticks, (float)user_time / ticks, memory_size, 0L);
+  /* I/O and CPU time */
+  sys_time = (stime + nstime) / ticks;
+  user_time = (utime + nutime) / ticks;
+  fclose(f);
 }
 
-/* prepare string with i/o information */
-static int GetChannelsAccounting(char *buf, int size)
+/* returns string i/o statistics */
+static char *Accounting(int fast)
 {
-  return g_snprintf(buf, size, "%ld %ld %ld %ld %ld %ld %ld %ld",
+  return g_strdup_printf("%.2f %.2f %ld %ld %ld %ld %ld %ld %ld %ld",
+      fast ? 0 : sys_time /* TODO(d'b): put I/O time instead of 0 */,
+      fast ? clock() / (float)CLOCKS_PER_SEC : user_time,
       local_stats[GetsLimit], local_stats[GetSizeLimit],
       local_stats[PutsLimit], local_stats[PutSizeLimit],
       network_stats[GetsLimit], network_stats[GetSizeLimit],
       network_stats[PutsLimit], network_stats[PutSizeLimit]);
 }
 
-void AccountingCtor(const struct NaClApp *nap)
+char *FastAccounting()
 {
+  return Accounting(1);
 }
 
-void AccountingDtor(const struct NaClApp *nap)
+char *FinalAccounting()
 {
-  int offset = 0;
+  assert(user_time == 0);
+  assert(sys_time == 0);
 
-  assert(nap != NULL);
-
-  if(nap->manifest == NULL || nap->manifest->channels == NULL) return;
-
-  offset = ReadSystemAccounting(nap, accounting, BIG_ENOUGH_STRING);
-  strncat(accounting, " ", 1);
-  ++offset;
-  GetChannelsAccounting(accounting + offset, BIG_ENOUGH_STRING - offset);
-}
-
-const char *GetAccountingInfo()
-{
-  return (const char*)accounting;
+  SystemAccounting();
+  return Accounting(0);
 }

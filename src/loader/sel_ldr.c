@@ -255,10 +255,9 @@ void LoadTrampoline(struct NaClApp *nap)
   }
 }
 
-void PrintAppDetails(struct NaClApp *nap, struct Gio *gp, int verbosity)
+void PrintAppDetails(struct NaClApp *nap, int verbosity)
 {
-  ZLOGS(verbosity, "NaClAppPrintDetails((struct NaClApp *) 0x%08lx,"
-      "(struct Gio *) 0x%08lx)", (uintptr_t)nap, (uintptr_t)gp);
+  ZLOGS(verbosity, "NaClAppPrintDetails((struct NaClApp*) 0x%08lx,", (uintptr_t)nap);
   ZLOGS(verbosity, "addr space size:         2**%d", nap->addr_bits);
   ZLOGS(verbosity, "stack size:              0x%08d", nap->stack_size);
   ZLOGS(verbosity, "mem start addr:          0x%08lx", nap->mem_start);

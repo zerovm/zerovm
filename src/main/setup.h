@@ -24,11 +24,11 @@ EXTERN_C_BEGIN
 #include "src/loader/sel_ldr.h"
 
 #define HELP_SCREEN /* update command line switches here */\
-    "%s%s\033[1m\033[37mZeroVM tag%d\033[0m lightweight VM manager, build 2013-09-23\n"\
+    "%s%s\033[1m\033[37mZeroVM tag%d\033[0m lightweight VM manager, build 2013-09-28\n"\
     "Usage: <manifest> [-l#] [-v#] [-stFPQ]\n\n"\
     " -l <gigabytes> file size limit (default 4Gb)\n"\
     " -s skip validation\n"\
-    " -t report to log instead of stdout\n"\
+    " -t <0..2> report to stdout/log/fast (default 0)\n"\
     " -v <0..3> log verbosity (default 0)\n"\
     " -F quit right before starting user session\n"\
     " -P disable channels space preallocation\n"\

@@ -24,26 +24,10 @@
 #define UNKNOWN_STATE "unknown error, see syslog"
 #define OK_STATE "ok"
 
-#ifdef DEBUG
-#define REPORT_VALIDATOR "validator state = "
-#define REPORT_RETCODE "user return code = "
-#define REPORT_ETAG "etag(s) = "
-#define REPORT_ACCOUNTING "accounting = "
-#define REPORT_STATE "exit state = "
-#define REPORT_DEBUG GetDebugString()
-#else
-#define REPORT_VALIDATOR ""
-#define REPORT_RETCODE ""
-#define REPORT_ETAG ""
-#define REPORT_ACCOUNTING ""
-#define REPORT_STATE ""
-#define REPORT_DEBUG ""
-#endif
-
 EXTERN_C_BEGIN
 
 /* put report to syslog instead of stdout */
-void HideReport();
+void ReportMode(int mode);
 
 /* set the text for "exit state" in report */
 void SetExitState(const char *state);
@@ -61,16 +45,21 @@ void SetUserCode(int code);
 void SetValidationState(int state);
 
 /* set zerovm command line for debug purposes */
-void SetDebugString(const char *s);
-
-/* get zerovm command line */
-char *GetDebugString();
+void SetCmdString(GString *s);
 
 /* add tag digest with given name */
 void ReportTag(char *name, void *tag);
 
 /* initialize report internals */
 void ReportCtor();
+
+/*
+ * report intermediate session statistics as often as defined by QUANT
+ * TODO(d'b): self-initializing. move it to ReportCtor()
+ * note: will not drop reports if waiting time is more than QUANT,
+ *       however reports number can be lesser than run time in seconds
+ */
+void FastReport();
 
 /*
  * exit zerovm. if code != 0 log it and show dump. release resources

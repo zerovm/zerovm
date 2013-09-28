@@ -1,5 +1,5 @@
 /*
- * accounting of the user resources: local i/o, network i/o, cpu and memory
+ * accounting of the user resources: local i/o, network i/o and cpu
  *
  * Copyright (c) 2012, LiteStack, Inc.
  *
@@ -21,22 +21,23 @@
 
 #include "src/channels/channel.h"
 
-#define DEFAULT_ACCOUNTING "not available"
-#define STAT_FMT "%*d %*s %*c %*d %*d %*d %*d %*d %*u %*u %*u %*u %*u %lu %lu %lu %lu"
-
-/* initialize accounting */
-void AccountingCtor(const struct NaClApp *nap);
-
-/* finalize accounting. return string with statistics */
-void AccountingDtor(const struct NaClApp *nap);
-
-/* return accounting string */
-const char *GetAccountingInfo();
-
 /* update get statistics */
 void CountGet(struct Connection *c, int size);
 
 /* update put statistics */
 void CountPut(struct Connection *c, int size);
+
+/*
+ * returns string with intermediate time and i/o statistics
+ * WARNING: returned string should be deallocated with g_free
+ */
+char *FastAccounting();
+
+/*
+ * returns string with final time and i/o statistics
+ * WARNING: returned string should be deallocated with g_free
+ * and the function should be called only once
+ */
+char *FinalAccounting();
 
 #endif /* ACCOUNTING_H_ */

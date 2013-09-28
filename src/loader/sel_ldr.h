@@ -193,7 +193,7 @@ void NaClAppDtor(struct NaClApp *nap);
 void AppLoadFile(struct Gio *gp, struct NaClApp *nap);
 
 /* TODO(d'b): replace spaces with format options and use macro */
-void PrintAppDetails(struct NaClApp *nap, struct Gio *gp, int verbosity);
+void PrintAppDetails(struct NaClApp *nap, int verbosity);
 
 /*
  * set an empty user stack and other context, then pass
