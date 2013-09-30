@@ -54,29 +54,23 @@ void CountPut(struct Connection *c, int size)
 /* get I/O and CPU time */
 static void SystemAccounting()
 {
-  char path[BIG_ENOUGH_STRING];
-  uint64_t utime = 0;
-  uint64_t stime = 0;
-  uint64_t nutime = 0; /* network time */
-  uint64_t nstime = 0; /* network time */
-  float ticks;
-  pid_t pid;
-  int code;
   FILE *f;
+  int code;
+  uint64_t t[4];
+  char *path;
+  float ticks = sysconf(_SC_CLK_TCK);
 
-  /* get time information */
-  ticks = sysconf(_SC_CLK_TCK);
-  pid = getpid();
-  g_snprintf(path, BIG_ENOUGH_STRING, "/proc/%d/stat", pid);
-
+  /* get system information */
+  path = g_strdup_printf("/proc/%d/stat", getpid());
   f = fopen(path, "r");
   if(f == NULL) return;
-  code = fscanf(f, FMT, &utime, &stime, &nutime, &nstime);
+  code = fscanf(f, FMT, &t[0], &t[1], &t[2], &t[3]);
   ZLOGIF(code != 4, "error %d occurred while reading '%s'", errno, path);
 
-  /* I/O and CPU time */
-  sys_time = (stime + nstime) / ticks;
-  user_time = (utime + nutime) / ticks;
+  /* set I/O and CPU time */
+  sys_time = (t[1] + t[3]) / ticks;
+  user_time = (t[0] + t[2]) / ticks;
+  g_free(path);
   fclose(f);
 }
 

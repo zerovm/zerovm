@@ -43,7 +43,7 @@
 #define EOL "\n"
 #endif
 
-/* 0: report to /dev/stdout, 1: report to syslog, 2: (0) + fast reports */
+/* 0: to /dev/stdout, 1: to syslog, 2: (0) + fast reports */
 static int report_mode = 0;
 static int zvm_code = 0;
 static int user_code = 0;

@@ -166,9 +166,7 @@ void AppLoadFile(struct Gio *gp, struct NaClApp *nap)
     if(0 == nap->rodata_start)
     {
       if(ROUNDUP_64K(max_vaddr) - max_vaddr < NACL_HALT_SLED_SIZE)
-      {
         max_vaddr += NACL_MAP_PAGESIZE;
-      }
     }
     max_vaddr = ROUNDUP_64K(max_vaddr);
   }

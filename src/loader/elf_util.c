@@ -147,8 +147,7 @@ void ValidateProgramHeaders(
      * that x is off.
      */
   const Elf_Ehdr      *hdr = &image->ehdr;
-  /* d'b: avoid compiler warning */
-  int seen_seg[sizeof phdr_check_data / sizeof *phdr_check_data] = {0};
+  int seen_seg[ARRAY_SIZE(phdr_check_data)] = {0};
   int                 segnum;
   const Elf_Phdr      *php;
   size_t              j;
@@ -223,8 +222,6 @@ void ValidateProgramHeaders(
 
     switch(phdr_check_data[j].action)
     {
-      case PCA_NONE:
-        break;
       case PCA_TEXT_CHECK:
         ZLOGFAIL(0 == php->p_memsz, ENOEXEC, FAILED_MSG);
         *static_text_end = NACL_TRAMPOLINE_END + php->p_filesz;
@@ -237,6 +234,7 @@ void ValidateProgramHeaders(
         *data_start = php->p_vaddr;
         *data_end = php->p_vaddr + php->p_memsz;
         break;
+      case PCA_NONE:
       case PCA_IGNORE:
         break;
     }

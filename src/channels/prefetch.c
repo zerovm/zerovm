@@ -34,25 +34,28 @@
 
 static void *context = NULL; /* zeromq context */
 
-/* make url from (Connection*) and return it through the "url" parameter */
-static void MakeURL(struct ChannelDesc *channel, int n, char *url, int32_t size)
+/* return connection url. returned string must be freed with g_free */
+static char *MakeURL(struct ChannelDesc *channel, int n)
 {
-  char host[BIG_ENOUGH_STRING] = "*";
+  char *host = NULL;
+  char *url = NULL;
 
-  /* create string with host */
+  /* take host if specified */
   if(IS_WO(channel) || IS_IPHOST(CH_CONN(channel, n)))
   {
     struct in_addr ip;
     ip.s_addr = CH_HOST(channel, n);
-    g_snprintf(host, BIG_ENOUGH_STRING, "%s", inet_ntoa(ip));
+    host = g_strdup_printf("%s", inet_ntoa(ip));
   }
 
   /* construct url */
-  g_snprintf(url, size, "%s://%s:%u",
+  url = g_strdup_printf("%s://%s:%u",
       g_ascii_strdown(XSTR(PROTOCOLS, CH_PROTO(channel, n)), -1),
-      host, CH_PORT(channel, n));
+      host == NULL ? "*" : host, CH_PORT(channel, n));
 
   ZLOG(LOG_INSANE, "url = %s", url);
+  g_free(host);
+  return url;
 }
 
 /* bind the RO source */
@@ -60,18 +63,19 @@ static void Bind(struct ChannelDesc *channel, int n)
 {
   struct Connection *c = CH_CONN(channel, n);
   static uint16_t port = LOWEST_AVAILABLE_PORT;
-  char url[BIG_ENOUGH_STRING];
+  char *url;
   int result = -1;
 
   /* loop will end anyway after "port" overflow */
   for(;port >= LOWEST_AVAILABLE_PORT; ++port)
   {
     if(!IS_IPHOST(c)) c->port = port;
-    MakeURL(channel, n, url, BIG_ENOUGH_STRING);
+    url = MakeURL(channel, n);
     result = zmq_bind(CH_HANDLE(channel, n), url);
     if(result == 0 || IS_IPHOST(c)) break;
   }
 
+  g_free(url);
   ZLOG(LOG_DEBUG, "host = %u, port = %u", c->host, c->port);
   ZLOGFAIL(result != 0, EFAULT, "cannot bind %s;%d: %s", channel->alias, n,
       strerror(errno));
@@ -80,7 +84,7 @@ static void Bind(struct ChannelDesc *channel, int n)
 /* connect the WO source */
 static void Connect(struct ChannelDesc *channel, int n)
 {
-  char url[BIG_ENOUGH_STRING];
+  char *url;
   uint64_t hwm = 1;
   void *h = CH_HANDLE(channel, n);
 
@@ -90,9 +94,10 @@ static void Connect(struct ChannelDesc *channel, int n)
 #endif
 
   ZMQ_ERR(zmq_setsockopt(h, ZMQ_HWM, &hwm, sizeof hwm));
-  MakeURL(channel, n, url, BIG_ENOUGH_STRING);
+  url = MakeURL(channel, n);
   ZLOGS(LOG_DEBUG, "connect url %s to %s;%d", url, channel->alias, n);
   ZMQ_ERR(zmq_connect(h, url));
+  g_free(url);
 }
 
 void NetCtor(const struct Manifest *manifest)
@@ -276,7 +281,7 @@ void PrefetchChannelCtor(struct ChannelDesc *channel, int n)
 
 void PrefetchChannelDtor(struct ChannelDesc *channel, int n)
 {
-  char url[BIG_ENOUGH_STRING]; /* debug purposes only */
+  char *url; /* debug purposes only */
   char buf[TAG_DIGEST_SIZE + 1] = "disabled", *digest = buf;
   int dsize = 0;
 
@@ -289,7 +294,7 @@ void PrefetchChannelDtor(struct ChannelDesc *channel, int n)
   assert(CH_HANDLE(channel, n) != NULL);
 
   /* log parameters and channel internals */
-  MakeURL(channel, n, url, BIG_ENOUGH_STRING);
+  url = MakeURL(channel, n);
   ZLOGS(LOG_DEBUG, "closing %s;%d with url %s", channel->alias, n, url);
 
   /* close WO source (send EOF) */
@@ -349,4 +354,5 @@ void PrefetchChannelDtor(struct ChannelDesc *channel, int n)
   ZMQ_ERR(zmq_close(CH_HANDLE(channel, n)));
   CH_HANDLE(channel, n) = NULL;
   ZLOGS(LOG_DEBUG, "%s closed", url);
+  g_free(url);
 }
