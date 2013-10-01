@@ -20,6 +20,7 @@
 #include "src/main/report.h"
 #include "src/platform/signal.h"
 #include "src/main/accounting.h"
+#include "src/main/setup.h"
 #include "src/channels/channel.h"
 
 #define MICRO_PER_SEC 1000000
@@ -232,18 +233,28 @@ void ReportDtor(int zvm_ret)
         gnap->manifest == NULL ? 0 : gnap->manifest->node,
         zvm_code, strerror(zvm_code));
     FinalDump(gnap);
+    ZTrace("[final dump]");
   }
 
   ChannelsDtor(gnap->manifest);
+  ZTrace("[channels destruction]");
   Report(gnap);
+  ZTrace("[report]");
   NaClAppDtor(gnap); /* free user space and globals */
+  ZTrace("[untrusted context closing]");
   ManifestDtor(gnap->manifest); /* dispose manifest and channels */
+  ZTrace("[manifest deallocating]");
   FreeDispatchThunk();
+  ZTrace("[thunk deallocating]");
   ZLogDtor();
+  ZTrace("[zlog deallocating]");
 
   /* free local resources and exit */
   g_string_free(digests, TRUE);
   g_string_free(cmd, TRUE);
   g_free(zvm_state);
+
+  ZTrace("[exit]");
+  ZTraceDtor();
   _exit(zvm_code);
 }

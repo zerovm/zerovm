@@ -24,15 +24,16 @@ EXTERN_C_BEGIN
 #include "src/loader/sel_ldr.h"
 
 #define HELP_SCREEN /* update command line switches here */\
-    "%s%s\033[1m\033[37mZeroVM tag%d\033[0m lightweight VM manager, build 2013-09-28\n"\
-    "Usage: <manifest> [-l#] [-v#] [-stFPQ]\n\n"\
+    "%s%s\033[1m\033[37mZeroVM tag%d\033[0m lightweight VM manager, build 2013-10-01\n"\
+    "Usage: <manifest> [-l#] [-v#] [-T#] [-stFPQ]\n\n"\
     " -l <gigabytes> file size limit (default 4Gb)\n"\
     " -s skip validation\n"\
     " -t <0..2> report to stdout/log/fast (default 0)\n"\
     " -v <0..3> log verbosity (default 0)\n"\
     " -F quit right before starting user session\n"\
     " -P disable channels space preallocation\n"\
-    " -Q disable platform qualification\n"
+    " -Q disable platform qualification\n"\
+    " -T enable time/call tracing\n"
 
 #define ZEROVM_PRIORITY 19
 #define ZEROVM_IO_LIMIT_UNIT 0x40000000L /* 1gb */
@@ -56,6 +57,15 @@ void PreallocateUserMemory(struct NaClApp *nap);
 
 /* serialize system data to user space */
 void SetSystemData(struct NaClApp *nap);
+
+/* initialize "ztrace" service */
+void ZTraceCtor(const char *name);
+
+/* close "ztrace" service */
+void ZTraceDtor();
+
+/* log the string with the next time delta */
+void ZTrace(const char *msg);
 
 EXTERN_C_END
 

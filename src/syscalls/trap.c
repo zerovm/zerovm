@@ -247,6 +247,7 @@ int32_t TrapHandler(struct NaClApp *nap, uint32_t args)
    */
   sys_args = (uint64_t*)NaClUserToSys(nap, (uintptr_t) args);
   ZLOGS(LOG_DEBUG, "%s called", FunctionNameById(sys_args[0]));
+  ZTrace("untrusted code");
 
   switch(*sys_args)
   {
@@ -273,8 +274,9 @@ int32_t TrapHandler(struct NaClApp *nap, uint32_t args)
       break;
   }
 
-  /* report and return */
+  /* report, ztrace and return */
   FastReport();
   ZLOGS(LOG_DEBUG, "%s returned %d", FunctionNameById(sys_args[0]), retcode);
+  ZTrace(FunctionNameById(sys_args[0]));
   return retcode;
 }

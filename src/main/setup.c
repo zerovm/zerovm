@@ -26,6 +26,37 @@
 
 /* hard limit for all zerovm i/o */
 static int64_t storage_limit = ZEROVM_IO_LIMIT;
+static GTimer *timer = NULL;
+static FILE *ztrace_log = NULL;
+
+void ZTraceCtor(const char *name)
+{
+  ZLOGFAIL(!g_path_is_absolute(name), EFAULT,
+      "ztrace log should have absolute path");
+  ztrace_log = fopen(name, "a");
+  ZLOGFAIL(ztrace_log == NULL, errno, "cannot open %s", name);
+  fprintf(ztrace_log, "\n[%d] %048o\n", getpid(), 0);
+  timer = g_timer_new();
+}
+
+void ZTraceDtor()
+{
+  if(timer != NULL) g_timer_destroy(timer);
+  if(ztrace_log != NULL) fclose(ztrace_log);
+}
+
+void ZTrace(const char *msg)
+{
+  static double chrono = 0;
+  double timing;
+
+  if(timer == NULL || ztrace_log == NULL) return;
+
+  timing = g_timer_elapsed(timer, NULL);
+  chrono += timing;
+  fprintf(ztrace_log, "%.6f [%.6f]: %s\n", chrono, timing, msg);
+  g_timer_start(timer);
+}
 
 /* limit zerovm i/o */
 static void LimitOwnIO()

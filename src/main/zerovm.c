@@ -64,7 +64,7 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
   ZLogCtor(LOG_ERROR);
   CommandLine(argc, argv);
 
-  while((opt = getopt(argc, argv, "-PFQst:v:M:l:")) != -1)
+  while((opt = getopt(argc, argv, "-PFQst:v:M:l:T:")) != -1)
   {
     switch(opt)
     {
@@ -99,6 +99,9 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
       case 'P':
         ZLOGS(LOG_ERROR, "DISK SPACE PREALLOCATION DISABLED");
         PreloadAllocationDisable();
+        break;
+      case 'T':
+        ZTraceCtor(optarg);
         break;
       default:
         BADCMDLINE(NULL);
@@ -147,17 +150,10 @@ static void ValidateProgram(struct NaClApp *nap)
   SetValidationState(0);
 }
 
-#define TIMER_REPORT(msg) \
-  do {\
-    ZLOGS(LOG_DEBUG, "...TIMER: %s took %.3f milliseconds", msg,\
-        g_timer_elapsed(timer, NULL) * MICROS_PER_MILLI);\
-    g_timer_start(timer);\
-  } while(0)
 int main(int argc, char **argv)
 {
   struct NaClApp state = {0}, *nap = &state;
   struct GioMemoryFileSnapshot main_file;
-  GTimer *timer;
 
   /* initialize globals and set nap fields to default values */
   ReportCtor();
@@ -169,41 +165,40 @@ int main(int argc, char **argv)
   SignalHandlerInit();
 
   /* read elf into memory */
-  timer = g_timer_new();
   ZLOGFAIL(0 == GioMemoryFileSnapshotCtor(&main_file, nap->manifest->program),
       ENOENT, "Cannot open '%s'. %s", nap->manifest->program, strerror(errno));
-  TIMER_REPORT("constructing of memory snapshot");
+  ZTrace("[memory snapshot]");
 
   /* validate program structure (check elf header and segments) */
   ZLOGS(LOG_DEBUG, "Loading %s", nap->manifest->program);
   AppLoadFile((struct Gio *) &main_file, nap);
-  TIMER_REPORT("loading user module");
+  ZTrace("[user module loading]");
 
   /* validate given program (ensure that text segment is safe) */
   ZLOGS(LOG_DEBUG, "Validating %s", nap->manifest->program);
   if(!skip_validation) ValidateProgram(nap);
-  TIMER_REPORT("validating user module");
+  ZTrace("[user module validation]");
 
   /* free snapshot */
   if(-1 == (*((struct Gio *)&main_file)->vtbl->Close)((struct Gio *)&main_file))
     ZLOG(LOG_ERROR, "Error while closing '%s'", nap->manifest->program);
   (*((struct Gio *) &main_file)->vtbl->Dtor)((struct Gio *) &main_file);
-  TIMER_REPORT("deallocating snapshot");
+  ZTrace("[snapshot deallocation]");
 
   /* initialize all channels */
   ChannelsCtor(nap->manifest);
-  TIMER_REPORT("channels mounting");
+  ZTrace("[channels mounting]");
 
   /*
    * allocate user heap. should be the last allocation in raw because
    * after heap allocated there will be no free user memory
    */
   PreallocateUserMemory(nap);
-  TIMER_REPORT("user memory preallocation");
+  ZTrace("[user memory preallocation]");
 
   /* set user manifest in user space */
   SetSystemData(nap);
-  TIMER_REPORT("serialization of manifest to user space");
+  ZTrace("[user manifest construction]");
 
   /* "defense in depth" call */
   ZLOGS(LOG_DEBUG, "Last preparations");
@@ -215,8 +210,7 @@ int main(int argc, char **argv)
     SetExitState(OK_STATE);
     ReportDtor(0);
   }
-  TIMER_REPORT("last preparations");
-  g_timer_destroy(timer);
+  ZTrace("[last preparations]");
 
   /* switch to the user code flushing all buffers */
   fflush((FILE*) NULL);
