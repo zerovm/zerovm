@@ -68,6 +68,7 @@ static int32_t ZVMReadHandle(struct NaClApp *nap,
   struct ChannelDesc *channel;
   int64_t tail;
   char *sys_buffer;
+  char *msg;
 
   assert(nap != NULL);
   assert(nap->manifest != NULL);
@@ -76,17 +77,17 @@ static int32_t ZVMReadHandle(struct NaClApp *nap,
   /* check the channel number */
   if(ch < 0 || ch >= nap->manifest->channels->len)
   {
-    ZLOGS(LOG_DEBUG, "channel_id=%d, buffer=0x%lx, size=%d, offset=%ld",
-        ch, (intptr_t)buffer, size, offset);
+    ZLOGS(LOG_DEBUG, "channel_id=%d, buffer=%p, size=%d, offset=%ld",
+        ch, buffer, size, offset);
     return -EINVAL;
   }
   channel = CH_CH(nap->manifest, ch);
-  ZLOGS(LOG_INSANE, "channel %s, buffer=0x%lx, size=%d, offset=%ld",
-      channel->alias, (intptr_t)buffer, size, offset);
+  ZLOGS(LOG_INSANE, "channel %s, buffer=%p, size=%d, offset=%ld",
+      channel->alias, buffer, size, offset);
 
   /* check buffer and convert address */
   if(CheckRAMAccess(nap, (uintptr_t)buffer, size, PROT_WRITE) == -1) return -EINVAL;
-  sys_buffer = (char*)NaClUserToSys(nap, (uintptr_t) buffer);
+  sys_buffer = (char*)NaClUserToSys(nap, (uintptr_t)buffer);
 
   /* ignore user offset for sequential access read */
   if(CH_SEQ_READABLE(channel))
@@ -116,6 +117,9 @@ static int32_t ZVMReadHandle(struct NaClApp *nap,
   if(size < 1) return -EDQUOT;
 
   /* read data */
+  msg = g_strdup_printf("TrapRead(%d, %p, %d, %ld)", ch, buffer, size, offset);
+  ZTrace(msg);
+  g_free(msg);
   return ChannelRead(channel, sys_buffer, (size_t)size, (off_t)offset);
 }
 
@@ -129,6 +133,7 @@ static int32_t ZVMWriteHandle(struct NaClApp *nap,
   struct ChannelDesc *channel;
   int64_t tail;
   const char *sys_buffer;
+  char *msg;
 
   assert(nap != NULL);
   assert(nap->manifest != NULL);
@@ -137,13 +142,13 @@ static int32_t ZVMWriteHandle(struct NaClApp *nap,
   /* check the channel number */
   if(ch < 0 || ch >= nap->manifest->channels->len)
   {
-    ZLOGS(LOG_DEBUG, "channel_id=%d, buffer=0x%lx, size=%d, offset=%ld",
-        ch, (intptr_t)buffer, size, offset);
+    ZLOGS(LOG_DEBUG, "channel_id=%d, buffer=%p, size=%d, offset=%ld",
+        ch, buffer, size, offset);
     return -EINVAL;
   }
   channel = CH_CH(nap->manifest, ch);
-  ZLOGS(LOG_INSANE, "channel %s, buffer=0x%lx, size=%d, offset=%ld",
-      channel->alias, (intptr_t)buffer, size, offset);
+  ZLOGS(LOG_INSANE, "channel %s, buffer=%p, size=%d, offset=%ld",
+      channel->alias, buffer, size, offset);
 
   /* check buffer and convert address */
   if(CheckRAMAccess(nap, (uintptr_t)buffer, size, PROT_READ) == -1) return -EINVAL;
@@ -169,6 +174,9 @@ static int32_t ZVMWriteHandle(struct NaClApp *nap,
   if(size < 1) return -EDQUOT;
 
   /* write data */
+  msg = g_strdup_printf("TrapWrite(%d, %p, %d, %ld)", ch, buffer, size, offset);
+  ZTrace(msg);
+  g_free(msg);
   return ChannelWrite(channel, sys_buffer, (size_t)size, (off_t)offset);
 }
 
@@ -277,6 +285,7 @@ int32_t TrapHandler(struct NaClApp *nap, uint32_t args)
   /* report, ztrace and return */
   FastReport();
   ZLOGS(LOG_DEBUG, "%s returned %d", FunctionNameById(sys_args[0]), retcode);
-  ZTrace(FunctionNameById(sys_args[0]));
+  if(retcode <= 0)
+    ZTrace(FunctionNameById(sys_args[0]));
   return retcode;
 }
