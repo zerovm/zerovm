@@ -53,7 +53,7 @@ static char *MakeURL(struct ChannelDesc *channel, int n)
       g_ascii_strdown(XSTR(PROTOCOLS, CH_PROTO(channel, n)), -1),
       host == NULL ? "*" : host, CH_PORT(channel, n));
 
-  ZLOG(LOG_INSANE, "url = %s", url);
+  ZLOGS(LOG_INSANE, "url = %s", url);
   g_free(host);
   return url;
 }
@@ -63,20 +63,20 @@ static void Bind(struct ChannelDesc *channel, int n)
 {
   struct Connection *c = CH_CONN(channel, n);
   static uint16_t port = LOWEST_AVAILABLE_PORT;
-  char *url;
   int result = -1;
 
   /* loop will end anyway after "port" overflow */
   for(;port >= LOWEST_AVAILABLE_PORT; ++port)
   {
+    char *url;
     if(!IS_IPHOST(c)) c->port = port;
     url = MakeURL(channel, n);
     result = zmq_bind(CH_HANDLE(channel, n), url);
+    g_free(url);
     if(result == 0 || IS_IPHOST(c)) break;
   }
 
-  g_free(url);
-  ZLOG(LOG_DEBUG, "host = %u, port = %u", c->host, c->port);
+  ZLOGS(LOG_DEBUG, "bind(): host = %u, port = %u", c->host, c->port);
   ZLOGFAIL(result != 0, EFAULT, "cannot bind %s;%d: %s", channel->alias, n,
       strerror(errno));
 }
@@ -186,7 +186,7 @@ int32_t SendData(struct ChannelDesc *channel, int n, const char *buf, int32_t co
   assert(buf != NULL);
 
   /* send a buffer through the multiple messages */
-  ZLOG(LOG_INSANE, "channel %s;%d, buffer=0x%lx, size=%d",
+  ZLOGS(LOG_INSANE, "send(): channel %s;%d, buffer=0x%lx, size=%d",
       channel->alias, n, (intptr_t)buf, count);
   for(writerest = count; writerest > 0; writerest -= NET_BUFFER_SIZE)
   {

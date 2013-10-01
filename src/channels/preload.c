@@ -98,7 +98,7 @@ static void CharacterChannel(struct ChannelDesc* channel, int n)
   int flags[] = {0, O_RDONLY, O_RDWR};
   int h;
 
-  ZLOG(LOG_DEBUG, "preload character %s", channel->alias);
+  ZLOGS(LOG_DEBUG, "preload character %s", channel->alias);
   ZLOGFAIL(!IS_RO(channel) && !IS_WO(channel), EINVAL,
       "%s has invalid i/o type", channel->alias);
 
@@ -116,7 +116,7 @@ static void CharacterChannel(struct ChannelDesc* channel, int n)
 static void RegularChannel(struct ChannelDesc* channel, int n)
 {
   int h;
-  ZLOG(LOG_DEBUG, "preload regular %s", channel->alias);
+  ZLOGS(LOG_DEBUG, "preload regular %s", channel->alias);
 
   switch(CH_RW_TYPE(channel))
   {
@@ -170,7 +170,7 @@ void PreloadChannelCtor(struct ChannelDesc *channel, int n)
   assert(n < channel->source->len);
 
   /* check the given channel */
-  ZLOG(LOG_DEBUG, "mounting file %s to alias %s",
+  ZLOGS(LOG_DEBUG, "mounting file %s to alias %s",
       CH_NAME(channel, n), channel->alias);
 
   SetChannelSource(channel, n);

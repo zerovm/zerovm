@@ -227,9 +227,6 @@ int32_t ChannelWrite(struct ChannelDesc *channel,
   int n;
   int32_t result = -1;
 
-  ZLOG(LOG_INSANE, "channel %s, buffer=0x%lx, size=%d, offset=%ld",
-      channel->alias, (intptr_t)buffer, size, offset);
-
   for(n = 0; n < channel->source->len; ++n)
   {
     switch(CH_PROTO(channel, n))
