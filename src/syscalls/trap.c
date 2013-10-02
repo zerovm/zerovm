@@ -20,17 +20,9 @@
 #include "src/platform/sel_memory.h"
 #include "src/main/setup.h"
 
-/* user exit. session is finished */
-static void ZVMExitHandle(struct NaClApp *nap, int32_t code)
-{
-  assert(nap != NULL);
-
-  SetUserCode(code);
-  if(GetExitCode() == 0)
-    SetExitState(OK_STATE);
-  ZLOGS(LOG_DEBUG, "SESSION %d RETURNED %d", nap->manifest->node, code);
-  ReportDtor(0);
-}
+static int idx[] = {TrapRead, TrapWrite, TrapJail, TrapUnjail, TrapExit};
+static char *function[] =
+  {"TrapRead", "TrapWrite", "TrapJail", "TrapUnjail", "TrapExit", "n/a"};
 
 /*
  * check "prot" access for user area (start, size)
@@ -68,7 +60,6 @@ static int32_t ZVMReadHandle(struct NaClApp *nap,
   struct ChannelDesc *channel;
   int64_t tail;
   char *sys_buffer;
-  char *msg;
 
   assert(nap != NULL);
   assert(nap->manifest != NULL);
@@ -117,9 +108,6 @@ static int32_t ZVMReadHandle(struct NaClApp *nap,
   if(size < 1) return -EDQUOT;
 
   /* read data */
-  msg = g_strdup_printf("TrapRead(%d, %p, %d, %ld)", ch, buffer, size, offset);
-  ZTrace(msg);
-  g_free(msg);
   return ChannelRead(channel, sys_buffer, (size_t)size, (off_t)offset);
 }
 
@@ -133,7 +121,6 @@ static int32_t ZVMWriteHandle(struct NaClApp *nap,
   struct ChannelDesc *channel;
   int64_t tail;
   const char *sys_buffer;
-  char *msg;
 
   assert(nap != NULL);
   assert(nap->manifest != NULL);
@@ -174,9 +161,6 @@ static int32_t ZVMWriteHandle(struct NaClApp *nap,
   if(size < 1) return -EDQUOT;
 
   /* write data */
-  msg = g_strdup_printf("TrapWrite(%d, %p, %d, %ld)", ch, buffer, size, offset);
-  ZTrace(msg);
-  g_free(msg);
   return ChannelWrite(channel, sys_buffer, (size_t)size, (off_t)offset);
 }
 
@@ -227,24 +211,48 @@ static int32_t ZVMUnjailHandle(struct NaClApp *nap, uintptr_t addr, int32_t size
 }
 #undef JAIL_CHECK
 
-/* this function debug only. return function name by id */
-static const char *FunctionNameById(int id)
+/* return index of function id in "function" */
+static int FunctionIndexById(int id)
 {
-  switch(id)
-  {
-    case TrapRead: return "TrapRead";
-    case TrapWrite: return "TrapWrite";
-    case TrapJail: return "TrapJail";
-    case TrapUnjail: return "TrapUnjail";
-    case TrapExit: return "TrapExit";
-  }
-  return "not supported";
+  int i;
+
+  for(i = 0; i < ARRAY_SIZE(idx); ++i)
+    if(idx[i] == id) return i;
+  return ARRAY_SIZE(idx);
+}
+
+static void SyscallZTrace(int i, ...)
+{
+  char *msg;
+  va_list ap;
+  char *fmt[] = {"%s(%d, %p, %d, %ld)", "%s(%d, %p, %d, %ld)",
+      "%s(%p, %d)", "%s(%p, %d)", "%s(%d)", "%s()"};
+
+  va_start(ap, i);
+  msg = g_strdup_vprintf(fmt[i], ap);
+  va_end(ap);
+  ZTrace(msg);
+  g_free(msg);
+}
+
+/* user exit. session is finished */
+static void ZVMExitHandle(struct NaClApp *nap, int32_t code)
+{
+  assert(nap != NULL);
+
+  SetUserCode(code);
+  if(GetExitCode() == 0)
+    SetExitState(OK_STATE);
+  ZLOGS(LOG_DEBUG, "SESSION %d RETURNED %d", nap->manifest->node, code);
+  SyscallZTrace(4, function[4], code);
+  ReportDtor(0);
 }
 
 int32_t TrapHandler(struct NaClApp *nap, uint32_t args)
 {
-  uint64_t *sys_args;
+  uint64_t *sargs;
   int retcode = 0;
+  int i;
 
   assert(nap != NULL);
   assert(nap->manifest != NULL);
@@ -253,39 +261,39 @@ int32_t TrapHandler(struct NaClApp *nap, uint32_t args)
    * translate address from user space to system
    * note: cannot set "trap error"
    */
-  sys_args = (uint64_t*)NaClUserToSys(nap, (uintptr_t) args);
-  ZLOGS(LOG_DEBUG, "%s called", FunctionNameById(sys_args[0]));
+  sargs = (uint64_t*)NaClUserToSys(nap, (uintptr_t)args);
+  i = FunctionIndexById(*sargs);
+  ZLOGS(LOG_DEBUG, "%s called", function[i]);
   ZTrace("untrusted code");
 
-  switch(*sys_args)
+  switch(*sargs)
   {
     case TrapExit:
-      ZVMExitHandle(nap, (int32_t) sys_args[2]);
+      ZVMExitHandle(nap, (int32_t) sargs[2]);
       break;
     case TrapRead:
       retcode = ZVMReadHandle(nap,
-          (int)sys_args[2], (char*)sys_args[3], (int32_t)sys_args[4], sys_args[5]);
+          (int)sargs[2], (char*)sargs[3], (int32_t)sargs[4], sargs[5]);
       break;
     case TrapWrite:
       retcode = ZVMWriteHandle(nap,
-          (int)sys_args[2], (char*)sys_args[3], (int32_t)sys_args[4], sys_args[5]);
+          (int)sargs[2], (char*)sargs[3], (int32_t)sargs[4], sargs[5]);
       break;
     case TrapJail:
-      retcode = ZVMJailHandle(nap, (uint32_t)sys_args[2], (int32_t)sys_args[3]);
+      retcode = ZVMJailHandle(nap, (uint32_t)sargs[2], (int32_t)sargs[3]);
       break;
     case TrapUnjail:
-      retcode = ZVMUnjailHandle(nap, (uint32_t)sys_args[2], (int32_t)sys_args[3]);
+      retcode = ZVMUnjailHandle(nap, (uint32_t)sargs[2], (int32_t)sargs[3]);
       break;
     default:
       retcode = -EPERM;
-      ZLOG(LOG_ERROR, "function %ld is not supported", *sys_args);
+      ZLOG(LOG_ERROR, "function %ld is not supported", *sargs);
       break;
   }
 
   /* report, ztrace and return */
   FastReport();
-  ZLOGS(LOG_DEBUG, "%s returned %d", FunctionNameById(sys_args[0]), retcode);
-  if(retcode <= 0)
-    ZTrace(FunctionNameById(sys_args[0]));
+  ZLOGS(LOG_DEBUG, "%s returned %d", function[i], retcode);
+  SyscallZTrace(i, function[i], sargs[2], sargs[3], sargs[4], sargs[5]);
   return retcode;
 }
