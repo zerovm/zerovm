@@ -30,7 +30,7 @@
  */
 static GPtrArray *buffers = NULL;
 static uint32_t buffers_size = 0; /* size of buffers */
-GTree *aliases;
+static GTree *aliases;
 static int tree_reset = 0;
 static uint32_t binds = 0; /* "bind" sources number */
 static uint32_t connects = 0; /* "connect" sources number */
@@ -336,6 +336,17 @@ static int OrderUser(const struct ChannelDesc **a, const struct ChannelDesc **b)
 static int OrderSources(const struct Connection **a, const struct Connection **b)
 {
   return IS_FILE(*a) - IS_FILE(*b);
+}
+
+/* to sort channels alphabetically by alias */
+static int OrderAlias(const struct ChannelDesc **a, const struct ChannelDesc **b)
+{
+  return g_strcmp0((*a)->alias, (*b)->alias);
+}
+
+void SortChannels(GPtrArray *channels)
+{
+  g_ptr_array_sort(channels, (GCompareFunc)OrderAlias);
 }
 
 /* get numbers of "binds" and "connects" sources */

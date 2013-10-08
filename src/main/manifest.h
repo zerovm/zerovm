@@ -102,6 +102,7 @@ struct Manifest {
   int node; /* own node id from manifest */
   char *program; /* program file name */
   char *etag; /* signature. reserved for a future */
+  char *job; /* daemon: job file name. child: manifest file name */
   int32_t timeout; /* time user module allowed to run */
   int64_t mem_size; /* user specified memory */
   void *mem_tag; /* tag context */
@@ -111,6 +112,9 @@ struct Manifest {
 
 /* de-serialize manifest from the given file */
 struct Manifest *ManifestCtor(const char *name);
+
+/* de-serialize manifest from the given text */
+struct Manifest *ManifestTextCtor(char *text);
 
 /*
  * release manifest resources. all elements initialized by another classes

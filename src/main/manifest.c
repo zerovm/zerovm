@@ -91,6 +91,7 @@ typedef enum {
   X(Timeout, 1, 1) \
   X(NameServer, 0, 1) \
   X(Node, 0, 1) \
+  X(Job, 0, 1) \
   X(Etag, 0, 1)
 
 /* (x-macro): manifest enumeration, array and statistics */
@@ -190,6 +191,12 @@ static void Timeout(struct Manifest *manifest, char *value)
 static void Node(struct Manifest *manifest, char *value)
 {
   manifest->node = ToInt(value);
+}
+
+static void Job(struct Manifest *manifest, char *value)
+{
+  ZLOGFAIL(strlen(value) > UNIX_PATH_MAX, EFAULT, "too long Job name");
+  manifest->job = g_strdup(g_strstrip(value));
 }
 
 static void Etag(struct Manifest *manifest, char *value)
@@ -339,22 +346,18 @@ static void CheckCounters(int *counters, int n)
   }
 }
 
-struct Manifest *ManifestCtor(const char *name)
+struct Manifest *ManifestTextCtor(char *text)
 {
   struct Manifest *manifest = g_malloc0(sizeof *manifest);
-  char buf[MANIFEST_SIZE_LIMIT] = {0};
   int counters[XSIZE(KEYWORDS)] = {0};
   char **lines;
   int i;
-
-  /* get manifest data */
-  GetManifestData(name, buf);
 
   /* initialize channels */
   manifest->channels = g_ptr_array_new();
 
   /* extract all lines */
-  lines = g_strsplit(buf, LINE_DELIMITER, MANIFEST_LINES_LIMIT);
+  lines = g_strsplit(text, LINE_DELIMITER, MANIFEST_LINES_LIMIT);
 
   /* parse each line */
   for(i = 0; lines[i] != NULL; ++i)
@@ -379,6 +382,13 @@ struct Manifest *ManifestCtor(const char *name)
   CheckCounters(counters, XSIZE(KEYWORDS));
 
   return manifest;
+}
+
+struct Manifest *ManifestCtor(const char *name)
+{
+  char buf[MANIFEST_SIZE_LIMIT] = {0};
+  GetManifestData(name, buf);
+  return ManifestTextCtor(buf);
 }
 
 void ManifestDtor(struct Manifest *manifest)

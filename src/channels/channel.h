@@ -19,6 +19,7 @@
 #ifndef CHANNEL_H_
 #define CHANNEL_H_
 
+#include <sys/un.h>
 #include "api/zvm.h"
 #include "src/main/etag.h"
 #include "src/main/manifest.h"
@@ -27,6 +28,9 @@ EXTERN_C_BEGIN
 
 /* net buffer size depends on it */
 #define BUFFER_SIZE 0x10000
+#ifndef UNIX_PATH_MAX
+#define UNIX_PATH_MAX 108
+#endif
 
 /* zerovm channels names */
 #define STDIN "/dev/stdin"
@@ -63,6 +67,9 @@ EXTERN_C_BEGIN
 #define CH_SEQ_WRITEABLE(channel) (((channel)->type & 2) == 0)
 #define CH_RND_READABLE(channel) (((channel)->type & 1) == 1)
 #define CH_RND_WRITEABLE(channel) (((channel)->type & 2) == 2)
+
+/* sort channels */
+void SortChannels(GPtrArray *channels);
 
 /* construct all channels, initialize it and update system_manifest */
 void ChannelsCtor(struct Manifest *manifest);

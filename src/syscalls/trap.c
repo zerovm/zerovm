@@ -19,6 +19,7 @@
 #include "src/main/report.h"
 #include "src/platform/sel_memory.h"
 #include "src/main/setup.h"
+#include "src/syscalls/daemon.h"
 
 static int idx[] = {TrapRead, TrapWrite, TrapJail, TrapUnjail, TrapExit};
 static char *function[] =
@@ -269,7 +270,10 @@ int32_t TrapHandler(struct NaClApp *nap, uint32_t args)
   switch(*sargs)
   {
     case TrapExit:
-      ZVMExitHandle(nap, (int32_t) sargs[2]);
+      /* TODO(d'b): create own trap function */
+      if(sargs[2] == -1LLU)
+        if(Daemon(nap) < 0) break;
+      ZVMExitHandle(nap, (int32_t)sargs[2]);
       break;
     case TrapRead:
       retcode = ZVMReadHandle(nap,

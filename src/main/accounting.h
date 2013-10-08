@@ -40,4 +40,7 @@ char *FastAccounting();
  */
 char *FinalAccounting();
 
+/* reset accounting internals */
+void ResetAccounting();
+
 #endif /* ACCOUNTING_H_ */

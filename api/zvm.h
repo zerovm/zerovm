@@ -39,7 +39,6 @@ enum ChannelType {
   RGetRPut /* random read, random write */
 };
 
-
 /* channel limits */
 enum ChannelLimits {
   GetsLimit,
@@ -89,6 +88,8 @@ struct UserManifest
  *   "buffer" should be 64kb aligned and point to heap
  * zvm_exit
  *   terminate program with "code"
+ * zvm_fork
+ *   ask for fork (for further details see "daemon mode")
  *
  * all trap functions return -errno code if error encountered, otherwise
  * result equal to processed bytes or 0 (for (un)jail). exit does not return
@@ -102,5 +103,6 @@ struct UserManifest
 #define zvm_unjail(buffer, size) \
   TRAP((uint64_t[]){TrapUnjail, 0, (uintptr_t)buffer, size})
 #define zvm_exit(code) TRAP((uint64_t[]){TrapExit, 0, code})
+#define zvm_fork() TRAP((uint64_t[]){TrapExit, 0, 0xffffffffffffffffLLU})
 
 #endif /* ZVM_API_H__ */

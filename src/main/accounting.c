@@ -93,9 +93,12 @@ char *FastAccounting()
 
 char *FinalAccounting()
 {
-  assert(user_time == 0);
-  assert(sys_time == 0);
-
   SystemAccounting();
   return Accounting(0);
+}
+
+void ResetAccounting()
+{
+  memset(network_stats, 0, sizeof network_stats);
+  memset(local_stats, 0, sizeof network_stats);
 }

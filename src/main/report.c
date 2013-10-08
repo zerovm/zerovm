@@ -52,6 +52,12 @@ static int validation_state = 2;
 static char *zvm_state = NULL;
 static GString *digests = NULL; /* cumulative etags */
 static GString *cmd = NULL;
+static int report_handle = STDOUT_FILENO;
+
+void SetReportHandle(int handle)
+{
+  report_handle = handle;
+}
 
 void ReportMode(int mode)
 {
@@ -156,7 +162,7 @@ static void OutputReport(char *r, int size)
   if(report_mode == 1)
     ZLOGS(LOG_ERROR, "%s", r);
   else
-    ZLOGIF(write(STDOUT_FILENO, r, size) != size,
+    ZLOGIF(write(report_handle, r, size) != size,
         "report write error %d: %s", errno, strerror(errno));
 }
 
@@ -189,7 +195,7 @@ void FastReport()
 
 /* part of report class dtor */
 #define REPORT g_string_append_printf
-static void Report(struct NaClApp *nap)
+void Report(struct NaClApp *nap)
 {
   GString *r = g_string_sized_new(BIG_ENOUGH_STRING);
   char *eol = report_mode == 1 ? "; " : "\n";
