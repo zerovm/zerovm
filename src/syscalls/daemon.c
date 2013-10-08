@@ -164,9 +164,10 @@ int Daemon(struct NaClApp *nap)
   max_handles = MIN(rl.rlim_max, MAX_CHANNELS_NUMBER);
 
   /* finalize user session */
-  SetDaemonState(1);
+  SetDaemonState(1); /* report the daemon mode launched */
   pid = fork();
   if(pid != 0) return 0;
+  SetDaemonState(0); /* forked sessions are not in daemon mode */
 
   /* start the daemon */
   Daemonize(nap);
