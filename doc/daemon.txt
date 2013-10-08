@@ -1,0 +1,24 @@
+This document describes ZeroVM daemon mode
+(up to date 2013-11-08, needs editing)
+-------------------------------------------------------------
+
+Description:
+starting from build 2013-11-08 zerovm can be started as daemon. only purpose
+of current implementation of daemon mode is reducing latency. some programs
+has very long startup time
+
+each request received by the daemon will immediately spawn child zerovm
+session which works as usual with some exclusions:
+1. a new manifest should be valid and contain same channels aliases (uris can
+   differ) with same fields. following keywords will be ignored (but shell
+   present): Memory, Program, Version.
+2. all data written until zvm_fork() will be lost. all sequential channels keep
+   their positions (and sequential channels reached eof will be unavailable)
+3. zerovm daemon created with network channel behavior undefined
+4. report of spawned session can only be placed to control channel provided by
+   Job in manifest
+
+known issues:
+1. daemon mode zerovm (daemon) releases forked processes in wait status when
+get command through command channel. therefore some finished and not yet
+released sessions will be seen as zombies  

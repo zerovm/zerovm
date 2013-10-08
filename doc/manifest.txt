@@ -14,7 +14,7 @@ Channel
 Memory
 Timeout
 Node
-Etag
+Job
 NameServer
 
 Structure:
@@ -92,9 +92,10 @@ Node
   Specifies the node id (not available for the untrusted code). The node 
   id should be in 1..2147483647 range
   ex.: Node = 1
-Etag
-  (optional)
-  reserved
+Job
+  (optional, string)
+  path to unix socket. if Job specified and session invoked zvm_fork(), current
+  session will be terminated and daemon will be created (see daemon.txt)
 
 Both keywords and values have size limit of 0x2000. The manifest file size
 limited to 0x80000. value limited to 16 tokens. The limitations can be

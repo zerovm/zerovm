@@ -28,6 +28,7 @@
 
 #ifdef DEBUG
 #define REPORT_VALIDATOR "validator state = "
+#define REPORT_DAEMON "daemon = "
 #define REPORT_RETCODE "user return code = "
 #define REPORT_ETAG "etag(s) = "
 #define REPORT_ACCOUNTING "accounting = "
@@ -36,6 +37,7 @@
 #define EOL "\r"
 #else
 #define REPORT_VALIDATOR ""
+#define REPORT_DAEMON ""
 #define REPORT_RETCODE ""
 #define REPORT_ETAG ""
 #define REPORT_ACCOUNTING ""
@@ -44,11 +46,16 @@
 #define EOL "\n"
 #endif
 
-/* 0: to /dev/stdout, 1: to syslog, 2: (0) + fast reports */
+/*
+ * 0: to /dev/stdout, 1: to syslog, 2: (0) + fast reports, 3: to socket
+ * TODO(d'b): fast reports should be cut from report output
+ * TODO(d'b): report outputs should be enumerated (magic numbers to remove)
+ */
 static int report_mode = 0;
 static int zvm_code = 0;
 static int user_code = 0;
 static int validation_state = 2;
+static int daemon_state = 0;
 static char *zvm_state = NULL;
 static GString *digests = NULL; /* cumulative etags */
 static GString *cmd = NULL;
@@ -61,7 +68,6 @@ void SetReportHandle(int handle)
 
 void ReportMode(int mode)
 {
-  ZLOGFAIL(mode < 0 || mode > 2, EFAULT, "invalid report mode %d", mode);
   report_mode = mode;
 }
 
@@ -90,6 +96,11 @@ void SetUserCode(int code)
 void SetValidationState(int state)
 {
   validation_state = state;
+}
+
+void SetDaemonState(int state)
+{
+  daemon_state = state;
 }
 
 void SetCmdString(GString *s)
@@ -157,13 +168,34 @@ void ReportCtor()
 }
 
 /* output report */
-static void OutputReport(char *r, int size)
+static void OutputReport(char *r)
 {
-  if(report_mode == 1)
-    ZLOGS(LOG_ERROR, "%s", r);
-  else
-    ZLOGIF(write(report_handle, r, size) != size,
-        "report write error %d: %s", errno, strerror(errno));
+  char *p = NULL;
+  int size = strlen(r);
+
+#define REPORT(p) ZLOGIF(write(report_handle, p, size) != size, \
+  "report write error %d: %s", errno, strerror(errno))
+
+  switch(report_mode)
+  {
+    case 3: /* unix socket */
+      p = g_strdup_printf("0x%06x%s", size, r);
+      size = strlen(p);
+      ZLOGS(LOG_ERROR, "report_handle = %d", report_handle);
+      REPORT(p);
+      g_free(p);
+      break;
+    case 0: /* stdout */
+      REPORT(r);
+      break;
+    case 1: /* syslog */
+      ZLOGS(LOG_ERROR, "%s", r);
+      break;
+    default:
+      ZLOG(LOG_ERROR, "invalid report mode %d", report_mode);
+      break;
+  }
+#undef REPORT
 }
 
 void FastReport()
@@ -187,7 +219,7 @@ void FastReport()
   /* create and output report */
   acc = FastAccounting();
   r = g_strdup_printf("%s%s%s", REPORT_ACCOUNTING, acc, eol);
-  OutputReport(r, strlen(r));
+  OutputReport(r);
 
   g_free(acc);
   g_free(r);
@@ -203,6 +235,7 @@ void Report(struct NaClApp *nap)
 
   /* report validator state and user return code */
   REPORT(r, "%s%d%s", REPORT_VALIDATOR, validation_state, eol);
+  REPORT(r, "%s%d%s", REPORT_DAEMON, daemon_state, eol);
   REPORT(r, "%s%d%s", REPORT_RETCODE, user_code, eol);
 
   /* add memory digest to cumulative digests if asked */
@@ -222,7 +255,7 @@ void Report(struct NaClApp *nap)
   REPORT(r, "%s%s%s", REPORT_STATE,
       zvm_state == NULL ? UNKNOWN_STATE : zvm_state, eol);
   REPORT(r, "%s%s", REPORT_CMD, eol);
-  OutputReport(r->str, r->len);
+  OutputReport(r->str);
 
   g_string_free(r, TRUE);
   g_free(acc);

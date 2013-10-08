@@ -61,6 +61,7 @@ static void UpdateSession(struct Manifest *manifest)
   SignalHandlerFini();
   SignalHandlerInit();
   ResetAccounting();
+  ReportMode(3);
   SetReportHandle(client);
 
   /* TODO(d'b): take verbosity from the command */
@@ -125,11 +126,6 @@ static void Daemonize(struct NaClApp *nap)
   sigemptyset(&sa.sa_mask);
   sa.sa_flags = 0;
   ZLOGFAIL(sigaction(SIGHUP, &sa, NULL) < 0, EFAULT, "can't ignore SIGHUP");
-#if 0
-  pid = fork();
-  ZLOGFAIL(pid < 0, EFAULT, "can't fork");
-  if(pid) exit(0); /* trash intermediate process */
-#endif
 
   /*
    * Change the current working directory to the root so
@@ -168,6 +164,7 @@ int Daemon(struct NaClApp *nap)
   max_handles = MIN(rl.rlim_max, MAX_CHANNELS_NUMBER);
 
   /* finalize user session */
+  SetDaemonState(1);
   pid = fork();
   if(pid != 0) return 0;
 
@@ -187,7 +184,7 @@ int Daemon(struct NaClApp *nap)
     /* get the next job */
     if((client = Job(sock)) < 0)
     {
-      ZLOGIF(1, "%s", strerror(errno));
+      ZLOG(LOG_ERROR, "%s", strerror(errno));
       continue;
     }
 
@@ -204,7 +201,8 @@ int Daemon(struct NaClApp *nap)
       break;
     }
 
-    /* daemon: wait for a new job */
+    /* daemon: close command socket and wait for a new job */
+    close(client);
     ZLOGIF(pid < 0, "fork failed: %s", strerror(errno));
   }
 

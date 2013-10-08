@@ -48,6 +48,9 @@ void SetUserCode(int code);
 /* set validation state (0 - passed, 1 - failed, 2 - disabled) */
 void SetValidationState(int state);
 
+/* set daemon state (0: regualr session, 1: daemon mode started)*/
+void SetDaemonState(int state);
+
 /* set zerovm command line for debug purposes */
 void SetCmdString(GString *s);
 
