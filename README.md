@@ -33,18 +33,17 @@ Proceeed only after checking the link above.
 
     $ cd ~/zerovm
     $ ./zerovm
-    ZeroVM lightweight VM manager, build 2013-03-27
-    Usage: <manifest> [-e#] [-l#] [-v#] [-sFPSQ]
+    ZeroVM tag1 lightweight VM manager, build 2013-10-08
+    Usage: <manifest> [-l#] [-v#] [-T#] [-stFPQ]
 
-    <manifest> load settings from manifest file
-    -e <level> enable the data control. where levels are
-        1 - channels, 2 - memory, 3 - both 
-    -l set a new storage limit (in Gb)
-    -s skip validation
-    -v <level> verbosity -F fuzz testing; quit right before starting user app
-    -P disable channels space preallocation
-    -Q disable platform qualification (dangerous!)
-    -S disable signal handling
+     -l <gigabytes> file size limit (default 4Gb)
+     -s skip validation
+     -t <0..2> report to stdout/log/fast (default 0)
+     -v <0..3> log verbosity (default 0)
+     -F quit right before starting user session
+     -P disable channels space preallocation
+     -Q disable platform qualification
+     -T enable time/call tracing
 
    You should see a usage message similar to the one above. If not check out the [troubleshooting](#troubleshooting) section below.
 

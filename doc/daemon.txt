@@ -7,18 +7,35 @@ starting from build 2013-11-08 zerovm can be started as daemon. only purpose
 of current implementation of daemon mode is reducing latency. some programs
 has very long startup time
 
+daemon creation:
+1. manifest should contain "Job" keyword. the keyword value contain the unix
+   socket name. the socket will be used by daemon and spawned sessions to
+   receive commands / manifests and to send reports
+2. the user program should contain zvm_fork invocation
+3. until zvm_fork session must not encounter errors
+
+spawning:
 each request received by the daemon will immediately spawn child zerovm
 session which works as usual with some exclusions:
-1. a new manifest should be valid and contain same channels aliases (uris can
-   differ) with same fields. following keywords will be ignored (but shell
-   present): Memory, Program, Version.
+1. a new manifest should be valid and contain same channels definitions (uris
+   can differ). following keywords will be ignored (but shell present): Memory,
+   Program, Version.
 2. all data written until zvm_fork() will be lost. all sequential channels keep
    their positions (and sequential channels reached eof will be unavailable)
-3. zerovm daemon created with network channel behavior undefined
+3. zerovm daemon created with network channel(s) behavior undefined
 4. report of spawned session can only be placed to control channel provided by
    Job in manifest
 
-known issues:
+known issues (features):
 1. daemon mode zerovm (daemon) releases forked processes in wait status when
 get command through command channel. therefore some finished and not yet
-released sessions will be seen as zombies  
+released sessions will be seen as zombies
+
+2. spawned sessions inherit validator status. if daemon was launched with -s
+   spawned session report will contain validator status = 2
+   
+3. etags disabled in daemon will be disabled in childs
+
+4. manifest for spawning session should have daemon's channels set
+
+5. spawned sessions inherit daemon syslog verbosity
