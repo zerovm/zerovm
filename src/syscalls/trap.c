@@ -21,9 +21,9 @@
 #include "src/main/setup.h"
 #include "src/syscalls/daemon.h"
 
-static int idx[] = {TrapRead, TrapWrite, TrapJail, TrapUnjail, TrapExit};
+static int idx[] = {TrapRead, TrapWrite, TrapJail, TrapUnjail, TrapExit, TrapFork};
 static char *function[] =
-  {"TrapRead", "TrapWrite", "TrapJail", "TrapUnjail", "TrapExit", "n/a"};
+  {"TrapRead", "TrapWrite", "TrapJail", "TrapUnjail", "TrapExit", "TrapFork", "n/a"};
 
 /*
  * check "prot" access for user area (start, size)
@@ -269,10 +269,11 @@ int32_t TrapHandler(struct NaClApp *nap, uint32_t args)
 
   switch(*sargs)
   {
+    case TrapFork:
+      if(Daemon(nap) == 0)
+        ZVMExitHandle(nap, 0);
+      break;
     case TrapExit:
-      /* TODO(d'b): create own trap function */
-      if(sargs[2] == -1LLU)
-        if(Daemon(nap) < 0) break;
       ZVMExitHandle(nap, (int32_t)sargs[2]);
       break;
     case TrapRead:

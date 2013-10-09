@@ -28,7 +28,8 @@ enum TrapCalls
   TrapWrite = 0x74697257,
   TrapJail = 0x6c69614a,
   TrapUnjail = 0x6c6a6e55,
-  TrapExit = 0x74697845
+  TrapExit = 0x74697845,
+  TrapFork = 0x6b726f46
 };
 
 /* channel types */
@@ -103,6 +104,6 @@ struct UserManifest
 #define zvm_unjail(buffer, size) \
   TRAP((uint64_t[]){TrapUnjail, 0, (uintptr_t)buffer, size})
 #define zvm_exit(code) TRAP((uint64_t[]){TrapExit, 0, code})
-#define zvm_fork() TRAP((uint64_t[]){TrapExit, 0, 0xffffffffffffffffLLU})
+#define zvm_fork() TRAP((uint64_t[]){TrapFork})
 
 #endif /* ZVM_API_H__ */
