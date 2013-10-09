@@ -39,25 +39,26 @@ static int max_handles = 0;
 static char *GetCommand()
 {
   int len;
-  char buf[CMD_SIZE], *mft = buf;
+  char *cmd = g_malloc0(TASK_SIZE);
 
   assert(client >= 0);
 
-  ZLOGFAIL(read(client, mft, sizeof mft) < 0, EIO, "%s", strerror(errno));
-  len = ToInt(mft);
-  mft = g_malloc(len);
-  ZLOGFAIL(read(client, mft, len) < 0, EIO, "%s", strerror(errno));
+  ZLOGFAIL(read(client, cmd, CMD_SIZE) < 0, EIO, "%s", strerror(errno));
+  len = ToInt(cmd);
+  ZLOGFAIL(read(client, cmd, len) < 0, EIO, "%s", strerror(errno));
 
-  return mft;
+  return cmd;
 }
 
 /* child: update "nap" with the new manifest */
 static void UpdateSession(struct Manifest *manifest)
 {
   int i;
-  struct Manifest *tmp = ManifestTextCtor(GetCommand());
+  char *cmd = GetCommand();
+  struct Manifest *tmp = ManifestTextCtor(cmd);
 
   /* re-initialize signals handling, accounting and the report handle */
+  g_free(cmd);
   SignalHandlerFini();
   SignalHandlerInit();
   ResetAccounting();
