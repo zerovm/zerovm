@@ -464,6 +464,9 @@ void ChannelsCtor(struct Manifest *manifest)
   g_ptr_array_add(buffers, NULL);
   for(i = 1; i < buffers_size; ++i)
     g_ptr_array_add(buffers, g_malloc(BUFFER_SIZE));
+
+  /* sort channels for user manifest */
+  SortChannels(manifest->channels);
 }
 
 void ChannelsDtor(struct Manifest *manifest)

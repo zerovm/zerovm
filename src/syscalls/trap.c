@@ -271,7 +271,10 @@ int32_t TrapHandler(struct NaClApp *nap, uint32_t args)
   {
     case TrapFork:
       if(Daemon(nap) == 0)
+      {
+        SyscallZTrace(5, function[5]);
         ZVMExitHandle(nap, 0);
+      }
       break;
     case TrapExit:
       ZVMExitHandle(nap, (int32_t)sargs[2]);
