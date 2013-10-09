@@ -181,7 +181,6 @@ static void OutputReport(char *r)
     case 3: /* unix socket */
       p = g_strdup_printf("0x%06x%s", size, r);
       size = strlen(p);
-      ZLOGS(LOG_ERROR, "report_handle = %d", report_handle);
       REPORT(p);
       g_free(p);
       break;

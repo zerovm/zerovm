@@ -64,10 +64,6 @@ static void UpdateSession(struct Manifest *manifest)
   ReportMode(3);
   SetReportHandle(client);
 
-  /* TODO(d'b): take verbosity from the command */
-  ZLogDtor();
-  ZLogCtor(2); // ### change it back to 0
-
   /* copy needful fields from the new manifest */
   manifest->timeout = tmp->timeout;
   manifest->name_server = tmp->name_server;
@@ -111,8 +107,6 @@ static void Daemonize(struct NaClApp *nap)
   int i;
   struct sigaction sa;
 
-  ZLOG(LOG_ERROR, "DAEMONIZATION started. pid = %d", getpid());
-
   /* unmount channels, reset timeout */
   ChannelsDtor(nap->manifest);
   nap->manifest->timeout = 0;
@@ -141,7 +135,6 @@ static void Daemonize(struct NaClApp *nap)
   ZLOGFAIL(open("/dev/null", O_RDWR) != 0, EFAULT, "can't set stdin to /dev/null");
   ZLOGFAIL(dup(0) != 1, EFAULT, "can't set stdout to /dev/null");
   ZLOGFAIL(dup(0) != 2, EFAULT, "can't set stderr to /dev/null");
-  ZLOG(LOG_ERROR, "zerovm daemon started. pid = %d", getpid());
 
   /* TODO(d'b): free needless resources */
 }
@@ -178,7 +171,6 @@ int Daemon(struct NaClApp *nap)
   strcpy(remote.sun_path, nap->manifest->job);
   ZLOGFAIL(bind(sock, &remote, sizeof remote) < 0, EIO, "%s", strerror(errno));
   ZLOGFAIL(listen(sock, QUEUE_SIZE) < 0, EIO, "%s", strerror(errno));
-  ZLOG(LOG_ERROR, "COMMAND CHANNEL OPENED. sock = %d", sock);
 
   for(;;)
   {
