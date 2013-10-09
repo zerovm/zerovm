@@ -39,3 +39,6 @@ released sessions will be seen as zombies
 4. manifest for spawning session should have daemon's channels set
 
 5. spawned sessions inherit daemon syslog verbosity
+
+6. current spawned session manifest size limited to 64kb (regular manifest
+   limited to 512kb)

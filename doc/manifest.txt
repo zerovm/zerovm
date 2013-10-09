@@ -97,6 +97,6 @@ Job
   path to unix socket. if Job specified and session invoked zvm_fork(), current
   session will be terminated and daemon will be created (see daemon.txt)
 
-Both keywords and values have size limit of 0x2000. The manifest file size
-limited to 0x80000. value limited to 16 tokens. The limitations can be
+Both keywords and values have size limit of 8kb. The manifest file size
+limited to 512kb. value limited to 16 tokens. The limitations can be
 changed in the future.

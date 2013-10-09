@@ -1,0 +1,3 @@
+#!/bin/sh
+python daemon_client.py job < forked.manifest >> LOG
+

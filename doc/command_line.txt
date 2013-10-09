@@ -4,12 +4,12 @@ This document describes ZeroVM command line switches
 
 ZeroVM command line switches:
 
-  ZeroVM tag1 lightweight VM manager, build 2013-09-20
+  ZeroVM tag1 lightweight VM manager, build 2013-10-09
   Usage: <manifest> [-l#] [-v#] [-stFPQ]
 
    -l <gigabytes> file size limit (default 4Gb)
    -s skip validation
-   -t report to log instead of stdout
+   -t <0..2> report to stdout/log/fast (default 0)
    -v <0..3> log verbosity (default 0)
    -F quit right before starting user session
    -P disable channels space preallocation
@@ -43,6 +43,14 @@ ZeroVM command line switches:
 
 -Q -- will skip data execution test. This switch makes it possible to run ZeroVM 
       application on a platform with no "data execution" protection.
+      
+notes:
+- tag1 after ZeroVM means encoding used for zerovm. tag0: md5, tag1: sha-1,
+  tag2: sha-256. encoding can be specified before zerovm compilation through
+  Makefile variable "TAG_ENCRYPTION".
+
+- -t3 should not be used. this value reserved for sessions spawned by zerovm
+  in daemon mode 
       
 examples:
   zerovm -v2 test.manifest

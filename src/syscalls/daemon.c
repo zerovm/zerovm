@@ -21,7 +21,6 @@
 #include "src/main/accounting.h"
 #include "src/platform/signal.h"
 #include "src/channels/channel.h"
-#include "src/channels/nservice.h"
 #include "src/syscalls/daemon.h"
 
 #define TASK_SIZE 0x10000
@@ -29,7 +28,7 @@
 #define CMD_SIZE (sizeof(uint64_t))
 
 static int client = -1;
-static int max_handles = 0;
+
 /*
  * child: get command from inherited command socket. current version can
  * only have one command and therefore the command format will only contain
@@ -107,6 +106,8 @@ static void Daemonize(struct NaClApp *nap)
 {
   int i;
   struct sigaction sa;
+  struct rlimit rl;
+  int max_handles;
 
   /* unmount channels, reset timeout */
   ChannelsDtor(nap->manifest);
@@ -128,6 +129,11 @@ static void Daemonize(struct NaClApp *nap)
    */
   ZLOGFAIL(chdir("/") < 0, EFAULT, "can't change directory to /");
 
+  /* set number of handles to be closed */
+  umask(0);
+  ZLOGFAIL(getrlimit(RLIMIT_NOFILE, &rl) < 0, EFAULT, "can't get file limit");
+  max_handles = MIN(rl.rlim_max, 1024);
+
   /* Close all open file descriptors */
   for (i = 0; i < max_handles; ++i)
     close(i);
@@ -145,17 +151,11 @@ int Daemon(struct NaClApp *nap)
   int sock;
   pid_t pid;
   siginfo_t info;
-  struct rlimit rl;
   struct sockaddr_un remote = {AF_UNIX, ""};
 
   /* can the daemon be started? */
   if(nap->manifest->job == NULL) return -1;
   ZLOGFAIL(GetExitCode(), EFAULT, "broken session");
-
-  /* set number of handles to be closed */
-  umask(0);
-  ZLOGFAIL(getrlimit(RLIMIT_NOFILE, &rl) < 0, EFAULT, "can't get file limit");
-  max_handles = MIN(rl.rlim_max, MAX_CHANNELS_NUMBER);
 
   /* finalize user session */
   SetDaemonState(1); /* report the daemon mode launched */
