@@ -134,7 +134,6 @@ static int Daemonize(struct NaClApp *nap)
   ZLOGFAIL(chdir("/") < 0, EFAULT, "can't change directory to /");
 
   /* set number of handles to be closed */
-  umask(0);
   ZLOGFAIL(getrlimit(RLIMIT_NOFILE, &rl) < 0, EFAULT, "can't get file limit");
   max_handles = MIN(rl.rlim_max, 1024);
 
@@ -175,6 +174,7 @@ int Daemon(struct NaClApp *nap)
   SetDaemonState(1);
 
   /* finalize user session */
+  umask(0);
   pid = fork();
   if(pid != 0) return 0;
 
