@@ -261,7 +261,7 @@ struct ElfImage *ElfImageNew(struct Gio *gp)
 
   memset(image.loadable, 0, sizeof image.loadable);
 
-  /* fail if could not seek to beginning of Gio object containing nexe */
+  /* fail if could not seek to beginning of Gio object containing program */
   ZLOGFAIL(-1 == (*gp->vtbl->Seek)(gp, 0, 0), EIO, FAILED_MSG);
 
   /* fail if could not load elf headers*/

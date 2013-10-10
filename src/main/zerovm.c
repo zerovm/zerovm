@@ -116,7 +116,7 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
   /* set available nap and manifest fields */
   ZLOGFAIL(nap->manifest->program == NULL, EFAULT, "program not specified");
   psize = GetFileSize(nap->manifest->program);
-  ZLOGFAIL(psize < 0, ENOENT, "nexe open error");
+  ZLOGFAIL(psize < 0, ENOENT, "program open error");
   ZLOGFAIL(psize == 0 || psize > LARGEST_NEXE, ENOENT, "too large program");
 }
 
@@ -213,7 +213,7 @@ int main(int argc, char **argv)
   ZTrace("[last preparations]");
 
   /* switch to the user code flushing all buffers */
-  fflush((FILE*) NULL);
+  fflush(NULL);
   CreateSession(nap);
   return EFAULT; /* unreachable */
 }

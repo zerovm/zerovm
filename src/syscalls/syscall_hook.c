@@ -80,7 +80,7 @@ NORETURN void SyscallHook()
    */
   user_ret = (nacl_reg_t)NaClSandboxCodeAddr(nap, (uintptr_t)user_ret);
 
-  /* d'b: give control to the nexe */
+  /* d'b: give control to the user side */
   SwitchToApp(nap, user_ret);
   ZLOGFAIL(1, EFAULT, "the unreachable has been reached");
 }

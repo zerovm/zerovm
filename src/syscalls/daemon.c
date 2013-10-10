@@ -16,13 +16,15 @@
 #include <assert.h>
 #include <sys/socket.h>
 #include <sys/resource.h>
-#include<sys/wait.h>
+#include <sys/wait.h>
+#include <sys/prctl.h>
 #include "src/main/report.h"
 #include "src/main/accounting.h"
 #include "src/platform/signal.h"
 #include "src/channels/channel.h"
 #include "src/syscalls/daemon.h"
 
+#define DAEMON_NAME "zerovm.daemon"
 #define TASK_SIZE 0x10000
 #define QUEUE_SIZE 0x100
 #define CMD_SIZE (sizeof(uint64_t))
@@ -102,10 +104,12 @@ static int Job(int sock)
 }
 
 /* convert to the daemon mode */
-static void Daemonize(struct NaClApp *nap)
+static int Daemonize(struct NaClApp *nap)
 {
   int i;
+  int sock;
   struct sigaction sa;
+  struct sockaddr_un remote = {AF_UNIX, ""};
   struct rlimit rl;
   int max_handles;
 
@@ -143,35 +147,40 @@ static void Daemonize(struct NaClApp *nap)
   ZLOGFAIL(dup(0) != 1, EFAULT, "can't set stdout to /dev/null");
   ZLOGFAIL(dup(0) != 2, EFAULT, "can't set stderr to /dev/null");
 
-  /* TODO(d'b): free needless resources */
-}
-
-int Daemon(struct NaClApp *nap)
-{
-  int sock;
-  pid_t pid;
-  siginfo_t info;
-  struct sockaddr_un remote = {AF_UNIX, ""};
-
-  /* can the daemon be started? */
-  if(nap->manifest->job == NULL) return -1;
-  ZLOGFAIL(GetExitCode(), EFAULT, "broken session");
-
-  /* finalize user session */
-  SetDaemonState(1); /* report the daemon mode launched */
-  pid = fork();
-  if(pid != 0) return 0;
-  SetDaemonState(0); /* forked sessions are not in daemon mode */
-
-  /* start the daemon */
-  Daemonize(nap);
-
   /* open the command channel */
   unlink(nap->manifest->job);
   sock = socket(AF_UNIX, SOCK_STREAM, 0);
   strcpy(remote.sun_path, nap->manifest->job);
   ZLOGFAIL(bind(sock, &remote, sizeof remote) < 0, EIO, "%s", strerror(errno));
   ZLOGFAIL(listen(sock, QUEUE_SIZE) < 0, EIO, "%s", strerror(errno));
+
+  /* set name for daemon */
+  prctl(PR_SET_NAME, &DAEMON_NAME);
+
+  /* TODO(d'b): free needless resources */
+  return sock;
+}
+
+int Daemon(struct NaClApp *nap)
+{
+  pid_t pid;
+  siginfo_t info;
+  int sock;
+
+  /* can the daemon be started? */
+  if(nap->manifest->job == NULL) return -1;
+  ZLOGFAIL(GetExitCode(), EFAULT, "broken session");
+
+  /* report the daemon mode launched */
+  SetDaemonState(1);
+
+  /* finalize user session */
+  pid = fork();
+  if(pid != 0) return 0;
+
+  /* forked sessions are not in daemon mode */
+  SetDaemonState(0);
+  sock = Daemonize(nap);
 
   for(;;)
   {

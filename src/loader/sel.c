@@ -205,7 +205,7 @@ void AppLoadFile(struct Gio *gp, struct NaClApp *nap)
   err = NaCl_mprotect((void *)(nap->mem_start + NACL_TRAMPOLINE_START),
       ROUNDUP_64K(nap->data_end) - NACL_TRAMPOLINE_START,
       PROT_READ | PROT_WRITE);
-  ZLOGFAIL(0 != err, EFAULT, "Failed to make image pages writable. code 0x%x", err);
+  ZLOGFAIL(0 != err, EFAULT, "Failed to make image pages writable. errno = %d", err);
 
   ElfImageLoad(image, gp, nap->addr_bits, nap->mem_start);
 
@@ -271,7 +271,7 @@ NORETURN void CreateSession(struct NaClApp *nap)
   nacl_sys->rbp = GetStackPtr();
   nacl_sys->rsp = GetStackPtr();
 
-  /* pass control to the nexe */
+  /* pass control to the user side */
   ZLOGS(LOG_DEBUG, "SESSION %d STARTED", nap->manifest->node);
   SwitchToApp(nap, nacl_user->new_prog_ctr);
   ZLOGFAIL(1, EFAULT, "the unreachable has been reached");
