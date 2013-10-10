@@ -347,6 +347,7 @@ static int OrderAlias(const struct ChannelDesc **a, const struct ChannelDesc **b
 void SortChannels(GPtrArray *channels)
 {
   g_ptr_array_sort(channels, (GCompareFunc)OrderAlias);
+  g_ptr_array_sort(channels, (GCompareFunc)OrderUser);
 }
 
 /* get numbers of "binds" and "connects" sources */
@@ -451,7 +452,7 @@ void ChannelsCtor(struct Manifest *manifest)
     ChannelCtor(CH_CH(manifest, i));
 
   /* reorder channels for user manifest */
-  g_ptr_array_sort(manifest->channels, (GCompareFunc)OrderUser);
+  SortChannels(manifest->channels);
 
   /* check if all standard channels are specified */
   ZLOGFAIL(manifest->channels->len <= STDERR_FILENO
@@ -464,9 +465,6 @@ void ChannelsCtor(struct Manifest *manifest)
   g_ptr_array_add(buffers, NULL);
   for(i = 1; i < buffers_size; ++i)
     g_ptr_array_add(buffers, g_malloc(BUFFER_SIZE));
-
-//  /* sort channels for user manifest */
-//  SortChannels(manifest->channels);
 }
 
 void ChannelsDtor(struct Manifest *manifest)
