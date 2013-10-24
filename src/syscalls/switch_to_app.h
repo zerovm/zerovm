@@ -34,8 +34,7 @@ void InitSwitchToApp(struct NaClApp *nap);
 
 extern NORETURN void SwitchAVX(struct ThreadContext *context);
 extern NORETURN void SwitchSSE(struct ThreadContext *context);
-
-NORETURN void SwitchToApp(struct NaClApp *nap, nacl_reg_t new_prog_ctr);
+NORETURN void (*ContextSwitch)(struct ThreadContext *context);
 
 EXTERN_C_END
 

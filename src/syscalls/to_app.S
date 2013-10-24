@@ -72,7 +72,7 @@ MACROENTRY
 
         /* there is no springboard for x86_64 */
         movq    0x38(%rcx), %rsp  /* rsp -- switch stack */
-        movq    0x90(%rcx), %rax  /* syscall return */
+        movq    0x88(%rcx), %rax  /* syscall return */
 
         /*
          * %rdi is the first argument in the user calling convention.
@@ -138,11 +138,11 @@ MACROENTRY
 
         /*
          * Load the return address into %rcx rather than doing
-         * "jmp *0x88(%rcx)" so that we do not leak the address of the
-         * struct NaClThreadContext to untrusted code.  Knowing this
+         * "jmp *0x80(%rcx)" so that we do not leak the address of the
+         * struct NaClThreadContext to untrusted code. Knowing this
          * address would make bugs in the sandbox easier to exploit.
          */
-        movq    0x88(%rcx), %rcx
+        movq    0x80(%rcx), %rcx
         jmp     *%rcx
 ENDMACRO
 

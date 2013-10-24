@@ -65,6 +65,8 @@ static void UpdateSession(struct Manifest *manifest)
   ResetAccounting();
   ReportMode(3);
   SetReportHandle(client);
+  ZLogDtor();
+  ZLogCtor(0);
 
   /* copy needful fields from the new manifest */
   manifest->timeout = tmp->timeout;
@@ -155,6 +157,7 @@ static int Daemonize(struct NaClApp *nap)
 
   /* set name for daemon */
   prctl(PR_SET_NAME, &DAEMON_NAME);
+  SetCmdString(g_string_new("command = daemonic"));
 
   /* TODO(d'b): free needless resources */
   return sock;

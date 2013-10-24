@@ -41,8 +41,7 @@ void SetThreadCtxSp(struct ThreadContext *th_ctx, uintptr_t sp)
 int ThreadContextCtor(struct ThreadContext *ntcp,
                       struct NaClApp       *nap,
                       nacl_reg_t           prog_ctr,
-                      nacl_reg_t           stack_ptr,
-                      uint32_t             tls_idx)
+                      nacl_reg_t           stack_ptr)
 {
   ntcp->rax = 0;
   ntcp->rbx = 0;
@@ -65,11 +64,7 @@ int ThreadContextCtor(struct ThreadContext *ntcp,
   ntcp->r15 = nap->mem_start;
 
   ntcp->prog_ctr = NaClUserToSys(nap, prog_ctr);
-  ntcp->new_prog_ctr = 0;
-  ntcp->sysret = -EINVAL;
-
-  ntcp->tls_base = NULL;
-  ntcp->tls_idx = tls_idx;
+  ntcp->sysret = 0;
 
   return 1;
 }

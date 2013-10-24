@@ -1,4 +1,6 @@
 /*
+ * (re)store session engine
+ *
  * Copyright (c) 2012, LiteStack, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,12 +16,13 @@
  * limitations under the License.
  */
 
-#ifdef zmq
-#include "prefetch_zmq.c"
-#else
-#ifdef udt
-#include "prefetch_udt.c"
-#else
-#error "only supported choices are zmq and udt"
-#endif
-#endif
+#ifndef SNAPSHOT_H_
+#define SNAPSHOT_H_
+
+/* load session from given image. 0: success, -1: failed */
+int LoadSession(struct NaClApp *nap, const char *name);
+
+/* store session to image "Save". 0: success, -1: failed */
+int SaveSession(struct NaClApp *nap);
+
+#endif /* SNAPSHOT_H_ */

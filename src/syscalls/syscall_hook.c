@@ -29,17 +29,14 @@
 NORETURN void SyscallHook()
 {
   struct NaClApp *nap;
-  struct ThreadContext *user;
   uintptr_t tramp_ret;
-  nacl_reg_t user_ret;
   size_t sysnum;
   uintptr_t sp_user;
   uintptr_t sp_sys;
 
   /* restore trusted side environment */
   nap = gnap; /* restore NaClApp object */
-  user = nacl_user;
-  sp_user = GetThreadCtxSp(user);
+  sp_user = GetThreadCtxSp(nacl_user);
   sp_sys = sp_user;
 
   /*
@@ -54,7 +51,7 @@ NORETURN void SyscallHook()
    * getting user return address (the address where we need to return after
    * system call) from the user stack. (see stack layout above)
    */
-  user_ret = *(uintptr_t *)(sp_sys + NACL_USERRET_FIX);
+  nacl_user->prog_ctr = *(uintptr_t *)(sp_sys + NACL_USERRET_FIX);
 
   /*
    * Fix the user stack, throw away return addresses from the top of the stack.
@@ -63,7 +60,7 @@ NORETURN void SyscallHook()
    */
   sp_sys += NACL_SYSARGS_FIX;
   sp_user += NACL_SYSCALLRET_FIX;
-  SetThreadCtxSp(user, sp_user);
+  SetThreadCtxSp(nacl_user, sp_user);
 
   /* fail if nacl syscall received */
   ZLOGFAIL(sysnum != 0, EINVAL, "nacl syscall #%d received", sysnum);
@@ -72,15 +69,16 @@ NORETURN void SyscallHook()
    * syscall_args must point to the first argument of a system call.
    * System call arguments are placed on the untrusted user stack.
    */
-  nap->sysret = TrapHandler(nap, *(uint32_t*)sp_sys);
+  nacl_user->sysret = TrapHandler(nap, *(uint32_t*)sp_sys);
 
   /*
    * before switching back to user module, we need to make sure that the
    * user_ret is properly sandboxed.
    */
-  user_ret = (nacl_reg_t)NaClSandboxCodeAddr(nap, (uintptr_t)user_ret);
+  nacl_user->prog_ctr = NaClSandboxCodeAddr(nap, nacl_user->prog_ctr);
 
   /* d'b: give control to the user side */
-  SwitchToApp(nap, user_ret);
+//  SwitchToApp(nap);
+  ContextSwitch(nacl_user);
   ZLOGFAIL(1, EFAULT, "the unreachable has been reached");
 }

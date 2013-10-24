@@ -187,6 +187,7 @@ int main(int argc, char **argv)
 
   /* initialize all channels */
   ChannelsCtor(nap->manifest);
+  ZLOGS(LOG_DEBUG, "channels constructed");
   ZTrace("[channels mounting]");
 
   /*
@@ -194,10 +195,12 @@ int main(int argc, char **argv)
    * after heap allocated there will be no free user memory
    */
   PreallocateUserMemory(nap);
+  ZLOGS(LOG_DEBUG, "user memory preallocated");
   ZTrace("[user memory preallocation]");
 
   /* set user manifest in user space */
   SetSystemData(nap);
+  ZLOGS(LOG_DEBUG, "system data set");
   ZTrace("[user manifest construction]");
 
   /* "defense in depth" call */

@@ -1,9 +1,9 @@
 NAME=lz4demo
-CCFLAGS=-n -s -nostartfiles -nostdlib -fno-builtin
+CCFLAGS=-n -g -nostartfiles -nostdlib -fno-builtin
 
 all: $(NAME).c lz4.c
 	@x86_64-nacl-gcc -o $(NAME).nexe $(CCFLAGS) -Wall -msse4.1 \
-	-O2 -I$(ZEROVM_ROOT) -I$(ZEROVM_ROOT)/tests/functional $^ \
+	-O6 -I$(ZEROVM_ROOT) -I$(ZEROVM_ROOT)/tests/functional $^ \
 	$(ZEROVM_ROOT)/tests/functional/include/libzvmlib.a
 	@dd if=/dev/zero of=input.data bs=1048576 count=256 2> /dev/null
 	@sed 's#PWD#$(PWD)#g' $(NAME).template > $(NAME).manifest

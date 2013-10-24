@@ -32,9 +32,6 @@
 # include <ammintrin.h>
 #endif
 
-#define NORETURN_PTR NORETURN
-static NORETURN_PTR void (*ContextSwitch)(struct ThreadContext *context);
-
 /* CPUID. "r" should be int[4], "func" = eax */
 #define CPUID(r, func) \
     asm("cpuid" : "=a"(r[0]), "=b"(r[1]), "=c"(r[2]), "=d"(r[3]) : "a"(func), "c"(0))
@@ -100,13 +97,4 @@ void InitSwitchToApp(struct NaClApp *nap)
   ZLOGFAIL(cpu == 0, EFAULT, "zerovm needs at least SSE CPU");
   ZLOGIF(cpu > 7, "zerovm running on CPU with partial support. UNSAFE!");
   ContextSwitch = cpu < 7 ? SwitchSSE : SwitchAVX;
-}
-
-/* switch to the nacl module (untrusted content) */
-NORETURN void SwitchToApp(struct NaClApp *nap, nacl_reg_t new_prog_ctr)
-{
-  nacl_user->new_prog_ctr = new_prog_ctr;
-  nacl_user->sysret = nap->sysret;
-
-  ContextSwitch(nacl_user);
 }

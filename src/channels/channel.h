@@ -62,6 +62,7 @@ EXTERN_C_BEGIN
 #define CH_NAME(channel, n) (CH_FILE(channel, n))->name
 #define CH_HOST(channel, n) (CH_CONN(channel, n))->host
 #define CH_PORT(channel, n) (CH_CONN(channel, n))->port
+#define CH_BACKUP(channel, n) (CH_CONN(channel, n))->backup
 
 #define CH_SEQ_READABLE(channel) (((channel)->type & 1) == 0)
 #define CH_SEQ_WRITEABLE(channel) (((channel)->type & 2) == 0)

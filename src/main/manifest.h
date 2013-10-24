@@ -66,6 +66,7 @@ struct Connection {
   uint8_t flags;
   uint16_t port;
   uint32_t host;
+  void *backup; /* for udt it is stored original handle */
 };
 
 /* local channel description */

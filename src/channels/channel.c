@@ -417,9 +417,12 @@ void ChannelsCtor(struct Manifest *manifest)
 {
   int i = 0;
 
-  assert(manifest != NULL);
+#ifdef udt /* TODO(d'b): remove it after "channels" re-design */
+  extern void PrefetchAccept(struct ChannelDesc *channel);
+#endif
 
   /* allocate list to detect duplicate channels aliases */
+  assert(manifest != NULL);
   assert(aliases == NULL);
   aliases = g_tree_new_full((GCompareDataFunc)strcmp,
       NULL, (GDestroyNotify)DuplicateKey, NULL);
@@ -450,6 +453,12 @@ void ChannelsCtor(struct Manifest *manifest)
   /* mount the rest of channels */
   for(; i < manifest->channels->len; ++i)
     ChannelCtor(CH_CH(manifest, i));
+
+#ifdef udt /* TODO(d'b): remove it after "channels" re-design */
+  /* accept after binds (to avoid hanging on accept) */
+  for(i = 0; i < manifest->channels->len; ++i)
+    PrefetchAccept(CH_CH(manifest, i));
+#endif
 
   /* reorder channels for user manifest */
   SortChannels(manifest->channels);

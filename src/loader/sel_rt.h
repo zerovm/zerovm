@@ -37,17 +37,9 @@ struct ThreadContext {
   /*          0x40, 0x48, 0x50, 0x58, 0x60, 0x68, 0x70, 0x78 */
   nacl_reg_t  prog_ctr;  /* rip */
   /*          0x80 */
-
-  nacl_reg_t  new_prog_ctr;
-  /*          0x88 */
   nacl_reg_t  sysret;
-  /*          0x90 */
-  void        *tls_base;
-  /*          0x98 */
-  uint32_t    tls_idx;
-  /* 0xa0 */
+  /*          0x88 */
 };
-/* 0xa8 */
 
 uintptr_t GetThreadCtxSp(struct ThreadContext *th_ctx);
 
