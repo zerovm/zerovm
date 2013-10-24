@@ -17,7 +17,7 @@
 #include <assert.h>
 #include <arpa/inet.h> /* convert ip <-> int */
 #include <netdb.h>
-#include <udtc.h>
+#include <udt/udtc.h>
 #include "src/channels/prefetch.h"
 #include "src/main/accounting.h"
 #include "src/main/report.h"
