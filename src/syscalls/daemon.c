@@ -19,6 +19,7 @@
 #include <sys/wait.h>
 #include <sys/prctl.h>
 #include "src/main/report.h"
+#include "src/main/setup.h"
 #include "src/main/accounting.h"
 #include "src/platform/signal.h"
 #include "src/channels/channel.h"
@@ -55,6 +56,7 @@ static char *GetCommand()
 static void UpdateSession(struct Manifest *manifest)
 {
   int i;
+  char *ztrace_name = NULL;
   char *cmd = GetCommand();
   struct Manifest *tmp = ManifestTextCtor(cmd);
 
@@ -67,6 +69,12 @@ static void UpdateSession(struct Manifest *manifest)
   SetReportHandle(client);
   ZLogDtor();
   ZLogCtor(0);
+
+  /* reopen ztrace */
+  ztrace_name = ZTraceFile();
+  ZTraceDtor(0);
+  ZTraceCtor(ztrace_name);
+  g_free(ztrace_name);
 
   /* copy needful fields from the new manifest */
   manifest->timeout = tmp->timeout;

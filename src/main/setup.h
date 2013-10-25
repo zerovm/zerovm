@@ -58,11 +58,14 @@ void PreallocateUserMemory(struct NaClApp *nap);
 /* serialize system data to user space */
 void SetSystemData(struct NaClApp *nap);
 
+/* return "ztrace" file name. string should be freed */
+char *ZTraceFile();
+
 /* initialize "ztrace" service */
 void ZTraceCtor(const char *name);
 
-/* close "ztrace" service */
-void ZTraceDtor();
+/* close "ztrace" service. mode = 0 designed for "spawned" sessions */
+void ZTraceDtor(int mode);
 
 /* log the string with the next time delta */
 void ZTrace(const char *msg);

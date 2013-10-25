@@ -293,6 +293,6 @@ void ReportDtor(int zvm_ret)
   g_free(zvm_state);
 
   ZTrace("[exit]");
-  ZTraceDtor();
+  ZTraceDtor(1);
   _exit(zvm_code);
 }

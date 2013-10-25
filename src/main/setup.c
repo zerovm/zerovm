@@ -26,37 +26,101 @@
 
 /* hard limit for all zerovm i/o */
 static int64_t storage_limit = ZEROVM_IO_LIMIT;
+
+static char *ztrace_name = NULL;
 static GTimer *timer = NULL;
 static FILE *ztrace_log = NULL;
+static GString *ztrace_buf = NULL;
+static double ztrace_chrono = 0;
+
+char *ZTraceFile()
+{
+  return g_strdup(ztrace_name);
+}
 
 void ZTraceCtor(const char *name)
 {
-  ZLOGFAIL(!g_path_is_absolute(name), EFAULT,
-      "ztrace log should have absolute path");
-  ztrace_log = fopen(name, "a");
-  ZLOGFAIL(ztrace_log == NULL, errno, "cannot open %s", name);
-  fprintf(ztrace_log, "\n[%d] %048o\n", getpid(), 0);
+  assert(name != NULL);
+
+  /* open ztrace file */
+  ZLOGFAIL(!g_path_is_absolute(name), EFAULT, "ztrace path should be absolute");
+  ztrace_name = g_strdup(name);
+  ztrace_log = fopen(ztrace_name, "a");
+  ZLOGFAIL(ztrace_log == NULL, errno, "cannot open %s", ztrace_name);
+
+  /* initialize ztrace buffer */
+  ztrace_buf = g_string_sized_new(BIG_ENOUGH_STRING);
+  g_string_append_printf(ztrace_buf, "[%d] %048o\n", getpid(), 0);
+
+  /* set timer */
+  ztrace_chrono = 0;
   timer = g_timer_new();
 }
 
-void ZTraceDtor()
+void ZTraceDtor(int mode)
 {
-  if(timer != NULL) g_timer_destroy(timer);
-  if(ztrace_log != NULL) fclose(ztrace_log);
+  int result;
+
+  if(timer == NULL || ztrace_log == NULL || ztrace_buf == NULL) return;
+
+  /* drop buffer to log */
+  if(mode != 0)
+  {
+    g_string_append_printf(ztrace_buf, "\n");
+    result = fwrite(ztrace_buf->str, 1, ztrace_buf->len, ztrace_log);
+    ZLOGIF(result != ztrace_buf->len, "only %d written to ztrace", result);
+    fflush(ztrace_log);
+  }
+
+  /* free resources */
+  g_string_free(ztrace_buf, TRUE);
+  g_free(ztrace_name);
+  g_timer_destroy(timer);
+
+  if(mode != 0) fclose(ztrace_log);
 }
 
 void ZTrace(const char *msg)
 {
-  static double chrono = 0;
   double timing;
 
-  if(timer == NULL || ztrace_log == NULL) return;
+  if(timer == NULL || ztrace_log == NULL || ztrace_buf == NULL) return;
 
   timing = g_timer_elapsed(timer, NULL);
-  chrono += timing;
-  fprintf(ztrace_log, "%.6f [%.6f]: %s\n", chrono, timing, msg);
+  ztrace_chrono += timing;
+  g_string_append_printf(ztrace_buf, "%.6f [%.6f]: %s\n", ztrace_chrono, timing, msg);
   g_timer_start(timer);
 }
+
+//void ZTraceCtor(const char *name)
+//{
+//  ZLOGFAIL(!g_path_is_absolute(name), EFAULT,
+//      "ztrace log should have absolute path");
+//  ztrace_log = fopen(name, "a");
+//  ZLOGFAIL(ztrace_log == NULL, errno, "cannot open %s", name);
+//  fprintf(ztrace_log, "\n[%d] %048o\n", getpid(), 0);
+//  timer = g_timer_new();
+//}
+//
+//void ZTraceDtor()
+//{
+//  if(timer != NULL) g_timer_destroy(timer);
+//  if(ztrace_log != NULL) fclose(ztrace_log);
+//}
+//
+//void ZTrace(const char *msg)
+//{
+//  static double chrono = 0;
+//  double timing;
+//
+//  if(timer == NULL || ztrace_log == NULL) return;
+//
+//  timing = g_timer_elapsed(timer, NULL);
+//  chrono += timing;
+//  fprintf(ztrace_log, "%.6f [%.6f]: %s\n", chrono, timing, msg);
+//  g_timer_start(timer);
+//}
+//
 
 /* limit zerovm i/o */
 static void LimitOwnIO()
