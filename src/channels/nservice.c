@@ -32,7 +32,7 @@
 #endif
 
 #define RETRY 3 /* poll retries */
-#define TIMEOUT 66667 /* poll timeout in microseconds */
+#define TIMEOUT 200000 /* poll timeout in microseconds */
 #define PARCEL_SIZE 65507 /* maximum size of an UDP packet */
 
 /*
