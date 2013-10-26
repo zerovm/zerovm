@@ -226,8 +226,8 @@ static void SyscallZTrace(int i, ...)
 {
   char *msg;
   va_list ap;
-  char *fmt[] = {"%s(%d, %p, %d, %ld)", "%s(%d, %p, %d, %ld)",
-      "%s(%p, %d)", "%s(%p, %d)", "%s(%d)", "%s()"};
+  char *fmt[] = {"%s(%d, %p, %d, %ld) = %d", "%s(%d, %p, %d, %ld) = %d",
+      "%s(%p, %d) = %d", "%s(%p, %d) = %d", "%s(%d) = %d", "%s()"};
 
   va_start(ap, i);
   msg = g_strdup_vprintf(fmt[i], ap);
@@ -302,6 +302,6 @@ int32_t TrapHandler(struct NaClApp *nap, uint32_t args)
   /* report, ztrace and return */
   FastReport();
   ZLOGS(LOG_DEBUG, "%s returned %d", function[i], retcode);
-  SyscallZTrace(i, function[i], sargs[2], sargs[3], sargs[4], sargs[5]);
+  SyscallZTrace(i, function[i], sargs[2], sargs[3], sargs[4], sargs[5], retcode);
   return retcode;
 }
