@@ -24,9 +24,6 @@
 #include "src/main/setup.h"
 #include "src/channels/channel.h"
 
-/* hard limit for all zerovm i/o */
-static int64_t storage_limit = ZEROVM_IO_LIMIT;
-
 static char *ztrace_name = NULL;
 static GTimer *timer = NULL;
 static FILE *ztrace_log = NULL;
@@ -96,18 +93,6 @@ void ZTrace(const char *msg)
   g_timer_start(timer);
 }
 
-/* limit zerovm i/o */
-static void LimitOwnIO()
-{
-  struct rlimit rl;
-
-  assert(storage_limit > 0);
-
-  ZLOGFAIL(getrlimit(RLIMIT_FSIZE, &rl) != 0, errno, "cannot get RLIMIT_FSIZE");
-  rl.rlim_cur = storage_limit;
-  ZLOGFAIL(setrlimit(RLIMIT_FSIZE, &rl) != 0, errno, "cannot set RLIMIT_FSIZE");
-}
-
 /* set timeout. by design timeout must be specified in manifest */
 static void SetTimeout(struct Manifest *manifest)
 {
@@ -133,18 +118,9 @@ static void GiveUpPrivileges()
   ZLOGFAIL(getuid() == 0, EPERM, "zerovm is not permitted to run as root");
 }
 
-int SetStorageLimit(int64_t a)
+void LastDefenseLine(struct Manifest *manifest)
 {
-  if(a < 1) return -1;
-
-  storage_limit = a * ZEROVM_IO_LIMIT_UNIT;
-  return 0;
-}
-
-void LastDefenseLine(struct NaClApp *nap)
-{
-  LimitOwnIO();
-  SetTimeout(nap->manifest);
+  SetTimeout(manifest);
   LowerOwnPriority();
   GiveUpPrivileges();
 }

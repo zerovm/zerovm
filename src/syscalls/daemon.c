@@ -76,6 +76,9 @@ static void UpdateSession(struct Manifest *manifest)
   manifest->node = tmp->node;
   manifest->job = tmp->job;
 
+  /* reset timeout, i/o limit, privileges e.t.c. */
+  LastDefenseLine(manifest);
+
   /* check and partially copy channels */
   SortChannels(manifest->channels);
   SortChannels(tmp->channels);

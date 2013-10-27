@@ -64,7 +64,7 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
   ZLogCtor(LOG_ERROR);
   CommandLine(argc, argv);
 
-  while((opt = getopt(argc, argv, "-PFQst:v:M:l:T:")) != -1)
+  while((opt = getopt(argc, argv, "-PFQst:v:M:T:")) != -1)
   {
     switch(opt)
     {
@@ -83,10 +83,6 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
         break;
       case 't':
         ReportMode(ToInt(optarg));
-        break;
-      case 'l':
-        if(SetStorageLimit(ToInt(optarg)) != 0)
-          BADCMDLINE("invalid storage limit");
         break;
       case 'v':
         ZLogDtor();
@@ -117,7 +113,6 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
   ZLOGFAIL(nap->manifest->program == NULL, EFAULT, "program not specified");
   psize = GetFileSize(nap->manifest->program);
   ZLOGFAIL(psize < 0, ENOENT, "program open error");
-  ZLOGFAIL(psize == 0 || psize > LARGEST_NEXE, ENOENT, "too large program");
 }
 
 static void ValidateProgram(struct NaClApp *nap)
@@ -205,7 +200,7 @@ int main(int argc, char **argv)
 
   /* "defense in depth" call */
   ZLOGS(LOG_DEBUG, "Last preparations");
-  LastDefenseLine(nap);
+  LastDefenseLine(nap->manifest);
 
   /* quit if fuzz testing specified */
   if(quit_after_load)
