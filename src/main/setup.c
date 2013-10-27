@@ -39,7 +39,8 @@ void ZTraceCtor(const char *name)
   if(ztrace_name == NULL && name == NULL) return;
   if(ztrace_name == NULL)
   {
-    ZLOGFAIL(!g_path_is_absolute(name), EFAULT, "ztrace path should be absolute: %s", name);
+    ZLOGFAIL(!g_path_is_absolute(name), EFAULT,
+        "ztrace path should be absolute: %s", name);
     ztrace_name = g_strdup(name);
   }
 

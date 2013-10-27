@@ -24,7 +24,7 @@
 
 #define NET_BUFFER_SIZE BUFFER_SIZE
 #define ERROR(code) ZLOGIF(code, "failed: %s", udt_getlasterror_desc())
-#define MAX_CONN 1 // ###
+#define MAX_CONN 1
 
 /*
  * accept "bind" channels. since udt_accept() is a blocking thing

@@ -110,12 +110,9 @@ static int Job(int sock)
 /* convert to the daemon mode */
 static int Daemonize(struct NaClApp *nap)
 {
-  int i;
   int sock;
   struct sigaction sa;
   struct sockaddr_un remote = {AF_UNIX, ""};
-  struct rlimit rl;
-  int max_handles;
 
   /* unmount channels, reset timeout */
   ChannelsDtor(nap->manifest);
@@ -140,13 +137,10 @@ static int Daemonize(struct NaClApp *nap)
   /* finalize modules with handles before handles down */
   ZTraceDtor(0);
 
-  /* set number of handles to be closed */
-  ZLOGFAIL(getrlimit(RLIMIT_NOFILE, &rl) < 0, EFAULT, "can't get file limit");
-  max_handles = MIN(rl.rlim_max, 1024);
-
-  /* Close all open file descriptors */
-  for (i = 0; i < max_handles; ++i)
-    close(i);
+  /* close standard descriptors */
+  close(STDIN_FILENO);
+  close(STDOUT_FILENO);
+  close(STDERR_FILENO);
 
   /* Attach standard channels to /dev/null */
   ZLOGFAIL(open("/dev/null", O_RDWR) != 0, EFAULT, "can't set stdin to /dev/null");
