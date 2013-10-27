@@ -13,4 +13,4 @@ Version = 20130611
 Program = fork.nexe
 Memory = 33554432, 0
 Timeout = 60
-Job = PWD/job
+Job = PWD/fork_test

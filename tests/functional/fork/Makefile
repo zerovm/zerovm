@@ -10,5 +10,5 @@ all: $(NAME).c
 	@$(ZEROVM_ROOT)/zerovm $(NAME).manifest
 
 clean:
-	rm -f $(NAME).nexe $(NAME).o *.log *.data *.manifest job LOG
-	pkill -9 zerovm | true
+	rm -f $(NAME).nexe $(NAME).o *.log *.data *.manifest fork_test LOG
+	pkill -9 zvm. | true

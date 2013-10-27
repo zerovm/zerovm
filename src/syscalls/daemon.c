@@ -25,9 +25,9 @@
 #include "src/channels/channel.h"
 #include "src/syscalls/daemon.h"
 
-#define DAEMON_NAME "zerovm.daemon"
-#define TASK_SIZE 0x10000
-#define QUEUE_SIZE 0x100
+#define DAEMON_NAME "zvm."
+#define TASK_SIZE 0x10000 /* limited by protocol (server <-> zerovm ) */
+#define QUEUE_SIZE 16
 #define CMD_SIZE (sizeof(uint64_t))
 
 static int client = -1;
@@ -113,6 +113,8 @@ static int Job(int sock)
 /* convert to the daemon mode */
 static int Daemonize(struct NaClApp *nap)
 {
+  char *bname;
+  char *name;
   int sock;
   struct sigaction sa;
   struct sockaddr_un remote = {AF_UNIX, ""};
@@ -158,10 +160,14 @@ static int Daemonize(struct NaClApp *nap)
   ZLOGFAIL(listen(sock, QUEUE_SIZE) < 0, EIO, "%s", strerror(errno));
 
   /* set name for daemon */
-  prctl(PR_SET_NAME, &DAEMON_NAME);
-  SetCmdString(g_string_new("command = daemonic"));
+  bname = g_path_get_basename(nap->manifest->job);
+  name = g_strdup_printf("%s%s", DAEMON_NAME, bname);
+  prctl(PR_SET_NAME, name);
+  g_free(bname);
+  g_free(name);
 
   /* TODO(d'b): free needless resources */
+  SetCmdString(g_string_new("command = daemonic"));
   return sock;
 }
 
