@@ -11,4 +11,4 @@ all: $(NAME).c
 
 clean:
 	rm -f $(NAME).nexe $(NAME).o *.log *.data *.manifest job LOG
-	pkill -9 zerovm
+	pkill -9 zerovm | true

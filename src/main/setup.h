@@ -24,7 +24,7 @@ EXTERN_C_BEGIN
 #include "src/loader/sel_ldr.h"
 
 #define HELP_SCREEN /* update command line switches here */\
-    "%s%s\033[1m\033[37mZeroVM tag%d\033[0m lightweight VM manager, build 2013-10-26\n"\
+    "%s%s\033[1m\033[37mZeroVM tag%d\033[0m lightweight VM manager, build 2013-10-27\n"\
     "Usage: <manifest> [-l#] [-v#] [-T#] [-stFPQ]\n\n"\
     " -l <gigabytes> file size limit (default 4Gb)\n"\
     " -s skip validation\n"\
@@ -58,14 +58,14 @@ void PreallocateUserMemory(struct NaClApp *nap);
 /* serialize system data to user space */
 void SetSystemData(struct NaClApp *nap);
 
-/* return "ztrace" file name. string should be freed */
-char *ZTraceFile();
-
-/* initialize "ztrace" service */
+/* initialize "ztrace" service. if name == NULL exit silently */
 void ZTraceCtor(const char *name);
 
 /* close "ztrace" service. mode = 0 designed for "spawned" sessions */
 void ZTraceDtor(int mode);
+
+/* free ztrace file name */
+void ZTraceNameDtor();
 
 /* log the string with the next time delta */
 void ZTrace(const char *msg);

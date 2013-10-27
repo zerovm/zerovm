@@ -148,7 +148,9 @@ static int32_t PollServer(const struct Connection *server, char *parcel, uint32_
 
   /* set timeout on socket i/o */
   result = setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, (char*)&timeout, sizeof timeout);
-  ZLOGFAIL(result == -1, errno, "cannot set i/o timeout");
+  ZLOGFAIL(result == -1, errno, "cannot set receiving timeout");
+  result = setsockopt(s, SOL_SOCKET, SO_SNDTIMEO, (char*)&timeout, sizeof timeout);
+  ZLOGFAIL(result == -1, errno, "cannot set sending timeout");
 
   /* poll server */
   for(i = 0; i < RETRY; ++i)

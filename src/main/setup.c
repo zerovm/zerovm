@@ -33,18 +33,17 @@ static FILE *ztrace_log = NULL;
 static GString *ztrace_buf = NULL;
 static double ztrace_chrono = 0;
 
-char *ZTraceFile()
-{
-  return g_strdup(ztrace_name);
-}
-
 void ZTraceCtor(const char *name)
 {
-  assert(name != NULL);
+  /* set ztrace file name */
+  if(ztrace_name == NULL && name == NULL) return;
+  if(ztrace_name == NULL)
+  {
+    ZLOGFAIL(!g_path_is_absolute(name), EFAULT, "ztrace path should be absolute: %s", name);
+    ztrace_name = g_strdup(name);
+  }
 
   /* open ztrace file */
-  ZLOGFAIL(!g_path_is_absolute(name), EFAULT, "ztrace path should be absolute");
-  ztrace_name = g_strdup(name);
   ztrace_log = fopen(ztrace_name, "a");
   ZLOGFAIL(ztrace_log == NULL, errno, "cannot open %s", ztrace_name);
 
@@ -70,14 +69,18 @@ void ZTraceDtor(int mode)
     result = fwrite(ztrace_buf->str, 1, ztrace_buf->len, ztrace_log);
     ZLOGIF(result != ztrace_buf->len, "only %d written to ztrace", result);
     fflush(ztrace_log);
+    fclose(ztrace_log);
   }
 
   /* free resources */
   g_string_free(ztrace_buf, TRUE);
-  g_free(ztrace_name);
   g_timer_destroy(timer);
+}
 
-  if(mode != 0) fclose(ztrace_log);
+void ZTraceNameDtor()
+{
+  g_free(ztrace_name);
+  ztrace_name = NULL;
 }
 
 void ZTrace(const char *msg)

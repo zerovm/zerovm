@@ -293,5 +293,6 @@ void ReportDtor(int zvm_ret)
 
   ZTrace("[exit]");
   ZTraceDtor(1);
+  ZTraceNameDtor();
   _exit(zvm_code);
 }

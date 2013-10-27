@@ -56,7 +56,6 @@ static char *GetCommand()
 static void UpdateSession(struct Manifest *manifest)
 {
   int i;
-  char *ztrace_name = NULL;
   char *cmd = GetCommand();
   struct Manifest *tmp = ManifestTextCtor(cmd);
 
@@ -69,12 +68,7 @@ static void UpdateSession(struct Manifest *manifest)
   SetReportHandle(client);
   ZLogDtor();
   ZLogCtor(0);
-
-  /* reopen ztrace */
-  ztrace_name = ZTraceFile();
-  ZTraceDtor(0);
-  ZTraceCtor(ztrace_name);
-  g_free(ztrace_name);
+  ZTraceCtor(NULL);
 
   /* copy needful fields from the new manifest */
   manifest->timeout = tmp->timeout;
@@ -142,6 +136,9 @@ static int Daemonize(struct NaClApp *nap)
    * we won't prevent file systems from being unmounted.
    */
   ZLOGFAIL(chdir("/") < 0, EFAULT, "can't change directory to /");
+
+  /* finalize modules with handles before handles down */
+  ZTraceDtor(0);
 
   /* set number of handles to be closed */
   ZLOGFAIL(getrlimit(RLIMIT_NOFILE, &rl) < 0, EFAULT, "can't get file limit");
