@@ -57,6 +57,7 @@
 /* size of the random biggest string */
 #define BIG_ENOUGH_STRING 1024
 #define MICROS_PER_MILLI 1000
+#define MICRO_PER_SEC 1000000
 
 #define ROUNDDOWN_64K(a) ((a) & ~(NACL_MAP_PAGESIZE - 1LLU))
 #define ROUNDUP_64K(a) ROUNDDOWN_64K((a) + NACL_MAP_PAGESIZE - 1LLU)

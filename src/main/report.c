@@ -23,7 +23,6 @@
 #include "src/main/setup.h"
 #include "src/channels/channel.h"
 
-#define MICRO_PER_SEC 1000000
 #define QUANT MICRO_PER_SEC
 
 #ifdef DEBUG

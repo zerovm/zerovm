@@ -32,7 +32,7 @@
 #endif
 
 #define RETRY 3 /* poll retries */
-#define TIMEOUT 999999 /* poll timeout in microseconds */
+#define TIMEOUT 1200000 /* poll timeout in microseconds */
 #define PARCEL_SIZE 65507 /* maximum size of an UDP packet */
 
 /*
@@ -138,7 +138,7 @@ static int32_t PollServer(const struct Connection *server, char *parcel, uint32_
   int32_t result;
   struct sockaddr_in addr;
   uint32_t len = sizeof addr;
-  struct timeval timeout = {0};
+  struct timeval timeout = {TIMEOUT / MICRO_PER_SEC, TIMEOUT % MICRO_PER_SEC};
 
   /* connect to the name server */
   s = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
@@ -147,7 +147,6 @@ static int32_t PollServer(const struct Connection *server, char *parcel, uint32_
   addr.sin_family = AF_INET;
 
   /* set timeout on socket i/o */
-  timeout.tv_usec = TIMEOUT;
   result = setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, (char*)&timeout, sizeof timeout);
   ZLOGFAIL(result == -1, errno, "cannot set i/o timeout");
 
