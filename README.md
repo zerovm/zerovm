@@ -16,7 +16,7 @@ VirtualBox [doesn't support SSE4.1](https://www.virtualbox.org/ticket/8651), whi
 
 Proceeed only after checking the link above.
 
-### Eclispe CDT installation
+### Eclipse CDT installation
    1. If your system doesn't have JRE, install a recent JRE. 
    2. Download Eclipse CDT from the [Eclipse download site][eclipse-dl]. No installation necessary, just unpack and run executable.
    3. Download and install [EGit plugin][egit-plugin] for Eclipse
