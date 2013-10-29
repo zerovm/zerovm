@@ -1,0 +1,4 @@
+example of the user module with the big .text segment. can be used to test
+validator work. 
+
+todo: should be extent to test zerovm elf loader

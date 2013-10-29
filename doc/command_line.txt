@@ -4,24 +4,21 @@ This document describes ZeroVM command line switches
 
 ZeroVM command line switches:
 
-  ZeroVM tag1 lightweight VM manager, build 2013-10-09
-  Usage: <manifest> [-l#] [-v#] [-stFPQ]
+  ZeroVM tag1 lightweight VM manager, build 2013-10-27
+  Usage: <manifest> [-v#] [-stFPQ]
 
-   -l <gigabytes> file size limit (default 4Gb)
    -s skip validation
    -t <0..2> report to stdout/log/fast (default 0)
    -v <0..3> log verbosity (default 0)
    -F quit right before starting user session
    -P disable channels space preallocation
    -Q disable platform qualification
+   -T enable time/call tracing
 
 
    -- The manifest contains a set of control data for the executable. Obligatory.
       More details about the manifest file can be found in the appropriate document on 
       github.com/ZeroVM/ZeroVM
-
--l -- changes zerovm i/o hard limit. by default session only allowed to use 4gb
-      value should be in gigabytes 
 
 -s -- skips validation. used for "prevalidation" engine.
 
@@ -44,13 +41,20 @@ ZeroVM command line switches:
 -Q -- will skip data execution test. This switch makes it possible to run ZeroVM 
       application on a platform with no "data execution" protection.
       
+-T -- enable tracing of the session. all trap calls, some of zerovm internal
+      calls and user code invocations will be logged in file specified by this
+      option. file should have absolute path (also see ztrace.txt) 
+      
 notes:
 - tag1 after ZeroVM means encoding used for zerovm. tag0: md5, tag1: sha-1,
   tag2: sha-256. encoding can be specified before zerovm compilation through
   Makefile variable "TAG_ENCRYPTION".
 
 - -t3 should not be used. this value reserved for sessions spawned by zerovm
-  in daemon mode 
+  in daemon mode
+  
+- in old zerovm versions manifest was passed with "-M" option. the option still
+  supported but marked obsolete and should not be used  
       
 examples:
   zerovm -v2 test.manifest

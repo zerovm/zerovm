@@ -1,0 +1,42 @@
+This document describes zerovm trace module
+(up to date 2013-10-29, needs editing)
+
+zerovm have trap call tracing capability. it can be used with "-T" command line
+option: zerovm my.manifest -T/my/path/to/trace.txt. specified file should have
+absolute path. this feature should only be used for debugging.
+
+following entities will be logged:
+- trap calls
+- invocations of the user code
+- some of internal zerovm calls
+
+example of zerovm trace:
+[25547] 000000000000000000000000000000000000000000000000
+0.000842 [0.000842]: [memory snapshot]
+0.001639 [0.000797]: [user module loading]
+0.002008 [0.000369]: [user module validation]
+0.002009 [0.000001]: [snapshot deallocation]
+0.002231 [0.000222]: [channels mounting]
+0.002240 [0.000009]: [user memory preallocation]
+0.002278 [0.000038]: [user manifest construction]
+0.002296 [0.000018]: [last preparations]
+0.002308 [0.000012]: untrusted code
+0.002582 [0.000274]: TrapWrite(1, 0x30000, 32, 0) = 32
+0.002583 [0.000001]: untrusted code
+0.002858 [0.000275]: TrapWrite(2, 0x30020, 33, 0) = 33
+0.002860 [0.000002]: untrusted code
+0.002862 [0.000002]: TrapExit(0) = 0
+0.003081 [0.000219]: [channels destruction]
+0.004081 [0.001000]: [report]
+0.004145 [0.000064]: [untrusted context closing]
+0.004153 [0.000008]: [manifest deallocating]
+0.004171 [0.000018]: [thunk deallocating]
+0.004172 [0.000001]: [zlog deallocating]
+0.004173 [0.000001]: [exit]
+
+where the 1st line contain zerovm process [pid]. the columns are:
+1. time from the zerovm start in microseconds
+2. time delta between current and previous call in microseconds
+3. the name of trap call with arguments and return code. or zerovm module name
+   or "untrusted code" (time spent in the user code)
+

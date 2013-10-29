@@ -1,0 +1,7 @@
+#!/bin/sh
+
+i=0
+while [ $i -lt 1048576 ]; do
+  echo i += $i\; i *= $i\;>> big1.h
+  i=$((i+1))
+done
