@@ -215,8 +215,9 @@ void SyncSource(struct ChannelDesc *channel, int n)
 
   ZLOGS(LOG_INSANE, "%s;%d skipped pos = %ld, getpos = %ld",
       channel->alias, n, CH_CONN(channel, n)->pos, channel->getpos);
-  ZLOGFAIL(CH_CONN(channel, n)->pos != channel->getpos,
-      EPIPE, "%s;%d is out of sync", channel->alias, n);
+  ZLOGFAIL(CH_CONN(channel, n)->pos != channel->getpos, EPIPE,
+      "%s;%d is out of sync: %ld:%ld", channel->alias, n,
+      CH_CONN(channel, n)->pos, channel->getpos);
 }
 
 void PrefetchChannelCtor(struct ChannelDesc *channel, int n)

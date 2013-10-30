@@ -46,6 +46,7 @@ static void CommandLine(int argc, char **argv)
 {
   GString *cmd = g_string_new("command =");
 
+  g_string_append_printf(cmd, " %s[%d]", *argv++, getpid());
   while(*argv != NULL)
     g_string_append_printf(cmd, " %s", *argv++);
 
