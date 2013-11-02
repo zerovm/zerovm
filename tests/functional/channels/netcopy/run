@@ -1,7 +1,5 @@
 #!/bin/sh
 python $ZEROVM_ROOT/ns_server.py 3 54321&
-usleep 50
-$ZEROVM_ROOT/zerovm -QPsT/home/bortoq/git/zerovm/tests/functional/channels/netcopy/ztrace1.txt netcopy1.manifest&
-$ZEROVM_ROOT/zerovm -QPsT/home/bortoq/git/zerovm/tests/functional/channels/netcopy/ztrace2.txt netcopy2.manifest&
-$ZEROVM_ROOT/zerovm -QPsT/home/bortoq/git/zerovm/tests/functional/channels/netcopy/ztrace3.txt netcopy3.manifest
-pkill -9 -f ns_server.py
+$ZEROVM_ROOT/zerovm -QPsT`pwd`/ztrace1.txt netcopy1.manifest&
+$ZEROVM_ROOT/zerovm -QPsT`pwd`/ztrace2.txt netcopy2.manifest&
+$ZEROVM_ROOT/zerovm -QPsT`pwd`/ztrace3.txt netcopy3.manifest

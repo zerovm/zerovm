@@ -72,7 +72,10 @@ static int32_t GetDataChunk(struct ChannelDesc *channel, int n,
     case ProtoTCP:
       /* get another message if it already exhausted */
       if(channel->bufend - channel->bufpos == 0)
+      {
+        channel->bufpos = size; /* workaround for udt to get full message */
         FetchMessage(channel, n);
+      }
 
       /* copy data from the message to buffers */
       if(channel->eof == 0)

@@ -131,28 +131,41 @@ void FreeMessage(struct ChannelDesc *channel)
 }
 
 /* get the next message. updates channel->msg (and indices) */
-static void GetMessage(struct ChannelDesc *channel, int n)
+static void GetMessage(struct ChannelDesc *channel, int n, int size)
 {
   ZLOGS(LOG_INSANE, "GetMessage: %s;%d", channel->alias, n);
   channel->bufpos = 0;
-  channel->bufend = udt_recv(GPOINTER_TO_INT(CH_HANDLE(channel, n)),
-      channel->msg, NET_BUFFER_SIZE, 0);
-
-  /* got data */
-  if(channel->bufend > 0) return;
-
-  /* EOF */
-  channel->eof = 1;
   channel->bufend = 0;
+
+  while(channel->bufend < size && !channel->eof)
+  {
+    int i = udt_recv(GPOINTER_TO_INT(CH_HANDLE(channel, n)),
+        channel->msg + channel->bufend, size - channel->bufend, 0);
+    if(i < 0) break;
+    else
+      channel->bufend += i;
+  }
+
+  /* only set EOF if this read returned nothing */
+  if(channel->bufend == 0)
+    channel->eof = 1;
 }
 
 void FetchMessage(struct ChannelDesc *channel, int n)
 {
   ZLOGS(LOG_INSANE, "FetchMessage: %s;%d", channel->alias, n);
 
+  /*
+   * ->bufpos contains read size to workaround problem with
+   * incomplete messages (usual case for udt).
+   * TODO(d'b): rewrite it when 0mq support will be removed
+   */
+  assert(channel->bufpos <= NET_BUFFER_SIZE);
+  assert(channel->bufpos > 0);
+
   /* get message */
   if(!channel->eof)
-    GetMessage(channel, n);
+    GetMessage(channel, n, channel->bufpos);
 }
 
 int32_t SendData(struct ChannelDesc *channel, int n, const char *buf, int32_t count)
@@ -202,9 +215,11 @@ void SyncSource(struct ChannelDesc *channel, int n)
   /* if source is a network get over (*->getpos - *->pos) bytes */
   else if(IS_NETWORK(CH_CONN(channel, n)))
   {
+    channel->eof = 0;
     while(CH_CONN(channel, n)->pos < channel->getpos && !channel->eof)
     {
-      FetchMessage(channel, n);
+      int size = channel->getpos - CH_CONN(channel, n)->pos;
+      GetMessage(channel, n, size < NET_BUFFER_SIZE ? size : NET_BUFFER_SIZE);
       CH_CONN(channel, n)->pos += channel->bufend;
     }
   }

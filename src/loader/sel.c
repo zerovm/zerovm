@@ -270,7 +270,6 @@ NORETURN void CreateSession(struct NaClApp *nap)
 
   /* pass control to the user side */
   ZLOGS(LOG_DEBUG, "SESSION %d STARTED", nap->manifest->node);
-//  SwitchToApp(nap);
   ContextSwitch(nacl_user);
   ZLOGFAIL(1, EFAULT, "the unreachable has been reached");
 }
