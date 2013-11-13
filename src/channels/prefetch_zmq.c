@@ -14,9 +14,6 @@
  * limitations under the License.
  */
 
-/*
- * for a new version of zeromq: 4.0.1
- */
 #include <assert.h>
 #include <arpa/inet.h> /* convert ip <-> int */
 #include <zmq.h>
@@ -24,8 +21,6 @@
 #include "src/main/accounting.h"
 #include "src/main/report.h"
 
-#define LINGER -1 /* send timeout. -1: infinite(default), 0+: wait 0+ms */
-#define LOWEST_AVAILABLE_PORT 49152
 #define NET_BUFFER_SIZE BUFFER_SIZE
 #define ZMQ_ERR(code) ZLOGIF(code, "failed: %s", zmq_strerror(zmq_errno()))
 
@@ -64,24 +59,23 @@ static char *MakeURL(struct ChannelDesc *channel, int n)
 /* bind the RO source */
 static void Bind(struct ChannelDesc *channel, int n)
 {
-  struct Connection *c = CH_CONN(channel, n);
-  static uint16_t port = LOWEST_AVAILABLE_PORT;
   int result = -1;
+  char port[BIG_ENOUGH_STRING];
+  size_t size = sizeof port;
+  char *url = MakeURL(channel, n);
 
-  /* loop will end anyway after "port" overflow */
-  for(;port >= LOWEST_AVAILABLE_PORT; ++port)
-  {
-    char *url;
-    if(!IS_IPHOST(c)) c->port = port;
-    url = MakeURL(channel, n);
-    result = zmq_bind(CH_HANDLE(channel, n), url);
-    g_free(url);
-    if(result == 0 || IS_IPHOST(c)) break;
-  }
-
-  ZLOGS(LOG_DEBUG, "bind(): host = %u, port = %u", c->host, c->port);
+  /* bind to 1st available port */
+  result = zmq_bind(CH_HANDLE(channel, n), url);
+  g_free(url);
   ZLOGFAIL(result != 0, EFAULT, "cannot bind %s;%d: %s", channel->alias, n,
       strerror(errno));
+  result = zmq_getsockopt(CH_HANDLE(channel, n), ZMQ_LAST_ENDPOINT, &port, &size);
+  ZLOGFAIL(result != 0, EFAULT, "cannot get port %s;%d: %s", channel->alias, n,
+      strerror(errno));
+
+  /* extract port to connection structure */
+  CH_PORT(channel, n) = ToInt(g_strrstr(port, ":") + 1);
+  ZLOGS(LOG_DEBUG, "bind(): host = %u, port = %u", CH_HOST(channel, n), CH_PORT(channel, n));
 }
 
 /* connect the WO source */
@@ -90,11 +84,6 @@ static void Connect(struct ChannelDesc *channel, int n)
   char *url;
   uint64_t hwm = 1;
   void *h = CH_HANDLE(channel, n);
-
-#if LINGER >= 0
-  int linger = LINGER;
-  ZMQ_ERR(zmq_setsockopt(h, ZMQ_LINGER, &linger, sizeof linger));
-#endif
 
   ZMQ_ERR(zmq_setsockopt(h, ZMQ_SNDHWM, &hwm, sizeof hwm));
   url = MakeURL(channel, n);
