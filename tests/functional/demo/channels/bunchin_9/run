@@ -1,7 +1,6 @@
 #!/bin/bash
 
 python $ZEROVM_ROOT/ns_server.py 10 54321&
-usleep 50
 $ZEROVM_ROOT/zerovm copy1.manifest&
 $ZEROVM_ROOT/zerovm copy2.manifest&
 $ZEROVM_ROOT/zerovm copy3.manifest&
@@ -12,5 +11,3 @@ $ZEROVM_ROOT/zerovm copy7.manifest&
 $ZEROVM_ROOT/zerovm copy8.manifest&
 $ZEROVM_ROOT/zerovm copy9.manifest&
 $ZEROVM_ROOT/zerovm copy10.manifest
-pkill -9 -f ns_server.py
-
