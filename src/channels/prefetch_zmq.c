@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+/*
+ * for a new version of zeromq: 4.0.1
+ */
 #include <assert.h>
 #include <arpa/inet.h> /* convert ip <-> int */
 #include <zmq.h>
@@ -93,7 +96,7 @@ static void Connect(struct ChannelDesc *channel, int n)
   ZMQ_ERR(zmq_setsockopt(h, ZMQ_LINGER, &linger, sizeof linger));
 #endif
 
-  ZMQ_ERR(zmq_setsockopt(h, ZMQ_HWM, &hwm, sizeof hwm));
+  ZMQ_ERR(zmq_setsockopt(h, ZMQ_SNDHWM, &hwm, sizeof hwm));
   url = MakeURL(channel, n);
   ZLOGS(LOG_DEBUG, "connect url %s to %s;%d", url, channel->alias, n);
   ZMQ_ERR(zmq_connect(h, url));
@@ -103,7 +106,7 @@ static void Connect(struct ChannelDesc *channel, int n)
 void NetCtor(const struct Manifest *manifest)
 {
   /* get zmq context */
-  context = zmq_init(1);
+  context = zmq_ctx_new();
   ZLOGFAIL(context == NULL, EFAULT, "cannot initialize zeromq context");
 }
 
@@ -112,11 +115,7 @@ void NetDtor(struct Manifest *manifest)
   /* don't terminate if session is broken */
   if(GetExitCode() != 0) return;
 
-  /*
-   * TODO(d'b): temporary disabled until the "hanging problem" will be
-   * solved. WARNING: there is memory leak until zmq_term commented out!
-   * zmq_term(context);
-   */
+  zmq_ctx_term(context);
   context = NULL;
 }
 
@@ -146,7 +145,7 @@ static void GetMessage(struct ChannelDesc *channel, int n)
   ZLOGS(LOG_INSANE, "GetMessage of %s;%d", channel->alias, n);
 
   /* receive the next message and rewind buffer */
-  ZMQ_ERR(zmq_recv(CH_HANDLE(channel, n), channel->msg, 0));
+  ZMQ_ERR(zmq_msg_recv(channel->msg, CH_HANDLE(channel, n), 0));
   channel->bufend = zmq_msg_size(channel->msg);
   channel->bufpos = 0;
 }
@@ -174,7 +173,7 @@ void FetchMessage(struct ChannelDesc *channel, int n)
 static void SendMessage(struct ChannelDesc *channel, int n)
 {
   ZLOGS(LOG_INSANE, "SendMessage to %s;%d", channel->alias, n);
-  ZMQ_ERR(zmq_send(CH_HANDLE(channel, n), channel->msg, 0));
+  ZMQ_ERR(zmq_msg_send(channel->msg, CH_HANDLE(channel, n), 0));
 }
 
 int32_t SendData(struct ChannelDesc *channel, int n, const char *buf, int32_t count)
