@@ -1,0 +1,6 @@
+#!/bin/bash
+
+python $ZEROVM_ROOT/ns_server.py 2 54321&
+sleep 0.05
+$ZEROVM_ROOT/zerovm noise.manifest -T`pwd`/input_trace.txt&
+$ZEROVM_ROOT/zerovm copy.manifest -T`pwd`/output_trace.txt

@@ -18,5 +18,4 @@ all: $(NAME).c
 	@$(ZEROVM_ROOT)/zerovm $(NAME)3.manifest
 
 clean:
-	rm -f $(NAME).nexe $(NAME).o *.log *.data *.manifest nvram*
-
+	rm -f $(NAME).nexe $(NAME).o *.log *.data *.manifest nvram* ztrace*

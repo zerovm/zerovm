@@ -1,6 +1,7 @@
 #!/bin/bash
 
 python $ZEROVM_ROOT/ns_server.py 4 54321&
+sleep 0.05
 $ZEROVM_ROOT/zerovm copy1.manifest&
 $ZEROVM_ROOT/zerovm copy2.manifest&
 $ZEROVM_ROOT/zerovm copy3.manifest&

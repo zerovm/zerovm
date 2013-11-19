@@ -1,5 +1,0 @@
-#!/bin/bash
-
-python $ZEROVM_ROOT/ns_server.py 2 54321&
-$ZEROVM_ROOT/zerovm -T`pwd`/trace1.trc copy1.manifest&
-$ZEROVM_ROOT/zerovm -T`pwd`/trace2.trc copy2.manifest

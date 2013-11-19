@@ -1,12 +1,12 @@
 #!/bin/bash
 echo hello
-$ZEROVM_ROOT/zerovm hello.manifest&
+$ZEROVM_ROOT/zerovm -T`pwd`/hello.trc hello.manifest&
 echo copy1
-$ZEROVM_ROOT/zerovm copy1.manifest&
+$ZEROVM_ROOT/zerovm -T`pwd`/copy1.trc copy1.manifest&
 echo copy2
-$ZEROVM_ROOT/zerovm copy2.manifest&
+$ZEROVM_ROOT/zerovm -T`pwd`/copy2.trc copy2.manifest&
 echo copy3
-$ZEROVM_ROOT/zerovm copy3.manifest
+$ZEROVM_ROOT/zerovm -T`pwd`/copy3.trc copy3.manifest
 cat output1.data output2.data output3.data 
 rm output1.data output2.data output3.data 
 

@@ -1,8 +1,8 @@
 =====================================================================
 == copy data from the input channel to the output channel
 =====================================================================
-Channel = tcp:1:;tcp:2:, /dev/stdin, 0, 0, 0x100000001, 0x100000001, 0, 0
-Channel = /dev/null, /dev/stdout, 0, 0, 0, 0, 0x100000001, 0x100000001
+Channel = tcp:1:;tcp:2:, /dev/stdin, 0, 1, 0x1000000, 0x1000000, 0, 0
+Channel = /dev/null, /dev/stdout, 0, 1, 0, 0, 0x1000000, 0x1000000
 Channel = /dev/null, /dev/stderr, 0, 0, 0, 0, 65536, 65536
 
 =====================================================================
@@ -12,6 +12,6 @@ Channel = /dev/null, /dev/stderr, 0, 0, 0, 0, 65536, 65536
 Version = 20130611
 Program = copy.nexe
 Memory = 134217728, 0
-Timeout = 5
+Timeout = 5555
 NameServer = udp:127.0.0.1:54321
 Node = 4

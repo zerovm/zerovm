@@ -1,2 +1,4 @@
 copy /dev/zero to /dev/null through multiplexed channel 9->1 (nine nodes 
 connected to one)
+
+notice: finite version (limited with the channels limits)

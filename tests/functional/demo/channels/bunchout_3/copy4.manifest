@@ -1,9 +1,9 @@
 =====================================================================
 == "hello world" is not a test. just a demo.
 =====================================================================
-Channel = /dev/zero, /dev/stdin, 0, 0, 0x100000000, 0x100000000, 0, 0
-Channel = tcp:127.0.0.1:50001; tcp:127.0.0.1:50002; tcp:127.0.0.1:50003, /dev/stdout, 0, 0, 0, 0, 0x100000000, 0x100000000
-Channel = /dev/stdout, /dev/stderr, 0, 0, 0, 0, 0x100000000, 0x100000000
+Channel = /dev/urandom, /dev/stdin, 0, 0, 0x1000000, 0x1000000, 0, 0
+Channel = tcp:127.0.0.1:50001; tcp:127.0.0.1:50002; tcp:127.0.0.1:50003, /dev/stdout, 0, 0, 0, 0, 0x1000000, 0x1000000
+Channel = /dev/stdout, /dev/stderr, 0, 0, 0, 0, 0x1000000, 0x1000000
 
 =====================================================================
 == switches for zerovm. some of them used to control nexe, some
