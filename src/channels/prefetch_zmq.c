@@ -22,7 +22,7 @@
 #include "src/main/report.h"
 
 #define NET_BUFFER_SIZE BUFFER_SIZE
-#define ZMQ_ERR(code) ZLOGIF(code, "failed: %s", zmq_strerror(zmq_errno()))
+#define ZMQ_ERR(code) ZLOGIF(code < 0, "failed: %s", zmq_strerror(zmq_errno()))
 
 /* TODO(d'b): find more neat solution than put it twice */
 #define XARRAY(a) static char *ARRAY_##a[] = {a};
@@ -82,7 +82,7 @@ static void Bind(struct ChannelDesc *channel, int n)
 static void Connect(struct ChannelDesc *channel, int n)
 {
   char *url;
-  uint64_t hwm = 1;
+  int hwm = 1;
   void *h = CH_HANDLE(channel, n);
 
   ZMQ_ERR(zmq_setsockopt(h, ZMQ_SNDHWM, &hwm, sizeof hwm));
@@ -104,6 +104,10 @@ void NetDtor(struct Manifest *manifest)
   /* don't terminate if session is broken */
   if(GetExitCode() != 0) return;
 
+  /*
+   * it is possible to use zmq_term() from the old api, but i am not sure if it
+   *  will work without hangups. note that zmq_ctx_term() is libzmq 4.0.1 only
+   */
   zmq_ctx_term(context);
   context = NULL;
 }
