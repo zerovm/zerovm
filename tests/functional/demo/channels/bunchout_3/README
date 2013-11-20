@@ -2,3 +2,4 @@ this sample uses 2 other samples: hello and copy. the purpouse is
 to demonstrate how to connect to programs through multiplexed channels
 
 bunch out means multiplexed "put" sources
+notice: finite version (limited with the channels limits)

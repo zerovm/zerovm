@@ -24,50 +24,73 @@
 #include "src/main/setup.h"
 #include "src/channels/channel.h"
 
-/* hard limit for all zerovm i/o */
-static int64_t storage_limit = ZEROVM_IO_LIMIT;
+static char *ztrace_name = NULL;
 static GTimer *timer = NULL;
 static FILE *ztrace_log = NULL;
+static GString *ztrace_buf = NULL;
+static double ztrace_chrono = 0;
 
 void ZTraceCtor(const char *name)
 {
-  ZLOGFAIL(!g_path_is_absolute(name), EFAULT,
-      "ztrace log should have absolute path");
-  ztrace_log = fopen(name, "a");
-  ZLOGFAIL(ztrace_log == NULL, errno, "cannot open %s", name);
-  fprintf(ztrace_log, "\n[%d] %048o\n", getpid(), 0);
+  /* set ztrace file name */
+  if(ztrace_name == NULL && name == NULL) return;
+  if(ztrace_name == NULL)
+  {
+    ZLOGFAIL(!g_path_is_absolute(name), EFAULT,
+        "ztrace path should be absolute: %s", name);
+    ztrace_name = g_strdup(name);
+  }
+
+  /* open ztrace file */
+  ztrace_log = fopen(ztrace_name, "a");
+  ZLOGFAIL(ztrace_log == NULL, errno, "cannot open %s", ztrace_name);
+
+  /* initialize ztrace buffer */
+  ztrace_buf = g_string_sized_new(BIG_ENOUGH_STRING);
+  g_string_append_printf(ztrace_buf, "[%d] %048o\n", getpid(), 0);
+
+  /* set timer */
+  ztrace_chrono = 0;
   timer = g_timer_new();
 }
 
-void ZTraceDtor()
+void ZTraceDtor(int mode)
 {
-  if(timer != NULL) g_timer_destroy(timer);
-  if(ztrace_log != NULL) fclose(ztrace_log);
+  int result;
+
+  if(timer == NULL || ztrace_log == NULL || ztrace_buf == NULL) return;
+
+  /* drop buffer to log */
+  if(mode != 0)
+  {
+    g_string_append_printf(ztrace_buf, "\n");
+    result = fwrite(ztrace_buf->str, 1, ztrace_buf->len, ztrace_log);
+    ZLOGIF(result != ztrace_buf->len, "only %d written to ztrace", result);
+    fflush(ztrace_log);
+    fclose(ztrace_log);
+  }
+
+  /* free resources */
+  g_string_free(ztrace_buf, TRUE);
+  g_timer_destroy(timer);
+}
+
+void ZTraceNameDtor()
+{
+  g_free(ztrace_name);
+  ztrace_name = NULL;
 }
 
 void ZTrace(const char *msg)
 {
-  static double chrono = 0;
   double timing;
 
-  if(timer == NULL || ztrace_log == NULL) return;
+  if(timer == NULL || ztrace_log == NULL || ztrace_buf == NULL) return;
 
   timing = g_timer_elapsed(timer, NULL);
-  chrono += timing;
-  fprintf(ztrace_log, "%.6f [%.6f]: %s\n", chrono, timing, msg);
+  ztrace_chrono += timing;
+  g_string_append_printf(ztrace_buf, "%.6f [%.6f]: %s\n", ztrace_chrono, timing, msg);
   g_timer_start(timer);
-}
-
-/* limit zerovm i/o */
-static void LimitOwnIO()
-{
-  struct rlimit rl;
-
-  assert(storage_limit > 0);
-
-  ZLOGFAIL(getrlimit(RLIMIT_FSIZE, &rl) != 0, errno, "cannot get RLIMIT_FSIZE");
-  rl.rlim_cur = storage_limit;
-  ZLOGFAIL(setrlimit(RLIMIT_FSIZE, &rl) != 0, errno, "cannot set RLIMIT_FSIZE");
 }
 
 /* set timeout. by design timeout must be specified in manifest */
@@ -95,18 +118,9 @@ static void GiveUpPrivileges()
   ZLOGFAIL(getuid() == 0, EPERM, "zerovm is not permitted to run as root");
 }
 
-int SetStorageLimit(int64_t a)
+void LastDefenseLine(struct Manifest *manifest)
 {
-  if(a < 1) return -1;
-
-  storage_limit = a * ZEROVM_IO_LIMIT_UNIT;
-  return 0;
-}
-
-void LastDefenseLine(struct NaClApp *nap)
-{
-  LimitOwnIO();
-  SetTimeout(nap->manifest);
+  SetTimeout(manifest);
   LowerOwnPriority();
   GiveUpPrivileges();
 }

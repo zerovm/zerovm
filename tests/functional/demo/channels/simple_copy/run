@@ -1,8 +1,6 @@
 #!/bin/bash
 
 python $ZEROVM_ROOT/ns_server.py 2 54321&
-usleep 50
+sleep 0.05
 $ZEROVM_ROOT/zerovm noise.manifest&
 $ZEROVM_ROOT/zerovm copy.manifest
-pkill -9 -f ns_server.py
-

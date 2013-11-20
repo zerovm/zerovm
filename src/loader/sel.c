@@ -261,18 +261,15 @@ NORETURN void CreateSession(struct NaClApp *nap)
   ((uint32_t*)stack_ptr)[4] = 1;
   ((uint32_t*)stack_ptr)[5] = 0xfffffff0;
 
-  /* construct "nacl_user" global */
-  ThreadContextCtor(nacl_user, nap, nap->initial_entry_pt, stack_ptr, 0);
-  nacl_user->sysret = nap->break_addr;
-  nacl_user->prog_ctr = NaClUserToSys(nap, nap->initial_entry_pt);
-  nacl_user->new_prog_ctr = NaClUserToSys(nap, nap->initial_entry_pt);
-
-  /* initialize "nacl_sys" global */
-  nacl_sys->rbp = GetStackPtr();
-  nacl_sys->rsp = GetStackPtr();
+  /*
+   * construct "nacl_user" and "nacl_sys" globals
+   * note: nacl_sys->prog_ctr meaningless but should not be 0
+   */
+  ThreadContextCtor(nacl_user, nap, nap->initial_entry_pt, stack_ptr);
+  ThreadContextCtor(nacl_sys, nap, 1, GetStackPtr());
 
   /* pass control to the user side */
   ZLOGS(LOG_DEBUG, "SESSION %d STARTED", nap->manifest->node);
-  SwitchToApp(nap, nacl_user->new_prog_ctr);
+  ContextSwitch(nacl_user);
   ZLOGFAIL(1, EFAULT, "the unreachable has been reached");
 }

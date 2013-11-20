@@ -46,6 +46,7 @@ static void CommandLine(int argc, char **argv)
 {
   GString *cmd = g_string_new("command =");
 
+  g_string_append_printf(cmd, " %s[%d]", *argv++, getpid());
   while(*argv != NULL)
     g_string_append_printf(cmd, " %s", *argv++);
 
@@ -64,7 +65,7 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
   ZLogCtor(LOG_ERROR);
   CommandLine(argc, argv);
 
-  while((opt = getopt(argc, argv, "-PFQst:v:M:l:T:")) != -1)
+  while((opt = getopt(argc, argv, "-PFQst:v:M:T:")) != -1)
   {
     switch(opt)
     {
@@ -83,10 +84,6 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
         break;
       case 't':
         ReportMode(ToInt(optarg));
-        break;
-      case 'l':
-        if(SetStorageLimit(ToInt(optarg)) != 0)
-          BADCMDLINE("invalid storage limit");
         break;
       case 'v':
         ZLogDtor();
@@ -117,7 +114,6 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
   ZLOGFAIL(nap->manifest->program == NULL, EFAULT, "program not specified");
   psize = GetFileSize(nap->manifest->program);
   ZLOGFAIL(psize < 0, ENOENT, "program open error");
-  ZLOGFAIL(psize == 0 || psize > LARGEST_NEXE, ENOENT, "too large program");
 }
 
 static void ValidateProgram(struct NaClApp *nap)
@@ -187,6 +183,7 @@ int main(int argc, char **argv)
 
   /* initialize all channels */
   ChannelsCtor(nap->manifest);
+  ZLOGS(LOG_DEBUG, "channels constructed");
   ZTrace("[channels mounting]");
 
   /*
@@ -194,15 +191,17 @@ int main(int argc, char **argv)
    * after heap allocated there will be no free user memory
    */
   PreallocateUserMemory(nap);
+  ZLOGS(LOG_DEBUG, "user memory preallocated");
   ZTrace("[user memory preallocation]");
 
   /* set user manifest in user space */
   SetSystemData(nap);
+  ZLOGS(LOG_DEBUG, "system data set");
   ZTrace("[user manifest construction]");
 
   /* "defense in depth" call */
   ZLOGS(LOG_DEBUG, "Last preparations");
-  LastDefenseLine(nap);
+  LastDefenseLine(nap->manifest);
 
   /* quit if fuzz testing specified */
   if(quit_after_load)

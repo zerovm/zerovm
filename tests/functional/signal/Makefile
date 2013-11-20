@@ -7,7 +7,7 @@ all: $(NAME).c
 	$(ZEROVM_ROOT)/tests/functional/include/libzvmlib.a
 	@sed 's#PWD#$(PWD)#g' $(NAME).template > $(NAME).manifest
 	@echo signal\\n8 > nvram
-	@$(ZEROVM_ROOT)/zerovm -l1 $(NAME).manifest
+	@$(ZEROVM_ROOT)/zerovm $(NAME).manifest
 
 clean:
 	rm -f $(NAME).nexe $(NAME).o *.log *.data *.manifest nvram*

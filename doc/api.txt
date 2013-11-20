@@ -22,6 +22,9 @@ enum TrapCalls - Trap functions (see trap.txt)
   TrapJail - validation of the memory block. if validation was successful
              memory block will be marked "read only" and "executable"
   TrapUnjail - memory block will be marked "read/write"
+  TrapFork - convert running zerovm to daemon. daemon can spawn new sessions
+             by request through unix socket. new sessions will start from
+             the address next after zvm_fork()
 
 zerovm data types
 -----------------------------------------------------------------------
@@ -67,6 +70,24 @@ zerovm api functions
 
   zvm_exit(code)
   terminates the program with "code"
+
+  zvm_fork()
+  if manifest have "Job" field set and session has no errors converts running
+  zerovm to daemon. current session will be terminated. "daemonized" zerovm
+  will have name "zvm.????????????" where "????????????" is the filename
+  extracted from manifest "Job" field. "daemon" session can be accessed via
+  unix socket specified by "Job" value. unix socket specified in "Job" will be
+  created (rewritten) when zerovm started (however zerovm does not remove it
+  if daemon killed). the previously written data (before daemon started) will
+  be lost for spawned sessions! new manifests can have different channels uris
+  other fields in the new manifests should be same as in the old one. for
+  further details see daemon.txt
+  The protocol:
+  - to send task to daemon a message should be sent to unix socket "Job". where
+    1st 8 bytes are the length of a new manifest and the rest of message is
+    a new manifest itself.
+  - to receive a report from daemon session just read unix socket "Job". format
+    of message is same as above (8 bytes length followed by report)
 
 variables
 -----------------------------------------------------------------------

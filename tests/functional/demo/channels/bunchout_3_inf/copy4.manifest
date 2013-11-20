@@ -1,0 +1,15 @@
+=====================================================================
+== "hello world" is not a test. just a demo.
+=====================================================================
+Channel = /dev/zero, /dev/stdin, 0, 0, 0x100000000, 0x100000000, 0, 0
+Channel = tcp:127.0.0.1:50001; tcp:127.0.0.1:50002; tcp:127.0.0.1:50003, /dev/stdout, 0, 0, 0, 0, 0x100000000, 0x100000000
+Channel = /dev/stdout, /dev/stderr, 0, 0, 0, 0, 0x100000000, 0x100000000
+
+=====================================================================
+== switches for zerovm. some of them used to control nexe, some
+== for the internal zerovm needs
+=====================================================================
+Version = 20130611
+Program = copy.nexe
+Memory = 134217728, 0
+Timeout = 5

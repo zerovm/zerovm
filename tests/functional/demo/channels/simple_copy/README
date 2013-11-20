@@ -1,2 +1,4 @@
-copy /dev/zero to /dev/null through multiplexed channel 2->1 (two nodes 
+copy /dev/zero to /dev/null through simple channel 1->1 (one node
 connected to one)
+
+notice: infinite version (will end upon timeout)

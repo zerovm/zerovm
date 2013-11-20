@@ -124,6 +124,7 @@ static void RegularChannel(struct ChannelDesc* channel, int n)
       h = open(CH_NAME(channel, n), O_RDONLY, CHANNEL_RIGHTS);
       CH_HANDLE(channel, n) = GINT_TO_POINTER(h);
       channel->size = GetFileSize(CH_NAME(channel, n));
+      ZLOGFAIL(channel->size < 0, EFAULT, "cannot open %s", CH_NAME(channel, n));
       break;
 
     case 2: /* write only. existing file will be overwritten */
@@ -144,6 +145,7 @@ static void RegularChannel(struct ChannelDesc* channel, int n)
       h = open(CH_NAME(channel, n), O_RDWR | O_CREAT, CHANNEL_RIGHTS);
       CH_HANDLE(channel, n) = GINT_TO_POINTER(h);
       channel->size = GetFileSize(CH_NAME(channel, n));
+      ZLOGFAIL(channel->size < 0, EFAULT, "cannot open %s", CH_NAME(channel, n));
       ZLOGFAIL(channel->putpos > channel->size, EFAULT,
           "%s size is less then specified append position", CH_NAME(channel, n));
 

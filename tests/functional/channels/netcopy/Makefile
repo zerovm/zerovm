@@ -16,8 +16,6 @@ all: $(NAME).c
 	@$(ZEROVM_ROOT)/zerovm $(NAME)1.manifest&
 	@$(ZEROVM_ROOT)/zerovm $(NAME)2.manifest&
 	@$(ZEROVM_ROOT)/zerovm $(NAME)3.manifest
-	@pkill -f ns_server
 
 clean:
-	rm -f $(NAME).nexe $(NAME).o *.log *.data *.manifest nvram*
-
+	rm -f $(NAME).nexe $(NAME).o *.log *.data *.manifest nvram* ztrace*

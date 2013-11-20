@@ -1,0 +1,15 @@
+=====================================================================
+== "biggest primal" generator
+=====================================================================
+Channel = /dev/null, /dev/stdin, 0, 0, 1, 1, 0, 0
+Channel = PWD/primal.txt, /dev/stdout, 0, 0, 0, 0, 0x100000000, 0x100000000
+Channel = /dev/null, /dev/stderr, 0, 0, 0, 0, 1, 1
+
+=====================================================================
+== switches for zerovm. some of them used to control nexe, some
+== for the internal zerovm needs
+=====================================================================
+Version = 20130611
+Program = primal.nexe
+Memory = 0x10000000, 0
+Timeout = 600

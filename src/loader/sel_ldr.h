@@ -153,7 +153,6 @@ struct NaClApp {
   /* data_end <= break_addr is an invariant */
 
   uintptr_t                 heap_end; /* end of user heap */
-  uint32_t                  sysret; /* syscall return code (from natp) */
   struct Manifest           *manifest;
 };
 
@@ -219,8 +218,7 @@ void FreeDispatchThunk();
 int ThreadContextCtor(struct ThreadContext  *ntcp,
                       struct NaClApp        *nap,
                       nacl_reg_t            prog_ctr,
-                      nacl_reg_t            stack_ptr,
-                      uint32_t              tls_info);
+                      nacl_reg_t            stack_ptr);
 
 EXTERN_C_END
 

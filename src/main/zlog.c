@@ -19,7 +19,7 @@
 #include "src/main/zlog.h"
 
 #define ZLOG_NAME "ZeroVM"
-#define ZLOG_OPTIONS (LOG_CONS | LOG_PID | LOG_NDELAY)
+#define ZLOG_OPTIONS (LOG_PID)
 #define ZLOG_FACILITY LOG_USER
 #define ZLOG_PRIORITY LOG_ERROR
 #define TAG_FORMAT "%s %d: "

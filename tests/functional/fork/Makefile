@@ -7,8 +7,8 @@ all: $(NAME).c
 	$(ZEROVM_ROOT)/tests/functional/include/libzvmlib.a
 	@sed 's#PWD#$(PWD)#g' $(NAME).template > $(NAME).manifest
 	@sed 's#PWD#$(PWD)#g' $(NAME)ed.template > $(NAME)ed.manifest
-	@$(ZEROVM_ROOT)/zerovm $(NAME).manifest
+	@$(ZEROVM_ROOT)/zerovm $(NAME).manifest -T`pwd`/fork.trc
 
 clean:
-	rm -f $(NAME).nexe $(NAME).o *.log *.data *.manifest job LOG
-	pkill -9 zerovm
+	rm -f $(NAME).nexe $(NAME).o *.log *.data *.manifest fork_test LOG *.trc
+	pkill zvm. | true

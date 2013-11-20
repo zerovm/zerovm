@@ -31,6 +31,8 @@
 #include <byteswap.h>
 #endif
 
+#define RETRY 3 /* poll retries */
+#define TIMEOUT 1200000 /* poll timeout in microseconds */
 #define PARCEL_SIZE 65507 /* maximum size of an UDP packet */
 
 /*
@@ -131,10 +133,12 @@ static int ParcelDtor(struct Manifest *manifest, char *parcel)
  */
 static int32_t PollServer(const struct Connection *server, char *parcel, uint32_t size)
 {
+  int i;
   int s;
   int32_t result;
   struct sockaddr_in addr;
   uint32_t len = sizeof addr;
+  struct timeval timeout = {TIMEOUT / MICRO_PER_SEC, TIMEOUT % MICRO_PER_SEC};
 
   /* connect to the name server */
   s = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
@@ -142,15 +146,24 @@ static int32_t PollServer(const struct Connection *server, char *parcel, uint32_
   addr.sin_port = bswap_16(server->port);
   addr.sin_family = AF_INET;
 
-  /* send the parcel to the name server */
-  result = sendto(s, parcel, size, 0, &addr, sizeof addr);
-  ZLOGFAIL(result == -1, errno, "cannot send parcel");
+  /* set timeout on socket i/o */
+  result = setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, (char*)&timeout, sizeof timeout);
+  ZLOGFAIL(result == -1, errno, "cannot set receiving timeout");
+  result = setsockopt(s, SOL_SOCKET, SO_SNDTIMEO, (char*)&timeout, sizeof timeout);
+  ZLOGFAIL(result == -1, errno, "cannot set sending timeout");
 
-  /* receive the parcel back */
-  result = recvfrom(s, parcel, size, 0, &addr, &len);
-  ZLOGFAIL(result == -1, errno, "cannot receive parcel");
+  /* poll server */
+  for(i = 0; i < RETRY; ++i)
+  {
+    result = sendto(s, parcel, size, 0, &addr, sizeof addr);
+    if(result < 0) continue;
+    result = recvfrom(s, parcel, size, 0, &addr, &len);
+    if(result > 0) break;
+  }
+
+  ZLOGIF(i && result > 0, "name service polled with %d retries", i);
+  ZLOGFAIL(result == -1, errno, "name service failed");
   close(s);
-
   return result;
 }
 

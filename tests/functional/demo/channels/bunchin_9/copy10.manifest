@@ -1,8 +1,8 @@
 =====================================================================
 == copy data from the input channel to the output channel
 =====================================================================
-Channel = tcp:1:;tcp:2:;tcp:3:;tcp:4:;tcp:5:;tcp:6:;tcp:7:;tcp:8:;tcp:9:, /dev/stdin, 0, 0, 0x100000001, 0x100000001, 0, 0
-Channel = /dev/null, /dev/stdout, 0, 0, 0, 0, 0x100000001, 0x100000001
+Channel = tcp:1:;tcp:2:;tcp:3:;tcp:4:;tcp:5:;tcp:6:;tcp:7:;tcp:8:;tcp:9:, /dev/stdin, 0, 0, 0x1000000, 0x1000000, 0, 0
+Channel = /dev/null, /dev/stdout, 0, 0, 0, 0, 0x1000000, 0x1000000
 Channel = /dev/null, /dev/stderr, 0, 0, 0, 0, 65536, 65536
 
 =====================================================================

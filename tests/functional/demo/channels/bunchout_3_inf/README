@@ -1,0 +1,5 @@
+this sample uses copy sample to copy data from /dev/zero. the purpouse is
+to demonstrate how to connect to programs through multiplexed channels
+
+bunch out means multiplexed "put" sources
+notice: infinite version (will end upon timeout)

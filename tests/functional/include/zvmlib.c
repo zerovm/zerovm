@@ -431,7 +431,9 @@ inline int handle(const char *alias)
 static int get_nvram_data(char *buffer)
 {
   int i = OPEN(ENVIRONMENT);
-  i = zvm_pread(i, buffer, ENVIRONMENT_MAX_SIZE, 0);
+
+  if(i >= 0)
+    i = zvm_pread(i, buffer, ENVIRONMENT_MAX_SIZE, 0);
   return i == ENVIRONMENT_MAX_SIZE || i < 1 ? -1 : i;
 }
 

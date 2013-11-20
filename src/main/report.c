@@ -23,7 +23,6 @@
 #include "src/main/setup.h"
 #include "src/channels/channel.h"
 
-#define MICRO_PER_SEC 1000000
 #define QUANT MICRO_PER_SEC
 
 #ifdef DEBUG
@@ -293,6 +292,7 @@ void ReportDtor(int zvm_ret)
   g_free(zvm_state);
 
   ZTrace("[exit]");
-  ZTraceDtor();
+  ZTraceDtor(1);
+  ZTraceNameDtor();
   _exit(zvm_code);
 }

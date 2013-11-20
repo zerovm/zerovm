@@ -1,9 +1,9 @@
 =====================================================================
 == "hello world" without main. only zvm api has been used
 =====================================================================
-Channel = /dev/null, /dev/stdin, 0, 1, 999999, 999999, 0, 0
-Channel = /dev/stdout, /dev/stdout, 0, 1, 0, 0, 999999, 999999
-Channel = /dev/stderr, /dev/stderr, 0, 1, 0, 0, 999999, 999999
+Channel = /dev/null, /dev/stdin, 0, 0, 1, 1, 0, 0
+Channel = /dev/stdout, /dev/stdout, 0, 0, 0, 0, 1, 64
+Channel = /dev/stderr, /dev/stderr, 0, 0, 0, 0, 1, 64
 
 =====================================================================
 == switches for zerovm. some of them used to control nexe, some
@@ -11,6 +11,6 @@ Channel = /dev/stderr, /dev/stderr, 0, 1, 0, 0, 999999, 999999
 =====================================================================
 Version = 20130611
 Program = zhello.nexe
-Memory = 33554432, 1
+Memory = 33554432, 0
 Timeout = 1
 

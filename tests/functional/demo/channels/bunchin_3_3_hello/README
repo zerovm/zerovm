@@ -1,2 +1,2 @@
-example of session with 2 multiplexed (3 bunch in) channels
-
+example of session with 2 multiplexed (3 bunch in) channels. put messages to
+zerovm stdout

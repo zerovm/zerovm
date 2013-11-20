@@ -1,0 +1,3 @@
+copy input.data to output.data through simple channel 1->1 (one node
+connected to one)
+

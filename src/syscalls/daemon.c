@@ -19,14 +19,15 @@
 #include <sys/wait.h>
 #include <sys/prctl.h>
 #include "src/main/report.h"
+#include "src/main/setup.h"
 #include "src/main/accounting.h"
 #include "src/platform/signal.h"
 #include "src/channels/channel.h"
 #include "src/syscalls/daemon.h"
 
-#define DAEMON_NAME "zerovm.daemon"
-#define TASK_SIZE 0x10000
-#define QUEUE_SIZE 0x100
+#define DAEMON_NAME "zvm."
+#define TASK_SIZE 0x10000 /* limited by protocol (server <-> zerovm ) */
+#define QUEUE_SIZE 16
 #define CMD_SIZE (sizeof(uint64_t))
 
 static int client = -1;
@@ -65,12 +66,18 @@ static void UpdateSession(struct Manifest *manifest)
   ResetAccounting();
   ReportMode(3);
   SetReportHandle(client);
+  ZLogDtor();
+  ZLogCtor(0);
+  ZTraceCtor(NULL);
 
   /* copy needful fields from the new manifest */
   manifest->timeout = tmp->timeout;
   manifest->name_server = tmp->name_server;
   manifest->node = tmp->node;
   manifest->job = tmp->job;
+
+  /* reset timeout, i/o limit, privileges e.t.c. */
+  LastDefenseLine(manifest);
 
   /* check and partially copy channels */
   SortChannels(manifest->channels);
@@ -106,12 +113,11 @@ static int Job(int sock)
 /* convert to the daemon mode */
 static int Daemonize(struct NaClApp *nap)
 {
-  int i;
+  char *bname;
+  char *name;
   int sock;
   struct sigaction sa;
   struct sockaddr_un remote = {AF_UNIX, ""};
-  struct rlimit rl;
-  int max_handles;
 
   /* unmount channels, reset timeout */
   ChannelsDtor(nap->manifest);
@@ -133,13 +139,13 @@ static int Daemonize(struct NaClApp *nap)
    */
   ZLOGFAIL(chdir("/") < 0, EFAULT, "can't change directory to /");
 
-  /* set number of handles to be closed */
-  ZLOGFAIL(getrlimit(RLIMIT_NOFILE, &rl) < 0, EFAULT, "can't get file limit");
-  max_handles = MIN(rl.rlim_max, 1024);
+  /* finalize modules with handles before handles down */
+  ZTraceDtor(0);
 
-  /* Close all open file descriptors */
-  for (i = 0; i < max_handles; ++i)
-    close(i);
+  /* close standard descriptors */
+  close(STDIN_FILENO);
+  close(STDOUT_FILENO);
+  close(STDERR_FILENO);
 
   /* Attach standard channels to /dev/null */
   ZLOGFAIL(open("/dev/null", O_RDWR) != 0, EFAULT, "can't set stdin to /dev/null");
@@ -154,9 +160,14 @@ static int Daemonize(struct NaClApp *nap)
   ZLOGFAIL(listen(sock, QUEUE_SIZE) < 0, EIO, "%s", strerror(errno));
 
   /* set name for daemon */
-  prctl(PR_SET_NAME, &DAEMON_NAME);
+  bname = g_path_get_basename(nap->manifest->job);
+  name = g_strdup_printf("%s%s", DAEMON_NAME, bname);
+  prctl(PR_SET_NAME, name);
+  g_free(bname);
+  g_free(name);
 
   /* TODO(d'b): free needless resources */
+  SetCmdString(g_string_new("command = daemonic"));
   return sock;
 }
 

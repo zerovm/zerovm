@@ -17,5 +17,6 @@ trap() supports the following functions:
   TrapJail
   TrapUnjail
   TrapExit
+  TrapFork
   
 detailed information regarding trap functions can be found in "api.txt"
