@@ -4,7 +4,7 @@ FLAGS0=-fPIE -Wall -Wno-long-long -fvisibility=hidden -fstack-protector --param 
 GLIB=`pkg-config --cflags glib-2.0`
 TAG_ENCRYPTION ?= G_CHECKSUM_SHA1
 # PREFETCH: zmq, udt
-PREFETCH ?= udt
+PREFETCH ?= zmq
 CCFLAGS0=-c -m64 -fPIC -D$(PREFETCH) -D_GNU_SOURCE -DTAG_ENCRYPTION=$(TAG_ENCRYPTION) -I. $(GLIB)
 
 CXXFLAGS0=-m64 -Wno-variadic-macros $(GLIB)
