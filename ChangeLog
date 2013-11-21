@@ -1,0 +1,11 @@
+history of zerovm hypervisor project. please note that only most important
+news go here, otherwise github commits history can be used
+
+2013-11-20 dmitri bortoq <bortoq@gmail.com>
+  * channels: zerovm can be built with udt library instead of zeromq.
+    make PREFETCH=udt
+  * channels: zeromq library updated from version 2.2 to version 4.0.1
+
+2011-09-17 dmitri bortoq <bortoq@gmail.com>
+  * earlier versions history can be added by d'b
+
