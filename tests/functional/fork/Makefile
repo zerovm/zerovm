@@ -10,5 +10,5 @@ all: $(NAME).c
 	@$(ZEROVM_ROOT)/zerovm $(NAME).manifest -T`pwd`/fork.trc
 
 clean:
-	rm -f $(NAME).nexe $(NAME).o *.log *.data *.manifest fork_test LOG *.trc
+	rm -f $(NAME).nexe $(NAME).o *.log *.data *.manifest fork_test LOG *.trc *.ctrl
 	pkill zvm. | true
