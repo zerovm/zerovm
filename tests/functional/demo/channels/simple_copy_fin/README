@@ -1,3 +1,7 @@
-copy input.data to output.data through simple channel 1->1 (one node
-connected to one)
+copy file over network. it is possible to copy up to 4gb within 2 minutes
+(for slower networks the timeouts should be set to appropriate values)
 
+usage: ./run <input file name> <output file name>
+
+note: of course, real network copy needs both zerovm session run on different
+servers

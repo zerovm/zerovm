@@ -1,6 +1,12 @@
 #!/bin/bash
 
+if [ "$#" -ne 2 ]; then
+  echo 2 arguments required, $# provided
+  echo usage: $0 \<input file name\> \<output file name\>
+  exit 1
+fi
+
 python $ZEROVM_ROOT/ns_server.py 2 54321&
 sleep 0.05
-$ZEROVM_ROOT/zerovm noise.manifest -T`pwd`/input_trace.txt&
-$ZEROVM_ROOT/zerovm copy.manifest -T`pwd`/output_trace.txt
+cat $1 | $ZEROVM_ROOT/zerovm input.manifest -QPs&
+$ZEROVM_ROOT/zerovm output.manifest -QPst1 > $2

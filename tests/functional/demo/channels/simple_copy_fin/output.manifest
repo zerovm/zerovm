@@ -1,8 +1,8 @@
 =====================================================================
 == copy data from the input channel to the output channel
 =====================================================================
-Channel = /home/bortoq/git/zerovm/tests/functional/demo/channels/simple_copy_fin/input.data, /dev/stdin, 0, 0, 0x100000000, 0x100000000, 0, 0
-Channel = tcp:2:, /dev/stdout, 0, 0, 0, 0, 0x100000000, 0x100000000
+Channel = tcp:1:, /dev/stdin, 0, 0, 0x100000000, 0x100000000, 0, 0
+Channel = /dev/stdout, /dev/stdout, 0, 0, 0, 0, 0x100000000, 0x100000000
 Channel = /dev/null, /dev/stderr, 0, 0, 0, 0, 65536, 65536
 
 =====================================================================
@@ -12,7 +12,7 @@ Channel = /dev/null, /dev/stderr, 0, 0, 0, 0, 65536, 65536
 Version = 20130611
 Program = copy.nexe
 Memory = 0x2000000, 0
-Timeout = 5555
+Timeout = 120
 NameServer = udp:127.0.0.1:54321
-Node = 1
+Node = 2
 
