@@ -3,8 +3,7 @@
 errors=0
 
 # Verify that the ZEROVM_ROOT var is set:
-env | grep -q ^ZEROVM_ROOT=
-if [ $? -ne 0 ]; then
+if [ -z "${ZEROVM_ROOT}" ]; then
     echo "Error: ZEROVM_ROOT variable is not set"
     exit 1
 fi
@@ -12,16 +11,13 @@ fi
 cd $ZEROVM_ROOT/tests/functional/include
 make -s clean all
 
-for i in `find $ZEROVM_ROOT/tests -type d`; do
-  if [ `pwd` = $i ]; then
-    continue
-  fi
+for i in $(find $ZEROVM_ROOT/tests -mindepth 1 -type d); do
     cd $i
-    if [ -f ./test.sh ]; then
-        output=`./test.sh`
+    if [ -x ./test.sh ]; then
+        output=$(./test.sh)
         # check for and count failures
-        if [[ $? -eq 1 || `echo "$output" | grep "failed"` ]]; then
-            errors=`expr $errors + 1`
+        if [[ "$?" -ne 0 || $(echo "$output" | grep "failed") ]]; then
+            errors=$(($errors + 1))
         fi
         printf "$output\n"
     fi
