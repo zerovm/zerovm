@@ -1,2 +1,6 @@
 obj/
 zerovm
+*.o
+libzvmlib.a
+.cproject
+.project

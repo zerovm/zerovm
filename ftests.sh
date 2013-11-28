@@ -14,12 +14,11 @@ make -s clean all
 for i in $(find $ZEROVM_ROOT/tests -mindepth 1 -type d); do
     cd $i
     if [ -x ./test.sh ]; then
-        output=$(./test.sh)
+        output=$(./test.sh | tee /dev/tty)
         # check for and count failures
         if [[ "$?" -ne 0 || $(echo "$output" | grep "failed") ]]; then
             errors=$(($errors + 1))
         fi
-        printf "$output\n"
     fi
 done
 
