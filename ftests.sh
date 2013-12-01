@@ -1,6 +1,8 @@
 #!/bin/bash
 
 errors=0
+OUTPUT=$(mktemp)
+trap "{ rm -rf $OUTPUT; exit $?; }" SIGINT SIGTERM EXIT
 
 # Verify that the ZEROVM_ROOT var is set:
 if [ -z "${ZEROVM_ROOT}" ]; then
@@ -14,9 +16,9 @@ make -s clean all
 for i in $(find $ZEROVM_ROOT/tests -mindepth 1 -type d); do
     cd $i
     if [ -x ./test.sh ]; then
-        output=$(./test.sh | tee /dev/tty)
+        ./test.sh | tee "${OUTPUT}"
         # check for and count failures
-        if [[ "$?" -ne 0 || $(echo "$output" | grep "failed") ]]; then
+        if [[ "$?" -ne 0 || $(grep "failed" "${OUTPUT}") ]]; then
             errors=$(($errors + 1))
         fi
     fi
