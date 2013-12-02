@@ -1,0 +1,8 @@
+Channel = /dev/stdin, /dev/stdin, 0, 0, 1, 1, 0, 0
+Channel = /dev/stdout, /dev/stdout, 0, 0, 0, 0, 1, 1
+Channel = /dev/stderr, /dev/stderr, 0, 0, 0, 0, 1, 1
+Version = 20130611
+Memory = 33554432, 0
+Timeout = 1
+Program = malformed_nexe.8.manifest
+

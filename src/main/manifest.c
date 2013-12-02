@@ -28,6 +28,8 @@
 #include "src/main/manifest.h"
 #include "src/channels/channel.h"
 
+#define MFTFAIL ZLogTag("MANIFEST", cline), FailIf
+
 /* general */
 #define PTR_SIZE (sizeof(void*))
 #define MANIFEST_VERSION "20130611"
@@ -113,6 +115,8 @@ typedef enum {
 /*
  * LOCAL variables and functions
  */
+static int cline = 0;
+
 /* get manifest data */
 static void GetManifestData(const char *name, char *buf)
 {
@@ -130,7 +134,8 @@ int64_t ToInt(char *a)
   errno = 0;
   a = g_strstrip(a);
   result = g_ascii_strtoll(a, &a, 0);
-  ZLOGFAIL(*a != '\0' || errno != 0, EFAULT, "invalid numeric value '%s'", a);
+  MFTFAIL(*a != '\0' || errno != 0, EFAULT,
+      "invalid numeric value '%s'", a);
 
   return result;
 }
@@ -152,7 +157,7 @@ static XTYPE(KEYWORDS) GetKey(char *key)
 /* test manifest version */
 static void Version(struct Manifest *manifest, char *value)
 {
-  ZLOGFAIL(g_strcmp0(MANIFEST_VERSION, g_strstrip(value)) != 0,
+  MFTFAIL(g_strcmp0(MANIFEST_VERSION, g_strstrip(value)) != 0,
       EFAULT, "invalid manifest version");
 }
 
@@ -170,14 +175,14 @@ static void Memory(struct Manifest *manifest, char *value)
 
   /* parse value */
   tokens = g_strsplit(value, VALUE_DELIMITER, MemoryTokensNumber);
-  ZLOGFAIL(tokens[MemoryTokensNumber] != NULL || tokens[MemoryTag] == NULL,
+  MFTFAIL(tokens[MemoryTokensNumber] != NULL || tokens[MemoryTag] == NULL,
       EFAULT, "invalid memory token");
 
   manifest->mem_size = ToInt(tokens[MemorySize]);
   tag = ToInt(tokens[MemoryTag]);
 
   /* initialize manifest field */
-  ZLOGFAIL(tag != 0 && tag != 1, EFAULT, "invalid memory etag token");
+  MFTFAIL(tag != 0 && tag != 1, EFAULT, "invalid memory etag token");
 
   manifest->mem_tag = tag == 0 ? NULL : TagCtor();
   g_strfreev(tokens);
@@ -195,7 +200,7 @@ static void Node(struct Manifest *manifest, char *value)
 
 static void Job(struct Manifest *manifest, char *value)
 {
-  ZLOGFAIL(strlen(value) > UNIX_PATH_MAX, EFAULT, "too long Job name");
+  MFTFAIL(strlen(value) > UNIX_PATH_MAX, EFAULT, "too long Job name");
   manifest->job = g_strdup(g_strstrip(value));
 }
 
@@ -216,7 +221,7 @@ static uint32_t ExtractHost(char *host, uint8_t *flags)
     *flags = 1;
     result = inet_pton(AF_INET, g_strstrip(host), &sa.sin_addr);
     result = result == 1 ? sa.sin_addr.s_addr : 0;
-    ZLOGFAIL(result == 0, EFAULT, "malformed ip token");
+    MFTFAIL(result == 0, EFAULT, "malformed ip token");
   }
   else
     result = ToInt(host);
@@ -248,8 +253,8 @@ static void ParseName(char *name, GPtrArray *names)
   if(proto == -1)
   {
     struct File *f;
-    ZLOGFAIL(tokens[1] != NULL, EFAULT, "invalid channel name");
-    ZLOGFAIL(!g_path_is_absolute(name), EFAULT,
+    MFTFAIL(tokens[1] != NULL, EFAULT, "invalid channel name");
+    MFTFAIL(!g_path_is_absolute(name), EFAULT,
         "only absolute path channels are allowed");
 
 
@@ -262,9 +267,7 @@ static void ParseName(char *name, GPtrArray *names)
   else
   {
     struct Connection *c = g_malloc0(sizeof *c);
-
-    /* TODO(d'b): fix "invalid_name_server_type.manifest" bug here */
-    ZLOGFAIL(tokens[ConnectionTokensNumber] != NULL || tokens[Host] == NULL,
+    MFTFAIL(tokens[ConnectionTokensNumber] != NULL || tokens[Host] == NULL,
         EFAULT, "invalid channel url");
 
     c->protocol = proto;
@@ -302,7 +305,7 @@ static void Channel(struct Manifest *manifest, char *value)
   tokens = g_strsplit(value, VALUE_DELIMITER, ChannelTokensNumber);
 
   /* TODO(d'b): fix "invalid numeric value ', 0'" bug here */
-  ZLOGFAIL(tokens[ChannelTokensNumber] != NULL || tokens[PutSize] == NULL,
+  MFTFAIL(tokens[ChannelTokensNumber] != NULL || tokens[PutSize] == NULL,
       EFAULT, "invalid channel tokens number");
 
   /* parse alias and name(s) */
@@ -314,14 +317,14 @@ static void Channel(struct Manifest *manifest, char *value)
   channel->type = ToInt(tokens[Type]);
 
   i = ToInt(tokens[Tag]);
-  ZLOGFAIL(i != 0 && i != 1, EFAULT, "invalid channel mumeric token");
+  MFTFAIL(i != 0 && i != 1, EFAULT, "invalid channel numeric token");
 
   channel->tag = i == 0 ? NULL : TagCtor();
 
   for(i = 0; i < LimitsNumber; ++i)
   {
     channel->limits[i] = ToInt(tokens[i + Gets]);
-    ZLOGFAIL(channel->limits[i] < 0, EFAULT,
+    MFTFAIL(channel->limits[i] < 0, EFAULT,
         "negative limits for %s", channel->alias);
   }
 
@@ -363,6 +366,7 @@ struct Manifest *ManifestTextCtor(char *text)
   for(i = 0; lines[i] != NULL; ++i)
   {
     char **tokens;
+    cline = i + 1;
 
     tokens = g_strsplit(lines[i], KEY_DELIMITER, MANIFEST_TOKENS_LIMIT);
     if(strlen(lines[i]) > 0 && tokens[Key] != NULL
