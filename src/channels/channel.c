@@ -436,6 +436,8 @@ void ChannelsCtor(struct Manifest *manifest)
    */
   ZLOGFAIL(manifest->channels->len >= MAX_CHANNELS_NUMBER,
       ENFILE, "channels number reached maximum");
+  ZLOGFAIL(manifest->channels->len < MIN_CHANNELS_NUMBER,
+      EFAULT, "not enough channels: %d", manifest->channels->len);
 
   /* sort channels. then count "binds" / "connects" number */
   g_ptr_array_sort(manifest->channels, (GCompareFunc)OrderMount);

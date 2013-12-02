@@ -23,6 +23,7 @@
  * ((PARCEL_SIZE - sizeof(struct NSParcel)) / sizeof(struct NSRecord) + 1)
  */
 #define MAX_CHANNELS_NUMBER 10915
+#define MIN_CHANNELS_NUMBER 3
 
 /* initialize name service and update channels information */
 void NameServiceCtor(struct Manifest *manifest, uint32_t b, uint32_t c);

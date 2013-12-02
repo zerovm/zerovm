@@ -183,6 +183,7 @@ void NameServiceCtor(struct Manifest *manifest, uint32_t b, uint32_t c)
   if(b + c < 1) return;
 
   /* create parcel */
+  ZLOGFAIL(manifest->node < 1, EFAULT, "invalid node: %d", manifest->node);
   ZLOGFAIL(manifest->name_server->protocol != ProtoUDP,
       EFAULT, "name server only support udp protocol");
   parcel = ParcelCtor(manifest, &psize, b, c);
