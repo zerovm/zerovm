@@ -1,5 +1,5 @@
 This document describes manifest for ZeroVM NaCl application.
-(up to date 2013-10-20, needs editing)
+(up to date 2013-12-03, needs editing)
 -------------------------------------------------------------
 
 Description:
@@ -61,13 +61,16 @@ Version
   (obligatory, string)
   currently ZeroVM is not backward compatible with the older manifest versions.
   working version is 20130611
+
 Program
   (obligatory, string)
   NaCl module to validate and run, full path
+
 Timeout
   (obligatory, 32-bit integer)
   time out in seconds. ZeroVM will stop user program and exit after the
   specified period. valid values are 1..2147483647
+
 Memory
   (obligatory, two 32-bit comma separated integers)
   1st argument specifies the memory size in bytes available for the user
@@ -76,6 +79,7 @@ Memory
   "Memory" should take in account that 16mb should be reserved for the user
   stack, 1mb+ - for nexe code and data, and some memory for system area.
   the 2nd argument is etag switch: 0 - disabled, 1 - enabled
+
 NameServer
   (optional, string)
   the address of name server. name server resolves zerovm provided network
@@ -87,11 +91,15 @@ NameServer
   127.0.0.1 - server ip address
   54321 - server port
   note: it is possible to use integer ip representation instead of IPv4
+
 Node
-  (optional, unsigned 32-bit integer)
+  (optional*, unsigned 32-bit integer)
   Specifies the node id (not available for the untrusted code). The node 
   id should be in 1..2147483647 range
   ex.: Node = 1
+  
+  WARNING: if "NameServer" specified, "Node" becomes obligatory. 
+
 Job
   (optional, string)
   path to unix socket. if Job specified and session invoked zvm_fork(), current
@@ -100,3 +108,7 @@ Job
 Both keywords and values have size limit of 8kb. The manifest file size
 limited to 512kb. value limited to 16 tokens. The limitations can be
 changed in the future.
+
+in the last zerovm version it is possible to get the manifest line number where
+error was found. it will look like: "MANIFEST 14: invalid memory etag token".
+it is easy to see from this message that manifest has error in line number 14  

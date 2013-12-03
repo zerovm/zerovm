@@ -1,5 +1,5 @@
 ZeroVM channels description
-(up to date 2013-10-20, needs editing)
+(up to date 2013-12-03, needs editing)
 ---------------------------
 
 Channels are the key component of ZeroVM I/O subsystem. On the host system
@@ -109,7 +109,7 @@ it mapper or reducer).
 To resolve the host identifiers you will need the following data in manifest:
 
 NameServer = udp:[ip address]:[port]
-Node = [instance name], [host identifier]
+Node = [host identifier]
 
 Name server line contains the ip address and port of udp name server that
 will resolve host ids. Node line contains id of this node (integer)
@@ -131,19 +131,18 @@ Instance #2
 Channel = tcp:1:, /dev/in/instance-1, 0, 1, 100, 1000, 0, 0
 Channel = tcp:1:, /dev/out/instance-1, 0, 0, 0, 0, 100, 1000
 NameServer = udp:10.0.0.254:5544
-NodeName = 2
+Node = 2
 
 If the manifest contains host identifiers ZeroVM will do the following on
 startup:
-1. for all write only channels, bind on any available port (but 1st will
-   try 49152..65535) for each one
+1. for all read only channels, bind on 1st available port for each one
 2. send discovery packet to name server with all the bound ports. discovery
-   packet also contains all identifiers for read only channels present
+   packet also contains all identifiers for write only channels present
    in the manifest
 3. wait for name server reply
 4. name server replies with mapping of identifiers sent in (2) to ip:port
    tuples
-5. connect to all read only channels
+5. connect to all write only channels
 
 After this 5 step operation all channels will be set up with correct
 unidirectional data paths. The reference implementation of name server

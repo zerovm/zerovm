@@ -167,6 +167,7 @@ void ReportCtor()
 }
 
 /* output report */
+/* TODO(d'b): rework "-t" and update the function */
 static void OutputReport(char *r)
 {
   char *p = NULL;
