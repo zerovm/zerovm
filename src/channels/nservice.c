@@ -70,6 +70,22 @@ struct NSParcel
       } \
     } while(c->protocol != ProtoTCP && IS_IPHOST(c))
 
+
+// ### return hex string of given buffer
+static char *HexDump(char *buf, uint32_t size)
+{
+  int i;
+  char *result = NULL;
+  GString *r = g_string_sized_new(3 * size);
+
+  for(i = 0; i < size; ++i)
+    g_string_append_printf(r, "%02X ", (uint8_t)buf[i]);
+
+  result = g_strdup(g_strchomp(r->str));
+  g_string_free(r, TRUE);
+  return result;
+}
+
 /* serialize channels data to the parcel. return parcel and its "size" */
 static void *ParcelCtor(const struct Manifest *manifest,
     uint32_t *size, uint32_t binds, uint32_t connects)
@@ -155,6 +171,7 @@ static int32_t PollServer(const struct Connection *server, char *parcel, uint32_
   /* poll server */
   for(i = 0; i < RETRY; ++i)
   {
+    ZLOGS(LOG_DEBUG, "parcel out #%d: %s", i, HexDump(parcel, size));
     result = sendto(s, parcel, size, 0, &addr, sizeof addr);
     if(result < 0) continue;
     result = recvfrom(s, parcel, size, 0, &addr, &len);
@@ -163,6 +180,7 @@ static int32_t PollServer(const struct Connection *server, char *parcel, uint32_
 
   ZLOGIF(i && result > 0, "name service polled with %d retries", i);
   ZLOGFAIL(result == -1, errno, "name service failed");
+  ZLOGS(LOG_DEBUG, "parcel in: %s", HexDump(parcel, size));
   close(s);
   return result;
 }
