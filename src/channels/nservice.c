@@ -31,7 +31,7 @@
 #include <byteswap.h>
 #endif
 
-#define RETRY 3 /* poll retries */
+#define RETRY 33333 /* ### poll retries */
 #define TIMEOUT 1200000 /* poll timeout in microseconds */
 #define PARCEL_SIZE 65507 /* maximum size of an UDP packet */
 
