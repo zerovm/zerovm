@@ -33,135 +33,135 @@ CC=@gcc
 CXX=@g++
 
 create_dirs:
-        @mkdir obj -p
+	@mkdir obj -p
 
 zerovm: obj/zerovm.o $(OBJS)
-        $(CC) -o $@ $(CXXFLAGS2) $^ $(LIBS)
+	$(CC) -o $@ $(CXXFLAGS2) $^ $(LIBS)
 
 tests: test_compile
-        @printf "UNIT TESTS %048o\n" 0
-        @cd tests/unit;\
-        ./manifest_parser_test;\
-        ./service_runtime_tests;\
-        cd ..
+	@printf "UNIT TESTS %048o\n" 0
+	@cd tests/unit;\
+	./manifest_parser_test;\
+	./service_runtime_tests;\
+	cd ..
 
 test_compile: tests/unit/manifest_parser_test tests/unit/service_runtime_tests
 
 obj/manifest_parser_test.o: tests/unit/manifest_parser_test.cc
-        $(CXX) $(CXXFLAGS1) -o $@ $^
+	$(CXX) $(CXXFLAGS1) -o $@ $^
 tests/unit/manifest_parser_test: obj/manifest_parser_test.o $(OBJS)
-        $(CXX) $(CXXFLAGS2) -o $@ $^ $(TESTLIBS)
+	$(CXX) $(CXXFLAGS2) -o $@ $^ $(TESTLIBS)
 
 obj/sel_ldr_test.o: tests/unit/sel_ldr_test.cc
-        $(CXX) $(CXXFLAGS1) -o $@ $^
+	$(CXX) $(CXXFLAGS1) -o $@ $^
 obj/sel_memory_unittest.o: tests/unit/sel_memory_unittest.cc
-        $(CXX) $(CXXFLAGS1) -o $@ $^
+	$(CXX) $(CXXFLAGS1) -o $@ $^
 obj/unittest_main.o: tests/unit/unittest_main.cc
-        $(CXX) $(CXXFLAGS1) -o $@ $^
+	$(CXX) $(CXXFLAGS1) -o $@ $^
 tests/unit/service_runtime_tests: obj/sel_ldr_test.o obj/sel_memory_unittest.o obj/unittest_main.o $(OBJS)
-        $(CXX) $(CXXFLAGS2) -o $@ $^ $(TESTLIBS)
+	$(CXX) $(CXXFLAGS2) -o $@ $^ $(TESTLIBS)
 
 .PHONY: clean clean_intermediate install
 
 clean: clean_intermediate
-        @rm -f zerovm
-        @echo ZeroVM has been deleted
+	@rm -f zerovm
+	@echo ZeroVM has been deleted
 
 clean_intermediate:
-        @rm -f tests/unit/manifest_parser_test tests/unit/service_runtime_tests obj/*
-        @echo intermediate files has been deleted
-        @echo unit tests has been deleted
+	@rm -f tests/unit/manifest_parser_test tests/unit/service_runtime_tests obj/*
+	@echo intermediate files has been deleted
+	@echo unit tests has been deleted
 
 install:
-        install -D -m 0755 zerovm $(DESTDIR)$(PREFIX)/bin/zerovm
-        install -D -m 0644 api/zvm.h $(DESTDIR)$(PREFIX)/x86_64-nacl/include/zvm.h
+	install -D -m 0755 zerovm $(DESTDIR)$(PREFIX)/bin/zerovm
+	install -D -m 0644 api/zvm.h $(DESTDIR)$(PREFIX)/x86_64-nacl/include/zvm.h
 
 obj/channel.o: src/channels/channel.c
-        $(CC) $(CCFLAGS1) -o $@ $^
+	$(CC) $(CCFLAGS1) -o $@ $^
 
 obj/prefetch.o: src/channels/prefetch.c
-        $(CC) $(CCFLAGS1) -o $@ $^
+	$(CC) $(CCFLAGS1) -o $@ $^
 
 obj/nservice.o: src/channels/nservice.c
-        $(CC) $(CCFLAGS1) -o $@ $^
+	$(CC) $(CCFLAGS1) -o $@ $^
 
 obj/preload.o: src/channels/preload.c
-        $(CC) $(CCFLAGS1) -o $@ $^
+	$(CC) $(CCFLAGS1) -o $@ $^
 
 obj/trap.o: src/syscalls/trap.c
-        $(CC) $(CCFLAGS1) -o $@ $^
+	$(CC) $(CCFLAGS1) -o $@ $^
 
 obj/setup.o: src/main/setup.c
-        $(CC) $(CCFLAGS1) -o $@ $^
+	$(CC) $(CCFLAGS1) -o $@ $^
 
 obj/manifest.o: src/main/manifest.c
-        $(CC) $(CCFLAGS1) -o $@ $^
+	$(CC) $(CCFLAGS1) -o $@ $^
 
 obj/to_app.o: src/syscalls/to_app.S
-        $(CC) $(CCFLAGS2) -o $@ $^
+	$(CC) $(CCFLAGS2) -o $@ $^
 
 obj/to_trap.o: src/syscalls/to_trap.S
-        $(CC) $(CCFLAGS2) -o $@ $^
+	$(CC) $(CCFLAGS2) -o $@ $^
 
 obj/tramp.o: src/syscalls/tramp.S
-        $(CC) $(CCFLAGS2) -o $@ $^
+	$(CC) $(CCFLAGS2) -o $@ $^
 
 obj/zerovm.o: src/main/zerovm.c
-        $(CC) $(CCFLAGS1) -o $@ $^
+	$(CC) $(CCFLAGS1) -o $@ $^
 
 obj/elf_util.o: src/loader/elf_util.c
-        $(CC) $(CCFLAGS1) -o $@ $^
+	$(CC) $(CCFLAGS1) -o $@ $^
 
 obj/signal_common.o: src/platform/signal_common.c
-        $(CC) $(CCFLAGS1) -o $@ $^
+	$(CC) $(CCFLAGS1) -o $@ $^
 
 obj/syscall_hook.o: src/syscalls/syscall_hook.c
-        $(CC) $(CCFLAGS1) -o $@ $^
+	$(CC) $(CCFLAGS1) -o $@ $^
 
 obj/sel_addrspace.o: src/loader/sel_addrspace.c
-        $(CC) $(CCFLAGS1) -o $@ $^
+	$(CC) $(CCFLAGS1) -o $@ $^
 
 obj/sel_ldr.o: src/loader/sel_ldr.c
-        $(CC) $(CCFLAGS1) -o $@ $^
+	$(CC) $(CCFLAGS1) -o $@ $^
 
 obj/sel.o: src/loader/sel.c
-        $(CC) $(CCFLAGS1) -o $@ $^
+	$(CC) $(CCFLAGS1) -o $@ $^
 
 obj/switch_to_app.o: src/syscalls/switch_to_app.c
-        $(CC) $(CCFLAGS1) -o $@ $^
+	$(CC) $(CCFLAGS1) -o $@ $^
 
 obj/sel_rt.o: src/loader/sel_rt.c
-        $(CC) $(CCFLAGS1) -o $@ $^
+	$(CC) $(CCFLAGS1) -o $@ $^
 
 obj/sel_memory.o: src/platform/sel_memory.c
-        $(CC) $(CCFLAGS1) -o $@ $^
+	$(CC) $(CCFLAGS1) -o $@ $^
 
 obj/signal.o: src/platform/signal.c
-        $(CC) $(CCFLAGS1) -o $@ $^
+	$(CC) $(CCFLAGS1) -o $@ $^
 
 obj/qualify.o: src/platform/qualify.c
-        $(CC) $(CCFLAGS1) -o $@ $^
+	$(CC) $(CCFLAGS1) -o $@ $^
 
 obj/report.o: src/main/report.c
-        $(CC) $(CCFLAGS1) -o $@ $^
+	$(CC) $(CCFLAGS1) -o $@ $^
 
 obj/zlog.o: src/main/zlog.c
-        $(CC) $(CCFLAGS1) -o $@ $^
+	$(CC) $(CCFLAGS1) -o $@ $^
 
 obj/gio.o: src/platform/gio.c
-        $(CC) $(CCFLAGS1) -o $@ $^
+	$(CC) $(CCFLAGS1) -o $@ $^
 
 obj/gio_snapshot.o: src/platform/gio_snapshot.c
-        $(CC) $(CCFLAGS1) -o $@ $^
+	$(CC) $(CCFLAGS1) -o $@ $^
 
 obj/etag.o: src/main/etag.c
-        $(CC) $(CCFLAGS1) -o $@ $^
+	$(CC) $(CCFLAGS1) -o $@ $^
 
 obj/accounting.o: src/main/accounting.c
-        $(CC) $(CCFLAGS1) -o $@ $^
+	$(CC) $(CCFLAGS1) -o $@ $^
 
 obj/daemon.o: src/syscalls/daemon.c
-        $(CC) $(CCFLAGS1) -o $@ $^
+	$(CC) $(CCFLAGS1) -o $@ $^
 
 obj/snapshot.o: src/syscalls/snapshot.c
-        $(CC) $(CCFLAGS1) -o $@ $^
+	$(CC) $(CCFLAGS1) -o $@ $^
