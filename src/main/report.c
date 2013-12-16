@@ -150,12 +150,13 @@ static void *GetMemoryDigest(struct NaClApp *nap)
   /* calculate overall memory tag */
   for(i = 0; i < MemMapSize; ++i)
   {
-    uintptr_t addr = nap->mem_map[i].start;
+//    uintptr_t addr = nap->mem_map[i].start;
+    const char *addr = (const char*)nap->mem_map[i].start;
     int64_t size = nap->mem_map[i].size;
 
     /* update user_etag skipping inaccessible pages */
     if(nap->mem_map[i].prot & PROT_READ)
-      TagUpdate(nap->manifest->mem_tag, (const char*)addr, size);
+      TagUpdate(nap->manifest->mem_tag, addr, size);
   }
 
   return nap->manifest->mem_tag;

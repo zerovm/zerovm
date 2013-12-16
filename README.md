@@ -57,4 +57,3 @@ Proceeed only after checking the link above.
     collect2: error: ld returned 1 exit status
     make: *** [zerovm] Error 1
 **Solution:** Install [zerovm/validator][zerovm-validator] or consult the [docs above](#install-the-zerovm-validator).
-
