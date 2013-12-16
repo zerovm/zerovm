@@ -150,7 +150,6 @@ static void *GetMemoryDigest(struct NaClApp *nap)
   /* calculate overall memory tag */
   for(i = 0; i < MemMapSize; ++i)
   {
-//    uintptr_t addr = nap->mem_map[i].start;
     const char *addr = (const char*)nap->mem_map[i].start;
     int64_t size = nap->mem_map[i].size;
 
