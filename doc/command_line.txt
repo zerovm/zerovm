@@ -13,7 +13,7 @@ ZeroVM command line switches:
    -F quit right before starting user session
    -P disable channels space preallocation
    -Q disable platform qualification
-   -T enable time/call tracing
+   -T enable trap calls tracing
 
 
    -- The manifest contains a set of control data for the executable. Obligatory.
