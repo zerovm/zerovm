@@ -1,0 +1,946 @@
+zerovm-zmq (0.9.4-2) precise; urgency=low
+
+  * fixed release/debug builds under debuild
+
+ -- Constantine Peresypkin (pkit) <constantine@litestack.com>  Tue, 26 Nov 2013 14:57:51 +0000
+
+zerovm-zmq (0.9.4) precise; urgency=low
+
+  [ bortoq ]
+  * initial commit for udt support
+
+  [ Constantine Peresypkin ]
+  * fixed udtc.h include path
+  * fixed netcopy test error code
+
+  [ bortoq ]
+  * #232 done for "udt version"
+  * #169 ztrace updated, trap calls now with return codes
+  * #234 done
+
+  [ Constantine Peresypkin ]
+  *  #234 timeout changed
+  *  #234, more timeout tweaking
+
+  [ bortoq ]
+  * #169 minor changes, name service timeout enlarged
+  * #235 ztrace ctor/dtor re-designed and fixed
+  * #229 fixed
+  * #231 fixed. #169 refactoring #236 fixed
+  * #230 done. daemonized zerovm will have "zvm.????????????" name. where ??.. uuid from manifest "Job"
+  * #218 updates, new doc added #169 new samples added
+  * rolled back to commit:f835c83e481d8c6a26723bfdb6d950756cefe5e4
+  * #169 minor report update, small changes
+  * #238 fixed
+  * #240 done
+  * #169 minor changes in demo
+  * #211 done
+
+  [ root ]
+
+ -- Constantine Peresypkin (pkit) <constantine@litestack.com>  Wed, 13 Nov 2013 15:01:25 +0000
+
+zerovm-zmq (0.9.3) precise; urgency=low
+
+  * #210 translation of api.txt. needs edition
+  * #210 channels.txt updated, #169 minor changes in security tests
+  * #210 manifest.txt updated
+  * #210 further updates in documentation
+  * #210 russian documents removed, other refactored
+  * #169 gmock removed (not used for a long time)
+  * #169 (c) added to zvmlib stuff
+  * #212 fixed
+  * #169 minor changes in cpu detection routines. #169 user i/o logs revised and enhanced
+  * #169 version changed
+  * #169 version changed again
+  * #169 nacl_macros.h refactored out, part of content moved to tools.h
+  * #213 delay removed
+  * #169 channel macros refactored
+  * #214 fixed #169 beautifying
+  * #215 done #216 done. (quant of time to show fast report defined in zerovm compile time and by default equal to 1 second) #217 done #169 minor
+  * #218 "-t" command line switch description updated
+  * #169 last minor changes before "daemon mode"
+  * #220 done. new command line switch -T
+  * #221 fixed #169 minor changes
+  * #220 syscalls format updated
+  * #220 another change in ztrace: all calls now can be logged
+  * #222 license file added to project
+  * #105 1st implementation. further work needed
+  * #105 fixed leaking of control socket handle. added a new field to report. report revised. #218 new document added, some updates
+  * #169 fake report "daemon = 1" for forked sessions fixed
+  * #169 extra debug messages removed. syslog reinitialization removed
+  * #223 fixed
+  * #218 updates: readme, daemon
+  * #218 updates #169 fork test added (not complete) #169 minor fixes
+  * #169 new api function added: zvm_fork extracted to own trap function. note: there are no changes in invocation it is same call zvm_fork()
+  * #225 fixed
+  * #225 redo
+  * #225 fixed
+  * #226 done, new process name: "zerovm.daemon" #169 minor changes
+  * #169 file creation mask placement fixed
+
+ -- Constantine Peresypkin (pkit) <constantine@litestack.com>  Fri, 25 Oct 2013 07:45:11 -0500
+
+zerovm-zmq (0.9.2-2) precise; urgency=low
+
+  * #209 done. tag0 - md5, tag1 - sha1, tag2 - sha256 #169 minor changes in preload
+  * #210 translation of api.txt. needs edition
+  * #210 channels.txt updated, #169 minor changes in security tests
+  * #210 manifest.txt updated
+  * #210 further updates in documentation
+  * #210 russian documents removed, other refactored
+  * #169 gmock removed (not used for a long time)
+  * #169 (c) added to zvmlib stuff
+  * #212 fixed
+
+ -- Constantine Peresypkin (pkit) <constantine@litestack.com>  Sun, 22 Sep 2013 03:28:23 -0500
+
+zerovm-zmq (0.9.2-1) precise; urgency=low
+
+  [ bortoq ]
+  * #195 done. #194 if zerovm made with debug mode, report will contain session command line as the last string #169 preload optimized, changes in manifest.c, refactored trap.c/channel.c, a lot of small changes #192 done (but still can be optimized further) #196 fixed
+  * #169 small fixes, todos, enhancements
+  * #198 fixed
+  * #197 fixed
+  * #197 small fix
+
+  [ Constantine Peresypkin ]
+  * added timeout to name server helper script
+
+  [ bortoq ]
+  * #199 fixed
+
+  [ Constantine Peresypkin ]
+  * do not catch system exit in ns_server.py
+
+  [ bortoq ]
+  * #200 fixed
+  * #169 channels logging changed
+  * #169 prefetch logs added
+  * #169 zmq_term temporary disabled
+  * #169 logs updated, refactoring
+  * #202 fixed. on closing source will be rewind to the EOF #201 fixed
+  * #169 minor changes in tests
+  * #171 new tests added /functional/demo/channels
+  * #201 fixed #171 minor changes
+
+  [ Constantine Peresypkin ]
+  * added fflush before zerovm exit
+
+  [ bortoq ]
+  * #169 extra fflush removed
+  * #204 "zero copy" removed
+  * #206 fixed
+  * #171 tests added. one sample added
+  * #207 done
+  * #169 eof for network sources counts as 1 get/put of 0 bytes
+  * #208 fixed #171 minor updates
+
+ -- Constantine Peresypkin (pkit) <constantine@litestack.com>  Fri, 20 Sep 2013 03:51:49 -0500
+
+zerovm-zmq (0.9.2) precise; urgency=low
+
+  [ bortoq ]
+  * #169 changes in manifest tests
+  * #171
+  * #169 refactoring and junk removal
+  * #172 fixed memory leak caused by glib timer. fixed memory leak in channel aliases duplicates detection. fixed memory leak with user command line/environment
+  * #174 timeout changed from cpu time to real time. the functional test fixed. zerovm version changed
+  * #70 done. finally. some tests fixed, two disabled and will be fixed soon
+  * #169 documentation updated
+  * #150 a new version of zerovm manifest. to be continue..
+  * #169 some errors messages modified #171 tests fixed, signal test partially revived
+  * #169 libzvm supports command line arguments and environment through /dev/nvram (reserved for this exact purpose) #171 further tests/samples revival
+  * #169 fixes in libzvm #171 fixes in samples/tests
+  * #177 fixed. deallocation moved to finalizer
+  * #178 done #179 done #180 done #171 tests and samples fixed
+  * #181 done. version changed
+  * #169 documents updated
+  * #169 help screen changed
+  * #169 api doc fixed. debug script fixed. api test fixed
+  * #169 report generation fixed. fixes in signal processing
+  * #169 fixes in code, some pruning. the macros number reduced
+
+  [ Constantine Peresypkin ]
+  * changed README to reflect recent changes in build procedures
+  * name server protocol changed
+  * fix name server
+
+  [ bortoq ]
+  * new zerovm version. #132 done #108 done
+  * #169 includes and defines revised
+  * #169 minor fixes, comments
+  * #182 done
+  * #183 done
+  * #169 small changes
+  * #171 multiplexed channels example added
+  * #184 done
+  * #184 fixed
+  * #185 fixed
+  * #186 fixed. many changes in prefetch: zerovm will not close network channels if session is broken, eof rewritten, get/put algos rewritten e.t.c.
+  * #186 try #2
+  * #189 fixed
+  * #169 compile error fixed
+
+  [ Constantine Peresypkin ]
+  * allow to change G_TAG_ENCRYPTION from command line
+  * revert zerovm.c changes
+
+  [ bortoq ]
+  * #189 fixed
+  * #189 improved, pruned
+
+  [ François Bobot ]
+  * ZVMReadHandle checks the given buffer with PROT_READ instead of PROT_WRITE
+
+  [ bortoq ]
+  * #169 report generation changes #171 improper channel size print fixed
+  * #169 one todo removed from report
+
+ -- Constantine Peresypkin (pkit) <constantine@litestack.com>  Sun, 08 Sep 2013 01:27:10 -0500
+
+zerovm-zmq (0.9-1) precise; urgency=low
+
+  * fixed pkg-config dependency
+
+  [ bortoq ]
+  * #102 #164 test edited to answer new toolchain changes
+  * #164
+  * #164
+  * #165 bugfix in trap unjail #164 zvmlib updated #102 (un)jail functional test added
+  * #164 ncval_stubout reinstated
+  * #102 accounting refactored for a new ztest
+  * #102 security test updated, the rest of functional tests updated (tiny fixes)
+  * #164 lib/bin removed. validator and stubout utility can be found in the validator project
+  * #102 lz4 compresses zeroes now
+  * #164 version change
+  * #166 fixed #92 channels mounting messages revised
+  * #92 version changed
+  * #164 duplicate channel aliases can be detected now
+  * #164 negative channels limits detection added
+  * #164 failure messages enhanced
+  * #164 changes in log. a lot of messages moved from LOG_DEBUG to LOG_INSANE
+  * #102 functional manifest tests added
+  * #164 now limits checked for all preload channel sources. logs enhanced
+  * #164 warnings fixed
+  * #164 name server has better error detection now, changes in documentation
+  * #102 new functional tests added
+  * #164 fixes in log error messages #102 manifest tests added
+  * #164 version changed
+  * #164 the nexe size limit added and set to 1gb
+  * #164 zvmlib always remakes when ftests.sh started
+  * #164 version changed, small test fixes
+  * #164 unsupported channel source type (socket) removed
+  * #164 api trap functions description updated
+  * #164 part of code revised, constant arguments set to "const"
+  * #102 #164 the freshly built zerovm will be used for tests (instead of installed)
+  * #162 .
+  * #164 code polishing
+  * #102 cosmetic update for tests
+  * #102 small fixes
+  * #102 a new demo added
+  * #164 further refactoring and editions
+  * #102 1 test added, tests updated
+  * #102 junk removed
+
+  [ Chandler Latour ]
+  * cleaned and converted README to README.md
+
+  [ bortoq ]
+  * #102 the netcopy test enhanced
+  * #164 libzvm fixed #102 netcopy fixed
+  * #102 netcopy another fix
+  * #164 "last line defense" improved (but some new functions are disabled)
+  * #102 exit test fixed #164 "root privileges" check added
+  * #164 fixed warnings after cppcheck
+  * #92 some of memsets removed
+  * #164 useless -D switch removed
+
+  [ Constantine Peresypkin ]
+
+ -- Constantine Peresypkin (pkit) <constantine@litestack.com>  Wed, 03 Apr 2013 23:49:19 -0500
+
+zerovm-zmq (0.8.3) precise; urgency=low
+
+  [ bortoq ]
+  * makefile changes
+  * #92
+  * #79 nacl errno.h and mman.h removed. #92 affected code refactored
+  * #79 #92 particular headers refactored/moved/removed
+  * #79 nacl_base.h pruned
+  * #79 src/include revised and cleaned #92 refactoring has been done
+  * #79 tiny nacl_time_types.h removed, refactoring done
+  * fix
+  * #79 data execution prevention test gathered in one file
+  * #79 platform_init.*, nrd_all_modules.* and nacl_all_modules.* were removed. nacl_syscalls.h added
+  * changes in log
+  * logs updated. fixed small bug in finalizer
+  * test fixed
+
+  [ YaroslavLitvinov ]
+  * ifdef USER_SIDE added
+
+  [ bortoq ]
+  * #119. readme fixes
+  * #119 readme fix
+  * preliminary changes in the project #1
+  * all functional tests grouped into one bunch. can be run via ftests.sh
+  * #124 added
+  * #103 with functional test
+  * small memory leak fix
+  * memory allocation completely replaced with glib functions (with fail instead of NULL). so if zerovm exits with signal 5 there is not enough memory. tests fixed
+  * #99 fixed
+  * free() changed to glib g_free()
+  * makefile "zerovm" fixed. further portability work.
+  * #125 #79 debug timing replaced with glib functions, perf_counter/ removed
+  * #79 #92 the rest of nacl memory manager removed (dynamic arrays, sel_mem, refcounters, desc..). tests updated/removed
+  * #79 #92 nacl time service removed. small fixes
+  * #92 src/ re-factored. the new folders structure (see issue comment)
+  * #79 #92 openssl replaced with glib. etag logic became more simple. code size reduced
+  * etag switched from md5 to sha1
+  * #92 prefetch split into prefetch itself and name service
+  * copyrights updated
+  * #92 small fixes
+
+  [ dmitri bortoq ]
+  * Update doc/how to get validator.txt
+  * Update doc/how to get validator.txt
+
+  [ bortoq ]
+  * #92 added lib/bin/ncval and lib/bin/ncval_stubout. these two are validator and patcher adapted for zerovm needs. functional test makefiles changed to conform a new utility (the binpatch replacement)
+  * zerovm readme updated
+  * warning fixed
+  * doc/ updated. NexeMax removed from tests and demo
+  * further doc/ editions
+  * small compatibility fix
+  * rdtsc code removed (was disabled)
+  * #119
+  * #92 trap logs updated
+  * #119 #92
+  * #92 validator states changed. now 0 means ok, 1 - failed, 2 - other error
+  * #92 errno code changed to more appropriate
+  * #92 small nacl syscall get_tls fix
+  * #119
+  * #119
+  * #128 fixed. also if channels initialized only partly finalizing will run properly
+  * #129 fixed
+  * #92
+  * #92
+  * #92
+  * #117 functional/demo/copy added for pipes (can be used as a generic test)
+  * #92
+  * #92
+  * #92
+  * #133 fixed
+  * #133 finally fixed
+  * #92 removed extra libs makefile dependencies. accounted moved forward to nexe execution
+  * #92
+
+  [ Constantine Peresypkin ]
+  * doc fixes
+
+  [ bortoq ]
+  * #136 try 1
+  * #136 try 2
+  * version change
+  * #137 fixed
+  * #92 tiny change in the trap errno code
+  * #138
+  * #92
+  * #127 1st release of the new api
+  * #140 1st iterarion
+  * #139 fixed
+  * #141 partial fix. the problem should be solved in principle
+
+  [ Constantine Peresypkin ]
+  * documentation changes
+
+  [ bortoq ]
+  * #119
+  * functional tests ported to new zvm toolchain
+  * ranro test fix
+  * zerovm api now builds using zerovm toolchain
+  * other demo fixed
+  * yet another sample ported to a new toolchain
+  * demo/dump enhanced
+  * a new compilation switch added: DISABLE_NACL_SYSCALLS. fixed evil bug in the trusted/untrusted context switcher, now the stack is always aligned to 16
+  * #143
+  * #144 fixed. #145 #146 #147. environment tests removed. functional demos added
+  * ported to zvmlib
+  * #147 zvmlib updated, tests updated too. linker script updated for #148
+  * needless files removed from the project
+  * #152 done. #146 building switch added NOSTDLIB (and this is default): build without std libs. so the tests doesn't use even a single line from glibc
+  * yet another libzvm version. tests fixes
+  * new demo: lz4 fast compressor ported to zvm
+  * #149 done with some simple refactoring
+  * #79 dynamic text, shared memory and junk removed
+  * #79 #92 also 6 extra signals were added to catch and process.
+  * #153 done. #119 updated
+  * further command line processing enhancements
+  * #92 nap partially unloaded
+  * #92 another field extracted from nap. also signal stack added (todo removed)
+  * #134 done
+  * #134 security issue fixed
+  * #100 syscallback removed. #92 straying manifest variables put in place. junk removed
+  * #79 junk removed
+  * #156 fixed
+  * #157 done. #92
+  * /demo/dump fixed
+  * #158 fixed. also issue with read memory permission fixed
+  * #158 finally fixed. yet api test revived
+  * #100 user_exit removed. minor changes. demo/calloc reworked
+  * #92
+  * #92 #79 tiny fixes
+  * #79 #92
+  * #79
+  * #92
+  * #92 #159 fixed with (3) samples and tests corrected
+  * #160 fixed
+  * #142 fixed
+  * #102 small fix
+  * #92
+  * #102 security tests updated (1 added)
+  * #148 tests/functional/demo/debug added
+  * #148
+  * fixed small issue with help screen. now zerovm always shows help if invalid command line specified
+  * #119 all documents revised (some removed)
+  * #92 debug junk removed. one function changed place and became static
+  * version updated
+  * #102 netcopy test improved
+  * cosmetic changes
+  * #102 security test updated
+  * #161 fixed
+  * #162 done
+  * #142 fixed. syslogs added. max url length reduced
+  * #163 done
+  * #164 truncating of not regular files disabled
+  * #164 "execute" right removed from files created for w/o channels
+  * #164 zvmlib fix
+  * #165 almost done. still need installer for libvalidator and zvm.h update
+  * #164 #165
+
+  [ Constantine Peresypkin ]
+  * install target and MAkefile changes
+
+  [ bortoq ]
+  * #164 zerovm code changed to gnu89 compliant
+
+  [ Constantine Peresypkin ]
+  * api location redone
+  * ZVM_PREFIX added
+
+ -- Constantine Peresypkin <constantine@litestack.com>  Thu, 21 Mar 2013 12:23:55 -0500
+
+zerovm-zmq (0.8.2) precise; urgency=low
+
+  [ Constantine Peresypkin ]
+  * fixed cpp flugs in Makefile
+
+  [ bortoq ]
+  * makefile changes
+  * #92
+  * #79 nacl errno.h and mman.h removed. #92 affected code refactored
+  * #79 #92 particular headers refactored/moved/removed
+  * #79 nacl_base.h pruned
+  * #79 src/include revised and cleaned #92 refactoring has been done
+  * #79 tiny nacl_time_types.h removed, refactoring done
+  * fix
+  * #79 data execution prevention test gathered in one file
+  * #79 platform_init.*, nrd_all_modules.* and nacl_all_modules.* were removed. nacl_syscalls.h added
+  * changes in log
+  * logs updated. fixed small bug in finalizer
+  * test fixed
+
+  [ YaroslavLitvinov ]
+  * ifdef USER_SIDE added
+
+  [ Constantine Peresypkin ]
+  * release version 0.8.1
+  * author fix
+
+ -- Constantine Peresypkin <constantine@litestack.com>  Mon, 12 Nov 2012 00:10:36 +0200
+
+zerovm-zmq (0.8.1) precise; urgency=low
+
+  [ Constantine Peresypkin ]
+  * removed libzrt references
+  * removed zvm api reference
+
+  [ bortoq ]
+  * renamed manifest keyword from "NameService" to "NameServer". samples fixed. "samples/net" restored
+
+  [ Constantine Peresypkin ]
+  * makefile changes, global env variables introduced
+  * new templates for manifest files
+
+  [ bortoq ]
+  * zerovm log fixed
+  * zrt completely removed from the project. fixes in tests
+  * #92
+  * #92 preliminary restructure
+
+  [ Constantine Peresypkin ]
+  * added "dist" make target to build release version
+
+ -- Constantine Peresypkin <constantine@litestack.com>  Wed, 31 Oct 2012 23:16:13 +0200
+
+zerovm-zmq (0.8) precise; urgency=low
+
+  [ bortoq ]
+  * issues: #71 #72 #73 #74
+  * the channels eof engine changed #75
+  * issues #68 and #73 fix. net channels closing procedure updated.
+  * net channels: multi-part messages replaced with multiple messages. "debug" channel excluded from the overall etag
+  * issue #64. net reader/writer rewritten. changes in channel descriptor
+  * a new sample added. small fix in zvm api
+  * #76
+  * #77, part 1. bugfixes.
+  * #77 part 2.
+  * #77 final part 3. the issue should be fixed now
+  * etag bugfix (invalid assertion)
+  * #78 fixed
+  * #79 m5 removed
+  * #67 (2. os memory allocation randomization) workaround
+  * minor changes. nacl desc test disabled
+  * #80: cpu detection engine replaced with a simpler version. samples partially fixed/removed. #79: 3 file removed from the project
+  * #9, #57: a new big folder added to project: "src/tests". it will contain all zvm test. "samples/" moved to "src/tests/junk" an will be removed soon. minor changes in the code.
+  * some includes revised. #9: api test updated
+  * etag updated to EVP interface. also tiny changes were made in channels
+  * bugfix
+  * help screen updated, build info added. small re-factoring in etag
+  * #9: api tests complete
+  * fix in etag usage
+
+  [ YaroslavLitvinov ]
+  * sample represents glibc function substitution and related problem that does not catch NULL pointer
+
+  [ bortoq ]
+  * ssl evp changed to a new version (*_ex)
+  * help screen fixed
+  * #81
+  * #9 cdr channel test added. #85 fixed
+  * #57: the cdr test extended
+  * #83 channels closing removed
+  * #82. sha1 replaced with md5
+  * #57 random read only channels test added. some tests/junk removed. issue in channels accounting fixed. small issue with nap etag initialization order fixed
+
+  [ YaroslavLitvinov ]
+  * sample reproduces mismatch of heap & stack
+
+  [ bortoq ]
+  * #57 random write only channels test added. the logic of w/o channels fixed. now it is impossible to write behind the PutSizeLimit if the channel doesn't allowed to read
+  * #57 sequential read only channels functional test added
+  * #57 sequential write only channels functional test
+  * #57 netcopy ported to functional test
+  * #9 "environment" example added to functional/demo. some junk/ (re)moved
+  * #86 fixed. changed calculation of user heap size. now it is aligned to the page boundary
+  * tiny fixes before the trusted memory manager removal
+  * #87: thunk related changes
+  * #87: nacl memory manager removal (partly). #87: nacl syscalls mmap, munmap - removed, setbreak - rewritten. zvm api changed. zvm api test fixed
+  * junk removed
+  * #79: *effector* removed
+  * #79 shared memory for dynamic text removed. #79 part of junk removed
+  * #79 imc ripped. #79 nacl_desc_base.* pruned
+  * #79 imc/ completely removed
+  * #79 nacl_ref_count.* pruned. #79 nacl_find_addrsp.c removed
+  * #79 stray test removed. #79 other parts of shared memory code removed. #79 nacl_host_desc.c removed. a lot of code cleaning/removal
+  * #79 useless header removed. #79 dyn_array.* pruned #79 cleaning
+  * #79 further fixes and deletions
+  * #79 the extra memory manager code removed. useless file removed
+  * #9 a new test added functional/memory. also demonstrates the new untrusted memory manager usage. #9 all unit tests moved to own folder tests/unit. #9 part of tests/junk removed
+  * #88 done. #79 some headers from include/ were cleaned out
+  * #88 all /zerovm/src/tests moved to /zerovm/tests. "zerovm/test" removed
+  * #89 fixed. #9 functional test added. #90 done
+  * #9 charo channel extended. #75 eof added for all channels
+  * #9 accounting test added
+  * 91: accounting refactored and disabled until cgroups configuration complete
+  * #92 preliminary commit
+  * #93 premature version. #92 6 files removed
+  * #93 #92
+  * #91 accounting files were missed. fixed #92
+  * #79 #92 #69. a new demo added: user memory dump
+  * #9 a new functional test added. demo fixed. junk removed
+  * #92 #95 memory map prints updated. small fixes in log engine and tests
+  * #92, #95 manifest fully updated with a new log system. #92 tests/junk/signal removed
+  * #79 fault injection removed
+  * #98 fixed with snprintf (which will demand attention later since the function is not part of c89)
+  * #92 #95 all logs revised, NaClLog completely replaced
+  * #94
+  * #112 fixed. test updated
+  * small fix in makefile
+  * #79 removed 2 variables from nap. #92 minor changes. #115 "rdtsc through signal" added and disabled
+  * #114 exit state message engine done
+  * #116 NexeMax removed
+  * #79 part of gio removed
+  * #114 removed. #79, #92 useless code removed, part of code rewritten
+  * #79 nacl_host_desc_types.h, nacl_host_desc_common.c, nacl_host_desc.h removed
+  * #118 temporary fix.
+  * #97 fixed
+  * small fixes here and there
+  * #121 done. security tests added. all other tests revised. small changes in zvm
+  * #120 added user time and system time
+  * #120 fixed
+  * #79 removed junk from include/
+
+  [ Constantine Peresypkin ]
+  * added libzvm.a artefact
+
+  [ bortoq ]
+  * #109 done. cdr test updated
+
+  [ Constantine Peresypkin ]
+
+ -- Constantine Peresypkin <constantine@litestack.com>  Sat, 27 Oct 2012 23:32:13 +0200
+
+zerovm-zmq (0.7) precise; urgency=low
+
+  [ bortoq ]
+  * a new engine for the network channels. tabs in sources were eliminated
+  * old network engine removed. sqlite removed. changes in zvm api, new reduced size data structures. more strict channel abstraction. extra access types were removed. the samples fixed. small fixes in zrt.
+  * samples added
+  * zrt debug prints added. eof added to channels. zvm_errno added to zvm api. samples fixed. small changes in channels design
+  * fix in zvm read/write
+  * fixed crash on network channels finalization
+  * removed all channel types not supported by design
+  * samples updated. zerovm state updated with a new state "nexe didn't start"
+  * commit before validator removal
+  * bugfix in zvm api. debug print added to zrt
+  * a new "cdr channel" sample added
+
+  [ YaroslavLitvinov ]
+  * const pointer for buffer zvm_pwrite
+
+  [ bortoq ]
+  * a new manifest keyword added: NodeName available to user as argv[0]
+  * read/write ret code fixed. "samples/net" fixed too
+  * premature channel close engine
+
+  [ YaroslavLitvinov ]
+  * zrt_read return value fix reqrep fixes for new channels
+  * reqrep script
+
+  [ bortoq ]
+  * intermediate version. contain bugs in network channels. name service added
+  * fixed the hashtable allocation/deallocation
+  * "samples/sort" fixed. small changes in log
+  * warnings fixed
+  * manifest version changed
+  * the network channels port issue fixed. the "bind" network channels host issue fixed. samples/ fixed to a new manifest version. some logs added
+  * tiny fix in the network channels. fixes in samples
+
+  [ Constantine Peresypkin ]
+  * correct glib-2.0 path search
+
+  [ bortoq ]
+  * network eof temporary disabled. max channels number changed
+  * a new log verbosity level added: LOG_SUICIDE. insane logging should use it to prevent overflow of syslog. the maximum recommended verbosity is LOG_DEBUG: -v4
+  * preliminary network channels release
+
+  [ Constantine Peresypkin ]
+  * make install added
+
+  [ bortoq ]
+  * a new sample added
+  * "samples/eof" trash removed.
+  * another try to remove trash from "samples/eof"
+  * restored the missed function in the "preload.c"
+  * 2nd try to restore network channels
+  * the project of the manual added to "doc/"
+  * the zvm read/write verbosity level fixed
+  * small fix
+
+  [ Constantine Peresypkin ]
+  * net sample fixes
+
+  [ bortoq ]
+  * timeout engine fixed. "defense in depth" added
+  * samples partially fixed
+  * "examples/sort" fixed for a new manifest
+  * internal validator replaced by external.
+  * premature accounting (internal and external via cgroups)
+  * further validator pruning: removed validator folders. zerovm makefile reduced
+  * premature code pruning
+  * further code pruning
+  * pruning: useless headers removed
+  * condvars and mutexes removed
+  * help screen redesigned and restored
+  * api doc
+  * warnings fixed. small fixes in makefile
+  * validator run routine updated
+  * "/dev/null" issue fixed
+  * zerovm api document updated
+  * a new "samples/api_test" added. zvm api document updated
+  * massive changes in documentation. needs review
+  * zrt usage removed from "samples/api_test"
+  * todo, cleaning
+  * makefile pruned. unit tests partially restored. removed junk from gtest. small fixes
+  * changes in src/ folder structure. work on unit tests and code
+  * new version of makefile
+  * the manifest parser test updated
+  * zerovm errors header removed as useless
+  * docs updated. bug #64 fixed. tiny fixes in api/
+  * PutSizeLimit and GetSizeLimit now means the channel size and if channel has random access the offset cannot exceed the *SizeLimit
+  * information about #63 added to api.txt
+  * nameservice bugfix. try1
+  * issue #62 fix
+  * "samples/net" updated
+  * preliminary etag engine added (for channels).
+  * etag engine: memory chunks, a new switch added to command line -e
+  * bugfix in etag engine
+  * added node name and id logging
+  * log for closing channels added
+  * logs added/changed
+  * added etag control mechanism for network channels. now at the channel closing zerovm checks the given etag with own one
+  * small fixes in the etag engine
+  * further determinism testing. etag fixes. small fixes in elf loader
+  * a new document added
+
+  [ Constantine Peresypkin ]
+
+ -- Constantine Peresypkin <constantine@litestack.com>  Tue, 18 Sep 2012 20:23:11 +0300
+
+zerovm-zmq (0.6) precise; urgency=low
+
+  [ bortoq ]
+  * added: macro definition ZRT_LIB. if program uses zrt lib it should be specified in linker command line fix: zrt_read() zrt_write() small bug fixed
+  * fix: changed open mode for "input" and "log" streams. now it can be read
+  * added: examples/zrt/sort is an old example. now with zrt lib fix: zrt lib. when zerovm not using chunk memory allocation, mmap() munmap() and sysbrk() will translate call back to zerovm fix: declaration of the setup object (user manifest) was added to zvm.h
+  * add: new example in samples/zrt/time. test for zrt_gettimeofday() note: i found that current nacl sdk does not use clock(), so this function is zrt will be dummy.
+  * fix: zrt/samples/makefile added: new example samples/zrt/file_io - zrt_read(), zrt_write() demo added: new example samples/zrt/file_stat - zrt_fstat() demo
+  * updated: zerovm memory manager now can work with MemMax from manifest. it is possible to use less memory than 4gb. also zerovm will not use mmap/mprotect syscalls while user nexe is running, all memory will be allocated before nacl module start added: samples/zrt/malloc demo of the new memory manager fixed: cosmetic changes in zrt fixed: minor fixes in trap, samples
+  * added: new sample "zrt/strtol" fix: zrt library tls_get() bug and minor changes. debug prints were removed fix: removed a few useless fields from struct NaClApp fix: "syscallback" sample manifest fix: trap() minor fixes fix: cosmetic changes
+
+  [ YaroslavLitvinov ]
+  * initial commit: added zeromq networking, disort sample appropriate changes in zrt library
+
+  [ bortoq ]
+  * fix: "onering" and "zrt/sort" examples
+  * added: new sample "command line" fixed: comments, extra headers, unclean code e.t.c fixed: mutex issue (using real syscalls after main() start). fixed: XObjectMetaTag and ContentType now initializes properly added: zerovm api has static library now. user can use it instead of 3 object files
+
+  [ YaroslavLitvinov ]
+  * distributed sort sample, tested for non sse4.1 instruction set
+
+  [ bortoq ]
+  * fixed: zerovm's makefile will invoke api make (and make clean) fixed: mknexe.sh obsolette and removed from the project
+
+  [ YaroslavLitvinov ]
+  * networking support for distributed sort sample
+  * NETWORKING disable by default
+  * zmq.h include removed as raise error and unused for current build config
+  * added lib32z1 package to dependencies list (it was required on ubuntu 10)
+  * zvm network protocol implementation based on req-rep pattern
+  * zvm networking support. implementation of PUSH-PULL sockets was removed, currently only req-rep sockets are supported
+  * zvm network implementation files added
+  * distributed sort changes, due to new network architecture. only one-to one channels are supported, one to many and many to one pruned.
+  * disort short description added
+  * added installation steps for ZeroMQ and sqlite-autoconf
+  * simple network sample running only two nodes
+  * manifests for reqrep sample
+  * MERGE_ON_FLY added in defines.h. Now at receiving sorted chunks by destination nodes they are only merging instead of sorting as in past version.
+  * gmock1.6 & updated gtest
+  * updated zmq_netw, zvm_netw : added plaggable interface; zmq_netw : dyn_array used; zmq_netw, zvm_netw test coverage enhanced nacl_error_code.h/c added new error codes support gcov support added to Makefile
+  * log stub for zmq_netw, zvm_netw
+
+  [ bortoq ]
+  * add: net channels to main version fix: samples revised. old ones were removed, new ones updated fix: zerovm retcode. if ok its 0 now fix: massive manifest/ refactored fix: sel_main refactored add: utils/tools.h added. now zvm has a scrapyard fix: changes in manifest. manifest version changed. fix: api/ changes fix: a lot of small changes/fixes
+
+  [ YaroslavLitvinov ]
+  * bitonic sort supported for disort
+
+  [ bortoq ]
+  * fix: samples readme updated fix: SET_LIMIT macro updated fix: user custom attributes initialized properly fix: some defines moved to tools.h fix: changes in comments
+  * fix: zvm api cleaned fix: small fixes
+  * fix: documentation has been revised
+  * fix: changes in "doc/" add: "zrtlib.txt"
+
+  [ Camuel Gilyadov ]
+  * cleanup
+  * Update master
+
+  [ bortoq ]
+  * fix: samples makefiles chanegd for the new nacl sdk
+  * fix: missed header
+  * fix: api makefile for the new nacl sdk
+
+  [ Camuel Gilyadov ]
+  * Update master
+
+  [ bortoq ]
+  * fix: samples/strtol makefile
+
+  [ Camuel Gilyadov ]
+  * Update master
+  * Update master
+  * Update master
+  * Update master
+
+  [ YaroslavLitvinov ]
+  * samples added: sqlite3 readonly db sample added; reqrep network example added; disort.sh updated: enhanced usability;
+  * sqlite sample description added
+  * disort description improved
+  * reqrep, sqlite samples updated to pepper19
+  * lua-scripting sample added
+  * README: short description added for LUA sample
+
+  [ bortoq ]
+  * rem: blob loader disabled. blob engine is under construction
+  * fix: not deterministic allocation of dispatch_thunk
+
+  [ YaroslavLitvinov ]
+  * lua-scripting: pure output without an interpeter prompt
+
+  [ bortoq ]
+  * rem: secure random removed
+  * fix: zrt & zvm split into 2 proper parts. samples fixed.
+  * fix: sel_memory.c will fail if couldn't allocate memory by const address
+  * fix: useless code eliminated after "blob" removal
+  * fix: command line changed; signal handlers will be installed by default
+  * new channels design, new api, new manifest, user attributes as environment variables
+  * new design: custom user attributes replaced with environment. manifest updated. environment example added. "random" example added. doc/ updated
+  * small fixes in manifest, new channel engine, api
+  * debug print removed
+
+  [ Constantine Peresypkin ]
+  * documentation fixes
+
+  [ bortoq ]
+  * zvm log system patched to use syslog. zvm report changed (will be updated in doc/ soon). simple version open() added to zrt. zvm_errors.h added. part of samples fixed
+
+  [ YaroslavLitvinov ]
+  * reqrep represents a channels bug. run test.sh from reqrep directory
+
+  [ bortoq ]
+  * log updated. *printf/perror replaced with patched nacllog. cond_abort updated. small fixes in the code.
+  * further log changes. on exit/abort zerovm do finalizations(report, resources,..) main() re-factored. report creation use safe write instead of printf. environment variables checks removed from the project.
+  * report' fixes. changes in nap and system manifest.
+  * bug fix in user environment
+  * further signal handling fixes. samples fixes.
+  * lock problem demo
+  * user return code fixed
+  * useless sample removed. test disabled until makefile will be revised. added 2 samples to test signals handling and timeout
+
+  [ Constantine Peresypkin ]
+
+ -- Constantine Peresypkin <constantine@litestack.com>  Sun, 22 Jul 2012 22:27:09 +0300
+
+zerovm-zmq (0.5) precise; urgency=low
+
+  [ bortoq ]
+  * fixed: "unused variable" warnings
+  * update: samples/sort/ has been updated with makefile. manifests has been changed accordingly added: intermediate readme.txt to samples/syscallback added: makefile to samples/direct_syscalls
+  * added: new document "demo (part of README).txt". contain information about how to compile and run examples
+  * fixed: junk removed. new document (demo) moved to proper place
+
+  [ Nick Markwell ]
+  * Add .gitignore
+
+  [ bortoq ]
+  * added: zrt library. very first simple version. very buggy yet. added: nacl validator updated from the last google release added: "samples/zrt" - zrt lib demo added: feature "MemMax". manifest can specify amount of available memory fixed: some minor issues in zerovm code
+  * fixed: warning in src/manifest/manifest_setup_test.cc (var type has changed)
+
+  [ Constantine Peresypkin ]
+
+ -- Constantine Peresypkin <constantine@litestack.com>  Sat, 12 May 2012 13:08:08 +0700
+
+zerovm-zmq (0.4) precise; urgency=low
+
+  [ bortoq ]
+  * syscall hook minor changes bugfix: nexe ret_code
+  * minor changes in manifest_parser: 2 functions were removed, functions names changes to c naming style convention, removed some includes
+  * - reduced codebase. removed a lot of code (threading, nice, syscalls, dead code e.t.c) - #includes revised for most of .c files - removed a lot of conditional compilation code
+  * another prunning iteration. zerovm files reduced in size and in amount
+  * fixed: evil bug in trap() fixed: main() report part fixed: all samples especially in the sort folder fixed: zvm.c log_msg() now work as meant, log_set is added()
+  * README renamed to CHANGELOG new README created
+
+  [ Camuel Gilyadov ]
+  * Update README
+
+  [ bortoq ]
+  * bugfix: empty command line caused segmentation fault
+
+  [ Camuel Gilyadov ]
+  * Update README
+
+  [ bortoq ]
+  * intermediate version - functional security tests added (can be found in "samples/security") - x264 compilation script added to samples - some samples were updated - "manifest/" unit test added - small readme added to samples folder fixed: report bug in sel_main fixed: small command line bug in sel_main fixed: other small fixes todo: finish platform qualify unit test todo: create makefiles for every sample/test inside the "samples" folder todo: add "trap" and "syscallback" documentation
+  * - added printing of syscall number to log. verbosity 4.
+  * fix: trap exit() added to user api fix: small fixes in userlog_test example new: zrt mock added. this is a 1st try to make a user side library. the sample is pretty rough and will be updated in the nearest future. however it already contain model of usage syscallback to intercept nacl syscalls. also it shows how to do selective syscalls interception. note: assembly source contain nacl pseudo instructions. samples/syscallback/ also contain build script "mknexe.sh", it will be replaced asap with makefile.
+  * update: syscallback sample has been cleaned, updated with a new cases, also small fix in syscall_manager.S has been made. the comments has been reworked.
+  * - documentation added. documentation folder created: "doc/" - small update in code comments
+  * fixed: samples/syscallback/syscallback_test.c
+  * updated: doc/pagination.txt
+  * fixed: useless functions definition removed from manifest_parser.h
+
+  [ YaroslavLitvinov ]
+  * fixes: Makefile - creating dirs obj,test; nacl_host_desc.c , ncal_host_dir.c - added include <sys/stat.h> to fix undefined reference to S_ISREG, S_ISDIR; sel_main.c - fixed segmentation fault error Added Makefiles into /api, /samples/hello, /samples/syscallback ;
+  * nacl_log_test.cc : unit-tests added for logging module; Makefile : Log tests build added into; nacl_log.c unused code removed inside NaClLogDefaultLogVerbosity, NaClLogDefaultLogVerbosity;
+
+  [ bortoq ]
+  * added: makefiles to samples fixed: some samples fixed: some samples/security
+  * update: new document added to doc/ zvm_security.txt
+
+  [ Constantine Peresypkin ]
+
+ -- Constantine Peresypkin <constantine@litestack.com>  Sat, 10 Mar 2012 15:57:27 +0700
+
+zerovm-zmq (0.3) precise; urgency=low
+
+  [ bortoq ]
+  * allow user to overload all syscalls except exit and onering (#30 and #3)   design:::::::     main concept is to intercept call from nexe and reroute it to nexe allowing user to handle all syscalls except   onering and exit. interceprion should be made between trampoline and NaClSyscallCSegHook(). most likely it would be   "NaClSyscallSeg" from nacl_syscall_64.S   engine description:::::::     when syscall detected check callstack and read syscall id. if it is not exit/onering and setuplist object contain   syscallback (address provided by user to handle syscalls) - jump to syscallback. user must take care about stack.   security::::::::     main concerns are about syscallback. before adding it to setuplist zvm should very carefully check it for alignement,   target address must be signed "executable", target address must have good enough gap to its "right" border.
+  * samples/syscallback test added
+  * fixes #003
+  * + todo: exit() function added. it can be called via trap() + fix: it is possible now to intercept exit(). interceptor code in "nacl_syscall_64.S" has been changed + fix: refactor ResumeCpuClock()/PauseCpuClock(). to avoid usage not initialized manifest accepted parameter changed from   "struct SetupList*" to "struct NaClApp*" + fix: accounting only work when manifest object is initialized. since zvm still have command string initialization (which   may or may not set manifest) we cannot just use accounting without checks. check for NULL is added. accessor functions   were added for each system/channel counter (can be found in "manifest_setup.c"/"manifest_setup.h") + fix: if nexe file limit was not set zvm exited with error message "nexe file is greater then alowed". now if limit isn't set   zvm skips nexe size check. + fix: if UserLog file isn't exist or has size less than set in given manifest, log will be trimmed to 1 byte or current size   fixed. + test: write test (and wrapper) for user_log engine
+
+  [ Constantine Peresypkin ]
+  * re-deleted some OSX and Windows references
+  * fixed manifest build in autotools
+  * manifest_parser_test linker error solved
+
+  [ bortoq ]
+  * - 2 folder has been removed from the "samples" directory - samples (except sort) were refined - zvm api files are renamed - minor changes to sel_main.c/.. just "zvm api" header renaming - zvm_write renamed to zvm_pwrite - nexe build script were revised - other minor changes
+  * merge
+  * - tiny bugfix in #if check
+  * three obsolete zmq_* files has been removed. makefile changed. minor changes in sources used zmq_* header.
+
+  [ camuel ]
+  * build scripts fixes
+
+  [ bortoq ]
+  * - trap is now interrupt number 0 (instead 3) - nacl_syscall_64.S size was reduced
+  * not fully functional version! intermediate version! almost all syscalls are not working. the main change of this version is context switching by jump (no threads)
+
+  [ Constantine Peresypkin ]
+
+ -- Constantine Peresypkin <constantine@litestack.com>  Sun, 25 Dec 2011 17:25:32 +0700
+
+zerovm-zmq (0.2) precise; urgency=low
+
+  [ camuel ]
+  * 2011-09-29 linux, x86, 64 working_sandbox_ver_2.7z version without syscalls --------------------------------------------------------------------------------     2nd version of sandbox. some of syscalls still left untouched because they work in process of load/exit nexe.     without them (or part of them) nexe cannot be loaded and cannot be run (for example we will always get     "segmentation fault" w/o exit syscall)
+  * working_sandbox_ver_3 2011-00-30 linux, x86, 64 working_sandbox_ver_3.7z version without syscalls. intermediate version. reduced file list -------------------------------------------------------------------------------- 	the only difference between this and previous versions is the smaller size of source distribution. 	i managed to remove some needless header files and "sel_main_chrome.c". 	some folders were removed completely with its content: valgrind (since it only needs 	for user nexes), toolchain (same reason). scattered files for windows/osx platforms and arm were removed as well.
+  * amend to ver 3
+  * ver4 2011-10-8 linux, x86, 64 working_sandbox_ver_4.7z version with optional syscalls and unit tests -------------------------------------------------------------------------------- 	two main features now are available: 	- new option "-Y" - allow syscalls (by default syscalls restricted to 	SysbrkDecoder, ExitDecoder, Thread_ExitDecoder, 	Tls_InitDecoder, Tls_GetDecoder and null) 	- unit tests. five binaries with several tests each. to extract appropriate test the logger was used (see "3. unittests.txt")
+  * ver4.1 2011-10-10
+  * ver 4.2 2011-10-20 linux, x86, 64 working_sandbox_ver_4.2.7z command line option "-Y" redesigned. added a new restricted syscalls behavior --------------------------------------------------------------------------------     the "-Y" switch now have options: [0,1,2]. by default "-Y0" assumed even when not specified.     - 0: abort when restricted syscall encountred     - 1: silently ignore restricted syscalls     - 2: allow all syscalls
+  * ver5 2011-10-28 linux, x86, 64 working_sandbox_ver_5.7z -------------------------------------------------------------------------------- 	despite the version number this is an intermediate version. the sandbox is prepared to integrate zmq. 	mock functions implemented. now the file names with "http://" have special meaning - they are a channels. 	proposed user API would be normal "file access" with a special names where the user program can get/set 	the data using standart libc functions (like fread(), fwrite() e.t.c.)
+  * ver5.2 2011-11-8 linux, x86, 64 working_sandbox_ver_5.2.7z added manifest, command line switches were revised -------------------------------------------------------------------------------- 	manifest is the file provided in the command line with switch "-M". manifest can contain nexe file name, log file name, 	nexe comamnd line (can contain up to 128 space delimited options). also manifest can contain any (key = value) pairs, for 	example it can be mapped file mapping (will be available in the next release). any switches cannot be duplicated with sel_ldr 	command line.
+  * ver 5.3 2011-11-9 linux, x86, 64 working_sandbox_ver_5.3.7z makefile instead of bash build script (big thanks goes to camuel and oleg) -------------------------------------------------------------------------------- 	fixes to get rid of compilation warnings: 		nacl_desc_base.c -- small change in define to avoid compiler warnings (marked with "d'b" comment) 		C:\1\trusted\validator\x86\nc_inst_bytes_tests.cc -- small syntax fixes 		C:\1\trusted\validator\x86\nc_remaining_memory_tests.cc -- small syntax fixes 		C:\1\trusted\validator\x86\halt_trim_tests.cc -- small syntax fixes 		C:\1\trusted\validator\x86\decoder\nc_inst_state_tests.cc -- small syntax fixes 		C:\1\trusted\validator\x86\decoder\gen\ncop_expr_node_kind.h -- small syntax fixes 		C:\1\trusted\validator\x86\decoder\gen\ncop_expr_node_flag.h -- small syntax fixes 		C:\1\trusted\validator\x86\decoder\gen\ncopcode_operand_flag.h -- small syntax fixes 		C:\1\trusted\validator\x86\decoder\gen\ncopcode_operand_kind.h -- small syntax fixes 		C:\1\trusted\validator\x86\decoder\gen\ncopcode_opcode_flags.h -- small syntax fixes 		C:\1\trusted\validator\x86\decoder\gen\ncopcode_insts.h -- small syntax fixes 		C:\1\trusted\validator\x86\decoder\gen\ncopcode_prefix.h -- small syntax fixes 		C:\1\shared\utils\debugging.h -- small syntax fixes
+  * ver5.6  2011-11-19
+  * ver6 2011-11-23 linux, x86, 64 working_sandbox_ver_6.7z restructurization, further code ripping, patches, refactoring --------------------------------------------------------------------------------   code base has been reduced   several components has been removed. this is the short list of changes:   trusted/handle_pass/ldr_handle.h -- removed with its folder "handle_pass"   trusted/desc/pepper/nacl_pepper.c --removed   trusted/desc/pepper/nacl_pepper.h -- removed   trusted/desc/nacl_desc_quota.c -- removed   trusted/desc/nacl_desc_quota.h -- removed   trusted/service_runtime/win/exception_patch/ntdll_patch.h - removed   trusted/service_runtime/generic_container/container.c - removed   trusted/service_runtime/generic_container/container.h - removed   include/win/mman.h -- removed   trusted/debug_stub/ -- removed   service_runtime/nacl_debug_init.h --removed   service_runtime/nacl_oop_debugger_hooks.h --removed   service_runtime/linux/nacl_oop_debugger_hooks.c -- removed   trusted/gdb_rsp/ -- removed   shared/srpc/ -- removed   trusted/service_runtime/nacl_kern_services.c -- removed   trusted/manifest_name_service_proxy/ -- removed   trusted/service_runtime/name_service/ -- removed   valgrind support has been removed together with srpc.   ...   ... removed a lot of files and folders   ... a lot of fixes has been made to the code
+  * deleted eclipse project files that I pushed by mistake
+
+  [ kit ]
+  * preliminary autotools chain
+
+  [ bortoq ]
+  * version 7 (intermediate)
+
+  [ Constantine Peresypkin ]
+
+ -- Constantine Peresypkin <constantine@litestack.com>  Sat, 10 Dec 2011 04:25:37 +0700
+
+zerovm-zmq (0.1) precise; urgency=low
+
+  * Initial release 
+
+ -- Constantine Peresypkin <constantine@litestack.com>  Sat, 26 Nov 2011 01:00:29 +0700
