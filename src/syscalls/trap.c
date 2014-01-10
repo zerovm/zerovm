@@ -21,41 +21,21 @@
 #include "src/platform/sel_memory.h"
 #include "src/main/setup.h"
 #include "src/syscalls/daemon.h"
+#include "src/main/ztrace.h"
 
+/*
+ * =======================================================================
+ * PAYPAL VERSION (with sockets)
+ * =======================================================================
+ * WARNING: "zerovm sockets" are potential security danger. better way to do
+ * "sockets" is support from untrusted side (zrt) and external trusted driver
+ * that can be connected via zerovm channel
+ */
+#ifdef ZVM_SOCKETS
 #include <sys/socket.h>
 #include <netdb.h>
-#include <sys/poll.h> // ### nfds_t
-
-static int idx[] = {TrapRead, TrapWrite, TrapJail, TrapUnjail, TrapExit, TrapFork
-#ifdef ZVM_SOCKETS
-    , TrapSocket, TrapBind, TrapConnect, TrapAccept, TrapListen, TrapRecv, TrapRecvfrom,
-    TrapRecvmsg, TrapSend, TrapSendto, TrapSendmsg, TrapGetsockopt, TrapSetsockopt, TrapSelect,
-    TrapPoll, TrapGethostbyname, TrapGethostbyaddr, TrapClose
+#include <sys/poll.h>
 #endif
-    };
-static char *function[] =
-  {"TrapRead", "TrapWrite", "TrapJail", "TrapUnjail", "TrapExit", "TrapFork",
-#ifdef ZVM_SOCKETS
-      "TrapSocket", "TrapBind", "TrapConnect", "TrapAccept", "TrapListen", "TrapRecv",
-      "TrapRecvfrom", "TrapRecvmsg", "TrapSend", "TrapSendto", "TrapSendmsg", "TrapGetsockopt",
-      "TrapSetsockopt", "TrapSelect", "TrapPoll", "TrapGethostbyname", "TrapGethostbyaddr", "TrapClose",
-#endif
-      "n/a"};
-
-static char *fmt[] = {
-    "%s(%d, %p, %d, %ld) = %d",
-    "%s(%d, %p, %d, %ld) = %d",
-    "%s(%p, %d) = %d",
-    "%s(%p, %d) = %d",
-    "%s(%d) = %d",
-    "%s()"
-    /* TODO(d'b): add arguments */
-#ifdef ZVM_SOCKETS
-    , "%s()", "%s()", "%s()", "%s()", "%s()", "%s()", "%s()", "%s()", "%s()", "%s()",
-    "%s()", "%s()", "%s()", "%s()", "%s()", "%s()", "%s()", "%s()"
-#endif
-};
-
 
 /*
  * check "prot" access for user area (start, size)
@@ -244,30 +224,6 @@ static int32_t ZVMUnjailHandle(struct NaClApp *nap, uintptr_t addr, int32_t size
 }
 #undef JAIL_CHECK
 
-/* return index of function id in "function" */
-static int FunctionIndexById(int id)
-{
-  int i;
-
-  for(i = 0; i < ARRAY_SIZE(idx); ++i)
-    if(idx[i] == id) return i;
-  return ARRAY_SIZE(idx);
-}
-
-static void SyscallZTrace(int i, ...)
-{
-  char *msg;
-  va_list ap;
-//  char *fmt[] = {"%s(%d, %p, %d, %ld) = %d", "%s(%d, %p, %d, %ld) = %d",
-//      "%s(%p, %d) = %d", "%s(%p, %d) = %d", "%s(%d) = %d", "%s()"};
-
-  va_start(ap, i);
-  msg = g_strdup_vprintf(fmt[i], ap);
-  va_end(ap);
-  ZTrace(msg);
-  g_free(msg);
-}
-
 /* user exit. session is finished */
 static void ZVMExitHandle(struct NaClApp *nap, int32_t code)
 {
@@ -277,14 +233,10 @@ static void ZVMExitHandle(struct NaClApp *nap, int32_t code)
   if(GetExitCode() == 0)
     SetExitState(OK_STATE);
   ZLOGS(LOG_DEBUG, "SESSION %d RETURNED %d", nap->manifest->node, code);
-  SyscallZTrace(4, function[4], code);
   ReportDtor(0);
 }
 
 /*
- * =======================================================================
- * PAYPAL VERSION (with sockets)
- * =======================================================================
  * note: variadic macros does not comply to c89 standard, but since this
  *   code is only demonstrates possibility to work with sockets it is ok
  */
@@ -315,7 +267,7 @@ static void ZVMExitHandle(struct NaClApp *nap, int32_t code)
 #define APPLY_7(m, x1, x2, x3, x4, x5, x6, x7) m(x1), m(x2), m(x3), m(x4), m(x5), m(x6), m(x7)
 #define APPLY_8(m, x1, x2, x3, x4, x5, x6, x7, x8) m(x1), m(x2), m(x3), m(x4), m(x5), m(x6), m(x7), m(x8)
 
-/* functions macro generator */
+/* function template #1 */
 #define FUNC(name, ...) \
   int ZVM_ ## name(APPLY(PAIR, __VA_ARGS__)) \
   { \
@@ -323,7 +275,7 @@ static void ZVMExitHandle(struct NaClApp *nap, int32_t code)
     return result == -1 ? -errno : result; \
   }
 
-/* functions macro generator */
+/* function template #2 */
 #define FUNC2(name, retype, ...) \
   retype ZVM_ ## name(APPLY(PAIR, __VA_ARGS__)) \
   { \
@@ -355,7 +307,6 @@ int32_t TrapHandler(struct NaClApp *nap, uint32_t args)
 {
   uint64_t *sargs;
   int retcode = 0;
-  int i;
 
   assert(nap != NULL);
   assert(nap->manifest != NULL);
@@ -365,20 +316,20 @@ int32_t TrapHandler(struct NaClApp *nap, uint32_t args)
    * note: cannot set "trap error"
    */
   sargs = (uint64_t*)NaClUserToSys(nap, (uintptr_t)args);
-  i = FunctionIndexById(*sargs);
-  ZLOGS(LOG_DEBUG, "%s called", function[i]);
+  ZLOGS(LOG_DEBUG, "%s called", FunctionName(*sargs));
   ZTrace("untrusted code");
 
   switch(*sargs)
   {
     case TrapFork:
-      if(Daemon(nap) == 0)
-      {
-        SyscallZTrace(5, function[5]);
-        ZVMExitHandle(nap, 0);
-      }
+      retcode = Daemon(nap);
+      if(retcode) break;
+      SyscallZTrace(*sargs, 0);
+      SyscallZTrace(TrapExit, 0);
+      ZVMExitHandle(nap, 0);
       break;
     case TrapExit:
+      SyscallZTrace(*sargs, sargs[2]);
       ZVMExitHandle(nap, (int32_t)sargs[2]);
       break;
     case TrapRead:
@@ -484,8 +435,7 @@ int32_t TrapHandler(struct NaClApp *nap, uint32_t args)
 
   /* report, ztrace and return */
   FastReport();
-  ZLOGS(LOG_DEBUG, "%s returned %d", function[i], retcode);
-
-    SyscallZTrace(i, function[i], sargs[2], sargs[3], sargs[4], sargs[5], retcode);
+  ZLOGS(LOG_DEBUG, "%s returned %d", FunctionName(*sargs), retcode);
+  SyscallZTrace(*sargs, retcode, sargs[2], sargs[3], sargs[4], sargs[5], sargs[6], sargs[7]);
   return retcode;
 }

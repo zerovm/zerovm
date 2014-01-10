@@ -24,6 +24,7 @@
 #include "src/platform/signal.h"
 #include "src/channels/channel.h"
 #include "src/syscalls/daemon.h"
+#include "src/main/ztrace.h"
 
 #define DAEMON_NAME "zvm."
 #define TASK_SIZE 0x10000 /* limited by protocol (server <-> zerovm ) */

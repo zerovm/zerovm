@@ -30,6 +30,7 @@
 #include "src/main/accounting.h"
 #include "src/main/tools.h"
 #include "src/channels/preload.h"
+#include "src/main/ztrace.h"
 
 #define BADCMDLINE(msg) \
   do { \

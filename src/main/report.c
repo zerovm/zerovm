@@ -22,6 +22,7 @@
 #include "src/main/accounting.h"
 #include "src/main/setup.h"
 #include "src/channels/channel.h"
+#include "src/main/ztrace.h"
 
 #define QUANT MICRO_PER_SEC
 
