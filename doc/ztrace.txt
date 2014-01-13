@@ -3,7 +3,7 @@ This document describes zerovm trace module
 
 zerovm have trap call tracing capability. it can be used with "-T" command line
 option: zerovm my.manifest -T/my/path/to/trace.txt. specified file should have
-absolute path. this feature should only be used for debugging.
+absolute path. this feature should only be used for debugging/profiling.
 
 following entities will be logged:
 - trap calls

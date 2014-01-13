@@ -25,19 +25,21 @@ static double ztrace_chrono = 0;
 
 static int idx[] = {TrapRead, TrapWrite, TrapJail, TrapUnjail, TrapExit, TrapFork
 #ifdef ZVM_SOCKETS
-    , TrapSocket, TrapBind, TrapConnect, TrapAccept, TrapListen, TrapRecv, TrapRecvfrom,
-    TrapRecvmsg, TrapSend, TrapSendto, TrapSendmsg, TrapGetsockopt, TrapSetsockopt, TrapSelect,
-    TrapPoll, TrapGethostbyname, TrapGethostbyaddr, TrapClose
+    , TrapSocket, TrapBind, TrapConnect, TrapAccept, TrapListen, TrapRecv,
+    TrapRecvfrom, TrapRecvmsg, TrapSend, TrapSendto, TrapSendmsg, TrapGetsockopt,
+    TrapSetsockopt, TrapSelect, TrapPoll, TrapGethostbyname, TrapGethostbyaddr,
+    TrapClose
 #endif
     };
 static char *function[] =
     {"TrapRead", "TrapWrite", "TrapJail", "TrapUnjail", "TrapExit", "TrapFork",
 #ifdef ZVM_SOCKETS
-    "TrapSocket", "TrapBind", "TrapConnect", "TrapAccept", "TrapListen", "TrapRecv",
-    "TrapRecvfrom", "TrapRecvmsg", "TrapSend", "TrapSendto", "TrapSendmsg", "TrapGetsockopt",
-    "TrapSetsockopt", "TrapSelect", "TrapPoll", "TrapGethostbyname", "TrapGethostbyaddr", "TrapClose",
+    "TrapSocket", "TrapBind", "TrapConnect", "TrapAccept", "TrapListen",
+    "TrapRecv", "TrapRecvfrom", "TrapRecvmsg", "TrapSend", "TrapSendto",
+    "TrapSendmsg", "TrapGetsockopt", "TrapSetsockopt", "TrapSelect", "TrapPoll",
+    "TrapGethostbyname", "TrapGethostbyaddr", "TrapClose",
 #endif
-      "n/a"};
+    "Invalid"};
 
 static char *fmt[] = {
     "%d, %p, %d, %ld", /* TrapRead */
@@ -65,7 +67,7 @@ static char *fmt[] = {
     "%p, %u, %ul", /* poll */
     "%s", /* gethostbyname */
     "%p, %u, %d", /* gethostbyaddr */
-    "%d)", /* close */
+    "%d", /* close */
 #endif
 };
 
@@ -156,7 +158,6 @@ void SyscallZTrace(int id, int retcode, ...)
   if(ztrace_name == NULL) return;
 
   va_start(ap, retcode);
-//  id = FunctionIdx(id);
   buf = g_strdup_vprintf(fmt[FunctionIdx(id)], ap);
 
 #ifdef ZVM_SOCKETS

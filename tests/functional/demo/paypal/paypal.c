@@ -13,7 +13,6 @@
 #define STDOUT_NO 1
 #define BUFSIZE 0x10000
 #define REQUEST "GET /index.html HTTP/1.1\r\nHost: google.com:80\r\n\r\n"
-//#define REQUEST "GET /webhp?nord=1#nord=1&q=zerovm HTTP/1.1\r\nHost: google.com:80\r\n\r\n"
 
 #define ID printf("#%d\n", __LINE__)
 #define FAILIF(c, r, ...) if(c) { printf(__VA_ARGS__); exit(r); }

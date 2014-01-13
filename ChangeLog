@@ -1,6 +1,10 @@
 history of zerovm hypervisor project. please note that only most important
 news go here, otherwise github commits history can be used
 
+2014-01-10 dmitri bortoq <bortoq@gmail.com>
+  * git: "devel" contains "paypal version" now. which can be compiled
+    with the sockets support (UNSAFE=ZVM_SOCKETS). it is disabled by default.
+
 2013-11-28 dmitri bortoq <bortoq@gmail.com>
   * git: udt branch has removed from the repository
   * git: new branch "devel" has been added to the repository. "master"
