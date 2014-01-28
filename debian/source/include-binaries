@@ -1,0 +1,6 @@
+zerovm-zmq.debian.tar.tar.gz
+tests/functional/include/libzvmlib.a
+tests/functional/include/zvmlib.o
+tests/functional/include/printf.o
+tests/functional/include/bget.o
+zerovm-dbg
