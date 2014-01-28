@@ -10,4 +10,4 @@ all: $(NAME).c
 	@$(ZEROVM_ROOT)/zerovm $(NAME).manifest
 
 clean:
-	rm -f $(NAME).nexe $(NAME).o *.log *.data *.manifest
+	rm -f $(NAME).nexe $(NAME).o *.log *.data *.manifest nvram

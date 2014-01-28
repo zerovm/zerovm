@@ -94,7 +94,7 @@ static void DumpElfHeader(int loglevel, const Elf_Ehdr *elf_hdr)
   DUMP(e_shentsize, "#x");
   DUMP(e_shnum, "#x");
   DUMP(e_shstrndx, "#x");
- ZLOGS(loglevel, "sizeof(Elf32_Ehdr) = 0x%x", (int) sizeof *elf_hdr);
+  ZLOGS(loglevel, "sizeof(Elf32_Ehdr) = 0x%x", (int) sizeof *elf_hdr);
 }
 #undef DUMP
 

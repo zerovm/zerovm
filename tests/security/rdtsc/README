@@ -3,7 +3,9 @@ with original nacl ncval
 
 should look like
 validator state = 1
+daemon = 0
 user return code = 0
-etag = disabled
-accounting = 0.00 0.00 16777216 0 0 0 0 0 0 0 0 0
-exit state = src/main/zvm_main.c 180: validation failed
+etag(s) = disable
+accounting = 0.00 0.00 0 0 0 0 0 0 0 0
+exit state = src/main/zerovm.c 146: validation failed
+command = /home/bortoq/git/zerovm/zerovm[7702] rdtsc.manifest

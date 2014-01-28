@@ -1,0 +1,12 @@
+should look like:
+
+Jumping to address 0x201c0
+Jumping to address 0x20160
+validator state = 0
+daemon = 0
+user return code = 0
+etag(s) = disable
+accounting = 0.00 0.00 0 0 2 54 0 0 0 0
+exit state = ok
+command = /home/bortoq/git/zerovm/zerovm[9425] computed_goto.manifest
+

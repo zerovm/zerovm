@@ -20,7 +20,7 @@
 
 int test_computed_goto(int index) {
   void *addr[] = { &&label1, &&label2 };
-  printf("Jumping to address %p\n", addr[index]);
+  printf("Jumping to address 0x%x\n", addr[index]);
   goto *addr[index];
  label1:
   return 1234;

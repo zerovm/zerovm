@@ -77,7 +77,7 @@ NORETURN void SyscallHook()
    */
   nacl_user->prog_ctr = NaClSandboxCodeAddr(nap, nacl_user->prog_ctr);
 
-  /* d'b: give control to the user side */
+  /* give control to the user side */
   ContextSwitch(nacl_user);
   ZLOGFAIL(1, EFAULT, "the unreachable has been reached");
 }

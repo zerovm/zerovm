@@ -1,0 +1,10 @@
+for now zerovm shows:
+
+This should fault... // message from the user module
+validator state = 0
+daemon = 0
+user return code = 0
+etag(s) = disable
+accounting = 0.00 0.00 0 0 1 21 0 0 0 0
+exit state = Signal 11 from untrusted code: Halting at 0x440A00040000
+command = /home/bortoq/git/zerovm/zerovm[8756] execute_data.manifest

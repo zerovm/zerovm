@@ -1,10 +1,12 @@
 zerovm must show something like:
 
 validator state = 1
+daemon = 0
 user return code = 0
-etag = da39a3ee5e6b4b0d3255bfef95601890afd80709
-accounting = 0.00 0.00 16777216 0 0 0 0 0 0 0 0 0
-exit state = src/main/zvm_main.c 165: validation failed
+etag(s) = disable
+accounting = 0.00 0.00 0 0 0 0 0 0 0 0
+exit state = src/main/zerovm.c 146: validation failed
+command = /home/bortoq/git/zerovm/zerovm[8399] overlapjmp.manifest
 
 and valz will show:
 VALIDATOR: segment[0] p_type 6 p_offset 0 vaddr 0 paddr 0 align 8
