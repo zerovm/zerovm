@@ -164,6 +164,8 @@ static void *GetMemoryDigest(struct NaClApp *nap)
 
 void ReportCtor()
 {
+  if(digests != NULL)
+    g_string_free(digests, TRUE);
   digests = g_string_sized_new(BIG_ENOUGH_STRING);
 }
 

@@ -65,6 +65,7 @@ static void UpdateSession(struct Manifest *manifest)
   SignalHandlerFini();
   SignalHandlerInit();
   ResetAccounting();
+  ReportCtor();
   ReportMode(3);
   SetReportHandle(client);
   ZLogDtor();
