@@ -1,5 +1,4 @@
 PREFIX ?= /usr/local
-DESTDIR ?=
 FLAGS0=-fPIE -Wall -Wno-long-long -fvisibility=hidden -fstack-protector --param ssp-buffer-size=4
 GLIB=`pkg-config --cflags glib-2.0`
 TAG_ENCRYPTION ?= G_CHECKSUM_SHA1
