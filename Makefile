@@ -1,5 +1,10 @@
 PREFIX ?= /usr/local
 DESTDIR ?=
+prefix = $(PREFIX)
+exec_prefix = $(prefix)
+libdir = $(exec_prefix)/lib
+
+LDFLAGS=-L $(libdir)
 FLAGS0=-fPIE -Wall -Wno-long-long -fvisibility=hidden -fstack-protector --param ssp-buffer-size=4
 GLIB=`pkg-config --cflags glib-2.0`
 TAG_ENCRYPTION ?= G_CHECKSUM_SHA1
@@ -36,7 +41,7 @@ create_dirs:
 	@mkdir obj -p
 
 zerovm: obj/zerovm.o $(OBJS)
-	$(CC) -o $@ $(CXXFLAGS2) $^ $(LIBS)
+	$(CC) $(LDFLAGS) -o $@ $(CXXFLAGS2) $^ $(LIBS)
 
 tests: test_compile
 	@printf "UNIT TESTS %048o\n" 0
