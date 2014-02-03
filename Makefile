@@ -2,7 +2,9 @@ PREFIX ?= /usr/local
 DESTDIR ?=
 prefix = $(PREFIX)
 exec_prefix = $(prefix)
+bindir = $(exec_prefix)/bin
 libdir = $(exec_prefix)/lib
+nacl_includedir = $(prefix)/x86_64-nacl/include
 
 LDFLAGS=-L $(libdir)
 FLAGS0=-fPIE -Wall -Wno-long-long -fvisibility=hidden -fstack-protector --param ssp-buffer-size=4
@@ -78,8 +80,8 @@ clean_intermediate:
 	@echo unit tests has been deleted
 
 install:
-	install -D -m 0755 zerovm $(DESTDIR)$(PREFIX)/bin/zerovm
-	install -D -m 0644 api/zvm.h $(DESTDIR)$(PREFIX)/x86_64-nacl/include/zvm.h
+	install -D -m 0755 zerovm $(DESTDIR)$(bindir)/zerovm
+	install -D -m 0644 api/zvm.h $(DESTDIR)$(nacl_includedir)/zvm.h
 
 obj/channel.o: src/channels/channel.c
 	$(CC) $(CCFLAGS1) -o $@ $^
