@@ -1,5 +1,4 @@
 PREFIX ?= /usr/local
-DESTDIR ?=
 prefix = $(PREFIX)
 exec_prefix = $(prefix)
 bindir = $(exec_prefix)/bin
