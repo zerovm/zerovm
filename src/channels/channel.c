@@ -21,8 +21,10 @@
 #include "src/main/accounting.h"
 #include "src/channels/preload.h"
 #include "src/channels/prefetch.h"
-#include "src/channels/nservice.h"
 #include "src/channels/channel.h"
+
+#define MAX_CHANNELS_NUMBER 10915
+#define MIN_CHANNELS_NUMBER 3
 
 /*
  * array of read buffers. WARNING: buffers[0] should not be allocated
@@ -451,19 +453,9 @@ void ChannelsCtor(struct Manifest *manifest)
   while(IS_RO(CH_CH(manifest, i)))
     ChannelCtor(CH_CH(manifest, i++));
 
-  /* ask for name service */
-  NameServiceCtor(manifest, binds, connects);
-  NameServiceDtor();
-
   /* mount the rest of channels */
   for(; i < manifest->channels->len; ++i)
     ChannelCtor(CH_CH(manifest, i));
-
-#ifdef udt /* TODO(d'b): remove it after "channels" re-design */
-  /* accept after binds (to avoid hanging on accept) */
-  for(i = 0; i < manifest->channels->len; ++i)
-    PrefetchAccept(CH_CH(manifest, i));
-#endif
 
   /* reorder channels for user manifest */
   SortChannels(manifest->channels);

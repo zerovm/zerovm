@@ -3,14 +3,10 @@ DESTDIR ?=
 FLAGS0=-fPIE -Wall -Wno-long-long -fvisibility=hidden -fstack-protector --param ssp-buffer-size=4
 GLIB=`pkg-config --cflags glib-2.0`
 TAG_ENCRYPTION ?= G_CHECKSUM_SHA1
-# PREFETCH: zmq, udt
-PREFETCH ?= zmq
-# UNSAFE: ZVM_SOCKETS, NO_ZVM_SOCKETS
-UNSAFE ?= NO_ZVM_SOCKETS
-CCFLAGS0=-c -m64 -fPIC -D$(UNSAFE) -D$(PREFETCH) -D_GNU_SOURCE -DTAG_ENCRYPTION=$(TAG_ENCRYPTION) -I. $(GLIB)
+CCFLAGS0=-c -m64 -fPIC -D_GNU_SOURCE -DTAG_ENCRYPTION=$(TAG_ENCRYPTION) -I. $(GLIB)
 
 CXXFLAGS0=-m64 -Wno-variadic-macros $(GLIB)
-LIBS=-l$(PREFETCH) -lglib-2.0 -lvalidator
+LIBS=-lglib-2.0 -lvalidator -lstdc++
 TESTLIBS=-Llib/gtest -lgtest $(LIBS)
 
 CCFLAGS1=-std=gnu89 -Wdeclaration-after-statement $(FLAGS0) $(CCFLAGS0)
@@ -30,7 +26,7 @@ debug: CXXFLAGS1 := -DDEBUG -g $(CXXFLAGS1)
 debug: CXXFLAGS2 := -DDEBUG -g $(CXXFLAGS2)
 debug: create_dirs zerovm tests
 
-OBJS=obj/elf_util.o obj/gio.o obj/gio_snapshot.o obj/manifest.o obj/setup.o obj/channel.o obj/qualify.o obj/report.o obj/zlog.o obj/signal_common.o obj/signal.o obj/to_app.o obj/switch_to_app.o obj/to_trap.o obj/syscall_hook.o obj/prefetch.o obj/nservice.o obj/preload.o obj/sel_addrspace.o obj/sel_ldr.o obj/sel.o obj/sel_memory.o obj/sel_rt.o obj/tramp.o obj/trap.o obj/etag.o obj/accounting.o obj/daemon.o obj/snapshot.o obj/ztrace.o
+OBJS=obj/elf_util.o obj/gio.o obj/gio_snapshot.o obj/manifest.o obj/setup.o obj/channel.o obj/qualify.o obj/report.o obj/zlog.o obj/signal_common.o obj/signal.o obj/to_app.o obj/switch_to_app.o obj/to_trap.o obj/syscall_hook.o obj/prefetch.o obj/preload.o obj/sel_addrspace.o obj/sel_ldr.o obj/sel.o obj/sel_memory.o obj/sel_rt.o obj/tramp.o obj/trap.o obj/etag.o obj/accounting.o obj/daemon.o obj/snapshot.o obj/ztrace.o
 CC=@gcc
 CXX=@g++
 
@@ -82,9 +78,6 @@ obj/channel.o: src/channels/channel.c
 	$(CC) $(CCFLAGS1) -o $@ $^
 
 obj/prefetch.o: src/channels/prefetch.c
-	$(CC) $(CCFLAGS1) -o $@ $^
-
-obj/nservice.o: src/channels/nservice.c
 	$(CC) $(CCFLAGS1) -o $@ $^
 
 obj/preload.o: src/channels/preload.c

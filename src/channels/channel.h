@@ -36,7 +36,7 @@ EXTERN_C_BEGIN
 #define STDIN "/dev/stdin"
 #define STDOUT "/dev/stdout"
 #define STDERR "/dev/stderr"
-#define STDRAM "/dev/memory"
+#define STDRAM "/dev/memory" /* reserved for internal usage */
 
 #define FLAG_VALID_MASK 8
 #define IS_NETWORK(c) ((c)->protocol < ProtoRegular)

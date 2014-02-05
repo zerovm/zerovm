@@ -1,6 +1,10 @@
 history of zerovm hypervisor project. please note that only most important
 news go here, otherwise github commits history can be used
 
+2014-02-04 dmitri bortoq <bortoq@gmail.com>
+  * channel: a new zerovm flavor created: no networking. sources removed* as
+    well and now channels restored to original design
+
 2014-01-10 dmitri bortoq <bortoq@gmail.com>
   * git: "devel" contains "paypal version" now. which can be compiled
     with the sockets support (UNSAFE=ZVM_SOCKETS). it is disabled by default.
