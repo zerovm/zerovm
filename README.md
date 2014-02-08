@@ -12,7 +12,10 @@ VirtualBox [doesn't support SSE4.1](https://www.virtualbox.org/ticket/8651), whi
 
 ## Installing ZeroVM
 
-### To install ZeroVM build environment see toolchain installation guide: [toolchain] (https://github.com/zerovm/toolchain/blob/master/README.md)
+To install ZeroVM build environment see the
+**[toolchain installation guide][toolchain]**.
+
+[toolchain]: https://github.com/zerovm/toolchain/blob/master/README.md
 
 Proceeed only after checking the link above.
 
