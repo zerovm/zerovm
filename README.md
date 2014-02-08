@@ -1,14 +1,16 @@
 # ZeroVM
 
-ZeroVM is a simple virtual machine.
-ZeroVM can run (and isolate) 64-bit x86 applications in a 32-bit address space.
-ZeroVM works under Linux x86_64.
-For more information check out [ZeroVM.org](http://zerovm.org)
+ZeroVM is a simple virtual machine. ZeroVM can run (and isolate)
+64-bit x86 applications in a 32-bit address space. ZeroVM works under
+Linux x86_64. For more information check out
+[ZeroVM.org](http://zerovm.org)
 
 ## Installation:
 
-Everything has been tested on Ubuntu 10.04 and Ubuntu 12.04. No issues with VMWare Player. 
-VirtualBox [doesn't support SSE4.1](https://www.virtualbox.org/ticket/8651), which is used by several of the provided samples.
+Everything has been tested on Ubuntu 10.04 and Ubuntu 12.04. No issues
+with VMWare Player. VirtualBox
+[doesn't support SSE4.1](https://www.virtualbox.org/ticket/8651),
+which is used by several of the provided samples.
 
 ## Installing ZeroVM
 
