@@ -69,11 +69,13 @@ Proceeed only after checking the link above.
     error: expected specifier-qualifier-list before ‘AES_KEY’
 
 **Solution:** missing libssl-dev library. Check the
-[system prerequisites](#install-system-prerequisites) above
+[system prerequisites][prerequisites].
 
     /usr/bin/ld: cannot find -lvalidator
     collect2: error: ld returned 1 exit status
     make: *** [zerovm] Error 1
+
+[prerequisites]: https://github.com/zerovm/toolchain/#install-prerequisites
 
 **Solution:** Install the [validator][zerovm-validator] by following
 the instructions in the [toolchain repository][zerovm-toolchain].
