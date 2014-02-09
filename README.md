@@ -17,8 +17,6 @@ which is used by several of the provided samples.
 To install ZeroVM build environment see the
 **[toolchain installation guide][toolchain]**.
 
-[toolchain]: https://github.com/zerovm/toolchain/blob/master/README.md
-
 Proceeed only after checking the link above.
 
 ### Eclipse CDT installation
@@ -78,7 +76,7 @@ Proceeed only after checking the link above.
 [prerequisites]: https://github.com/zerovm/toolchain/#install-prerequisites
 
 **Solution:** Install the [validator][zerovm-validator] by following
-the instructions in the [toolchain repository][zerovm-toolchain].
+the [toolchain installation instructions][toolchain].
 
 [zerovm-validator]: https://github.com/zerovm/validator
-[zerovm-toolchain]: https://github.com/zerovm/toolchain
+[toolchain]: https://github.com/zerovm/toolchain/blob/master/README.md
