@@ -1,0 +1,35 @@
+Name: zerovm
+Version: 0.9.4
+Release: 1%{?dist}
+Summary: ZeroVM
+Group: Development/Tools
+License: Apache 2
+Source: %{name}.tar.gz
+BuildRequires: pkgconfig(glib-2.0)
+BuildRequires: pkgconfig(libzmq)
+BuildRequires: zvm-validator
+Requires: zvm-validator
+
+%description
+ZeroVM is an open-source lightweight virtualization platform
+based on Google Native Client project
+
+%prep
+%setup -c
+
+
+%build
+make all
+
+%install
+make install PREFIX=%{_prefix} DESTDIR=%{buildroot}
+
+%clean
+
+%files
+/usr/bin/zerovm
+/usr/x86_64-nacl/include/zvm.h
+
+%doc README.md
+
+%changelog
