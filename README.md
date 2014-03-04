@@ -14,6 +14,31 @@ which is used by several of the provided samples.
 
 ## Installing ZeroVM
 
+From Ubuntu packages:
+
+Packages for ZeroVM are available for Ubuntu 12.04. Choose from the following
+PPAs.
+
+Latest: https://launchpad.net/~zerovm-ci/+archive/zerovm-latest
+Stable: https://launchpad.net/~zerovm-ci/+archive/zerovm-stable
+
+Installing from Latest:
+
+    sudo apt-get install python-software-properties
+    sudo add-apt-repository ppa:zerovm-ci/zerovm-latest
+    sudo apt-get update
+    sudo apt-get install zerovm-zmq
+
+Installing from Stable:
+
+    sudo apt-get install python-software-properties
+    sudo add-apt-repository ppa:zerovm-ci/zerovm-stable
+    sudo apt-get update
+    sudo apt-get install zerovm-zmq
+
+
+Manually:
+
 To install ZeroVM build environment see the
 **[toolchain installation guide][toolchain]**.
 
