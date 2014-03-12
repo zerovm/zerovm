@@ -28,34 +28,22 @@ void NetCtor(const struct Manifest *manifest);
 /* deallocate network context */
 void NetDtor(struct Manifest *manifest);
 
-/* construct network channel and connect/bind it to specified address */
-void PrefetchChannelCtor(struct ChannelDesc *channel, int n);
+/* construct network channel */
+void PrefetchChannelCtor(struct ChannelDesc *channel);
 
-/*
- * finalize and deallocate network channel resources
- * TODO(d'b): rewrite the code after zmq_term will be fixed
- */
-void PrefetchChannelDtor(struct ChannelDesc *channel, int n);
-
-/* return already available data of the channel */
-char *MessageData(struct ChannelDesc *channel);
-
-/* receive a new message and update channel with it */
-void FetchMessage(struct ChannelDesc *channel, int n);
-
-/*
- * skip obsolete messages/bytes until the source will be in sync with
- * the channel position. works only for channels with sequential read
- */
-void SyncSource(struct ChannelDesc *channel, int n);
-
-/* deallocate channel message */
-void FreeMessage(struct ChannelDesc *channel);
+/* finalize and deallocate network channel */
+void PrefetchChannelDtor(struct ChannelDesc *channel);
 
 /*
  * send the data to the network channel
  * return number of sent bytes or negative error code
  */
-int32_t SendData(struct ChannelDesc *channel, int n, const char *buf, int32_t count);
+int32_t SendData(struct ChannelDesc *channel, const char *buf, int32_t count);
+
+/*
+ * get the data from the network channel
+ * return number of received bytes or negative error code
+ */
+int32_t FetchData(struct ChannelDesc *channel, char *buf, int32_t count);
 
 #endif /* PREFETCH_H_ */

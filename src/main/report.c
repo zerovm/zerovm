@@ -200,7 +200,7 @@ static void OutputReport(char *r)
 #undef REPORT
 }
 
-void FastReport()
+void FastReport(struct NaClApp *nap)
 {
   char *eol = report_mode == 1 ? "; " : EOL;
   static int64_t start = 0;
@@ -219,7 +219,7 @@ void FastReport()
   start += start == 0 ? now : QUANT;
 
   /* create and output report */
-  acc = FastAccounting();
+  acc = Accounting(nap->manifest);
   r = g_strdup_printf("%s%s%s", REPORT_ACCOUNTING, acc, eol);
   OutputReport(r);
 
@@ -233,7 +233,7 @@ void Report(struct NaClApp *nap)
 {
   GString *r = g_string_sized_new(BIG_ENOUGH_STRING);
   char *eol = report_mode == 1 ? "; " : "\n";
-  char *acc = FinalAccounting();
+  char *acc = Accounting(nap->manifest);
 
   /* report validator state and user return code */
   REPORT(r, "%s%d%s", REPORT_VALIDATOR, validation_state, eol);

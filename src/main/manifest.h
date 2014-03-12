@@ -58,30 +58,16 @@ EXTERN_C_BEGIN
  * 1..2: r/w source type: 0 - inaccessible, 1 - RO, 2 - WO, 3 - RW
  * 3:    0 means channel is valid, 1 - invalid
  */
-/* network channel description */
-struct Connection {
-  uint8_t protocol; /* XTYPE(PROTOCOLS) */
-  void *handle; /* pointer to (0mq) socket */
-  int64_t pos; /* position */
-  uint8_t flags;
-  uint16_t port;
-  uint32_t host;
-  void *backup; /* for udt it is stored original handle */
-};
-
-/* local channel description */
-struct File {
-  uint8_t protocol; /* XTYPE(PROTOCOLS) */
-  void *handle; /* (int*) or (FILE*) */
-  int64_t pos; /* position */
-  uint8_t flags;
-  char *name;
-};
 
 /* channel structure */
 struct ChannelDesc {
   /* manifest parser initialize it (partially) */
-  GPtrArray *source; /* (Connection*) or (File*) */
+  uint8_t protocol; /* XTYPE(PROTOCOLS) */
+  void *handle; /* (int*) or (FILE*) */
+  // ### todo: replace "flags" with specific fields
+  uint8_t flags; /* 0: handle is ptr; 1: read access; 2: write access; 3: valid; */
+  char *name; /* file name */
+
   char *alias; /* name for untrusted */
   enum ChannelType type; /* type of access sequential/random */
   void *tag; /* tag context */
@@ -107,7 +93,6 @@ struct Manifest {
   int32_t timeout; /* time user module allowed to run */
   int64_t mem_size; /* user specified memory */
   void *mem_tag; /* tag context */
-  struct Connection *name_server;
   GPtrArray *channels; /* all elements are (ChannelDesc*) */
 };
 

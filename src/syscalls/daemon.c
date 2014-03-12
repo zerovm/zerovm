@@ -13,6 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/*
+ * ### WARNING: under re-construction!
+ */
 #include <assert.h>
 #include <sys/socket.h>
 #include <sys/resource.h>
@@ -39,6 +42,28 @@ static int client = -1;
  * one (pascal) string: 4-bytes length and data of "length" size. the data
  * is manifest (reduced form of it). WARNING: result should be freed
  */
+//static char *GetCommand()
+//{
+//  int len;
+//  char *cmd = g_malloc0(TASK_SIZE);
+//
+//  assert(client >= 0);
+//
+//  // ### ZLOGFAIL should not be used because in case of error we want to
+//  // give the report to command channel, not just fail
+//  ZLOGFAIL(read(client, cmd, CMD_SIZE) < 0, EIO, "%s", strerror(errno));
+//  len = ToInt(cmd);
+//  ZLOGFAIL(read(client, cmd, len) < 0, EIO, "%s", strerror(errno));
+//
+//  return cmd;
+//}
+
+/*
+ * child: get command from inherited command socket. current version can
+ * only have one command and therefore the command format will only contain
+ * one (pascal) string: 4-bytes length and data of "length" size. the data
+ * is manifest (reduced form of it). WARNING: result should be freed
+ */
 static char *GetCommand()
 {
   int len;
@@ -46,9 +71,24 @@ static char *GetCommand()
 
   assert(client >= 0);
 
-  ZLOGFAIL(read(client, cmd, CMD_SIZE) < 0, EIO, "%s", strerror(errno));
-  len = ToInt(cmd);
-  ZLOGFAIL(read(client, cmd, len) < 0, EIO, "%s", strerror(errno));
+  /* read manifest length */
+  if(read(client, cmd, CMD_SIZE) != CMD_SIZE)
+  {
+    ZLOG(LOG_DEBUG, "read(client, cmd, CMD_SIZE) failed");
+    return NULL;
+  }
+  len = g_ascii_strtoll(g_strstrip(cmd), NULL, 0);
+
+  /* empty manifest?! */
+  if(len <= 0)
+    return NULL;
+
+  /* read manifest */
+  if(read(client, cmd, len) < 0)
+  {
+    ZLOG(LOG_DEBUG, "read(client, cmd, len) failed");
+    return NULL;
+  }
 
   return cmd;
 }
@@ -58,28 +98,33 @@ static void UpdateSession(struct Manifest *manifest)
 {
   int i;
   char *cmd = GetCommand();
-  struct Manifest *tmp = ManifestTextCtor(cmd);
+  struct Manifest *tmp;
 
-  /* re-initialize signals handling, accounting and the report handle */
-  g_free(cmd);
+  ZLOG(LOG_INSANE, "job manifest: %s", cmd);
+
+  /* reset system internals */
   SignalHandlerFini();
   SignalHandlerInit();
-  ResetAccounting();
   ReportCtor();
   ReportMode(3);
   SetReportHandle(client);
-  ZLogDtor();
-  ZLogCtor(0);
   ZTraceCtor(NULL);
+  ZLOG(LOG_INSANE, "signals, report, log and trace reinitialized");
+
+  /* read manifest */
+  write(client, "0x010000\ntest\n", 14); // ### doesn't work. why?
+  ZLOGFAIL(cmd == NULL, EFAULT, "invalid manifest received");
+  tmp = ManifestTextCtor(cmd);
+  g_free(cmd);
 
   /* copy needful fields from the new manifest */
   manifest->timeout = tmp->timeout;
-  manifest->name_server = tmp->name_server;
   manifest->node = tmp->node;
   manifest->job = tmp->job;
 
   /* reset timeout, i/o limit, privileges e.t.c. */
   LastDefenseLine(manifest);
+  ZLOG(LOG_INSANE, "'last defense line' reinitialized");
 
   /* check and partially copy channels */
   SortChannels(manifest->channels);
@@ -98,10 +143,19 @@ static void UpdateSession(struct Manifest *manifest)
     CHECK(limits[2]);
     CHECK(limits[3]);
 
-    CH_CH(manifest, i)->source = CH_CH(tmp, i)->source;
+    CH_CH(manifest, i)->handle = CH_CH(tmp, i)->handle;
     CH_CH(manifest, i)->tag = CH_CH(tmp, i)->tag;
+
+    /*
+     * copy new uri (->name) to forked nap. note that original "name"
+     * should not be freed because it is shared memory and "daemon"
+     * session will take care about it later
+     * TODO(d'b): check channels dtor if it is true
+     */
+    CH_CH(manifest, i)->name = g_strdup(CH_CH(tmp, i)->name);
   }
   ChannelsCtor(manifest);
+  ZLOG(LOG_INSANE, "channels reconstructed");
 }
 
 /* daemon: get the next task: return when accept()'ed */
@@ -198,11 +252,13 @@ int Daemon(struct NaClApp *nap)
   for(;;)
   {
     /* get the next job */
+    ZLOG(LOG_INSANE, "waiting for a job");
     if((client = Job(sock)) < 0)
     {
       ZLOG(LOG_ERROR, "%s", strerror(errno));
       continue;
     }
+    ZLOG(LOG_INSANE, "got the job");
 
     /* release waiting child sessions */
     do

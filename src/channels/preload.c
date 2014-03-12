@@ -27,19 +27,18 @@ void PreloadAllocationDisable()
 }
 
 /* detect and set source type */
-#define SET(f, p) if(f(fs.st_mode)) CH_PROTO(channel, n) = Proto##p; else
-static void SetChannelSource(struct ChannelDesc *channel, int n)
+#define SET(f, p) if(f(fs.st_mode)) channel->protocol = Proto##p; else
+static void SetChannelSource(struct ChannelDesc *channel)
 {
   struct stat fs;
 
   assert(channel != NULL);
-  assert(CH_NAME(channel, n) != NULL);
 
   /*
    * get the file statistics and calculate the source type (if file
    * is not exist it will be regular)
    */
-  if(stat(CH_NAME(channel, n), &fs) < 0) CH_PROTO(channel, n) = ProtoRegular; else
+  if(stat(channel->name, &fs) < 0) channel->protocol = ProtoRegular; else
   SET(S_ISREG, Regular)
   SET(S_ISDIR, Directory)
   SET(S_ISCHR, Character)
@@ -47,21 +46,20 @@ static void SetChannelSource(struct ChannelDesc *channel, int n)
   SET(S_ISFIFO, FIFO)
   SET(S_ISLNK, Link)
   SET(S_ISSOCK, Socket)
-  ZLOGFAIL(1, EFAULT, "cannot detect source type of %s", CH_NAME(channel, n));
+  ZLOGFAIL(1, EFAULT, "cannot detect source type of %s", channel->name);
 }
 
-int PreloadChannelDtor(struct ChannelDesc *channel, int n)
+int PreloadChannelDtor(struct ChannelDesc *channel)
 {
   int code = 0;
   int handle;
 
   assert(channel != NULL);
-  assert(n < channel->source->len);
 
   /* adjust the size of writable channels */
-  handle = GPOINTER_TO_INT(CH_HANDLE(channel, n));
+  handle = GPOINTER_TO_INT(channel->handle);
   if(channel->limits[PutSizeLimit] && channel->limits[PutsLimit]
-     && CH_PROTO(channel, n) == ProtoRegular)
+     && channel->protocol == ProtoRegular)
     code = ftruncate(handle, channel->size);
 
   ZLOGS(LOG_DEBUG,
@@ -70,21 +68,20 @@ int PreloadChannelDtor(struct ChannelDesc *channel, int n)
 
   if(handle != 0)
   {
-    if(CH_PROTO(channel, n) == ProtoRegular)
+    if(channel->protocol == ProtoRegular)
       close(handle);
     else
-      fclose(CH_HANDLE(channel, n));
+      fclose(channel->handle);
   }
 
-  g_ptr_array_remove(channel->source, CH_FILE(channel, n));
-  return -(code != 0);
+  return code;
 }
 
 /* preallocate channel space if not disabled with "-P" */
-static void PreallocateChannel(const struct ChannelDesc *channel, int n)
+static void PreallocateChannel(const struct ChannelDesc *channel)
 {
   int code;
-  int handle = GPOINTER_TO_INT(CH_HANDLE(channel, n));
+  int handle = GPOINTER_TO_INT(channel->handle);
 
   if(disable_preallocation) return;
   code = ftruncate(handle, channel->limits[PutSizeLimit]);
@@ -92,7 +89,7 @@ static void PreallocateChannel(const struct ChannelDesc *channel, int n)
 }
 
 /* preload given character/FIFO device to channel */
-static void CharacterChannel(struct ChannelDesc* channel, int n)
+static void CharacterChannel(struct ChannelDesc* channel)
 {
   char *mode[] = {NULL, "rb", "wb"};
   int flags[] = {0, O_RDONLY, O_RDWR};
@@ -103,17 +100,16 @@ static void CharacterChannel(struct ChannelDesc* channel, int n)
       "%s has invalid i/o type", channel->alias);
 
   /* open file */
-  h = open(CH_NAME(channel, n), flags[CH_RW_TYPE(channel)]);
-  CH_HANDLE(channel, n) = fdopen(h, mode[CH_RW_TYPE(channel)]);
-  ZLOGFAIL(CH_HANDLE(channel, n) == NULL, errno,
-      "cannot open %s", CH_NAME(channel, n));
+  h = open(channel->name, flags[CH_RW_TYPE(channel)]);
+  channel->handle = fdopen(h, mode[CH_RW_TYPE(channel)]);
+  ZLOGFAIL(channel->handle == NULL, errno, "cannot open %s", channel->name);
 
   /* set channel attributes */
   channel->size = 0;
 }
 
 /* preload given regular device to channel */
-static void RegularChannel(struct ChannelDesc* channel, int n)
+static void RegularChannel(struct ChannelDesc* channel)
 {
   int h;
   ZLOGS(LOG_DEBUG, "preload regular %s", channel->alias);
@@ -121,18 +117,18 @@ static void RegularChannel(struct ChannelDesc* channel, int n)
   switch(CH_RW_TYPE(channel))
   {
     case 1: /* read only */
-      h = open(CH_NAME(channel, n), O_RDONLY, CHANNEL_RIGHTS);
-      CH_HANDLE(channel, n) = GINT_TO_POINTER(h);
-      channel->size = GetFileSize(CH_NAME(channel, n));
-      ZLOGFAIL(channel->size < 0, EFAULT, "cannot open %s", CH_NAME(channel, n));
+      h = open(channel->name, O_RDONLY, CHANNEL_RIGHTS);
+      channel->handle = GINT_TO_POINTER(h);
+      channel->size = GetFileSize(channel->name);
+      ZLOGFAIL(channel->size < 0, EFAULT, "cannot open %s", channel->name);
       break;
 
     case 2: /* write only. existing file will be overwritten */
-      h = open(CH_NAME(channel, n), O_WRONLY|O_CREAT|O_TRUNC, CHANNEL_RIGHTS);
-      CH_HANDLE(channel, n) = GINT_TO_POINTER(h);
+      h = open(channel->name, O_WRONLY|O_CREAT|O_TRUNC, CHANNEL_RIGHTS);
+      channel->handle = GINT_TO_POINTER(h);
       channel->size = 0;
-      if(g_strcmp0(CH_NAME(channel, n), DEV_NULL) != 0)
-        PreallocateChannel(channel, n);
+      if(g_strcmp0(channel->name, DEV_NULL) != 0)
+        PreallocateChannel(channel);
       break;
 
     case 3: /* cdr or full random access */
@@ -142,16 +138,16 @@ static void RegularChannel(struct ChannelDesc* channel, int n)
           "sequential read / random write channels not supported");
 
       /* open the file and ensure that putpos is not greater than the file size */
-      h = open(CH_NAME(channel, n), O_RDWR | O_CREAT, CHANNEL_RIGHTS);
-      CH_HANDLE(channel, n) = GINT_TO_POINTER(h);
-      channel->size = GetFileSize(CH_NAME(channel, n));
-      ZLOGFAIL(channel->size < 0, EFAULT, "cannot open %s", CH_NAME(channel, n));
+      h = open(channel->name, O_RDWR | O_CREAT, CHANNEL_RIGHTS);
+      channel->handle = GINT_TO_POINTER(h);
+      channel->size = GetFileSize(channel->name);
+      ZLOGFAIL(channel->size < 0, EFAULT, "cannot open %s", channel->name);
       ZLOGFAIL(channel->putpos > channel->size, EFAULT,
-          "%s size is less then specified append position", CH_NAME(channel, n));
+          "%s size is less then specified append position", channel->name);
 
       /* file does not exist */
-      if(channel->size == 0 && g_strcmp0(CH_NAME(channel, n), DEV_NULL) != 0)
-        PreallocateChannel(channel, n);
+      if(channel->size == 0 && g_strcmp0(channel->name, DEV_NULL) != 0)
+        PreallocateChannel(channel);
       /* existing file */
       else
         channel->putpos = channel->type == RGetSPut ? channel->size : 0;
@@ -162,29 +158,28 @@ static void RegularChannel(struct ChannelDesc* channel, int n)
       break;
   }
 
-  ZLOGFAIL(GPOINTER_TO_INT(CH_HANDLE(channel, n)) < 0,
-      errno, "%s open error", CH_NAME(channel, n));
+  ZLOGFAIL(GPOINTER_TO_INT(channel->handle) < 0,
+      errno, "%s open error", channel->name);
 }
 
-void PreloadChannelCtor(struct ChannelDesc *channel, int n)
+void PreloadChannelCtor(struct ChannelDesc *channel)
 {
   assert(channel != NULL);
-  assert(n < channel->source->len);
 
   /* check the given channel */
   ZLOGS(LOG_DEBUG, "mounting file %s to alias %s",
-      CH_NAME(channel, n), channel->alias);
+      channel->name, channel->alias);
 
-  SetChannelSource(channel, n);
+  SetChannelSource(channel);
 
-  switch(CH_PROTO(channel, n))
+  switch(channel->protocol)
   {
     case ProtoRegular:
-      RegularChannel(channel, n);
+      RegularChannel(channel);
       break;
     case ProtoCharacter:
     case ProtoFIFO:
-      CharacterChannel(channel, n);
+      CharacterChannel(channel);
       break;
     default:
       ZLOGFAIL(1, EPROTONOSUPPORT, "invalid %s source type %d",

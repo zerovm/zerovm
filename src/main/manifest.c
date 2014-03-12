@@ -44,10 +44,10 @@
 #define TOKEN_DELIMITER ";"
 #define CONNECTION_DELIMITER ":"
 
-#define XARRAY(a) static char *ARRAY_##a[] = {a};
-#define X(a) #a,
-  XARRAY(PROTOCOLS)
-#undef X
+//#define XARRAY(a) static char *ARRAY_##a[] = {a};
+//#define X(a) #a,
+//  XARRAY(PROTOCOLS)
+//#undef X
 
 /* key/value tokens */
 typedef enum {
@@ -91,7 +91,6 @@ typedef enum {
   X(Program, 1, 1) \
   X(Memory, 1, 1) \
   X(Timeout, 1, 1) \
-  X(NameServer, 0, 1) \
   X(Node, 0, 1) \
   X(Job, 0, 1) \
   X(Etag, 0, 1)
@@ -209,118 +208,29 @@ static void Etag(struct Manifest *manifest, char *value)
   manifest->etag = g_strdup(g_strstrip(value));
 }
 
-/* convert ip address (or node id) to integer */
-static uint32_t ExtractHost(char *host, uint8_t *flags)
-{
-  uint32_t result;
-
-  *flags = 0;
-  if(strchr(host, '.') != NULL)
-  {
-    struct sockaddr_in sa;
-    *flags = 1;
-    result = inet_pton(AF_INET, g_strstrip(host), &sa.sin_addr);
-    result = result == 1 ? sa.sin_addr.s_addr : 0;
-    MFTFAIL(result == 0, EFAULT, "malformed ip token");
-  }
-  else
-    result = ToInt(host);
-
-  return result;
-}
-
-/* analyze given string and return protocol id */
-static XTYPE(PROTOCOLS) GetChannelProtocol(char *proto)
-{
-  XTYPE(PROTOCOLS) p;
-
-  proto = g_strstrip(proto);
-  for(p = 0; p < XSIZE(PROTOCOLS); ++p)
-    if(g_ascii_strcasecmp(XSTR(PROTOCOLS, p), proto) == 0) return p;
-  return -1;
-}
-
-/* parse the name and append to given array of names as connection or string */
-static void ParseName(char *name, GPtrArray *names)
-{
-  char **tokens;
-  XTYPE(PROTOCOLS) proto;
-
-  name = g_strstrip(name);
-  tokens = g_strsplit(name, CONNECTION_DELIMITER, ConnectionTokensNumber);
-  proto = GetChannelProtocol(tokens[Protocol]);
-
-  if(proto == -1)
-  {
-    struct File *f;
-    MFTFAIL(tokens[1] != NULL, EFAULT, "invalid channel name");
-    MFTFAIL(!g_path_is_absolute(name), EFAULT,
-        "only absolute path channels are allowed");
-
-
-    f = g_malloc0(sizeof *f);
-    f->protocol = ProtoRegular; /* just in case (will be set later) */
-    f->name = g_strdup(name);
-    f->handle = NULL;
-    g_ptr_array_add(names, f);
-  }
-  else
-  {
-    struct Connection *c = g_malloc0(sizeof *c);
-    MFTFAIL(tokens[ConnectionTokensNumber] != NULL || tokens[Host] == NULL,
-        EFAULT, "invalid channel url");
-
-    c->protocol = proto;
-    c->host = ExtractHost(tokens[Host], &c->flags);
-    c->port = ToInt(tokens[Port]);
-    c->handle = NULL;
-    g_ptr_array_add(names, c);
-  }
-
-  g_strfreev(tokens);
-}
-
-/* TODO(d'b): it is ugly. solution needed */
-static void NameServer(struct Manifest *manifest, char *value)
-{
-  GPtrArray *dummy = g_ptr_array_new();
-  ParseName(value, dummy);
-  manifest->name_server = g_ptr_array_index(dummy, 0);
-  g_ptr_array_free(dummy, TRUE);
-}
-
 /* set channels field */
 static void Channel(struct Manifest *manifest, char *value)
 {
-  char **tokens;
-  char **names;
   int i;
-  struct ChannelDesc *channel;
-
-  /* allocate a new channel */
-  channel = g_malloc0(sizeof *channel);
-  channel->source = g_ptr_array_new();
+  char **tokens;
+  struct ChannelDesc *channel = g_malloc0(sizeof *channel);
 
   /* get tokens from channel description */
   tokens = g_strsplit(value, VALUE_DELIMITER, ChannelTokensNumber);
+  for(i = 0; tokens[i] != NULL; ++i)
+    g_strstrip(tokens[i]);
 
   /* TODO(d'b): fix "invalid numeric value ', 0'" bug here */
   MFTFAIL(tokens[ChannelTokensNumber] != NULL || tokens[PutSize] == NULL,
       EFAULT, "invalid channel tokens number");
 
-  /* parse alias and name(s) */
-  channel->alias = g_strdup(g_strstrip(tokens[Alias]));
-  names = g_strsplit(tokens[Name], TOKEN_DELIMITER, MANIFEST_TOKENS_LIMIT);
-  for(i = 0; names[i] != NULL; ++i)
-    ParseName(names[i], channel->source);
+  /* parse name and alias */
+  MFTFAIL(!g_path_is_absolute(tokens[Name]), EFAULT,
+      "only absolute path channels are allowed");
+  channel->name = g_strdup(tokens[Name]);
+  channel->alias = g_strdup(tokens[Alias]);
 
-  channel->type = ToInt(tokens[Type]);
-
-  i = ToInt(tokens[Tag]);
-  MFTFAIL(i != 0 && i != 1, EFAULT, "invalid channel numeric token");
-
-  channel->tag = i == 0 ? NULL : TagCtor();
-
+  /* parse limits */
   for(i = 0; i < LimitsNumber; ++i)
   {
     channel->limits[i] = ToInt(tokens[i + Gets]);
@@ -328,9 +238,16 @@ static void Channel(struct Manifest *manifest, char *value)
         "negative limits for %s", channel->alias);
   }
 
+  /* initialize the rest of fields */
+  channel->protocol = ProtoRegular; /* just in case (will be set later) */
+  channel->handle = NULL;
+  channel->type = ToInt(tokens[Type]);
+  i = ToInt(tokens[Tag]);
+  MFTFAIL(i != 0 && i != 1, EFAULT, "invalid channel numeric token");
+  channel->tag = i == 0 ? NULL : TagCtor();
+
   /* append a new channel */
   g_ptr_array_add(manifest->channels, channel);
-  g_strfreev(names);
   g_strfreev(tokens);
 }
 
@@ -398,7 +315,6 @@ struct Manifest *ManifestCtor(const char *name)
 void ManifestDtor(struct Manifest *manifest)
 {
   int i;
-  int j;
 
   if(manifest == NULL) return;
 
@@ -407,16 +323,10 @@ void ManifestDtor(struct Manifest *manifest)
   {
     struct ChannelDesc *channel = g_ptr_array_index(manifest->channels, i);
 
-    /* sources */
-    for(j = 0; j < channel->source->len; ++j)
-    {
-      struct File *file = g_ptr_array_index(channel->source, j);
-      if(IS_FILE(file))
-        g_free(file->name);
-      g_free(file);
-    }
-    g_ptr_array_free(channel->source, TRUE);
     g_free(channel->alias);
+    g_free(channel->name);
+    if(IS_PTR(channel))
+      g_free(channel->handle);
     TagDtor(channel->tag);
     g_free(channel);
   }
@@ -425,7 +335,6 @@ void ManifestDtor(struct Manifest *manifest)
   /* other */
   g_free(manifest->etag);
   TagDtor(manifest->mem_tag);
-  g_free(manifest->name_server);
   g_free(manifest->program);
   g_free(manifest);
 }

@@ -21,26 +21,32 @@
 
 #include "src/channels/channel.h"
 
-/* update get statistics */
-void CountGet(struct Connection *c, int size);
+///* update get statistics */
+//void CountGet(struct Connection *c, int size);
+//
+///* update put statistics */
+//void CountPut(struct Connection *c, int size);
+//
+///*
+// * returns string with intermediate time and i/o statistics
+// * WARNING: returned string should be deallocated with g_free
+// */
+//char *FastAccounting();
+//
+///*
+// * returns string with final time and i/o statistics
+// * WARNING: returned string should be deallocated with g_free
+// * and the function should be called only once
+// */
+//char *FinalAccounting();
 
-/* update put statistics */
-void CountPut(struct Connection *c, int size);
-
-/*
- * returns string with intermediate time and i/o statistics
- * WARNING: returned string should be deallocated with g_free
- */
-char *FastAccounting();
-
-/*
- * returns string with final time and i/o statistics
+/* returns string with time and i/o statistics
  * WARNING: returned string should be deallocated with g_free
  * and the function should be called only once
  */
-char *FinalAccounting();
+char *Accounting(struct Manifest *manifest);
 
-/* reset accounting internals */
-void ResetAccounting();
+///* reset accounting internals */
+//void ResetAccounting();
 
 #endif /* ACCOUNTING_H_ */

@@ -29,9 +29,9 @@ void PreloadAllocationDisable();
  * preload given file to channel.
  * return 0 if success, otherwise negative errcode
  */
-void PreloadChannelCtor(struct ChannelDesc* channel, int n);
+void PreloadChannelCtor(struct ChannelDesc* channel);
 
 /* (adjust and) close file associated with the channel */
-int PreloadChannelDtor(struct ChannelDesc* channel, int n);
+int PreloadChannelDtor(struct ChannelDesc* channel);
 
 #endif

@@ -60,13 +60,8 @@ void ReportTag(char *name, void *tag);
 /* initialize report internals */
 void ReportCtor();
 
-/*
- * report intermediate session statistics as often as defined by QUANT
- * TODO(d'b): self-initializing. move it to ReportCtor()
- * note: will not drop reports if waiting time is more than QUANT,
- *       however reports number can be lesser than run time in seconds
- */
-void FastReport();
+/* report intermediate session statistics as often as defined by QUANT */
+void FastReport(struct NaClApp *nap);
 
 /* full report (declared for daemon) */
 void Report(struct NaClApp *nap);

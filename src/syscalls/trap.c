@@ -24,20 +24,6 @@
 #include "src/main/ztrace.h"
 
 /*
- * =======================================================================
- * PAYPAL VERSION (with sockets)
- * =======================================================================
- * WARNING: "zerovm sockets" are potential security danger. better way to do
- * "sockets" is support from untrusted side (zrt) and external trusted driver
- * that can be connected via zerovm channel
- */
-#ifdef ZVM_SOCKETS
-#include <sys/socket.h>
-#include <netdb.h>
-#include <sys/poll.h>
-#endif
-
-/*
  * check "prot" access for user area (start, size)
  * if failed return -1, otherwise - 0
  */
@@ -236,73 +222,6 @@ static void ZVMExitHandle(struct NaClApp *nap, int32_t code)
   ReportDtor(0);
 }
 
-/*
- * note: variadic macros does not comply to c89 standard, but since this
- *   code is only demonstrates possibility to work with sockets it is ok
- */
-#ifdef ZVM_SOCKETS
-
-/* utility macros */
-#define EAT(x)
-#define REM(x) x
-#define STRIP(x) EAT x
-#define PAIR(x) REM x
-
-/* This counts the number of args */
-#define NARGS_SEQ(_1, _2, _3, _4, _5, _6, _7, _8, N, ...) N
-#define NARGS(...) NARGS_SEQ(__VA_ARGS__, 8, 7, 6, 5, 4, 3, 2, 1)
-
-/* This will let macros expand before concating them */
-#define PRIMITIVE_CAT(x, y) x ## y
-#define CAT(x, y) PRIMITIVE_CAT(x, y)
-
-/* This will call a macro on each argument passed in */
-#define APPLY(macro, ...) CAT(APPLY_, NARGS(__VA_ARGS__))(macro, __VA_ARGS__)
-#define APPLY_1(m, x1) m(x1)
-#define APPLY_2(m, x1, x2) m(x1), m(x2)
-#define APPLY_3(m, x1, x2, x3) m(x1), m(x2), m(x3)
-#define APPLY_4(m, x1, x2, x3, x4) m(x1), m(x2), m(x3), m(x4)
-#define APPLY_5(m, x1, x2, x3, x4, x5) m(x1), m(x2), m(x3), m(x4), m(x5)
-#define APPLY_6(m, x1, x2, x3, x4, x5, x6) m(x1), m(x2), m(x3), m(x4), m(x5), m(x6)
-#define APPLY_7(m, x1, x2, x3, x4, x5, x6, x7) m(x1), m(x2), m(x3), m(x4), m(x5), m(x6), m(x7)
-#define APPLY_8(m, x1, x2, x3, x4, x5, x6, x7, x8) m(x1), m(x2), m(x3), m(x4), m(x5), m(x6), m(x7), m(x8)
-
-/* function template #1 */
-#define FUNC(name, ...) \
-  int ZVM_ ## name(APPLY(PAIR, __VA_ARGS__)) \
-  { \
-    int result = name(APPLY(STRIP, __VA_ARGS__)); \
-    return result == -1 ? -errno : result; \
-  }
-
-/* function template #2 */
-#define FUNC2(name, retype, ...) \
-  retype ZVM_ ## name(APPLY(PAIR, __VA_ARGS__)) \
-  { \
-    retype result = name(APPLY(STRIP, __VA_ARGS__)); \
-    return result == NULL ? (void*)(intptr_t)-h_errno : result; \
-  }
-
-FUNC(socket, (int)domain, (int)type, (int)protocol)
-FUNC(bind, (int)sockfd, (const struct sockaddr*)addr, (socklen_t)addrlen)
-FUNC(connect, (int)sockfd, (const struct sockaddr*)addr, (socklen_t)addrlen)
-FUNC(accept, (int)sockfd, (struct sockaddr*)addr, (socklen_t*)addrlen)
-FUNC(listen, (int)sockfd, (int)backlog)
-FUNC(recv, (int)sockfd, (void*)buf, (size_t)len, (int)flags)
-FUNC(recvfrom, (int)sockfd, (void*)buf, (size_t)len, (int)flags, (struct sockaddr*)src_addr, (socklen_t*)addrlen)
-FUNC(recvmsg, (int)sockfd, (struct msghdr*)msg, (int)flags)
-FUNC(send, (int)sockfd, (const void*)buf, (size_t)len, (int)flags)
-FUNC(sendto, (int)sockfd, (const void*)buf, (size_t)len, (int)flags, (const struct sockaddr*)dest_addr, (socklen_t)addrlen)
-FUNC(sendmsg, (int)sockfd, (const struct msghdr*)msg, (int)flags)
-FUNC(getsockopt, (int)sockfd, (int)level, (int)optname, (void*)optval, (socklen_t*)optlen)
-FUNC(setsockopt, (int)sockfd, (int)level, (int)optname, (const void*)optval, (socklen_t)optlen)
-FUNC(select, (int)nfds, (fd_set*)readfds, (fd_set*)writefds, (fd_set*)exceptfds, (struct timeval*)timeout)
-FUNC(poll, (struct pollfd*)fds, (nfds_t)nfds, (int)timeout)
-FUNC2(gethostbyname, struct hostent*, (const char*)name)
-FUNC2(gethostbyaddr, struct hostent*, (const void*)addr, (socklen_t)len, (int)type)
-FUNC(close, (int)fd)
-#endif
-
 int32_t TrapHandler(struct NaClApp *nap, uint32_t args)
 {
   uint64_t *sargs;
@@ -346,87 +265,6 @@ int32_t TrapHandler(struct NaClApp *nap, uint32_t args)
     case TrapUnjail:
       retcode = ZVMUnjailHandle(nap, (uint32_t)sargs[2], (int32_t)sargs[3]);
       break;
-
-#ifdef ZVM_SOCKETS
-    case TrapSocket:
-      retcode = ZVM_socket((int)sargs[2], (int)sargs[3], (int)sargs[4]);
-      break;
-    case TrapBind: {
-      const struct sockaddr *addr = (void*)NaClUserToSys(nap, (uintptr_t)sargs[3]);
-      retcode = ZVM_bind((int)sargs[2], addr, (socklen_t)sargs[4]);
-      break; }
-    case TrapConnect: {
-      const struct sockaddr *addr = (void*)NaClUserToSys(nap, (uintptr_t)sargs[3]);
-      retcode = ZVM_connect((int)sargs[2], addr, (socklen_t)sargs[4]);
-      break; }
-    case TrapAccept: {
-      struct sockaddr *addr = (void*)NaClUserToSys(nap, (uintptr_t)sargs[3]);
-      socklen_t *len = (void*)NaClUserToSys(nap, (uintptr_t)sargs[4]);
-      retcode = ZVM_accept((int)sargs[2], addr, len);
-      break; }
-    case TrapListen:
-      retcode = ZVM_listen((int)sargs[2], (int)sargs[3]);
-      break;
-    case TrapRecv: {
-      void *buf = (void*)NaClUserToSys(nap, (uintptr_t)sargs[3]);
-      retcode = ZVM_recv((int)sargs[2], buf, (size_t)sargs[4], (int)sargs[5]);
-      break; }
-    case TrapRecvfrom: {
-      void *buf = (void*)NaClUserToSys(nap, (uintptr_t)sargs[3]);
-      struct sockaddr *addr = (void*)NaClUserToSys(nap, (uintptr_t)sargs[6]);
-      socklen_t *len = (void*)NaClUserToSys(nap, (uintptr_t)sargs[7]);
-      retcode = ZVM_recvfrom((int)sargs[2], buf, (size_t)sargs[4], (int)sargs[5], addr, len);
-      break; }
-    case TrapRecvmsg: {
-      struct msghdr *msg = (void*)NaClUserToSys(nap, (uintptr_t)sargs[3]);
-      retcode = ZVM_recvmsg((int)sargs[2], msg, (int)sargs[4]);
-      break; }
-    case TrapSend: {
-      const void *buf = (void*)NaClUserToSys(nap, (uintptr_t)sargs[3]);
-      retcode = ZVM_send((int)sargs[2], buf, (size_t)sargs[4], (int)sargs[5]);
-      break; }
-    case TrapSendto: {
-      const void *buf = (void*)NaClUserToSys(nap, (uintptr_t)sargs[3]);
-      const struct sockaddr *addr = (void*)NaClUserToSys(nap, (uintptr_t)sargs[6]);
-      retcode = ZVM_sendto((int)sargs[2], buf, (size_t)sargs[4], (int)sargs[5], addr, (socklen_t)sargs[7]);
-      break; }
-    case TrapSendmsg: {
-      const struct msghdr *msg = (void*)NaClUserToSys(nap, (uintptr_t)sargs[3]);
-      retcode = ZVM_sendmsg((int)sargs[2], msg, (int)sargs[4]);
-      break; }
-    case TrapGetsockopt: {
-      void *optval = (void*)NaClUserToSys(nap, (uintptr_t)sargs[5]);
-      socklen_t *len = (void*)NaClUserToSys(nap, (uintptr_t)sargs[6]);
-      retcode = ZVM_getsockopt((int)sargs[2], (int)sargs[3], (int)sargs[4], optval, len);
-      break; }
-    case TrapSetsockopt: {
-      const void *optval = (void*)NaClUserToSys(nap, (uintptr_t)sargs[5]);
-      retcode = ZVM_setsockopt((int)sargs[2], (int)sargs[3], (int)sargs[4], optval, (socklen_t)sargs[6]);
-      break; }
-    case TrapSelect: {
-      fd_set *readfds = (void*)NaClUserToSys(nap, (uintptr_t)sargs[3]);
-      fd_set *writefds = (void*)NaClUserToSys(nap, (uintptr_t)sargs[4]);
-      fd_set *exceptfds = (void*)NaClUserToSys(nap, (uintptr_t)sargs[5]);
-      struct timeval *timeout = (void*)NaClUserToSys(nap, (uintptr_t)sargs[6]);
-      retcode = ZVM_select((int)sargs[2], readfds, writefds, exceptfds, timeout);
-      break; }
-    case TrapPoll: {
-      struct pollfd *fds = (void*)NaClUserToSys(nap, (uintptr_t)sargs[2]);
-      retcode = ZVM_poll(fds, (nfds_t)sargs[3], (int)sargs[4]);
-      break; }
-    case TrapGethostbyname: {
-      const char *name = (void*)NaClUserToSys(nap, (uintptr_t)sargs[2]);
-      retcode = (int)(intptr_t)ZVM_gethostbyname(name);
-      break; }
-    case TrapGethostbyaddr: {
-      const void *addr = (void*)NaClUserToSys(nap, (uintptr_t)sargs[2]);
-      retcode = (int)(intptr_t)ZVM_gethostbyaddr(addr, (socklen_t)sargs[3], (int)sargs[4]);
-      break; }
-    case TrapClose:
-      retcode = ZVM_close((int)sargs[2]);
-      break;
-#endif
-
     default:
       retcode = -EPERM;
       ZLOG(LOG_ERROR, "function %ld is not supported", *sargs);
@@ -434,7 +272,7 @@ int32_t TrapHandler(struct NaClApp *nap, uint32_t args)
   }
 
   /* report, ztrace and return */
-  FastReport();
+  FastReport(nap);
   ZLOGS(LOG_DEBUG, "%s returned %d", FunctionName(*sargs), retcode);
   SyscallZTrace(*sargs, retcode, sargs[2], sargs[3], sargs[4], sargs[5], sargs[6], sargs[7]);
   return retcode;
