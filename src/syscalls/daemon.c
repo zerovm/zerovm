@@ -30,66 +30,42 @@
 #include "src/main/ztrace.h"
 
 #define DAEMON_NAME "zvm."
-#define TASK_SIZE 0x10000 /* limited by protocol (server <-> zerovm ) */
 #define QUEUE_SIZE 16
-#define CMD_SIZE (sizeof(uint64_t))
 
 static int client = -1;
 
 /*
- * child: get command from inherited command socket. current version can
- * only have one command and therefore the command format will only contain
- * one (pascal) string: 4-bytes length and data of "length" size. the data
- * is manifest (reduced form of it). WARNING: result should be freed
+ * get command (see doc/protocol.txt) from the control channel
+ * NOTE: ZLOGFAIL should not be used
+ * WARNING: result should be freed
+ * TODO(d'b): add document, current ron's version can be used
+ * TODO(d'b): generalize and move it to own class (protocol.c?)
  */
-//static char *GetCommand()
-//{
-//  int len;
-//  char *cmd = g_malloc0(TASK_SIZE);
-//
-//  assert(client >= 0);
-//
-//  // ### ZLOGFAIL should not be used because in case of error we want to
-//  // give the report to command channel, not just fail
-//  ZLOGFAIL(read(client, cmd, CMD_SIZE) < 0, EIO, "%s", strerror(errno));
-//  len = ToInt(cmd);
-//  ZLOGFAIL(read(client, cmd, len) < 0, EIO, "%s", strerror(errno));
-//
-//  return cmd;
-//}
-
-/*
- * child: get command from inherited command socket. current version can
- * only have one command and therefore the command format will only contain
- * one (pascal) string: 4-bytes length and data of "length" size. the data
- * is manifest (reduced form of it). WARNING: result should be freed
- */
+#define CMD_SIZE 0x10000
+#define CMD_FAIL(cond, msg) \
+  if(cond)\
+  {\
+    ZLOG(LOG_ERROR, msg);\
+    g_free(cmd);\
+    return NULL;\
+  }
 static char *GetCommand()
 {
   int len;
-  char *cmd = g_malloc0(TASK_SIZE);
+  char *cmd = g_malloc0(CMD_SIZE);
 
   assert(client >= 0);
 
   /* read manifest length */
-  if(read(client, cmd, CMD_SIZE) != CMD_SIZE)
-  {
-    ZLOG(LOG_DEBUG, "read(client, cmd, CMD_SIZE) failed");
-    return NULL;
-  }
+  CMD_FAIL(read(client, cmd, sizeof(uint64_t)) != sizeof(uint64_t),
+      "failed to read command");
   len = g_ascii_strtoll(g_strstrip(cmd), NULL, 0);
 
-  /* empty manifest?! */
-  if(len <= 0)
-    return NULL;
+  /* check manifest size */
+  CMD_FAIL(len <= 0, "invalid manifest size");
 
   /* read manifest */
-  if(read(client, cmd, len) < 0)
-  {
-    ZLOG(LOG_DEBUG, "read(client, cmd, len) failed");
-    return NULL;
-  }
-
+  CMD_FAIL(read(client, cmd, len) < 0, "failed to read command data");
   return cmd;
 }
 
@@ -112,7 +88,7 @@ static void UpdateSession(struct Manifest *manifest)
   ZLOG(LOG_INSANE, "signals, report, log and trace reinitialized");
 
   /* read manifest */
-  write(client, "0x010000\ntest\n", 14); // ### doesn't work. why?
+//  write(client, "0x010000\ntest\n", 14); // ### doesn't work. why?
   ZLOGFAIL(cmd == NULL, EFAULT, "invalid manifest received");
   tmp = ManifestTextCtor(cmd);
   g_free(cmd);
