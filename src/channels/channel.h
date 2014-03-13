@@ -39,7 +39,7 @@ EXTERN_C_BEGIN
 #define STDRAM "/dev/memory" /* reserved for internal usage */
 
 #define FLAG_VALID_MASK 8
-#define IS_NETWORK(c) ((c)->protocol < ProtoRegular)
+#define IS_NETWORK(c) ((c)->protocol < ProtoIPC)
 #define IS_FILE(c) (!IS_NETWORK(c))
 #define IS_VALID(c) (!((c)->flags & FLAG_VALID_MASK))
 #define IS_PTR(c) ((c)->flags & 1)

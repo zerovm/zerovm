@@ -1,6 +1,7 @@
 /*
  * routines to calculate hashes. should be constructed from the command
  * line parser
+ * update (2014.03.13): from now debug purposes only
  *
  * Copyright (c) 2012, LiteStack, Inc.
  *

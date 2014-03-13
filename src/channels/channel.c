@@ -13,15 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/*
- * d'b: changes for the new "simple" channels design
- * - all sources related stuff removed (buffers, counters e.t.c.)
- * - all network aware logic removed
- * - extra sorts removed
- * - etags were removed. i am thinking about removing it completely
- * nb: however, the logic (and the code) still can be simplified
- */
-
 #include <assert.h>
 #include <glib.h>
 #include "src/loader/sel_ldr.h"
@@ -60,9 +51,7 @@ int32_t ChannelRead(struct ChannelDesc *channel,
 
   assert(channel != NULL);
 
-  /* read "size" bytes or until channel EOF */
   switch(channel->protocol)
-  // ### detect the channel nature (local or not)
   {
     case ProtoRegular:
       result = pread(GPOINTER_TO_INT(channel->handle), buffer, size, offset);
@@ -75,7 +64,7 @@ int32_t ChannelRead(struct ChannelDesc *channel,
       if(result == -1)
         result = -errno;
       break;
-    case ProtoTCP: // ### the protocol(s) needs to be revised
+    case ProtoIPC:
       FetchData(channel, buffer, size);
       break;
     default: /* design error */
@@ -117,7 +106,7 @@ int32_t ChannelWrite(struct ChannelDesc *channel,
     case ProtoFIFO:
       result = fwrite(buffer, 1, size, channel->handle);
       break;
-    case ProtoTCP:
+    case ProtoIPC:
       result = SendData(channel, buffer, size);
       break;
     default: /* design error */
@@ -180,11 +169,13 @@ static void ChannelCtor(struct ChannelDesc *channel)
       "%s has invalid type %d", channel->alias, channel->type);
 
   /* mount the channel */
-  // ### detect the channel type
   if(IS_FILE(channel))
     PreloadChannelCtor(channel);
   else
     PrefetchChannelCtor(channel);
+
+  /* mark channel as valid */
+  channel->flags |= FLAG_VALID_MASK;
 }
 
 /* close channel and deallocate its resources */
@@ -193,12 +184,9 @@ static void ChannelDtor(struct ChannelDesc *channel)
   assert(channel != NULL);
 
   /* quit if channel isn't mounted (no handles added) */
-  // ### new check needed. since handle can be 0 (when it is not pointer).
-  // also NULL is not always 0 (for all platforms)
-  if(channel->handle == NULL) return;
+  if(!IS_VALID(channel)) return;
 
   /* free channel */
-  // ### detect the channel type
   if(IS_FILE(channel))
     PreloadChannelDtor(channel);
   else
@@ -225,9 +213,8 @@ void ChannelsCtor(struct Manifest *manifest)
       EFAULT, "not enough channels: %d", manifest->channels->len);
 
   /* construct prefetch class before usage */
-  // ### how to initiate protocol to broker w/o visiting channels?
-//  if(binds + connects > 0)
-    NetCtor(manifest);
+  /* TODO(d'b): skip broker initialization if no network channels exist */
+  NetCtor(manifest);
 
   /* mount channels */
   for(i = 0; i < manifest->channels->len; ++i)
@@ -254,13 +241,11 @@ void ChannelsDtor(struct Manifest *manifest)
   for(i = 0; i < manifest->channels->len; ++i)
   {
     struct ChannelDesc *channel = CH_CH(manifest, i);
-//    ReportTag(channel->alias, channel->tag);
     ChannelDtor(channel);
   }
   ResetAliases();
 
   /* release prefetch class */
-  // ### how to finalize protocol to broker?
-//  if(binds + connects > 0)
-    NetDtor(manifest);
+  /* TODO(d'b): skip broker finalization if no network channels exist */
+  NetDtor(manifest);
 }

@@ -13,9 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/*
- * ### WARNING: under re-construction!
- */
 #include <assert.h>
 #include <sys/socket.h>
 #include <sys/resource.h>
@@ -88,7 +85,6 @@ static void UpdateSession(struct Manifest *manifest)
   ZLOG(LOG_INSANE, "signals, report, log and trace reinitialized");
 
   /* read manifest */
-//  write(client, "0x010000\ntest\n", 14); // ### doesn't work. why?
   ZLOGFAIL(cmd == NULL, EFAULT, "invalid manifest received");
   tmp = ManifestTextCtor(cmd);
   g_free(cmd);

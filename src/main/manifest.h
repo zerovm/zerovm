@@ -44,6 +44,7 @@ EXTERN_C_BEGIN
     X(Block) \
     X(FIFO) \
     X(Link) \
+    X(Opaque) /* zpipes (ron) */ \
     X(Socket)
 
 /* (x-macro): manifest enumeration and array */
@@ -52,19 +53,17 @@ EXTERN_C_BEGIN
   XENUM(PROTOCOLS)
 #undef X
 
-/*
- * short "flags" description:
- * 0:    id/ip. 0 means id specified by "Channel" field, 1 - ip4
- * 1..2: r/w source type: 0 - inaccessible, 1 - RO, 2 - WO, 3 - RW
- * 3:    0 means channel is valid, 1 - invalid
- */
-
 /* channel structure */
 struct ChannelDesc {
   /* manifest parser initialize it (partially) */
   uint8_t protocol; /* XTYPE(PROTOCOLS) */
   void *handle; /* (int*) or (FILE*) */
-  // ### todo: replace "flags" with specific fields
+  /*
+   * 0:    id/ip. 0 means id specified by "Channel" field, 1 - ip4
+   * 1..2: r/w source type: 0 - inaccessible, 1 - RO, 2 - WO, 3 - RW
+   * 3:    0 means channel is valid, 1 - invalid
+   * TODO(d'b): "flags" field need to be re-factored with specific fields
+   */
   uint8_t flags; /* 0: handle is ptr; 1: read access; 2: write access; 3: valid; */
   char *name; /* file name */
 
