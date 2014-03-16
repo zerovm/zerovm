@@ -16,8 +16,12 @@
 
 /*
  * WARNING: under construction!
+ * this design uses new protocol to send/receive data (for details:
+ * https://gist.github.com/rpedde/8927215, by Ron Pedde). however, this
+ * code only takes over r/w channel operations and thus uses the limited
+ * set of protocol mentioned above. also zerovm assumes that the manifest
+ * provider does not provide information to broker
  */
-
 #include <assert.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -28,105 +32,63 @@
 #include "src/main/report.h"
 
 #define NET_BUFFER_SIZE BUFFER_SIZE
-// ###
-#define ERROR(code) ZLOGIF(code, "failed: %s", getlasterror_desc())
+#define QUEUE_SIZE 16
 #define MAX_CONN 1
+#define B_EOL "\n"
+#define B_INIT_ANSWER "%d"
+#define B_QUIT "QUIT" B_EOL
+#define B_QUIT_ANSWER "%d"
+#define B_POPEN "POPEN %s %s %s" B_EOL
+#define B_POPEN_ANSWER "%d %s"
+#define B_PCLOSE "PCLOSE %s" B_EOL
+#define B_PCLOSE_ANSWER "%d"
 
-// ### replace function "in place"
+/* TODO(d'b): replace the function with inline error */
 static char *getlasterror_desc()
 {
   return strerror(errno);
 }
 
-///*
-// * accept "bind" channels. since accept() is a blocking thing
-// * the function should be used *only* after other channels are mounted
-// * TODO(d'b): remove it after "channels" re-design
-// */
-//void PrefetchAccept(struct ChannelDesc *channel)
-//{
-////  int n;
-//  int result;
-//  struct sockaddr_in incoming;
-//
-//  // ### assert if channel has "network" type
-//
-//  /* skip inappropriate channels */
-//  if(!IS_RO(channel)) return;
-//
-////  for(n = 0; n < channel->source->len; ++n)
-////  {
-////    if(IS_FILE(CH_CONN(channel, n))) continue;
-////
-////    result = accept(GPOINTER_TO_INT(CH_HANDLE(channel, n)),
-////        (struct sockaddr*)&incoming, (uint32_t*)&result);
-////    CH_HANDLE(channel, n) = GINT_TO_POINTER(result);
-////    ZLOGFAIL(GPOINTER_TO_INT(CH_HANDLE(channel, n)) == -1, EFAULT,
-////        "bind %s;%d: %s", channel->alias, n, getlasterror_desc());
-////  }
-//  result = accept(GPOINTER_TO_INT(channel->handle),
-//      (struct sockaddr*)&incoming, (uint32_t*)&result);
-//  channel->handle = GINT_TO_POINTER(result);
-//  ZLOGFAIL(GPOINTER_TO_INT(channel->handle) == -1, EFAULT,
-//      "bind %s: %s", channel->alias, getlasterror_desc());
-//}
-
-/* bind the RO source */
-// ### rewrite
-static void Bind(struct ChannelDesc *channel, struct addrinfo *local)
+/* open the channel */
+static void Open(struct ChannelDesc *channel)
 {
-//  int result;
-//  struct sockaddr_in incoming;
-//  int i = sizeof incoming;
+  struct sockaddr_un remote = {AF_UNIX, ""};
 
   ZLOG(LOG_DEBUG, "Bind: %s", channel->alias);
-
-//  /* bind */
-//  result = bind(GPOINTER_TO_INT(channel->handle),
-//      local->ai_addr, local->ai_addrlen);
-//  ZLOGFAIL(result != 0, EFAULT, "bind %s: %s",
-//      channel->alias, getlasterror_desc());
-//
-//  /* listen */
-//  result = listen(GPOINTER_TO_INT(channel->handle), MAX_CONN);
-//  ZLOGFAIL(result == -1, EFAULT, "listen: %s", getlasterror_desc());
-}
-
-/* connect the WO source */
-// ### rewrite
-static void Connect(struct ChannelDesc *channel, struct addrinfo *local)
-{
-//  char *ip;
-//  char *port;
-//  int result;
-//  struct addrinfo *peer;
-//  struct in_addr ip_int;
-
-  ZLOG(LOG_DEBUG, "Connect: %s", channel->alias);
-
-//  /* update connection information (do we really need it?) */
-//  ip_int.s_addr = CH_HOST(channel, n);
-//  ip = inet_ntoa(ip_int);
-//  port = g_strdup_printf("%d", CH_PORT(channel, n));
-//  ZLOGFAIL(getaddrinfo(ip, port, local, &peer) != 0, EFAULT,
-//      "%s;%d has incorrect network address", channel->alias, n);
-//
-//  /* connect */
-//  result = connect(GPOINTER_TO_INT(CH_HANDLE(channel, n)),
-//      peer->ai_addr, peer->ai_addrlen);
-//  freeaddrinfo(peer);
-//  ZLOGFAIL(result != 0, EFAULT, "connect %s;%d: %s",
-//      channel->alias, n, getlasterror_desc());
+  ZLOGFAIL(bind(GPOINTER_TO_INT(channel->handle), &remote,
+      sizeof remote) < 0, EIO, "bind: %s", strerror(errno));
+  ZLOGFAIL(listen(GPOINTER_TO_INT(channel->handle),
+      QUEUE_SIZE) < 0, EIO, "listen: %s", strerror(errno));
 }
 
 void NetCtor(const struct Manifest *manifest)
 {
-  // ### remove it completely
+  /*
+   * TODO(d'b): adapt it for broker
+   */
 }
 
 void NetDtor(struct Manifest *manifest)
 {
-  // ### remove it completely
+  /*
+   * TODO(d'b): adapt it for broker
+   */
+}
+
+/*
+ * TODO(d'b): decide interface
+ */
+static int GetCommand(struct ChannelDesc *channel)
+{
+
+}
+
+/*
+ * TODO(d'b): decide interface
+ */
+static int GetData(struct ChannelDesc *channel)
+{
+
 }
 
 // ### rewrite
@@ -203,10 +165,7 @@ void PrefetchChannelCtor(struct ChannelDesc *channel)
   assert(channel != NULL);
   ZLOGS(LOG_DEBUG, "PrefetchChannelCtor %s", channel->alias);
 
-  // ### to remove {{
-  Bind(channel, NULL);
-  Connect(channel, NULL);
-  // }}
+  Open(channel);
 
 //  /* choose socket type */
 //  ZLOGFAIL((uint32_t)CH_RW_TYPE(channel) - 1 > 1, EFAULT, "invalid i/o type");

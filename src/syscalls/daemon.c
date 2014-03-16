@@ -65,13 +65,14 @@ static char *GetCommand()
   CMD_FAIL(read(client, cmd, len) < 0, "failed to read command data");
   return cmd;
 }
+#undef CMD_FAIL
 
 /* child: update "nap" with the new manifest */
 static void UpdateSession(struct Manifest *manifest)
 {
   int i;
-  char *cmd = GetCommand();
   struct Manifest *tmp;
+  char *cmd = GetCommand();
 
   ZLOG(LOG_INSANE, "job manifest: %s", cmd);
 
