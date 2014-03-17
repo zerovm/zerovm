@@ -85,10 +85,10 @@ struct ChannelDesc {
 
 /* zerovm manifest structure */
 struct Manifest {
-  int node; /* own node id from manifest */
+  int node; /* TODO(d'b): useless. to remove. own node id from manifest */
   char *program; /* program file name */
-  char *etag; /* signature. reserved for a future */
   char *job; /* daemon: job file name. child: manifest file name */
+  char *broker; /* path to talk with network broker */
   int32_t timeout; /* time user module allowed to run */
   int64_t mem_size; /* user specified memory */
   void *mem_tag; /* tag context */

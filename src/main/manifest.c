@@ -93,7 +93,7 @@ typedef enum {
   X(Timeout, 1, 1) \
   X(Node, 0, 1) \
   X(Job, 0, 1) \
-  X(Etag, 0, 1)
+  X(Broker, 0, 1)
 
 /* (x-macro): manifest enumeration, array and statistics */
 #define XENUM(a) enum ENUM_##a {a};
@@ -199,13 +199,14 @@ static void Node(struct Manifest *manifest, char *value)
 
 static void Job(struct Manifest *manifest, char *value)
 {
-  MFTFAIL(strlen(value) > UNIX_PATH_MAX, EFAULT, "too long Job name");
+  MFTFAIL(strlen(value) > UNIX_PATH_MAX, EFAULT, "too long Job path");
   manifest->job = g_strdup(g_strstrip(value));
 }
 
-static void Etag(struct Manifest *manifest, char *value)
+static void Broker(struct Manifest *manifest, char *value)
 {
-  manifest->etag = g_strdup(g_strstrip(value));
+  MFTFAIL(strlen(value) > UNIX_PATH_MAX, EFAULT, "too long Broker path");
+  manifest->job = g_strdup(g_strstrip(value));
 }
 
 /* set channels field */
@@ -333,7 +334,7 @@ void ManifestDtor(struct Manifest *manifest)
   g_ptr_array_free(manifest->channels, TRUE);
 
   /* other */
-  g_free(manifest->etag);
+  g_free(manifest->broker);
   TagDtor(manifest->mem_tag);
   g_free(manifest->program);
   g_free(manifest);

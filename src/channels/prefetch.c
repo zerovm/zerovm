@@ -17,10 +17,22 @@
 /*
  * WARNING: under construction!
  * this design uses new protocol to send/receive data (for details:
- * https://gist.github.com/rpedde/8927215, by Ron Pedde). however, this
- * code only takes over r/w channel operations and thus uses the limited
- * set of protocol mentioned above. also zerovm assumes that the manifest
- * provider does not provide information to broker
+ * https://gist.github.com/rpedde/8927215, by Ron Pedde). manifest should
+ * contain "Broker" string (path to connect to the broker and send/receive
+ * control information). also zerovm assumes that the manifest provider
+ * does not provide information to broker
+ *
+ * 1. connect broker (where to get connection line/url?)
+ * 2. send the broker the channel connection information
+ * 3. get the broker's answer, extract the return code and pipe path
+ * 4. repeat (2,3) until the channels list become empty
+ * 5. use channels sending/receiving data
+ * 6. close channels sending appropriate commands to the broker
+ * 9. quit broker session
+ *
+ * questions:
+ * 1. are we using same (control) channel to get/receive data for all network channels?
+ * 2. will we use control channel to communicate with daemon?
  */
 #include <assert.h>
 #include <sys/types.h>
@@ -36,12 +48,17 @@
 #define MAX_CONN 1
 #define B_EOL "\n"
 #define B_INIT_ANSWER "%d"
+#define B_OK 200
 #define B_QUIT "QUIT" B_EOL
 #define B_QUIT_ANSWER "%d"
 #define B_POPEN "POPEN %s %s %s" B_EOL
 #define B_POPEN_ANSWER "%d %s"
 #define B_PCLOSE "PCLOSE %s" B_EOL
 #define B_PCLOSE_ANSWER "%d"
+#define B_BUF_SIZE 1024 /* broker command buffer size */
+
+static int control = -1; /* file descriptor to broker */
+static int bsock = -1; /* only need to free socket resource after usage */
 
 /* TODO(d'b): replace the function with inline error */
 static char *getlasterror_desc()
@@ -50,6 +67,7 @@ static char *getlasterror_desc()
 }
 
 /* open the channel */
+/* ### change it */
 static void Open(struct ChannelDesc *channel)
 {
   struct sockaddr_un remote = {AF_UNIX, ""};
@@ -63,16 +81,45 @@ static void Open(struct ChannelDesc *channel)
 
 void NetCtor(const struct Manifest *manifest)
 {
-  /*
-   * TODO(d'b): adapt it for broker
-   */
+  struct sockaddr_un remote = {AF_UNIX, ""};
+  socklen_t len = sizeof remote;
+  char buffer[B_BUF_SIZE];
+  int size;
+  int code;
+
+  /* open control channel to broker */
+  bsock = socket(AF_UNIX, SOCK_STREAM, 0);
+  ZLOGFAIL(bsock < 0, EIO, "%s", strerror(errno));
+  strcpy(remote.sun_path, manifest->broker);
+  ZLOGFAIL(bind(bsock, &remote, sizeof remote) < 0, EIO, "%s", strerror(errno));
+  ZLOGFAIL(listen(bsock, QUEUE_SIZE) < 0, EIO, "%s", strerror(errno));
+
+  /* accept connection to broker */
+  control = accept(bsock, &remote, &len);
+  ZLOGFAIL(control < 0, EIO, "%s", strerror(errno));
+
+  /* command broker to serve */
+  size = read(control, buffer, B_BUF_SIZE);
+  sscanf(buffer, B_INIT_ANSWER, &code);
+  ZLOGFAIL(code != B_OK, EIO, "broker returned error %d", code);
 }
 
 void NetDtor(struct Manifest *manifest)
 {
-  /*
-   * TODO(d'b): adapt it for broker
-   */
+  char buffer[B_BUF_SIZE];
+  int code;
+
+  /* log out broker */
+  if(control >= 0)
+  {
+    write(control, B_QUIT, sizeof B_QUIT);
+    sscanf(buffer, B_QUIT_ANSWER, &code);
+    ZLOG(LOG_DEBUG, "broker closed with code %d", code);
+    close(control);
+  }
+
+  if(bsock >= 0)
+    close(bsock);
 }
 
 /*
