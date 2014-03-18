@@ -16,92 +16,84 @@
 
 /*
  * WARNING: under construction!
- * this design uses new protocol to send/receive data (for details:
- * https://gist.github.com/rpedde/8927215, by Ron Pedde). manifest should
- * contain "Broker" string (path to connect to the broker and send/receive
- * control information). also zerovm assumes that the manifest provider
- * does not provide information to broker
+ * this design based on the (modified) protocol by Ron Pedde (for details:
+ * https://gist.github.com/rpedde/8927215). manifest should contain "Broker"
+ * string (path to connect to the broker and send/receive control
+ * information). also zerovm assumes that the manifest provider does not
+ * provide information to broker
  *
  * 1. connect broker (where to get connection line/url?)
  * 2. send the broker the channel connection information
- * 3. get the broker's answer, extract the return code and pipe path
+ * 3. get the broker's answer, extract the return code and if ok connect the channel
  * 4. repeat (2,3) until the channels list become empty
  * 5. use channels sending/receiving data
  * 6. close channels sending appropriate commands to the broker
  * 9. quit broker session
  *
+ * note: in this version node is a string. therefore any id can be used in
+ * "Node" and "Channel" (however it is advised to use 64-bit values)
+ *
  * questions:
  * 1. are we using same (control) channel to get/receive data for all network channels?
+ *    answer: no
  * 2. will we use control channel to communicate with daemon?
+ *    answer: perhaps, we should use channel provided by "Job"
  */
 #include <assert.h>
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <arpa/inet.h> /* convert ip <-> int */
-#include <netdb.h>
 #include "src/channels/prefetch.h"
-#include "src/main/accounting.h"
 #include "src/main/report.h"
 
-#define NET_BUFFER_SIZE BUFFER_SIZE
-#define QUEUE_SIZE 16
-#define MAX_CONN 1
+#define B_BUF_SIZE 1024 /* broker command buffer size */
 #define B_EOL "\n"
-#define B_INIT_ANSWER "%d"
 #define B_OK 200
+
+/* the format strings are here just for convenience */
+#define B_INIT_ANSWER "%d"
 #define B_QUIT "QUIT" B_EOL
 #define B_QUIT_ANSWER "%d"
-#define B_POPEN "POPEN %s %s %s" B_EOL
-#define B_POPEN_ANSWER "%d %s"
+#define B_POPEN "POPEN %s %s %c" B_EOL
+#define B_POPEN_ANSWER "%d"
 #define B_PCLOSE "PCLOSE %s" B_EOL
 #define B_PCLOSE_ANSWER "%d"
-#define B_BUF_SIZE 1024 /* broker command buffer size */
 
+static char *node = NULL;
 static int control = -1; /* file descriptor to broker */
 static int bsock = -1; /* only need to free socket resource after usage */
-
-/* TODO(d'b): replace the function with inline error */
-static char *getlasterror_desc()
-{
-  return strerror(errno);
-}
-
-/* open the channel */
-/* ### change it */
-static void Open(struct ChannelDesc *channel)
-{
-  struct sockaddr_un remote = {AF_UNIX, ""};
-
-  ZLOG(LOG_DEBUG, "Bind: %s", channel->alias);
-  ZLOGFAIL(bind(GPOINTER_TO_INT(channel->handle), &remote,
-      sizeof remote) < 0, EIO, "bind: %s", strerror(errno));
-  ZLOGFAIL(listen(GPOINTER_TO_INT(channel->handle),
-      QUEUE_SIZE) < 0, EIO, "listen: %s", strerror(errno));
-}
+static struct sockaddr_un broker = {AF_UNIX, ""};
 
 void NetCtor(const struct Manifest *manifest)
 {
-  struct sockaddr_un remote = {AF_UNIX, ""};
-  socklen_t len = sizeof remote;
   char buffer[B_BUF_SIZE];
-  int size;
   int code;
 
+  /* don't proceed if broker is not specified */
+  if(manifest->broker == NULL) return;
+
+  ZLOGS(LOG_INSANE, "connecting to broker %s", manifest->broker);
+
+  /* store node */
+  node = manifest->node;
+
   /* open control channel to broker */
+  code = sizeof broker.sun_path - strlen(manifest->broker);
+  ZLOGFAIL(code < 0, EFAULT, "too long broker path");
   bsock = socket(AF_UNIX, SOCK_STREAM, 0);
   ZLOGFAIL(bsock < 0, EIO, "%s", strerror(errno));
-  strcpy(remote.sun_path, manifest->broker);
-  ZLOGFAIL(bind(bsock, &remote, sizeof remote) < 0, EIO, "%s", strerror(errno));
-  ZLOGFAIL(listen(bsock, QUEUE_SIZE) < 0, EIO, "%s", strerror(errno));
+  strcpy(broker.sun_path, manifest->broker);
 
-  /* accept connection to broker */
-  control = accept(bsock, &remote, &len);
+  /* connect to broker */
+  control = connect(bsock, &broker, sizeof broker);
   ZLOGFAIL(control < 0, EIO, "%s", strerror(errno));
 
   /* command broker to serve */
-  size = read(control, buffer, B_BUF_SIZE);
+  code = read(control, buffer, B_BUF_SIZE);
+  ZLOGFAIL(code < 0, EIO, "control channel read error: %s", strerror(errno));
   sscanf(buffer, B_INIT_ANSWER, &code);
   ZLOGFAIL(code != B_OK, EIO, "broker returned error %d", code);
+
+  ZLOGS(LOG_DEBUG, "broker %s connected", manifest->broker);
 }
 
 void NetDtor(struct Manifest *manifest)
@@ -109,7 +101,12 @@ void NetDtor(struct Manifest *manifest)
   char buffer[B_BUF_SIZE];
   int code;
 
-  /* log out broker */
+  /* don't proceed if broker is not specified */
+  if(manifest->broker == NULL) return;
+
+  ZLOGS(LOG_INSANE, "disconnecting broker %s", manifest->broker);
+
+  /* log out broker and close control channel */
   if(control >= 0)
   {
     write(control, B_QUIT, sizeof B_QUIT);
@@ -118,162 +115,118 @@ void NetDtor(struct Manifest *manifest)
     close(control);
   }
 
+  /* close control socket */
   if(bsock >= 0)
     close(bsock);
+
+  ZLOGS(LOG_DEBUG, "broker %s disconnected", manifest->broker);
 }
 
-/*
- * TODO(d'b): decide interface
- */
-static int GetCommand(struct ChannelDesc *channel)
-{
-
-}
-
-/*
- * TODO(d'b): decide interface
- */
-static int GetData(struct ChannelDesc *channel)
-{
-
-}
-
-// ### rewrite
 int32_t FetchData(struct ChannelDesc *channel, char *buf, int32_t size)
 {
   int32_t result = 0;
-
-  /*
-   * ->bufpos contains read size to workaround problem with
-   * incomplete messages (usual case for udt).
-   */
-  assert(channel->bufpos <= NET_BUFFER_SIZE);
-  assert(channel->bufpos > 0);
-  ZLOGS(LOG_INSANE, "FetchMessage: %s", channel->alias);
-
-  /* get message */
-  if(!channel->eof)
-  {
-    channel->bufpos = 0;
-    channel->bufend = 0;
-
-    while(channel->bufend < size && !channel->eof)
-    {
-      int i = recv(GPOINTER_TO_INT(channel->handle),
-          channel->msg + channel->bufend, size - channel->bufend, 0);
-      if(i < 0) break; // ### fail here
-      else
-        channel->bufend += i;
-      result += i;
-    }
-
-    /* only set EOF if this read returned nothing */
-    if(channel->bufend == 0)
-      channel->eof = 1;
-  }
-
-  return result;
-}
-
-// ### rewrite
-int32_t SendData(struct ChannelDesc *channel, const char *buf, int32_t count)
-{
-  int i;
-  int pos;
+  int32_t rest;
+  int32_t toread;
 
   assert(channel != NULL);
+  assert(channel->handle != NULL);
   assert(buf != NULL);
-  assert(count >= 0);
 
-  ZLOGS(LOG_INSANE, "SendData: channel %s;%d, buffer=0x%lx, size=%d",
-      channel->alias, (intptr_t)buf, count);
+  ZLOGS(LOG_INSANE, "FetchData(%s, %p, %d)", channel->alias, buf, size);
 
-  /* send a buffer through the multiple messages */
-  for(pos = 0; pos < count; pos += i)
+  /* read to buffer with small chunks */
+  for(rest = size; rest > 0; rest -= result)
   {
-    i = MIN(NET_BUFFER_SIZE, count - pos);
-    i = send(GPOINTER_TO_INT(channel->handle), buf + pos, i, 0);
-    ZLOGFAIL(i < 0, EFAULT, "send: %s", getlasterror_desc());
+    toread = MIN(rest, BUFFER_SIZE);
+    result = read(GPOINTER_TO_INT(channel->handle), buf, toread);
+
+    if(result < 0) return -errno;
+    if(result == 0) break;
+    buf += result;
   }
 
-  return count;
+  return size - rest;
 }
 
-// ### rewrite
+/*
+ * TODO(d'b): remove code doubling
+ */
+int32_t SendData(struct ChannelDesc *channel, const char *buf, int32_t size)
+{
+  int32_t result = 0;
+  int32_t rest;
+  int32_t tosend;
+
+  assert(channel != NULL);
+  assert(channel->handle != NULL);
+  assert(buf != NULL);
+
+  ZLOGS(LOG_INSANE, "SendData(%s, %p, %d)", channel->alias, buf, size);
+
+  /* write from buffer with small chunks */
+  for(rest = size; rest > 0; rest -= result)
+  {
+    tosend = MIN(rest, BUFFER_SIZE);
+    result = write(GPOINTER_TO_INT(channel->handle), buf, tosend);
+
+    if(result < 0) return -errno;
+    if(result == 0) break;
+    buf += result;
+  }
+
+  return size - rest;
+}
+
 void PrefetchChannelCtor(struct ChannelDesc *channel)
 {
-//  int i;
-////  char *ip;
-////  char *port;
-////  struct addrinfo hint = {0};
-//  struct addrinfo *local;
-////  struct in_addr ip_int;
+  char buffer[B_BUF_SIZE];
+  int size;
+  int code;
 
   assert(channel != NULL);
-  ZLOGS(LOG_DEBUG, "PrefetchChannelCtor %s", channel->alias);
+  assert(control >= 0);
+  assert(bsock >= 0);
+  assert(node != NULL);
+  assert(!CH_RND_READABLE(channel));
+  assert(!CH_RND_WRITEABLE(channel));
+  assert(!CH_SEQ_READABLE(channel) || !CH_SEQ_WRITEABLE(channel));
 
-  Open(channel);
+  ZLOGS(LOG_INSANE, "opening channel %s", channel->alias);
 
-//  /* choose socket type */
-//  ZLOGFAIL((uint32_t)CH_RW_TYPE(channel) - 1 > 1, EFAULT, "invalid i/o type");
-//  channel->flags |= (CH_RW_TYPE(channel) - 1) << 1;
+  /* ask the broker to connect session to another */
+  size = g_snprintf(buffer, B_BUF_SIZE, B_POPEN, node,
+      channel->name, CH_SEQ_READABLE(channel) ? 'R' : 'W');
+  code = write(control, buffer, size);
+  ZLOGFAIL(size != code, EIO, "control channel write error");
 
-//  /* get address structure via "hint" to "local" */
-//  hint.ai_flags = AI_PASSIVE;
-//  hint.ai_family = AF_INET;
-//  hint.ai_socktype = SOCK_STREAM;
+  /* get broker's answer (is it OK to connect new channel) */
+  size = read(control, buffer, B_BUF_SIZE);
+  ZLOGFAIL(size < 0, EIO, "control channel read error: %s", strerror(errno));
+  sscanf(buffer, B_POPEN_ANSWER, &code);
+  ZLOGFAIL(code != B_OK, EIO, "broker returned error %d", code);
 
-//  ip_int.s_addr = CH_HOST(channel, n);
-//  ip = IS_RO(channel) ? NULL : inet_ntoa(ip_int);
-//  port = g_strdup_printf("%d", CH_PORT(channel, n));
-//  ZLOGFAIL(getaddrinfo(ip, port, &hint, &local) != 0, EFAULT,
-//      "%s;%d has incorrect network address", channel->alias, n);
-
-//  /* open socket */
-//  i = socket(local->ai_family, local->ai_socktype, local->ai_protocol);
-//  ZLOGFAIL(i == -1, EFAULT, "%s: %s", channel->alias, getlasterror_desc());
-//  channel->handle = GINT_TO_POINTER(i);
-//
-//  /* do NOT reuse an existing address */
-//  i = 0;
-//  ZLOGFAIL(setsockopt(GPOINTER_TO_INT(channel->handle), 0, SO_REUSEADDR,
-//      &i, sizeof i) == -1, EFAULT, "%s", getlasterror_desc());
-
-  /*
-   * TODO(d'b): remove this when code will be re-factored to use the user
-   * provided buffer
-   */
-//  channel->msg = IS_RO(channel) ? g_malloc(NET_BUFFER_SIZE) : NULL;
-//
-//  /* bind or connect the channel */
-//  IS_RO(channel) ? Bind(channel, local) : Connect(channel, local);
-//  freeaddrinfo(local);
+  /* open channel */
+  code = connect(bsock, &broker, sizeof broker);
+  ZLOGFAIL(code < 0, EIO, "%s", strerror(errno));
+  channel->handle = GINT_TO_POINTER(code);
+  ZLOGS(LOG_DEBUG, "%s opened successfully", channel->alias);
 }
 
 void PrefetchChannelDtor(struct ChannelDesc *channel)
 {
-  /* skip source closing if session is broken */
-  if(GetExitCode() != 0) return;
+  /* prevent abort if channel is not constructed */
+  if(channel == NULL) return;
+  if(channel->alias == NULL) return;
+  if(channel->handle == NULL) return;
 
-  assert(channel != NULL);
-  assert(channel->handle != NULL);
-  ZLOGS(LOG_DEBUG, "closing %s", channel->alias);
+  assert(control >= 0);
+  assert(bsock >= 0);
+  assert(node != NULL);
+  assert(!CH_RND_READABLE(channel));
+  assert(!CH_RND_WRITEABLE(channel));
+  assert(!CH_SEQ_READABLE(channel) || !CH_SEQ_WRITEABLE(channel));
 
-  /*
-   * TODO(d'b): this is the 1st version of UDT EOF. the channel source
-   * does not have digest. the digest will be added later
-   */
-  /* close WO source (send EOF) */
-  if(IS_WO(channel))
-  {
-    /* <...> EOF removed */
-  }
-  /* close RO source, "fast forward" to EOF if needed */
-  else
-  {
-    /* <...> EOF and source "rewinding" removed */
-    channel->eof = 1;
-  }
+  ZLOGS(LOG_INSANE, "closing %s", channel->alias);
 
   /* close source */
   close(GPOINTER_TO_INT(channel->handle));

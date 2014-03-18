@@ -270,8 +270,8 @@ void ReportDtor(int zvm_ret)
   /* broken session */
   if(zvm_code != 0)
   {
-    ZLOGS(LOG_ERROR, "SESSION %d FAILED WITH ERROR %d: %s",
-        gnap->manifest == NULL ? 0 : gnap->manifest->node,
+    ZLOGS(LOG_ERROR, "SESSION %s FAILED WITH ERROR %d: %s",
+        gnap->manifest == NULL ? "unknown" : gnap->manifest->node,
         zvm_code, strerror(zvm_code));
     FinalDump(gnap);
     ZTrace("[final dump]");

@@ -92,7 +92,7 @@ static void UpdateSession(struct Manifest *manifest)
 
   /* copy needful fields from the new manifest */
   manifest->timeout = tmp->timeout;
-  manifest->node = tmp->node;
+  manifest->node = g_strdup(tmp->node);
   manifest->job = tmp->job;
 
   /* reset timeout, i/o limit, privileges e.t.c. */
@@ -117,7 +117,6 @@ static void UpdateSession(struct Manifest *manifest)
     CHECK(limits[3]);
 
     CH_CH(manifest, i)->handle = CH_CH(tmp, i)->handle;
-    CH_CH(manifest, i)->tag = CH_CH(tmp, i)->tag;
 
     /*
      * copy new uri (->name) to forked nap. note that original "name"

@@ -194,7 +194,7 @@ static void Timeout(struct Manifest *manifest, char *value)
 
 static void Node(struct Manifest *manifest, char *value)
 {
-  manifest->node = ToInt(value);
+  manifest->node = g_strdup(g_strstrip(value));
 }
 
 static void Job(struct Manifest *manifest, char *value)
@@ -245,7 +245,6 @@ static void Channel(struct Manifest *manifest, char *value)
   channel->type = ToInt(tokens[Type]);
   i = ToInt(tokens[Tag]);
   MFTFAIL(i != 0 && i != 1, EFAULT, "invalid channel numeric token");
-  channel->tag = i == 0 ? NULL : TagCtor();
 
   /* append a new channel */
   g_ptr_array_add(manifest->channels, channel);
@@ -328,7 +327,6 @@ void ManifestDtor(struct Manifest *manifest)
     g_free(channel->name);
     if(IS_PTR(channel))
       g_free(channel->handle);
-    TagDtor(channel->tag);
     g_free(channel);
   }
   g_ptr_array_free(manifest->channels, TRUE);

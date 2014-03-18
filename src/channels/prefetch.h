@@ -42,7 +42,7 @@ int32_t SendData(struct ChannelDesc *channel, const char *buf, int32_t count);
 
 /*
  * get the data from the network channel
- * return number of received bytes or negative error code
+ * return number of received bytes or negative error code or 0 when EOF
  */
 int32_t FetchData(struct ChannelDesc *channel, char *buf, int32_t count);
 

@@ -218,7 +218,7 @@ static void ZVMExitHandle(struct NaClApp *nap, int32_t code)
   SetUserCode(code);
   if(GetExitCode() == 0)
     SetExitState(OK_STATE);
-  ZLOGS(LOG_DEBUG, "SESSION %d RETURNED %d", nap->manifest->node, code);
+  ZLOGS(LOG_DEBUG, "SESSION %s RETURNED %d", nap->manifest->node, code);
   ReportDtor(0);
 }
 

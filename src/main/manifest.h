@@ -69,23 +69,19 @@ struct ChannelDesc {
 
   char *alias; /* name for untrusted */
   enum ChannelType type; /* type of access sequential/random */
-  void *tag; /* tag context */
   int64_t limits[LimitsNumber];
   int8_t eof;
 
-  /* constructor initialize it */
-  void *msg; /* network message container */
+  /* constructor initializes it */
   int64_t size; /* file size (or 0) */
   int64_t getpos; /* channel read position */
   int64_t putpos; /* channel write position */
-  int32_t bufpos; /* index of the 1st available byte in the buffer */
-  int32_t bufend; /* index of the 1st unavailable byte in the buffer */
   int64_t counters[LimitsNumber];
 };
 
 /* zerovm manifest structure */
 struct Manifest {
-  int node; /* TODO(d'b): useless. to remove. own node id from manifest */
+  char *node; /* own node id from manifest */
   char *program; /* program file name */
   char *job; /* daemon: job file name. child: manifest file name */
   char *broker; /* path to talk with network broker */
