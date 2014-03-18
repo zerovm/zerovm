@@ -33,7 +33,7 @@
  *
  * TODO(d'b): add complete design to /doc/networking.txt (update channels.txt,
  * manifest.txt; remove name_server.txt)
- *
+ * TODO(d'b): rewrite code removing code doubling. remove extra asserts
  */
 #include <assert.h>
 #include <sys/types.h>
@@ -208,8 +208,15 @@ void PrefetchChannelCtor(struct ChannelDesc *channel)
   ZLOGS(LOG_DEBUG, "%s opened successfully", channel->alias);
 }
 
+/*
+ * TODO(d'b): remove code doubling
+ */
 void PrefetchChannelDtor(struct ChannelDesc *channel)
 {
+  char buffer[B_BUF_SIZE];
+  int size;
+  int code;
+
   /* prevent abort if channel is not constructed */
   if(channel == NULL) return;
   if(channel->alias == NULL) return;
@@ -223,6 +230,17 @@ void PrefetchChannelDtor(struct ChannelDesc *channel)
   assert(!CH_SEQ_READABLE(channel) || !CH_SEQ_WRITEABLE(channel));
 
   ZLOGS(LOG_INSANE, "closing %s", channel->alias);
+
+  /* ask the broker to connect session to another */
+  size = g_snprintf(buffer, B_BUF_SIZE, B_PCLOSE, channel->name);
+  code = write(control, buffer, size);
+  ZLOGIF(size != code, "control channel write error");
+
+  /* get broker's answer (is it OK to connect new channel) */
+  size = read(control, buffer, B_BUF_SIZE);
+  ZLOGIF(size < 0, "control channel read error: %s", strerror(errno));
+  sscanf(buffer, B_PCLOSE_ANSWER, &code);
+  ZLOGIF(code != B_OK, "broker returned error %d", code);
 
   /* close source */
   close(GPOINTER_TO_INT(channel->handle));
