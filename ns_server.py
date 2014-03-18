@@ -46,7 +46,7 @@ while 1:
                 for i in range(connect_count):
                     h = struct.unpack_from('!I', reply, offset)[0]
                     port = bind_map[h][src]
-                    struct.pack_into('!4sH', reply, offset, socket.inet_pton(socket.AF_INET, peer_map[src][0]), port)
+                    struct.pack_into('!4sH', reply, offset, socket.inet_pton(socket.AF_INET, peer_map[h][0]), port)
                     offset += 6
                 s.sendto(reply, (peer_map[src][0], peer_map[src][1]))
                 print ['sending to: ', peer_map[src][0], peer_map[src][1]]
