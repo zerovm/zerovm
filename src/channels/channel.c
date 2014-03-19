@@ -64,7 +64,7 @@ int32_t ChannelRead(struct ChannelDesc *channel,
       if(result == -1)
         result = -errno;
       break;
-    case ProtoIPC:
+    case ProtoSocket:
       FetchData(channel, buffer, size);
       break;
     default: /* design error */
@@ -106,7 +106,7 @@ int32_t ChannelWrite(struct ChannelDesc *channel,
     case ProtoFIFO:
       result = fwrite(buffer, 1, size, channel->handle);
       break;
-    case ProtoIPC:
+    case ProtoSocket:
       result = SendData(channel, buffer, size);
       break;
     default: /* design error */
@@ -175,7 +175,7 @@ static void ChannelCtor(struct ChannelDesc *channel)
     PrefetchChannelCtor(channel);
 
   /* mark channel as valid */
-  channel->flags |= FLAG_VALID_MASK;
+  channel->valid = 1;
 }
 
 /* close channel and deallocate its resources */
@@ -184,7 +184,7 @@ static void ChannelDtor(struct ChannelDesc *channel)
   assert(channel != NULL);
 
   /* quit if channel isn't mounted (no handles added) */
-  if(!IS_VALID(channel)) return;
+  if(channel->valid == 0) return;
 
   /* free channel */
   if(IS_FILE(channel))

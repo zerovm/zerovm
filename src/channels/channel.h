@@ -38,11 +38,8 @@ EXTERN_C_BEGIN
 #define STDERR "/dev/stderr"
 #define STDRAM "/dev/memory" /* reserved for internal usage */
 
-#define FLAG_VALID_MASK 8
-#define IS_NETWORK(c) ((c)->protocol < ProtoIPC)
+#define IS_NETWORK(c) ((c)->protocol == ProtoSocket) /* TODO(d'b): rename */
 #define IS_FILE(c) (!IS_NETWORK(c))
-#define IS_VALID(c) (!((c)->flags & FLAG_VALID_MASK))
-#define IS_PTR(c) ((c)->flags & 1)
 
 /* CH_RW_TYPE returns 0..3 */
 #define IS_NIL(channel) (CH_RW_TYPE(channel) == 0)

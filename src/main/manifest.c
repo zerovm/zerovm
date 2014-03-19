@@ -44,11 +44,6 @@
 #define TOKEN_DELIMITER ";"
 #define CONNECTION_DELIMITER ":"
 
-//#define XARRAY(a) static char *ARRAY_##a[] = {a};
-//#define X(a) #a,
-//  XARRAY(PROTOCOLS)
-//#undef X
-
 /* key/value tokens */
 typedef enum {
   Key,
@@ -325,8 +320,6 @@ void ManifestDtor(struct Manifest *manifest)
 
     g_free(channel->alias);
     g_free(channel->name);
-    if(IS_PTR(channel))
-      g_free(channel->handle);
     g_free(channel);
   }
   g_ptr_array_free(manifest->channels, TRUE);

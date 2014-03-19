@@ -30,21 +30,14 @@ EXTERN_C_BEGIN
 #define XSIZE(a) ARRAY_SIZE(ARRAY_##a)
 #define XSTR(a, c) ARRAY_##a[c]
 
-/* (x-macro): channels protocols */
+/* (x-macro): channels protocols (only standard types) */
 #define PROTOCOLS \
-    X(TCP) \
-    X(UDP) \
-    X(IPC) \
-    X(INPROC) \
-    X(PGM) \
-    X(EPGM) \
     X(Regular) \
     X(Directory) \
     X(Character) \
     X(Block) \
     X(FIFO) \
     X(Link) \
-    X(Opaque) /* zpipes (ron) */ \
     X(Socket)
 
 /* (x-macro): manifest enumeration and array */
@@ -58,13 +51,7 @@ struct ChannelDesc {
   /* manifest parser initialize it (partially) */
   uint8_t protocol; /* XTYPE(PROTOCOLS) */
   void *handle; /* (int*) or (FILE*) */
-  /*
-   * 0:    id/ip. 0 means id specified by "Channel" field, 1 - ip4
-   * 1..2: r/w source type: 0 - inaccessible, 1 - RO, 2 - WO, 3 - RW
-   * 3:    0 means channel is valid, 1 - invalid
-   * TODO(d'b): "flags" field need to be re-factored with specific fields
-   */
-  uint8_t flags; /* 0: handle is ptr; 1: read access; 2: write access; 3: valid; */
+  uint8_t valid; /* 0 if channel is invalid */
   char *name; /* file name */
 
   char *alias; /* name for untrusted */
