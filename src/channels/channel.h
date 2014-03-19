@@ -26,10 +26,9 @@
 
 EXTERN_C_BEGIN
 
-/* net buffer size depends on it */
-#define BUFFER_SIZE 0x10000
+#define BUFFER_SIZE 0x10000 /* network buffer size */
 #ifndef UNIX_PATH_MAX
-#define UNIX_PATH_MAX 108
+#define UNIX_PATH_MAX sizeof ((struct sockaddr_un*)0)->sun_path
 #endif
 
 /* zerovm channels names */
@@ -38,10 +37,8 @@ EXTERN_C_BEGIN
 #define STDERR "/dev/stderr"
 #define STDRAM "/dev/memory" /* reserved for internal usage */
 
-#define IS_NETWORK(c) ((c)->protocol == ProtoSocket) /* TODO(d'b): rename */
-#define IS_FILE(c) (!IS_NETWORK(c))
-
 /* CH_RW_TYPE returns 0..3 */
+#define IS_FILE(c) ((c)->protocol != ProtoSocket)
 #define IS_NIL(channel) (CH_RW_TYPE(channel) == 0)
 #define IS_RO(channel) (CH_RW_TYPE(channel) == 1)
 #define IS_WO(channel) (CH_RW_TYPE(channel) == 2)

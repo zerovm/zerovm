@@ -51,7 +51,7 @@
 #define B_QUIT_ANSWER "%d"
 #define B_POPEN "POPEN %s %s %c" B_EOL
 #define B_POPEN_ANSWER "%d"
-#define B_PCLOSE "PCLOSE %s" B_EOL
+#define B_PCLOSE "PCLOSE %s %s" B_EOL
 #define B_PCLOSE_ANSWER "%d"
 
 static char *node = NULL;
@@ -73,7 +73,7 @@ void NetCtor(const struct Manifest *manifest)
   node = manifest->node;
 
   /* open control channel to broker */
-  code = sizeof broker.sun_path - strlen(manifest->broker);
+  code = UNIX_PATH_MAX - strlen(manifest->broker);
   ZLOGFAIL(code < 0, EFAULT, "too long broker path");
   bsock = socket(AF_UNIX, SOCK_STREAM, 0);
   ZLOGFAIL(bsock < 0, EIO, "%s", strerror(errno));
@@ -232,7 +232,7 @@ void PrefetchChannelDtor(struct ChannelDesc *channel)
   ZLOGS(LOG_INSANE, "closing %s", channel->alias);
 
   /* ask the broker to connect session to another */
-  size = g_snprintf(buffer, B_BUF_SIZE, B_PCLOSE, channel->name);
+  size = g_snprintf(buffer, B_BUF_SIZE, B_PCLOSE, node, channel->name);
   code = write(control, buffer, size);
   ZLOGIF(size != code, "control channel write error");
 

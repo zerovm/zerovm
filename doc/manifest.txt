@@ -1,5 +1,5 @@
 This document describes manifest for ZeroVM NaCl application.
-(up to date 2013-12-03, needs editing)
+(up to date 2014-03-19, needs editing)
 -------------------------------------------------------------
 
 Description:
@@ -15,7 +15,7 @@ Memory
 Timeout
 Node
 Job
-NameServer
+Broker
 
 Structure:
 - each valid line must contain exactly only one key and value(s) separated
@@ -28,7 +28,7 @@ Structure:
 - invalid lines will be ignored
 - lines with unknown keywords (not mentioned below) will be ignored
 - integer fields can use octal, decimal and hexadecimal notation
-- "Channel" expects complex values: comma and semicolon separated fields 
+- "Channel" expects complex values: comma separated fields 
 
 List of valid keywords:
 Channel
@@ -39,7 +39,7 @@ Channel
     [1] trusted channel name (n/a for the user),
     [2] untrusted channel name,
     [3] access type (0..3),
-    [4] etag disabled/enabled (0..1),
+    [4] etag disabled/enabled (0..1), (obsolete, will be removed)
     [5] gets limit,
     [6] get size limits,
     [7] puts limit,
@@ -80,25 +80,16 @@ Memory
   stack, 1mb+ - for nexe code and data, and some memory for system area.
   the 2nd argument is etag switch: 0 - disabled, 1 - enabled
 
-NameServer
-  (optional, string)
-  the address of name server. name server resolves zerovm provided network
-  channels. only supported protocol is udp. notation used to specify the
-  address is not standard since 1. it is internal thing, 2. it is more simple
-  to parse such pseudo url. the same notation used for network channels.
-  ex.: NameServer = udp:127.0.0.1:54321
-  udp - protocol
-  127.0.0.1 - server ip address
-  54321 - server port
-  note: it is possible to use integer ip representation instead of IPv4
+Broker
+  (optional*, string)
+  absolute path to the network broker (unix socket)
 
 Node
-  (optional*, unsigned 32-bit integer)
-  Specifies the node id (not available for the untrusted code). The node 
-  id should be in 1..2147483647 range
+  (optional*, string)
+  Specifies the node id (not available for the untrusted code).
   ex.: Node = 1
   
-  WARNING: if "NameServer" specified, "Node" becomes obligatory. 
+  WARNING: if "Broker" specified, "Node" becomes obligatory. 
 
 Job
   (optional, string)

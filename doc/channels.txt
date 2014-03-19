@@ -1,27 +1,27 @@
 ZeroVM channels description
-(up to date 2013-12-03, needs editing)
+(up to date 2014-03-19, needs editing)
 ---------------------------
 
 Channels are the key component of ZeroVM I/O subsystem. On the host system
 side the channels are backed by the file system using regular files, pipes,
-character devices or tcp sockets. On the guest side the channel is a device
-file. It could be used as either character or block device it depends on the
-usage pattern and access type (see access types below). "Channel" keyword
-passed via the manifest to ZeroVM (comma delimited, see examples below).
-this keyword can (and should) be used more than once per manifest. it is
-possible to use integers in octal, decimal and hexadecimal notation.
+character devices or unix domain sockets. On the guest side the channel is
+a device file. It could be used as either character or block device it depends
+on the usage pattern and access type (see access types below). "Channel"
+keyword passed via the manifest to ZeroVM (comma delimited, see examples
+below). this keyword can (and should) be used more than once per manifest.
+It is possible to use integers in octal, decimal and hexadecimal notation.
 
 Channel = [uri], [alias], [type], [etag], [gets], [get_size], [puts], [put_size]
-uri      - can be a local file, pipe, character device, tcp socket or host
-  identifier (see more details below). channel can have more than 1 "uri" 
-  of any mentioned type. uris should be delimited with ";" (semicolon)
+uri      - can be a local file, pipe, character device or node identifier
+  (see more details below).
 alias    - channel name for the user side.
 type     - access type.
   0: sequential read / sequential write (can be used as character device)
   1: random read / sequential write
   2: sequential read / random write
   3: random read / random write
-etag     - etag switch. Can be in 0..1 range (for details see below)
+etag     - (obsolete, will be removed) etag switch. Can be in 0..1 range
+  (for details see below)
   0 - etag disabled for the channel
   1 - etag enabled
 gets     - limit for reads allowed from this channel
@@ -53,8 +53,8 @@ The channels have well known device names "/dev/stdin", "/dev/stdout" and
 "/dev/stderr". all mandatory channels must present in the manifest.
 usually /dev/stdin is a sequential read only channel, /dev/stdin is a
 sequential write only channel and /dev/stderr is a sequential write only 
-channel. however standard channels can be redefined in the system manifest
-(not recommended).
+channel. however standard channels access type can be redefined in the
+system manifest (not recommended).
 
 Channel is a file abstraction over the local files and network streams. Local 
 files can have random access type, network streams are always sequential.
@@ -70,85 +70,46 @@ All socket based channels are either sequential read only or sequential write
 only. They represent unidirectional connection between two ZeroVM instances.
 You can have as many network channels as you want, although it's not advisable
 to have more than one channel in the same direction between the same two
-ZeroVM instances. All network channels use TCP sockets. Write only channel
-will listen on socket while the read only channel will connect to the same
-socket from another instance. All the read operations on the guest side will
-block until some data is available. If you read a specific amount of data
-(using pread() for example) the read will block until this amount of data
-is available. There is no support for unblocking reads for ZeroVM channels,
-it's by design.
+ZeroVM instances. All network channels use unix domain sockets through network
+broker (separate program). Write only channel will listen on socket while the
+read only channel will connect to the same socket from another instance. All
+the read operations on the guest side will block until some data is available.
+If you read a specific amount of data (using pread() for example) the read
+will block until this amount of data is available. There is no support for
+unblocking reads for ZeroVM channels, it's by design.
 
 Example of bidirectional connection between two ZeroVM instances:
 
-Instance #1, IP addr 10.0.0.1
-Channel = tcp:10.0.0.1:34423, /dev/out/instance2, 0, 1, 0, 0, 100, 1000
-Channel = tcp:10.0.0.2:56645, /dev/in/instance2, 0, 1, 100, 1000, 0, 0
+Instance #1
+Channel = ipc:12345, /dev/out/instance2, 0, 1, 0, 0, 100, 1000
+Node = 54321
 
-Instance #2, IP addr 10.0.0.2
-Channel = tcp:10.0.0.1:34423, /dev/in/instance1, 0, 1, 100, 1000, 0, 0
-Channel = tcp:10.0.0.2:56645, /dev/out/instance1, 0, 1, 0, 0, 100, 1000
+Instance #2
+Channel = ipc:54321, /dev/in/instance1, 0, 1, 100, 1000, 0, 0
+Node = 12345
 
 Each read from read only network channel can result in zvm_eof indicator read.
 This means that the other party closed the channel, you will get the same
-zvm_eof each time you try to read from this channel again. If integrity checks
-are in place (zerovm was run with -e option) zvm_eof will contain channel
-integrity checksum.
+zvm_eof each time you try to read from this channel again.
 
-Host identifiers
+note: "ipc:" is a prefix and only way to mark the channel as "network" one.
+
+Node identifiers
 ----------------
-In the case of clustered runs there is no way to know the network topology
-before actually trying to run ZeroVM instances. Host IPs and ports are not
-known until the very start of ZeroVM executable. To solve this problem we
-introduce the host identifiers. Each ZeroVM instance (guest) in clustered
-configuration gets identifier (just a running number). The identifier is
-unique only within the current cluster configuration. For example if we
-want to run map-reduce job with 4 mappers and 5 reducers, there will be 9
-identifiers (1..9) and one number will be assigned for each instance (be
-it mapper or reducer).
+Node id and channel id (which is id of connected node) are not zerovm's
+responsibility. Manifest provider and broker should have agreement about
+node/channel naming convention. ZeroVM treat node id as a string.
 
-To resolve the host identifiers you will need the following data in manifest:
+If the manifest contains "Broker", "Node" and node identifier(s) in channel(s)
+definition ZeroVM will do the following on startup:
+1. open connection to broker using path specified by "Broker" value
+2. mount channel(s) with node id in name field using "Node" from manifest and
+   channel(s) definition to ask read or write only mode for the channel(s)
 
-NameServer = udp:[ip address]:[port]
-Node = [host identifier]
-
-Name server line contains the ip address and port of udp name server that
-will resolve host ids. Node line contains id of this node (integer)
-
-Example:
-
-NameServer = udp:10.0.0.254:5544
-Node = 34
-
-The two instance example (see above) will look like this:
-
-Instance #1
-Channel = tcp:2:, /dev/out/instance-2, 0, 0, 0, 0, 100, 1000
-Channel = tcp:2:, /dev/in/instance-2, 0, 1, 100, 1000, 0, 0
-NameServer = udp:10.0.0.254:5544
-Node = 1
-
-Instance #2
-Channel = tcp:1:, /dev/in/instance-1, 0, 1, 100, 1000, 0, 0
-Channel = tcp:1:, /dev/out/instance-1, 0, 0, 0, 0, 100, 1000
-NameServer = udp:10.0.0.254:5544
-Node = 2
-
-If the manifest contains host identifiers ZeroVM will do the following on
-startup:
-1. for all read only channels, bind on 1st available port for each one
-2. send discovery packet to name server with all the bound ports. discovery
-   packet also contains all identifiers for write only channels present
-   in the manifest
-3. wait for name server reply
-4. name server replies with mapping of identifiers sent in (2) to ip:port
-   tuples
-5. connect to all write only channels
-
-After this 5 step operation all channels will be set up with correct
-unidirectional data paths. The reference implementation of name server
-daemon can be found in zerovm root (ns_server.py). You can also use zerovm
-networked samples to see the flow, namely 'netcopy' or 'demo/channels' sample.
-To find more info about name server consult name_server.txt
+After these operations the channels will be set up with correct unidirectional
+data paths. You can use zerovm networked samples to see the flow, namely
+'netcopy' or 'demo/channels' sample. To find more info about broker consult
+broker.txt
 
 examples
 -----------
@@ -156,16 +117,16 @@ Channel = /tmp/file.tmp, /dev/stderr, 0, 1, 0, 0, 0x100, 1048576
   will be mounted over "/tmp/file.tmp" file
   to "/dev/stderr" alias (visible to user)
   channel has sequential access
-  etag enabled
+  etag enabled (etag is obsolete and will not be used)
   channel is write only ("0, 0" in positions 5, 6 means no read possible)
   it is possible to make 256 writes (specified in position 7)
   it is possible to write 1048576 bytes (specified in position 8)
 
 Channel = /dev/stdin, /dev/stdin, 0, 1, 07, 0x1000, 0, 0
-Channel = tcp:127.0.0.1:55431, /dev/in/some_host, 0, 0, 0x1000000, 0x100000000, 0, 0
-Channel = tcp:13:, /dev/out/node13, 0, 0, 0, 0, 13, 1313
+Channel = 55431, /dev/in/some_host, 0, 0, 0x1000000, 0x100000000, 0, 0
+Channel = 12345, /dev/out/node13, 0, 0, 0, 0, 13, 1313
 
 Limitations
 -----------
 - The number of channels in the manifest is limited to 10915 "Channel" lines
-- user program cannot bind and connect network channel to itself
+- user program cannot use network channel to itself

@@ -114,11 +114,11 @@ int32_t ChannelWrite(struct ChannelDesc *channel,
       break;
   }
 
-    /* accounting */
-    ZLOGFAIL(result < 0, EIO, "%s;%d failed to write: %s",
-        channel->alias, strerror(errno));
-    channel->counters[PutSizeLimit] += result;
-    ++channel->counters[PutsLimit];
+  /* accounting */
+  ZLOGFAIL(result < 0, EIO, "%s failed to write: %s",
+      channel->alias, strerror(errno));
+  channel->counters[PutSizeLimit] += result;
+  ++channel->counters[PutsLimit];
 
   /* update cursors and size */
   channel->putpos = offset + result;
@@ -174,7 +174,7 @@ static void ChannelCtor(struct ChannelDesc *channel)
   else
     PrefetchChannelCtor(channel);
 
-  /* mark channel as valid */
+  /* mark channel as mounted */
   channel->valid = 1;
 }
 
@@ -183,7 +183,7 @@ static void ChannelDtor(struct ChannelDesc *channel)
 {
   assert(channel != NULL);
 
-  /* quit if channel isn't mounted (no handles added) */
+  /* quit if channel isn't mounted */
   if(channel->valid == 0) return;
 
   /* free channel */
@@ -213,7 +213,6 @@ void ChannelsCtor(struct Manifest *manifest)
       EFAULT, "not enough channels: %d", manifest->channels->len);
 
   /* construct prefetch class before usage */
-  /* TODO(d'b): skip broker initialization if no network channels exist */
   NetCtor(manifest);
 
   /* mount channels */
@@ -246,6 +245,5 @@ void ChannelsDtor(struct Manifest *manifest)
   ResetAliases();
 
   /* release prefetch class */
-  /* TODO(d'b): skip broker finalization if no network channels exist */
   NetDtor(manifest);
 }

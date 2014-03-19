@@ -1,0 +1,64 @@
+broker definition
+(up to date 2014-03-19, needs editing)
+---------------------------
+
+this document defines requirements to the network broker - separate program
+to serve zerovm request for network channels. in zerovm 2.0 there are no
+usual network channels like it was before (tcp channels and 0mq channels).
+instead of that zerovm sends request to broker and asks to give file descriptor
+to the unix domain socket which connects current zerovm session with other
+zerovm session specified in the channel definition.
+
+this broker design based on document written by ron pedde:
+https://gist.github.com/rpedde/8927215
+
+open broker
+-----------
+connection to the broker will be opened automatically after opening unix domain
+socket specified by "Broker" value from manifest. zerovm expect answer from 
+broker with operation result code. "200" means ok. if connection opened 
+successfully broker will serve zerovm's requests until closed.
+
+close broker
+-----------
+zerovm sends "QUIT" to broker channel (unix socket) and expect the operation
+result code. "200" means ok, connection closed. broker stopped to serve zerovm
+requests
+
+open channel
+-----------
+zerovm sends "POPEN xxxx yyyy M" where:
+xxxx - current node id specified by "Node" in manifest
+yyyy - node id of another zerovm session to connect to current one. this value
+       specified in channel definition in "name" field after "ipc:" prefix
+M    - access type modifier. it is one symbol: "R" for read only channel, "W"
+       for write only channel
+       
+node id is not zerovm responsibility. for zerovm it is just a string. broker
+should have convention about node id with manifest provider. also this
+convention can allow to use more than one channel between two connected
+sessions.
+
+zerovm expects the operation result code. "200" means ok, descriptor can be
+get from broker unix socket with connect(2).
+
+example: command "1 2 R" asks to open connection to read data to node 1 from
+node 2
+
+close channel
+-----------
+zerovm sends "PCLOSE xxxx yyyy" where:
+xxxx - current node id specified by "Node" in manifest
+yyyy - node id of another zerovm session to connect to current one. this value
+       specified in channel definition in "name" field after "ipc:" prefix
+
+zerovm expects the operation result code. "200" means ok, descriptor will be
+closed with close(2).
+
+sending/receiving the data through the channels
+-----------
+zerovm will send/receive big portions of data with chunks 64kb large. if broker
+doesn't have enough data to provide to zerovm, it should block until all data
+will be sent by connected zerovm session(s) or until eof received (connected
+session closed the channel). "fan in"/"fan out" (entanglement) is broker's
+responsibility.
