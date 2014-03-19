@@ -137,7 +137,7 @@ static void RegularChannel(struct ChannelDesc* channel)
       ZLOGFAIL(channel->type == SGetRPut, EFAULT,
           "sequential read / random write channels not supported");
 
-      /* open the file and ensure that putpos is not greater than the file size */
+      /* open file and ensure that putpos is not greater than the file size */
       h = open(channel->name, O_RDWR | O_CREAT, CHANNEL_RIGHTS);
       channel->handle = GINT_TO_POINTER(h);
       channel->size = GetFileSize(channel->name);

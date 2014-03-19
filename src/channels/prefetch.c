@@ -105,7 +105,8 @@ void NetDtor(struct Manifest *manifest)
   /* log out broker and close control channel */
   if(control >= 0)
   {
-    write(control, B_QUIT, sizeof B_QUIT);
+    code = write(control, B_QUIT, sizeof B_QUIT);
+    ZLOGIF(code < 0, "control channel write error: %s", strerror(errno));
     sscanf(buffer, B_QUIT_ANSWER, &code);
     ZLOG(LOG_DEBUG, "broker closed with code %d", code);
     close(control);
