@@ -1,15 +1,15 @@
 =====================================================================
 == fork test
 =====================================================================
-Channel = /dev/null, /dev/stdin, 0, 0, 0x100, 0x10000, 0, 0
-Channel = PWD/fork_out.log, /dev/stdout, 0, 1, 0, 0, 0x100, 0x10000
-Channel = PWD/fork_err.log, /dev/stderr, 0, 1, 0, 0, 0x100, 0x10000
+Channel = /dev/null, /dev/stdin, 0, 0x100, 0x10000, 0, 0
+Channel = PWD/fork_out.log, /dev/stdout, 0, 0, 0, 0x100, 0x10000
+Channel = PWD/fork_err.log, /dev/stderr, 0, 0, 0, 0x100, 0x10000
 
 =====================================================================
 == switches for zerovm. some of them used to control nexe, some
 == for the internal zerovm needs
 =====================================================================
-Version = 20130611
+Version = 20140320
 Program = fork.nexe
 Memory = 33554432, 0
 Timeout = 60

@@ -9,7 +9,7 @@ Channel = /dev/null, /dev/stderr, 0, 0, 0, 0, 1, 1
 == switches for zerovm. some of them used to control nexe, some
 == for the internal zerovm needs
 =====================================================================
-Version = 20130611
+Version = 20140320
 Program = primal.nexe
 Memory = 0x10000000, 0
 Timeout = 600

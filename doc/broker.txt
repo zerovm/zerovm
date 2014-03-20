@@ -30,7 +30,7 @@ open channel
 zerovm sends "POPEN xxxx yyyy M" where:
 xxxx - current node id specified by "Node" in manifest
 yyyy - node id of another zerovm session to connect to current one. this value
-       specified in channel definition in "name" field after "ipc:" prefix
+       specified in channel definition in "name" field after "net:" prefix
 M    - access type modifier. it is one symbol: "R" for read only channel, "W"
        for write only channel
        
@@ -50,7 +50,7 @@ close channel
 zerovm sends "PCLOSE xxxx yyyy" where:
 xxxx - current node id specified by "Node" in manifest
 yyyy - node id of another zerovm session to connect to current one. this value
-       specified in channel definition in "name" field after "ipc:" prefix
+       specified in channel definition in "name" field after "net:" prefix
 
 zerovm expects the operation result code. "200" means ok, descriptor will be
 closed with close(2).

@@ -1,18 +1,18 @@
 =====================================================================
 == the read/write channels test. assumes existance of "stubbed.data"
 =====================================================================
-Channel = /dev/null, /dev/stdin, 0, 1, 16, 256, 0, 0
-Channel = /dev/stdout, /dev/stdout, 0, 1, 0, 0, 512, 8192
-Channel = PWD/result.log, /dev/stderr, 0, 1, 0, 0, 512, 8192
-Channel = PWD/empty.data, /dev/empty, 3, 1, 512, 8192, 16, 36
-Channel = PWD/stubbed.data, /dev/stubbed, 3, 1, 512, 8192, 16, 35
-Channel = PWD/scapegoat.data, /dev/scapegoat, 3, 1, 512, 8192, 16, 16
+Channel = /dev/null, /dev/stdin, 0, 16, 256, 0, 0
+Channel = /dev/stdout, /dev/stdout, 0, 0, 0, 512, 8192
+Channel = PWD/result.log, /dev/stderr, 0, 0, 0, 512, 8192
+Channel = PWD/empty.data, /dev/empty, 3, 512, 8192, 16, 36
+Channel = PWD/stubbed.data, /dev/stubbed, 3, 512, 8192, 16, 35
+Channel = PWD/scapegoat.data, /dev/scapegoat, 3, 512, 8192, 16, 16
 
 =====================================================================
 == switches for zerovm. some of them used to control nexe, some
 == for the internal zerovm needs
 =====================================================================
-Version = 20130611
+Version = 20140320
 Program = ranrw.nexe
 Memory = 33554432, 1
 Timeout = 1

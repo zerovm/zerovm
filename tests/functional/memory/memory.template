@@ -1,15 +1,15 @@
 =====================================================================
 == memory management test
 =====================================================================
-Channel = /dev/null, /dev/stdin, 0, 1, 16, 256, 0, 0
-Channel = /dev/null, /dev/stdout, 0, 1, 0, 0, 16, 256
-Channel = PWD/result.log, /dev/stderr, 0, 1, 0, 0, 65536, 1048576
+Channel = /dev/null, /dev/stdin, 0, 16, 256, 0, 0
+Channel = /dev/null, /dev/stdout, 0, 0, 0, 16, 256
+Channel = PWD/result.log, /dev/stderr, 0, 0, 0, 65536, 1048576
 
 =====================================================================
 == switches for zerovm. some of them used to control nexe, some
 == for the internal zerovm needs
 =====================================================================
-Version = 20130611
+Version = 20140320
 Program = memory.nexe
 Timeout = 30
 

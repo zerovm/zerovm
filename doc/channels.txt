@@ -11,7 +11,7 @@ keyword passed via the manifest to ZeroVM (comma delimited, see examples
 below). this keyword can (and should) be used more than once per manifest.
 It is possible to use integers in octal, decimal and hexadecimal notation.
 
-Channel = [uri], [alias], [type], [etag], [gets], [get_size], [puts], [put_size]
+Channel = [uri], [alias], [type], [gets], [get_size], [puts], [put_size]
 uri      - can be a local file, pipe, character device or node identifier
   (see more details below).
 alias    - channel name for the user side.
@@ -20,10 +20,6 @@ type     - access type.
   1: random read / sequential write
   2: sequential read / random write
   3: random read / random write
-etag     - (obsolete, will be removed) etag switch. Can be in 0..1 range
-  (for details see below)
-  0 - etag disabled for the channel
-  1 - etag enabled
 gets     - limit for reads allowed from this channel
 get_size - limit on total amount of data to be read from this channel in bytes
 puts     - limit for writes allowed for this channel
@@ -81,11 +77,11 @@ unblocking reads for ZeroVM channels, it's by design.
 Example of bidirectional connection between two ZeroVM instances:
 
 Instance #1
-Channel = ipc:12345, /dev/out/instance2, 0, 1, 0, 0, 100, 1000
+Channel = ipc:12345, /dev/out/instance2, 0, 0, 0, 100, 1000
 Node = 54321
 
 Instance #2
-Channel = ipc:54321, /dev/in/instance1, 0, 1, 100, 1000, 0, 0
+Channel = ipc:54321, /dev/in/instance1, 0, 100, 1000, 0, 0
 Node = 12345
 
 Each read from read only network channel can result in zvm_eof indicator read.
@@ -113,18 +109,17 @@ broker.txt
 
 examples
 -----------
-Channel = /tmp/file.tmp, /dev/stderr, 0, 1, 0, 0, 0x100, 1048576
+Channel = /tmp/file.tmp, /dev/stderr, 0, 0, 0x100, 1048576
   will be mounted over "/tmp/file.tmp" file
   to "/dev/stderr" alias (visible to user)
   channel has sequential access
-  etag enabled (etag is obsolete and will not be used)
   channel is write only ("0, 0" in positions 5, 6 means no read possible)
   it is possible to make 256 writes (specified in position 7)
   it is possible to write 1048576 bytes (specified in position 8)
 
-Channel = /dev/stdin, /dev/stdin, 0, 1, 07, 0x1000, 0, 0
-Channel = 55431, /dev/in/some_host, 0, 0, 0x1000000, 0x100000000, 0, 0
-Channel = 12345, /dev/out/node13, 0, 0, 0, 0, 13, 1313
+Channel = /dev/stdin, /dev/stdin, 0, 07, 0x1000, 0, 0
+Channel = 55431, /dev/in/some_host, 0, 0x1000000, 0x100000000, 0, 0
+Channel = 12345, /dev/out/node13, 0, 0, 0, 13, 1313
 
 Limitations
 -----------

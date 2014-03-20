@@ -32,10 +32,11 @@
 
 /* general */
 #define PTR_SIZE (sizeof(void*))
-#define MANIFEST_VERSION "20130611"
+#define MANIFEST_VERSION "20140320"
 #define MANIFEST_SIZE_LIMIT 0x80000
 #define MANIFEST_LINES_LIMIT 0x2000
 #define MANIFEST_TOKENS_LIMIT 0x10
+#define NAME_PREFIX_NET "net:"
 
 /* delimiters */
 #define LINE_DELIMITER "\n"
@@ -71,7 +72,6 @@ typedef enum {
   Name,
   Alias,
   Type,
-  Tag,
   Gets,
   GetSize,
   Puts,
@@ -192,15 +192,14 @@ static void Node(struct Manifest *manifest, char *value)
   manifest->node = g_strdup(g_strstrip(value));
 }
 
+static void Broker(struct Manifest *manifest, char *value)
+{
+  manifest->broker = g_strdup(g_strstrip(value));
+}
+
 static void Job(struct Manifest *manifest, char *value)
 {
   MFTFAIL(strlen(value) > UNIX_PATH_MAX, EFAULT, "too long Job path");
-  manifest->job = g_strdup(g_strstrip(value));
-}
-
-static void Broker(struct Manifest *manifest, char *value)
-{
-  MFTFAIL(strlen(value) > UNIX_PATH_MAX, EFAULT, "too long Broker path");
   manifest->job = g_strdup(g_strstrip(value));
 }
 
@@ -212,19 +211,34 @@ static void Channel(struct Manifest *manifest, char *value)
   struct ChannelDesc *channel = g_malloc0(sizeof *channel);
 
   /* get tokens from channel description */
-  tokens = g_strsplit(value, VALUE_DELIMITER, ChannelTokensNumber);
+  tokens = g_strsplit(value, VALUE_DELIMITER, ChannelTokensNumber + 1);
   for(i = 0; tokens[i] != NULL; ++i)
     g_strstrip(tokens[i]);
 
-  /* TODO(d'b): fix "invalid numeric value ', 0'" bug here */
   MFTFAIL(tokens[ChannelTokensNumber] != NULL || tokens[PutSize] == NULL,
       EFAULT, "invalid channel tokens number");
 
-  /* parse name and alias */
-  MFTFAIL(!g_path_is_absolute(tokens[Name]), EFAULT,
-      "only absolute path channels are allowed");
-  channel->name = g_strdup(tokens[Name]);
+  /*
+   * set name and protocol (network or local). exact protocol
+   * for the local channel will be set later
+   */
+  if(g_str_has_prefix(tokens[Name], NAME_PREFIX_NET))
+  {
+    channel->protocol = ProtoSocket;
+    channel->name = g_strdup(tokens[Name] + strlen(NAME_PREFIX_NET));
+  }
+  else
+  {
+    MFTFAIL(!g_path_is_absolute(tokens[Name]), EFAULT,
+        "only absolute path channels are allowed");
+    channel->protocol = ProtoRegular;
+    channel->name = g_strdup(tokens[Name]);
+  }
+
+  /* initialize the rest of fields */
   channel->alias = g_strdup(tokens[Alias]);
+  channel->handle = NULL;
+  channel->type = ToInt(tokens[Type]);
 
   /* parse limits */
   for(i = 0; i < LimitsNumber; ++i)
@@ -233,13 +247,6 @@ static void Channel(struct Manifest *manifest, char *value)
     MFTFAIL(channel->limits[i] < 0, EFAULT,
         "negative limits for %s", channel->alias);
   }
-
-  /* initialize the rest of fields */
-  channel->protocol = ProtoRegular; /* just in case (will be set later) */
-  channel->handle = NULL;
-  channel->type = ToInt(tokens[Type]);
-  i = ToInt(tokens[Tag]);
-  MFTFAIL(i != 0 && i != 1, EFAULT, "invalid channel numeric token");
 
   /* append a new channel */
   g_ptr_array_add(manifest->channels, channel);
@@ -286,7 +293,8 @@ struct Manifest *ManifestTextCtor(char *text)
     {
       /* switch invoking functions by the keyword */
 #define XSWITCH(a) switch(GetKey(tokens[Key])) {a};
-#define X(a, o, s) case Key##a: ++counters[Key##a]; a(manifest, tokens[Value]); break;
+#define X(a, o, s) case Key##a: ++counters[Key##a]; a(manifest, tokens[Value]); \
+    MFTFAIL(*tokens[Value] == 0, EFAULT, "%s has empty value", tokens[Key]); break;
       XSWITCH(KEYWORDS)
 #undef X
     }
@@ -296,6 +304,10 @@ struct Manifest *ManifestTextCtor(char *text)
   /* check obligatory and singleton keywords */
   g_strfreev(lines);
   CheckCounters(counters, XSIZE(KEYWORDS));
+
+  /* "Broker" depends on "Node" existence */
+  ZLOGFAIL(manifest->broker != NULL && manifest->node == NULL,
+      EFAULT, "broker specified but node is absent");
 
   return manifest;
 }

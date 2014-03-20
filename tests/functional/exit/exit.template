@@ -1,15 +1,15 @@
 =====================================================================
 == trap exit test
 =====================================================================
-Channel = /dev/null, /dev/stdin, 0, 1, 999999, 999999, 0, 0
-Channel = /dev/null, /dev/stdout, 0, 1, 0, 0, 999999, 999999
-Channel = PWD/result.log, /dev/stderr, 0, 1, 0, 0, 999999, 999999
+Channel = /dev/null, /dev/stdin, 0, 999999, 999999, 0, 0
+Channel = /dev/null, /dev/stdout, 0, 0, 0, 999999, 999999
+Channel = PWD/result.log, /dev/stderr, 0, 0, 0, 999999, 999999
 
 =====================================================================
 == switches for zerovm. some of them used to control nexe, some
 == for the internal zerovm needs
 =====================================================================
-Version = 20130611
+Version = 20140320
 Program = exit.nexe
 Memory = 33554432, 1
 Timeout = 1
