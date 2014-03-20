@@ -32,11 +32,8 @@
 static int client = -1;
 
 /*
- * get command (see doc/protocol.txt) from the control channel
+ * get command from the daemon control channel
  * NOTE: ZLOGFAIL should not be used
- * WARNING: result should be freed
- * TODO(d'b): add document, current ron's version can be used
- * TODO(d'b): generalize and move it to own class (protocol.c?)
  */
 #define CMD_SIZE 0x10000
 #define CMD_FAIL(cond, msg) \
@@ -122,7 +119,6 @@ static void UpdateSession(struct Manifest *manifest)
      * copy new uri (->name) to forked nap. note that original "name"
      * should not be freed because it is shared memory and "daemon"
      * session will take care about it later
-     * TODO(d'b): check channels dtor if it is true
      */
     CH_CH(manifest, i)->name = g_strdup(CH_CH(tmp, i)->name);
   }
@@ -194,7 +190,6 @@ static int Daemonize(struct NaClApp *nap)
   g_free(bname);
   g_free(name);
 
-  /* TODO(d'b): free needless resources */
   SetCmdString(g_string_new("command = daemonic"));
   return sock;
 }

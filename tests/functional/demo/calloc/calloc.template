@@ -1,9 +1,9 @@
 =====================================================================
 == "calloc" tests zvm lib memory allocation
 =====================================================================
-Channel = /dev/null, /dev/stdin, 0, 1, 999999, 999999, 0, 0
-Channel = PWD/stderr.data, /dev/stdout, 0, 1, 0, 0, 999999, 999999
-Channel = /dev/null, /dev/stderr, 0, 1, 0, 0, 999999, 999999
+Channel = /dev/null, /dev/stdin, 0, 999999, 999999, 0, 0
+Channel = PWD/stderr.data, /dev/stdout, 0, 0, 0, 999999, 999999
+Channel = /dev/null, /dev/stderr, 0, 0, 0, 999999, 999999
 
 =====================================================================
 == switches for zerovm. some of them used to control nexe, some

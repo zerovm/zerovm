@@ -1,9 +1,9 @@
 =====================================================================
 == dumps whole available user memory
 =====================================================================
-Channel = /dev/null, /dev/stdin, 0, 1, 65536, 4194304, 0, 0
-Channel = PWD/dump.data, /dev/stdout, 0, 1, 0, 0, 4194304, 4294967296
-Channel = PWD/stderr.data, /dev/stderr, 0, 1, 0, 0, 65536, 4194304
+Channel = /dev/null, /dev/stdin, 0, 65536, 4194304, 0, 0
+Channel = PWD/dump.data, /dev/stdout, 0, 0, 0, 4194304, 4294967296
+Channel = PWD/stderr.data, /dev/stderr, 0, 0, 0, 65536, 4194304
 
 =====================================================================
 == switches for zerovm. some of them used to control nexe, some

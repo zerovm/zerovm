@@ -1,9 +1,9 @@
 =====================================================================
 == additional (paypal) trap calls test
 =====================================================================
-Channel = /dev/stdin, /dev/stdin, 0, 0, 0x100, 0x10000, 0, 0
-Channel = /dev/stdout, /dev/stdout, 0, 0, 0, 0, 0x100, 0x10000
-Channel = /dev/stderr, /dev/stderr, 0, 0, 0, 0, 0x100, 0x10000
+Channel = /dev/stdin, /dev/stdin, 0, 0x100, 0x10000, 0, 0
+Channel = /dev/stdout, /dev/stdout, 0, 0, 0, 0x100, 0x10000
+Channel = /dev/stderr, /dev/stderr, 0, 0, 0, 0x100, 0x10000
 
 =====================================================================
 == switches for zerovm. some of them used to control nexe, some

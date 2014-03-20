@@ -1,9 +1,9 @@
 =====================================================================
 == (zerovm api) draw the geometric figure
 =====================================================================
-Channel = /dev/null, /dev/stdin, 0, 1, 1024, 1024, 0, 0
-Channel = /dev/stdout, /dev/stdout, 0, 1, 0, 0, 1024, 1024
-Channel = /dev/stderr, /dev/stderr, 0, 1, 0, 0, 1024, 1024
+Channel = /dev/null, /dev/stdin, 0, 1024, 1024, 0, 0
+Channel = /dev/stdout, /dev/stdout, 0, 0, 0, 1024, 1024
+Channel = /dev/stderr, /dev/stderr, 0, 0, 0, 1024, 1024
 
 =====================================================================
 == switches for zerovm. some of them used to control nexe, some
