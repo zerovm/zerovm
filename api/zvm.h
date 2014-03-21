@@ -30,27 +30,6 @@ enum TrapCalls
   TrapUnjail = 0x6c6a6e55,
   TrapExit = 0x74697845,
   TrapFork = 0x6b726f46
-#ifdef ZVM_SOCKETS
-  ,
-  TrapSocket = 0x30303030,
-  TrapBind,
-  TrapConnect,
-  TrapAccept,
-  TrapListen,
-  TrapRecv,
-  TrapRecvfrom,
-  TrapRecvmsg,
-  TrapSend,
-  TrapSendto,
-  TrapSendmsg = 0x30303041,
-  TrapGetsockopt,
-  TrapSetsockopt,
-  TrapSelect,
-  TrapPoll,
-  TrapGethostbyname,
-  TrapGethostbyaddr,
-  TrapClose
-#endif
 };
 
 /* channel types */
@@ -126,48 +105,5 @@ struct UserManifest
   TRAP((uint64_t[]){TrapUnjail, 0, (uintptr_t)buffer, size})
 #define zvm_exit(code) TRAP((uint64_t[]){TrapExit, 0, code})
 #define zvm_fork() TRAP((uint64_t[]){TrapFork})
-
-#ifdef ZVM_SOCKETS
-#define zvm_socket(domain, type, protocol) \
-  TRAP((uint64_t[]){TrapSocket, 0, domain, type, protocol})
-#define zvm_bind(sockfd, addr, addrlen) \
-  TRAP((uint64_t[]){TrapBind, 0, sockfd, (uintptr_t)addr, addrlen})
-#define zvm_connect(sockfd, addr, addrlen) \
-  TRAP((uint64_t[]){TrapConnect, 0, sockfd, (uintptr_t)addr, addrlen})
-#define zvm_accept(sockfd, addr, addrlen) \
-  TRAP((uint64_t[]){TrapAccept, 0, sockfd, (uintptr_t)addr, (uintptr_t)addrlen})
-#define zvm_listen(sockfd, backlog) \
-  TRAP((uint64_t[]){TrapListen, 0, sockfd, backlog})
-#define zvm_recv(sockfd, buf, len, flags) \
-  TRAP((uint64_t[]){TrapRecv, 0, sockfd, (uintptr_t)buf, len, flags})
-#define zvm_recvfrom(sockfd, buf, len, flags, src_addr, addrlen)) \
-  TRAP((uint64_t[]){TrapRecvfrom, 0, sockfd, (uintptr_t)buf, len, \
-  flags, (uintptr_t)src_addr, (uintptr_t)addrlen})
-#define zvm_recvmsg(sockfd, msg, flags) \
-  TRAP((uint64_t[]){TrapRecvmsg, 0, sockfd, (uintptr_t)msg, flags})
-#define zvm_send(sockfd, buf, len, flags) \
-  TRAP((uint64_t[]){TrapSend, 0, sockfd, (uintptr_t)buf, len, flags})
-#define zvm_sendto(sockfd, buf, len, flags, dest_addr, addrlen) \
-  TRAP((uint64_t[]){TrapSendto, 0, sockfd, (uintptr_t)buf, len, \
-  flags, (uintptr_t)dest_addr, addrlen})
-#define zvm_sendmsg(sockfd, msg, flags) \
-  TRAP((uint64_t[]){TrapSendmsg, 0, sockfd, (uintptr_t)msg, flags})
-#define zvm_getsockopt(sockfd, level, optname, optval, optlen) \
-  TRAP((uint64_t[]){TrapGetsockopt, 0, sockfd, level, optname, \
-  (uintptr_t)optval, (uintptr_t)optlen})
-#define zvm_setsockopt(sockfd, level, optname, optval, optlen) \
-  TRAP((uint64_t[]){TrapSetsockopt, 0, sockfd, level, optname, \
-  (uintptr_t)optval, optlen})
-#define zvm_select(nfds, readfds, writefds, exceptfds, timeout) \
-  TRAP((uint64_t[]){TrapSelect, 0, nfds, (uintptr_t)readfds, \
-  (uintptr_t)writefds, (uintptr_t)exceptfds, (uintptr_t)timeout})
-#define zvm_poll(fds, nfds, timeout) \
-  TRAP((uint64_t[]){TrapPoll, 0, (uintptr_t)fds, nfds, timeout})
-#define zvm_gethostbyname(name) \
-  TRAP((uint64_t[]){TrapGethostbyname, 0, (uintptr_t)name})
-#define zvm_gethostbyaddr(addr, len, type) \
-  TRAP((uint64_t[]){TrapGethostbyaddr, 0, (uintptr_t)addr, len, type})
-#define zvm_close(fd) TRAP((uint64_t[]){TrapClose, 0, fd})
-#endif
 
 #endif /* ZVM_API_H__ */

@@ -25,24 +25,11 @@ static FILE *ztrace_log = NULL;
 static GString *ztrace_buf = NULL;
 static double ztrace_chrono = 0;
 
-static int idx[] = {TrapRead, TrapWrite, TrapJail, TrapUnjail, TrapExit, TrapFork
-#ifdef ZVM_SOCKETS
-    , TrapSocket, TrapBind, TrapConnect, TrapAccept, TrapListen, TrapRecv,
-    TrapRecvfrom, TrapRecvmsg, TrapSend, TrapSendto, TrapSendmsg, TrapGetsockopt,
-    TrapSetsockopt, TrapSelect, TrapPoll, TrapGethostbyname, TrapGethostbyaddr,
-    TrapClose
-#endif
-    };
+static int idx[] =
+    {TrapRead, TrapWrite, TrapJail, TrapUnjail, TrapExit, TrapFork};
 static char *function[] =
-    {"TrapRead", "TrapWrite", "TrapJail", "TrapUnjail", "TrapExit", "TrapFork",
-#ifdef ZVM_SOCKETS
-    "TrapSocket", "TrapBind", "TrapConnect", "TrapAccept", "TrapListen",
-    "TrapRecv", "TrapRecvfrom", "TrapRecvmsg", "TrapSend", "TrapSendto",
-    "TrapSendmsg", "TrapGetsockopt", "TrapSetsockopt", "TrapSelect", "TrapPoll",
-    "TrapGethostbyname", "TrapGethostbyaddr", "TrapClose",
-#endif
-    "Invalid"};
-
+    {"TrapRead", "TrapWrite", "TrapJail", "TrapUnjail", "TrapExit",
+     "TrapFork", "Invalid"};
 static char *fmt[] = {
     "%d, %p, %d, %ld", /* TrapRead */
     "%d, %p, %d, %ld", /* TrapWrite */
@@ -50,27 +37,6 @@ static char *fmt[] = {
     "%p, %d", /* TrapUnjail */
     "", /* TrapExit */
     "" /* TrapFork */
-#ifdef ZVM_SOCKETS
-    ,
-    "%d, %d, %d", /* socket */
-    "%d, %p, %u", /* bind */
-    "%d, %p, %u", /* connect */
-    "%d, %p, %p", /* accept */
-    "%d, %d", /* listen */
-    "%d, %p, %ld, %d", /* recv */
-    "%d, %p, %ld, %d, %p, %p", /* recvfrom */
-    "%d, %p, %d", /* recvmsg */
-    "%d, %p, %ld, %d", /* send */
-    "%d, %p, %ld, %d, %p, %u", /* sendto */
-    "%d, %p, %d", /* sendmsg */
-    "%d, %d, %d, %p, %p", /* getsockopt */
-    "%d, %d, %d, %p, %p", /* setsockopt */
-    "%d, %p, %p, %p, %p", /* select */
-    "%p, %u, %ul", /* poll */
-    "%s", /* gethostbyname */
-    "%p, %u, %d", /* gethostbyaddr */
-    "%d", /* close */
-#endif
 };
 
 void ZTraceCtor(const char *name)
@@ -161,13 +127,7 @@ void SyscallZTrace(int id, int retcode, ...)
 
   va_start(ap, retcode);
   buf = g_strdup_vprintf(fmt[FunctionIdx(id)], ap);
-
-#ifdef ZVM_SOCKETS
-  msg = g_strdup_printf((id == TrapGethostbyname || id == TrapGethostbyaddr)
-      ? "%s(%s) = 0x%x" : "%s(%s) = %d", FunctionName(id), buf, retcode);
-#else
   msg = g_strdup_printf("%s(%s) = %d", FunctionName(id), buf, retcode);
-#endif
 
   va_end(ap);
   ZTrace(msg);
