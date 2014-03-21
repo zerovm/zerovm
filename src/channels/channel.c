@@ -15,12 +15,11 @@
  */
 #include <assert.h>
 #include <glib.h>
-#include "src/loader/sel_ldr.h"
-#include "src/main/report.h"
-#include "src/main/accounting.h"
+#include <stdio.h>
+#include "src/main/zlog.h"
+#include "src/channels/channel.h"
 #include "src/channels/preload.h"
 #include "src/channels/prefetch.h"
-#include "src/channels/channel.h"
 
 #define MAX_CHANNELS_NUMBER 10915
 #define MIN_CHANNELS_NUMBER 3

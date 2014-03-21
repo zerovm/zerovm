@@ -23,6 +23,7 @@
 #include "src/main/setup.h"
 #include "src/channels/channel.h"
 #include "src/main/ztrace.h"
+#include "src/main/etag.h"
 
 #define QUANT MICRO_PER_SEC
 

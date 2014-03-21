@@ -24,9 +24,12 @@
  * manifest parser. input: manifest file name. output: manifest structure
  */
 #include <assert.h>
+#include <sys/un.h>
 #include <arpa/inet.h> /* convert ip to int */
 #include "src/main/manifest.h"
+#include "src/main/etag.h"
 #include "src/channels/channel.h"
+#include "src/loader/sel_ldr.h"
 
 #define MFTFAIL ZLogTag("MANIFEST", cline), FailIf
 

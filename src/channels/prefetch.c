@@ -15,31 +15,14 @@
  */
 
 /*
- * this design based on the (modified) protocol by Ron Pedde (for details:
- * https://gist.github.com/rpedde/8927215). manifest should contain "Broker"
- * string (path to connect to the broker and send/receive control
- * information). manifest should contain "Node" as well
- *
- * 1. connect broker
- * 2. send the broker the channel connection information
- * 3. get the answer, extract the return code and if ok connect the channel
- * 4. repeat (2,3) until the channels list become empty
- * 5. use channels to serve user session
- * 6. close channels sending appropriate commands to the broker
- * 7. quit broker session
- *
- * note: in this version node is a string. therefore any id can be used in
- * "Node" and "Channel" (however it is advised to use 64-bit values)
- *
- * TODO(d'b): add complete design to /doc/networking.txt (update channels.txt,
- * manifest.txt; remove name_server.txt)
  * TODO(d'b): rewrite code removing code doubling. remove extra asserts
  */
 #include <assert.h>
-#include <sys/types.h>
+#include <stdio.h>
+#include <sys/un.h>
 #include <sys/socket.h>
+#include "src/main/zlog.h"
 #include "src/channels/prefetch.h"
-#include "src/main/report.h"
 
 #define B_BUF_SIZE 1024 /* broker command buffer size */
 #define B_EOL "\n"

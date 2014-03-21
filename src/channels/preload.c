@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 #include <assert.h>
+#include <stdio.h>
+#include "src/main/zlog.h"
 #include "src/channels/preload.h"
 
 #define CHANNEL_RIGHTS S_IRUSR | S_IWUSR

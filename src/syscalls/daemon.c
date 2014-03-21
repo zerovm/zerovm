@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 #include <assert.h>
+#include <sys/un.h>
 #include <sys/socket.h>
 #include <sys/resource.h>
 #include <sys/wait.h>

@@ -19,9 +19,7 @@
 #ifndef CHANNEL_H_
 #define CHANNEL_H_
 
-#include <sys/un.h>
 #include "api/zvm.h"
-#include "src/main/etag.h"
 #include "src/main/manifest.h"
 
 EXTERN_C_BEGIN

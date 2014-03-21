@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 #include <assert.h>
+#include <stdio.h>
+#include "src/main/zlog.h"
 #include "src/channels/channel.h"
 #include "src/main/ztrace.h"
 
