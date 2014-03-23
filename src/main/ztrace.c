@@ -26,15 +26,14 @@ static GString *ztrace_buf = NULL;
 static double ztrace_chrono = 0;
 
 static int idx[] =
-    {TrapRead, TrapWrite, TrapJail, TrapUnjail, TrapExit, TrapFork};
+    {TrapRead, TrapWrite, TrapProt, TrapExit, TrapFork};
 static char *function[] =
-    {"TrapRead", "TrapWrite", "TrapJail", "TrapUnjail", "TrapExit",
+    {"TrapRead", "TrapWrite", "TrapProt", "TrapExit",
      "TrapFork", "Invalid"};
 static char *fmt[] = {
     "%d, %p, %d, %ld", /* TrapRead */
     "%d, %p, %d, %ld", /* TrapWrite */
-    "%p, %d", /* TrapJail */
-    "%p, %d", /* TrapUnjail */
+    "%p, %d, %d", /* TrapProt */
     "", /* TrapExit */
     "" /* TrapFork */
 };

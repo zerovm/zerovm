@@ -27,7 +27,8 @@
  * check "prot" access for user area (start, size)
  * if failed return -1, otherwise - 0
  */
-static int CheckRAMAccess(struct NaClApp *nap, uintptr_t start, int64_t size, int prot)
+static int CheckRAMAccess(struct NaClApp *nap,
+    uintptr_t start, int64_t size, int prot)
 {
   int i;
 
@@ -37,7 +38,7 @@ static int CheckRAMAccess(struct NaClApp *nap, uintptr_t start, int64_t size, in
     /* skip until start hit block in mem_map */
     if(start >= nap->mem_map[i].end) continue;
 
-    /* fail if block protection doesn't meat prot */
+    /* fail if block protection doesn't meet "prot" */
     if((prot & nap->mem_map[i].prot) == 0) return -1;
 
     /* subtract checked space from given area */
@@ -76,7 +77,8 @@ static int32_t ZVMReadHandle(struct NaClApp *nap,
       channel->alias, buffer, size, offset);
 
   /* check buffer and convert address */
-  if(CheckRAMAccess(nap, (uintptr_t)buffer, size, PROT_WRITE) == -1) return -EINVAL;
+  if(CheckRAMAccess(nap, (uintptr_t)buffer, size, PROT_WRITE) == -1)
+    return -EINVAL;
   sys_buffer = (char*)NaClUserToSys(nap, (uintptr_t)buffer);
 
   /* ignore user offset for sequential access read */
@@ -137,7 +139,8 @@ static int32_t ZVMWriteHandle(struct NaClApp *nap,
       channel->alias, buffer, size, offset);
 
   /* check buffer and convert address */
-  if(CheckRAMAccess(nap, (uintptr_t)buffer, size, PROT_READ) == -1) return -EINVAL;
+  if(CheckRAMAccess(nap, (uintptr_t)buffer, size, PROT_READ) == -1)
+    return -EINVAL;
   sys_buffer = (char*)NaClUserToSys(nap, (uintptr_t) buffer);
 
   /* ignore user offset for sequential access write */
@@ -163,54 +166,63 @@ static int32_t ZVMWriteHandle(struct NaClApp *nap,
   return ChannelWrite(channel, sys_buffer, (size_t)size, (off_t)offset);
 }
 
-#define JAIL_CHECK \
-    uintptr_t sysaddr; \
-    int result; \
-\
-    assert(nap != NULL); \
-    assert(nap->manifest != NULL); \
-\
-    sysaddr = NaClUserToSysAddrNullOkay(nap, addr); \
-\
-    /* sanity check */ \
-    if(size <= 0) return -EINVAL; \
-    if(sysaddr < nap->mem_map[HeapIdx].start || \
-        sysaddr >= nap->mem_map[HeapIdx].end) return -EINVAL; \
-    if(sysaddr != ROUNDDOWN_64K(sysaddr)) return -EINVAL
-
 /*
- * validate given buffer and, if successful, change protection to
- * read / execute and return 0
+ * put protection on memory region addr:size. available protections are
+ * r/o, r/w, r/x, none. if user asked for r/x validation will be applied
+ * returns 0 (successful) or negative error code
  */
-static int32_t ZVMJailHandle(struct NaClApp *nap, uintptr_t addr, int32_t size)
+static int32_t ZVMProtHandle(struct NaClApp *nap,
+    uintptr_t addr, int32_t size, int prot)
 {
-  JAIL_CHECK;
+  int result = 0;
+  uintptr_t sysaddr;
 
-  /* validate */
-  result = NaClSegmentValidates((uint8_t*)sysaddr, size, sysaddr);
-  if(result == 0) return -EPERM;
+  assert(nap != NULL);
+  assert(nap->manifest != NULL);
 
-  /* protect */
-  result = NaCl_mprotect((void*)sysaddr, size, PROT_READ | PROT_EXEC);
-  if(result != 0) return -EACCES;
+  sysaddr = NaClUserToSysAddrNullOkay(nap, addr);
 
-  return 0;
+  /* sanity check */
+  if(size <= 0)
+    return -EINVAL;
+  if(sysaddr != ROUNDDOWN_64K(sysaddr))
+    return -EINVAL;
+
+  /* region check */
+  if(sysaddr < nap->mem_map[TextIdx].start)
+    return -EACCES;
+  if(sysaddr >= nap->mem_map[HeapIdx].end)
+    return -EACCES;
+
+  /* put protection */
+  switch(prot)
+  {
+    case PROT_NONE:
+    case PROT_READ:
+    case PROT_WRITE:
+    case PROT_READ | PROT_WRITE:
+      if(NaCl_mprotect((void*)sysaddr, size, prot) != 0)
+        result = -errno;
+      break;
+
+    case PROT_EXEC:
+    case PROT_READ | PROT_EXEC:
+      if(NaClSegmentValidates((uint8_t*)sysaddr, size, sysaddr) == 0)
+        result = -EPERM;
+      else
+        if(NaCl_mprotect((void*)sysaddr, size, prot) != 0)
+          result = -errno;
+      break;
+
+    default:
+      result = -EPERM;
+      break;
+  }
+
+  return result;
 }
 
-/* change protection to read / write and return 0 if successful */
-static int32_t ZVMUnjailHandle(struct NaClApp *nap, uintptr_t addr, int32_t size)
-{
-  JAIL_CHECK;
-
-  /* protect */
-  result = NaCl_mprotect((void*)sysaddr, size, PROT_READ | PROT_WRITE);
-  if(result != 0) return -EACCES;
-
-  return 0;
-}
-#undef JAIL_CHECK
-
-/* user exit. session is finished */
+/* user exit. session is finished. no return. */
 static void ZVMExitHandle(struct NaClApp *nap, int32_t code)
 {
   assert(nap != NULL);
@@ -259,11 +271,9 @@ int32_t TrapHandler(struct NaClApp *nap, uint32_t args)
       retcode = ZVMWriteHandle(nap,
           (int)sargs[2], (char*)sargs[3], (int32_t)sargs[4], sargs[5]);
       break;
-    case TrapJail:
-      retcode = ZVMJailHandle(nap, (uint32_t)sargs[2], (int32_t)sargs[3]);
-      break;
-    case TrapUnjail:
-      retcode = ZVMUnjailHandle(nap, (uint32_t)sargs[2], (int32_t)sargs[3]);
+    case TrapProt:
+      retcode = ZVMProtHandle(nap,
+          (uint32_t)sargs[2], (int32_t)sargs[3], (int)sargs[4]);
       break;
     default:
       retcode = -EPERM;
@@ -274,6 +284,7 @@ int32_t TrapHandler(struct NaClApp *nap, uint32_t args)
   /* report, ztrace and return */
   FastReport(nap);
   ZLOGS(LOG_DEBUG, "%s returned %d", FunctionName(*sargs), retcode);
-  SyscallZTrace(*sargs, retcode, sargs[2], sargs[3], sargs[4], sargs[5], sargs[6], sargs[7]);
+  SyscallZTrace(*sargs, retcode,
+      sargs[2], sargs[3], sargs[4], sargs[5], sargs[6], sargs[7]);
   return retcode;
 }

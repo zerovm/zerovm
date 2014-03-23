@@ -26,8 +26,7 @@ enum TrapCalls
 {
   TrapRead = 0x64616552,
   TrapWrite = 0x74697257,
-  TrapJail = 0x6c69614a,
-  TrapUnjail = 0x6c6a6e55,
+  TrapProt = 0x746f7250,
   TrapExit = 0x74697845,
   TrapFork = 0x6b726f46
 };
@@ -81,16 +80,16 @@ struct UserManifest
  *   read from "offset" position of "desc" channel "size" bytes to "buffer"
  * zvm_pwrite
  *   write to "offset" position of "desc" channel "size" bytes from "buffer"
- * zvm_jail
- *   validate "size" bytes from "buffer" and (if ok) protect it with read/exec
- *   "buffer" should be 64kb aligned and point to heap
- * zvm_unjail
- *   protect "size" bytes from "buffer" with read/write
- *   "buffer" should be 64kb aligned and point to heap
+ * zvm_mprotect
+ *   protect "size" bytes from "buffer" with "prot"
  * zvm_exit
  *   terminate program with "code"
  * zvm_fork
  *   ask for fork (for further details see "daemon mode")
+ *
+ * note: zvm_jail, zvm_unjail removed, but can be reproduced with zvm_mprotect
+ *   call. zvm_jail(buffer, size) => zvm_mprotect(buffer, size, PROT_READ | PROT_EXEC)
+ *   and zvm_unjail(buffer, size) => zvm_mprotect(buffer, size, PROT_READ | PROT_WRITE)
  *
  * all trap functions return -errno code if error encountered, otherwise
  * result equal to processed bytes or 0 (for (un)jail). exit does not return
@@ -99,10 +98,8 @@ struct UserManifest
   TRAP((uint64_t[]){TrapRead, 0, desc, (uintptr_t)buffer, size, offset})
 #define zvm_pwrite(desc, buffer, size, offset) \
   TRAP((uint64_t[]){TrapWrite, 0, desc, (uintptr_t)buffer, size, offset})
-#define zvm_jail(buffer, size) \
-  TRAP((uint64_t[]){TrapJail, 0, (uintptr_t)buffer, size})
-#define zvm_unjail(buffer, size) \
-  TRAP((uint64_t[]){TrapUnjail, 0, (uintptr_t)buffer, size})
+#define zvm_mprotect(buffer, size, prot) \
+  TRAP((uint64_t[]){TrapProt, 0, (uintptr_t)buffer, size, prot})
 #define zvm_exit(code) TRAP((uint64_t[]){TrapExit, 0, code})
 #define zvm_fork() TRAP((uint64_t[]){TrapFork})
 
