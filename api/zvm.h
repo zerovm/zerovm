@@ -27,8 +27,8 @@ enum TrapCalls
   TrapRead = 0x64616552,
   TrapWrite = 0x74697257,
   TrapProt = 0x746f7250,
-  TrapExit = 0x74697845,
-  TrapFork = 0x6b726f46
+  TrapFork = 0x6b726f46,
+  TrapExit = 0x74697845
 };
 
 /* channel types */
@@ -68,7 +68,7 @@ struct UserManifest
 };
 
 /* pointer to the user manifest (read only memory area) */
-#define MANIFEST ((const struct UserManifest const *)*((uintptr_t*)0xFEFFFFFC))
+#define MANIFEST ((const struct UserManifest const*)*((uintptr_t*)0xFEFFFFFC))
 
 /* trap pointer. internal helper. DO NOT use it! */
 #define TRAP ((int32_t (*)(uint64_t*))0x10000)
@@ -82,17 +82,17 @@ struct UserManifest
  *   write to "offset" position of "desc" channel "size" bytes from "buffer"
  * zvm_mprotect
  *   protect "size" bytes from "buffer" with "prot"
- * zvm_exit
- *   terminate program with "code"
  * zvm_fork
  *   ask for fork (for further details see "daemon mode")
+ * zvm_exit
+ *   terminate program with "code"
  *
- * note: zvm_jail, zvm_unjail removed, but can be reproduced with zvm_mprotect
- *   call. zvm_jail(buffer, size) => zvm_mprotect(buffer, size, PROT_READ | PROT_EXEC)
- *   and zvm_unjail(buffer, size) => zvm_mprotect(buffer, size, PROT_READ | PROT_WRITE)
+ * all trap functions (except zvm_fork) has same return as libc ones, but
+ * instead of setting errno and returning -1 it returns -errno
  *
- * all trap functions return -errno code if error encountered, otherwise
- * result equal to processed bytes or 0 (for (un)jail). exit does not return
+ * note: zvm_jail, zvm_unjail removed, but can be emulated with zvm_mprotect:
+ * zvm_jail(buffer, size) => zvm_mprotect(buffer, size, PROT_READ | PROT_EXEC)
+ * zvm_unjail(buffer, size) => zvm_mprotect(buffer, size, PROT_READ | PROT_WRITE)
  */
 #define zvm_pread(desc, buffer, size, offset) \
   TRAP((uint64_t[]){TrapRead, 0, desc, (uintptr_t)buffer, size, offset})
@@ -100,7 +100,7 @@ struct UserManifest
   TRAP((uint64_t[]){TrapWrite, 0, desc, (uintptr_t)buffer, size, offset})
 #define zvm_mprotect(buffer, size, prot) \
   TRAP((uint64_t[]){TrapProt, 0, (uintptr_t)buffer, size, prot})
-#define zvm_exit(code) TRAP((uint64_t[]){TrapExit, 0, code})
 #define zvm_fork() TRAP((uint64_t[]){TrapFork})
+#define zvm_exit(code) TRAP((uint64_t[]){TrapExit, 0, code})
 
 #endif /* ZVM_API_H__ */
