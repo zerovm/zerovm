@@ -34,6 +34,7 @@
 #define MFTFAIL ZLogTag("MANIFEST", cline), FailIf
 
 /* general */
+#define MIN_MFT_SIZE 124 /* can be calculated, but it will be complex */
 #define PTR_SIZE (sizeof(void*))
 #define MANIFEST_VERSION "20140320"
 #define MANIFEST_SIZE_LIMIT 0x80000
@@ -117,10 +118,13 @@ static int cline = 0;
 /* get manifest data */
 static void GetManifestData(const char *name, char *buf)
 {
+  int size;
   FILE *h = fopen(name, "r");
 
-  ZLOGFAIL(h == NULL, ENOENT, "manifest open error");
-  ZLOGFAIL(fread(buf, 1, MANIFEST_SIZE_LIMIT, h) < 1, EIO, "manifest read error");
+  ZLOGFAIL(h == NULL, ENOENT, "manifest: %s", strerror(errno));
+  size = fread(buf, 1, MANIFEST_SIZE_LIMIT, h);
+  ZLOGFAIL(size < 1, EIO, "manifest: %s", strerror(errno));
+  ZLOGFAIL(size < MIN_MFT_SIZE, EFAULT, "manifest is too small");
   fclose(h);
 }
 
