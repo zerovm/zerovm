@@ -278,10 +278,10 @@ void ReportDtor(int zvm_ret)
     ZTrace("[final dump]");
   }
 
-  ChannelsDtor(gnap->manifest);
-  ZTrace("[channels destruction]");
   Report(gnap);
   ZTrace("[report]");
+  ChannelsDtor(gnap->manifest);
+  ZTrace("[channels destruction]");
   NaClAppDtor(gnap); /* free user space and globals */
   ZTrace("[untrusted context closing]");
   ManifestDtor(gnap->manifest); /* dispose manifest and channels */

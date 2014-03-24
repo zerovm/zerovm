@@ -70,9 +70,7 @@ static void UpdateSession(struct Manifest *manifest)
 {
   int i;
   struct Manifest *tmp;
-  char *cmd = GetCommand();
-
-  ZLOG(LOG_INSANE, "job manifest: %s", cmd);
+  char *cmd;
 
   /* reset system internals */
   SignalHandlerFini();
@@ -84,6 +82,8 @@ static void UpdateSession(struct Manifest *manifest)
   ZLOG(LOG_INSANE, "signals, report, log and trace reinitialized");
 
   /* read manifest */
+  cmd = GetCommand();
+  ZLOG(LOG_INSANE, "job manifest: %s", cmd);
   ZLOGFAIL(cmd == NULL, EFAULT, "invalid manifest received");
   tmp = ManifestTextCtor(cmd);
   g_free(cmd);
