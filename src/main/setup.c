@@ -85,6 +85,55 @@ void PreallocateUserMemory(struct NaClApp *nap)
   nap->mem_map[HeapIdx].end += heap;
 }
 
+/*
+ * ### {{
+ * new user memory manager. replaces struct MemBlock (with all its
+ * macros/logic). need to be done for snapshot.
+ * TODO(d'b): should be extracted to own class
+ */
+
+/* contains PROT_* bits or 0xff for unavailable pages */
+static uint8_t user_map[FOURGIG / NACL_MAP_PAGESIZE];
+
+/* get full user memory map */
+uint8_t *GetUserMap()
+{
+  return user_map;
+}
+
+/* return 0 if user memory region available, otherwise -1 */
+int CheckUserMap(intptr_t addr, int size)
+{
+  int i;
+
+  if(addr % NACL_MAP_PAGESIZE != 0) return -1;
+  if(size % NACL_MAP_PAGESIZE != 0) return -1;
+
+  for(i = (size - 1) / NACL_MAP_PAGESIZE; i; --i)
+    if(user_map[i + addr / NACL_MAP_PAGESIZE] == 0xff) return -1;
+
+  return 0;
+}
+
+/*
+ * update user memory map with new protection. expects properly aligned
+ * addr / size. returns 0 if successfully otherwise -1.
+ */
+int UpdateUserMap(intptr_t addr, int size, int prot)
+{
+  int i;
+
+  /* check if all pages available */
+  if(CheckUserMap(addr, size) != 0) return -1;
+
+  /* set new protection for all pages */
+  for(i = (size - 1) / NACL_MAP_PAGESIZE; i; --i)
+    user_map[i + addr / NACL_MAP_PAGESIZE] = (uint8_t)prot;
+  return 0;
+}
+
+/* }} */
+
 /* TODO(d'b): move it to sel_addrspace */
 /* should be kept in sync with api/zvm.h*/
 struct ChannelSerialized

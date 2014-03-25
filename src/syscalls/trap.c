@@ -185,7 +185,9 @@ static int32_t ZVMProtHandle(struct NaClApp *nap,
   /* sanity check */
   if(size <= 0)
     return -EINVAL;
-  if(sysaddr != ROUNDDOWN_64K(sysaddr))
+  if(size % NACL_MAP_PAGESIZE != 0)
+    return -EINVAL;
+  if(sysaddr % NACL_MAP_PAGESIZE != 0)
     return -EINVAL;
 
   /* region check */
