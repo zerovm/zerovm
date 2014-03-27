@@ -20,11 +20,11 @@ int main(int argc, char **argv)
   ZTEST(PWRITE(SEQWO, buf, 1, 0) == 1);
   ZTEST(PWRITE(SEQWO, buf, 1,
       MANIFEST->channels[OPEN(SEQWO)].limits[PutSizeLimit] - 1) == 1);
-  ZTEST(PWRITE(SEQWO, buf, 0, -1) == 0);
+  ZTEST(PWRITE(SEQWO, buf, 0, -1) < 0);
 
   /* incorrect requests: NULL buffer */
-  ZTEST(PWRITE(SEQWO, NULL, 0, 0) < 0);
-  ZTEST(PWRITE(SEQWO, NULL, 0, 1) < 0);
+  ZTEST(PWRITE(SEQWO, NULL, 0, 0) == 0);
+  ZTEST(PWRITE(SEQWO, NULL, 0, 1) == 0);
   ZTEST(PWRITE(SEQWO, NULL, 1, 0) < 0);
   ZTEST(PWRITE(SEQWO, NULL, 1,
       MANIFEST->channels[OPEN(SEQWO)].limits[PutSizeLimit] - 1) < 0);
@@ -34,8 +34,8 @@ int main(int argc, char **argv)
   ZTEST(PWRITE(SEQWO, buf, -1, 0) < 0);
 
   /* incorrect requests: offset */
-  ZTEST(PWRITE(SEQWO, buf, 0, -1) == 0);
-  ZTEST(PWRITE(SEQWO, buf, 1, -1) == 1);
+  ZTEST(PWRITE(SEQWO, buf, 0, -1) < 0);
+  ZTEST(PWRITE(SEQWO, buf, 1, -1) < 1);
   ZTEST(PWRITE(SEQWO, buf, 1,
       MANIFEST->channels[OPEN(SEQWO)].limits[PutSizeLimit]) == 1);
 
@@ -48,7 +48,7 @@ int main(int argc, char **argv)
       MANIFEST->channels[OPEN(SEQWO)].limits[PutSizeLimit]) < 0);
 
   /* incorrect requests: exhausted */
-  ZTEST(PWRITE(SEQWO, buf, 30, 0) == 28);
+  ZTEST(PWRITE(SEQWO, buf, 30, 0) == 29);
   ZTEST(PWRITE(SEQWO, buf, 10, 0) < 0);
 
   /* count errors and exit with it */

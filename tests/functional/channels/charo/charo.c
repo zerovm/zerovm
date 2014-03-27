@@ -18,8 +18,8 @@ int main(int argc, char **argv)
   ZTEST(PREAD(CHARO, buf, 0, 0) == 0);
   ZTEST(PREAD(CHARO, buf, 0, 1) == 0);
   ZTEST(PREAD(CHARO, buf, 1, 0) == 1);
-  ZTEST(PREAD(CHARO, buf, 1, MANIFEST->channels[OPEN(CHARO)].size - 1) == 1);
-  ZTEST(PREAD(CHARO, buf, 0, -1) == 0);
+  ZTEST(PREAD(CHARO, buf, 1, MANIFEST->channels[OPEN(CHARO)].size - 1) < 0);
+  ZTEST(PREAD(CHARO, buf, 0, -1) < 0);
 
   /* incorrect handle */
   ZTEST(zvm_pread(-1, buf, 1, 0) < 0);
@@ -27,8 +27,8 @@ int main(int argc, char **argv)
   ZTEST(zvm_pread(MANIFEST->channels_count, buf, 1, 0) < 0);
 
   /* incorrect requests: NULL buffer */
-  ZTEST(PREAD(CHARO, NULL, 0, 0) < 0);
-  ZTEST(PREAD(CHARO, NULL, 0, 1) < 0);
+  ZTEST(PREAD(CHARO, NULL, 0, 0) == 0);
+  ZTEST(PREAD(CHARO, NULL, 0, 1) == 0);
   ZTEST(PREAD(CHARO, NULL, 1, 0) < 0);
   ZTEST(PREAD(CHARO, NULL, 1, MANIFEST->channels[OPEN(CHARO)].size - 1) < 0);
   ZTEST(PREAD(CHARO, NULL, 0, -1) < 0);
@@ -37,8 +37,8 @@ int main(int argc, char **argv)
   ZTEST(PREAD(CHARO, buf, -1, 0) < 0);
 
   /* incorrect requests: offset */
-  ZTEST(PREAD(CHARO, buf, 0, -1) == 0);
-  ZTEST(PREAD(CHARO, buf, 1, -1) == 1);
+  ZTEST(PREAD(CHARO, buf, 0, -1) < 0);
+  ZTEST(PREAD(CHARO, buf, 1, -1) < 0);
   ZTEST(PREAD(CHARO, buf, 1, MANIFEST->channels[OPEN(CHARO)].size) == 1);
 
   /* correct requests: writing of 0 bytes attempt */
@@ -50,7 +50,7 @@ int main(int argc, char **argv)
   ZTEST(PWRITE(CHARO, buf, 1, MANIFEST->channels[OPEN(CHARO)].size - 1) < 0);
 
   /* incorrect requests: exhausted */
-  ZTEST(PREAD(CHARO, buf, 30, 0) == 28);
+  ZTEST(PREAD(CHARO, buf, 31, 0) == 30);
   ZTEST(PWRITE(STDOUT, buf, 28, 0) == 28);
   ZTEST(PREAD(CHARO, buf, 10, 0) < 0);
 

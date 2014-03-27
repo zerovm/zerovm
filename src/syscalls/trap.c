@@ -24,33 +24,6 @@
 #include "src/main/ztrace.h"
 
 /*
- * check "prot" access for user area (start, size)
- * if failed return -1, otherwise - 0
- */
-static int CheckRAMAccess(struct NaClApp *nap,
-    uintptr_t start, int64_t size, int prot)
-{
-  int i;
-
-  start = NaClUserToSysAddrNullOkay(nap, start);
-  for(i = LeftBumperIdx; i < MemMapSize; ++i)
-  {
-    /* skip until start hit block in mem_map */
-    if(start >= nap->mem_map[i].end) continue;
-
-    /* fail if block protection doesn't meet "prot" */
-    if((prot & nap->mem_map[i].prot) == 0) return -1;
-
-    /* subtract checked space from given area */
-    size -= (nap->mem_map[i].end - start);
-    if(size <= 0) return 0;
-
-    start = nap->mem_map[i].end;
-  }
-  return -1;
-}
-
-/*
  * read specified amount of bytes from given desc/offset to buffer
  * return amount of read bytes or negative error code if call failed
  */
@@ -76,10 +49,15 @@ static int32_t ZVMReadHandle(struct NaClApp *nap,
   ZLOGS(LOG_INSANE, "channel %s, buffer=%p, size=%d, offset=%ld",
       channel->alias, buffer, size, offset);
 
-  /* check buffer and convert address */
-  if(CheckRAMAccess(nap, (uintptr_t)buffer, size, PROT_WRITE) == -1)
+  /* check other arguments sanity */
+  if(size < 0) return -EFAULT;
+  if(offset < 0) return -EINVAL;
+  if(size == 0) return 0;
+
+  /* check buffer availability */
+  sys_buffer = (char*)NaClUserToSysAddrNullOkay(nap, (uintptr_t)buffer);
+  if(CheckUserMap((intptr_t)sys_buffer, size, PROT_WRITE) == -1)
     return -EINVAL;
-  sys_buffer = (char*)NaClUserToSys(nap, (uintptr_t)buffer);
 
   /* ignore user offset for sequential access read */
   if(CH_SEQ_READABLE(channel))
@@ -88,20 +66,15 @@ static int32_t ZVMReadHandle(struct NaClApp *nap,
   /* prevent reading beyond the end of the random access channels */
     size = MIN(channel->size - offset, size);
 
-  /* check arguments sanity */
-  if(size == 0) return 0; /* success. user has read 0 bytes */
-  if(size < 0) return -EFAULT;
-  if(offset < 0) return -EINVAL;
-
   /* check for eof */
   if(channel->eof) return 0;
 
   /* check limits */
   if(channel->counters[GetsLimit] >= channel->limits[GetsLimit])
     return -EDQUOT;
-  if(CH_RND_READABLE(channel))
-    if(offset >= channel->limits[PutSizeLimit] - channel->counters[PutSizeLimit]
-      + channel->size) return -EINVAL;
+//  if(CH_RND_READABLE(channel))
+//    if(offset >= channel->limits[PutSizeLimit] - channel->counters[PutSizeLimit]
+//      + channel->size) return -EINVAL;
 
   /* calculate i/o leftovers */
   tail = channel->limits[GetSizeLimit] - channel->counters[GetSizeLimit];
@@ -138,25 +111,28 @@ static int32_t ZVMWriteHandle(struct NaClApp *nap,
   ZLOGS(LOG_INSANE, "channel %s, buffer=%p, size=%d, offset=%ld",
       channel->alias, buffer, size, offset);
 
-  /* check buffer and convert address */
-  if(CheckRAMAccess(nap, (uintptr_t)buffer, size, PROT_READ) == -1)
+  /* check other arguments sanity */
+  if(size < 0) return -EFAULT;
+  if(offset < 0) return -EINVAL;
+  if(size == 0) return 0;
+
+  /* check buffer availability */
+  sys_buffer = (char*)NaClUserToSysAddrNullOkay(nap, (uintptr_t)buffer);
+  if(CheckUserMap((intptr_t)sys_buffer, size, PROT_WRITE) == -1)
     return -EINVAL;
-  sys_buffer = (char*)NaClUserToSys(nap, (uintptr_t) buffer);
 
   /* ignore user offset for sequential access write */
   if(CH_SEQ_WRITEABLE(channel)) offset = channel->putpos;
-
-  /* check arguments sanity */
-  if(size == 0) return 0; /* success. user has read 0 bytes */
-  if(size < 0) return -EFAULT;
-  if(offset < 0) return -EINVAL;
 
   /* check limits */
   if(channel->counters[PutsLimit] >= channel->limits[PutsLimit])
     return -EDQUOT;
   tail = channel->limits[PutSizeLimit] - channel->counters[PutSizeLimit];
-  if(offset >= channel->limits[PutSizeLimit] &&
-      !((CH_RW_TYPE(channel) & 1) == 1)) return -EINVAL;
+
+  /* prevent writing beyond the limit */
+  if(CH_RND_WRITEABLE(channel))
+    if(offset >= channel->limits[PutSizeLimit])
+      return -EINVAL;
 
   if(offset >= channel->size + tail) return -EINVAL;
   if(size > tail) size = tail;

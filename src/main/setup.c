@@ -24,6 +24,75 @@
 #include "src/main/setup.h"
 #include "src/channels/channel.h"
 
+/*
+ * ### {{
+ * new user memory manager. replaces struct MemBlock (with all its
+ * macros/logic). need to be done for snapshot.
+ * NOTE: "addr" should be specified in system address space
+ * TODO(d'b): should be extracted to own class
+ * TODO(d'b): map updating and checking is slow, speed it up
+ */
+
+/* contains PROT_* bits or 0xff for unavailable pages */
+static uint8_t user_map[FOURGIG / NACL_MAP_PAGESIZE];
+
+uint8_t *GetUserMap()
+{
+  uint8_t *buffer = g_malloc(ARRAY_SIZE(user_map));
+  ZLOGFAIL(buffer == NULL, ENOMEM, "cannot allocate user map copy");
+
+  return buffer;
+}
+
+/* return index of "addr" in user map */
+INLINE static int UserMapIndex(intptr_t addr)
+{
+  return (addr - (intptr_t)R15_CONST - GUARDSIZE) / NACL_MAP_PAGESIZE;
+}
+
+int CheckUserMap(intptr_t addr, int64_t size, int prot)
+{
+  int i;
+
+  /* check arguments sanity */
+  if(addr - (intptr_t)R15_CONST - GUARDSIZE < 0) // ### does it work?
+    return -1;
+  if(addr - (intptr_t)R15_CONST - GUARDSIZE + size > FOURGIG)
+    return -1;
+  if(prot < PROT_NONE || prot > (PROT_READ|PROT_WRITE|PROT_EXEC))
+    return -1;
+
+  /* scan given region for availability */
+  if(prot == 0)
+  {
+    for(i = 0; i < ROUNDUP_64K(size) / NACL_MAP_PAGESIZE; ++i)
+      if(user_map[UserMapIndex(addr) + i] == 0xff)
+        return -1;
+  }
+  /* scan given region for prot */
+  else
+    for(i = 0; i < ROUNDUP_64K(size) / NACL_MAP_PAGESIZE; ++i)
+      if((user_map[UserMapIndex(addr) + i] & prot) == 0)
+        return -1;
+
+  return 0;
+}
+
+int UpdateUserMap(intptr_t addr, int64_t size, int prot)
+{
+  int i;
+
+  /* check if all pages available */
+  if(CheckUserMap(addr, size, PROT_NONE) != 0) return -1;
+
+  /* set new protection for all pages */
+  for(i = 0; i < ROUNDUP_64K(size) / NACL_MAP_PAGESIZE; ++i)
+    user_map[UserMapIndex(addr) + i] = (uint8_t)prot;
+  return 0;
+}
+
+/* }} */
+
 /* set timeout. by design timeout must be specified in manifest */
 static void SetTimeout(struct Manifest *manifest)
 {
@@ -84,55 +153,6 @@ void PreallocateUserMemory(struct NaClApp *nap)
   nap->mem_map[HeapIdx].size += heap;
   nap->mem_map[HeapIdx].end += heap;
 }
-
-/*
- * ### {{
- * new user memory manager. replaces struct MemBlock (with all its
- * macros/logic). need to be done for snapshot.
- * TODO(d'b): should be extracted to own class
- */
-
-/* contains PROT_* bits or 0xff for unavailable pages */
-static uint8_t user_map[FOURGIG / NACL_MAP_PAGESIZE];
-
-/* get full user memory map */
-uint8_t *GetUserMap()
-{
-  return user_map;
-}
-
-/* return 0 if user memory region available, otherwise -1 */
-int CheckUserMap(intptr_t addr, int size)
-{
-  int i;
-
-  if(addr % NACL_MAP_PAGESIZE != 0) return -1;
-  if(size % NACL_MAP_PAGESIZE != 0) return -1;
-
-  for(i = (size - 1) / NACL_MAP_PAGESIZE; i; --i)
-    if(user_map[i + addr / NACL_MAP_PAGESIZE] == 0xff) return -1;
-
-  return 0;
-}
-
-/*
- * update user memory map with new protection. expects properly aligned
- * addr / size. returns 0 if successfully otherwise -1.
- */
-int UpdateUserMap(intptr_t addr, int size, int prot)
-{
-  int i;
-
-  /* check if all pages available */
-  if(CheckUserMap(addr, size) != 0) return -1;
-
-  /* set new protection for all pages */
-  for(i = (size - 1) / NACL_MAP_PAGESIZE; i; --i)
-    user_map[i + addr / NACL_MAP_PAGESIZE] = (uint8_t)prot;
-  return 0;
-}
-
-/* }} */
 
 /* TODO(d'b): move it to sel_addrspace */
 /* should be kept in sync with api/zvm.h*/

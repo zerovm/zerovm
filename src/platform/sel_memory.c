@@ -19,8 +19,10 @@
  * limitations under the License.
  */
 
+#include <assert.h>
 #include <sys/mman.h>
 #include "src/main/zlog.h"
+#include "src/main/setup.h"
 
 int NaCl_page_alloc_intern_flags(void **p, size_t size, int map_flags)
 {
@@ -46,6 +48,13 @@ int NaCl_page_free(void *p, size_t size)
 int NaCl_mprotect(void *addr, size_t len, int prot)
 {
   int ret = mprotect(addr, len, prot);
+  if(ret == 0 && addr >= R15_CONST + GUARDSIZE
+      && addr + len <= R15_CONST + GUARDSIZE + FOURGIG)
+  {
+    int result;
+    result = UpdateUserMap((intptr_t)addr, len, prot);
+    assert(result == 0);
+  }
 
   return ret == -1 ? -errno : ret;
 }
