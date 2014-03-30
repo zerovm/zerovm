@@ -123,9 +123,7 @@ void AllocAddrSpace(struct NaClApp *nap)
 
   hole_start = ROUNDUP_64K(nap->data_end);
 
-  ZLOGFAIL(nap->stack_size >= ((uintptr_t) 1U) << nap->addr_bits,
-      EFAULT, "AllocAddrSpace: stack too large!");
-  stack_start = (((uintptr_t) 1U) << nap->addr_bits) - nap->stack_size;
+  stack_start = (((uintptr_t) 1U) << nap->addr_bits) - STACK_SIZE;
   stack_start = ROUNDUP_64K(stack_start);
 
   ZLOGFAIL(stack_start < hole_start, EFAULT,
@@ -246,16 +244,15 @@ void MemoryProtection(struct NaClApp *nap)
   }
 
   /* stack is read/write but not execute */
-  region_size = nap->stack_size;
+  region_size = STACK_SIZE;
   start_addr = NaClUserToSys(nap,
-      ROUNDUP_64K(((uintptr_t) 1U << nap->addr_bits) - nap->stack_size));
+      ROUNDUP_64K(((uintptr_t) 1U << nap->addr_bits) - STACK_SIZE));
   ZLOGS(LOG_INSANE, "RW stack region start 0x%08x, size 0x%08lx, end 0x%08x",
           start_addr, region_size, start_addr + region_size);
 
-  err = NaCl_mprotect((void *)start_addr, ROUNDUP_64K(nap->stack_size),
-      PROT_READ | PROT_WRITE);
+  err = NaCl_mprotect((void *)start_addr, STACK_SIZE, PROT_READ | PROT_WRITE);
   ZLOGFAIL(0 != err, err, FAILED_MSG);
 
   SET_MEM_MAP_IDX(nap->mem_map[StackIdx], "Stack",
-      start_addr, ROUNDUP_64K(nap->stack_size), PROT_READ | PROT_WRITE);
+      start_addr, STACK_SIZE, PROT_READ | PROT_WRITE);
 }

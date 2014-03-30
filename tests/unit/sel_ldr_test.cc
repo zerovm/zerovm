@@ -59,7 +59,6 @@ TEST_F(SelLdrTest, DescTable) {
 
   NaClAppCtor(&app);
   ASSERT_EQ(NACL_MAX_ADDR_BITS, app.addr_bits);
-  ASSERT_EQ((uintptr_t)NACL_DEFAULT_STACK_MAX, app.stack_size);
   ASSERT_EQ(0u, app.mem_start);
   ASSERT_EQ(0u, app.static_text_end);
   ASSERT_EQ(0u, app.dynamic_text_start);

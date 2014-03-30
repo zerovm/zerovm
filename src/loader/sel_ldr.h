@@ -40,7 +40,6 @@
 #include <stdint.h>
 
 /* from sel_ldr_x86.h */
-#define NACL_DEFAULT_STACK_MAX (16 << 20) /* untrusted stack */
 #define NACL_MAX_ADDR_BITS (32)
 #define NACL_HALT_OPCODE   0xf4
 #define NACL_HALT_LEN      1 /* length of halt instruction */
@@ -90,14 +89,6 @@ struct NaClApp {
    * public, user settable prior to app start.
    */
   uint8_t                   addr_bits;
-  uintptr_t                 stack_size;
-  /*
-   * stack_size is the maximum size of the (main) stack.  The stack
-   * memory is eager allocated (mapped in w/o MAP_NORESERVE) so
-   * there must be enough swap space; page table entries are not
-   * populated (no MAP_POPULATE), so actual accesses will likely
-   * incur page faults.
-   */
 
   /*
    * Determined at load time; OS-determined.

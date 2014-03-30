@@ -144,8 +144,6 @@ void AppLoadFile(struct Gio *gp, struct NaClApp *nap)
   /* fail if Address space too big */
   ZLOGFAIL(nap->addr_bits > NACL_MAX_ADDR_BITS, EFAULT, FAILED_MSG);
 
-  nap->stack_size = ROUNDUP_64K(nap->stack_size);
-
   /* temporay object will be deleted at end of function */
   image = ElfImageNew(gp);
   ValidateElfHeader(image);

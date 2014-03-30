@@ -211,7 +211,6 @@ static void FillTrampolineRegion(struct NaClApp *nap)
 void NaClAppCtor(struct NaClApp *nap)
 {
   nap->addr_bits = NACL_MAX_ADDR_BITS;
-  nap->stack_size = NACL_DEFAULT_STACK_MAX;
 
   gnap = nap;
   nacl_user = g_malloc(sizeof *nacl_user);
@@ -259,7 +258,7 @@ void PrintAppDetails(struct NaClApp *nap, int verbosity)
 {
   ZLOGS(verbosity, "NaClAppPrintDetails((struct NaClApp*) 0x%08lx,", (uintptr_t)nap);
   ZLOGS(verbosity, "addr space size:         2**%d", nap->addr_bits);
-  ZLOGS(verbosity, "stack size:              0x%08d", nap->stack_size);
+  ZLOGS(verbosity, "stack size:              0x%08d", STACK_SIZE);
   ZLOGS(verbosity, "mem start addr:          0x%08lx", nap->mem_start);
   ZLOGS(verbosity, "static_text_end:         0x%08lx", nap->static_text_end);
   ZLOGS(verbosity, "end-of-text:             0x%08lx", NaClEndOfStaticText(nap));

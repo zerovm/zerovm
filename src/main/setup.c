@@ -44,6 +44,23 @@ uint8_t *GetUserMap()
   return buffer;
 }
 
+/* lock user pages of: NULL, trampoline, user manifest, stack */
+/* TODO(d'b): ugly, magic numbers. heal the code */
+void LockRestrictedMemory()
+{
+  int i;
+
+  user_map[0] |= PROT_LOCK; /* NULL */
+  user_map[1] |= PROT_LOCK; /* trampoline */
+
+  /* TODO(d'b): manifest can be larger than 1 page. fix it! */
+  user_map[(FOURGIG - STACK_SIZE - 1)  / NACL_MAP_PAGESIZE] |= PROT_LOCK;
+
+  /* stack */
+  for(i = (FOURGIG - STACK_SIZE) / NACL_MAP_PAGESIZE; i < FOURGIG / NACL_MAP_PAGESIZE; ++i)
+    user_map[i] |= PROT_LOCK;
+}
+
 /* return index of "addr" in user map */
 INLINE static int UserMapIndex(intptr_t addr)
 {
@@ -140,7 +157,7 @@ void PreallocateUserMemory(struct NaClApp *nap)
 
   /* calculate user heap size (must be allocated next to the data_end) */
   p = (void*)ROUNDUP_64K(nap->data_end);
-  heap = nap->manifest->mem_size - nap->stack_size;
+  heap = nap->manifest->mem_size - STACK_SIZE;
   heap = ROUNDUP_64K(heap) - ROUNDUP_64K(nap->data_end);
   ZLOGFAIL(heap <= LEAST_USER_HEAP_SIZE, ENOMEM, "user heap size is too small");
 
@@ -183,7 +200,7 @@ static void SetUserManifestPtr(struct NaClApp *nap, void *mft)
 {
   uintptr_t *p;
 
-  p = (void*)NaClUserToSys(nap, FOURGIG - nap->stack_size - USER_PTR_SIZE);
+  p = (void*)NaClUserToSys(nap, FOURGIG - STACK_SIZE - USER_PTR_SIZE);
   *p = NaClSysToUser(nap, (uintptr_t)mft);
 }
 
@@ -225,7 +242,7 @@ static void ProtectUserManifest(struct NaClApp *nap, void *mft)
   uintptr_t page_ptr;
   uint64_t size;
 
-  size = FOURGIG - nap->stack_size - NaClSysToUser(nap, (uintptr_t)mft);
+  size = FOURGIG - STACK_SIZE - NaClSysToUser(nap, (uintptr_t)mft);
   page_ptr = AlignAndProtect((uintptr_t) mft, size, PROT_READ);
 
   /* update mem_map */
@@ -269,12 +286,12 @@ void SetSystemData(struct NaClApp *nap)
    */
   size = manifest->channels->len * CHANNEL_STRUCT_SIZE;
   size += USER_MANIFEST_STRUCT_SIZE + USER_PTR_SIZE;
-  ptr = (void*)(FOURGIG - nap->stack_size - size);
+  ptr = (void*)(FOURGIG - STACK_SIZE - size);
   user_manifest = (void*)NaClUserToSys(nap, (uintptr_t)ptr);
   channels = (void*)((uintptr_t)&user_manifest->channels + USER_PTR_SIZE);
 
   /* make the 1st page of user manifest writable */
-  CopyDown((void*)NaClUserToSys(nap, FOURGIG - nap->stack_size), "");
+  CopyDown((void*)NaClUserToSys(nap, FOURGIG - STACK_SIZE), "");
   ptr = user_manifest;
 
   /* initialize pointer to user manifest */
@@ -311,7 +328,7 @@ void SetSystemData(struct NaClApp *nap)
 
   /* serialize the rest of the user manifest records */
   user_manifest->heap_ptr = nap->break_addr;
-  user_manifest->stack_size = nap->stack_size;
+  user_manifest->stack_size = STACK_SIZE;
   user_manifest->channels_count = manifest->channels->len;
   user_manifest->channels = NaClSysToUser(nap, (uintptr_t)channels);
 
