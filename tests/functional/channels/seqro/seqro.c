@@ -23,35 +23,35 @@ int main(int argc, char **argv)
   ZTEST(PREAD(SEQRO, buf, 0, 0) == 0);
   ZTEST(PREAD(SEQRO, buf, 0, 1) == 0);
   ZTEST(PREAD(SEQRO, buf, 1, 0) == 1);
-  ZTEST(PREAD(SEQRO, buf, 1, MANIFEST->channels[OPEN(SEQRO)].size - 1) == 1);
-  ZTEST(PREAD(SEQRO, buf, 0, -1) == 0);
+  ZTEST(PREAD(SEQRO, buf, 1, MANIFEST->channels[OPEN(SEQRO)].size - 1) < 0); /* offset == -1 */
+  ZTEST(PREAD(SEQRO, buf, 0, -1) < 0);
 
   /* incorrect requests: NULL buffer */
-  ZTEST(PREAD(SEQRO, NULL, 0, 0) < 0);
-  ZTEST(PREAD(SEQRO, NULL, 0, 1) < 0);
+  ZTEST(PREAD(SEQRO, NULL, 0, 0) == 0);
+  ZTEST(PREAD(SEQRO, NULL, 0, 1) == 0);
   ZTEST(PREAD(SEQRO, NULL, 1, 0) < 0);
   ZTEST(PREAD(SEQRO, NULL, 1, MANIFEST->channels[OPEN(SEQRO)].size - 1) < 0);
   ZTEST(PREAD(SEQRO, NULL, 0, -1) < 0);
 
   /* incorrect requests: read only buffer */
-  ZTEST(PREAD(SEQRO, target, 0, 0) == -EINVAL);
-  ZTEST(PREAD(SEQRO, target, 0, 1) == -EINVAL);
+  ZTEST(PREAD(SEQRO, target, 0, 0) == 0);
+  ZTEST(PREAD(SEQRO, target, 0, 1) == 0);
   ZTEST(PREAD(SEQRO, target, 1, 0) == -EINVAL);
   ZTEST(PREAD(SEQRO, target, 1,
               MANIFEST->channels[OPEN(SEQRO)].size - 1) == -EINVAL);
   ZTEST(PREAD(SEQRO, target, 0, -1) == -EINVAL);
 
   /* incorrect requests: read only memory: MANIFEST */
-  ZTEST(PREAD(SEQRO, MANIFEST->channels[OPEN(SEQRO)].name, 0, 0) == -EINVAL);
-  ZTEST(PREAD(SEQRO, MANIFEST->channels[OPEN(SEQRO)].name, 0, 1) == -EINVAL);
+  ZTEST(PREAD(SEQRO, MANIFEST->channels[OPEN(SEQRO)].name, 0, 0) == 0);
+  ZTEST(PREAD(SEQRO, MANIFEST->channels[OPEN(SEQRO)].name, 0, 1) == 0);
   ZTEST(PREAD(SEQRO, MANIFEST->channels[OPEN(SEQRO)].name, 1, 0) == -EINVAL);
 
   /* incorrect requests: size */
   ZTEST(PREAD(SEQRO, buf, -1, 0) < 0);
 
   /* incorrect requests: offset */
-  ZTEST(PREAD(SEQRO, buf, 0, -1) == 0);
-  ZTEST(PREAD(SEQRO, buf, 1, -1) == 1);
+  ZTEST(PREAD(SEQRO, buf, 0, -1) < 0);
+  ZTEST(PREAD(SEQRO, buf, 1, -1) < 0);
   ZTEST(PREAD(SEQRO, buf, 1, MANIFEST->channels[OPEN(SEQRO)].size) == 1);
 
   /* correct requests: writing of 0 bytes attempt */
@@ -63,7 +63,7 @@ int main(int argc, char **argv)
   ZTEST(PWRITE(SEQRO, buf, 1, MANIFEST->channels[OPEN(SEQRO)].size - 1) < 0);
 
   /* incorrect requests: exhausted */
-  ZTEST(PREAD(SEQRO, buf, 30, 0) == 28);
+  ZTEST(PREAD(SEQRO, buf, 32, 0) == 30);
   ZTEST(PREAD(SEQRO, buf, 10, 0) < 0);
 
   /* count errors and exit with it */

@@ -64,7 +64,6 @@ int main(int argc, char **argv)
   ZTEST(PWRITE(STDRW_GOAT, (void*)0x1, 1, 0) < 0);
   ZTEST(PWRITE(STDRW_GOAT, (void*)0xffff, 1, 0) < 0);
   ZTEST(PWRITE(STDRW_GOAT, (void*)0x10000, -1, 0) < 0);
-//  ZTEST(PWRITE(STDRW_GOAT, MANIFEST->heap_ptr, MANIFEST->heap_size + 1, 0) > 0); // ###
   ZTEST(PWRITE(STDRW_GOAT, MANIFEST->heap_ptr + MANIFEST->heap_size, 1, 0) < 0);
   ZTEST(PWRITE(STDRW_GOAT, (void*)0x100000000LL - 0x1000001 - 0x10000, 1, 0) < 0);
   ZTEST(PWRITE(STDRW_GOAT, (void*)0x100000000LL, 1, 0) < 0);
@@ -77,6 +76,7 @@ int main(int argc, char **argv)
   FPRINTF(STDERR, "TEST OTHER VALID BUFFER/SIZE CASES FOR PWRITE\n");
   ZTEST(PWRITE(STDRW_GOAT, (void*)0x10000, 1, 0) == 1);
   ZTEST(PWRITE(STDRW_GOAT, MANIFEST->heap_ptr + MANIFEST->heap_size - 1, 1, 0) == 1);
+  ZTEST(PREAD(STDRW_GOAT, MANIFEST->heap_ptr, MANIFEST->heap_size + 1, 0) == 1);
   ZTEST(PWRITE(STDRW_GOAT, (void*)0x100000000LL - 0x1000000, 1, 0) == 1);
   ZTEST(PWRITE(STDRW_GOAT, (void*)0x100000000LL - 0x1, 1, 0) == 1);
   overall_errors += ERRCOUNT;
@@ -86,7 +86,6 @@ int main(int argc, char **argv)
   ERRCOUNT = 0;
   FPRINTF(STDERR, "TEST OTHER INVALID BUFFER/SIZE CASES FOR PREAD\n");
   ZTEST(PREAD(STDRW_GOAT, (char*)main, 1, 0) < 0);
-//  ZTEST(PREAD(STDRW_GOAT, MANIFEST->heap_ptr, MANIFEST->heap_size + 1, 0) < 0);
   ZTEST(PREAD(STDRW_GOAT, MANIFEST->heap_ptr + MANIFEST->heap_size, 1, 0) < 0);
   ZTEST(PREAD(STDRW_GOAT, (void*)0x100000000LL - 0x1000001, 1, 0) < 0);
   ZTEST(PREAD(STDRW_GOAT, (void*)0x100000000LL, 1, 0) < 0);

@@ -62,9 +62,12 @@ static int32_t ZVMReadHandle(struct NaClApp *nap,
   /* ignore user offset for sequential access read */
   if(CH_SEQ_READABLE(channel))
     offset = channel->getpos;
-  else
   /* prevent reading beyond the end of the random access channels */
+  else
+  {
     size = MIN(channel->size - offset, size);
+    if(size == 0) return 0;
+  }
 
   /* check for eof */
   if(channel->eof) return 0;
@@ -72,9 +75,6 @@ static int32_t ZVMReadHandle(struct NaClApp *nap,
   /* check limits */
   if(channel->counters[GetsLimit] >= channel->limits[GetsLimit])
     return -EDQUOT;
-//  if(CH_RND_READABLE(channel))
-//    if(offset >= channel->limits[PutSizeLimit] - channel->counters[PutSizeLimit]
-//      + channel->size) return -EINVAL;
 
   /* calculate i/o leftovers */
   tail = channel->limits[GetSizeLimit] - channel->counters[GetSizeLimit];
@@ -118,7 +118,7 @@ static int32_t ZVMWriteHandle(struct NaClApp *nap,
 
   /* check buffer availability */
   sys_buffer = (char*)NaClUserToSysAddrNullOkay(nap, (uintptr_t)buffer);
-  if(CheckUserMap((intptr_t)sys_buffer, size, PROT_WRITE) == -1)
+  if(CheckUserMap((intptr_t)sys_buffer, size, PROT_READ) == -1)
     return -EINVAL;
 
   /* ignore user offset for sequential access write */

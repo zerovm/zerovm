@@ -95,8 +95,8 @@ int main(int argc, char **argv)
   ZTEST(PWRITE(STDCDR_GOAT, buf, -1, -1) < 0); /* invalid size, offset ignored = fail */
   ZTEST(PWRITE(STDCDR_GOAT, buf, -1, 0) < 0); /* invalid size, offset ignored = fail */
   ZTEST(PWRITE(STDCDR_GOAT, buf, -1, 1) < 0); /* invalid size, offset ignored = fail */
-  ZTEST(PWRITE(STDCDR_GOAT, buf, 0, -1) == 0); /* accessing of 0 bytes is always ok */
-  ZTEST(PWRITE(STDCDR_GOAT, buf, 1, -1) == 1); /* size = 1, offset ignored = 1 byte written */
+  ZTEST(PWRITE(STDCDR_GOAT, buf, 0, -1) < 0); /* proper size, invalid offset = fail */
+  ZTEST(PWRITE(STDCDR_GOAT, buf, 1, -1) < 0); /* proper size, invalid offset = fail */
   ZTEST(PWRITE(STDCDR_GOAT, buf, 0, MANIFEST->channels[OPEN(STDCDR_GOAT)].limits[PutSizeLimit] + 1) == 0);
   ZTEST(PWRITE(STDCDR_GOAT, buf, 1, MANIFEST->channels[OPEN(STDCDR_GOAT)].limits[PutSizeLimit] + 1) == 1);
   overall_errors += ERRCOUNT;
@@ -109,9 +109,9 @@ int main(int argc, char **argv)
   ZTEST(PREAD(STDCDR_GOAT, buf, -1, -1) < 0); /* invalid size, invalid offset = fail */
   ZTEST(PREAD(STDCDR_GOAT, buf, -1, 0) < 0); /* invalid size, invalid offset = fail */
   ZTEST(PREAD(STDCDR_GOAT, buf, -1, 1) < 0); /* invalid size, invalid offset = fail */
-  ZTEST(PREAD(STDCDR_GOAT, buf, 0, -1) == 0); /* accessing 0 bytes is always ok */
+  ZTEST(PREAD(STDCDR_GOAT, buf, 0, -1) < 0); /* proper size, invalid offset = fail */
   ZTEST(PREAD(STDCDR_GOAT, buf, 1, -1) < 0); /* valid size, invalid offset = fail */
-  ZTEST(PREAD(STDCDR_GOAT, buf, 0, MANIFEST->channels[OPEN(STDCDR_GOAT)].limits[PutSizeLimit] + 1) < 0);
+  ZTEST(PREAD(STDCDR_GOAT, buf, 0, MANIFEST->channels[OPEN(STDCDR_GOAT)].limits[PutSizeLimit] + 1) == 0);
   ZTEST(PREAD(STDCDR_GOAT, buf, 1, MANIFEST->channels[OPEN(STDCDR_GOAT)].limits[PutSizeLimit] + 1) < 0);
   overall_errors += ERRCOUNT;
   FPRINTF(STDERR, ERRCOUNT ? "TEST FAILED\n\n" : "TEST SUCCEED\n\n");
@@ -120,7 +120,7 @@ int main(int argc, char **argv)
   ERRCOUNT = 0;
   FPRINTF(STDERR, "TEST NULL BUFFER CASES\n");
   ZTEST(PWRITE(STDCDR_GOAT, NULL, 1, 0) < 0);
-  ZTEST(PWRITE(STDCDR_GOAT, NULL, 0, 0) < 0);
+  ZTEST(PWRITE(STDCDR_GOAT, NULL, 0, 0) == 0);
   overall_errors += ERRCOUNT;
   FPRINTF(STDERR, ERRCOUNT ? "TEST FAILED\n\n" : "TEST SUCCEED\n\n");
 
@@ -130,7 +130,6 @@ int main(int argc, char **argv)
   ZTEST(PWRITE(STDCDR_GOAT, (void*)0x1, 1, 0) < 0);
   ZTEST(PWRITE(STDCDR_GOAT, (void*)0xffff, 1, 0) < 0);
   ZTEST(PWRITE(STDCDR_GOAT, (void*)0x10000, -1, 0) < 0);
-  ZTEST(PWRITE(STDCDR_GOAT, MANIFEST->heap_ptr, MANIFEST->heap_size + 1, 0) < 0);
   ZTEST(PWRITE(STDCDR_GOAT, MANIFEST->heap_ptr + MANIFEST->heap_size, 1, 0) < 0);
   ZTEST(PWRITE(STDCDR_GOAT, (void*)0x100000000LL - 0x1000001 - 0x10000, 1, 0) < 0);
   ZTEST(PWRITE(STDCDR_GOAT, (void*)0x100000000LL, 1, 0) < 0);
@@ -152,7 +151,6 @@ int main(int argc, char **argv)
   ERRCOUNT = 0;
   FPRINTF(STDERR, "TEST OTHER INVALID BUFFER/SIZE CASES FOR PREAD\n");
   ZTEST(PREAD(STDCDR_GOAT, (char*)main, 1, 0) < 0);
-  ZTEST(PREAD(STDCDR_GOAT, MANIFEST->heap_ptr, MANIFEST->heap_size + 1, 0) < 0);
   ZTEST(PREAD(STDCDR_GOAT, MANIFEST->heap_ptr + MANIFEST->heap_size, 1, 0) < 0);
   ZTEST(PREAD(STDCDR_GOAT, (void*)0x100000000LL - 0x1000001, 1, 0) < 0);
   ZTEST(PREAD(STDCDR_GOAT, (void*)0x100000000LL, 1, 0) < 0);
