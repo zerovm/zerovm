@@ -66,7 +66,7 @@ int CheckUserMap(intptr_t addr, int64_t size, int prot)
   if(prot == 0)
   {
     for(i = 0; i < ROUNDUP_64K(size) / NACL_MAP_PAGESIZE; ++i)
-      if(user_map[UserMapIndex(addr) + i] == 0xff)
+      if(user_map[UserMapIndex(addr) + i] & PROT_LOCK)
         return -1;
   }
   /* scan given region for prot */

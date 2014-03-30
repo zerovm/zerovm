@@ -24,7 +24,7 @@ EXTERN_C_BEGIN
 #include "src/loader/sel_ldr.h"
 
 #define HELP_SCREEN /* update command line switches here */\
-    "%s%s\033[1m\033[37mZeroVM tag%d\033[0m lightweight VM manager, build 2014-03-26\n"\
+    "%s%s\033[1m\033[37mZeroVM tag%d\033[0m lightweight VM manager, build 2014-03-30\n"\
     "Usage: <manifest> [-v#] [-T#] [-stFPQ]\n\n"\
     " -s skip validation\n"\
     " -t <0..2> report to stdout/log/fast (default 0)\n"\
@@ -34,6 +34,7 @@ EXTERN_C_BEGIN
     " -Q disable platform qualification\n"\
     " -T enable trap calls tracing\n"
 
+#define PROT_LOCK 0x8 /* protection of page cannot be changed */
 #define ZEROVM_PRIORITY 19
 
 /* validator function from libvalidator.so */
