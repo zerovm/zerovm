@@ -33,32 +33,36 @@
  * TODO(d'b): map updating and checking is slow, speed it up
  */
 
-/* contains PROT_* bits or 0xff for unavailable pages */
+/* contains PROT_* bits of user pages */
 static uint8_t user_map[FOURGIG / NACL_MAP_PAGESIZE];
 
 uint8_t *GetUserMap()
 {
   uint8_t *buffer = g_malloc(ARRAY_SIZE(user_map));
   ZLOGFAIL(buffer == NULL, ENOMEM, "cannot allocate user map copy");
+  memcpy(buffer, user_map, ARRAY_SIZE(user_map));
 
   return buffer;
 }
 
-/* lock user pages of: NULL, trampoline, user manifest, stack */
-/* TODO(d'b): ugly, magic numbers. heal the code */
 void LockRestrictedMemory()
 {
   int i;
 
-  user_map[0] |= PROT_LOCK; /* NULL */
-  user_map[1] |= PROT_LOCK; /* trampoline */
-
-  /* TODO(d'b): manifest can be larger than 1 page. fix it! */
-  user_map[(FOURGIG - STACK_SIZE - 1)  / NACL_MAP_PAGESIZE] |= PROT_LOCK;
+  /* NULL and hole (everything protected with PROT_NONE is restricted) */
+  for(i = 0; i < FOURGIG / NACL_MAP_PAGESIZE; ++i)
+    if(user_map[i] == PROT_NONE)
+      user_map[i] = PROT_LOCK;
 
   /* stack */
-  for(i = (FOURGIG - STACK_SIZE) / NACL_MAP_PAGESIZE; i < FOURGIG / NACL_MAP_PAGESIZE; ++i)
-    user_map[i] |= PROT_LOCK;
+  memset(user_map + (FOURGIG - STACK_SIZE) / NACL_MAP_PAGESIZE,
+      PROT_READ |PROT_WRITE |PROT_LOCK, STACK_SIZE / NACL_MAP_PAGESIZE);
+
+  /* trampoline */
+  user_map[1] |= PROT_LOCK;
+
+  /* TODO(d'b): manifest can be larger than 1 page. fix it! */
+  user_map[(FOURGIG - STACK_SIZE - 1) / NACL_MAP_PAGESIZE] |= PROT_LOCK;
 }
 
 /* return index of "addr" in user map */
@@ -67,14 +71,14 @@ INLINE static int UserMapIndex(intptr_t addr)
   return (addr - (intptr_t)R15_CONST - GUARDSIZE) / NACL_MAP_PAGESIZE;
 }
 
-int CheckUserMap(intptr_t addr, int64_t size, int prot)
+int CheckUserMap(intptr_t addr, uint32_t size, int prot)
 {
   int i;
 
   /* check arguments sanity */
-  if(addr - (intptr_t)R15_CONST - GUARDSIZE < 0) // ### does it work?
+  if(addr - MEM_START < 0) // ### does it work?
     return -1;
-  if(addr - (intptr_t)R15_CONST - GUARDSIZE + size > FOURGIG)
+  if(addr - MEM_START + size > FOURGIG)
     return -1;
   if(prot < PROT_NONE || prot > (PROT_READ|PROT_WRITE|PROT_EXEC))
     return -1;
@@ -95,7 +99,7 @@ int CheckUserMap(intptr_t addr, int64_t size, int prot)
   return 0;
 }
 
-int UpdateUserMap(intptr_t addr, int64_t size, int prot)
+int UpdateUserMap(intptr_t addr, uint32_t size, int prot)
 {
   int i;
 
@@ -166,13 +170,10 @@ void PreallocateUserMemory(struct NaClApp *nap)
   i = NaCl_mprotect(p, heap, PROT_READ | PROT_WRITE);
   ZLOGFAIL(0 != i, -i, "cannot set protection on user heap");
   nap->heap_end = NaClSysToUser((uintptr_t)p + heap);
-
-  nap->mem_map[HeapIdx].size += heap;
-  nap->mem_map[HeapIdx].end += heap;
 }
 
 /* TODO(d'b): move it to sel_addrspace */
-/* should be kept in sync with api/zvm.h*/
+/* should be kept in sync with struct ZVMChannel from api/zvm.h */
 struct ChannelSerialized
 {
   int64_t limits[LimitsNumber];
@@ -181,7 +182,7 @@ struct ChannelSerialized
   uint32_t name;
 };
 
-/* should be kept in sync with api/zvm.h*/
+/* should be kept in sync with struct UserManifest from api/zvm.h*/
 struct UserManifestSerialized
 {
   uint32_t heap_ptr;
@@ -204,8 +205,8 @@ static void SetUserManifestPtr(struct NaClApp *nap, void *mft)
   *p = NaClSysToUser((uintptr_t)mft);
 }
 
-/* align area to page(s) both bounds an protect. return pointer to (new) area */
-static uintptr_t AlignAndProtect(uintptr_t area, int64_t size, int prot)
+/* align area to page(s) both bounds an protect */
+static void AlignAndProtect(uintptr_t area, int64_t size, int prot)
 {
   uintptr_t page_ptr;
   uint64_t aligned_size;
@@ -217,7 +218,6 @@ static uintptr_t AlignAndProtect(uintptr_t area, int64_t size, int prot)
   code = NaCl_mprotect((void*)page_ptr, aligned_size, prot);
   ZLOGFAIL(0 != code, code, "cannot protect 0x%x of %d bytes with %d",
       page_ptr, aligned_size, prot);
-  return page_ptr;
 }
 
 /*
@@ -236,31 +236,13 @@ static void *CopyDown(void *area, char *name)
   return memcpy((char*)area - size, name, size);
 }
 
-/* protect user manifest and update mem_map */
+/* protect user manifest */
 static void ProtectUserManifest(struct NaClApp *nap, void *mft)
 {
-  uintptr_t page_ptr;
   uint64_t size;
 
   size = FOURGIG - STACK_SIZE - NaClSysToUser((uintptr_t)mft);
-  page_ptr = AlignAndProtect((uintptr_t) mft, size, PROT_READ);
-
-  /* update mem_map */
-  SET_MEM_MAP_IDX(nap->mem_map[SysDataIdx], "UserManifest",
-      page_ptr, ROUNDUP_64K(size + ((uintptr_t)mft - page_ptr)), PROT_READ);
-
-  /* its time to add hole to memory map */
-  page_ptr = nap->mem_map[HeapIdx].end;
-  size = nap->mem_map[SysDataIdx].start - nap->mem_map[HeapIdx].end;
-  SET_MEM_MAP_IDX(nap->mem_map[HoleIdx], "Hole", page_ptr, size, PROT_NONE);
-
-  /*
-   * patch: change the heap size to correct value. the user manifest
-   * contains the different heap start (it does not include r/w data)
-   * TODO(d'b): fix it by adding a new memory region
-   */
-  nap->mem_map[HeapIdx].size =
-      nap->mem_map[HeapIdx].end - nap->mem_map[HeapIdx].start;
+  AlignAndProtect((uintptr_t) mft, size, PROT_READ);
 }
 
 void SetSystemData(struct NaClApp *nap)
@@ -319,12 +301,6 @@ void SetSystemData(struct NaClApp *nap)
   size = ROUNDDOWN_64K(NaClSysToUser((uintptr_t)ptr));
   size = MIN(nap->heap_end, size);
   user_manifest->heap_size = size - nap->break_addr;
-
-  /* note that rw data merged with heap! */
-
-  /* update memory map */
-  nap->mem_map[HeapIdx].end = NaClUserToSys(size);
-  nap->mem_map[HeapIdx].size = user_manifest->heap_size;
 
   /* serialize the rest of the user manifest records */
   user_manifest->heap_ptr = nap->break_addr;

@@ -48,8 +48,8 @@ int NaCl_page_free(void *p, size_t size)
 int NaCl_mprotect(void *addr, size_t len, int prot)
 {
   int ret = mprotect(addr, len, prot);
-  if(ret == 0 && addr >= R15_CONST + GUARDSIZE
-      && addr + len <= R15_CONST + GUARDSIZE + FOURGIG)
+  if(ret == 0 && addr >= (void*)MEM_START
+      && addr + len <= (void*)MEM_START + FOURGIG)
   {
     int result;
     result = UpdateUserMap((intptr_t)addr, len, prot);

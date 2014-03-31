@@ -110,23 +110,36 @@ void SetCmdString(GString *s)
 }
 
 /* log user memory map */
-static void LogMemMap(struct NaClApp *nap, int verbosity)
+static void LogMemMap()
 {
   int i;
+  uint8_t *map = GetUserMap();
+  int prev = 0;
+  int prev_prot = map[0];
+  int cur_prot;
 
-  ZLOGS(verbosity, "user memory map (in pages):");
+  ZLOGS(LOG_DEBUG, "user memory map:");
+  for(i = 1; i < FOURGIG / NACL_MAP_PAGESIZE; ++i)
+  {
+    cur_prot = map[i];
+    if(prev_prot != cur_prot)
+    {
+      ZLOGS(LOG_DEBUG, "%08X:%08X %x", NACL_MAP_PAGESIZE * prev,
+          NACL_MAP_PAGESIZE * i - 1, prev_prot);
+      prev = i;
+      prev_prot = cur_prot;
+    }
+  }
+  ZLOGS(LOG_DEBUG, "%08X:%08X %x", FOURGIG - STACK_SIZE, FOURGIG - 1, map[i - 1]);
 
-  for(i = 0; i < MemMapSize; ++i)
-    ZLOGS(verbosity, "%s: address = 0x%08x, size = 0x%08x, protection = x",
-        nap->mem_map[i].name, (uint32_t) nap->mem_map[i].start,
-        (uint32_t) nap->mem_map[i].size, nap->mem_map[i].prot);
+  g_free(map);
 }
 
 static void FinalDump(struct NaClApp *nap)
 {
   ZLOGS(LOG_INSANE, "exiting -- printing NaClApp details");
   PrintAppDetails(nap, LOG_INSANE);
-  LogMemMap(nap, LOG_INSANE);
+  LogMemMap();
 
   SignalHandlerFini();
 }
@@ -145,21 +158,33 @@ void ReportTag(char *name, void *tag)
 /* calculate user memory tag, and return pointer to it */
 static void *GetMemoryDigest(struct NaClApp *nap)
 {
-  int i;
+  int i = 0;
+  int j;
+  int size;
+  uint8_t *map = GetUserMap();
 
   assert(nap != NULL);
+  assert(nap->manifest != NULL);
+  assert(nap->manifest->mem_tag != NULL);
 
-  /* calculate overall memory tag */
-  for(i = 0; i < MemMapSize; ++i)
+  while(i < FOURGIG / NACL_MAP_PAGESIZE)
   {
-    const char *addr = (const char*)nap->mem_map[i].start;
-    int64_t size = nap->mem_map[i].size;
+    /* count readable pages */
+    for(j = i; j < FOURGIG / NACL_MAP_PAGESIZE; ++j)
+      if((map[j] & PROT_READ) == 0) break;
 
-    /* update user_etag skipping inaccessible pages */
-    if(nap->mem_map[i].prot & PROT_READ)
-      TagUpdate(nap->manifest->mem_tag, addr, size);
+    size = j - i;
+    if(size)
+    {
+      TagUpdate(nap->manifest->mem_tag,
+          (void*)MEM_START + i * NACL_MAP_PAGESIZE, size * NACL_MAP_PAGESIZE);
+      i += j;
+    }
+    else
+      ++i;
   }
 
+  g_free(map);
   return nap->manifest->mem_tag;
 }
 

@@ -43,12 +43,6 @@ static void MprotectGuards(struct NaClApp *nap)
   ZLOGFAIL(err != 0, err, FAILED_MSG);
   err = NaCl_mprotect((void *)(MEM_START + FOURGIG), GUARDSIZE, PROT_NONE);
   ZLOGFAIL(err != 0, err, FAILED_MSG);
-
-  /* put information to the memory map */
-  SET_MEM_MAP_IDX(nap->mem_map[LeftBumperIdx], "LeftBumper",
-      MEM_START - GUARDSIZE, GUARDSIZE + NACL_SYSCALL_START_ADDR, PROT_NONE);
-  SET_MEM_MAP_IDX(nap->mem_map[RightBumperIdx], "RightBumper",
-      MEM_START + FOURGIG, GUARDSIZE, PROT_NONE);
 }
 
 /*
@@ -186,9 +180,6 @@ void MemoryProtection(struct NaClApp *nap)
   err = NaCl_mprotect((void *)start_addr, region_size, PROT_READ | PROT_EXEC);
   ZLOGFAIL(0 != err, err, FAILED_MSG);
 
-  SET_MEM_MAP_IDX(nap->mem_map[TextIdx], "Text",
-      start_addr, region_size, PROT_READ | PROT_EXEC);
-
   if(0 != nap->rodata_start)
   {
     uintptr_t rodata_end;
@@ -209,9 +200,6 @@ void MemoryProtection(struct NaClApp *nap)
 
     err = NaCl_mprotect((void *)start_addr, region_size, PROT_READ);
     ZLOGFAIL(0 != err, err, FAILED_MSG);
-
-    SET_MEM_MAP_IDX(nap->mem_map[RODataIdx], "ROData",
-        start_addr, region_size, PROT_READ);
   }
 
   /*
@@ -228,9 +216,6 @@ void MemoryProtection(struct NaClApp *nap)
 
     err = NaCl_mprotect((void *)start_addr, region_size, PROT_READ | PROT_WRITE);
     ZLOGFAIL(0 != err, err, FAILED_MSG);
-
-    SET_MEM_MAP_IDX(nap->mem_map[HeapIdx], "Heap",
-        start_addr, region_size, PROT_READ | PROT_WRITE);
   }
 
   /* stack is read/write but not execute */
@@ -241,7 +226,4 @@ void MemoryProtection(struct NaClApp *nap)
 
   err = NaCl_mprotect((void *)start_addr, STACK_SIZE, PROT_READ | PROT_WRITE);
   ZLOGFAIL(0 != err, err, FAILED_MSG);
-
-  SET_MEM_MAP_IDX(nap->mem_map[StackIdx], "Stack",
-      start_addr, STACK_SIZE, PROT_READ | PROT_WRITE);
 }

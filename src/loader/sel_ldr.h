@@ -51,39 +51,6 @@
 
 EXTERN_C_BEGIN
 
-/*
- * helper macro. _element should be nap->mem_map[index], _addr - block
- * address (bytes), _size - block size (bytes), _prot - block protection
- */
-#define SET_MEM_MAP_IDX(_element, _name, _addr, _size, _prot) \
-  do {\
-    _element.name = _name;\
-    _element.start = (_addr);\
-    _element.end = (_addr) + (_size);\
-    _element.size = (_size);\
-    _element.prot = _prot;\
-  } while(0)
-
-enum MemMapIndices {
-  LeftBumperIdx, /* includes NULL protector */
-  TextIdx, /* includes trampoline */
-  RODataIdx,
-  HeapIdx, /* includes r/w data */
-  HoleIdx,
-  SysDataIdx,
-  StackIdx,
-  RightBumperIdx,
-  MemMapSize
-};
-
-struct MemBlock {
-  char      *name; /* block name */
-  uintptr_t start; /* block start. system virtual address */
-  uintptr_t end;   /* block end (for ease). system virtual address */
-  size_t    size;  /* number of bytes */
-  int       prot;  /* mprotect attribute */
-};
-
 struct NaClApp {
   /* only used for ET_EXEC:  for CS restriction */
   uintptr_t                 static_text_end;  /* relative to mem_start */
@@ -113,9 +80,6 @@ struct NaClApp {
    * to. initial_entry_pt is in the user executable.
    */
   uintptr_t                 initial_entry_pt;
-
-  /* user memory map */
-  struct MemBlock           mem_map[MemMapSize];
 
   uintptr_t                 break_addr; /* user addr */
   /* data_end <= break_addr is an invariant */

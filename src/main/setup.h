@@ -24,7 +24,7 @@ EXTERN_C_BEGIN
 #include "src/loader/sel_ldr.h"
 
 #define HELP_SCREEN /* update command line switches here */\
-    "%s%s\033[1m\033[37mZeroVM tag%d\033[0m lightweight VM manager, build 2014-03-30\n"\
+    "%s%s\033[1m\033[37mZeroVM tag%d\033[0m lightweight VM manager, build 2014-03-31\n"\
     "Usage: <manifest> [-v#] [-T#] [-stFPQ]\n\n"\
     " -s skip validation\n"\
     " -t <0..2> report to stdout/log/fast (default 0)\n"\
@@ -56,18 +56,22 @@ void SetSystemData(struct NaClApp *nap);
 /* get copy of user memory map. WARNING: result should be freed */
 uint8_t *GetUserMap();
 
+/* lock user pages of: NULL, trampoline, hole, user manifest, stack */
+/* TODO(d'b): ugly, magic numbers. heal the code */
+void LockRestrictedMemory();
+
 /*
  * return 0 if memory region available or -1. aligned addr/size needed
  * NOTE: if prot == PROT_NONE function will check region for availability
  */
-int CheckUserMap(intptr_t addr, int64_t size, int prot);
+int CheckUserMap(intptr_t addr, uint32_t size, int prot);
 
 /*
  * update memory map with new protection. aligned addr/size needed.
  * returns 0 if successfully otherwise -1.
  * NOTE: can be used by user request and for internal zerovm needs
  */
-int UpdateUserMap(intptr_t addr, int64_t size, int prot);
+int UpdateUserMap(intptr_t addr, uint32_t size, int prot);
 
 
 EXTERN_C_END

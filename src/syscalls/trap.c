@@ -147,29 +147,21 @@ static int32_t ZVMWriteHandle(struct NaClApp *nap,
  * r/o, r/w, r/x, none. if user asked for r/x validation will be applied
  * returns 0 (successful) or negative error code
  */
-static int32_t ZVMProtHandle(struct NaClApp *nap,
-    uintptr_t addr, int32_t size, int prot)
+static int32_t ZVMProtHandle(uintptr_t addr, uint32_t size, int prot)
 {
   int result = 0;
   uintptr_t sysaddr;
 
-  assert(nap != NULL);
-  assert(nap->manifest != NULL);
-
   sysaddr = NaClUserToSysAddrNullOkay(addr);
 
   /* sanity check */
-  if(size <= 0)
-    return -EINVAL;
   if(size % NACL_MAP_PAGESIZE != 0)
     return -EINVAL;
   if(sysaddr % NACL_MAP_PAGESIZE != 0)
     return -EINVAL;
 
-  /* region check */
-  if(sysaddr < nap->mem_map[TextIdx].start)
-    return -EACCES;
-  if(sysaddr >= nap->mem_map[HeapIdx].end)
+  /* locked regions are not allowed to change protection */
+  if(CheckUserMap(sysaddr, size, 0) < 0)
     return -EACCES;
 
   /* put protection */
@@ -250,8 +242,8 @@ int32_t TrapHandler(struct NaClApp *nap, uint32_t args)
           (int)sargs[2], (char*)sargs[3], (int32_t)sargs[4], sargs[5]);
       break;
     case TrapProt:
-      retcode = ZVMProtHandle(nap,
-          (uint32_t)sargs[2], (int32_t)sargs[3], (int)sargs[4]);
+      retcode = ZVMProtHandle((uint32_t)sargs[2], (uint32_t)sargs[3],
+          (int)sargs[4]);
       break;
     default:
       retcode = -EPERM;

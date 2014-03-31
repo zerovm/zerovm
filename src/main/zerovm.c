@@ -193,6 +193,11 @@ int main(int argc, char **argv)
   ZLOGS(LOG_DEBUG, "system data set");
   ZTrace("[user manifest construction]");
 
+  /* lock restricted regions in user memory */
+  LockRestrictedMemory();
+  ZLOGS(LOG_DEBUG, "lock restricted user regions");
+  ZTrace("[restricted user regions locking]");
+
   /* "defense in depth" call */
   ZLOGS(LOG_DEBUG, "Last preparations");
   LastDefenseLine(nap->manifest);

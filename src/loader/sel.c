@@ -219,13 +219,6 @@ void AppLoadFile(struct Gio *gp, struct NaClApp *nap)
   ZLOGS(LOG_DEBUG, "Installing trampoline");
   LoadTrampoline(nap);
 
-  /*
-   * NaClMemoryProtect also initializes the mem_map w/ information
-   * about the memory pages and their current protection value.
-   *
-   * The contents of the dynamic text region will get remapped as
-   * non-writable.
-   */
   ZLOGS(LOG_DEBUG, "Applying memory protection");
   MemoryProtection(nap);
 
