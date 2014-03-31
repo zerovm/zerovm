@@ -61,9 +61,9 @@ int ThreadContextCtor(struct ThreadContext *ntcp,
   ntcp->r12 = 0;
   ntcp->r13 = 0;
   ntcp->r14 = 0;
-  ntcp->r15 = nap->mem_start;
+  ntcp->r15 = MEM_START;
 
-  ntcp->prog_ctr = NaClUserToSys(nap, prog_ctr);
+  ntcp->prog_ctr = NaClUserToSys(prog_ctr);
   ntcp->sysret = 0;
 
   return 1;

@@ -162,10 +162,10 @@ void PreallocateUserMemory(struct NaClApp *nap)
   ZLOGFAIL(heap <= LEAST_USER_HEAP_SIZE, ENOMEM, "user heap size is too small");
 
   /* since 4gb of user space is already allocated just set protection to the heap */
-  p = (void*)NaClUserToSys(nap, (uintptr_t)p);
+  p = (void*)NaClUserToSys((uintptr_t)p);
   i = NaCl_mprotect(p, heap, PROT_READ | PROT_WRITE);
   ZLOGFAIL(0 != i, -i, "cannot set protection on user heap");
-  nap->heap_end = NaClSysToUser(nap, (uintptr_t)p + heap);
+  nap->heap_end = NaClSysToUser((uintptr_t)p + heap);
 
   nap->mem_map[HeapIdx].size += heap;
   nap->mem_map[HeapIdx].end += heap;
@@ -200,8 +200,8 @@ static void SetUserManifestPtr(struct NaClApp *nap, void *mft)
 {
   uintptr_t *p;
 
-  p = (void*)NaClUserToSys(nap, FOURGIG - STACK_SIZE - USER_PTR_SIZE);
-  *p = NaClSysToUser(nap, (uintptr_t)mft);
+  p = (void*)NaClUserToSys(FOURGIG - STACK_SIZE - USER_PTR_SIZE);
+  *p = NaClSysToUser((uintptr_t)mft);
 }
 
 /* align area to page(s) both bounds an protect. return pointer to (new) area */
@@ -242,7 +242,7 @@ static void ProtectUserManifest(struct NaClApp *nap, void *mft)
   uintptr_t page_ptr;
   uint64_t size;
 
-  size = FOURGIG - STACK_SIZE - NaClSysToUser(nap, (uintptr_t)mft);
+  size = FOURGIG - STACK_SIZE - NaClSysToUser((uintptr_t)mft);
   page_ptr = AlignAndProtect((uintptr_t) mft, size, PROT_READ);
 
   /* update mem_map */
@@ -287,11 +287,11 @@ void SetSystemData(struct NaClApp *nap)
   size = manifest->channels->len * CHANNEL_STRUCT_SIZE;
   size += USER_MANIFEST_STRUCT_SIZE + USER_PTR_SIZE;
   ptr = (void*)(FOURGIG - STACK_SIZE - size);
-  user_manifest = (void*)NaClUserToSys(nap, (uintptr_t)ptr);
+  user_manifest = (void*)NaClUserToSys((uintptr_t)ptr);
   channels = (void*)((uintptr_t)&user_manifest->channels + USER_PTR_SIZE);
 
   /* make the 1st page of user manifest writable */
-  CopyDown((void*)NaClUserToSys(nap, FOURGIG - STACK_SIZE), "");
+  CopyDown((void*)NaClUserToSys(FOURGIG - STACK_SIZE), "");
   ptr = user_manifest;
 
   /* initialize pointer to user manifest */
@@ -312,25 +312,25 @@ void SetSystemData(struct NaClApp *nap)
 
     /* alias */
     ptr = CopyDown(ptr, CH_CH(manifest, i)->alias);
-    channels[i].name = NaClSysToUser(nap, (uintptr_t)ptr);
+    channels[i].name = NaClSysToUser((uintptr_t)ptr);
   }
 
   /* update heap_size in the user manifest */
-  size = ROUNDDOWN_64K(NaClSysToUser(nap, (uintptr_t)ptr));
+  size = ROUNDDOWN_64K(NaClSysToUser((uintptr_t)ptr));
   size = MIN(nap->heap_end, size);
   user_manifest->heap_size = size - nap->break_addr;
 
   /* note that rw data merged with heap! */
 
   /* update memory map */
-  nap->mem_map[HeapIdx].end = NaClUserToSys(nap, size);
+  nap->mem_map[HeapIdx].end = NaClUserToSys(size);
   nap->mem_map[HeapIdx].size = user_manifest->heap_size;
 
   /* serialize the rest of the user manifest records */
   user_manifest->heap_ptr = nap->break_addr;
   user_manifest->stack_size = STACK_SIZE;
   user_manifest->channels_count = manifest->channels->len;
-  user_manifest->channels = NaClSysToUser(nap, (uintptr_t)channels);
+  user_manifest->channels = NaClSysToUser((uintptr_t)channels);
 
   /* make the user manifest read only */
   ProtectUserManifest(nap, ptr);

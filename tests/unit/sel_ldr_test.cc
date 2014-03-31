@@ -58,8 +58,6 @@ TEST_F(SelLdrTest, DescTable) {
   struct NaClApp app = {0};
 
   NaClAppCtor(&app);
-  ASSERT_EQ(NACL_MAX_ADDR_BITS, app.addr_bits);
-  ASSERT_EQ(0u, app.mem_start);
   ASSERT_EQ(0u, app.static_text_end);
   ASSERT_EQ(0u, app.dynamic_text_start);
   ASSERT_EQ(0u, app.dynamic_text_end);

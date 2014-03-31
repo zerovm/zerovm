@@ -126,14 +126,14 @@ static void ValidateProgram(struct NaClApp *nap)
   uint8_t* dynamic_addr;
 
   assert((nap->static_text_end | nap->dynamic_text_start
-      | nap->dynamic_text_end | nap->mem_start) > 0);
+      | nap->dynamic_text_end | MEM_START) > 0);
 
   /* static and dynamic text address / length */
   static_size = nap->static_text_end -
-      NaClSysToUser(nap, nap->mem_start + NACL_TRAMPOLINE_END);
+      NaClSysToUser(MEM_START + NACL_TRAMPOLINE_END);
   dynamic_size = nap->dynamic_text_end - nap->dynamic_text_start;
-  static_addr = (uint8_t*)NaClUserToSys(nap, NACL_TRAMPOLINE_END);
-  dynamic_addr = (uint8_t*)NaClUserToSys(nap, nap->dynamic_text_start);
+  static_addr = (uint8_t*)NaClUserToSys(NACL_TRAMPOLINE_END);
+  dynamic_addr = (uint8_t*)NaClUserToSys(nap->dynamic_text_start);
 
   /* validate static and dynamic text */
   if(static_size > 0)

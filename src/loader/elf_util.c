@@ -130,7 +130,6 @@ void ValidateElfHeader(const struct ElfImage *image)
 
 void ValidateProgramHeaders(
   struct ElfImage     *image,
-  uint8_t             addr_bits,
   uintptr_t           *static_text_end,
   uintptr_t           *rodata_start,
   uintptr_t           *rodata_end,
@@ -203,7 +202,7 @@ void ValidateProgramHeaders(
     ZLOGFAIL(php->p_vaddr + php->p_memsz < php->p_vaddr, ENOEXEC,
         "Segment %d: p_memsz caused integer overflow", segnum);
 
-    ZLOGFAIL(php->p_vaddr + php->p_memsz >= ((Elf_Addr)1U << addr_bits), ENOEXEC,
+    ZLOGFAIL(php->p_vaddr + php->p_memsz >= ((Elf_Addr)1U << ADDR_BITS), ENOEXEC,
         "Segment %d: too large, ends at 0x%08x", segnum, php->p_vaddr + php->p_memsz);
 
     ZLOGFAIL(php->p_filesz > php->p_memsz, ENOEXEC, "Segment %d: file size 0x%08x "
@@ -215,7 +214,7 @@ void ValidateProgramHeaders(
     /*
      * NACL_TRAMPOLINE_END <= p_vaddr
      *                     <= p_vaddr + p_memsz
-     *                     < ((uintptr_t) 1U << nap->addr_bits)
+     *                     < ((uintptr_t) 1U << ADDR_BITS)
      */
     if(*max_vaddr < php->p_vaddr + php->p_memsz)
       *max_vaddr = php->p_vaddr + php->p_memsz;
@@ -304,7 +303,7 @@ struct ElfImage *ElfImageNew(struct Gio *gp)
 }
 
 void ElfImageLoad(const struct ElfImage *image,
-    struct Gio *gp, uint8_t addr_bits, uintptr_t mem_start)
+    struct Gio *gp, uintptr_t mem_start)
 {
   int               segnum;
   uintptr_t         paddr;
@@ -335,7 +334,7 @@ void ElfImageLoad(const struct ElfImage *image,
      * address space?  if it is, it implies that the start virtual
      * address is also.
      */
-    ZLOGFAIL(end_vaddr >= ((uintptr_t)1U << addr_bits), EFAULT,
+    ZLOGFAIL(end_vaddr >= ((uintptr_t)1U << ADDR_BITS), EFAULT,
         "parameter error should have been detected already");
 
     paddr = mem_start + php->p_vaddr;

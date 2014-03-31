@@ -44,7 +44,7 @@ NORETURN void SyscallHook()
    * trampoline slot
    */
   tramp_ret = *(uintptr_t *)sp_sys;
-  sysnum = (tramp_ret - (nap->mem_start + NACL_SYSCALL_START_ADDR))
+  sysnum = (tramp_ret - (MEM_START + NACL_SYSCALL_START_ADDR))
       >> NACL_SYSCALL_BLOCK_SHIFT;
 
   /*
@@ -75,7 +75,7 @@ NORETURN void SyscallHook()
    * before switching back to user module, we need to make sure that the
    * user_ret is properly sandboxed.
    */
-  nacl_user->prog_ctr = NaClSandboxCodeAddr(nap, nacl_user->prog_ctr);
+  nacl_user->prog_ctr = NaClSandboxCodeAddr(nacl_user->prog_ctr);
 
   /* give control to the user side */
   ContextSwitch(nacl_user);

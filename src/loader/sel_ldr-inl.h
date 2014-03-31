@@ -30,7 +30,7 @@
  * service runtime addresses.  the *Addr* versions will return
  * kNaClBadAddress if the user address is outside of the user address
  * space, e.g., if the input addresses for *UserToSys* is outside of
- * (1<<nap->addr_bits), and correspondingly for *SysToUser* if the
+ * (1 << ADDR_BITS), and correspondingly for *SysToUser* if the
  * input system address does not correspond to a user address.
  * Generally, the *Addr* versions are used when the addresses come
  * from untrusted usre code, and kNaClBadAddress would translate to an
@@ -50,26 +50,25 @@
 #include "src/main/zlog.h"
 
 /* d'b: no checks, just does the work */
-static INLINE uintptr_t NaClUserToSysAddrNullOkay
-    (struct NaClApp *nap, uintptr_t uaddr)
+static INLINE uintptr_t NaClUserToSysAddrNullOkay(uintptr_t uaddr)
 {
-  return uaddr + nap->mem_start;
+  return uaddr + MEM_START;
 }
 
-static INLINE uintptr_t NaClUserToSys(struct NaClApp *nap, uintptr_t uaddr)
+static INLINE uintptr_t NaClUserToSys(uintptr_t uaddr)
 {
-  ZLOGFAIL(0 == uaddr || ((uintptr_t) 1U << nap->addr_bits) <= uaddr, EFAULT,
-      "uaddr 0x%08lx, addr space %d bits", uaddr, nap->addr_bits);
-  return uaddr + nap->mem_start;
+  ZLOGFAIL(0 == uaddr || ((uintptr_t) 1U << ADDR_BITS) <= uaddr, EFAULT,
+      "uaddr 0x%08lx, addr space %d bits", uaddr, ADDR_BITS);
+  return uaddr + MEM_START;
 }
 
-static INLINE uintptr_t NaClSysToUser(struct NaClApp *nap, uintptr_t sysaddr)
+static INLINE uintptr_t NaClSysToUser(uintptr_t sysaddr)
 {
-  ZLOGFAIL(sysaddr < nap->mem_start || nap->mem_start
-      + ((uintptr_t) 1U << nap->addr_bits) <= sysaddr, EFAULT,
+  ZLOGFAIL(MEM_START + ((uintptr_t) 1U << ADDR_BITS) <= sysaddr
+      || sysaddr < MEM_START, EFAULT,
       "sysaddr 0x%08lx, mem_start 0x%08lx, addr space %d bits",
-      sysaddr, nap->mem_start, nap->addr_bits);
-  return sysaddr - nap->mem_start;
+      sysaddr, MEM_START, ADDR_BITS);
+  return sysaddr - MEM_START;
 }
 
 static INLINE uintptr_t NaClEndOfStaticText(struct NaClApp *nap)
@@ -77,8 +76,8 @@ static INLINE uintptr_t NaClEndOfStaticText(struct NaClApp *nap)
   return nap->static_text_end;
 }
 
-static INLINE uintptr_t NaClSandboxCodeAddr(struct NaClApp *nap, uintptr_t addr)
+static INLINE uintptr_t NaClSandboxCodeAddr(uintptr_t addr)
 {
   return (((addr & ~(((uintptr_t)NACL_INSTR_BLOCK_SIZE) - 1))
-           & ((((uintptr_t) 1) << 32) - 1)) + nap->mem_start);
+           & ((((uintptr_t) 1) << 32) - 1)) + MEM_START);
 }

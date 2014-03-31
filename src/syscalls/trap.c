@@ -55,7 +55,7 @@ static int32_t ZVMReadHandle(struct NaClApp *nap,
   if(size == 0) return 0;
 
   /* check buffer availability */
-  sys_buffer = (char*)NaClUserToSysAddrNullOkay(nap, (uintptr_t)buffer);
+  sys_buffer = (char*)NaClUserToSysAddrNullOkay((uintptr_t)buffer);
   if(CheckUserMap((intptr_t)sys_buffer, size, PROT_WRITE) == -1)
     return -EINVAL;
 
@@ -117,7 +117,7 @@ static int32_t ZVMWriteHandle(struct NaClApp *nap,
   if(size == 0) return 0;
 
   /* check buffer availability */
-  sys_buffer = (char*)NaClUserToSysAddrNullOkay(nap, (uintptr_t)buffer);
+  sys_buffer = (char*)NaClUserToSysAddrNullOkay((uintptr_t)buffer);
   if(CheckUserMap((intptr_t)sys_buffer, size, PROT_READ) == -1)
     return -EINVAL;
 
@@ -156,7 +156,7 @@ static int32_t ZVMProtHandle(struct NaClApp *nap,
   assert(nap != NULL);
   assert(nap->manifest != NULL);
 
-  sysaddr = NaClUserToSysAddrNullOkay(nap, addr);
+  sysaddr = NaClUserToSysAddrNullOkay(addr);
 
   /* sanity check */
   if(size <= 0)
@@ -224,7 +224,7 @@ int32_t TrapHandler(struct NaClApp *nap, uint32_t args)
    * translate address from user space to system
    * note: cannot set "trap error"
    */
-  sargs = (uint64_t*)NaClUserToSys(nap, (uintptr_t)args);
+  sargs = (uint64_t*)NaClUserToSys((uintptr_t)args);
   ZLOGS(LOG_DEBUG, "%s called", FunctionName(*sargs));
   ZTrace("untrusted code");
 

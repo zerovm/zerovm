@@ -38,17 +38,17 @@ static void MprotectGuards(struct NaClApp *nap)
    * make bumpers (guard pages) with "inaccessible" protection. the "left"
    * bumper size is 40gb + 64kb, the "right" one - 40gb
    */
-  err = NaCl_mprotect((void *)(nap->mem_start - GUARDSIZE),
+  err = NaCl_mprotect((void *)(MEM_START - GUARDSIZE),
       GUARDSIZE + NACL_SYSCALL_START_ADDR, PROT_NONE);
   ZLOGFAIL(err != 0, err, FAILED_MSG);
-  err = NaCl_mprotect((void *)(nap->mem_start + FOURGIG), GUARDSIZE, PROT_NONE);
+  err = NaCl_mprotect((void *)(MEM_START + FOURGIG), GUARDSIZE, PROT_NONE);
   ZLOGFAIL(err != 0, err, FAILED_MSG);
 
   /* put information to the memory map */
   SET_MEM_MAP_IDX(nap->mem_map[LeftBumperIdx], "LeftBumper",
-      nap->mem_start - GUARDSIZE, GUARDSIZE + NACL_SYSCALL_START_ADDR, PROT_NONE);
+      MEM_START - GUARDSIZE, GUARDSIZE + NACL_SYSCALL_START_ADDR, PROT_NONE);
   SET_MEM_MAP_IDX(nap->mem_map[RightBumperIdx], "RightBumper",
-      nap->mem_start + FOURGIG, GUARDSIZE, PROT_NONE);
+      MEM_START + FOURGIG, GUARDSIZE, PROT_NONE);
 }
 
 /*
@@ -72,9 +72,8 @@ static void AllocatePow2AlignedMemory(size_t mem_sz)
 /*
  * Platform-specific routine to allocate memory space for the NaCl
  * module.  mem is an out argument; addrsp_size is the requested
- * address space size, currently always ((size_t) 1) <<
- * nap->addr_bits.  On x86-64, there's a further requirement that this
- * is 4G.
+ * address space size, currently always ((size_t) 1) << ADDR_BITS.
+ * On x86-64, there's a further requirement that this is 4G.
  *
  * The actual amount of memory allocated is larger than requested on
  * x86-64 and on the ARM, since guard pages are also allocated to be
@@ -115,15 +114,11 @@ void AllocAddrSpace(struct NaClApp *nap)
   size_t      hole_size;
   uintptr_t   stack_start;
 
-  ZLOGS(LOG_INSANE, "calling AllocateSpace(*,0x%016x)", ((size_t)1 << nap->addr_bits));
-  AllocateSpace(&mem, (uintptr_t) 1U << nap->addr_bits);
-
-  nap->mem_start = (uintptr_t) mem;
-  ZLOGS(LOG_INSANE, "allocated memory at 0x%08x", nap->mem_start);
+  ZLOGS(LOG_INSANE, "calling AllocateSpace(*,0x%016x)", ((size_t)1 << ADDR_BITS));
+  AllocateSpace(&mem, (uintptr_t) 1U << ADDR_BITS);
 
   hole_start = ROUNDUP_64K(nap->data_end);
-
-  stack_start = (((uintptr_t) 1U) << nap->addr_bits) - STACK_SIZE;
+  stack_start = (((uintptr_t) 1U) << ADDR_BITS) - STACK_SIZE;
   stack_start = ROUNDUP_64K(stack_start);
 
   ZLOGFAIL(stack_start < hole_start, EFAULT,
@@ -140,15 +135,15 @@ void AllocAddrSpace(struct NaClApp *nap)
   if(hole_size != 0)
   {
     ZLOGS(LOG_INSANE, "madvising 0x%08x, 0x%08x, MADV_DONTNEED",
-        nap->mem_start + hole_start, hole_size);
+        MEM_START + hole_start, hole_size);
 
-    ZLOGFAIL(0 != NaCl_madvise((void*)(nap->mem_start + hole_start), hole_size,
+    ZLOGFAIL(0 != NaCl_madvise((void*)(MEM_START + hole_start), hole_size,
         MADV_DONTNEED), errno, "madvise failed. cannot release unused data segment");
 
     ZLOGS(LOG_INSANE, "mprotecting 0x%08x, 0x%08x, PROT_NONE",
-        nap->mem_start + hole_start, hole_size);
+        MEM_START + hole_start, hole_size);
 
-    ZLOGFAIL(0 != NaCl_mprotect((void *)(nap->mem_start + hole_start), hole_size,
+    ZLOGFAIL(0 != NaCl_mprotect((void *)(MEM_START + hole_start), hole_size,
         PROT_NONE), errno, "mprotect failed. cannot protect pages");
   }
   else
@@ -175,10 +170,10 @@ void MemoryProtection(struct NaClApp *nap)
    * write sandboxing) won't affect the trusted data structures.
    */
 
-  ZLOGS(LOG_INSANE, "Protecting guard pages for 0x%08x", nap->mem_start);
+  ZLOGS(LOG_INSANE, "Protecting guard pages for 0x%08x", MEM_START);
   MprotectGuards(nap);
 
-  start_addr = nap->mem_start + NACL_SYSCALL_START_ADDR;
+  start_addr = MEM_START + NACL_SYSCALL_START_ADDR;
   /*
    * The next pages up to NACL_TRAMPOLINE_END are the trampolines.
    * Immediately following that is the loaded text section.
@@ -211,9 +206,8 @@ void MemoryProtection(struct NaClApp *nap)
       rodata_end = nap->data_start;
     else rodata_end = nap->break_addr;
 
-    start_addr = NaClUserToSys(nap, nap->rodata_start);
-    region_size = ROUNDUP_4K(ROUNDUP_64K(rodata_end)
-        - NaClSysToUser(nap, start_addr));
+    start_addr = NaClUserToSys(nap->rodata_start);
+    region_size = ROUNDUP_4K(ROUNDUP_64K(rodata_end) - NaClSysToUser(start_addr));
     ZLOGS(LOG_INSANE, "RO data region start 0x%08x, size 0x%08x, end 0x%08x",
         start_addr, region_size, start_addr + region_size);
 
@@ -230,9 +224,9 @@ void MemoryProtection(struct NaClApp *nap)
    */
   if(0 != nap->data_start)
   {
-    start_addr = NaClUserToSys(nap, nap->data_start);
+    start_addr = NaClUserToSys(nap->data_start);
     region_size = ROUNDUP_4K(ROUNDUP_64K(nap->data_end)
-        - NaClSysToUser(nap, start_addr));
+        - NaClSysToUser(start_addr));
     ZLOGS(LOG_INSANE, "RW data region start 0x%08x, size 0x%08x, end 0x%08x",
         start_addr, region_size, start_addr + region_size);
 
@@ -245,8 +239,7 @@ void MemoryProtection(struct NaClApp *nap)
 
   /* stack is read/write but not execute */
   region_size = STACK_SIZE;
-  start_addr = NaClUserToSys(nap,
-      ROUNDUP_64K(((uintptr_t) 1U << nap->addr_bits) - STACK_SIZE));
+  start_addr = NaClUserToSys(ROUNDUP_64K(((uintptr_t) 1U << ADDR_BITS) - STACK_SIZE));
   ZLOGS(LOG_INSANE, "RW stack region start 0x%08x, size 0x%08lx, end 0x%08x",
           start_addr, region_size, start_addr + region_size);
 

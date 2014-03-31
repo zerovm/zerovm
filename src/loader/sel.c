@@ -60,9 +60,9 @@ void static FillEndOfTextRegion(struct NaClApp *nap)
   ZLOGFAIL(page_pad >= NACL_MAP_PAGESIZE + NACL_HALT_SLED_SIZE, EFAULT, FAILED_MSG);
 
   ZLOGS(LOG_INSANE, "Filling with halts: %08lx, %08lx bytes",
-          nap->mem_start + nap->static_text_end, page_pad);
+      MEM_START + nap->static_text_end, page_pad);
 
-  FillMemoryRegionWithHalt((void*)(nap->mem_start + nap->static_text_end), page_pad);
+  FillMemoryRegionWithHalt((void*)MEM_START + nap->static_text_end, page_pad);
   nap->static_text_end += page_pad;
 }
 
@@ -141,15 +141,12 @@ void AppLoadFile(struct Gio *gp, struct NaClApp *nap)
   struct ElfImage *image = NULL;
   int err;
 
-  /* fail if Address space too big */
-  ZLOGFAIL(nap->addr_bits > NACL_MAX_ADDR_BITS, EFAULT, FAILED_MSG);
-
   /* temporay object will be deleted at end of function */
   image = ElfImageNew(gp);
   ValidateElfHeader(image);
 
-  ValidateProgramHeaders(image, nap->addr_bits, &nap->static_text_end,
-      &nap->rodata_start, &rodata_end, &nap->data_start, &data_end, &max_vaddr);
+  ValidateProgramHeaders(image, &nap->static_text_end, &nap->rodata_start,
+      &rodata_end, &nap->data_start, &data_end, &max_vaddr);
 
   /*
    * if no rodata and no data, we make sure that there is space for
@@ -200,12 +197,12 @@ void AppLoadFile(struct Gio *gp, struct NaClApp *nap)
    * to write them.
    */
   ZLOGS(LOG_DEBUG, "Loading into memory");
-  err = NaCl_mprotect((void *)(nap->mem_start + NACL_TRAMPOLINE_START),
+  err = NaCl_mprotect((void*)MEM_START + NACL_TRAMPOLINE_START,
       ROUNDUP_64K(nap->data_end) - NACL_TRAMPOLINE_START,
       PROT_READ | PROT_WRITE);
   ZLOGFAIL(0 != err, EFAULT, "Failed to make image pages writable. errno = %d", err);
 
-  ElfImageLoad(image, gp, nap->addr_bits, nap->mem_start);
+  ElfImageLoad(image, gp, MEM_START);
 
   /* d'b: shared memory for the dynamic text disabled */
   nap->dynamic_text_start = ROUNDUP_64K(NaClEndOfStaticText(nap));
@@ -253,7 +250,7 @@ NORETURN void CreateSession(struct NaClApp *nap)
   assert(nap != NULL);
 
   /* set up user stack */
-  stack_ptr = nap->mem_start + ((uintptr_t)1U << nap->addr_bits);
+  stack_ptr = MEM_START + ((uintptr_t)1U << ADDR_BITS);
   stack_ptr -= STACK_USER_DATA_SIZE;
   memset((void*)stack_ptr, 0, STACK_USER_DATA_SIZE);
   ((uint32_t*)stack_ptr)[4] = 1;

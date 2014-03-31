@@ -40,7 +40,7 @@
 #include <stdint.h>
 
 /* from sel_ldr_x86.h */
-#define NACL_MAX_ADDR_BITS (32)
+#define ADDR_BITS (32)
 #define NACL_HALT_OPCODE   0xf4
 #define NACL_HALT_LEN      1 /* length of halt instruction */
 
@@ -85,17 +85,6 @@ struct MemBlock {
 };
 
 struct NaClApp {
-  /*
-   * public, user settable prior to app start.
-   */
-  uint8_t                   addr_bits;
-
-  /*
-   * Determined at load time; OS-determined.
-   * Read-only after load, so accesses do not require locking.
-   */
-  uintptr_t                 mem_start;
-
   /* only used for ET_EXEC:  for CS restriction */
   uintptr_t                 static_text_end;  /* relative to mem_start */
   /* ro after app starts. memsz from phdr */

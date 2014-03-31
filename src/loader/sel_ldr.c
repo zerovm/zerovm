@@ -205,13 +205,11 @@ void FillMemoryRegionWithHalt(void *start, size_t size)
 static void FillTrampolineRegion(struct NaClApp *nap)
 {
   FillMemoryRegionWithHalt
-    ((void *)(nap->mem_start + NACL_TRAMPOLINE_START), NACL_TRAMPOLINE_SIZE);
+    ((void *)(MEM_START + NACL_TRAMPOLINE_START), NACL_TRAMPOLINE_SIZE);
 }
 
 void NaClAppCtor(struct NaClApp *nap)
 {
-  nap->addr_bits = NACL_MAX_ADDR_BITS;
-
   gnap = nap;
   nacl_user = g_malloc(sizeof *nacl_user);
   nacl_sys = g_malloc(sizeof *nacl_sys);
@@ -246,7 +244,7 @@ void LoadTrampoline(struct NaClApp *nap)
   num_syscalls = ((NACL_TRAMPOLINE_END - NACL_SYSCALL_START_ADDR) / NACL_SYSCALL_BLOCK_SIZE) - 1;
   ZLOGS(LOG_INSANE, "num_syscalls = %d (0x%x)", num_syscalls, num_syscalls);
 
-  addr = nap->mem_start + NACL_SYSCALL_START_ADDR;
+  addr = MEM_START + NACL_SYSCALL_START_ADDR;
   for (i = 0; i < num_syscalls; ++i)
   {
     PatchOneTrampoline(addr);
@@ -257,9 +255,9 @@ void LoadTrampoline(struct NaClApp *nap)
 void PrintAppDetails(struct NaClApp *nap, int verbosity)
 {
   ZLOGS(verbosity, "NaClAppPrintDetails((struct NaClApp*) 0x%08lx,", (uintptr_t)nap);
-  ZLOGS(verbosity, "addr space size:         2**%d", nap->addr_bits);
+  ZLOGS(verbosity, "addr space size:         2**%d", ADDR_BITS);
   ZLOGS(verbosity, "stack size:              0x%08d", STACK_SIZE);
-  ZLOGS(verbosity, "mem start addr:          0x%08lx", nap->mem_start);
+  ZLOGS(verbosity, "mem start addr:          0x%08lx", MEM_START);
   ZLOGS(verbosity, "static_text_end:         0x%08lx", nap->static_text_end);
   ZLOGS(verbosity, "end-of-text:             0x%08lx", NaClEndOfStaticText(nap));
   ZLOGS(verbosity, "rodata:                  0x%08lx", nap->rodata_start);

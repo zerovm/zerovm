@@ -43,7 +43,6 @@ void ValidateElfHeader(const struct ElfImage *image);
  */
 void ValidateProgramHeaders(
   struct ElfImage *image,
-  uint8_t         addr_bits,
   uintptr_t       *static_text_end,
   uintptr_t       *rodata_start,
   uintptr_t       *rodata_end,
@@ -56,7 +55,7 @@ void ValidateProgramHeaders(
  * protections have been set up by NaClMemoryProtection().
  */
 void ElfImageLoad(const struct ElfImage *image,
-    struct Gio *gp, uint8_t addr_bits, uintptr_t mem_start);
+    struct Gio *gp, uintptr_t mem_start);
 
 void ElfImageDelete(struct ElfImage *image);
 
