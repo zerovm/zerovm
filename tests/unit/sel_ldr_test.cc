@@ -63,5 +63,4 @@ TEST_F(SelLdrTest, DescTable) {
   ASSERT_EQ(0u, app.data_start);
   ASSERT_EQ(0u, app.data_end);
   ASSERT_EQ(0u, app.initial_entry_pt);
-  ASSERT_EQ(0u, app.user_entry_pt);
 }

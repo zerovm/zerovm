@@ -265,5 +265,4 @@ void PrintAppDetails(struct NaClApp *nap, int verbosity)
   ZLOGS(verbosity, "data_end:                0x%08lx", nap->data_end);
   ZLOGS(verbosity, "break_addr:              0x%08lx", nap->break_addr);
   ZLOGS(verbosity, "ELF initial entry point: 0x%08x", nap->initial_entry_pt);
-  ZLOGS(verbosity, "ELF user entry point:    0x%08x", nap->user_entry_pt);
 }

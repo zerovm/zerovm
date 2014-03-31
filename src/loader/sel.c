@@ -122,7 +122,6 @@ static void LogAddressSpaceLayout(struct NaClApp *nap)
   DUMP(nap->data_end);
   DUMP(nap->break_addr);
   DUMP(nap->initial_entry_pt);
-  DUMP(nap->user_entry_pt);
 }
 
 static int AddrIsValidEntryPt(struct NaClApp *nap, uintptr_t addr)

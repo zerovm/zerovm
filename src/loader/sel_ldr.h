@@ -110,13 +110,9 @@ struct NaClApp {
 
   /*
    * initial_entry_pt is the first address in untrusted code to jump
-   * to.  When using the IRT (integrated runtime), this is provided by
-   * the IRT library, and user_entry_pt is the entry point in the user
-   * executable.  Otherwise, initial_entry_pt is in the user
-   * executable and user_entry_pt is zero.
+   * to. initial_entry_pt is in the user executable.
    */
   uintptr_t                 initial_entry_pt;
-  uintptr_t                 user_entry_pt;
 
   /* user memory map */
   struct MemBlock           mem_map[MemMapSize];
