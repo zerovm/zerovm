@@ -84,7 +84,6 @@ struct NaClApp {
   uintptr_t                 break_addr; /* user addr */
   /* data_end <= break_addr is an invariant */
 
-  uintptr_t                 heap_end; /* end of user heap */
   struct Manifest           *manifest;
 };
 

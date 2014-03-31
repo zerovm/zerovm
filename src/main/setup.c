@@ -146,32 +146,6 @@ void LastDefenseLine(struct Manifest *manifest)
   GiveUpPrivileges();
 }
 
-void PreallocateUserMemory(struct NaClApp *nap)
-{
-  uintptr_t i;
-  int64_t heap;
-  void *p;
-
-  assert(nap != NULL);
-  assert(nap->manifest != NULL);
-
-  /* quit function if "Memory" is not specified or invalid */
-  ZLOGFAIL(nap->manifest->mem_size <= 0 || nap->manifest->mem_size > FOURGIG,
-      ENOMEM, "invalid memory size");
-
-  /* calculate user heap size (must be allocated next to the data_end) */
-  p = (void*)ROUNDUP_64K(nap->data_end);
-  heap = nap->manifest->mem_size - STACK_SIZE;
-  heap = ROUNDUP_64K(heap) - ROUNDUP_64K(nap->data_end);
-  ZLOGFAIL(heap <= LEAST_USER_HEAP_SIZE, ENOMEM, "user heap size is too small");
-
-  /* since 4gb of user space is already allocated just set protection to the heap */
-  p = (void*)NaClUserToSys((uintptr_t)p);
-  i = NaCl_mprotect(p, heap, PROT_READ | PROT_WRITE);
-  ZLOGFAIL(0 != i, -i, "cannot set protection on user heap");
-  nap->heap_end = NaClSysToUser((uintptr_t)p + heap);
-}
-
 /* TODO(d'b): move it to sel_addrspace */
 /* should be kept in sync with struct ZVMChannel from api/zvm.h */
 struct ChannelSerialized
@@ -195,6 +169,34 @@ struct UserManifestSerialized
 #define USER_PTR_SIZE sizeof(int32_t)
 #define CHANNEL_STRUCT_SIZE sizeof(struct ChannelSerialized)
 #define USER_MANIFEST_STRUCT_SIZE sizeof(struct UserManifestSerialized)
+
+static intptr_t heap_end = 0;
+
+void PreallocateUserMemory(struct NaClApp *nap)
+{
+  uintptr_t i;
+  int64_t heap;
+  void *p;
+
+  assert(nap != NULL);
+  assert(nap->manifest != NULL);
+
+  /* quit function if "Memory" is not specified or invalid */
+  ZLOGFAIL(nap->manifest->mem_size <= 0 || nap->manifest->mem_size > FOURGIG,
+      ENOMEM, "invalid memory size");
+
+  /* calculate user heap size (must be allocated next to the data_end) */
+  p = (void*)ROUNDUP_64K(nap->data_end);
+  heap = nap->manifest->mem_size - STACK_SIZE;
+  heap = ROUNDUP_64K(heap) - ROUNDUP_64K(nap->data_end);
+  ZLOGFAIL(heap <= LEAST_USER_HEAP_SIZE, ENOMEM, "user heap size is too small");
+
+  /* since 4gb of user space is already allocated just set protection to the heap */
+  p = (void*)NaClUserToSys((uintptr_t)p);
+  i = NaCl_mprotect(p, heap, PROT_READ | PROT_WRITE);
+  ZLOGFAIL(0 != i, -i, "cannot set protection on user heap");
+  heap_end = NaClSysToUser((uintptr_t)p + heap);
+}
 
 /* set pointer to user manifest */
 static void SetUserManifestPtr(struct NaClApp *nap, void *mft)
@@ -299,7 +301,7 @@ void SetSystemData(struct NaClApp *nap)
 
   /* update heap_size in the user manifest */
   size = ROUNDDOWN_64K(NaClSysToUser((uintptr_t)ptr));
-  size = MIN(nap->heap_end, size);
+  size = MIN(heap_end, size);
   user_manifest->heap_size = size - nap->break_addr;
 
   /* serialize the rest of the user manifest records */
