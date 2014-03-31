@@ -90,14 +90,6 @@ struct NaClApp {
   /* ro after app starts. memsz from phdr */
 
   /*
-   * The dynamic code area follows the static code area.  These fields
-   * are both set to static_text_end if the dynamic code area has zero
-   * size.
-   */
-  uintptr_t                 dynamic_text_start;
-  uintptr_t                 dynamic_text_end;
-
-  /*
    * rodata_start and data_start may be 0 if these segments are not
    * present in the executable.
    */

@@ -189,10 +189,6 @@ void MemoryProtection(struct NaClApp *nap)
   SET_MEM_MAP_IDX(nap->mem_map[TextIdx], "Text",
       start_addr, region_size, PROT_READ | PROT_EXEC);
 
-  /* zerovm does not support dynamic text directly (see trap (un)jail) */
-  region_size = nap->dynamic_text_end - nap->dynamic_text_start;
-  ZLOGFAIL(0 != region_size, ENOEXEC, "zerovm does not support dynamic text");
-
   if(0 != nap->rodata_start)
   {
     uintptr_t rodata_end;

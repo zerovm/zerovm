@@ -59,8 +59,6 @@ TEST_F(SelLdrTest, DescTable) {
 
   NaClAppCtor(&app);
   ASSERT_EQ(0u, app.static_text_end);
-  ASSERT_EQ(0u, app.dynamic_text_start);
-  ASSERT_EQ(0u, app.dynamic_text_end);
   ASSERT_EQ(0u, app.rodata_start);
   ASSERT_EQ(0u, app.data_start);
   ASSERT_EQ(0u, app.data_end);

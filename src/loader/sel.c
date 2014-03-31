@@ -117,8 +117,6 @@ static void LogAddressSpaceLayout(struct NaClApp *nap)
 {
   ZLOGS(LOG_INSANE, "NaClApp addr space layout:");
   DUMP(nap->static_text_end);
-  DUMP(nap->dynamic_text_start);
-  DUMP(nap->dynamic_text_end);
   DUMP(nap->rodata_start);
   DUMP(nap->data_start);
   DUMP(nap->data_end);
@@ -203,10 +201,6 @@ void AppLoadFile(struct Gio *gp, struct NaClApp *nap)
   ZLOGFAIL(0 != err, EFAULT, "Failed to make image pages writable. errno = %d", err);
 
   ElfImageLoad(image, gp, MEM_START);
-
-  /* d'b: shared memory for the dynamic text disabled */
-  nap->dynamic_text_start = ROUNDUP_64K(NaClEndOfStaticText(nap));
-  nap->dynamic_text_end = nap->dynamic_text_start;
 
   /*
    * FillEndOfTextRegion will fill with halt instructions the
