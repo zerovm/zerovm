@@ -76,8 +76,6 @@ int CheckUserMap(uintptr_t addr, uint32_t size, int prot)
   int i;
 
   /* check arguments sanity */
-  if(addr - MEM_START < 0) // ### does it work?
-    return -1;
   if(addr - MEM_START + size > FOURGIG)
     return -1;
   if(prot < PROT_NONE || prot > (PROT_READ|PROT_WRITE|PROT_EXEC))
