@@ -52,7 +52,7 @@ int NaCl_mprotect(void *addr, size_t len, int prot)
       && addr + len <= (void*)MEM_START + FOURGIG)
   {
     int result;
-    result = UpdateUserMap((intptr_t)addr, len, prot);
+    result = UpdateUserMap((uintptr_t)addr, len, prot);
     ZLOGFAIL(result < 0, EFAULT, "internal error. cannot update user map");
   }
 

@@ -29,7 +29,7 @@
  * new user memory manager. replaces struct MemBlock (with all its
  * macros/logic). need to be done for snapshot.
  * NOTE: "addr" should be specified in system address space
- * TODO(d'b): should be extracted to own class
+ * TODO(d'b): should be moved to sel_memory.*
  * TODO(d'b): map updating and checking is slow, speed it up
  */
 
@@ -66,12 +66,12 @@ void LockRestrictedMemory()
 }
 
 /* return index of "addr" in user map */
-INLINE static int UserMapIndex(intptr_t addr)
+INLINE static int UserMapIndex(uintptr_t addr)
 {
-  return (addr - (intptr_t)R15_CONST - GUARDSIZE) / NACL_MAP_PAGESIZE;
+  return (addr - (uintptr_t)R15_CONST - GUARDSIZE) / NACL_MAP_PAGESIZE;
 }
 
-int CheckUserMap(intptr_t addr, uint32_t size, int prot)
+int CheckUserMap(uintptr_t addr, uint32_t size, int prot)
 {
   int i;
 
@@ -99,7 +99,7 @@ int CheckUserMap(intptr_t addr, uint32_t size, int prot)
   return 0;
 }
 
-int UpdateUserMap(intptr_t addr, uint32_t size, int prot)
+int UpdateUserMap(uintptr_t addr, uint32_t size, int prot)
 {
   int i;
 

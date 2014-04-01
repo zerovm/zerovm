@@ -56,7 +56,7 @@ static int32_t ZVMReadHandle(struct NaClApp *nap,
 
   /* check buffer availability */
   sys_buffer = (char*)NaClUserToSysAddrNullOkay((uintptr_t)buffer);
-  if(CheckUserMap((intptr_t)sys_buffer, size, PROT_WRITE) == -1)
+  if(CheckUserMap((uintptr_t)sys_buffer, size, PROT_WRITE) == -1)
     return -EINVAL;
 
   /* ignore user offset for sequential access read */
@@ -118,7 +118,7 @@ static int32_t ZVMWriteHandle(struct NaClApp *nap,
 
   /* check buffer availability */
   sys_buffer = (char*)NaClUserToSysAddrNullOkay((uintptr_t)buffer);
-  if(CheckUserMap((intptr_t)sys_buffer, size, PROT_READ) == -1)
+  if(CheckUserMap((uintptr_t)sys_buffer, size, PROT_READ) == -1)
     return -EINVAL;
 
   /* ignore user offset for sequential access write */
@@ -177,8 +177,17 @@ static int32_t ZVMProtHandle(uintptr_t addr, uint32_t size, int prot)
 
     case PROT_EXEC:
     case PROT_READ | PROT_EXEC:
-      if(NaClSegmentValidates((uint8_t*)sysaddr, size, sysaddr) == 0)
+      /* test if memory is readable */
+      if(CheckUserMap(sysaddr, size, PROT_READ) != 0)
+      {
+        result = -EACCES;
+        break;
+      }
+
+      /* validation failed */
+      if(NaClSegmentValidates((uint8_t*)sysaddr, size, addr) == 0)
         result = -EPERM;
+      /* validation ok, changing protection */
       else
         if(NaCl_mprotect((void*)sysaddr, size, prot) != 0)
           result = -errno;

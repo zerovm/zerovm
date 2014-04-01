@@ -56,7 +56,7 @@ int main()
 {
   ZTEST(test_function(good) == 0);
   ZTEST(test_function((void (*)())bad) != 0);
-  
+
   /* try to change NULL protection */
   ZTEST(zvm_mprotect(NULL, 0x10000, PROT_NONE) == -13);
   ZTEST(zvm_mprotect(NULL, 0x10000, PROT_READ) == -13);
@@ -84,6 +84,15 @@ int main()
   ZTEST(zvm_mprotect(0xFF000000, 0x10000, PROT_READ | PROT_WRITE) == -13);
   ZTEST(zvm_mprotect(0xFF000000, 0x10000, PROT_WRITE) == -13);
   ZTEST(zvm_mprotect(0xFF000000, 0x10000, PROT_READ | PROT_EXEC) == -13);
+
+  /* change protection on TEXT */
+  ZTEST(zvm_mprotect(0x000A0000, 0x10000, PROT_NONE) == 0);
+  ZTEST(zvm_mprotect(0x000A0000, 0x10000, PROT_READ | PROT_EXEC) == -13);
+  ZTEST(zvm_mprotect(0x000A0000, 0x10000, PROT_READ) == 0);
+  ZTEST(zvm_mprotect(0x000A0000, 0x10000, PROT_READ | PROT_EXEC) == -1);
+  ZTEST(zvm_mprotect(0x00020000, 0x10000, PROT_READ | PROT_EXEC) == 0);
+  ZTEST(zvm_mprotect(0x00030000, 0x10000, PROT_WRITE) == 0);
+  ZTEST(zvm_mprotect(0x00030000, 0x10000, PROT_READ | PROT_EXEC) == -13);
 
   ZREPORT;
   return 0; /* prevent warning */
