@@ -25,7 +25,7 @@
 #include "src/platform/signal.h"
 #include "src/channels/channel.h"
 #include "src/syscalls/daemon.h"
-#include "src/main/ztrace.h"
+#include "src/syscalls/ztrace.h"
 
 #define DAEMON_NAME "zvm."
 #define QUEUE_SIZE 16

@@ -161,5 +161,5 @@ obj/daemon.o: src/syscalls/daemon.c
 obj/snapshot.o: src/syscalls/snapshot.c
 	$(CC) $(CCFLAGS1) -o $@ $^
 
-obj/ztrace.o: src/main/ztrace.c
+obj/ztrace.o: src/syscalls/ztrace.c
 	$(CC) $(CCFLAGS1) -o $@ $^

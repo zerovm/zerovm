@@ -21,7 +21,7 @@
 #include "src/platform/sel_memory.h"
 #include "src/main/setup.h"
 #include "src/syscalls/daemon.h"
-#include "src/main/ztrace.h"
+#include "src/syscalls/ztrace.h"
 
 /*
  * read specified amount of bytes from given desc/offset to buffer

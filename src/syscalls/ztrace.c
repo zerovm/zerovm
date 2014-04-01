@@ -17,7 +17,7 @@
 #include <stdio.h>
 #include "src/main/zlog.h"
 #include "src/channels/channel.h"
-#include "src/main/ztrace.h"
+#include "src/syscalls/ztrace.h"
 
 static char *ztrace_name = NULL;
 static GTimer *timer = NULL;
