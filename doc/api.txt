@@ -56,10 +56,11 @@ zerovm api functions
   eof reached and -errno in case of error
 
   zvm_mprotect(buffer, size, prot)
-  puts requested protection "prot" with limitations: "write/execute" and
-  "read/write/execute" prohibited. if "execute" protection requested
-  validator will be invoked. the "buffer" pointer should be aligned to
-  mmap page size (64kb). if validation complete successfully memory area
+  puts requested protection "prot" with limitations: "write/execute" 
+  combination is prohibited, NULL, TRAMPOLINE, MANIFEST and STACK regions
+  are not allowed to modify protection. if "execute" protection requested
+  validator will be invoked. the "buffer" pointer and size should be aligned
+  to mmap page size (64kb). if validation complete successfully memory area
   specified by "buffer" and "size" will be marked as "read only" and
   "executable". in case of error the function will return -errno, otherwise
   0 will be returned
