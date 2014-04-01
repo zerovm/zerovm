@@ -53,7 +53,7 @@ int NaCl_mprotect(void *addr, size_t len, int prot)
   {
     int result;
     result = UpdateUserMap((intptr_t)addr, len, prot);
-    assert(result == 0);
+    ZLOGFAIL(result < 0, EFAULT, "internal error. cannot update user map");
   }
 
   return ret == -1 ? -errno : ret;
