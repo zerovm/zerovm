@@ -56,6 +56,34 @@ int main()
 {
   ZTEST(test_function(good) == 0);
   ZTEST(test_function((void (*)())bad) != 0);
+  
+  /* try to change NULL protection */
+  ZTEST(zvm_mprotect(NULL, 0x10000, PROT_NONE) == -13);
+  ZTEST(zvm_mprotect(NULL, 0x10000, PROT_READ) == -13);
+  ZTEST(zvm_mprotect(NULL, 0x10000, PROT_READ | PROT_WRITE) == -13);
+  ZTEST(zvm_mprotect(NULL, 0x10000, PROT_WRITE) == -13);
+  ZTEST(zvm_mprotect(NULL, 0x10000, PROT_READ | PROT_EXEC) == -13);
+
+  /* try to change TRAMPOLINE protection */
+  ZTEST(zvm_mprotect(0x10000, 0x10000, PROT_NONE) == -13);
+  ZTEST(zvm_mprotect(0x10000, 0x10000, PROT_READ) == -13);
+  ZTEST(zvm_mprotect(0x10000, 0x10000, PROT_READ | PROT_WRITE) == -13);
+  ZTEST(zvm_mprotect(0x10000, 0x10000, PROT_WRITE) == -13);
+  ZTEST(zvm_mprotect(0x10000, 0x10000, PROT_READ | PROT_EXEC) == -13);
+
+  /* try to change MANIFEST protection */
+  ZTEST(zvm_mprotect(0xFEFF0000, 0x10000, PROT_NONE) == -13);
+  ZTEST(zvm_mprotect(0xFEFF0000, 0x10000, PROT_READ) == -13);
+  ZTEST(zvm_mprotect(0xFEFF0000, 0x10000, PROT_READ | PROT_WRITE) == -13);
+  ZTEST(zvm_mprotect(0xFEFF0000, 0x10000, PROT_WRITE) == -13);
+  ZTEST(zvm_mprotect(0xFEFF0000, 0x10000, PROT_READ | PROT_EXEC) == -13);
+
+  /* try to change STACK protection */
+  ZTEST(zvm_mprotect(0xFF000000, 0x10000, PROT_NONE) == -13);
+  ZTEST(zvm_mprotect(0xFF000000, 0x10000, PROT_READ) == -13);
+  ZTEST(zvm_mprotect(0xFF000000, 0x10000, PROT_READ | PROT_WRITE) == -13);
+  ZTEST(zvm_mprotect(0xFF000000, 0x10000, PROT_WRITE) == -13);
+  ZTEST(zvm_mprotect(0xFF000000, 0x10000, PROT_READ | PROT_EXEC) == -13);
 
   ZREPORT;
   return 0; /* prevent warning */

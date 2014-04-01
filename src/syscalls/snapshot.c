@@ -17,9 +17,9 @@
 /*
  * TODO(d'b): design (under construction)
  * image consist of 4 main parts:
- * 1. user memory map (for mprotect()'ion)
- * 2. user memory dump
- * 3. user context (registers) + user_ret (user entry point)
+ * 1. user memory map (for mprotect()'ion) -- done
+ * 2. user memory dump -- trivial
+ * 3. user context [GetThreadCtxSp(nacl_user)] + user entry point [user_ret]
  * 4. manifest (text file, variable size, ends with eof)
  *
  * to save image
@@ -46,6 +46,7 @@
 #include <assert.h>
 #include "src/loader/sel_ldr.h"
 #include "src/main/zlog.h"
+#include "src/main/setup.h"
 #include "src/syscalls/snapshot.h"
 
 static int image = -1;
