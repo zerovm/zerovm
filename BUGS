@@ -1,7 +1,3 @@
-please report bugs to zerovm project repository on github to appropriate
-milestone: (current milestone is "marvin", also "wishlist" can be used)
-  https://github.com/zerovm/zerovm/issues?milestone=21&page=1&state=open
-
-tag "FIX" should be used. the bug severity can be denoted with one of "VALUE+",
-"VALUE++" or "VALUE+++" tags
+please report bugs to zerovm project forum: 
+https://groups.google.com/forum/#!forum/zerovm
 
