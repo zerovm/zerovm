@@ -63,14 +63,6 @@ typedef enum {
   MemoryTokensNumber
 } MemoryTokens;
 
-/* connection tokens */
-typedef enum {
-  Protocol,
-  Host,
-  Port,
-  ConnectionTokensNumber
-} ConnectionTokens;
-
 /* channel tokens */
 typedef enum {
   Name,
@@ -199,6 +191,7 @@ static void Node(struct Manifest *manifest, char *value)
   manifest->node = g_strdup(g_strstrip(value));
 }
 
+/* TODO(d'b): call NetCtor() from here */
 static void Broker(struct Manifest *manifest, char *value)
 {
   manifest->broker = g_strdup(g_strstrip(value));
@@ -228,6 +221,8 @@ static void Channel(struct Manifest *manifest, char *value)
   /*
    * set name and protocol (network or local). exact protocol
    * for the local channel will be set later
+   * TODO(d'b): move to ChannelCtor()
+   * TODO(d'b): move ChannelsCtor() logic here
    */
   if(g_str_has_prefix(tokens[Name], NAME_PREFIX_NET))
   {
@@ -342,6 +337,8 @@ void ManifestDtor(struct Manifest *manifest)
     g_free(channel);
   }
   g_ptr_array_free(manifest->channels, TRUE);
+
+  /* TODO(d'b): call NetDtor() from here */
 
   /* other */
   g_free(manifest->broker);
