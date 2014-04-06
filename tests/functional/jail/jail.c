@@ -85,7 +85,10 @@ int main()
   ZTEST(zvm_mprotect(0xFF000000, 0x10000, PROT_WRITE) == -13);
   ZTEST(zvm_mprotect(0xFF000000, 0x10000, PROT_READ | PROT_EXEC) == -13);
 
-  /* change protection on TEXT */
+  /*
+   * change protection on TEXT
+   * WARNING: be careful here this is operation over working code!
+   */
   ZTEST(zvm_mprotect(0x000A0000, 0x10000, PROT_NONE) == 0);
   ZTEST(zvm_mprotect(0x000A0000, 0x10000, PROT_READ | PROT_EXEC) == -13);
   ZTEST(zvm_mprotect(0x000A0000, 0x10000, PROT_READ) == 0);

@@ -15,42 +15,28 @@
  */
 
 /*
- * TODO(d'b): design (under construction)
- * image consist of 4 main parts:
- * 1. user memory map (for mprotect()'ion) -- done
- * 2. user memory dump -- trivial
- * 3. user context [GetThreadCtxSp(nacl_user)] + user entry point [user_ret]
- * 4. manifest (text file, variable size, ends with eof)
- *
- * to save image
- * - check session status (should be "ok")
- * - check "Save" value
- * - catch TrapSave (drop, hold, shot, snap)
- * - store all mentioned above data into the file
- *
- * to restore image (zerovm initialization as usual)
- * - allocate user space
- * - read (to user space) memory map (it is 64kb)
- * - read (to user space) memory dump until hole (infer from map)
- * - read (to user space) the rest (user manifest and stack)
- * - read user context and initialize nacl_sys
- * - reconstruct nap from data above (nap->sysret to TrapSave retcode)
- * - return to user code (user_ret from image contain entry point)
- *
- * CHANGES IN ZEROVM DESIGN
- * - main() loading of program with all checks allocations should be wrapped and carried out
- * - CreateSession() should not set user stack and affected things
- * - add manifest text to nap or manifest
+ * TODO(d'b): under construction
  */
 #include <stdio.h>
+#include <unistd.h>
+#include <sys/mman.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include <assert.h>
 #include "src/loader/sel_ldr.h"
 #include "src/main/zlog.h"
 #include "src/main/setup.h"
 #include "src/syscalls/snapshot.h"
 
-static int image = -1;
+#define R_FLAG (O_RDONLY)
+#define W_MODE (S_IRUSR | S_IWUSR)
+#define ID_MAP "map"
+#define ID_DUMP "dump"
+#define ID_CONTEXT "context"
+#define ID_CHANNELS "channels"
 
+#if 0 // ### disabled as useless
 /*
  * return 0: given file contains session, -1: random file
  * note: initializes image handler
@@ -70,107 +56,208 @@ static int IsImage(const char *name)
   code = read(image, &magic, sizeof magic);
   return code == sizeof magic ? magic == MAGIC ? 0 : -1 : -1;
 }
+#endif
 
-/* get memory map from system */
-static void *GetSystemMemoryMap()
+#if 0
+/* write "buffer" to disk under "id" name */
+static int WriteData(char *name, void *buffer, uint32_t size)
 {
-  return NULL;
+  int handle;
+
+  /* open id part of image */
+  handle = creat(name, W_MODE);
+  if(handle < 0) return -1;
+
+  /* write data */
+  if(write(handle, buffer, size) != size)
+  {
+    close(handle);
+    unlink(name);
+    return -1;
+  }
+
+  /* close file */
+  if(close(handle) < 0) return -1;
+  return 0;
 }
+#endif
+
+/*
+ * wrappers {{
+ */
+/* create file for "name" and  return handle or -1 */
+static int CreateImage(char *name)
+{
+  return creat(name, W_MODE);
+}
+
+/* write "buffer" to "handle" */
+static int AppendToImage(int handle, void *buffer, uint32_t size)
+{
+  return write(handle, buffer, size);
+}
+
+/* open image file for "name" and return handle or -1 */
+static int OpenImage(char *name)
+{
+  return open(name, R_FLAG);
+}
+
+/* read to "buffer" from "handle" */
+static int ReadFromImage(int handle, void *buffer, uint32_t size)
+{
+  return read(handle, buffer, size);
+}
+
+/* close image handle */
+static int CloseImage(int handle)
+{
+  return close(handle);
+}
+/* wrappers }} */
 
 /* save memory map to image */
-static int SaveMemoryMap(void *map)
+static int SaveUserMap(void *map)
 {
-  return -1;
+  int handle;
+
+  handle = CreateImage(ID_MAP);
+  if(handle < 0) return -1;
+
+  if(AppendToImage(handle, map, USER_MAP_SIZE) != USER_MAP_SIZE)
+    return -1;
+
+  /* close image */
+  return CloseImage(handle);
 }
 
-/* save 1st part of user memory dump to image */
-static int SaveMemory1(struct NaClApp *nap, void *map)
+/* save user memory dump */
+static int SaveDump(struct NaClApp *nap, uint8_t *map)
 {
-  return -1;
-}
+  int handle;
+  int i;
 
-/* save 2nd part of user memory dump to image */
-static int SaveMemory2(struct NaClApp *nap, void *map)
-{
-  return -1;
+  /* open image to save dump */
+  handle = CreateImage(ID_DUMP);
+  if(handle < 0) return -1;
+
+  /* write all available pages */
+  for(i = 0; i < USER_MAP_SIZE; ++i)
+    if(map[i] & (PROT_READ | PROT_WRITE | PROT_EXEC))
+      if(AppendToImage(handle, (void*)MEM_START + i * NACL_MAP_PAGESIZE,
+          NACL_MAP_PAGESIZE) != NACL_MAP_PAGESIZE)
+        return -1;
+
+  /* close image */
+  return CloseImage(handle);
 }
 
 /* save user context to image */
-static int SaveUserContext(struct NaClApp *nap)
+static int SaveUserContext(struct ThreadContext *nacl_user)
 {
-  return -1;
+  int handle;
+
+  handle = CreateImage(ID_CONTEXT);
+  if(handle < 0) return -1;
+
+  if(AppendToImage(handle, nacl_user, sizeof *nacl_user) != sizeof *nacl_user)
+    return -1;
+
+  /* close image */
+  return CloseImage(handle);
 }
 
 /* save text manifest to image */
-static int SaveManifest(struct NaClApp *nap)
+// ### serializer needed
+static int SaveChannels(struct NaClApp *nap)
+{
+  int i;
+  int handle;
+
+  handle = CreateImage(ID_CHANNELS);
+  if(handle < 0) return -1;
+
+  /* write all available pages */
+  for(i = 0; i < nap->manifest->channels->len; ++i)
+  {
+    struct ChannelDesc channel;
+//    if(AppendToImage(handle, (void*)CH_CH(nap->manifest, i),
+//        NACL_MAP_PAGESIZE) != NACL_MAP_PAGESIZE)
+    return -1;
+  }
+
+  /* close image */
+  return CloseImage(handle);
+}
+
+/* load memory map from image to user space */
+static int LoadUserMap(void *map)
+{
+  int handle;
+
+  handle = OpenImage(ID_MAP);
+  if(handle < 0) return -1;
+
+  if(ReadFromImage(handle, map, USER_MAP_SIZE) != USER_MAP_SIZE)
+    return -1;
+
+  /* close image */
+  return CloseImage(handle);
+}
+
+/* allocate user space (as usual, in safe way) and load dump */
+/* TODO(d'b): this logic should replace the one inherited from NaCl */
+// ###
+static int LoadDump(struct NaClApp *nap, void *map)
+{
+  /* open dump file */
+  /* allocate user space */
+  /* load data mprotecting it */
+  /* close dump file */
+
+  return -1;
+}
+
+/* load user context from image to user space */
+// ###
+static int LoadUserContext(struct ThreadContext *nacl_user)
 {
   return -1;
 }
 
-/* .. */
-
-/* load memory map from image to user space */
-static void *LoadMemoryMap(struct NaClApp *nap)
+// ###
+static int LoadChannels(struct NaClApp *nap)
 {
-  return NULL;
+  return -1;
 }
 
-/* load 1st part of memory dump from image to user space */
-static void LoadMemory1(struct NaClApp *nap, void *map)
-{
-}
-
-/* load 2nd part of memory dump from image to user space */
-static void LoadMemory2(struct NaClApp *nap, void *map)
-{
-}
-
-/* load user context from image to user space */
-static void LoadUserContext(struct NaClApp *nap)
-{
-}
-
+#if 0
 /* read old manifest from image, and check it up against the new one */
 static void CheckManifest(struct NaClApp *nap)
 {
 }
+#endif
 
 int SaveSession(struct NaClApp *nap)
 {
-  int code;
-  void *map;
+  void *map = GetUserMap();
 
-  map = GetSystemMemoryMap();
-  if(map == NULL) return -1;
-
-  code = SaveMemoryMap(map);
-  if(code < 0) return -1;
-
-  code = SaveMemory1(nap, map);
-  if(code < 0) return -1;
-
-  code = SaveMemory2(nap, map);
-  if(code < 0) return -1;
-
-  code = SaveUserContext(nap);
-  if(code < 0) return -1;
-
-  code = SaveManifest(nap);
-  if(code < 0) return -1;
+  if(SaveUserMap(map) < 0) return -1;
+  if(SaveDump(nap, map) < 0) return -1;
+  if(SaveUserContext(nacl_user) < 0) return -1;
+  if(SaveChannels(nap) < 0) return -1;
 
   return 0;
 }
 
-int LoadSession(struct NaClApp *nap, const char *name)
+int LoadSession(struct NaClApp *nap)
 {
-  void *map;
-  if(IsImage(name) < 0) return -1;
+  void *map = GetUserMap();
 
-  map = LoadMemoryMap(nap);
-  LoadMemory1(nap, map);
-  LoadMemory2(nap, map);
-  LoadUserContext(nap);
-  CheckManifest(nap);
+  if(LoadUserMap(map) < 0) return -1;
+  if(LoadDump(nap, map) < 0) return -1;
+  if(LoadUserContext(nacl_user) < 0) return -1;
+  if(LoadChannels(nap) < 0) return -1;
 
   return 0;
 }

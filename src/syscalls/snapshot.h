@@ -20,7 +20,7 @@
 #define SNAPSHOT_H_
 
 /* load session from given image. 0: success, -1: failed */
-int LoadSession(struct NaClApp *nap, const char *name);
+int LoadSession(struct NaClApp *nap);
 
 /* store session to image "Save". 0: success, -1: failed */
 int SaveSession(struct NaClApp *nap);

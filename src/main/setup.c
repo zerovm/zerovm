@@ -34,8 +34,10 @@
  */
 
 /* contains PROT_* bits of user pages */
-static uint8_t user_map[FOURGIG / NACL_MAP_PAGESIZE];
+static uint8_t user_map[USER_MAP_SIZE];
 
+#if 0 // ###
+/* get copy of user memory map. WARNING: result should be freed */
 uint8_t *GetUserMap()
 {
   uint8_t *buffer = g_malloc(ARRAY_SIZE(user_map));
@@ -44,13 +46,19 @@ uint8_t *GetUserMap()
 
   return buffer;
 }
+#else
+uint8_t *GetUserMap()
+{
+  return user_map;
+}
+#endif
 
 void LockRestrictedMemory()
 {
   int i;
 
   /* NULL and hole (everything protected with PROT_NONE is restricted) */
-  for(i = 0; i < FOURGIG / NACL_MAP_PAGESIZE; ++i)
+  for(i = 0; i < USER_MAP_SIZE; ++i)
     if(user_map[i] == PROT_NONE)
       user_map[i] = PROT_LOCK;
 
