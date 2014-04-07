@@ -36,85 +36,35 @@
 #define ID_CONTEXT "context"
 #define ID_CHANNELS "channels"
 
-#if 0 // ### disabled as useless
-/*
- * return 0: given file contains session, -1: random file
- * note: initializes image handler
- */
-#define MAGIC 0x3030474d494d565aULL
-static int IsImage(const char *name)
-{
-  uint64_t magic = 0;
-  int code;
-
-  /* open image */
-  if(image < 0)
-    image = open(name, O_RDONLY);
-  if(image < 0) return -1;
-
-  /* read "magic" */
-  code = read(image, &magic, sizeof magic);
-  return code == sizeof magic ? magic == MAGIC ? 0 : -1 : -1;
-}
-#endif
-
-#if 0
-/* write "buffer" to disk under "id" name */
-static int WriteData(char *name, void *buffer, uint32_t size)
-{
-  int handle;
-
-  /* open id part of image */
-  handle = creat(name, W_MODE);
-  if(handle < 0) return -1;
-
-  /* write data */
-  if(write(handle, buffer, size) != size)
-  {
-    close(handle);
-    unlink(name);
-    return -1;
-  }
-
-  /* close file */
-  if(close(handle) < 0) return -1;
-  return 0;
-}
-#endif
-
-/*
- * wrappers {{
- */
 /* create file for "name" and  return handle or -1 */
-static int CreateImage(char *name)
+INLINE static int CreateImage(char *name)
 {
   return creat(name, W_MODE);
 }
 
 /* write "buffer" to "handle" */
-static int AppendToImage(int handle, void *buffer, uint32_t size)
+INLINE static int WriteToImage(int handle, void *buffer, uint32_t size)
 {
   return write(handle, buffer, size);
 }
 
 /* open image file for "name" and return handle or -1 */
-static int OpenImage(char *name)
+INLINE static int OpenImage(char *name)
 {
   return open(name, R_FLAG);
 }
 
 /* read to "buffer" from "handle" */
-static int ReadFromImage(int handle, void *buffer, uint32_t size)
+INLINE static int ReadFromImage(int handle, void *buffer, uint32_t size)
 {
   return read(handle, buffer, size);
 }
 
 /* close image handle */
-static int CloseImage(int handle)
+INLINE static int CloseImage(int handle)
 {
   return close(handle);
 }
-/* wrappers }} */
 
 /* save memory map to image */
 static int SaveUserMap(void *map)
@@ -124,7 +74,7 @@ static int SaveUserMap(void *map)
   handle = CreateImage(ID_MAP);
   if(handle < 0) return -1;
 
-  if(AppendToImage(handle, map, USER_MAP_SIZE) != USER_MAP_SIZE)
+  if(WriteToImage(handle, map, USER_MAP_SIZE) != USER_MAP_SIZE)
     return -1;
 
   /* close image */
@@ -144,7 +94,7 @@ static int SaveDump(struct NaClApp *nap, uint8_t *map)
   /* write all available pages */
   for(i = 0; i < USER_MAP_SIZE; ++i)
     if(map[i] & (PROT_READ | PROT_WRITE | PROT_EXEC))
-      if(AppendToImage(handle, (void*)MEM_START + i * NACL_MAP_PAGESIZE,
+      if(WriteToImage(handle, (void*)MEM_START + i * NACL_MAP_PAGESIZE,
           NACL_MAP_PAGESIZE) != NACL_MAP_PAGESIZE)
         return -1;
 
@@ -160,7 +110,7 @@ static int SaveUserContext(struct ThreadContext *nacl_user)
   handle = CreateImage(ID_CONTEXT);
   if(handle < 0) return -1;
 
-  if(AppendToImage(handle, nacl_user, sizeof *nacl_user) != sizeof *nacl_user)
+  if(WriteToImage(handle, nacl_user, sizeof *nacl_user) != sizeof *nacl_user)
     return -1;
 
   /* close image */
@@ -180,7 +130,7 @@ static int SaveChannels(struct NaClApp *nap)
   /* write all available pages */
   for(i = 0; i < nap->manifest->channels->len; ++i)
   {
-    struct ChannelDesc channel;
+//    struct ChannelDesc channel;
 //    if(AppendToImage(handle, (void*)CH_CH(nap->manifest, i),
 //        NACL_MAP_PAGESIZE) != NACL_MAP_PAGESIZE)
     return -1;
@@ -210,10 +160,16 @@ static int LoadUserMap(void *map)
 // ###
 static int LoadDump(struct NaClApp *nap, void *map)
 {
-  /* open dump file */
+  int handle;
+
+  handle = OpenImage(ID_DUMP);
+  if(handle < 0) return -1;
+
   /* allocate user space */
   /* load data mprotecting it */
   /* close dump file */
+
+  /* protect bumpers */
 
   return -1;
 }

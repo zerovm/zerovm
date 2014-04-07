@@ -130,9 +130,8 @@ static void LogMemMap()
       prev_prot = cur_prot;
     }
   }
-  ZLOGS(LOG_DEBUG, "%08X:%08X %x", FOURGIG - STACK_SIZE, FOURGIG - 1, map[i - 1]);
 
-  g_free(map);
+  ZLOGS(LOG_DEBUG, "%08X:%08X %x", FOURGIG - STACK_SIZE, FOURGIG - 1, map[i - 1]);
 }
 
 static void FinalDump(struct NaClApp *nap)
@@ -184,7 +183,6 @@ static void *GetMemoryDigest(struct NaClApp *nap)
       ++i;
   }
 
-  g_free(map);
   return nap->manifest->mem_tag;
 }
 

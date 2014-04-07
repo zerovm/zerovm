@@ -36,22 +36,10 @@
 /* contains PROT_* bits of user pages */
 static uint8_t user_map[USER_MAP_SIZE];
 
-#if 0 // ###
-/* get copy of user memory map. WARNING: result should be freed */
-uint8_t *GetUserMap()
-{
-  uint8_t *buffer = g_malloc(ARRAY_SIZE(user_map));
-  ZLOGFAIL(buffer == NULL, ENOMEM, "cannot allocate user map copy");
-  memcpy(buffer, user_map, ARRAY_SIZE(user_map));
-
-  return buffer;
-}
-#else
 uint8_t *GetUserMap()
 {
   return user_map;
 }
-#endif
 
 void LockRestrictedMemory()
 {
