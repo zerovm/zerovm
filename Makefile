@@ -26,7 +26,7 @@ debug: CXXFLAGS1 := -DDEBUG -g $(CXXFLAGS1)
 debug: CXXFLAGS2 := -DDEBUG -g $(CXXFLAGS2)
 debug: create_dirs zerovm tests
 
-OBJS=obj/elf_util.o obj/gio.o obj/gio_snapshot.o obj/manifest.o obj/setup.o obj/channel.o obj/qualify.o obj/report.o obj/zlog.o obj/signal_common.o obj/signal.o obj/to_app.o obj/switch_to_app.o obj/to_trap.o obj/syscall_hook.o obj/prefetch.o obj/preload.o obj/sel_addrspace.o obj/sel_ldr.o obj/sel.o obj/sel_memory.o obj/sel_rt.o obj/tramp.o obj/trap.o obj/etag.o obj/accounting.o obj/daemon.o obj/snapshot.o obj/ztrace.o
+OBJS=obj/elf_util.o obj/gio.o obj/gio_snapshot.o obj/manifest.o obj/setup.o obj/channel.o obj/qualify.o obj/report.o obj/zlog.o obj/signal_common.o obj/signal.o obj/to_app.o obj/switch_to_app.o obj/to_trap.o obj/syscall_hook.o obj/prefetch.o obj/preload.o obj/sel_addrspace.o obj/sel_ldr.o obj/sel.o obj/sel_memory.o obj/sel_rt.o obj/tramp.o obj/trap.o obj/etag.o obj/accounting.o obj/daemon.o obj/snapshot.o obj/ztrace.o obj/userspace.o
 CC=@gcc
 CXX=@g++
 
@@ -162,4 +162,7 @@ obj/snapshot.o: src/syscalls/snapshot.c
 	$(CC) $(CCFLAGS1) -o $@ $^
 
 obj/ztrace.o: src/syscalls/ztrace.c
+	$(CC) $(CCFLAGS1) -o $@ $^
+
+obj/userspace.o: src/loader/userspace.c
 	$(CC) $(CCFLAGS1) -o $@ $^

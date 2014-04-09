@@ -14,6 +14,11 @@
  * limitations under the License.
  */
 
+/*
+ * TODO(d'b): the replacement for sel_addrspace. will be activated after
+ * SEL will be removed
+ */
+
 #include <assert.h>
 #include <sys/mman.h>
 #include "src/loader/sel_ldr.h"
@@ -24,46 +29,73 @@
  * prepares trampoline and stack
  */
 #define SIZE_84GB (2 * GUARDSIZE + FOURGIG)
-#define PROXY_IDX 2
+#define USER_PTR ((void*)0x440000000000)
+#define TRAMP_IDX 2
 #define TRAMP_PATTERN \
   0x48, 0xb8, 0xf4, 0xf4, 0xf4, 0xf4, 0xf4, 0xf4, \
   0xf4, 0xf4, 0xff, 0xd0, 0xf4, 0xf4, 0xf4, 0xf4, \
   0xf4, 0xf4, 0xf4, 0xf4, 0xf4, 0xf4, 0xf4, 0xf4, \
   0xf4, 0xf4, 0xf4, 0xf4, 0xf4, 0xf4, 0xf4, 0xf4
+#define PROXY_PTR ((void*)0x5AFECA110000)
+#define PROXY_SIZE NACL_MAP_PAGESIZE
+#define PROXY_IDX 2
 
-/* allocate 84 gb of user space */
+extern int SyscallSeg(); /* defined in to_trap.S */
+
+/* allocate and set call proxy */
+static void MakeTrapProxy()
+{
+  int i;
+  void *p;
+
+  /* allocate page for proxy */
+  p = mmap(PROXY_PTR, PROXY_SIZE, PROT_WRITE, ABSOLUTE_MMAP, -1, (off_t)0);
+  ZLOGFAIL(PROXY_PTR != p, errno, "cannot allocate proxy");
+
+  /* populate proxy area with halts */
+  memset(PROXY_PTR, NACL_HALT_OPCODE, PROXY_SIZE);
+
+  /* patch proxy with trap address */
+  *(uintptr_t*)(PROXY_PTR + PROXY_IDX) = (uintptr_t)&SyscallSeg;
+
+  /* change proxy protection */
+  i = NaCl_mprotect(PROXY_PTR, PROXY_SIZE, PROT_READ | PROT_EXEC);
+  ZLOGFAIL(0 != i, ENOMEM, "cannot set stack protection");
+}
+
+/* free call proxy */
+static void FreeTrapProxy()
+{
+  munmap(PROXY_PTR, PROXY_SIZE);
+}
+
 void MakeUserSpace()
 {
   int i;
+  void *p;
 
   /* get 84gb at the fixed address */
-  i = mmap(R15_CONST, SIZE_84GB, PROT_NONE, ABSOLUTE_MMAP, -1, (off_t)0);
-  ZLOGFAIL(R15_CONST != i, errno, "cannot allocate 84gb");
+  p = mmap(USER_PTR, SIZE_84GB, PROT_NONE, ABSOLUTE_MMAP, -1, (off_t)0);
+  ZLOGFAIL(USER_PTR != p, errno, "cannot allocate 84gb");
 
   /* give advice to kernel */
-  i = NaCl_madvise(R15_CONST, SIZE_84GB, MADV_DONTNEED);
+  i = NaCl_madvise(USER_PTR, SIZE_84GB, MADV_DONTNEED);
   ZLOGIF(i != 0, "cannot madvise 84gb");
+
+  MakeTrapProxy();
 }
 
-/* unmap 84gb of user space */
 void FreeUserSpace()
 {
-  munmap(R15_CONST, 2 * GUARDSIZE + FOURGIG);
+  munmap(USER_PTR, 2 * GUARDSIZE + FOURGIG);
+  FreeTrapProxy();
 }
 
 /* initialize trampoline using given thunk address */
-static void SetTrampoline(uintptr_t thunk)
+static void SetTrampoline()
 {
   int i;
   uint8_t pattern[] = { TRAMP_PATTERN };
-
-#if 0 /* ### another way to initialize pattern */
-  uint8_t pattern[32];
-
-  memset(pattern, 0xf4, 32);
-  *(uint16_t*)pattern = 0xb848;
-  *(uint16_t*)(pattern + 10) = 0xd0ff;
-#endif
 
   /* change protection of area to RW */
   i = NaCl_mprotect((void*)(MEM_START + NACL_TRAMPOLINE_START),
@@ -71,11 +103,11 @@ static void SetTrampoline(uintptr_t thunk)
   ZLOGFAIL(0 != i, ENOMEM, "cannot make trampoline writable");
 
   /* create trampoline call pattern */
-  *(uintptr_t*)(pattern + PROXY_IDX) = thunk;
+  *(uintptr_t*)(pattern + TRAMP_IDX) = (uintptr_t)PROXY_PTR;
 
   /* populate trampoline area with it */
   for(i = 0; i < NACL_TRAMPOLINE_SIZE / ARRAY_SIZE(pattern); ++i)
-    memset((char*)NACL_TRAMPOLINE_START + i * ARRAY_SIZE(pattern),
+    memcpy((char*)NACL_TRAMPOLINE_START + i * ARRAY_SIZE(pattern),
         pattern, ARRAY_SIZE(pattern));
 
   /* change protection of area to RX */
@@ -92,6 +124,8 @@ static void SetTrampoline(uintptr_t thunk)
 /* initialize stack */
 static void SetStack()
 {
+  int i;
+
   /* change protection of stack to RW */
   i = NaCl_mprotect((void*)(MEM_START + FOURGIG - STACK_SIZE),
       STACK_SIZE, PROT_READ | PROT_WRITE);
@@ -109,23 +143,9 @@ static void SetUserManifest()
 
 }
 
-/*
- * initialize user memory with mandatory areas:
- * trampoline [RX], heap [RW], manifest [RX] and stack [RW]
- * note: channels should be already set
- */
 void SetUserSpace(struct NaClApp *nap)
 {
-  uintptr_t start_addr;
-  size_t    region_size;
-  int       err;
-
-  /* set trampoline */
   SetTrampoline();
-
-  /* call function to set user manifest and heap */
   SetUserManifest();
-
-  /* set stack */
   SetStack();
 }
