@@ -22,6 +22,8 @@
 #include "src/main/setup.h"
 #include "src/syscalls/daemon.h"
 #include "src/syscalls/ztrace.h"
+#include "src/loader/userspace.h"
+#include "src/loader/usermap.h"
 
 /*
  * read specified amount of bytes from given desc/offset to buffer

@@ -24,6 +24,8 @@
 #include "src/channels/channel.h"
 #include "src/syscalls/ztrace.h"
 #include "src/main/etag.h"
+#include "src/loader/userspace.h"
+#include "src/loader/usermap.h"
 
 #define QUANT MICRO_PER_SEC
 

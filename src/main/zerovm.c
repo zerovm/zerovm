@@ -25,6 +25,8 @@
 #include <assert.h>
 #include "src/platform/signal.h"
 #include "src/main/setup.h"
+#include "src/loader/userspace.h"
+#include "src/loader/usermap.h"
 #include "src/main/report.h"
 #include "src/platform/qualify.h"
 #include "src/main/accounting.h"

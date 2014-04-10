@@ -1,5 +1,5 @@
 /*
- * user space and call proxy management
+ * first part of user memory manager. controls user space and call proxy
  *
  * Copyright (c) 2012, LiteStack, Inc.
  *
@@ -31,5 +31,11 @@ void FreeUserSpace();
  * note: channels should be already set
  */
 void SetUserSpace(struct NaClApp *nap);
+
+/* preallocate memory area of given size. abort if fail */
+void PreallocateUserMemory(struct NaClApp *nap);
+
+/* serialize system data to user space */
+void SetSystemData(struct NaClApp *nap);
 
 #endif /* USERSPACE_H_ */

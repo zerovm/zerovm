@@ -20,9 +20,11 @@
  */
 
 #include <assert.h>
+#include <stdint.h>
 #include <sys/mman.h>
 #include "src/main/zlog.h"
-#include "src/main/setup.h"
+#include "src/main/config.h"
+#include "src/loader/usermap.h"
 
 int NaCl_page_alloc_intern_flags(void **p, size_t size, int map_flags)
 {

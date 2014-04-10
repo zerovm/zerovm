@@ -28,6 +28,8 @@
 #include "src/main/zlog.h"
 #include "src/main/setup.h"
 #include "src/syscalls/snapshot.h"
+#include "src/loader/userspace.h"
+#include "src/loader/usermap.h"
 
 #define R_FLAG (O_RDONLY)
 #define W_MODE (S_IRUSR | S_IWUSR)
