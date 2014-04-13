@@ -29,8 +29,13 @@
 #include "src/platform/sel_memory.h"
 
 /*
- * this module allocates user space. protects bumpers and NULL.
- * prepares trampoline and stack
+ * TODO(d'b): reconsider user manifest position. perhaps it worth to place
+ * it to the stack bottom
+ * pros:
+ *   - no need to recalculate and re-protect heap
+ *   - no need to recalculate and re-protect hole
+ * cons:
+ *   - reduction by 64kb..5mb of user stack (more likely by 64kb)
  */
 #define SIZE_84GB (2 * GUARDSIZE + FOURGIG)
 #define USER_PTR ((void*)0x440000000000)
@@ -43,7 +48,31 @@
 #define PROXY_PTR ((void*)0x5AFECA110000)
 #define PROXY_SIZE NACL_MAP_PAGESIZE
 #define PROXY_IDX 2
+#define PROXY_PATTERN \
+  0x48, 0xb8, 0xf4, 0xf4, 0xf4, 0xf4, 0xf4, 0xf4, 0xf4, 0xf4, 0xff, 0xe0
+#define NULL_SIZE 0x10000
+#define USER_PTR_SIZE sizeof(int32_t)
 
+/* should be kept in sync with struct ZVMChannel from api/zvm.h */
+struct ChannelSerialized
+{
+  int64_t limits[LimitsNumber];
+  int64_t size;
+  uint32_t type;
+  uint32_t name;
+};
+
+/* should be kept in sync with struct UserManifest from api/zvm.h*/
+struct UserManifestSerialized
+{
+  uint32_t heap_ptr;
+  uint32_t heap_size;
+  uint32_t stack_size;
+  int32_t channels_count;
+  uint32_t channels;
+};
+
+static intptr_t heap_end = 0;
 extern int SyscallSeg(); /* defined in to_trap.S */
 
 /* allocate and set call proxy */
@@ -51,6 +80,7 @@ static void MakeTrapProxy()
 {
   int i;
   void *p;
+  uint8_t pattern[] = { PROXY_PATTERN };
 
   /* allocate page for proxy */
   p = mmap(PROXY_PTR, PROXY_SIZE, PROT_WRITE, ABSOLUTE_MMAP, -1, 0);
@@ -59,12 +89,38 @@ static void MakeTrapProxy()
   /* populate proxy area with halts */
   memset(PROXY_PTR, NACL_HALT_OPCODE, PROXY_SIZE);
 
-  /* patch proxy with trap address */
-  *(uintptr_t*)(PROXY_PTR + PROXY_IDX) = (uintptr_t)&SyscallSeg;
+  /* patch pattern with trap address and update proxy */
+  *(uintptr_t*)(pattern + PROXY_IDX) = (uintptr_t)&SyscallSeg;
+  memcpy(PROXY_PTR, pattern, ARRAY_SIZE(pattern));
 
   /* change proxy protection */
   i = NaCl_mprotect(PROXY_PTR, PROXY_SIZE, PROT_READ | PROT_EXEC);
   ZLOGFAIL(0 != i, ENOMEM, "cannot set stack protection");
+}
+
+/* initialize trampoline using given thunk address */
+static void SetTrampoline()
+{
+  int i;
+  uint8_t pattern[] = { TRAMP_PATTERN };
+
+  /* change protection of area to RW */
+  i = NaCl_mprotect((void*)(MEM_START + NACL_TRAMPOLINE_START),
+      NACL_TRAMPOLINE_SIZE, PROT_READ | PROT_WRITE);
+  ZLOGFAIL(0 != i, ENOMEM, "cannot make trampoline writable");
+
+  /* create trampoline call pattern */
+  *(uintptr_t*)(pattern + TRAMP_IDX) = (uintptr_t)PROXY_PTR;
+
+  /* populate trampoline area with it */
+  for(i = 0; i < NACL_TRAMPOLINE_SIZE / ARRAY_SIZE(pattern); ++i)
+    memcpy((void*)(MEM_START + NACL_TRAMPOLINE_START) + i * ARRAY_SIZE(pattern),
+        pattern, ARRAY_SIZE(pattern));
+
+  /* change protection of area to RXL */
+  i = NaCl_mprotect((void*)(MEM_START + NACL_TRAMPOLINE_START),
+      NACL_TRAMPOLINE_SIZE, PROT_READ | PROT_EXEC | PROT_LOCK);
+  ZLOGFAIL(0 != i, ENOMEM, "cannot make trampoline executable");
 }
 
 /* free call proxy */
@@ -95,86 +151,27 @@ void FreeUserSpace()
   FreeTrapProxy();
 }
 
-/* initialize trampoline using given thunk address */
-static void SetTrampoline()
-{
-  int i;
-  uint8_t pattern[] = { TRAMP_PATTERN };
-
-  /* change protection of area to RW */
-  i = NaCl_mprotect((void*)(MEM_START + NACL_TRAMPOLINE_START),
-      NACL_TRAMPOLINE_SIZE, PROT_READ | PROT_WRITE);
-  ZLOGFAIL(0 != i, ENOMEM, "cannot make trampoline writable");
-
-  /* create trampoline call pattern */
-  *(uintptr_t*)(pattern + TRAMP_IDX) = (uintptr_t)PROXY_PTR;
-
-  /* populate trampoline area with it */
-  for(i = 0; i < NACL_TRAMPOLINE_SIZE / ARRAY_SIZE(pattern); ++i)
-    memcpy((char*)NACL_TRAMPOLINE_START + i * ARRAY_SIZE(pattern),
-        pattern, ARRAY_SIZE(pattern));
-
-  /* change protection of area to RX */
-  i = NaCl_mprotect((void*)(MEM_START + NACL_TRAMPOLINE_START),
-      NACL_TRAMPOLINE_SIZE, PROT_READ | PROT_EXEC);
-  ZLOGFAIL(0 != i, ENOMEM, "cannot make trampoline executable");
-
-  /* give kernel advice */
-  i = NaCl_madvise((void*)(MEM_START + NACL_TRAMPOLINE_START),
-      NACL_TRAMPOLINE_SIZE, MADV_WILLNEED);
-  ZLOGIF(i != 0, "cannot madvise trampoline");
-}
-
 /* initialize stack */
 static void SetStack()
 {
   int i;
 
-  /* change protection of stack to RW */
+  /* change protection of stack to RWL */
   i = NaCl_mprotect((void*)(MEM_START + FOURGIG - STACK_SIZE),
-      STACK_SIZE, PROT_READ | PROT_WRITE);
+      STACK_SIZE, PROT_READ | PROT_WRITE | PROT_LOCK);
   ZLOGFAIL(0 != i, ENOMEM, "cannot set stack protection");
-
-  /* give kernel advice */
-  i = NaCl_madvise((void*)(MEM_START + NACL_TRAMPOLINE_START),
-      NACL_TRAMPOLINE_SIZE, MADV_NORMAL);
-  ZLOGIF(i != 0, "cannot madvise stack");
 }
 
-//////////////////////////////////////////// refactor! {{
-#define USER_PTR_SIZE sizeof(int32_t)
-
-/* should be kept in sync with struct ZVMChannel from api/zvm.h */
-struct ChannelSerialized
-{
-  int64_t limits[LimitsNumber];
-  int64_t size;
-  uint32_t type;
-  uint32_t name;
-};
-
-/* should be kept in sync with struct UserManifest from api/zvm.h*/
-struct UserManifestSerialized
-{
-  uint32_t heap_ptr;
-  uint32_t heap_size;
-  uint32_t stack_size;
-  int32_t channels_count;
-  uint32_t channels;
-};
-
-static intptr_t heap_end = 0;
-
-void PreallocateUserMemory(struct NaClApp *nap)
+/* calculate and allocate user heap. abort if fail */
+/* TODO(d'b): should be refactored after "simple boot" will be done {{ */
+/* WARNING: should be called AFTER elf loaded until SEL will be removed */
+static void SetHeapTMP(struct NaClApp *nap)
 {
   uintptr_t i;
   int64_t heap;
   void *p;
 
-  assert(nap != NULL);
-  assert(nap->manifest != NULL);
-
-  /* quit function if "Memory" is not specified or invalid */
+  /* fail if memory size is invalid */
   ZLOGFAIL(nap->manifest->mem_size <= 0 || nap->manifest->mem_size > FOURGIG,
       ENOMEM, "invalid memory size");
 
@@ -182,9 +179,9 @@ void PreallocateUserMemory(struct NaClApp *nap)
   p = (void*)ROUNDUP_64K(nap->data_end);
   heap = nap->manifest->mem_size - STACK_SIZE;
   heap = ROUNDUP_64K(heap) - ROUNDUP_64K(nap->data_end);
-  ZLOGFAIL(heap <= LEAST_USER_HEAP_SIZE, ENOMEM, "user heap size is too small");
+  ZLOGFAIL(heap <= MIN_HEAP_SIZE, ENOMEM, "user heap size is too small");
 
-  /* since 4gb of user space is already allocated just set protection to the heap */
+  /* make heap RW */
   p = (void*)NaClUserToSys((uintptr_t)p);
   i = NaCl_mprotect(p, heap, PROT_READ | PROT_WRITE);
   ZLOGFAIL(0 != i, -i, "cannot set protection on user heap");
@@ -231,16 +228,16 @@ static void *CopyDown(void *area, char *name)
   return memcpy((char*)area - size, name, size);
 }
 
-/* protect user manifest */
+/* protect user manifest with RL */
 static void ProtectUserManifest(struct NaClApp *nap, void *mft)
 {
   uint64_t size;
 
   size = FOURGIG - STACK_SIZE - NaClSysToUser((uintptr_t)mft);
-  AlignAndProtect((uintptr_t) mft, size, PROT_READ);
+  AlignAndProtect((uintptr_t) mft, size, PROT_READ | PROT_LOCK);
 }
 
-void SetSystemData(struct NaClApp *nap)
+static void SetSystemData(struct NaClApp *nap)
 {
   struct Manifest *manifest;
   struct ChannelSerialized *channels;
@@ -308,15 +305,51 @@ void SetSystemData(struct NaClApp *nap)
 }
 
 /* set user manifest and initialize heap */
-static void SetUserManifest()
+static void SetManifest()
 {
-
+  /* TODO(d'b): wrapper. content of SetSystemData() should be moved here */
+  SetSystemData(gnap);
 }
-//////////////////////////////////////////// }}
 
-void SetUserSpace(struct NaClApp *nap)
+/* set user manifest and initialize heap */
+static void SetHeap()
+{
+  /* TODO(d'b): wrapper. content of SetHeapTMP() should be moved here */
+  SetHeapTMP(gnap);
+}
+
+/* ### set RX protection on user code */
+static void SetCode()
+{
+  int i;
+
+  /* change protection of area to RX */
+  i = NaCl_mprotect((void*)(MEM_START + NACL_TRAMPOLINE_START + NACL_TRAMPOLINE_SIZE),
+      gnap->static_text_end - NACL_TRAMPOLINE_SIZE - NULL_SIZE,
+      PROT_READ | PROT_EXEC);
+  ZLOGFAIL(0 != i, ENOMEM, "cannot set RX protection on user code");
+}
+
+/* ### set R protection on user R data */
+static void SetROData()
+{
+  int i;
+
+  /* change protection of area to R if read only data is non NULL */
+  if(gnap->data_start == 0) return;
+  i = NaCl_mprotect((void*)(MEM_START + gnap->rodata_start),
+      gnap->data_start - gnap->rodata_start, PROT_READ);
+  ZLOGFAIL(0 != i, ENOMEM, "cannot set R protection on user R data");
+}
+/* }} */
+
+void SetUserSpace()
 {
   SetTrampoline();
-  SetUserManifest();
   SetStack();
+  SetHeap();
+  ChannelsCtor(gnap->manifest); // ### find proper place and method to call it
+  SetManifest();
+  SetCode(); /* TODO(d'b): remove after "simple boot" will be done */
+  SetROData(); /* TODO(d'b): remove after "simple boot" will be done */
 }

@@ -177,23 +177,10 @@ int main(int argc, char **argv)
   (*((struct Gio *) &main_file)->vtbl->Dtor)((struct Gio *) &main_file);
   ZTrace("[snapshot deallocation]");
 
-  /* initialize all channels */
-  ChannelsCtor(nap->manifest);
-  ZLOGS(LOG_DEBUG, "channels constructed");
-  ZTrace("[channels mounting]");
-
-  /*
-   * allocate user heap. should be the last allocation in raw because
-   * after heap allocated there will be no free user memory
-   */
-  PreallocateUserMemory(nap);
-  ZLOGS(LOG_DEBUG, "user memory preallocated");
-  ZTrace("[user memory preallocation]");
-
-  /* set user manifest in user space */
-  SetSystemData(nap);
-  ZLOGS(LOG_DEBUG, "system data set");
-  ZTrace("[user manifest construction]");
+//  /* initialize all channels */
+//  ChannelsCtor(nap->manifest);
+//  ZLOGS(LOG_DEBUG, "channels constructed");
+//  ZTrace("[channels mounting]");
 
   /* lock restricted regions in user memory */
   LockRestrictedMemory();

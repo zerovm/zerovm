@@ -30,12 +30,6 @@ void FreeUserSpace();
  * trampoline [RX], heap [RW], manifest [RX] and stack [RW]
  * note: channels should be already set
  */
-void SetUserSpace(struct NaClApp *nap);
-
-/* preallocate memory area of given size. abort if fail */
-void PreallocateUserMemory(struct NaClApp *nap);
-
-/* serialize system data to user space */
-void SetSystemData(struct NaClApp *nap);
+void SetUserSpace();
 
 #endif /* USERSPACE_H_ */

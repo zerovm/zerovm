@@ -20,6 +20,7 @@
 #define USERMAP_H_
 
 #include <stdint.h>
+#include <sys/mman.h>
 
 #define USER_MAP_SIZE (FOURGIG / NACL_MAP_PAGESIZE)
 #define PROT_LOCK 0x8 /* protection of page cannot be changed */

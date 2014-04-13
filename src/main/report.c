@@ -306,15 +306,15 @@ void ReportDtor(int zvm_ret)
   Report(gnap);
   ZTrace("[report]");
   ChannelsDtor(gnap->manifest);
-  ZTrace("[channels destruction]");
-  NaClAppDtor(gnap); /* free user space and globals */
-  ZTrace("[untrusted context closing]");
+  ZTrace("[channels destructed]");
+  NaClAppDtor(gnap);
+  ZTrace("[untrusted context closed]");
   ManifestDtor(gnap->manifest); /* dispose manifest and channels */
-  ZTrace("[manifest deallocating]");
-  FreeDispatchThunk();
-  ZTrace("[thunk deallocating]");
+  ZTrace("[manifest deallocated]");
+  FreeUserSpace();
+  ZTrace("[user space deallocated]");
   ZLogDtor();
-  ZTrace("[zlog deallocating]");
+  ZTrace("[zlog deallocated]");
 
   /* free local resources and exit */
   g_string_free(digests, TRUE);

@@ -16,7 +16,6 @@
 
 #include <assert.h>
 #include <sys/resource.h>
-#include <sys/mman.h>
 #include "src/loader/usermap.h"
 #include "src/main/config.h"
 #include "src/platform/sel_memory.h"
@@ -38,13 +37,13 @@ void LockRestrictedMemory()
     if(user_map[i] == PROT_NONE)
       user_map[i] = PROT_LOCK;
 
-  /* stack */
-  memset(user_map + (FOURGIG - STACK_SIZE) / NACL_MAP_PAGESIZE,
-      PROT_READ |PROT_WRITE |PROT_LOCK, STACK_SIZE / NACL_MAP_PAGESIZE);
-
-  /* trampoline */
-  /* TODO(d'b): remove magic number */
-  user_map[1] |= PROT_LOCK;
+//  /* stack */
+//  memset(user_map + (FOURGIG - STACK_SIZE) / NACL_MAP_PAGESIZE,
+//      PROT_READ |PROT_WRITE |PROT_LOCK, STACK_SIZE / NACL_MAP_PAGESIZE);
+//
+//  /* trampoline */
+//  /* TODO(d'b): remove magic number */
+//  user_map[1] |= PROT_LOCK;
 
   /* TODO(d'b): manifest can be larger than 1 page. fix it! */
   user_map[(FOURGIG - STACK_SIZE - 1) / NACL_MAP_PAGESIZE] |= PROT_LOCK;

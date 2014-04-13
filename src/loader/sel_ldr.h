@@ -90,7 +90,7 @@ struct NaClApp {
 /* global variables */
 struct ThreadContext    *nacl_user; /* user registers storage */
 struct ThreadContext    *nacl_sys;  /* zerovm registers storage */
-struct NaClApp              *gnap;      /* pointer to global NaClApp object */
+struct NaClApp              *gnap;  /* pointer to global NaClApp object */
 
 /*
  * Initializes a NaCl application with the default parameters.
@@ -131,20 +131,20 @@ void PrintAppDetails(struct NaClApp *nap, int verbosity);
  */
 void CreateSession(struct NaClApp *nap);
 
-/*
- * Install syscall trampolines at all possible well-formed entry points
- * within the trampoline pages.  Many of these syscalls will correspond
- * to unimplemented system calls and will just abort the program.
- */
-void LoadTrampoline(struct NaClApp *nap);
-
-static const uintptr_t kNaClBadAddress = (uintptr_t) -1;
+///*
+// * Install syscall trampolines at all possible well-formed entry points
+// * within the trampoline pages.  Many of these syscalls will correspond
+// * to unimplemented system calls and will just abort the program.
+// */
+//void LoadTrampoline(struct NaClApp *nap);
+//
+//static const uintptr_t kNaClBadAddress = (uintptr_t) -1;
 
 #include "src/loader/sel_ldr-inl.h"
 
 void FillMemoryRegionWithHalt(void *start, size_t size);
 
-void FreeDispatchThunk();
+//void FreeDispatchThunk();
 
 int ThreadContextCtor(struct ThreadContext  *ntcp,
                       struct NaClApp        *nap,
