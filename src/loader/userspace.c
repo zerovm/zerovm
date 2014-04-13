@@ -36,8 +36,8 @@
  * cons:
  *   - reduction by 64kb..5mb of user stack (more likely by 64kb)
  */
-#define SIZE_84GB (2 * GUARDSIZE + FOURGIG)
-#define USER_PTR ((void*)0x440000000000)
+#define RELATIVE_MMAP (MAP_ANONYMOUS | MAP_NORESERVE | MAP_PRIVATE)
+#define ABSOLUTE_MMAP (RELATIVE_MMAP | MAP_FIXED)
 #define TRAMP_IDX 2
 #define TRAMP_PATTERN \
   0x48, 0xb8, 0xf4, 0xf4, 0xf4, 0xf4, 0xf4, 0xf4, \
@@ -134,11 +134,11 @@ void MakeUserSpace()
   void *p;
 
   /* get 84gb at the fixed address */
-  p = mmap(USER_PTR, SIZE_84GB, PROT_NONE, ABSOLUTE_MMAP, -1, 0);
-  ZLOGFAIL(USER_PTR != p, errno, "cannot allocate 84gb");
+  p = mmap((void*)UNTRUSTED_START, UNTRUSTED_SIZE, PROT_NONE, ABSOLUTE_MMAP, -1, 0);
+  ZLOGFAIL((void*)UNTRUSTED_START != p, errno, "cannot allocate 84gb");
 
   /* give advice to kernel */
-  i = madvise(USER_PTR, SIZE_84GB, MADV_DONTNEED);
+  i = madvise((void*)UNTRUSTED_START, UNTRUSTED_SIZE, MADV_DONTNEED);
   ZLOGIF(i != 0, "cannot madvise 84gb: %s", strerror(errno));
 
   MakeTrapProxy();
@@ -146,7 +146,7 @@ void MakeUserSpace()
 
 void FreeUserSpace()
 {
-  munmap(USER_PTR, 2 * GUARDSIZE + FOURGIG);
+  munmap((void*)UNTRUSTED_START, 2 * GUARDSIZE + FOURGIG);
   FreeTrapProxy();
 }
 

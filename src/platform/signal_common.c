@@ -76,8 +76,8 @@ static struct SignalNode s_SignalNodes[MAX_HANDLERS];
  */
 static int SignalContextIsUntrusted(const struct SignalContext *sigCtx)
 {
-  if(sigCtx->prog_ctr >= START_OF_USER_SPACE
-      && sigCtx->prog_ctr < END_OF_USER_SPACE) return 1;
+  if(sigCtx->prog_ctr >= UNTRUSTED_START
+      && sigCtx->prog_ctr < UNTRUSTED_END) return 1;
   return 0;
 }
 

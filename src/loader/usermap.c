@@ -54,7 +54,7 @@ void LockRestrictedMemory()
 /* return index of "addr" in user map */
 INLINE static int UserMapIndex(uintptr_t addr)
 {
-  return (addr - (uintptr_t)R15_CONST - GUARDSIZE) / NACL_MAP_PAGESIZE;
+  return (addr - UNTRUSTED_START - GUARDSIZE) / NACL_MAP_PAGESIZE;
 }
 
 int CheckUserMap(uintptr_t addr, uint32_t size, int prot)

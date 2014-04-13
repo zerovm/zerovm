@@ -21,6 +21,7 @@
 
 /*
  * NaCl Simple/secure ELF loader (NaCl SEL).
+ * TODO(d'b): NACL_* macros should be revised after finalizing "simple boot"
  *
  * NOTE: This header is ALSO included by assembler files and hence
  *       must not include any C code
@@ -129,15 +130,13 @@
 #define STACK_USER_DATA_SIZE     56
 
 /* d'b: macro definitions for the user space allocation */
-#define FOURGIG     (((size_t) 1) << 32)
+#define FOURGIG     (((size_t)1) << 32)
 #define GUARDSIZE   (10 * FOURGIG)
-#define R15_CONST   ((void*)0x440000000000)
-#define RELATIVE_MMAP (MAP_ANONYMOUS | MAP_NORESERVE | MAP_PRIVATE)
-#define ABSOLUTE_MMAP (RELATIVE_MMAP | MAP_FIXED)
-#define START_OF_USER_SPACE ((uintptr_t)R15_CONST)
-#define END_OF_USER_SPACE (START_OF_USER_SPACE + FOURGIG + 2 * GUARDSIZE)
+#define UNTRUSTED_START   0x440000000000
+#define UNTRUSTED_END (UNTRUSTED_START + FOURGIG + 2 * GUARDSIZE)
+#define UNTRUSTED_SIZE (UNTRUSTED_END - UNTRUSTED_START)
 #define MIN_HEAP_SIZE (8*1024*1024)
 #define STACK_SIZE 0x1000000
-#define MEM_START ((uintptr_t)R15_CONST + GUARDSIZE)
+#define MEM_START (UNTRUSTED_START + GUARDSIZE)
 
 #endif  /* CONFIG_H_ */
