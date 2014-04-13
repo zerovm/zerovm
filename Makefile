@@ -26,7 +26,7 @@ debug: CXXFLAGS1 := -DDEBUG -g $(CXXFLAGS1)
 debug: CXXFLAGS2 := -DDEBUG -g $(CXXFLAGS2)
 debug: create_dirs zerovm tests
 
-OBJS=obj/elf_util.o obj/gio.o obj/gio_snapshot.o obj/manifest.o obj/setup.o obj/channel.o obj/qualify.o obj/report.o obj/zlog.o obj/signal_common.o obj/signal.o obj/to_app.o obj/switch_to_app.o obj/to_trap.o obj/syscall_hook.o obj/prefetch.o obj/preload.o obj/sel_ldr.o obj/sel.o obj/sel_rt.o obj/tramp.o obj/trap.o obj/etag.o obj/accounting.o obj/daemon.o obj/snapshot.o obj/ztrace.o obj/userspace.o obj/usermap.o
+OBJS=obj/elf_util.o obj/gio.o obj/gio_snapshot.o obj/manifest.o obj/setup.o obj/channel.o obj/qualify.o obj/report.o obj/zlog.o obj/signal_common.o obj/signal.o obj/to_app.o obj/switch_to_app.o obj/to_trap.o obj/syscall_hook.o obj/prefetch.o obj/preload.o obj/sel_ldr.o obj/sel.o obj/sel_rt.o obj/trap.o obj/etag.o obj/accounting.o obj/daemon.o obj/snapshot.o obj/ztrace.o obj/userspace.o obj/usermap.o
 CC=@gcc
 CXX=@g++
 
@@ -94,9 +94,6 @@ obj/to_app.o: src/syscalls/to_app.S
 	$(CC) $(CCFLAGS2) -o $@ $^
 
 obj/to_trap.o: src/syscalls/to_trap.S
-	$(CC) $(CCFLAGS2) -o $@ $^
-
-obj/tramp.o: src/syscalls/tramp.S
 	$(CC) $(CCFLAGS2) -o $@ $^
 
 obj/zerovm.o: src/main/zerovm.c
