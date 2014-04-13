@@ -25,6 +25,9 @@
 #define USER_MAP_SIZE (FOURGIG / NACL_MAP_PAGESIZE)
 #define PROT_LOCK 0x8 /* protection of page cannot be changed */
 
+/* mprotect given region and update user map if needed */
+int Zmprotect(void *addr, size_t len, int prot);
+
 /* get user memory map */
 uint8_t *GetUserMap();
 

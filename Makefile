@@ -26,7 +26,7 @@ debug: CXXFLAGS1 := -DDEBUG -g $(CXXFLAGS1)
 debug: CXXFLAGS2 := -DDEBUG -g $(CXXFLAGS2)
 debug: create_dirs zerovm tests
 
-OBJS=obj/elf_util.o obj/gio.o obj/gio_snapshot.o obj/manifest.o obj/setup.o obj/channel.o obj/qualify.o obj/report.o obj/zlog.o obj/signal_common.o obj/signal.o obj/to_app.o obj/switch_to_app.o obj/to_trap.o obj/syscall_hook.o obj/prefetch.o obj/preload.o obj/sel_ldr.o obj/sel.o obj/sel_memory.o obj/sel_rt.o obj/tramp.o obj/trap.o obj/etag.o obj/accounting.o obj/daemon.o obj/snapshot.o obj/ztrace.o obj/userspace.o obj/usermap.o
+OBJS=obj/elf_util.o obj/gio.o obj/gio_snapshot.o obj/manifest.o obj/setup.o obj/channel.o obj/qualify.o obj/report.o obj/zlog.o obj/signal_common.o obj/signal.o obj/to_app.o obj/switch_to_app.o obj/to_trap.o obj/syscall_hook.o obj/prefetch.o obj/preload.o obj/sel_ldr.o obj/sel.o obj/sel_rt.o obj/tramp.o obj/trap.o obj/etag.o obj/accounting.o obj/daemon.o obj/snapshot.o obj/ztrace.o obj/userspace.o obj/usermap.o
 CC=@gcc
 CXX=@g++
 
@@ -52,11 +52,9 @@ tests/unit/manifest_parser_test: obj/manifest_parser_test.o $(OBJS)
 
 obj/sel_ldr_test.o: tests/unit/sel_ldr_test.cc
 	$(CXX) $(CXXFLAGS1) -o $@ $^
-obj/sel_memory_unittest.o: tests/unit/sel_memory_unittest.cc
-	$(CXX) $(CXXFLAGS1) -o $@ $^
 obj/unittest_main.o: tests/unit/unittest_main.cc
 	$(CXX) $(CXXFLAGS1) -o $@ $^
-tests/unit/service_runtime_tests: obj/sel_ldr_test.o obj/sel_memory_unittest.o obj/unittest_main.o $(OBJS)
+tests/unit/service_runtime_tests: obj/sel_ldr_test.o obj/unittest_main.o $(OBJS)
 	$(CXX) $(CXXFLAGS2) -o $@ $^ $(TESTLIBS)
 
 .PHONY: clean clean_intermediate install
@@ -123,9 +121,6 @@ obj/switch_to_app.o: src/syscalls/switch_to_app.c
 	$(CC) $(CCFLAGS1) -o $@ $^
 
 obj/sel_rt.o: src/loader/sel_rt.c
-	$(CC) $(CCFLAGS1) -o $@ $^
-
-obj/sel_memory.o: src/platform/sel_memory.c
 	$(CC) $(CCFLAGS1) -o $@ $^
 
 obj/signal.o: src/platform/signal.c

@@ -26,7 +26,6 @@
 #include "src/loader/userspace.h"
 #include "src/loader/usermap.h"
 #include "src/channels/channel.h"
-#include "src/platform/sel_memory.h"
 
 /*
  * TODO(d'b): reconsider user manifest position. perhaps it worth to place
@@ -94,7 +93,7 @@ static void MakeTrapProxy()
   memcpy(PROXY_PTR, pattern, ARRAY_SIZE(pattern));
 
   /* change proxy protection */
-  i = NaCl_mprotect(PROXY_PTR, PROXY_SIZE, PROT_READ | PROT_EXEC);
+  i = Zmprotect(PROXY_PTR, PROXY_SIZE, PROT_READ | PROT_EXEC);
   ZLOGFAIL(0 != i, ENOMEM, "cannot set stack protection");
 }
 
@@ -105,7 +104,7 @@ static void SetTrampoline()
   uint8_t pattern[] = { TRAMP_PATTERN };
 
   /* change protection of area to RW */
-  i = NaCl_mprotect((void*)(MEM_START + NACL_TRAMPOLINE_START),
+  i = Zmprotect((void*)(MEM_START + NACL_TRAMPOLINE_START),
       NACL_TRAMPOLINE_SIZE, PROT_READ | PROT_WRITE);
   ZLOGFAIL(0 != i, ENOMEM, "cannot make trampoline writable");
 
@@ -118,7 +117,7 @@ static void SetTrampoline()
         pattern, ARRAY_SIZE(pattern));
 
   /* change protection of area to RXL */
-  i = NaCl_mprotect((void*)(MEM_START + NACL_TRAMPOLINE_START),
+  i = Zmprotect((void*)(MEM_START + NACL_TRAMPOLINE_START),
       NACL_TRAMPOLINE_SIZE, PROT_READ | PROT_EXEC | PROT_LOCK);
   ZLOGFAIL(0 != i, ENOMEM, "cannot make trampoline executable");
 }
@@ -139,8 +138,8 @@ void MakeUserSpace()
   ZLOGFAIL(USER_PTR != p, errno, "cannot allocate 84gb");
 
   /* give advice to kernel */
-  i = NaCl_madvise(USER_PTR, SIZE_84GB, MADV_DONTNEED);
-  ZLOGIF(i != 0, "cannot madvise 84gb");
+  i = madvise(USER_PTR, SIZE_84GB, MADV_DONTNEED);
+  ZLOGIF(i != 0, "cannot madvise 84gb: %s", strerror(errno));
 
   MakeTrapProxy();
 }
@@ -157,7 +156,7 @@ static void SetStack()
   int i;
 
   /* change protection of stack to RWL */
-  i = NaCl_mprotect((void*)(MEM_START + FOURGIG - STACK_SIZE),
+  i = Zmprotect((void*)(MEM_START + FOURGIG - STACK_SIZE),
       STACK_SIZE, PROT_READ | PROT_WRITE | PROT_LOCK);
   ZLOGFAIL(0 != i, ENOMEM, "cannot set stack protection");
 }
@@ -183,7 +182,7 @@ static void SetHeapTMP(struct NaClApp *nap)
 
   /* make heap RW */
   p = (void*)NaClUserToSys((uintptr_t)p);
-  i = NaCl_mprotect(p, heap, PROT_READ | PROT_WRITE);
+  i = Zmprotect(p, heap, PROT_READ | PROT_WRITE);
   ZLOGFAIL(0 != i, -i, "cannot set protection on user heap");
   heap_end = NaClSysToUser((uintptr_t)p + heap);
 }
@@ -207,7 +206,7 @@ static void AlignAndProtect(uintptr_t area, int64_t size, int prot)
   page_ptr = ROUNDDOWN_64K(area);
   aligned_size = ROUNDUP_64K(size + (area - page_ptr));
 
-  code = NaCl_mprotect((void*)page_ptr, aligned_size, prot);
+  code = Zmprotect((void*)page_ptr, aligned_size, prot);
   ZLOGFAIL(0 != code, code, "cannot protect 0x%x of %d bytes with %d",
       page_ptr, aligned_size, prot);
 }
@@ -318,26 +317,27 @@ static void SetHeap()
   SetHeapTMP(gnap);
 }
 
-/* ### set RX protection on user code */
+/* set RX protection on user code */
 static void SetCode()
 {
   int i;
 
   /* change protection of area to RX */
-  i = NaCl_mprotect((void*)(MEM_START + NACL_TRAMPOLINE_START + NACL_TRAMPOLINE_SIZE),
+  /* TODO(d'b): will be removed after finishing "simple boot" */
+  i = Zmprotect((void*)(MEM_START + NACL_TRAMPOLINE_START + NACL_TRAMPOLINE_SIZE),
       gnap->static_text_end - NACL_TRAMPOLINE_SIZE - NULL_SIZE,
       PROT_READ | PROT_EXEC);
   ZLOGFAIL(0 != i, ENOMEM, "cannot set RX protection on user code");
 }
 
-/* ### set R protection on user R data */
+/* set R protection on user R data */
 static void SetROData()
 {
   int i;
 
   /* change protection of area to R if read only data is non NULL */
   if(gnap->data_start == 0) return;
-  i = NaCl_mprotect((void*)(MEM_START + gnap->rodata_start),
+  i = Zmprotect((void*)(MEM_START + gnap->rodata_start),
       gnap->data_start - gnap->rodata_start, PROT_READ);
   ZLOGFAIL(0 != i, ENOMEM, "cannot set R protection on user R data");
 }

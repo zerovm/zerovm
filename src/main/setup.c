@@ -20,7 +20,7 @@
 #include <sys/resource.h>
 #include <sys/mman.h>
 #include "src/loader/sel_ldr.h"
-#include "src/platform/sel_memory.h"
+#include "src/loader/usermap.h"
 #include "src/main/setup.h"
 #include "src/channels/channel.h"
 
@@ -55,4 +55,3 @@ void LastDefenseLine(struct Manifest *manifest)
   LowerOwnPriority();
   GiveUpPrivileges();
 }
-

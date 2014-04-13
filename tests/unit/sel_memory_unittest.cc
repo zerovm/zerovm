@@ -67,16 +67,16 @@ TEST_F(SelMemoryBasic, mprotect) {
   // we cannot use gUnit to test the protection. We might want to add some
   // internal processing (based on SEH/signals) at some stage
 
-  res = NaCl_mprotect(p, size, PROT_READ |PROT_WRITE);
+  res = Zmprotect(p, size, PROT_READ |PROT_WRITE);
   EXPECT_EQ(0, res);
   addr = reinterpret_cast<char*>(p);
   addr[0] = '5';
 
-  res = NaCl_mprotect(p, size, PROT_READ);
+  res = Zmprotect(p, size, PROT_READ);
   EXPECT_EQ(0, res);
   EXPECT_EQ('5', addr[0]);
 
-  res = NaCl_mprotect(p, size, PROT_READ|PROT_WRITE|PROT_EXEC);
+  res = Zmprotect(p, size, PROT_READ|PROT_WRITE|PROT_EXEC);
 
   NaCl_page_free(p, size);
 }

@@ -15,13 +15,26 @@
  */
 
 #include <assert.h>
+#include <errno.h>
 #include <sys/resource.h>
 #include "src/loader/usermap.h"
 #include "src/main/config.h"
-#include "src/platform/sel_memory.h"
+#include "src/main/zlog.h"
+#include "src/main/tools.h"
 
 /* contains PROT_* bits of user pages */
 static uint8_t user_map[USER_MAP_SIZE];
+
+int Zmprotect(void *addr, size_t len, int prot)
+{
+  int result = mprotect(addr, len, prot);
+  if(result != 0) return -errno;
+
+  if(addr >= (void*)MEM_START && addr + len <= (void*)MEM_START + FOURGIG)
+    result = UpdateUserMap((uintptr_t)addr, len, prot);
+
+  return result == 0 ? 0 : -EFAULT;
+}
 
 uint8_t *GetUserMap()
 {

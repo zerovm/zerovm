@@ -18,7 +18,6 @@
 #include <sys/mman.h>
 #include "src/channels/channel.h"
 #include "src/main/report.h"
-#include "src/platform/sel_memory.h"
 #include "src/main/setup.h"
 #include "src/syscalls/daemon.h"
 #include "src/syscalls/ztrace.h"
@@ -173,7 +172,7 @@ static int32_t ZVMProtHandle(uintptr_t addr, uint32_t size, int prot)
     case PROT_READ:
     case PROT_WRITE:
     case PROT_READ | PROT_WRITE:
-      if(NaCl_mprotect((void*)sysaddr, size, prot) != 0)
+      if(Zmprotect((void*)sysaddr, size, prot) != 0)
         result = -errno;
       break;
 
@@ -191,7 +190,7 @@ static int32_t ZVMProtHandle(uintptr_t addr, uint32_t size, int prot)
         result = -EPERM;
       /* validation ok, changing protection */
       else
-        if(NaCl_mprotect((void*)sysaddr, size, prot) != 0)
+        if(Zmprotect((void*)sysaddr, size, prot) != 0)
           result = -errno;
       break;
 

@@ -23,8 +23,8 @@
 #include <sys/mman.h>
 #include "src/loader/elf_util.h"
 #include "src/syscalls/switch_to_app.h"
-#include "src/platform/sel_memory.h"
 #include "src/loader/userspace.h"
+#include "src/loader/usermap.h"
 
 /*
  * Fill from static_text_end to end of that page with halt
@@ -130,6 +130,7 @@ static int AddrIsValidEntryPt(struct NaClApp *nap, uintptr_t addr)
   return addr < nap->static_text_end;
 }
 
+// ### MakeUserSpace() and SetUserSpace() calls should be extracted
 void AppLoadFile(struct Gio *gp, struct NaClApp *nap)
 {
   uintptr_t rodata_end;
@@ -187,14 +188,14 @@ void AppLoadFile(struct Gio *gp, struct NaClApp *nap)
   CheckAddressSpaceLayoutSanity(nap, rodata_end, data_end, max_vaddr);
 
   ZLOGS(LOG_DEBUG, "Allocating address space");
-  MakeUserSpace();
+  MakeUserSpace(); // ###
 
   /*
    * Make sure the static image pages are marked writable before we try
    * to write them.
    */
   ZLOGS(LOG_DEBUG, "Loading into memory");
-  err = NaCl_mprotect((void*)MEM_START + NACL_TRAMPOLINE_START,
+  err = Zmprotect((void*)MEM_START + NACL_TRAMPOLINE_START,
       ROUNDUP_64K(nap->data_end) - NACL_TRAMPOLINE_START,
       PROT_READ | PROT_WRITE);
   ZLOGFAIL(0 != err, EFAULT, "Failed to make image pages writable. errno = %d", err);
@@ -217,7 +218,7 @@ void AppLoadFile(struct Gio *gp, struct NaClApp *nap)
   InitSwitchToApp(nap);
 
   ZLOGS(LOG_DEBUG, "Applying memory protection");
-  SetUserSpace();
+  SetUserSpace(); // ###
 
   ZLOGS(LOG_DEBUG, "AppLoadFile done");
   LogAddressSpaceLayout(nap);
