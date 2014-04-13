@@ -28,7 +28,7 @@
 /* get user memory map */
 uint8_t *GetUserMap();
 
-/* lock user pages of: NULL, trampoline, hole, user manifest, stack */
+/* lock NULL and hole */
 void LockRestrictedMemory();
 
 /*

@@ -24,7 +24,6 @@
 #include "src/loader/elf_util.h"
 #include "src/syscalls/switch_to_app.h"
 #include "src/platform/sel_memory.h"
-#include "src/loader/sel_addrspace.h"
 #include "src/loader/userspace.h"
 
 /*
@@ -188,7 +187,6 @@ void AppLoadFile(struct Gio *gp, struct NaClApp *nap)
   CheckAddressSpaceLayoutSanity(nap, rodata_end, data_end, max_vaddr);
 
   ZLOGS(LOG_DEBUG, "Allocating address space");
-//  AllocAddrSpace(nap);
   MakeUserSpace();
 
   /*
@@ -218,11 +216,7 @@ void AppLoadFile(struct Gio *gp, struct NaClApp *nap)
   ZLOGS(LOG_DEBUG, "Initializing arch switcher");
   InitSwitchToApp(nap);
 
-//  ZLOGS(LOG_DEBUG, "Installing trampoline");
-//  LoadTrampoline(nap);
-
   ZLOGS(LOG_DEBUG, "Applying memory protection");
-//  MemoryProtection(nap);
   SetUserSpace();
 
   ZLOGS(LOG_DEBUG, "AppLoadFile done");

@@ -131,20 +131,9 @@ void PrintAppDetails(struct NaClApp *nap, int verbosity);
  */
 void CreateSession(struct NaClApp *nap);
 
-///*
-// * Install syscall trampolines at all possible well-formed entry points
-// * within the trampoline pages.  Many of these syscalls will correspond
-// * to unimplemented system calls and will just abort the program.
-// */
-//void LoadTrampoline(struct NaClApp *nap);
-//
-//static const uintptr_t kNaClBadAddress = (uintptr_t) -1;
-
 #include "src/loader/sel_ldr-inl.h"
 
 void FillMemoryRegionWithHalt(void *start, size_t size);
-
-//void FreeDispatchThunk();
 
 int ThreadContextCtor(struct ThreadContext  *ntcp,
                       struct NaClApp        *nap,
