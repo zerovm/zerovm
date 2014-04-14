@@ -43,11 +43,7 @@ void ZTraceCtor(const char *name)
   /* set ztrace file name */
   if(ztrace_name == NULL && name == NULL) return;
   if(ztrace_name == NULL)
-  {
-    ZLOGFAIL(!g_path_is_absolute(name), EFAULT,
-        "ztrace path should be absolute: %s", name);
     ztrace_name = g_strdup(name);
-  }
 
   /* open ztrace file */
   ztrace_log = fopen(ztrace_name, "a");
