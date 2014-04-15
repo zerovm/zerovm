@@ -107,19 +107,6 @@ typedef enum {
  */
 static int cline = 0;
 
-/* get manifest data */
-static void GetManifestData(const char *name, char *buf)
-{
-  int size;
-  FILE *h = fopen(name, "r");
-
-  ZLOGFAIL(h == NULL, ENOENT, "manifest: %s", strerror(errno));
-  size = fread(buf, 1, MANIFEST_SIZE_LIMIT, h);
-  ZLOGFAIL(size < 1, EIO, "manifest: %s", strerror(errno));
-  ZLOGFAIL(size < MIN_MFT_SIZE, EFAULT, "manifest is too small");
-  fclose(h);
-}
-
 int64_t ToInt(char *a)
 {
   int64_t result;
@@ -316,8 +303,16 @@ struct Manifest *ManifestTextCtor(char *text)
 
 struct Manifest *ManifestCtor(const char *name)
 {
+  int size;
   char buf[MANIFEST_SIZE_LIMIT] = {0};
-  GetManifestData(name, buf);
+  FILE *h = fopen(name, "r");
+
+  ZLOGFAIL(h == NULL, ENOENT, "manifest: %s", strerror(errno));
+  size = fread(buf, 1, MANIFEST_SIZE_LIMIT, h);
+  ZLOGFAIL(size < 1, EIO, "manifest: %s", strerror(errno));
+  ZLOGFAIL(size < MIN_MFT_SIZE, EFAULT, "manifest is too small");
+  fclose(h);
+
   return ManifestTextCtor(buf);
 }
 

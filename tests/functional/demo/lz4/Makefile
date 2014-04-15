@@ -12,4 +12,4 @@ all: $(NAME).c lz4.c
 	@./lz4demo -t output.lz4
 
 clean:
-	rm -f $(NAME).nexe $(NAME).o lz4.o *.log *.lz4 *.data *.manifest nvram*
+	rm -f $(NAME).nexe $(NAME).o lz4.o *.log *.lz4 *.data *.manifest nvram* *.trc

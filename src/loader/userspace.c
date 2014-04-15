@@ -348,7 +348,6 @@ void SetUserSpace()
   SetTrampoline();
   SetStack();
   SetHeap();
-  ChannelsCtor(gnap->manifest); // ### find proper place and method to call it
   SetManifest();
   SetCode(); /* TODO(d'b): remove after "simple boot" will be done */
   SetROData(); /* TODO(d'b): remove after "simple boot" will be done */

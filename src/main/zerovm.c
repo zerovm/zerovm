@@ -61,7 +61,6 @@ static void CommandLine(int argc, char **argv)
 static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
 {
   int opt;
-  char *manifest_name = NULL;
   int64_t psize;
 
   /* construct logger with default verbosity */
@@ -74,9 +73,9 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
     {
       case 1:
       case 'M':
-        if(manifest_name != NULL)
+        if(nap->manifest != NULL)
           BADCMDLINE("2nd manifest encountered");
-        manifest_name = optarg;
+        nap->manifest = ManifestCtor(optarg);
         break;
       case 's':
         skip_validation = 1;
@@ -89,7 +88,6 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
         ReportMode(ToInt(optarg));
         break;
       case 'v':
-        ZLogDtor();
         ZLogCtor(ToInt(optarg));
         break;
       case 'Q':
@@ -110,8 +108,7 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
   }
 
   /* parse manifest file specified in command line */
-  if(manifest_name == NULL) BADCMDLINE(NULL);
-  nap->manifest = ManifestCtor(manifest_name);
+  if(nap->manifest == NULL) BADCMDLINE(NULL);
 
   /* set available nap and manifest fields */
   ZLOGFAIL(nap->manifest->program == NULL, EFAULT, "program not specified");
@@ -125,7 +122,7 @@ static void ValidateProgram(struct NaClApp *nap)
   int64_t static_size;
   uint8_t* static_addr;
 
-  assert((nap->static_text_end | MEM_START) > 0);
+  assert(nap->static_text_end > 0);
 
   /* static and dynamic text address / length */
   static_size = nap->static_text_end -
@@ -161,6 +158,12 @@ int main(int argc, char **argv)
       ENOENT, "Cannot open '%s'. %s", nap->manifest->program, strerror(errno));
   ZTrace("[memory snapshot]");
 
+  /* initialize all channels */
+  /* TODO(d'b): should be done *after* validation */
+  ChannelsCtor(nap->manifest);
+  ZLOGS(LOG_DEBUG, "channels constructed");
+  ZTrace("[channels mounting]");
+
   /* validate program structure (check elf header and segments) */
   ZLOGS(LOG_DEBUG, "Loading %s", nap->manifest->program);
   AppLoadFile((struct Gio *) &main_file, nap);
@@ -176,11 +179,6 @@ int main(int argc, char **argv)
     ZLOG(LOG_ERROR, "Error while closing '%s'", nap->manifest->program);
   (*((struct Gio *) &main_file)->vtbl->Dtor)((struct Gio *) &main_file);
   ZTrace("[snapshot deallocation]");
-
-//  /* initialize all channels */
-//  ChannelsCtor(nap->manifest);
-//  ZLOGS(LOG_DEBUG, "channels constructed");
-//  ZTrace("[channels mounting]");
 
   /* lock restricted regions in user memory */
   LockRestrictedMemory();

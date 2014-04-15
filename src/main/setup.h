@@ -25,7 +25,7 @@ EXTERN_C_BEGIN
 
 #define ZEROVM_PRIORITY 19
 #define HELP_SCREEN /* update command line switches here */\
-    "%s%s\033[1m\033[37mZeroVM tag%d\033[0m lightweight VM manager, build 2014-04-10\n"\
+    "%s%s\033[1m\033[37mZeroVM tag%d\033[0m lightweight VM manager, build 2014-04-15\n"\
     "Usage: <manifest> [-v#] [-T#] [-stFPQ]\n\n"\
     " -s skip validation\n"\
     " -t <0..2> report to stdout/log/fast (default 0)\n"\
