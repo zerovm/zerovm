@@ -76,8 +76,9 @@ static void UpdateSession(struct Manifest *manifest)
   SignalHandlerFini();
   SignalHandlerInit();
   ReportCtor();
-  ReportMode(3);
-  SetReportHandle(client);
+  ReportSetupPtr()->mode = 3;
+  ReportSetupPtr()->handle = client;
+
   ZTraceCtor(NULL);
   ZLOG(LOG_INSANE, "signals, report, log and trace reinitialized");
 
@@ -191,7 +192,7 @@ static int Daemonize(struct NaClApp *nap)
   g_free(bname);
   g_free(name);
 
-  SetCmdString(g_string_new("command = daemonic"));
+  ReportSetupPtr()->cmd = "command = daemonic";
   return sock;
 }
 
@@ -203,10 +204,10 @@ int Daemon(struct NaClApp *nap)
 
   /* can the daemon be started? */
   if(nap->manifest->job == NULL) return -1;
-  ZLOGFAIL(GetExitCode(), EFAULT, "broken session");
+  ZLOGFAIL(ReportSetupPtr()->zvm_code != 0, EFAULT, "broken session");
 
   /* report the daemon mode launched */
-  SetDaemonState(1);
+  ReportSetupPtr()->daemon_state = 1;
 
   /* finalize user session */
   umask(0);
@@ -214,7 +215,7 @@ int Daemon(struct NaClApp *nap)
   if(pid != 0) return 0;
 
   /* forked sessions are not in daemon mode */
-  SetDaemonState(0);
+  ReportSetupPtr()->daemon_state = 0;
   sock = Daemonize(nap);
 
   for(;;)

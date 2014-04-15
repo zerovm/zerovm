@@ -40,10 +40,6 @@
         msg == NULL ? "" : "\n", TAG_ENCRYPTION); exit(EINVAL); \
   } while(0)
 
-static int skip_qualification = 0;
-static int skip_validation = 0;
-static int quit_after_load = 0;
-
 /* log zerovm command line. note: delegates g_string_free to report */
 static void CommandLine(int argc, char **argv)
 {
@@ -53,15 +49,16 @@ static void CommandLine(int argc, char **argv)
   while(*argv != NULL)
     g_string_append_printf(cmd, " %s", *argv++);
 
-  SetCmdString(cmd);
-  ZLOGS(LOG_DEBUG, "%s", cmd);
+  ZLOGS(LOG_DEBUG, "%s", cmd->str);
+  ReportSetupPtr()->cmd = g_strdup(cmd->str);
+  g_string_free(cmd, TRUE);
 }
 
 /* parse given command line, manifest and initialize NaClApp object */
 static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
 {
   int opt;
-  int64_t psize;
+  char *manifest = NULL;
 
   /* construct logger with default verbosity */
   ZLogCtor(LOG_ERROR);
@@ -73,33 +70,34 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
     {
       case 1:
       case 'M':
-        if(nap->manifest != NULL)
+        if(manifest != NULL)
           BADCMDLINE("2nd manifest encountered");
-        nap->manifest = ManifestCtor(optarg);
+        manifest = optarg;
         break;
       case 's':
-        skip_validation = 1;
+        CommandPtr()->skip_validation = 1;
         ZLOGS(LOG_ERROR, "VALIDATION DISABLED");
         break;
       case 'F':
-        quit_after_load = 1;
+        CommandPtr()->quit_after_load = 1;
         break;
       case 't':
-        ReportMode(ToInt(optarg));
+        CommandPtr()->report_mode = ToInt(optarg);
         break;
       case 'v':
+        CommandPtr()->zlog_verbosity = ToInt(optarg);
         ZLogCtor(ToInt(optarg));
         break;
       case 'Q':
-        skip_qualification = 1;
+        CommandPtr()->skip_qualification = 1;
         ZLOGS(LOG_ERROR, "PLATFORM QUALIFICATION DISABLED");
         break;
       case 'P':
+        CommandPtr()->preload_allocation_disable = 1;
         ZLOGS(LOG_ERROR, "DISK SPACE PREALLOCATION DISABLED");
-        PreloadAllocationDisable();
         break;
       case 'T':
-        ZTraceCtor(optarg);
+        CommandPtr()->ztrace_name = g_strdup(optarg);
         break;
       default:
         BADCMDLINE(NULL);
@@ -107,13 +105,9 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
     }
   }
 
-  /* parse manifest file specified in command line */
-  if(nap->manifest == NULL) BADCMDLINE(NULL);
-
-  /* set available nap and manifest fields */
-  ZLOGFAIL(nap->manifest->program == NULL, EFAULT, "program not specified");
-  psize = GetFileSize(nap->manifest->program);
-  ZLOGFAIL(psize < 0, ENOENT, "program open error");
+  /* initialize session */
+  if(manifest == NULL) BADCMDLINE(NULL);
+  nap->manifest = ManifestCtor(manifest);
 }
 
 static void ValidateProgram(struct NaClApp *nap)
@@ -134,9 +128,9 @@ static void ValidateProgram(struct NaClApp *nap)
     status = NaClSegmentValidates(static_addr, static_size, nap->initial_entry_pt);
 
   /* set results */
-  SetValidationState(1);
+  ReportSetupPtr()->validation_state = 1;
   ZLOGFAIL(status == 0, ENOEXEC, "validation failed");
-  SetValidationState(0);
+  ReportSetupPtr()->validation_state = 0;
 }
 
 int main(int argc, char **argv)
@@ -150,7 +144,8 @@ int main(int argc, char **argv)
   ParseCommandLine(nap, argc, argv);
 
   /* We use the signal handler to verify a signal took place. */
-  if(skip_qualification == 0) RunSelQualificationTests();
+  if(CommandPtr()->skip_qualification == 0)
+    RunSelQualificationTests();
   SignalHandlerInit();
 
   /* read elf into memory */
@@ -171,7 +166,8 @@ int main(int argc, char **argv)
 
   /* validate given program (ensure that text segment is safe) */
   ZLOGS(LOG_DEBUG, "Validating %s", nap->manifest->program);
-  if(!skip_validation) ValidateProgram(nap);
+  if(CommandPtr()->skip_validation == 0)
+    ValidateProgram(nap);
   ZTrace("[user module validation]");
 
   /* free snapshot */
@@ -190,9 +186,9 @@ int main(int argc, char **argv)
   LastDefenseLine(nap->manifest);
 
   /* quit if fuzz testing specified */
-  if(quit_after_load)
+  if(CommandPtr()->quit_after_load)
   {
-    SetExitState(OK_STATE);
+    ReportSetupPtr()->zvm_state = OK_STATE;
     ReportDtor(0);
   }
   ZTrace("[last preparations]");

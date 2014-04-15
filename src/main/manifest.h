@@ -77,6 +77,20 @@ struct Manifest {
   GPtrArray *channels; /* all elements are (ChannelDesc*) */
 };
 
+/* zerovm command line structure */
+struct Command {
+  uint8_t skip_validation;
+  uint8_t quit_after_load;
+  uint8_t skip_qualification;
+  uint8_t preload_allocation_disable;
+  uint8_t report_mode;
+  uint8_t zlog_verbosity;
+  char *ztrace_name; /* should be deallocated after usage */
+};
+
+/* returns zerovm command line structure. TODO(d'b): better solution? */
+struct Command *CommandPtr();
+
 /* de-serialize manifest from the given file */
 struct Manifest *ManifestCtor(const char *name);
 

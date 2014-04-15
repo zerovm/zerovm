@@ -36,7 +36,7 @@
 #define REPORT_ETAG "etag(s) = "
 #define REPORT_ACCOUNTING "accounting = "
 #define REPORT_STATE "exit state = "
-#define REPORT_CMD cmd->str
+#define REPORT_CMD ReportSetupPtr()->cmd
 #define EOL "\r"
 #else
 #define REPORT_VALIDATOR ""
@@ -50,68 +50,19 @@
 #endif
 
 /*
- * 0: to /dev/stdout, 1: to syslog, 2: (0) + fast reports, 3: to socket
  * TODO(d'b): fast reports should be cut from report output
- * TODO(d'b): report outputs should be enumerated (magic numbers to remove)
+ * TODO(d'b): "digests" can be removed with its logic since only use is memory
  */
-static int report_mode = 0;
-static int zvm_code = 0;
-static int user_code = 0;
-static int validation_state = 2;
-static int daemon_state = 0;
-static char *zvm_state = NULL;
 static GString *digests = NULL; /* cumulative etags */
-static GString *cmd = NULL;
-static int report_handle = STDOUT_FILENO;
 
-void SetReportHandle(int handle)
+struct ReportSetup *ReportSetupPtr()
 {
-  report_handle = handle;
-}
-
-void ReportMode(int mode)
-{
-  report_mode = mode;
-}
-
-void SetExitState(const char *state)
-{
-  g_free(zvm_state);
-  zvm_state = g_strdup(state);
-}
-
-void SetExitCode(int code)
-{
-  /* only the 1st error matters */
-  if(zvm_code == 0) zvm_code = code;
-}
-
-int GetExitCode()
-{
-  return zvm_code;
-}
-
-void SetUserCode(int code)
-{
-  user_code = code;
-}
-
-void SetValidationState(int state)
-{
-  validation_state = state;
-}
-
-void SetDaemonState(int state)
-{
-  daemon_state = state;
-}
-
-void SetCmdString(GString *s)
-{
-  cmd = s;
+    static struct ReportSetup report;
+  return &report;
 }
 
 /* log user memory map */
+/* TODO(d'b): rewrite or remove. this function spams syslog */
 static void LogMemMap()
 {
   int i;
@@ -202,10 +153,10 @@ static void OutputReport(char *r)
   char *p = NULL;
   int size = strlen(r);
 
-#define REPORT(p) ZLOGIF(write(report_handle, p, size) != size, \
+#define REPORT(p) ZLOGIF(write(ReportSetupPtr()->handle, p, size) != size, \
   "report write error %d: %s", errno, strerror(errno))
 
-  switch(report_mode)
+  switch(ReportSetupPtr()->handle)
   {
     case 3: /* unix socket */
       p = g_strdup_printf("0x%06x%s", size, r);
@@ -220,7 +171,7 @@ static void OutputReport(char *r)
       ZLOGS(LOG_ERROR, "%s", r);
       break;
     default:
-      ZLOG(LOG_ERROR, "invalid report mode %d", report_mode);
+      ZLOG(LOG_ERROR, "invalid report mode %d", ReportSetupPtr()->mode);
       break;
   }
 #undef REPORT
@@ -228,7 +179,7 @@ static void OutputReport(char *r)
 
 void FastReport(struct NaClApp *nap)
 {
-  char *eol = report_mode == 1 ? "; " : EOL;
+  char *eol = ReportSetupPtr()->mode == 1 ? "; " : EOL;
   static int64_t start = 0;
   int64_t now = 0;
   struct timeval t;
@@ -236,7 +187,7 @@ void FastReport(struct NaClApp *nap)
   char *r = NULL;
 
   /* skip fast report if specified */
-  if(report_mode != 2) return;
+  if(ReportSetupPtr()->mode != 2) return;
 
   /* check if it is time to report */
   gettimeofday(&t, NULL);
@@ -258,13 +209,13 @@ void FastReport(struct NaClApp *nap)
 void Report(struct NaClApp *nap)
 {
   GString *r = g_string_sized_new(BIG_ENOUGH_STRING);
-  char *eol = report_mode == 1 ? "; " : "\n";
+  char *eol = ReportSetupPtr()->mode == 1 ? "; " : "\n";
   char *acc = Accounting(nap->manifest);
 
   /* report validator state and user return code */
-  REPORT(r, "%s%d%s", REPORT_VALIDATOR, validation_state, eol);
-  REPORT(r, "%s%d%s", REPORT_DAEMON, daemon_state, eol);
-  REPORT(r, "%s%d%s", REPORT_RETCODE, user_code, eol);
+  REPORT(r, "%s%d%s", REPORT_VALIDATOR, ReportSetupPtr()->validation_state, eol);
+  REPORT(r, "%s%d%s", REPORT_DAEMON, ReportSetupPtr()->daemon_state, eol);
+  REPORT(r, "%s%lu%s", REPORT_RETCODE, ReportSetupPtr()->user_code, eol);
 
   /* add memory digest to cumulative digests if asked */
   if(nap != NULL && nap->manifest != NULL)
@@ -278,10 +229,11 @@ void Report(struct NaClApp *nap)
   g_string_truncate(r, r->len - 1);
 
   /* report accounting and session message */
-  if(zvm_state == NULL) zvm_state = UNKNOWN_STATE;
+  if(ReportSetupPtr()->zvm_state == NULL)
+    ReportSetupPtr()->zvm_state = UNKNOWN_STATE;
   REPORT(r, "%s%s%s%s", eol, REPORT_ACCOUNTING, acc, eol);
-  REPORT(r, "%s%s%s", REPORT_STATE,
-      zvm_state == NULL ? UNKNOWN_STATE : zvm_state, eol);
+  REPORT(r, "%s%s%s", REPORT_STATE, ReportSetupPtr()->zvm_state == NULL
+      ? UNKNOWN_STATE : ReportSetupPtr()->zvm_state, eol);
   REPORT(r, "%s%s", REPORT_CMD, eol);
   OutputReport(r->str);
 
@@ -291,14 +243,14 @@ void Report(struct NaClApp *nap)
 
 void ReportDtor(int zvm_ret)
 {
-  SetExitCode(zvm_ret);
+  ReportSetupPtr()->zvm_code = zvm_ret;
 
   /* broken session */
-  if(zvm_code != 0)
+  if(ReportSetupPtr()->zvm_code != 0)
   {
     ZLOGS(LOG_ERROR, "SESSION %s FAILED WITH ERROR %d: %s",
         gnap->manifest == NULL ? "unknown" : gnap->manifest->node,
-        zvm_code, strerror(zvm_code));
+            ReportSetupPtr()->zvm_code, strerror(ReportSetupPtr()->zvm_code));
     FinalDump(gnap);
     ZTrace("[final dump]");
   }
@@ -318,11 +270,9 @@ void ReportDtor(int zvm_ret)
 
   /* free local resources and exit */
   g_string_free(digests, TRUE);
-  g_string_free(cmd, TRUE);
-  g_free(zvm_state);
 
   ZTrace("[exit]");
   ZTraceDtor(1);
   ZTraceNameDtor();
-  _exit(zvm_code);
+  _exit(ReportSetupPtr()->zvm_code);
 }

@@ -150,7 +150,7 @@ static enum SignalResult SignalHandleAll(int signum, void *ctx)
         "Signal %d from %strusted code: Halting at 0x%012lX", signum,
         SignalContextIsUntrusted(&sigCtx) ? "un" : "", sigCtx.prog_ctr);
 
-  SetExitState(msg);
+  ReportSetupPtr()->zvm_state = g_strdup(msg);
   ReportDtor(EINTR);
   return NACL_SIGNAL_RETURN; /* unreachable */
 }

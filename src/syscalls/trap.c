@@ -203,14 +203,14 @@ static int32_t ZVMProtHandle(uintptr_t addr, uint32_t size, int prot)
 }
 
 /* user exit. session is finished. no return. */
-static void ZVMExitHandle(struct NaClApp *nap, int32_t code)
+static void ZVMExitHandle(struct NaClApp *nap, uint64_t code)
 {
   assert(nap != NULL);
 
-  SetUserCode(code);
-  if(GetExitCode() == 0)
-    SetExitState(OK_STATE);
-  ZLOGS(LOG_DEBUG, "SESSION %s RETURNED %d", nap->manifest->node, code);
+  ReportSetupPtr()->user_code = code;
+  if(ReportSetupPtr()->zvm_code == 0)
+    ReportSetupPtr()->zvm_state = OK_STATE;
+  ZLOGS(LOG_DEBUG, "SESSION %s RETURNED %lu", nap->manifest->node, code);
   ReportDtor(0);
 }
 
@@ -241,7 +241,7 @@ int32_t TrapHandler(struct NaClApp *nap, uint32_t args)
       break;
     case TrapExit:
       SyscallZTrace(*sargs, sargs[2]);
-      ZVMExitHandle(nap, (int32_t)sargs[2]);
+      ZVMExitHandle(nap, sargs[2]);
       break;
     case TrapRead:
       retcode = ZVMReadHandle(nap,

@@ -78,6 +78,6 @@ void LogIf(int cond, char const *fmt, ...)
 void FailIf(int cond, int err, char const *fmt, ...)
 {
   ZLO(!cond);
-  SetExitState(msg);
+  ReportSetupPtr()->zvm_state = g_strdup(msg);
   ReportDtor(err);
 }

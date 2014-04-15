@@ -27,32 +27,19 @@
 
 EXTERN_C_BEGIN
 
-/* assign file handle to put report */
-void SetReportHandle(int handle);
+struct ReportSetup {
+  uint8_t zvm_code;
+  uint8_t validation_state;
+  uint8_t daemon_state;
+  uint8_t mode;
+  int handle;
+  uint64_t user_code;
+  char *zvm_state;
+  char *cmd;
+};
 
-/* put report to syslog instead of stdout */
-void ReportMode(int mode);
-
-/* set the text for "exit state" in report */
-void SetExitState(const char *state);
-
-/* set zerovm exit code */
-void SetExitCode(int code);
-
-/* get zerovm exit code */
-int GetExitCode();
-
-/* set user session exit code */
-void SetUserCode(int code);
-
-/* set validation state (0 - passed, 1 - failed, 2 - disabled) */
-void SetValidationState(int state);
-
-/* set daemon state (0: regualr session, 1: daemon mode started)*/
-void SetDaemonState(int state);
-
-/* set zerovm command line for debug purposes */
-void SetCmdString(GString *s);
+/* returns report setup structure. TODO(d'b): better solution? */
+struct ReportSetup *ReportSetupPtr();
 
 /* add tag digest with given name */
 void ReportTag(char *name, void *tag);

@@ -148,7 +148,7 @@ static void FindAndRunHandler(int sig, siginfo_t *info, void *uc)
     {
       char msg[SIGNAL_STRLEN];
       g_snprintf(msg, SIGNAL_STRLEN, "Signal %d failed to be handled", sig);
-      SetExitState(msg);
+      ReportSetupPtr()->zvm_state = g_strdup(msg);
       ReportDtor(EINTR);
     }
 

@@ -209,7 +209,6 @@ static void Channel(struct Manifest *manifest, char *value)
    * set name and protocol (network or local). exact protocol
    * for the local channel will be set later
    * TODO(d'b): move to ChannelCtor()
-   * TODO(d'b): move ChannelsCtor() logic here
    */
   if(g_str_has_prefix(tokens[Name], NAME_PREFIX_NET))
   {
@@ -283,7 +282,7 @@ struct Manifest *ManifestTextCtor(char *text)
       /* switch invoking functions by the keyword */
 #define XSWITCH(a) switch(GetKey(tokens[Key])) {a};
 #define X(a, o, s) case Key##a: ++counters[Key##a]; a(manifest, tokens[Value]); \
-    MFTFAIL(*tokens[Value] == 0, EFAULT, "%s has empty value", tokens[Key]); break;
+    MFTFAIL(*tokens[Value] == 0, EFAULT, "%s has no value", tokens[Key]); break;
       XSWITCH(KEYWORDS)
 #undef X
     }
@@ -340,4 +339,10 @@ void ManifestDtor(struct Manifest *manifest)
   TagDtor(manifest->mem_tag);
   g_free(manifest->program);
   g_free(manifest);
+}
+
+struct Command *CommandPtr()
+{
+  static struct Command command;
+  return &command;
 }
