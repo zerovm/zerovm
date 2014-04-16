@@ -28,7 +28,7 @@ EXTERN_C_BEGIN
     "%s%s\033[1m\033[37mZeroVM tag%d\033[0m lightweight VM manager, build 2014-04-16\n"\
     "Usage: <manifest> [-v#] [-T#] [-stFPQ]\n\n"\
     " -s skip validation\n"\
-    " -t <0..1> report to stdout/log/fast (default 0)\n"\
+    " -t <0..3> report to stdout/log/fast (default 0)\n"\
     " -v <0..3> log verbosity (default 0)\n"\
     " -F quit right before starting user session\n"\
     " -P disable channels space preallocation\n"\

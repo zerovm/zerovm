@@ -8,7 +8,7 @@ ZeroVM command line switches:
   Usage: <manifest> [-v#] [-stFPQ]
 
    -s skip validation
-   -t <0..2> report to stdout/log/fast (default 0)
+   -t <0..3> report to stdout/log/fast (default 0)
    -v <0..3> log verbosity (default 0)
    -F quit right before starting user session
    -P disable channels space preallocation
@@ -25,10 +25,9 @@ ZeroVM command line switches:
 -t -- specifies report mode. valid arguments <0..2> 
       0 - put final report into /dev/stdout (default)
       1 - put final report into syslog
-      2 - enable fast reports and put it with final report into /dev/stdout
       3 - put final report into path specified by "Job" in manifest
       note 1: the switch is still under construction (and can be removed in a future)
-      note 2: "-t2" not supported yet
+      note 2: "-t2" is not supported
 
 -v -- controls verbosity of information in the ZeroVM log. writes ZeroVM 
       log to "var/log/syslog". it is not recommended to use values more than 2
