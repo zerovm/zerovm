@@ -50,6 +50,9 @@
 #endif
 
 /*
+ * TODO(d'b): everything beside the report creation should be moved to other
+ * place (setup?)
+ *
  * TODO(d'b): fast reports should be cut from report output
  * TODO(d'b): "digests" can be removed with its logic since only use is memory
  */
@@ -176,33 +179,6 @@ static void OutputReport(char *r)
       break;
   }
 #undef REPORT
-}
-
-void FastReport(struct NaClApp *nap)
-{
-  char *eol = ReportSetupPtr()->mode == 1 ? "; " : EOL;
-  static int64_t start = 0;
-  int64_t now = 0;
-  struct timeval t;
-  char *acc = NULL;
-  char *r = NULL;
-
-  /* skip fast report if specified */
-  if(ReportSetupPtr()->mode != 2) return;
-
-  /* check if it is time to report */
-  gettimeofday(&t, NULL);
-  now = MICRO_PER_SEC * t.tv_sec + t.tv_usec;
-  if(now - start < QUANT) return;
-  start += start == 0 ? now : QUANT;
-
-  /* create and output report */
-  acc = Accounting(nap->manifest);
-  r = g_strdup_printf("%s%s%s", REPORT_ACCOUNTING, acc, eol);
-  OutputReport(r);
-
-  g_free(acc);
-  g_free(r);
 }
 
 /* part of report class dtor */

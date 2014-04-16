@@ -261,8 +261,7 @@ int32_t TrapHandler(struct NaClApp *nap, uint32_t args)
       break;
   }
 
-  /* report, ztrace and return */
-  FastReport(nap);
+  /* ztrace and return */
   ZLOGS(LOG_DEBUG, "%s returned %d", FunctionName(*sargs), retcode);
   SyscallZTrace(*sargs, retcode,
       sargs[2], sargs[3], sargs[4], sargs[5], sargs[6], sargs[7]);

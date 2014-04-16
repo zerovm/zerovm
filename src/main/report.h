@@ -47,9 +47,6 @@ void ReportTag(char *name, void *tag);
 /* initialize report internals */
 void ReportCtor();
 
-/* report intermediate session statistics as often as defined by QUANT */
-void FastReport(struct NaClApp *nap);
-
 /* full report (declared for daemon) */
 void Report(struct NaClApp *nap);
 
