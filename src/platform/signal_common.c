@@ -20,7 +20,7 @@
  */
 
 #include "src/platform/signal.h"
-#include "src/main/report.h"
+#include "src/main/setup.h"
 #include "src/loader/sel_ldr.h"
 
 #define MAX_HANDLERS 16
@@ -150,8 +150,7 @@ static enum SignalResult SignalHandleAll(int signum, void *ctx)
         "Signal %d from %strusted code: Halting at 0x%012lX", signum,
         SignalContextIsUntrusted(&sigCtx) ? "un" : "", sigCtx.prog_ctr);
 
-  ReportSetupPtr()->zvm_state = g_strdup(msg);
-  ReportDtor(EINTR);
+  SessionDtor(EINTR, msg);
   return NACL_SIGNAL_RETURN; /* unreachable */
 }
 

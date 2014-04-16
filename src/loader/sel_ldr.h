@@ -129,7 +129,7 @@ void PrintAppDetails(struct NaClApp *nap, int verbosity);
  * set an empty user stack and other context, then pass
  * control to user code
  */
-void CreateSession(struct NaClApp *nap);
+void RunSession(struct NaClApp *nap);
 
 #include "src/loader/sel_ldr-inl.h"
 

@@ -22,7 +22,7 @@
 #include <assert.h>
 #include <sys/mman.h>
 #include "src/platform/signal.h"
-#include "src/main/report.h"
+#include "src/main/setup.h"
 #include "src/main/tools.h"
 #include "src/loader/sel_ldr.h"
 
@@ -148,8 +148,7 @@ static void FindAndRunHandler(int sig, siginfo_t *info, void *uc)
     {
       char msg[SIGNAL_STRLEN];
       g_snprintf(msg, SIGNAL_STRLEN, "Signal %d failed to be handled", sig);
-      ReportSetupPtr()->zvm_state = g_strdup(msg);
-      ReportDtor(EINTR);
+      SessionDtor(EINTR, msg);
     }
 
     /* If this is a real sigaction pointer call the old handler */

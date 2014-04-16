@@ -50,12 +50,6 @@ void ReportCtor();
 /* full report (declared for daemon) */
 void Report(struct NaClApp *nap);
 
-/*
- * exit zerovm. if code != 0 log it and show dump. release resources
- * note: use global nap because can be invoked from signal handler
- */
-void ReportDtor(int code);
-
 EXTERN_C_END
 
 #endif /* EXIT_H_ */

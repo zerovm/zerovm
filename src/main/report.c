@@ -64,41 +64,6 @@ struct ReportSetup *ReportSetupPtr()
   return &report;
 }
 
-/* log user memory map */
-/* TODO(d'b): rewrite or remove. this function spams syslog */
-static void LogMemMap()
-{
-  int i;
-  uint8_t *map = GetUserMap();
-  int prev = 0;
-  int prev_prot = map[0];
-  int cur_prot;
-
-  ZLOGS(LOG_DEBUG, "user memory map:");
-  for(i = 1; i < FOURGIG / NACL_MAP_PAGESIZE; ++i)
-  {
-    cur_prot = map[i];
-    if(prev_prot != cur_prot)
-    {
-      ZLOGS(LOG_DEBUG, "%08X:%08X %x", NACL_MAP_PAGESIZE * prev,
-          NACL_MAP_PAGESIZE * i - 1, prev_prot);
-      prev = i;
-      prev_prot = cur_prot;
-    }
-  }
-
-  ZLOGS(LOG_DEBUG, "%08X:%08X %x", FOURGIG - STACK_SIZE, FOURGIG - 1, map[i - 1]);
-}
-
-static void FinalDump(struct NaClApp *nap)
-{
-  ZLOGS(LOG_INSANE, "exiting -- printing NaClApp details");
-  PrintAppDetails(nap, LOG_INSANE);
-  LogMemMap();
-
-  SignalHandlerFini();
-}
-
 void ReportTag(char *name, void *tag)
 {
   char digest[TAG_DIGEST_SIZE + 1];
@@ -213,43 +178,6 @@ void Report(struct NaClApp *nap)
   OutputReport(r->str);
 
   g_string_free(r, TRUE);
-  g_free(acc);
-}
-
-void ReportDtor(int zvm_ret)
-{
-  ReportSetupPtr()->zvm_code = zvm_ret;
-
-  /* broken session */
-  if(ReportSetupPtr()->zvm_code != 0)
-  {
-    ZLOGS(LOG_ERROR, "SESSION %s FAILED WITH ERROR %d: %s",
-        gnap->manifest == NULL ? "unknown" : gnap->manifest->node,
-            ReportSetupPtr()->zvm_code, strerror(ReportSetupPtr()->zvm_code));
-    FinalDump(gnap);
-    ZTrace("[final dump]");
-  }
-
-  Report(gnap);
-  ZTrace("[report]");
-  ChannelsDtor(gnap->manifest);
-  ZTrace("[channels destructed]");
-  NaClAppDtor(gnap);
-  ZTrace("[untrusted context closed]");
-  ManifestDtor(gnap->manifest); /* dispose manifest and channels */
-  ZTrace("[manifest deallocated]");
-  FreeUserSpace();
-  ZTrace("[user space deallocated]");
-  ZLogDtor();
-  ZTrace("[zlog deallocated]");
-
-  /* free local resources and exit */
   g_string_free(digests, TRUE);
-  g_free(ReportSetupPtr()->zvm_state);
-  g_free(ReportSetupPtr()->cmd);
-
-  ZTrace("[exit]");
-  ZTraceDtor(1);
-  ZTraceNameDtor();
-  _exit(ReportSetupPtr()->zvm_code);
+  g_free(acc);
 }

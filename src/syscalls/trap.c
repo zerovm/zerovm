@@ -211,7 +211,7 @@ static void ZVMExitHandle(struct NaClApp *nap, uint64_t code)
   if(ReportSetupPtr()->zvm_code == 0)
     ReportSetupPtr()->zvm_state = g_strdup(OK_STATE);
   ZLOGS(LOG_DEBUG, "SESSION %s RETURNED %lu", nap->manifest->node, code);
-  ReportDtor(0);
+  SessionDtor(0, OK_STATE);
 }
 
 int32_t TrapHandler(struct NaClApp *nap, uint32_t args)

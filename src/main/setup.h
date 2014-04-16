@@ -19,8 +19,6 @@
 #ifndef SETUP_H__
 #define SETUP_H__ 1
 
-EXTERN_C_BEGIN
-
 #include "src/loader/sel_ldr.h"
 
 #define ZEROVM_PRIORITY 19
@@ -38,12 +36,13 @@ EXTERN_C_BEGIN
 /* validator function from libvalidator.so */
 int NaClSegmentValidates(uint8_t* mbase, size_t size, uint32_t vbase);
 
-/*
- * "defense in depth". the last frontier of defense.
- * zerovm limits itself as much as possible
- */
-void LastDefenseLine();
+/* the last frontier of defense. zerovm limits itself as much as possible */
+void LastDefenseLine(struct Manifest *manifest);
 
-EXTERN_C_END
+/* session constructor. calls for all main constructors */
+void SessionCtor(struct NaClApp *nap, char *mft);
+
+/* session destructor. calls for all main destructors, releases resources */
+void SessionDtor(int code, char *state);
 
 #endif

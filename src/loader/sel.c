@@ -227,7 +227,7 @@ void AppLoadFile(struct Gio *gp, struct NaClApp *nap)
 }
 #undef DUMP
 
-NORETURN void CreateSession(struct NaClApp *nap)
+NORETURN void RunSession(struct NaClApp *nap)
 {
   uintptr_t stack_ptr;
 

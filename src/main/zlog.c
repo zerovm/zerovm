@@ -16,7 +16,7 @@
 
 #include <assert.h>
 #include "src/main/report.h"
-#include "src/main/zlog.h"
+#include "src/main/setup.h"
 
 #define ZLOG_NAME "ZeroVM"
 #define ZLOG_OPTIONS (LOG_PID)
@@ -78,6 +78,5 @@ void LogIf(int cond, char const *fmt, ...)
 void FailIf(int cond, int err, char const *fmt, ...)
 {
   ZLO(!cond);
-  ReportSetupPtr()->zvm_state = g_strdup(msg);
-  ReportDtor(err);
+  SessionDtor(err, msg);
 }

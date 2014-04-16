@@ -23,16 +23,8 @@
  */
 
 #include <assert.h>
-#include "src/platform/signal.h"
 #include "src/main/setup.h"
-#include "src/loader/userspace.h"
-#include "src/loader/usermap.h"
 #include "src/main/report.h"
-#include "src/platform/qualify.h"
-#include "src/main/accounting.h"
-#include "src/main/tools.h"
-#include "src/channels/preload.h"
-#include "src/syscalls/ztrace.h"
 
 #define BADCMDLINE(msg) \
   do { \
@@ -55,13 +47,11 @@ static void CommandLine(int argc, char **argv)
 }
 
 /* parse given command line, manifest and initialize NaClApp object */
-static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
+static char *ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
 {
   int opt;
-  char *manifest = NULL;
+  char *mft = NULL;
 
-  /* construct logger with default verbosity */
-  ZLogCtor(LOG_ERROR);
   CommandLine(argc, argv);
 
   while((opt = getopt(argc, argv, "-PFQst:v:M:T:")) != -1)
@@ -70,9 +60,9 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
     {
       case 1:
       case 'M':
-        if(manifest != NULL)
+        if(mft != NULL)
           BADCMDLINE("2nd manifest encountered");
-        manifest = optarg;
+        mft = optarg;
         break;
       case 's':
         CommandPtr()->skip_validation = 1;
@@ -105,96 +95,25 @@ static void ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
     }
   }
 
-  /* initialize session */
-  if(manifest == NULL) BADCMDLINE(NULL);
-  nap->manifest = ManifestCtor(manifest);
-}
-
-static void ValidateProgram(struct NaClApp *nap)
-{
-  int status = 0; /* 0 = failed, 1 = successful */
-  int64_t static_size;
-  uint8_t* static_addr;
-
-  assert(nap->static_text_end > 0);
-
-  /* static and dynamic text address / length */
-  static_size = nap->static_text_end -
-      NaClSysToUser(MEM_START + NACL_TRAMPOLINE_END);
-  static_addr = (uint8_t*)NaClUserToSys(NACL_TRAMPOLINE_END);
-
-  /* validate static and dynamic text */
-  if(static_size > 0)
-    status = NaClSegmentValidates(static_addr, static_size, nap->initial_entry_pt);
-
-  /* set results */
-  ReportSetupPtr()->validation_state = 1;
-  ZLOGFAIL(status == 0, ENOEXEC, "validation failed");
-  ReportSetupPtr()->validation_state = 0;
+  if(mft == NULL) BADCMDLINE(NULL);
+  return g_strdup(mft);
 }
 
 int main(int argc, char **argv)
 {
-  struct NaClApp state = {0}, *nap = &state;
-  struct GioMemoryFileSnapshot main_file;
+  struct NaClApp state = {0};
 
-  /* initialize globals and set nap fields to default values */
-  ReportCtor();
-  NaClAppCtor(nap);
-  ParseCommandLine(nap, argc, argv);
-
-  /* We use the signal handler to verify a signal took place. */
-  if(CommandPtr()->skip_qualification == 0)
-    RunSelQualificationTests();
-  SignalHandlerInit();
-
-  /* read elf into memory */
-  ZLOGFAIL(0 == GioMemoryFileSnapshotCtor(&main_file, nap->manifest->program),
-      ENOENT, "Cannot open '%s'. %s", nap->manifest->program, strerror(errno));
-  ZTrace("[memory snapshot]");
-
-  /* initialize all channels */
-  /* TODO(d'b): should be done *after* validation */
-  ChannelsCtor(nap->manifest);
-  ZLOGS(LOG_DEBUG, "channels constructed");
-  ZTrace("[channels mounting]");
-
-  /* validate program structure (check elf header and segments) */
-  ZLOGS(LOG_DEBUG, "Loading %s", nap->manifest->program);
-  AppLoadFile((struct Gio *) &main_file, nap);
-  ZTrace("[user module loading]");
-
-  /* validate given program (ensure that text segment is safe) */
-  ZLOGS(LOG_DEBUG, "Validating %s", nap->manifest->program);
-  if(CommandPtr()->skip_validation == 0)
-    ValidateProgram(nap);
-  ZTrace("[user module validation]");
-
-  /* free snapshot */
-  if(-1 == (*((struct Gio *)&main_file)->vtbl->Close)((struct Gio *)&main_file))
-    ZLOG(LOG_ERROR, "Error while closing '%s'", nap->manifest->program);
-  (*((struct Gio *) &main_file)->vtbl->Dtor)((struct Gio *) &main_file);
-  ZTrace("[snapshot deallocation]");
-
-  /* lock restricted regions in user memory */
-  LockRestrictedMemory();
-  ZLOGS(LOG_DEBUG, "lock restricted user regions");
-  ZTrace("[restricted user regions locking]");
-
-  /* "defense in depth" call */
-  ZLOGS(LOG_DEBUG, "Last preparations");
-  LastDefenseLine(nap->manifest);
+  /* set logger in case it will be used during initialization */
+  ZLogCtor(LOG_ERROR);
+  SessionCtor(&state, ParseCommandLine(&state, argc, argv));
 
   /* quit if fuzz testing specified */
   if(CommandPtr()->quit_after_load)
-  {
-    ReportSetupPtr()->zvm_state = g_strdup(OK_STATE);
-    ReportDtor(0);
-  }
-  ZTrace("[last preparations]");
+    SessionDtor(0, OK_STATE);
 
   /* switch to the user code flushing all buffers */
   fflush(NULL);
-  CreateSession(nap);
+  RunSession(&state);
+
   return EFAULT; /* unreachable */
 }
