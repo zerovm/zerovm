@@ -156,7 +156,7 @@ static void OutputReport(char *r)
 #define REPORT(p) ZLOGIF(write(ReportSetupPtr()->handle, p, size) != size, \
   "report write error %d: %s", errno, strerror(errno))
 
-  switch(ReportSetupPtr()->handle)
+  switch(ReportSetupPtr()->mode)
   {
     case 3: /* unix socket */
       p = g_strdup_printf("0x%06x%s", size, r);
@@ -165,6 +165,7 @@ static void OutputReport(char *r)
       g_free(p);
       break;
     case 0: /* stdout */
+      ReportSetupPtr()->handle = STDOUT_FILENO;
       REPORT(r);
       break;
     case 1: /* syslog */
@@ -229,8 +230,6 @@ void Report(struct NaClApp *nap)
   g_string_truncate(r, r->len - 1);
 
   /* report accounting and session message */
-  if(ReportSetupPtr()->zvm_state == NULL)
-    ReportSetupPtr()->zvm_state = UNKNOWN_STATE;
   REPORT(r, "%s%s%s%s", eol, REPORT_ACCOUNTING, acc, eol);
   REPORT(r, "%s%s%s", REPORT_STATE, ReportSetupPtr()->zvm_state == NULL
       ? UNKNOWN_STATE : ReportSetupPtr()->zvm_state, eol);
@@ -270,6 +269,8 @@ void ReportDtor(int zvm_ret)
 
   /* free local resources and exit */
   g_string_free(digests, TRUE);
+  g_free(ReportSetupPtr()->zvm_state);
+  g_free(ReportSetupPtr()->cmd);
 
   ZTrace("[exit]");
   ZTraceDtor(1);

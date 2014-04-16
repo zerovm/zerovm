@@ -188,7 +188,7 @@ int main(int argc, char **argv)
   /* quit if fuzz testing specified */
   if(CommandPtr()->quit_after_load)
   {
-    ReportSetupPtr()->zvm_state = OK_STATE;
+    ReportSetupPtr()->zvm_state = g_strdup(OK_STATE);
     ReportDtor(0);
   }
   ZTrace("[last preparations]");

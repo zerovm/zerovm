@@ -209,7 +209,7 @@ static void ZVMExitHandle(struct NaClApp *nap, uint64_t code)
 
   ReportSetupPtr()->user_code = code;
   if(ReportSetupPtr()->zvm_code == 0)
-    ReportSetupPtr()->zvm_state = OK_STATE;
+    ReportSetupPtr()->zvm_state = g_strdup(OK_STATE);
   ZLOGS(LOG_DEBUG, "SESSION %s RETURNED %lu", nap->manifest->node, code);
   ReportDtor(0);
 }

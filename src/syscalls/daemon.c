@@ -192,7 +192,7 @@ static int Daemonize(struct NaClApp *nap)
   g_free(bname);
   g_free(name);
 
-  ReportSetupPtr()->cmd = "command = daemonic";
+  ReportSetupPtr()->cmd = g_strdup("command = daemonic");
   return sock;
 }
 
