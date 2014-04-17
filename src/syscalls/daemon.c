@@ -75,7 +75,6 @@ static void UpdateSession(struct Manifest *manifest)
   /* reset system internals */
   SignalHandlerFini();
   SignalHandlerInit();
-  ReportCtor();
   ReportSetupPtr()->mode = 3;
   ReportSetupPtr()->handle = client;
 

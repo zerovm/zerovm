@@ -30,7 +30,6 @@ typedef int _2[-(sizeof(_1) > G_CHECKSUM_SHA256)];
 
 /* glib instead of macro have function returning digest size */
 #define TAG_DIGEST_SIZE (8 * sizeof(_1) * sizeof(_1) + 32)
-#define TAG_ENGINE_DISABLED "disabled"
 
 /*
  * initialize and return the hash context or abort if failed

@@ -41,14 +41,8 @@ struct ReportSetup {
 /* returns report setup structure. TODO(d'b): better solution? */
 struct ReportSetup *ReportSetupPtr();
 
-/* add tag digest with given name */
-void ReportTag(char *name, void *tag);
-
-/* initialize report internals */
-void ReportCtor();
-
 /* full report (declared for daemon) */
-void Report(struct NaClApp *nap);
+void Report(struct Manifest *manifest);
 
 EXTERN_C_END
 

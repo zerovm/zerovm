@@ -123,9 +123,8 @@ void SessionCtor(struct NaClApp *nap, char *mft)
 {
   struct GioMemoryFileSnapshot boot;
 
-  /* initialize globals and report */
+  /* initialize globals */
   NaClAppCtor(nap);
-  ReportCtor();
 
   /* initialize manifest */
   g_nap = nap;
@@ -190,7 +189,7 @@ void SessionDtor(int code, char *state)
     ZTrace("[final dump]");
   }
 
-  Report(g_nap);
+  Report(g_nap->manifest);
   ZTrace("[report]");
   ChannelsDtor(g_nap->manifest);
   ZTrace("[channels destructed]");
