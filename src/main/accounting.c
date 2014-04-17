@@ -28,82 +28,83 @@
 
 #define ACCOUNTING_SIZE 128
 #define FMT "%*d %*s %*c %*d %*d %*d %*d %*d %*u %*u %*u %*u %*u %lu %lu %lu %lu"
-
-static int64_t network_stats[LimitsNumber];
-static int64_t local_stats[LimitsNumber];
-static float user_time;
-static float sys_time;
+#define INVALID_TIME "0.0 0.0"
+#define INVALID_IO "0 0 0 0 0 0 0 0"
 
 /* get I/O and CPU time */
-static void SystemAccounting()
+static char *SystemAccounting()
 {
   FILE *f;
   int code;
   uint64_t t[4];
-  char *path;
+  char path[BIG_ENOUGH_STRING];
   float ticks = sysconf(_SC_CLK_TCK);
 
   /* get information from host */
-  path = g_strdup_printf("/proc/%d/stat", getpid());
+  g_snprintf(path, BIG_ENOUGH_STRING, "/proc/%d/stat", getpid());
   f = fopen(path, "r");
-  if(f == NULL) return;
-  code = fscanf(f, FMT, &t[0], &t[1], &t[2], &t[3]);
-  ZLOGIF(code != 4, "error %d occurred while reading '%s'", errno, path);
+  if(f == NULL)
+  {
+    ZLOG(LOG_ERROR, "cannot open stat");
+    return g_strdup(INVALID_TIME);
+  }
 
-  /* calculate I/O and CPU time in seconds */
-  sys_time = (t[1] + t[3]) / ticks;
-  user_time = (t[0] + t[2]) / ticks;
-  g_free(path);
+  code = fscanf(f, FMT, &t[0], &t[1], &t[2], &t[3]);
   fclose(f);
+  if(code != 4)
+  {
+    ZLOG(LOG_ERROR, "cannot read stat");
+    return g_strdup(INVALID_TIME);
+  }
+
+  return g_strdup_printf("%.2f %.2f",
+      (t[1] + t[3]) / ticks, (t[0] + t[2]) / ticks);
 }
 
 /* i/o accounting */
-static void IOAccounting(struct Manifest *manifest)
+static char *IOAccounting(struct Manifest *manifest)
 {
   int i;
+  int64_t net[LimitsNumber] = {0};
+  int64_t loc[LimitsNumber] = {0};
 
   /*
    * if manifest is not yet initialized, than session is not started
    * and it is ok to show zeroes in account string
    */
-  if(manifest == NULL) return;
-  if(manifest->channels == NULL) return;
+  if(manifest == NULL || manifest->channels == NULL)
+    return g_strdup(INVALID_IO);
 
   for(i = 0; i < manifest->channels->len; ++i)
   {
-    static int64_t *stats;
+    static int64_t *io;
     struct ChannelDesc *channel = CH_CH(manifest, i);
 
     assert(channel != NULL);
 
-    stats = IS_FILE(channel) ? local_stats : network_stats;
-    stats[GetsLimit] += channel->counters[GetsLimit];
-    stats[GetSizeLimit] += channel->counters[GetSizeLimit];
-    stats[PutsLimit] += channel->counters[PutsLimit];
-    stats[PutSizeLimit] += channel->counters[PutSizeLimit];
+    io = IS_FILE(channel) ? loc : net;
+    io[GetsLimit] += channel->counters[GetsLimit];
+    io[GetSizeLimit] += channel->counters[GetSizeLimit];
+    io[PutsLimit] += channel->counters[PutsLimit];
+    io[PutSizeLimit] += channel->counters[PutSizeLimit];
   }
+
+  return g_strdup_printf("%ld %ld %ld %ld %ld %ld %ld %ld",
+      loc[GetsLimit], loc[GetSizeLimit],
+      loc[PutsLimit], loc[PutSizeLimit],
+      net[GetsLimit], net[GetSizeLimit],
+      net[PutsLimit], net[PutSizeLimit]);
 }
 
 /* returns string i/o statistics */
 char *Accounting(struct Manifest *manifest)
 {
   static char result[ACCOUNTING_SIZE];
+  char *time = SystemAccounting();
+  char *io = IOAccounting(manifest);
   
-  /* reset i/o stats */
-  memset(network_stats, 0, sizeof network_stats);
-  memset(local_stats, 0, sizeof network_stats);
-
-  /* get accounted */
-  IOAccounting(manifest);
-  SystemAccounting();
-
-  g_snprintf(result, ACCOUNTING_SIZE,
-      "%.2f %.2f %ld %ld %ld %ld %ld %ld %ld %ld",
-      sys_time,
-      user_time,
-      local_stats[GetsLimit], local_stats[GetSizeLimit],
-      local_stats[PutsLimit], local_stats[PutSizeLimit],
-      network_stats[GetsLimit], network_stats[GetSizeLimit],
-      network_stats[PutsLimit], network_stats[PutSizeLimit]);
+  g_snprintf(result, ACCOUNTING_SIZE, "%s %s", time, io);
+  g_free(time);
+  g_free(io);
   return result;
 }
