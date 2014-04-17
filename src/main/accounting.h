@@ -19,12 +19,9 @@
 #ifndef ACCOUNTING_H_
 #define ACCOUNTING_H_
 
-#include "src/channels/channel.h"
+#include "src/main/manifest.h"
 
-/* returns string with time and i/o statistics
- * WARNING: returned string should be deallocated with g_free
- * and the function should be called only once
- */
+/* returns string with time and i/o statistics */
 char *Accounting(struct Manifest *manifest);
 
 #endif /* ACCOUNTING_H_ */

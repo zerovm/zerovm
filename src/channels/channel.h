@@ -33,7 +33,6 @@ EXTERN_C_BEGIN
 #define STDIN "/dev/stdin"
 #define STDOUT "/dev/stdout"
 #define STDERR "/dev/stderr"
-#define STDRAM "/dev/memory" /* reserved for internal usage */
 
 /* CH_RW_TYPE returns 0..3 */
 #define IS_FILE(c) ((c)->protocol != ProtoSocket)

@@ -114,19 +114,17 @@ void Report(struct Manifest *manifest)
 {
   GString *r = g_string_sized_new(BIG_ENOUGH_STRING);
   char *eol = ReportSetupPtr()->mode == 1 ? "; " : "\n";
-  char *acc = Accounting(manifest);
 
   /* report validator state and user return code */
   REP(r, "%s%d%s", REPORT_VALIDATOR, ReportSetupPtr()->validation_state, eol);
   REP(r, "%s%d%s", REPORT_DAEMON, ReportSetupPtr()->daemon_state, eol);
   REP(r, "%s%lu%s", REPORT_RETCODE, ReportSetupPtr()->user_code, eol);
   REP(r, "%s%s%s", REPORT_ETAG, GetMemoryDigest(manifest), eol);
-  REP(r, "%s%s%s", REPORT_ACCOUNTING, acc, eol);
+  REP(r, "%s%s%s", REPORT_ACCOUNTING, Accounting(manifest), eol);
   REP(r, "%s%s%s", REPORT_STATE, ReportSetupPtr()->zvm_state == NULL
       ? UNKNOWN_STATE : ReportSetupPtr()->zvm_state, eol);
   REP(r, "%s%s", REPORT_CMD, eol);
   OutputReport(r->str);
 
   g_string_free(r, TRUE);
-  g_free(acc);
 }

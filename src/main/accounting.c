@@ -24,8 +24,9 @@
 #include <time.h>
 #include "src/loader/sel_ldr.h"
 #include "src/main/accounting.h"
-#include "src/main/manifest.h"
+#include "src/channels/channel.h"
 
+#define ACCOUNTING_SIZE 128
 #define FMT "%*d %*s %*c %*d %*d %*d %*d %*d %*u %*u %*u %*u %*u %lu %lu %lu %lu"
 
 static int64_t network_stats[LimitsNumber];
@@ -86,6 +87,8 @@ static void IOAccounting(struct Manifest *manifest)
 /* returns string i/o statistics */
 char *Accounting(struct Manifest *manifest)
 {
+  static char result[ACCOUNTING_SIZE];
+  
   /* reset i/o stats */
   memset(network_stats, 0, sizeof network_stats);
   memset(local_stats, 0, sizeof network_stats);
@@ -94,11 +97,13 @@ char *Accounting(struct Manifest *manifest)
   IOAccounting(manifest);
   SystemAccounting();
 
-  return g_strdup_printf("%.2f %.2f %ld %ld %ld %ld %ld %ld %ld %ld",
+  g_snprintf(result, ACCOUNTING_SIZE,
+      "%.2f %.2f %ld %ld %ld %ld %ld %ld %ld %ld",
       sys_time,
       user_time,
       local_stats[GetsLimit], local_stats[GetSizeLimit],
       local_stats[PutsLimit], local_stats[PutSizeLimit],
       network_stats[GetsLimit], network_stats[GetSizeLimit],
       network_stats[PutsLimit], network_stats[PutSizeLimit]);
+  return result;
 }
