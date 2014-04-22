@@ -198,7 +198,7 @@ void AppLoadFile(struct Gio *gp, struct NaClApp *nap)
   err = Zmprotect((void*)MEM_START + NACL_TRAMPOLINE_START,
       ROUNDUP_64K(nap->data_end) - NACL_TRAMPOLINE_START,
       PROT_READ | PROT_WRITE);
-  ZLOGFAIL(0 != err, EFAULT, "Failed to make image pages writable. errno = %d", err);
+  ZLOGFAIL(0 != err, err, "Failed to make image pages writable");
 
   ElfImageLoad(image, gp, MEM_START);
 

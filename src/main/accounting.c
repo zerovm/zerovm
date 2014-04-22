@@ -13,12 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/*
- * d'b: changes for the new "simple" channels design
- * - new approach (actually it is the oldest one) to count i/o statistics:
- *   do it on demand, when Accounting() called
- * - "fast" and "regular" accounting should be replaced with 1 universal call
- */
 
 #include <assert.h>
 #include <time.h>
@@ -70,7 +64,7 @@ static char *IOAccounting(struct Manifest *manifest)
 
   /*
    * if manifest is not yet initialized, than session is not started
-   * and it is ok to show zeroes in account string
+   * and it is ok to show zeroes in the accounting string
    */
   if(manifest == NULL || manifest->channels == NULL)
     return g_strdup(INVALID_IO);

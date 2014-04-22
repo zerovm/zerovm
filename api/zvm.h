@@ -64,11 +64,11 @@ struct UserManifest
   uint32_t heap_size;
   uint32_t stack_size;
   int32_t channels_count;
-  struct ZVMChannel *channels;
+  struct ZVMChannel channels[0];
 };
 
 /* pointer to the user manifest (read only memory area) */
-#define MANIFEST ((const struct UserManifest const*)*((uintptr_t*)0xFEFFFFFC))
+#define MANIFEST ((const struct UserManifest const*)(uintptr_t)0xFF000000)
 
 /* trap pointer. internal helper. DO NOT use it! */
 #define TRAP ((int32_t (*)(uint64_t*))0x10000)

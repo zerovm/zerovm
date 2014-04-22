@@ -27,13 +27,12 @@ static uint8_t user_map[USER_MAP_SIZE];
 
 int Zmprotect(void *addr, size_t len, int prot)
 {
-  int result = mprotect(addr, len, prot);
-  if(result != 0) return -errno;
+  int result = 0;
 
   if(addr >= (void*)MEM_START && addr + len <= (void*)MEM_START + FOURGIG)
     result = UpdateUserMap((uintptr_t)addr, len, prot);
 
-  return result == 0 ? 0 : -EFAULT;
+  return result == 0 ? -mprotect(addr, len, prot) : result;
 }
 
 uint8_t *GetUserMap()

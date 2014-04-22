@@ -24,6 +24,7 @@
 
 EXTERN_C_BEGIN
 
+#define CHANNEL_NAME_MAX 0x400
 #define BUFFER_SIZE 0x10000 /* network buffer size */
 #ifndef UNIX_PATH_MAX
 #define UNIX_PATH_MAX sizeof ((struct sockaddr_un*)0)->sun_path
