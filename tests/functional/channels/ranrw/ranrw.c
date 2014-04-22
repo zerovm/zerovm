@@ -90,6 +90,7 @@ int main(int argc, char **argv)
   ZTEST(PREAD(STDRW_GOAT, (void*)0x100000000LL - 0x1000001, 1, 0) < 0);
   ZTEST(PREAD(STDRW_GOAT, (void*)0x100000000LL, 1, 0) < 0);
   ZTEST(PREAD(STDRW_GOAT, (void*)0x100000000LL - 0x1000000, 0x1000001, 0) < 0);
+  ZTEST(PREAD(STDRW_GOAT, (void*)0x100000000LL - 0x1000000, 1, 0) < 0); /* user manifest area */
   overall_errors += ERRCOUNT;
   FPRINTF(STDERR, ERRCOUNT ? "TEST FAILED\n\n" : "TEST SUCCEED\n\n");
 
@@ -98,7 +99,6 @@ int main(int argc, char **argv)
   FPRINTF(STDERR, "TEST OTHER VALID BUFFER/SIZE CASES FOR PREAD\n");
   ZTEST(PREAD(STDRW_GOAT, &data_start, 1, 0) == 1);
   ZTEST(PREAD(STDRW_GOAT, MANIFEST->heap_ptr + MANIFEST->heap_size - 1, 1, 0) == 1);
-  ZTEST(PREAD(STDRW_GOAT, (void*)0x100000000LL - 0x1000000, 1, 0) == 1);
   ZTEST(PREAD(STDRW_GOAT, (void*)0x100000000LL - 0x1, 1, 0) == 1);
   overall_errors += ERRCOUNT;
   FPRINTF(STDERR, ERRCOUNT ? "TEST FAILED\n\n" : "TEST SUCCEED\n\n");

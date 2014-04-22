@@ -77,9 +77,11 @@ struct ChannelsSerial *ChannelsSerializer(struct Manifest *manifest, uintptr_t o
   for(i = 0; i < manifest->channels->len; ++i)
   {
     buffer->channels[i].type = CH_CH(manifest, i)->type;
-    buffer->channels[i].size = CH_CH(manifest, i)->size;
     stats = is_mft ? CH_CH(manifest, i)->limits : CH_CH(manifest, i)->counters;
     CopyStats(&buffer->channels[i], stats);
+    buffer->channels[i].size =
+        CH_RND_READABLE(CH_CH(manifest, i)) || CH_RND_WRITEABLE(CH_CH(manifest, i))
+        ? CH_CH(manifest, i)->size : 0;
 
     /* copy alias to names area */
     buffer->channels[i].name = (uintptr_t)names_pos - (uintptr_t)names;

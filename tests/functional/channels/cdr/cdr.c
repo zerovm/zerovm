@@ -163,7 +163,7 @@ int main(int argc, char **argv)
   FPRINTF(STDERR, "TEST OTHER VALID BUFFER/SIZE CASES FOR PREAD\n");
   ZTEST(PREAD(STDCDR_GOAT, &data_start, 1, 0) == 1);
   ZTEST(PREAD(STDCDR_GOAT, MANIFEST->heap_ptr + MANIFEST->heap_size - 1, 1, 0) == 1);
-  ZTEST(PREAD(STDCDR_GOAT, (void*)0x100000000LL - 0x1000000, 1, 0) == 1);
+  ZTEST(PREAD(STDCDR_GOAT, (void*)0x100000000LL - 0x1000000, 1, 0) < 0); /* user manifest area */
   ZTEST(PREAD(STDCDR_GOAT, (void*)0x100000000LL - 0x1, 1, 0) == 1);
   overall_errors += ERRCOUNT;
   FPRINTF(STDERR, ERRCOUNT ? "TEST FAILED\n\n" : "TEST SUCCEED\n\n");
