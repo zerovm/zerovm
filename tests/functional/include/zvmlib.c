@@ -505,9 +505,6 @@ void _start(uint32_t *info)
   char **argv = (void*)&p[1];
   char **envp = (void*)&p[argc + 2];
 
-//  /* put marker to the bottom of the stack */
-//  *(uint64_t*)0xFF000000 = 0x716f74726f622764LLU;
-
   /* call the user main and exit to zerovm */
   zvm_exit(main(argc, argv, envp));
 }
