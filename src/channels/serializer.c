@@ -25,7 +25,7 @@
  * TODO(d'b): add byte order to (de)serializer
  */
 
-#define GETSTATS(c) (is_mft ? (c)->limits : (c)->counters)
+#define GETSTATS(c) ((void*)(is_mft ? (c)->limits : (c)->counters))
 
 /* copy name to names area */
 INLINE static uint32_t CopyName(char *target, char *name)
@@ -56,7 +56,6 @@ struct ChannelsSerial *ChannelsSerializer(struct Manifest *manifest, uintptr_t o
   struct ChannelsSerial *buffer;
   char *names_pos;
   char *names;
-  void *stats;
   int i;
   int is_mft = offset ? 1 : 0;
 
@@ -80,8 +79,7 @@ struct ChannelsSerial *ChannelsSerializer(struct Manifest *manifest, uintptr_t o
   {
     /* set type and limits (or counters) */
     buffer->channels[i].type = CH_CH(manifest, i)->type;
-    stats = GETSTATS(CH_CH(manifest, i));
-    CopyStats(&buffer->channels[i], stats);
+    CopyStats(&buffer->channels[i], GETSTATS(CH_CH(manifest, i)));
 
     /* set size */
     if(is_mft)
@@ -102,38 +100,37 @@ struct ChannelsSerial *ChannelsSerializer(struct Manifest *manifest, uintptr_t o
   return g_realloc(buffer, (uintptr_t)names_pos - (uintptr_t)buffer);
 }
 
-/* returns 0 if channels has same alias / name */
-INLINE static int CheckAlias(struct ChannelDesc *channel, struct ChannelRec *record)
-{
-  char *name = TOPTR(record->name); // ### fix it
-
-  return g_strcmp0(channel->alias, name);
-}
-
 int ChannelsDeserializer(struct Manifest *manifest, struct ChannelRec *channels)
 {
   int i;
-  void *stats;
 
   /*
    * TODO(d'b): should be taken from arguments. for now only use case is
    * snapshot. however it would be nice to have generic solution
    */
   int is_mft = 0;
+  char *name;
 
   assert(manifest != NULL);
   assert(channels != NULL);
 
   /* populate manifest with channels data */
   /* TODO(d'b): need solution to make both channels list to be sorted */
+  name = TOPTR(channels) + manifest->channels->len * sizeof *channels;
   for(i = 0; i < manifest->channels->len; ++i)
   {
-    if(CheckAlias(CH_CH(manifest, i), &channels[i]) != 0)
+    /* ckeck alias */
+    if(g_strcmp0(CH_CH(manifest, i)->alias, name) != 0)
       return -1;
-    stats = GETSTATS(CH_CH(manifest, i));
-    CopyStats(stats, channels->limits);
-    CH_CH(manifest, i)->size = channels->size;
-    CH_CH(manifest, i)->type = channels->type;
+
+    /* rewind to the next alias */
+    name += strlen(name);
+    ++name; /* skip ending '\0' */
+
+    /* copy fields */
+    CopyStats(GETSTATS(CH_CH(manifest, i)), channels[i].limits);
+    CH_CH(manifest, i)->size = channels[i].size;
+    CH_CH(manifest, i)->type = channels[i].type;
   }
 
   return 0;
