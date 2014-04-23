@@ -19,6 +19,7 @@
 #include "src/channels/channel.h"
 #include "src/main/report.h"
 #include "src/main/setup.h"
+#include "src/syscalls/snapshot.h"
 #include "src/syscalls/daemon.h"
 #include "src/syscalls/ztrace.h"
 #include "src/loader/userspace.h"
@@ -214,6 +215,13 @@ static void ZVMExitHandle(struct NaClApp *nap, uint64_t code)
   SessionDtor(0, OK_STATE);
 }
 
+/* handler for syscalls testing */
+static void ZVMTestHandle(struct NaClApp *nap)
+{
+  assert(nap != NULL);
+  SaveSession(nap);
+}
+
 int32_t TrapHandler(struct NaClApp *nap, uint32_t args)
 {
   uint64_t *sargs;
@@ -254,6 +262,10 @@ int32_t TrapHandler(struct NaClApp *nap, uint32_t args)
     case TrapProt:
       retcode = ZVMProtHandle((uint32_t)sargs[2], (uint32_t)sargs[3],
           (int)sargs[4]);
+      break;
+    case TrapTest:
+      ZVMTestHandle(nap);
+      ZVMExitHandle(nap, 0);
       break;
     default:
       retcode = -EPERM;

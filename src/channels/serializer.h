@@ -49,6 +49,7 @@ struct ChannelsSerial *ChannelsSerializer(struct Manifest *manifest, uintptr_t o
  * deserialize channels to manifest. channels count will be taken from
  * manifest all integers represented in platform order. return 0 if
  * successful, or negative error code
+ * TODO(d'b): "channels" sanity check needed
  */
 int ChannelsDeserializer(struct Manifest *manifest, struct ChannelRec *channels);
 

@@ -24,6 +24,8 @@
 /* zerovm system calls */
 enum TrapCalls
 {
+  TrapTest = 0x74736554, /* TODO(d'b): should be removed before release */
+
   TrapRead = 0x64616552,
   TrapWrite = 0x74697257,
   TrapProt = 0x746f7250,

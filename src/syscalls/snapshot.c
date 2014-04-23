@@ -30,6 +30,7 @@
 #include "src/syscalls/snapshot.h"
 #include "src/loader/userspace.h"
 #include "src/loader/usermap.h"
+#include "src/channels/serializer.h"
 
 #define R_FLAG (O_RDONLY)
 #define W_MODE (S_IRUSR | S_IWUSR)
@@ -120,25 +121,21 @@ static int SaveUserContext(struct ThreadContext *nacl_user)
 }
 
 /* save text manifest to image */
-// ### serializer needed
 static int SaveChannels(struct NaClApp *nap)
 {
-  int i;
   int handle;
+  struct ChannelsSerial *buffer;
 
   handle = CreateImage(ID_CHANNELS);
   if(handle < 0) return -1;
 
   /* write all available pages */
-  for(i = 0; i < nap->manifest->channels->len; ++i)
-  {
-//    struct ChannelDesc channel;
-//    if(AppendToImage(handle, (void*)CH_CH(nap->manifest, i),
-//        NACL_MAP_PAGESIZE) != NACL_MAP_PAGESIZE)
+  buffer = ChannelsSerializer(nap->manifest, 0);
+  if(WriteToImage(handle, buffer->channels, buffer->size) != buffer->size)
     return -1;
-  }
 
   /* close image */
+  g_free(buffer);
   return CloseImage(handle);
 }
 
@@ -158,43 +155,85 @@ static int LoadUserMap(void *map)
 }
 
 /* allocate user space (as usual, in safe way) and load dump */
-/* TODO(d'b): this logic should replace the one inherited from NaCl */
-// ###
 static int LoadDump(struct NaClApp *nap, void *map)
 {
   int handle;
+  uintptr_t addr;
+  uint32_t size;
+  uint32_t idx = 0;
+  uint32_t end;
 
+  /* create user space */
+  MakeUserSpace();
+
+  /* open dump */
   handle = OpenImage(ID_DUMP);
   if(handle < 0) return -1;
 
-  /* allocate user space */
-  /* load data mprotecting it */
-  /* close dump file */
+  /* loop through all pages */
+  do {
+    /* skip unavailable pages */
+    while(((uint8_t*)map)[idx] == PROT_LOCK)
+      ++idx;
 
-  /* protect bumpers */
+    /* wind until page with different protection */
+    for(end = idx + 1; end < USER_MAP_SIZE; ++end)
+      if(((uint8_t*)map)[end - 1] == ((uint8_t*)map)[end]) break;
 
-  return -1;
+    /* read pages sequence to user space */
+    size = NACL_MAP_PAGESIZE * (end - idx);
+    addr = MEM_START + NACL_MAP_PAGESIZE * idx;
+    if(ReadFromImage(handle, TOPTR(addr), size) != size)
+      return -1;
+
+    /* protect pages */
+    if(Zmprotect(TOPTR(addr), size, ((uint8_t*)map)[idx]) != 0)
+      return -1;
+  } while(end < USER_MAP_SIZE);
+
+  return CloseImage(handle);
 }
 
 /* load user context from image to user space */
-// ###
 static int LoadUserContext(struct ThreadContext *nacl_user)
 {
-  return -1;
+  int handle;
+
+  handle = OpenImage(ID_CONTEXT);
+  if(handle < 0) return -1;
+
+  if(ReadFromImage(handle, nacl_user, sizeof *nacl_user) != sizeof *nacl_user)
+    return -1;
+
+  /* close image */
+  return CloseImage(handle);
 }
 
-// ###
 static int LoadChannels(struct NaClApp *nap)
 {
-  return -1;
-}
+  int handle;
+  uint32_t size;
+  struct ChannelRec *channels;
 
-#if 0
-/* read old manifest from image, and check it up against the new one */
-static void CheckManifest(struct NaClApp *nap)
-{
+  /* calculate and allocate memory for channels */
+  size = GetFileSize(ID_CHANNELS);
+  if(size < 0) return -1;
+  channels = g_malloc(size);
+
+  /* get channels data */
+  handle = OpenImage(ID_CHANNELS);
+  if(handle < 0) return -1;
+  if(ReadFromImage(handle, channels, size) != size)
+    return -1;
+
+  /* set manifest from channels data */
+  if(ChannelsDeserializer(nap->manifest, channels) != 0)
+    return -1;
+
+  /* close image */
+  g_free(channels);
+  return CloseImage(handle);
 }
-#endif
 
 int SaveSession(struct NaClApp *nap)
 {
