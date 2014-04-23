@@ -172,23 +172,29 @@ static int LoadDump(struct NaClApp *nap, void *map)
 
   /* loop through all pages */
   do {
-    /* skip unavailable pages */
-    while(((uint8_t*)map)[idx] == PROT_LOCK)
-      ++idx;
-
-    /* wind until page with different protection */
+    /* detect pages sequence with same protection */
     for(end = idx + 1; end < USER_MAP_SIZE; ++end)
-      if(((uint8_t*)map)[end - 1] == ((uint8_t*)map)[end]) break;
+      if(((uint8_t*)map)[end - 1] != ((uint8_t*)map)[end]) break;
 
-    /* read pages sequence to user space */
     size = NACL_MAP_PAGESIZE * (end - idx);
     addr = MEM_START + NACL_MAP_PAGESIZE * idx;
-    if(ReadFromImage(handle, TOPTR(addr), size) != size)
-      return -1;
+
+    /* load non-empty pages */
+    if(((uint8_t*)map)[idx] != PROT_LOCK)
+    {
+      /* make pages writable */
+      if(Zmprotect(TOPTR(addr), size, PROT_WRITE) != 0)
+        return -1;
+
+      /* read pages to user space */
+      if(ReadFromImage(handle, TOPTR(addr), size) != size)
+        return -1;
+    }
 
     /* protect pages */
-    if(Zmprotect(TOPTR(addr), size, ((uint8_t*)map)[idx]) != 0)
+    if(Zmprotect(TOPTR(addr), size, ((uint8_t*) map)[idx]) != 0)
       return -1;
+    idx = end;
   } while(end < USER_MAP_SIZE);
 
   return CloseImage(handle);
@@ -244,17 +250,21 @@ int SaveSession(struct NaClApp *nap)
   if(SaveUserContext(nacl_user) < 0) return -1;
   if(SaveChannels(nap) < 0) return -1;
 
+  /* TODO(d'b): save report / session settings */
+
   return 0;
 }
 
 int LoadSession(struct NaClApp *nap)
 {
-  void *map = GetUserMap();
+  uint8_t map[USER_MAP_SIZE];
 
   if(LoadUserMap(map) < 0) return -1;
   if(LoadDump(nap, map) < 0) return -1;
   if(LoadUserContext(nacl_user) < 0) return -1;
   if(LoadChannels(nap) < 0) return -1;
+
+  /* TODO(d'b): load report / session settings */
 
   return 0;
 }

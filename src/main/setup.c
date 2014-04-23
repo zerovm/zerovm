@@ -23,6 +23,7 @@
 #include "src/loader/userspace.h"
 #include "src/main/setup.h"
 #include "src/main/report.h"
+#include "src/syscalls/snapshot.h"
 #include "src/syscalls/ztrace.h"
 #include "src/channels/channel.h"
 #include "src/platform/signal.h"
@@ -135,38 +136,55 @@ void SessionCtor(struct NaClApp *nap, char *mft)
     RunSelQualificationTests();
   SignalHandlerInit();
 
-  /* read elf into memory */
-  ZLOGFAIL(0 == GioMemoryFileSnapshotCtor(&boot, nap->manifest->program),
-      ENOENT, "open '%s': %s", nap->manifest->program, strerror(errno));
-  ZTrace("[memory snapshot]");
+  if(g_strcmp0(nap->manifest->program, ".") != 0)
+  /* create session from scratch */
+  {
+    /* read elf into memory */
+    ZLOGFAIL(0 == GioMemoryFileSnapshotCtor(&boot, nap->manifest->program),
+        ENOENT, "open '%s': %s", nap->manifest->program, strerror(errno));
+    ZTrace("[memory snapshot]");
 
-  /* initialize all channels */
-  /* TODO(d'b): should be done *after* validation */
-  ChannelsCtor(nap->manifest);
-  ZLOGS(LOG_DEBUG, "channels constructed");
-  ZTrace("[channels mounting]");
+    /* initialize all channels */
+    /* TODO(d'b): should be done *after* validation */
+    ChannelsCtor(nap->manifest);
+    ZLOGS(LOG_DEBUG, "channels constructed");
+    ZTrace("[channels mounting]");
 
-  /* validate program structure (check elf header and segments) */
-  ZLOGS(LOG_DEBUG, "Loading %s", nap->manifest->program);
-  AppLoadFile((struct Gio *) &boot, nap);
-  ZTrace("[user module loading]");
+    /* validate program structure (check elf header and segments) */
+    ZLOGS(LOG_DEBUG, "Loading %s", nap->manifest->program);
+    AppLoadFile((struct Gio *) &boot, nap);
+    ZTrace("[user module loading]");
 
-  /* validate given program (ensure that text segment is safe) */
-  ZLOGS(LOG_DEBUG, "Validating %s", nap->manifest->program);
-  if(CommandPtr()->skip_validation == 0)
-    ValidateProgram(nap);
-  ZTrace("[user module validation]");
+    /* validate given program (ensure that text segment is safe) */
+    ZLOGS(LOG_DEBUG, "Validating %s", nap->manifest->program);
+    if(CommandPtr()->skip_validation == 0)
+      ValidateProgram(nap);
+    ZTrace("[user module validation]");
 
-  /* free snapshot */
-  if(-1 == (*((struct Gio*)&boot)->vtbl->Close)((struct Gio *)&boot))
-    ZLOG(LOG_ERROR, "Error while closing '%s'", nap->manifest->program);
-  (*((struct Gio*)&boot)->vtbl->Dtor)((struct Gio*)&boot);
-  ZTrace("[snapshot deallocation]");
+    /* free snapshot */
+    if(-1 == (*((struct Gio*)&boot)->vtbl->Close)((struct Gio *)&boot))
+      ZLOG(LOG_ERROR, "Error while closing '%s'", nap->manifest->program);
+    (*((struct Gio*)&boot)->vtbl->Dtor)((struct Gio*)&boot);
+    ZTrace("[snapshot deallocation]");
 
-  /* lock restricted regions in user memory */
-  LockRestrictedMemory();
-  ZLOGS(LOG_DEBUG, "lock restricted user regions");
-  ZTrace("[restricted user regions locking]");
+    /* lock restricted regions in user memory */
+    LockRestrictedMemory();
+    ZLOGS(LOG_DEBUG, "lock restricted user regions");
+    ZTrace("[restricted user regions locking]");
+  }
+  /* load session from image */
+  else
+  {
+    /* initialize all channels */
+    ChannelsCtor(nap->manifest);
+    ZLOGS(LOG_DEBUG, "channels constructed");
+    ZTrace("[channels mounting]");
+
+    /* load session */
+    LoadSession(nap);
+    ZLOGS(LOG_DEBUG, "session loading");
+    ZTrace("[session loading]");
+  }
 
   /* "defense in depth" call */
   ZLOGS(LOG_DEBUG, "Last preparations");

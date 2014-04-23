@@ -35,12 +35,12 @@ INLINE static uint32_t CopyName(char *target, char *name)
 }
 
 /* copy channel limits or counts (for snapshot) */
-INLINE static void CopyStats(struct ChannelRec *record, int64_t *stats)
+INLINE static void CopyStats(int64_t *dst, int64_t *src)
 {
-  record->limits[GetsLimit] = stats[GetsLimit];
-  record->limits[GetSizeLimit] = stats[GetSizeLimit];
-  record->limits[PutsLimit] = stats[PutsLimit];
-  record->limits[PutSizeLimit] = stats[PutSizeLimit];
+  dst[GetsLimit] = src[GetsLimit];
+  dst[GetSizeLimit] = src[GetSizeLimit];
+  dst[PutsLimit] = src[PutsLimit];
+  dst[PutSizeLimit] = src[PutSizeLimit];
 }
 
 /*
@@ -79,7 +79,7 @@ struct ChannelsSerial *ChannelsSerializer(struct Manifest *manifest, uintptr_t o
   {
     /* set type and limits (or counters) */
     buffer->channels[i].type = CH_CH(manifest, i)->type;
-    CopyStats(&buffer->channels[i], GETSTATS(CH_CH(manifest, i)));
+    CopyStats(buffer->channels[i].limits, GETSTATS(CH_CH(manifest, i)));
 
     /* set size */
     if(is_mft)
