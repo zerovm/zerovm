@@ -55,17 +55,18 @@
 #define NORETURN __attribute__((noreturn))
 #define NACL_WUR __attribute__((__warn_unused_result__))
 
-/* size of the random biggest string */
+/* generic constants */
 #define BIG_ENOUGH_STRING 1024
 #define MICROS_PER_MILLI 1000
 #define MICRO_PER_SEC 1000000
 
+/* utilities */
+#define TOPTR(a) ((void*)(uintptr_t)(a))
+#define TOINT(a) ((void*)(uintptr_t)(a))
 #define ROUNDDOWN_64K(a) ((a) & ~(NACL_MAP_PAGESIZE - 1LLU))
 #define ROUNDUP_64K(a) ROUNDDOWN_64K((a) + NACL_MAP_PAGESIZE - 1LLU)
 #define ROUNDDOWN_4K(a) ((a) & ~(NACL_PAGESIZE - 1LLU))
 #define ROUNDUP_4K(a) ROUNDDOWN_4K((a) + NACL_PAGESIZE - 1LLU)
-
-/* from nacl_macros.h */
 #define ARRAY_SIZE(arr) ((sizeof arr)/sizeof arr[0])
 #define ARRAY_SIZE_SAFE(arr) (NaClArrayCheckHelper( \
     __builtin_types_compatible_p(__typeof__(&arr[0]), \

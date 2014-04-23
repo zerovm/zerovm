@@ -25,6 +25,8 @@
  * TODO(d'b): add byte order to (de)serializer
  */
 
+#define GETSTATS(c) (is_mft ? (c)->limits : (c)->counters)
+
 /* copy name to names area */
 INLINE static uint32_t CopyName(char *target, char *name)
 {
@@ -76,12 +78,18 @@ struct ChannelsSerial *ChannelsSerializer(struct Manifest *manifest, uintptr_t o
   /* loop through all channels and serialize them into buffer */
   for(i = 0; i < manifest->channels->len; ++i)
   {
+    /* set type and limits (or counters) */
     buffer->channels[i].type = CH_CH(manifest, i)->type;
-    stats = is_mft ? CH_CH(manifest, i)->limits : CH_CH(manifest, i)->counters;
+    stats = GETSTATS(CH_CH(manifest, i));
     CopyStats(&buffer->channels[i], stats);
-    buffer->channels[i].size =
+
+    /* set size */
+    if(is_mft)
+      buffer->channels[i].size =
         CH_RND_READABLE(CH_CH(manifest, i)) || CH_RND_WRITEABLE(CH_CH(manifest, i))
         ? CH_CH(manifest, i)->size : 0;
+    else
+      buffer->channels[i].size = CH_CH(manifest, i)->size;
 
     /* copy alias to names area */
     buffer->channels[i].name = (uintptr_t)names_pos - (uintptr_t)names;
@@ -94,7 +102,39 @@ struct ChannelsSerial *ChannelsSerializer(struct Manifest *manifest, uintptr_t o
   return g_realloc(buffer, (uintptr_t)names_pos - (uintptr_t)buffer);
 }
 
-int ChannelsDeserializer(struct Manifest *manifest, struct ChannelsSerial *buffer)
+/* returns 0 if channels has same alias / name */
+INLINE static int CheckAlias(struct ChannelDesc *channel, struct ChannelRec *record)
 {
-  return -1;
+  char *name = TOPTR(record->name); // ### fix it
+
+  return g_strcmp0(channel->alias, name);
+}
+
+int ChannelsDeserializer(struct Manifest *manifest, struct ChannelRec *channels)
+{
+  int i;
+  void *stats;
+
+  /*
+   * TODO(d'b): should be taken from arguments. for now only use case is
+   * snapshot. however it would be nice to have generic solution
+   */
+  int is_mft = 0;
+
+  assert(manifest != NULL);
+  assert(channels != NULL);
+
+  /* populate manifest with channels data */
+  /* TODO(d'b): need solution to make both channels list to be sorted */
+  for(i = 0; i < manifest->channels->len; ++i)
+  {
+    if(CheckAlias(CH_CH(manifest, i), &channels[i]) != 0)
+      return -1;
+    stats = GETSTATS(CH_CH(manifest, i));
+    CopyStats(stats, channels->limits);
+    CH_CH(manifest, i)->size = channels->size;
+    CH_CH(manifest, i)->type = channels->type;
+  }
+
+  return 0;
 }

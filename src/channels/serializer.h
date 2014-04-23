@@ -42,16 +42,14 @@ struct ChannelsSerial
   struct ChannelRec channels[0];
 };
 
-/*
- * serialize channels and returns buffer. 1st 4 bytes of buffer contains
- * its size. all integers represented in platform order
- */
+/* serialize channels into structure. all integers represented in platform order */
 struct ChannelsSerial *ChannelsSerializer(struct Manifest *manifest, uintptr_t offset);
 
 /*
- * deserialize channels from given buffer to manifest. returns -1 if failed
- * otherwise - 0
+ * deserialize channels to manifest. channels count will be taken from
+ * manifest all integers represented in platform order. return 0 if
+ * successful, or negative error code
  */
-int ChannelsDeserializer(struct Manifest *manifest, struct ChannelsSerial *buffer);
+int ChannelsDeserializer(struct Manifest *manifest, struct ChannelRec *channels);
 
 #endif /* SERIALIZER_H_ */
