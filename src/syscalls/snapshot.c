@@ -14,19 +14,15 @@
  * limitations under the License.
  */
 
-/*
- * TODO(d'b): under construction
- */
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/mman.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
 #include <assert.h>
 #include "src/loader/sel_ldr.h"
 #include "src/main/zlog.h"
 #include "src/main/setup.h"
+#include "src/main/report.h"
+#include "src/main/manifest.h"
 #include "src/syscalls/snapshot.h"
 #include "src/loader/userspace.h"
 #include "src/loader/usermap.h"
@@ -38,6 +34,8 @@
 #define ID_DUMP "dump"
 #define ID_CONTEXT "context"
 #define ID_CHANNELS "channels"
+#define ID_REPORT "report"
+#define ID_SESSION "session"
 
 /* create file for "name" and  return handle or -1 */
 INLINE static int CreateImage(char *name)
@@ -69,18 +67,14 @@ INLINE static int CloseImage(int handle)
   return close(handle);
 }
 
-/* save memory map to image */
-static int SaveUserMap(void *map)
+/* save fixed size data to image */
+static int SaveFixedSize(char *name, void *buffer, int size)
 {
-  int handle;
+  int handle = CreateImage(name);
 
-  handle = CreateImage(ID_MAP);
   if(handle < 0) return -1;
-
-  if(WriteToImage(handle, map, USER_MAP_SIZE) != USER_MAP_SIZE)
+  if(WriteToImage(handle, buffer, size) != size)
     return -1;
-
-  /* close image */
   return CloseImage(handle);
 }
 
@@ -105,52 +99,14 @@ static int SaveDump(struct NaClApp *nap, uint8_t *map)
   return CloseImage(handle);
 }
 
-/* save user context to image */
-static int SaveUserContext(struct ThreadContext *nacl_user)
+/* save fixed size data from image */
+static int LoadFixedSize(char *name, void *buffer, int size)
 {
-  int handle;
+  int handle = OpenImage(name);
 
-  handle = CreateImage(ID_CONTEXT);
   if(handle < 0) return -1;
-
-  if(WriteToImage(handle, nacl_user, sizeof *nacl_user) != sizeof *nacl_user)
+  if(ReadFromImage(handle, buffer, size) != size)
     return -1;
-
-  /* close image */
-  return CloseImage(handle);
-}
-
-/* save text manifest to image */
-static int SaveChannels(struct NaClApp *nap)
-{
-  int handle;
-  struct ChannelsSerial *buffer;
-
-  handle = CreateImage(ID_CHANNELS);
-  if(handle < 0) return -1;
-
-  /* write all available pages */
-  buffer = ChannelsSerializer(nap->manifest, 0);
-  if(WriteToImage(handle, buffer->channels, buffer->size) != buffer->size)
-    return -1;
-
-  /* close image */
-  g_free(buffer);
-  return CloseImage(handle);
-}
-
-/* load memory map from image to user space */
-static int LoadUserMap(void *map)
-{
-  int handle;
-
-  handle = OpenImage(ID_MAP);
-  if(handle < 0) return -1;
-
-  if(ReadFromImage(handle, map, USER_MAP_SIZE) != USER_MAP_SIZE)
-    return -1;
-
-  /* close image */
   return CloseImage(handle);
 }
 
@@ -200,71 +156,70 @@ static int LoadDump(struct NaClApp *nap, void *map)
   return CloseImage(handle);
 }
 
-/* load user context from image to user space */
-static int LoadUserContext(struct ThreadContext *nacl_user)
-{
-  int handle;
-
-  handle = OpenImage(ID_CONTEXT);
-  if(handle < 0) return -1;
-
-  if(ReadFromImage(handle, nacl_user, sizeof *nacl_user) != sizeof *nacl_user)
-    return -1;
-
-  /* close image */
-  return CloseImage(handle);
-}
-
-static int LoadChannels(struct NaClApp *nap)
-{
-  int handle;
-  uint32_t size;
-  struct ChannelRec *channels;
-
-  /* calculate and allocate memory for channels */
-  size = GetFileSize(ID_CHANNELS);
-  if(size < 0) return -1;
-  channels = g_malloc(size);
-
-  /* get channels data */
-  handle = OpenImage(ID_CHANNELS);
-  if(handle < 0) return -1;
-  if(ReadFromImage(handle, channels, size) != size)
-    return -1;
-
-  /* set manifest from channels data */
-  if(ChannelsDeserializer(nap->manifest, channels) != 0)
-    return -1;
-
-  /* close image */
-  g_free(channels);
-  return CloseImage(handle);
-}
-
 int SaveSession(struct NaClApp *nap)
 {
   void *map = GetUserMap();
+  struct ChannelsSerial *buffer = ChannelsSerializer(nap->manifest, 0);
 
-  if(SaveUserMap(map) < 0) return -1;
-  if(SaveDump(nap, map) < 0) return -1;
-  if(SaveUserContext(nacl_user) < 0) return -1;
-  if(SaveChannels(nap) < 0) return -1;
+  if(SaveFixedSize(ID_MAP, map, USER_MAP_SIZE) < 0)
+    return -1;
+  if(SaveDump(nap, map) < 0)
+    return -1;
+  if(SaveFixedSize(ID_CONTEXT, nacl_user, sizeof *nacl_user) < 0)
+    return -1;
 
-  /* TODO(d'b): save report / session settings */
+  /*
+   * TODO(d'b): decide leave it or remove. seems that CommandPtr() can be
+   * safely removed. ReportSetupPtr() contains information about session
+   * state and perhaps it should be checked before snapshot, if only good
+   * session will be allowed to store, ReportSetupPtr() can be removed
+   * as well
+   * NOTE: disabled until "allocation" bug will not be resolved
+   */
+#if 0
+  if(SaveFixedSize(ID_REPORT, ReportSetupPtr(), sizeof *ReportSetupPtr()) < 0)
+    return -1;
+  if(SaveFixedSize(ID_SESSION, CommandPtr(), sizeof *CommandPtr()) < 0)
+    return -1;
+#endif
 
+  if(SaveFixedSize(ID_CHANNELS, buffer->channels, buffer->size) < 0)
+    return -1;
+
+  g_free(buffer);
   return 0;
 }
 
 int LoadSession(struct NaClApp *nap)
 {
   uint8_t map[USER_MAP_SIZE];
+  uint32_t size = GetFileSize(ID_CHANNELS);
+  struct ChannelRec *channels;
 
-  if(LoadUserMap(map) < 0) return -1;
-  if(LoadDump(nap, map) < 0) return -1;
-  if(LoadUserContext(nacl_user) < 0) return -1;
-  if(LoadChannels(nap) < 0) return -1;
+  if(LoadFixedSize(ID_MAP, map, USER_MAP_SIZE) < 0)
+    return -1;
+  if(LoadDump(nap, map) < 0)
+    return -1;
+  if(LoadFixedSize(ID_CONTEXT, nacl_user, sizeof *nacl_user) < 0)
+    return -1;
 
-  /* TODO(d'b): load report / session settings */
+#if 0 /* see comment above */
+  if(LoadFixedSize(ID_REPORT, ReportSetupPtr(), sizeof *ReportSetupPtr()) < 0)
+    return -1;
+  if(LoadFixedSize(ID_SESSION, CommandPtr(), sizeof *CommandPtr()) < 0)
+    return -1;
+#endif
 
+  /* calculate and allocate memory for channels */
+  if(size < 0) return -1;
+  channels = g_malloc(size);
+
+  /* set manifest from channels data */
+  if(LoadFixedSize(ID_CHANNELS, channels, size) < 0)
+    return -1;
+  if(ChannelsDeserializer(nap->manifest, channels) != 0)
+    return -1;
+
+  g_free(channels);
   return 0;
 }

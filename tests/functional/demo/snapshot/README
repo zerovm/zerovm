@@ -1,0 +1,18 @@
+the sample to test zerovm snapshot engine
+
+to restore stored session from the snapshot
+0. create the snapshot with "make"
+1. copy manifest e.g. to "load_snapshot.manifest"
+2. change "Program = snapshot.nexe" to "Program = ."
+3. run zerovm with "load_snapshot.manifest"
+
+output of restored session:
+"restored successfully!" = restored successfully!
+validator state = 0
+daemon = 0
+user return code = 0
+memtag = disabled
+accounting = 0.02 0.00 0 0 30 1022 0 0 0 0
+exit state = ok
+command = /home/bortoq/git/zerovm/zerovm[22266] load_snapshot.manifest
+

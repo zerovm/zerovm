@@ -123,7 +123,7 @@ void Report(struct Manifest *manifest)
   REP(r, "%s%s%s", REPORT_ACCOUNTING, Accounting(manifest), eol);
   REP(r, "%s%s%s", REPORT_STATE, ReportSetupPtr()->zvm_state == NULL
       ? UNKNOWN_STATE : ReportSetupPtr()->zvm_state, eol);
-  REP(r, "%s%s", REPORT_CMD, eol);
+  REP(r, "%s%s", REPORT_CMD, eol); // ### sigsegv bug is here
   OutputReport(r->str);
 
   g_string_free(r, TRUE);

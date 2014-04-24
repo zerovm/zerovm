@@ -23,6 +23,7 @@
 #include "src/loader/userspace.h"
 #include "src/main/setup.h"
 #include "src/main/report.h"
+#include "src/syscalls/switch_to_app.h"
 #include "src/syscalls/snapshot.h"
 #include "src/syscalls/ztrace.h"
 #include "src/channels/channel.h"
@@ -184,6 +185,16 @@ void SessionCtor(struct NaClApp *nap, char *mft)
     LoadSession(nap);
     ZLOGS(LOG_DEBUG, "session loading");
     ZTrace("[session loading]");
+
+    // ### TODO(d'b): temporary fix. should be replaced with permanent solution {{
+//    nap->initial_entry_pt = nacl_user->prog_ctr;
+    LastDefenseLine(nap->manifest);
+    InitSwitchToApp(nap);
+    ThreadContextCtor(nacl_sys, nap, 1, GetStackPtr());
+    ZLOGS(LOG_DEBUG, "SESSION %s RESUMED", nap->manifest->node);
+    ContextSwitch(nacl_user);
+    ZLOGFAIL(1, EFAULT, "the unreachable has been reached");
+    // }}
   }
 
   /* "defense in depth" call */
