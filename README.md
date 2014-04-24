@@ -1,5 +1,7 @@
 # ZeroVM
 
+[![Build Status](http://ci.oslab.cc/job/zvm-zerovm/badge/icon)](http://ci.oslab.cc/job/zvm-zerovm)
+
 ZeroVM is a simple virtual machine. ZeroVM can run (and isolate)
 64-bit x86 applications in a 32-bit address space. ZeroVM works under
 Linux x86_64. For more information check out
