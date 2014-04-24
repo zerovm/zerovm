@@ -1,0 +1,19 @@
+ZeroVM session snapshot description
+(up to date 2014-04-24, needs editing)
+---------------------------
+
+ZeroVM has ability to store session "on the fly" and restore it later. for
+now snapshot can only be initiated by untrusted code request. there are plans
+to allow snapshot from outside by signal or by request from "command channel"
+(design is not ready yet)
+
+snapshot is the image of session. the image consist of fllowing files:
+channels -- information about channels (see channels.txt)
+context -- untrusted context (untrusted registers)
+dump -- untrusted memory dump
+map -- untrusted memory map (protection of each page)
+
+for now if ZeroVM gets "." in manifest "Program" value it will try to read all
+necessary data from the current directory. "." will be upgraded to image file
+path soon. if stored session data loaded successfully ZeroVM sets other
+settings and pass control to the untrusted code where it was stopped
