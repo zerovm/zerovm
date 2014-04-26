@@ -1,0 +1,20 @@
+=====================================================================
+== untrusted boot prototype
+=====================================================================
+Channel = /dev/null, /dev/stdin, 0, 65536, 4194304, 0, 0
+Channel = /dev/stdout, /dev/stdout, 0, 0, 0, 4194304, 4294967296
+Channel = /dev/stderr, /dev/stderr, 0, 0, 0, 65536, 4194304
+Channel = PWD/hello.nexe, /boot/elf, 0, 0, 0, 65536, 4194304
+
+=====================================================================
+== switches for zerovm. some of them used to control nexe, some
+== for the internal zerovm needs
+=====================================================================
+Version = 20140320
+Memory = 33554432, 0
+Timeout = 60
+
+== "Program" key will be renamed to "Boot" and it is not recommended to use
+== ".nexe" extension for the uboot code. ".img" or ".bin" will be ok
+Program = uboot.img
+
