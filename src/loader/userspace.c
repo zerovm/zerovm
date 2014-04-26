@@ -14,12 +14,6 @@
  * limitations under the License.
  */
 
-/*
- * TODO(d'b): the replacement for sel_*. will be activated after
- * SEL will be removed. also this component will be used by snapshot engine
- * TODO(d'b): collect all defines in proper place under proper names
- */
-
 #include <assert.h>
 #include <sys/mman.h>
 #include "src/loader/sel_ldr.h" // ### to remove
@@ -29,16 +23,9 @@
 #include "src/channels/serializer.h"
 
 /*
- * TODO(d'b): reconsider user manifest position. perhaps it worth to place
- * it to the stack bottom
- * pros:
- *   - no need to recalculate and re-protect heap
- *   - no need to recalculate and re-protect hole
- * cons:
- *   - reduction by 64kb..5mb of user stack (more likely by 64kb)
+ * TODO(d'b): collect all defines in proper place under proper names
  */
-#define RELATIVE_MMAP (MAP_ANONYMOUS | MAP_NORESERVE | MAP_PRIVATE)
-#define ABSOLUTE_MMAP (RELATIVE_MMAP | MAP_FIXED)
+#define ABSOLUTE_MMAP (MAP_ANONYMOUS | MAP_NORESERVE | MAP_PRIVATE | MAP_FIXED)
 #define TRAMP_IDX 2
 #define TRAMP_PATTERN \
   0x48, 0xb8, 0xf4, 0xf4, 0xf4, 0xf4, 0xf4, 0xf4, \
@@ -154,7 +141,7 @@ static void SetStack()
 }
 
 /* calculate and allocate user heap. abort if fail */
-/* TODO(d'b): should be refactored after "simple boot" will be done {{ */
+/* TODO(d'b): should be refactored after "uboot" will be done {{ */
 /* WARNING: should be called AFTER elf loaded until SEL will be removed */
 static void SetHeapTMP(struct NaClApp *nap)
 {
@@ -207,11 +194,12 @@ static void SetManifest()
   size = ROUNDUP_64K(channels->size + sizeof *user);
   user->stack_size = STACK_SIZE - size;
 
-  /* make the user manifest read only */
+  /* make the user manifest read only but not locked for uboot sake */
   /* TODO(d'b): avoid this hack */
   for(i = 0; i < size / NACL_MAP_PAGESIZE; ++i)
-    GetUserMap()[i + (FOURGIG - STACK_SIZE) / NACL_MAP_PAGESIZE] &= PROT_READ | PROT_WRITE;
-  Zmprotect(user, size, PROT_READ | PROT_LOCK);
+    GetUserMap()[i + (FOURGIG - STACK_SIZE) / NACL_MAP_PAGESIZE]
+                 &= PROT_READ | PROT_WRITE;
+  Zmprotect(user, size, PROT_READ);
 }
 
 /* set user manifest and initialize heap */
@@ -227,7 +215,7 @@ static void SetCode()
   int i;
 
   /* change protection of area to RX */
-  /* TODO(d'b): will be removed after finishing "simple boot" */
+  /* TODO(d'b): will be removed after finishing "uboot" */
   i = Zmprotect((void*)(MEM_START + NACL_TRAMPOLINE_START + NACL_TRAMPOLINE_SIZE),
       gnap->static_text_end - NACL_TRAMPOLINE_SIZE - NULL_SIZE,
       PROT_READ | PROT_EXEC);
@@ -253,6 +241,6 @@ void SetUserSpace()
   SetStack();
   SetHeap();
   SetManifest();
-  SetCode(); /* TODO(d'b): remove after "simple boot" will be done */
-  SetROData(); /* TODO(d'b): remove after "simple boot" will be done */
+  SetCode(); /* TODO(d'b): remove after "uboot" will be done */
+  SetROData(); /* TODO(d'b): remove after "uboot" will be done */
 }

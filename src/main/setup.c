@@ -187,7 +187,6 @@ void SessionCtor(struct NaClApp *nap, char *mft)
     ZTrace("[session loading]");
 
     // ### TODO(d'b): temporary fix. should be replaced with permanent solution {{
-//    nap->initial_entry_pt = nacl_user->prog_ctr;
     LastDefenseLine(nap->manifest);
     InitSwitchToApp(nap);
     ThreadContextCtor(nacl_sys, nap, 1, GetStackPtr());
