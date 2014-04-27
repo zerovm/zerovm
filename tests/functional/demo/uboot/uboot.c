@@ -14,7 +14,9 @@
 void _start()
 {
   /* find /boot/elf channel handle */
-  /* read all */
+  /* read all sections and load loadable ones with appropriate protection */
+  /* calculate new user manifest size (w/o uboot now) */
+  /* pass conntrol to loaded code via zvm_mprotect */
 
   zvm_exit(12345);
 }
