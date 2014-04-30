@@ -179,6 +179,17 @@ static void SetManifest()
   assert(gnap->manifest->channels != NULL);
 
   /* set user manifest to the user stack end */
+  /*
+   * TODO(d'b): current user manifest address is not perfect. stack size
+   * is not intended to be constant. there are a few options:
+   * 1. return user manifest through trap function
+   * 2. find another fixed address. e.g. start of stack
+   * note: fixed address could be set for user manifest address only. possible
+   * solution can be placing this address into trampoline as part of nop
+   * instruction, like "cmp eax, address". another profit of this solution:
+   * this address cannot be changed by untrusted code (manifest can be changed
+   * by uboot)
+   */
   user = (void*)NaClUserToSys(FOURGIG - STACK_SIZE);
 
   /* serialize channels and copy to user manifest */

@@ -230,6 +230,9 @@ int32_t TrapHandler(struct NaClApp *nap, uint32_t args)
   assert(nap != NULL);
   assert(nap->manifest != NULL);
 
+  /* test args address validity */
+  if(args > -48u) return -EFAULT;
+
   /*
    * translate address from user space to system
    * note: cannot set "trap error"
