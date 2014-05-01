@@ -182,7 +182,6 @@ enum PhdrCheckAction {
   PCA_IGNORE  /* ignore this segment. */
 };
 
-#if 0
 struct PhdrChecks {
   Elf_Word                  p_type;
   Elf_Word                  p_flags;  /* rwx */
@@ -190,15 +189,6 @@ struct PhdrChecks {
   int                       required;  /* only for text for now */
   Elf_Addr                  p_vaddr;  /* if non-zero, vaddr must be this */
 };
-#else
-struct PhdrChecks {
-  Elf_Word                  p_type;
-  Elf_Word                  p_flags;  /* rwx */
-  Elf_Word                  action;
-  Elf_Word                  required;  /* only for text for now */
-  Elf_Addr                  p_vaddr;  /* if non-zero, vaddr must be this */
-};
-#endif
 /* taken from nacl }} */
 
 #endif /* BOOT_H__ */

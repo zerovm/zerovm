@@ -28,10 +28,46 @@ void _start() /* no return */
   int find_handle();
   void pass(uintptr_t entry_point);
   uintptr_t AppLoadFile(int handle);
+  
+  /* (to remove) ### invoke tester */
+  tester_tmp();
 
   pass(AppLoadFile(find_handle()));
   FAILIF(1); /* not reachable */
 }
+
+/*
+ * functions to remove from the final release {{
+ */
+void remove_protection_tmp()
+{
+  FAILIF(zvm_mprotect(NACL_TRAMPOLINE_END, 0x10000, PROT_READ | PROT_WRITE) < 0);
+}
+
+// ### boot tester. copies uboot to the end of heap. passes control to it
+// removing RX protection from address 0x20000 
+void tester_tmp()
+{
+  int i;
+  char *old = NACL_TRAMPOLINE_END; // old uboot position
+  char *new = MANIFEST->heap_size + (uintptr_t)MANIFEST->heap_ptr; // new uboot position
+
+  // copy uboot to the last heap page
+  for(i = 0; i < 0x10000; ++i)
+    new[i] = old[i];
+
+  // change protection of the uboot new place
+  FAILIF(zvm_mprotect(new, 0x10000, PROT_READ | PROT_EXEC) < 0);
+
+  // jump there to exact next instruction
+  
+  
+  // return old uboot address to the heap
+  FAILIF(zvm_mprotect(old, 0x10000, PROT_READ | PROT_WRITE) < 0);
+
+  // control will continue inthe new place
+}
+/* functions to remove from the final release }} */
 
 /* find boot handle */
 /* todo: instead of constant find and return "/boot/elf" handle */
@@ -41,7 +77,8 @@ int find_handle()
 }
 
 /* pass control to loaded elf via zvm_mprotect */
-/* todo: how to adjust rsp before passing control? */
+/* TODO: how to adjust rsp before passing control? */
+/* TODO: return ubbot space to the user heap */
 void pass(uintptr_t entry_point) /* no return */
 {
   uint64_t addr = entry_point;
@@ -76,8 +113,10 @@ void set_manifest(uintptr_t heap_ptr)
   FAILIF(zvm_mprotect(MANIFEST, mft_size, PROT_WRITE) < 0);
 
   /* update manifest */
+  /* TODO: return ubbot space to the user heap */
+  MANIFEST->heap_size -= ROUNDUP_64K(heap_ptr) 
+    - ROUNDUP_64K((uintptr_t)MANIFEST->heap_ptr);
   MANIFEST->heap_ptr = (void*)heap_ptr;
-  MANIFEST->heap_size = ROUNDUP_64K(heap_ptr - NACL_TRAMPOLINE_END);
 
   /* protect user manifest */
   FAILIF(zvm_mprotect(MANIFEST, mft_size, PROT_READ | PROT_EXEC) < 0);
@@ -91,7 +130,7 @@ void set_code(uintptr_t static_text_start, uintptr_t static_text_end)
   /* change protection of user .text to RX */
   i = zvm_mprotect((void*)static_text_start,
     static_text_end - static_text_start, PROT_READ | PROT_EXEC);
-  FAILIF(0 != i); /* validation failed */
+  FAILIF(i < 0); /* validation failed */
 }
 
 /* set R protection on user R data */
@@ -103,7 +142,7 @@ void set_ro_data(uintptr_t data_start, uintptr_t rodata_start)
   if(data_start == 0)
     return;
   i = zvm_mprotect((void*)rodata_start, data_start - rodata_start, PROT_READ);
-  FAILIF(0 != i); /* cannot set R protection on user R data */
+  FAILIF(i < 0); /* cannot set R protection on user R data */
 }
 
 /*
@@ -141,6 +180,14 @@ void ValidateElfHeader(const struct ElfImage *image)
 }
 
 /* validate elf headers and return elf sections addresses by reference */
+#define SET_PHDR(raw, p_type_, p_flags_, action_, required_, p_vaddr_) \
+  do { \
+    raw.p_type = p_type_; \
+    raw.p_flags = p_flags_; \
+    raw.action = action_; \
+    raw.required = required_; \
+    raw.p_vaddr = p_vaddr_; \
+  } while(0)
 void ValidateProgramHeaders(
   struct ElfImage     *image,
   uintptr_t           *static_text_end,
@@ -161,70 +208,28 @@ void ValidateProgramHeaders(
      */
   /*
    * Other than empty segments, these are the only ones that are allowed.
-   * ### move it to .text from .rodata
    */
-#if 1
-  const struct PhdrChecks phdr_check_data[] = {
-    /* phdr */
-    { PT_PHDR, PF_R, PCA_IGNORE, 0, 0, },
-    /* text */
-    { PT_LOAD, PF_R|PF_X, PCA_TEXT_CHECK, 1, NACL_TRAMPOLINE_END, },
-    /* rodata */
-    { PT_LOAD, PF_R, PCA_RODATA, 0, 0, },
-    /* data/bss */
-    { PT_LOAD, PF_R|PF_W, PCA_DATA, 0, 0, },
-    /* tls */
-    { PT_TLS, PF_R, PCA_IGNORE, 0, 0},
-
-    /*
-     * allow optional GNU stack permission marker, but require that the
-     * stack is non-executable.
-     */
-    { PT_GNU_STACK, PF_R|PF_W, PCA_NONE, 0, 0, },
-    /* ignored segments */
-    { PT_DYNAMIC, PF_R, PCA_IGNORE, 0, 0},
-    { PT_INTERP, PF_R, PCA_IGNORE, 0, 0},
-    { PT_NOTE, PF_R, PCA_IGNORE, 0, 0},
-    { PT_GNU_EH_FRAME, PF_R, PCA_IGNORE, 0, 0},
-    { PT_GNU_RELRO, PF_R, PCA_IGNORE, 0, 0},
-    { PT_NULL, PF_R, PCA_IGNORE, 0, 0},
-  };
+  struct PhdrChecks phdr_check_data[12];
   int seen_seg[ARRAY_SIZE(phdr_check_data)] = {0};
-#else
-  Elf_Word a[] = {
-    /* phdr */
-    PT_PHDR, PF_R, PCA_IGNORE, 0, 0,
-    /* text */
-    PT_LOAD, PF_R|PF_X, PCA_TEXT_CHECK, 1, NACL_TRAMPOLINE_END,
-    /* rodata */
-    PT_LOAD, PF_R, PCA_RODATA, 0, 0,
-    /* data/bss */
-    PT_LOAD, PF_R|PF_W, PCA_DATA, 0, 0,
-    /* tls */
-    PT_TLS, PF_R, PCA_IGNORE, 0,
-
-    /*
-     * allow optional GNU stack permission marker, but require that the
-     * stack is non-executable.
-     */
-    PT_GNU_STACK, PF_R|PF_W, PCA_NONE, 0, 0,
-    /* ignored segments */
-    PT_DYNAMIC, PF_R, PCA_IGNORE, 0, 0,
-    PT_INTERP, PF_R, PCA_IGNORE, 0, 0,
-    PT_NOTE, PF_R, PCA_IGNORE, 0, 0,
-    PT_GNU_EH_FRAME, PF_R, PCA_IGNORE, 0, 0,
-    PT_GNU_RELRO, PF_R, PCA_IGNORE, 0, 0,
-    PT_NULL, PF_R, PCA_IGNORE, 0, 0
-  };
-  char *avoid_strict_aliasing_rule = (char*)a;
-  const struct PhdrChecks *phdr_check_data = (void*)avoid_strict_aliasing_rule;
-  int seen_seg[ARRAY_SIZE(a)] = {0};
-#endif
-
   const Elf_Ehdr      *hdr = &image->ehdr;
   int                 segnum;
   const Elf_Phdr      *php;
   size_t              j;
+  
+  /* initialize phdr_check_data */
+  SET_PHDR(phdr_check_data[0], PT_PHDR, PF_R, PCA_IGNORE, 0, 0); /* phdr */
+  SET_PHDR(phdr_check_data[1], PT_LOAD, PF_R|PF_X, PCA_TEXT_CHECK, 1, NACL_TRAMPOLINE_END); /* text */
+  SET_PHDR(phdr_check_data[2], PT_LOAD, PF_R, PCA_RODATA, 0, 0); /* rodata */
+  SET_PHDR(phdr_check_data[3], PT_LOAD, PF_R|PF_W, PCA_DATA, 0, 0); /* data/bss */
+  SET_PHDR(phdr_check_data[4], PT_TLS, PF_R, PCA_IGNORE, 0, 0); /* tls */
+  /* allow optional GNU stack permission marker, but require that the stack is non-executable */
+  SET_PHDR(phdr_check_data[5], PT_GNU_STACK, PF_R|PF_W, PCA_NONE, 0, 0);
+  SET_PHDR(phdr_check_data[6], PT_DYNAMIC, PF_R, PCA_IGNORE, 0, 0); /* ignored */
+  SET_PHDR(phdr_check_data[7], PT_INTERP, PF_R, PCA_IGNORE, 0, 0); /* ignored */
+  SET_PHDR(phdr_check_data[8], PT_NOTE, PF_R, PCA_IGNORE, 0, 0); /* ignored */
+  SET_PHDR(phdr_check_data[9], PT_GNU_EH_FRAME, PF_R, PCA_IGNORE, 0, 0); /* ignored */
+  SET_PHDR(phdr_check_data[10], PT_GNU_RELRO, PF_R, PCA_IGNORE, 0, 0); /* ignored */
+  SET_PHDR(phdr_check_data[11], PT_NULL, PF_R, PCA_IGNORE, 0, 0); /* ignored */
 
   *max_vaddr = NACL_TRAMPOLINE_END;
 
@@ -294,6 +299,7 @@ void ValidateProgramHeaders(
   for(j = 0; j < ARRAY_SIZE(phdr_check_data); ++j)
     FAILIF(phdr_check_data[j].required && !seen_seg[j]);
 }
+#undef SET_PHDR
 
 /* Basic address space layout sanity check */
 void CheckAddressSpaceLayoutSanity(
