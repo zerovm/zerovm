@@ -1,17 +1,17 @@
 /*
  * untrusted boot (UBOOT) prototype
  *
- * WARNING: ro data and rw data will not be loaded! only .text elf section
- * will be processed by zerovm. so, do not use strings, static arrays e.t.c.
+ * several suggestions how to make own uboot:
+ * 1. ro data and rw data will not be loaded! only .text elf section will
+ *    be processed by zerovm. so, do not use strings, static arrays e.t.c.
+ * 2. entry point should be 1st byte in .text section (zerovm will not read
+ *    entry point and will always assume it started from the .text beginning)
+ * 3. only zerovm api should be used (no zrt!)
  *
- * WARNING: entry point should be 1st byte in .text section (zerovm will not
- * read entry point and will always assume it started from the .text beginning)
+ * note: in case of error uboot returns the line number where encountered
  *
- * WARNING: only zerovm api should be used
- *
- * note: since uboot has very basic error detection, all critical load errors
- * should be fatal and should be invoked from the line where they were produced.
- * FAILIF() macro can be used for that
+ * TODO: fix most ugly hacks: hardcodded offsets, magical numbers,
+ *   pseudo-"strcmp" e.t.c.
  */
 #include <sys/mman.h>
 #include "api/zvm.h"
@@ -22,7 +22,7 @@
 #define MANIFEST ((struct UserManifest*)(uintptr_t)0xFF000000)
 
 /* address of the next instruction of moved "uboot" */
-#define FIXUP 0x100
+#define FIXUP 0x120
 #define BOOTSIZE 0x10000
 
 /* jump to absolute address */
@@ -68,6 +68,7 @@ void _start() /* no return */
   zvm_mprotect(new, BOOTSIZE, PROT_READ | PROT_EXEC);
 
   /* pass control to new place */
+  /* TODO: find the way how to pass control w/o using fixup */
   JUMP(MANIFEST->heap_size + (uintptr_t)MANIFEST->heap_ptr - BOOTSIZE + FIXUP);
 
   /* this code run at the new place ===================> */
@@ -94,8 +95,13 @@ void _start() /* no return */
   uintptr_t initial_entry_pt; /* user entry point */
   struct ElfImage image_, *image = &image_;
 
-  /* TODO: find handle of "/boot/elf" instead of using constant */
-  int handle = 3;
+  /* find handle of elf file to load */
+  int handle = 3; /* start looking for self name right after stderr */
+  for(; handle < MANIFEST->channels_count; ++handle)
+    if(*(uint64_t*)(MANIFEST->channels[handle].name) == SELFNAME_1)
+      if(*((uint16_t*)(MANIFEST->channels[handle].name) + 4) == SELFNAME_2)
+        break;
+  FAILIF(handle >= MANIFEST->channels_count);
 
   /* LOAD ELF HEADERS */
   /* load elf headers */
@@ -351,16 +357,16 @@ void _start() /* no return */
 
   /* update manifest */
   /* TODO: return uboot space to the user heap */
-  MANIFEST->heap_size -= ROUNDUP_64K(break_addr) 
-    - ROUNDUP_64K((uintptr_t)MANIFEST->heap_ptr);
+  i = (uintptr_t)MANIFEST->heap_ptr + MANIFEST->heap_size; /* end of heap */
   MANIFEST->heap_ptr = (void*)break_addr;
+  MANIFEST->heap_size = i - break_addr;
 
   /* protect user manifest */
   FAILIF(zvm_mprotect(MANIFEST, mft_size, PROT_READ) < 0);
 
   /* PASS CONTROL TO LOADED ELF */
   register uint64_t addr = initial_entry_pt;
-  register uint64_t self = (uint64_t)new;
+  register uint64_t self = (uint64_t)new; /* TODO: fix warning */
 
   /* restore rsp */
   asm("mov $0xffffffc0, %esp");

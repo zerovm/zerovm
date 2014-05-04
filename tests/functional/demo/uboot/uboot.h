@@ -4,8 +4,6 @@
 #ifndef BOOT_H__
 #define BOOT_H__ 1
 
-/* todo: uboot error codes */
-
 /* constants */
 #define ADDR_BITS (32)
 #define NACL_MAX_PROGRAM_HEADERS 128
@@ -19,6 +17,10 @@
 #define NACL_HALT_SLED_SIZE      32
 #define NACL_BLOCK_SHIFT 5
 #define NACL_INSTR_BLOCK_SIZE    (1 << NACL_BLOCK_SHIFT)
+
+/* "/boot/elf" reserved for channel with elf to load */
+#define SELFNAME_1 0x6c652f746f6f622fLLU /* "/boot/el" */
+#define SELFNAME_2 ((uint16_t)0x66) /* "f\000" */
 
 /* macros */
 #define FAILIF(c) do { if(c) zvm_exit(__LINE__); } while(0)
@@ -52,9 +54,7 @@
  * ELFMAG and SELFMAG are names/values from linux elf.h, for code usage
  * compatibility.
  */
-//#define ELFMAG        "\177ELF"
-#define ELFMAG        0x464c457f
-//#define SELFMAG       4
+#define ELFMAG        0x464c457f /* "\177ELF" */
 
 /* EI_CLASS values */
 #define ELFCLASSNONE  0
