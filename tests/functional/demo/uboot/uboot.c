@@ -84,9 +84,6 @@ void _start() /* no return */
   /*
    * untrusted elf loader
    */
-
-//  AppLoadFile();
-//  AppLoadFile(); ===================================================== {{
   uintptr_t rodata_start = 0;
   uintptr_t rodata_end = 0;
   uintptr_t data_start = 0;
@@ -97,13 +94,10 @@ void _start() /* no return */
   uintptr_t initial_entry_pt; /* user entry point */
   struct ElfImage image_, *image = &image_;
 
-//  find_handle(); ===================================================== {{
+  /* TODO: find handle of "/boot/elf" instead of using constant */
   int handle = 3;
-//  find_handle(); ===================================================== }}
 
-  /* temporay object will be deleted at end of function */
-//  ElfImageNew(handle, image);
-//  ElfImageNew(handle, image); ======================================== {{
+  /* LOAD ELF HEADERS */
   /* load elf headers */
   FAILIF(zvm_pread(handle, &image->ehdr, sizeof image->ehdr, 0) != sizeof image->ehdr);
 
@@ -117,10 +111,8 @@ void _start() /* no return */
   FAILIF(zvm_pread(handle, &image->phdrs[0], image->ehdr.e_phnum
     * sizeof image->phdrs[0], (off_t)image->ehdr.e_phoff)
     != (image->ehdr.e_phnum * sizeof image->phdrs[0]));
-//  ElfImageNew(handle, image); ======================================== }}
 
-//  ValidateElfHeader(image);
-//  ValidateElfHeader(image); ======================================== {{
+  /* VALIDATE ELF HEADER */
   const Elf_Ehdr *hdr = &image->ehdr;
   const void *p = hdr->e_ident;
 
@@ -129,28 +121,23 @@ void _start() /* no return */
   FAILIF(ET_EXEC != hdr->e_type); /* non executable */
   FAILIF(EM_EXPECTED_BY_NACL != hdr->e_machine); /* bad machine */
   FAILIF(EV_CURRENT != hdr->e_version); /* bad elf version */
-//  ValidateElfHeader(image); ======================================== }}
 
 
-//  ValidateProgramHeaders(image, &static_text_end, &rodata_start,
-//      &rodata_end, &data_start, &data_end, &max_vaddr);
-//  ValidateProgramHeaders ======================================== {{
-      
-      /*
-     * Scan phdrs and do sanity checks in-line.  Verify that the load
-     * address is NACL_TRAMPOLINE_END, that we have a single text
-     * segment.  Data and TLS segments are not required, though it is
-     * hard to avoid with standard tools, but in any case there should
-     * be at most one each.  Ensure that no segment's vaddr is outside
-     * of the address space.  Ensure that PT_GNU_STACK is present, and
-     * that x is off.
-     */
+  /* VALIDATE ELF HEADERS */      
+  /*
+   * Scan phdrs and do sanity checks in-line.  Verify that the load
+   * address is NACL_TRAMPOLINE_END, that we have a single text
+   * segment.  Data and TLS segments are not required, though it is
+   * hard to avoid with standard tools, but in any case there should
+   * be at most one each.  Ensure that no segment's vaddr is outside
+   * of the address space.  Ensure that PT_GNU_STACK is present, and
+   * that x is off.
+   */
   /*
    * Other than empty segments, these are the only ones that are allowed.
    */
   struct PhdrChecks phdr_check_data[12];
   int seen_seg[ARRAY_SIZE(phdr_check_data)] = {0};
-//  const Elf_Ehdr      *hdr = &image->ehdr;
   int                 segnum;
   const Elf_Phdr      *php;
   size_t              j;
@@ -237,7 +224,6 @@ void _start() /* no return */
   /* check if ELF executable missing a required segment (text) */
   for(j = 0; j < ARRAY_SIZE(phdr_check_data); ++j)
     FAILIF(phdr_check_data[j].required && !seen_seg[j]);
-//  ValidateProgramHeaders ======================================== }}
 
   /*
    * if no rodata and no data, we make sure that there is space for
@@ -267,15 +253,10 @@ void _start() /* no return */
   initial_entry_pt = image->ehdr.e_entry;
 
   /* Bad program entry point address */
-//  FAILIF(!AddrIsValidEntryPt(initial_entry_pt, static_text_end)); /* Bad user entry point */
-// AddrIsValidEntryPt() ================================================ {{
   FAILIF(0 != (initial_entry_pt & (NACL_INSTR_BLOCK_SIZE - 1)));  
   FAILIF(initial_entry_pt >= static_text_end);  
-// AddrIsValidEntryPt() ================================================ }}
 
-//  CheckAddressSpaceLayoutSanity(static_text_end,
-//    data_start, rodata_start, rodata_end, data_end, max_vaddr);
-// CheckAddressSpaceLayoutSanity ======================================= {{
+  /* CHECK ADDRESS SPACE LAYOUT SANITY */
   /* fail if Data segment exists, but is not last segment */
   if(0 != data_start)
     FAILIF(data_end != max_vaddr);
@@ -313,11 +294,8 @@ void _start() /* no return */
 
   /* fail if data_start not a multiple of allocation size */
   FAILIF(0 != data_start && ROUNDUP_64K(data_start) != data_start);
-// CheckAddressSpaceLayoutSanity ======================================= }}
 
-//  ElfImageLoad(image, handle);
-//  ElfImageLoad(image, handle); ======================================= {{
-//  int               segnum;
+  /* LOAD ELF IMAGE */
   uintptr_t         end_vaddr;
 
   for(segnum = 0; segnum < image->ehdr.e_phnum; ++segnum)
@@ -350,28 +328,21 @@ void _start() /* no return */
       (off_t)php->p_offset) != php->p_filesz); /* segment load failure */
     /* region from p_filesz to p_memsz should already be zero filled */
   }
-//  ElfImageLoad(image, handle); ======================================= }}
 
-//  set_code(NACL_TRAMPOLINE_END, static_text_end);
-//  set_code(NACL_TRAMPOLINE_END, static_text_end); ==================== {{
+  /* SET PROTECTIONS */
   /* change protection of user .text to RX */
   i = zvm_mprotect((void*)NACL_TRAMPOLINE_END,
     ROUNDUP_64K(static_text_end) - NACL_TRAMPOLINE_END, PROT_READ | PROT_EXEC);
   FAILIF(i != 0); /* validation failed */
-//  set_code(NACL_TRAMPOLINE_END, static_text_end); ==================== }}
 
-//  set_ro_data(data_start, rodata_start);
-//  set_ro_data(data_start, rodata_start); ============================= {{
-  /* change protection of area to R if read only data is not NULL */
+  /* change protection of read only data to R if it is not NULL */
   if(data_start != 0)
   {
     i = zvm_mprotect((void*)rodata_start, data_start - rodata_start, PROT_READ);
     FAILIF(i != 0); /* cannot set R protection on user R data */
   }
-//  set_ro_data(data_start, rodata_start); ============================= }}
 
-//  set_manifest(break_addr);
-//  set_manifest(break_addr); ========================================== {{
+  /* UPDATE USER MANIFEST */
   uint32_t mft_size = ROUNDUP_64K(sizeof(struct UserManifest)
     + MANIFEST->channels_count * sizeof(struct ZVMChannel));
 
@@ -379,46 +350,37 @@ void _start() /* no return */
   FAILIF(zvm_mprotect(MANIFEST, mft_size, PROT_WRITE) < 0);
 
   /* update manifest */
-  /* TODO: return ubbot space to the user heap */
+  /* TODO: return uboot space to the user heap */
   MANIFEST->heap_size -= ROUNDUP_64K(break_addr) 
     - ROUNDUP_64K((uintptr_t)MANIFEST->heap_ptr);
   MANIFEST->heap_ptr = (void*)break_addr;
 
   /* protect user manifest */
   FAILIF(zvm_mprotect(MANIFEST, mft_size, PROT_READ) < 0);
-//  set_manifest(break_addr); ========================================== }}
 
-//  return initial_entry_pt;
-//  AppLoadFile(); ===================================================== }}
-
-//  pass(i);
-//  pass(i); =========================================================== {{
+  /* PASS CONTROL TO LOADED ELF */
   register uint64_t addr = initial_entry_pt;
+  register uint64_t self = (uint64_t)new;
 
   /* restore rsp */
-  // {{
-  asm("mov $0xffffffc8, %esp");
+  asm("mov $0xffffffc0, %esp");
   asm("add %r15, %rsp");
-  asm volatile("pushq %0" : "+r" (addr) : );
-  asm("naclret");
-  // }}
 
   /* allocate stack space for trap function arguments */
   asm(".intel_syntax noprefix");
   asm("lea edi, [rsp - 0x28]");
   asm(".att_syntax");
 
-  /* set up trap function (with arguments) */
+  /* set up trap function (with arguments) to return own page to heap */
   asm("pushq $0x3"); /* argument 3 */
   asm("pushq $0x10000"); /* argument 2 */
-  asm("pushq $0x20000"); /* argument 1 */
+  asm volatile("pushq %0" : "+r" (self) : ); /* argument 1 */
   asm("pushq $0x0"); /* 0x0 reserved */
   asm("pushq $0x746f7250"); /* trap function: TrapProt */
 
   /* emulate call to trap with different return address */
   asm volatile("pushq %0" : "+r" (addr) : );
   JUMP(0x10000);
-//  pass(i); =========================================================== }}
 
   FAILIF(1); /* not reachable */
 }
