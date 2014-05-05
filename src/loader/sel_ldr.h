@@ -136,7 +136,6 @@ void RunSession(struct NaClApp *nap);
 void FillMemoryRegionWithHalt(void *start, size_t size);
 
 int ThreadContextCtor(struct ThreadContext  *ntcp,
-                      struct NaClApp        *nap,
                       nacl_reg_t            prog_ctr,
                       nacl_reg_t            stack_ptr);
 

@@ -19,6 +19,9 @@
 #ifndef USERSPACE_H_
 #define USERSPACE_H_
 
+/* return the end of user heap (system address) */
+uintptr_t UserHeapEnd();
+
 /* allocate 84 gb of user space and call proxy */
 void MakeUserSpace();
 
@@ -31,5 +34,8 @@ void FreeUserSpace();
  * note: channels should be already set
  */
 void SetUserSpace();
+
+/* return system address of the 1st byte after user heap end */
+uintptr_t SysUserHeapEnd();
 
 #endif /* USERSPACE_H_ */

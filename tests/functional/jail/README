@@ -1,0 +1,8 @@
+this test is obsolette and should be replaced with the new one: mprotect
+
+subjects to tests:
+read only protection of area (should be ok)
+read/write protection of area (should be ok)
+read/execute protection of area (should be ok)
+read/write/execute protection of area (should fail)
+e.t.c.

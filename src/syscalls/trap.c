@@ -157,8 +157,6 @@ static int32_t ZVMProtHandle(uintptr_t addr, uint32_t size, int prot)
   sysaddr = NaClUserToSysAddrNullOkay(addr);
 
   /* sanity check */
-  if(size % NACL_MAP_PAGESIZE != 0)
-    return -EINVAL;
   if(sysaddr % NACL_MAP_PAGESIZE != 0)
     return -EINVAL;
 

@@ -39,7 +39,6 @@ void SetThreadCtxSp(struct ThreadContext *th_ctx, uintptr_t sp)
 }
 
 int ThreadContextCtor(struct ThreadContext *ntcp,
-                      struct NaClApp       *nap,
                       nacl_reg_t           prog_ctr,
                       nacl_reg_t           stack_ptr)
 {

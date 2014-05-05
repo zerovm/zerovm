@@ -50,8 +50,13 @@ struct UserManifest64
   struct ChannelRec channels[0];
 };
 
-static intptr_t heap_end = 0;
+static uintptr_t heap_end = 0;
 extern int SyscallSeg(); /* defined in to_trap.S */
+
+uintptr_t UserHeapEnd()
+{
+  return NaClUserToSys(heap_end);
+}
 
 /* allocate and set call proxy */
 static void MakeTrapProxy()
@@ -154,13 +159,13 @@ static void SetHeapTMP(struct NaClApp *nap)
       ENOMEM, "invalid memory size");
 
   /* calculate user heap size (must be allocated next to the data_end) */
-  p = (void*)ROUNDUP_64K(nap->data_end);
+  p = (void*)ROUNDUP_64K(NACL_TRAMPOLINE_END);
   heap = nap->manifest->mem_size - STACK_SIZE;
-  heap = ROUNDUP_64K(heap) - ROUNDUP_64K(nap->data_end);
+  heap = ROUNDUP_64K(heap) - ROUNDUP_64K(NACL_TRAMPOLINE_END);
   ZLOGFAIL(heap <= MIN_HEAP_SIZE, ENOMEM, "user heap size is too small");
 
   /* make heap RW */
-  p = (void*)NaClUserToSys((uintptr_t)p);
+  p = (void*)NaClUserToSys(NACL_TRAMPOLINE_END);
   i = Zmprotect(p, heap, PROT_READ | PROT_WRITE);
   ZLOGFAIL(0 != i, i, "cannot protection user heap");
   heap_end = NaClSysToUser((uintptr_t)p + heap);
@@ -197,9 +202,9 @@ static void SetManifest()
   memcpy(&user->channels, channels->channels, channels->size);
 
   /* set user manifest fields */
-  user->heap_ptr = gnap->break_addr;
+  user->heap_ptr = NACL_TRAMPOLINE_END;
+  user->heap_size = heap_end - NACL_TRAMPOLINE_END;
   user->channels_count = gnap->manifest->channels->len;
-  user->heap_size = heap_end - gnap->break_addr;
 
   /* calculate and set stack size */
   size = ROUNDUP_64K(channels->size + sizeof *user);
@@ -219,31 +224,6 @@ static void SetHeap()
   /* TODO(d'b): wrapper. content of SetHeapTMP() should be moved here */
   SetHeapTMP(gnap);
 }
-
-/* set RX protection on user code */
-static void SetCode()
-{
-  int i;
-
-  /* change protection of area to RX */
-  /* TODO(d'b): will be removed after finishing "uboot" */
-  i = Zmprotect((void*)(MEM_START + NACL_TRAMPOLINE_START + NACL_TRAMPOLINE_SIZE),
-      gnap->static_text_end - NACL_TRAMPOLINE_SIZE - NULL_SIZE,
-      PROT_READ | PROT_EXEC);
-  ZLOGFAIL(0 != i, ENOMEM, "cannot set RX protection on user code");
-}
-
-/* set R protection on user R data */
-static void SetROData()
-{
-  int i;
-
-  /* change protection of area to R if read only data is non NULL */
-  if(gnap->data_start == 0) return;
-  i = Zmprotect((void*)(MEM_START + gnap->rodata_start),
-      gnap->data_start - gnap->rodata_start, PROT_READ);
-  ZLOGFAIL(0 != i, ENOMEM, "cannot set R protection on user R data");
-}
 /* }} */
 
 void SetUserSpace()
@@ -252,6 +232,5 @@ void SetUserSpace()
   SetStack();
   SetHeap();
   SetManifest();
-  SetCode(); /* TODO(d'b): remove after "uboot" will be done */
-  SetROData(); /* TODO(d'b): remove after "uboot" will be done */
+  LockRestrictedMemory();
 }

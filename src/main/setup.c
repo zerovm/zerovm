@@ -26,9 +26,11 @@
 #include "src/syscalls/switch_to_app.h"
 #include "src/syscalls/snapshot.h"
 #include "src/syscalls/ztrace.h"
+#include "src/syscalls/trap.h"
 #include "src/channels/channel.h"
 #include "src/platform/signal.h"
 #include "src/platform/qualify.h"
+#include "src/loader/uboot.h"
 
 static struct NaClApp *g_nap = NULL;
 
@@ -62,28 +64,6 @@ void LastDefenseLine(struct Manifest *manifest)
   SetTimeout(manifest);
   LowerOwnPriority();
   GiveUpPrivileges();
-}
-
-static void ValidateProgram(struct NaClApp *nap)
-{
-  int status = 0; /* 0 = failed, 1 = successful */
-  int64_t size;
-  uint8_t *addr;
-
-  assert(nap->static_text_end > 0);
-
-  /* static and dynamic text address / length */
-  size = nap->static_text_end - NaClSysToUser(MEM_START + NACL_TRAMPOLINE_END);
-  addr = (uint8_t*)NaClUserToSys(NACL_TRAMPOLINE_END);
-
-  /* validate static and dynamic text */
-  if(size > 0)
-    status = NaClSegmentValidates(addr, size, nap->initial_entry_pt);
-
-  /* set results */
-  ReportSetupPtr()->validation_state = 1;
-  ZLOGFAIL(status == 0, ENOEXEC, "validation failed");
-  ReportSetupPtr()->validation_state = 0;
 }
 
 /* log user memory map */
@@ -121,14 +101,65 @@ static void FinalDump(struct NaClApp *nap)
   SignalHandlerFini();
 }
 
+/* set user stack and return its pointer (system address) */
+static uintptr_t UserStackPtr()
+{
+  uintptr_t stack_ptr;
+
+  /* calculate stack address */
+  stack_ptr = MEM_START + ((uintptr_t)1U << ADDR_BITS);
+  stack_ptr -= STACK_USER_DATA_SIZE;
+
+  /* set argc, argv, envp */
+  memset((void*)stack_ptr, 0, STACK_USER_DATA_SIZE);
+  ((uint32_t*)stack_ptr)[4] = 1;
+  ((uint32_t*)stack_ptr)[5] = 0xfffffff0;
+
+  return stack_ptr;
+}
+
+/* load boot to the user memory */
+static void Boot(struct Manifest *manifest)
+{
+  uint32_t size = uboot_bin_len;
+  uint8_t *buffer;
+  int i;
+
+  assert(manifest != NULL);
+
+  /* load user provided boot */
+  if(manifest->boot != NULL)
+  {
+    int handle;
+
+    size = GetFileSize(manifest->boot);
+    ZLOGFAIL(size < 0, EIO, "cannot get boot size");
+    buffer = (uint8_t*)UserHeapEnd() - ROUNDUP_64K(size);
+
+    handle = open(manifest->boot, O_RDONLY);
+    ZLOGFAIL(handle < 0, EIO, "cannot open %s", manifest->boot);
+    ZLOGFAIL(read(handle, buffer, size) != size,
+        EIO, "%s read error", manifest->boot);
+  }
+  /* load default boot */
+  else
+  {
+    buffer = (uint8_t*)UserHeapEnd() - ROUNDUP_64K(size);
+    memcpy(buffer, uboot_bin, size);
+  }
+
+  /* validate boot and set untrusted context */
+  i = NaClSegmentValidates(buffer, size, NaClSysToUser((uintptr_t)buffer));
+  ZLOGFAIL(i == 0, ENOEXEC, "boot validation failed");
+  i = Zmprotect(buffer, ROUNDUP_64K(size), PROT_READ | PROT_EXEC);
+  ZLOGFAIL(i != 0, EFAULT, "cannot protect boot");
+  ThreadContextCtor(nacl_user, NaClSysToUser((uintptr_t)buffer), UserStackPtr());
+}
+
 void SessionCtor(struct NaClApp *nap, char *mft)
 {
-  struct GioMemoryFileSnapshot boot;
-
-  /* initialize globals */
+  /* initialize globals and manifest */
   NaClAppCtor(nap);
-
-  /* initialize manifest */
   g_nap = nap;
   nap->manifest = ManifestCtor(mft);
 
@@ -137,69 +168,37 @@ void SessionCtor(struct NaClApp *nap, char *mft)
     RunSelQualificationTests();
   SignalHandlerInit();
 
-  if(g_strcmp0(nap->manifest->program, ".") != 0)
-  /* create session from scratch */
-  {
-    /* read elf into memory */
-    ZLOGFAIL(0 == GioMemoryFileSnapshotCtor(&boot, nap->manifest->program),
-        ENOENT, "open '%s': %s", nap->manifest->program, strerror(errno));
-    ZTrace("[memory snapshot]");
+  /* create user space */
+  MakeUserSpace();
 
-    /* initialize all channels */
-    /* TODO(d'b): should be done *after* validation */
-    ChannelsCtor(nap->manifest);
-    ZLOGS(LOG_DEBUG, "channels constructed");
-    ZTrace("[channels mounting]");
+  /* initialize all channels */
+  ChannelsCtor(nap->manifest);
+  ZLOGS(LOG_DEBUG, "channels constructed");
+  ZTrace("[channels mounting]");
 
-    /* validate program structure (check elf header and segments) */
-    ZLOGS(LOG_DEBUG, "Loading %s", nap->manifest->program);
-    AppLoadFile((struct Gio *) &boot, nap);
-    ZTrace("[user module loading]");
-
-    /* validate given program (ensure that text segment is safe) */
-    ZLOGS(LOG_DEBUG, "Validating %s", nap->manifest->program);
-    if(CommandPtr()->skip_validation == 0)
-      ValidateProgram(nap);
-    ZTrace("[user module validation]");
-
-    /* free snapshot */
-    if(-1 == (*((struct Gio*)&boot)->vtbl->Close)((struct Gio *)&boot))
-      ZLOG(LOG_ERROR, "Error while closing '%s'", nap->manifest->program);
-    (*((struct Gio*)&boot)->vtbl->Dtor)((struct Gio*)&boot);
-    ZTrace("[snapshot deallocation]");
-
-    /* lock restricted regions in user memory */
-    LockRestrictedMemory();
-    ZLOGS(LOG_DEBUG, "lock restricted user regions");
-    ZTrace("[restricted user regions locking]");
-  }
-  /* load session from image */
-  else
-  {
-    /* initialize all channels */
-    ChannelsCtor(nap->manifest);
-    ZLOGS(LOG_DEBUG, "channels constructed");
-    ZTrace("[channels mounting]");
-
-    /* load session */
-    LoadSession(nap);
-    ZLOGS(LOG_DEBUG, "session loading");
-    ZTrace("[session loading]");
-
-    // ### TODO(d'b): temporary fix. should be replaced with permanent solution {{
-    LastDefenseLine(nap->manifest);
-    InitSwitchToApp(nap);
-    ThreadContextCtor(nacl_sys, nap, 1, GetStackPtr());
-    ZLOGS(LOG_DEBUG, "SESSION %s RESUMED", nap->manifest->node);
-    ContextSwitch(nacl_user);
-    ZLOGFAIL(1, EFAULT, "the unreachable has been reached");
-    // }}
-  }
-
-  /* "defense in depth" call */
+  /* "defense in depth" */
   ZLOGS(LOG_DEBUG, "Last preparations");
   LastDefenseLine(nap->manifest);
   ZTrace("[last preparations]");
+
+  /* set untrusted context switcher */
+  InitSwitchToApp(nap);
+
+  /* boot session from.. */
+  if(g_strcmp0(nap->manifest->boot, ".") != 0)
+  /* ..scratch */
+  {
+    /* set user space areas */
+    SetUserSpace();
+    Boot(nap->manifest);
+  }
+  /* ..from image */
+  else
+    LoadSession(nap);
+  ZTrace("[session loaded]");
+
+  /* construct trusted context */
+  ThreadContextCtor(nacl_sys, 1, GetStackPtr());
 }
 
 void SessionDtor(int code, char *state)

@@ -79,7 +79,7 @@ typedef enum {
 #define KEYWORDS \
   X(Channel, 1, 0) \
   X(Version, 1, 1) \
-  X(Program, 1, 1) \
+  X(Boot, 0, 1) \
   X(Memory, 1, 1) \
   X(Timeout, 1, 1) \
   X(Node, 0, 1) \
@@ -142,9 +142,9 @@ static void Version(struct Manifest *manifest, char *value)
 }
 
 /* set program field (should be g_free later) */
-static void Program(struct Manifest *manifest, char *value)
+static void Boot(struct Manifest *manifest, char *value)
 {
-  manifest->program = g_strdup(g_strstrip(value));
+  manifest->boot = g_strdup(g_strstrip(value));
 }
 
 /* set mem_size and mem_tag field */
@@ -337,7 +337,7 @@ void ManifestDtor(struct Manifest *manifest)
   /* other */
   g_free(manifest->broker);
   TagDtor(manifest->mem_tag);
-  g_free(manifest->program);
+  g_free(manifest->boot);
   g_free(manifest);
 }
 

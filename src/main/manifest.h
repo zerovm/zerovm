@@ -68,7 +68,7 @@ struct ChannelDesc {
 /* zerovm manifest structure */
 struct Manifest {
   char *node; /* own node id from manifest */
-  char *program; /* program file name */
+  char *boot; /* untrusted loader */
   char *job; /* daemon: job file name. child: manifest file name */
   char *broker; /* path to talk with network broker */
   int32_t timeout; /* time user module allowed to run */

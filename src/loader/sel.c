@@ -244,8 +244,8 @@ NORETURN void RunSession(struct NaClApp *nap)
    * construct "nacl_user" and "nacl_sys" globals
    * note: nacl_sys->prog_ctr meaningless but should not be 0
    */
-  ThreadContextCtor(nacl_user, nap, nap->initial_entry_pt, stack_ptr);
-  ThreadContextCtor(nacl_sys, nap, 1, GetStackPtr());
+  ThreadContextCtor(nacl_user, nap->initial_entry_pt, stack_ptr);
+  ThreadContextCtor(nacl_sys, 1, GetStackPtr());
 
   /* pass control to the user side */
   ZLOGS(LOG_DEBUG, "SESSION %s STARTED", nap->manifest->node);

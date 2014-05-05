@@ -5,13 +5,13 @@ Channel = /dev/null, /dev/stdin, 0, 16, 256, 0, 0
 Channel = /dev/null, /dev/stdout, 0, 0, 0, 16, 256
 Channel = PWD/result.log, /dev/stderr, 0, 0, 0, 512, 8192
 Channel = PWD/seqro.data, /dev/seqro, 0, 32, 32, 0, 0
+Channel = PWD/seqro.nexe, /boot/elf, 1, 0x10000, 0x10000, 0, 0
 
 =====================================================================
 == switches for zerovm. some of them used to control nexe, some
 == for the internal zerovm needs
 =====================================================================
 Version = 20140320
-Program = seqro.nexe
 Memory = 33554432, 1
 Timeout = 1
 

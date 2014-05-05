@@ -21,10 +21,6 @@
 #undef MANIFEST
 #define MANIFEST ((struct UserManifest*)(uintptr_t)0xFF000000)
 
-/* address of the next instruction of moved "uboot" */
-#define FIXUP 0x120
-#define BOOTSIZE 0x10000
-
 /* jump to absolute address */
 #define JUMP(entry_point) \
   do { \
@@ -45,46 +41,8 @@
 /* main of untrusted elf loader */
 void _start() /* no return */
 {
-  /*
-   * following code moves itself to the "boot place". it contains some
-   * manually made constants. however, there is no need to beautify it
-   * since this code will be removed after integrating with zerovm (when
-   * zerovm will add support for uboot)
-   * FOLLOWING CODE SHOULD BE REMOVED IN RELEASE {{
-   */
   uintptr_t i;
-
-  /* old uboot position */
-  char *old = (void*)NACL_TRAMPOLINE_END;
-
-  /* new uboot position */
-  char *new = (void*)(MANIFEST->heap_size + (uintptr_t)MANIFEST->heap_ptr - BOOTSIZE);
-
-  /* copy uboot to the last heap page */
-  for(i = 0; i < BOOTSIZE; ++i)
-    new[i] = old[i];
-
-  /* change protection of the uboot new place */
-  zvm_mprotect(new, BOOTSIZE, PROT_READ | PROT_EXEC);
-
-  /* pass control to new place */
-  /* TODO: find the way how to pass control w/o using fixup */
-  JUMP(MANIFEST->heap_size + (uintptr_t)MANIFEST->heap_ptr - BOOTSIZE + FIXUP);
-
-  /* this code run at the new place ===================> */
-  asm("nop"); asm("nop"); asm("nop"); asm("nop"); asm("nop");
-  asm("nop"); asm("nop"); asm("nop"); asm("nop"); asm("nop");
-  asm("nop"); asm("nop"); asm("nop"); asm("nop"); asm("nop");
-  asm("nop"); asm("nop"); asm("nop"); asm("nop"); asm("nop");
-  asm("nop"); asm("nop");
-
-  /* return old uboot space to the heap */
-  zvm_mprotect(old, 0x10000, PROT_READ | PROT_WRITE);
-  /* FOLLOWING CODE SHOULD BE REMOVED IN RELEASE }} */
-
-  /*
-   * untrusted elf loader
-   */
+  int handle = 3; /* start looking for self name right after stderr */
   uintptr_t rodata_start = 0;
   uintptr_t rodata_end = 0;
   uintptr_t data_start = 0;
@@ -96,7 +54,6 @@ void _start() /* no return */
   struct ElfImage image_, *image = &image_;
 
   /* find handle of elf file to load */
-  int handle = 3; /* start looking for self name right after stderr */
   for(; handle < MANIFEST->channels_count; ++handle)
     if(*(uint64_t*)(MANIFEST->channels[handle].name) == SELFNAME_1)
       if(*((uint16_t*)(MANIFEST->channels[handle].name) + 4) == SELFNAME_2)
@@ -338,7 +295,7 @@ void _start() /* no return */
   /* SET PROTECTIONS */
   /* change protection of user .text to RX */
   i = zvm_mprotect((void*)NACL_TRAMPOLINE_END,
-    ROUNDUP_64K(static_text_end) - NACL_TRAMPOLINE_END, PROT_READ | PROT_EXEC);
+    static_text_end - NACL_TRAMPOLINE_END, PROT_READ | PROT_EXEC);
   FAILIF(i != 0); /* validation failed */
 
   /* change protection of read only data to R if it is not NULL */
@@ -366,7 +323,9 @@ void _start() /* no return */
 
   /* PASS CONTROL TO LOADED ELF */
   register uint64_t addr = initial_entry_pt;
-  register uint64_t self = (uint64_t)new; /* TODO: fix warning */
+//  register uint64_t self = (uint64_t)new; /* TODO: fix warning */
+  register uint64_t self = (uint64_t)MANIFEST->heap_size
+    + (uintptr_t)MANIFEST->heap_ptr - 0x10000 /* BOOTSIZE */;
 
   /* restore rsp */
   asm("mov $0xffffffc0, %esp");
@@ -387,7 +346,5 @@ void _start() /* no return */
   /* emulate call to trap with different return address */
   asm volatile("pushq %0" : "+r" (addr) : );
   JUMP(0x10000);
-
-  FAILIF(1); /* not reachable */
 }
 

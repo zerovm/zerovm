@@ -4,12 +4,12 @@
 Channel = PWD/accounting.nexe, /dev/stdin, 0, 65536, 4194304, 0, 0
 Channel = PWD/stdout.data, /dev/stdout, 0, 0, 0, 65536, 4194304
 Channel = PWD/result.log, /dev/stderr, 0, 0, 0, 65536, 4194304
+Channel = PWD/accounting.nexe, /boot/elf, 1, 0x10000, 0x10000, 0, 0
 
 =====================================================================
 == switches for zerovm. some of them used to control nexe, some
 == for the internal zerovm needs
 =====================================================================
 Version = 20140320
-Program = accounting.nexe
 Memory = 33554432, 1
 Timeout = 1

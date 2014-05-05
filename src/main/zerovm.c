@@ -25,6 +25,7 @@
 #include <assert.h>
 #include "src/main/setup.h"
 #include "src/main/report.h"
+#include "src/syscalls/switch_to_app.h"
 
 #define BADCMDLINE(msg) \
   do { \
@@ -113,7 +114,8 @@ int main(int argc, char **argv)
 
   /* switch to the user code flushing all buffers */
   fflush(NULL);
-  RunSession(&state);
+  ZLOGS(LOG_DEBUG, "SESSION %s STARTED", state.manifest->node);
+  ContextSwitch(nacl_user);
 
   return EFAULT; /* unreachable */
 }
