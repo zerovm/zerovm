@@ -51,6 +51,9 @@ EXTERN_C_BEGIN
 #define CH_RND_READABLE(channel) (((channel)->type & 1) == 1)
 #define CH_RND_WRITEABLE(channel) (((channel)->type & 2) == 2)
 
+/* return size of given file or negative error code */
+int64_t GetFileSize(const char *name);
+
 /* sort channels */
 void SortChannels(GPtrArray *channels);
 

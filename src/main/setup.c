@@ -66,6 +66,29 @@ void LastDefenseLine(struct Manifest *manifest)
   GiveUpPrivileges();
 }
 
+/* TODO(d'b): should be removed after nap removal {{ */
+/*
+ * Initializes a NaCl application with the default parameters.
+ * nap is a pointer to the NaCl object that is being filled in.
+ * assumes all fields already set to zeroes
+ */
+void NaClAppCtor(struct NaClApp *nap)
+{
+  gnap = nap;
+  nacl_user = g_malloc(sizeof *nacl_user);
+  nacl_sys = g_malloc(sizeof *nacl_sys);
+}
+
+/* free app memory and globals */
+void NaClAppDtor(struct NaClApp *nap)
+{
+  g_free(nacl_sys);
+  g_free(nacl_user);
+  nacl_sys = NULL;
+  nacl_user = NULL;
+}
+/* }} */
+
 /* log user memory map */
 /* TODO(d'b): rewrite or remove. this function spams syslog */
 static void LogMemMap()
@@ -95,7 +118,6 @@ static void LogMemMap()
 static void FinalDump(struct NaClApp *nap)
 {
   ZLOGS(LOG_INSANE, "exiting -- printing NaClApp details");
-  PrintAppDetails(nap, LOG_INSANE);
   LogMemMap();
 
   SignalHandlerFini();

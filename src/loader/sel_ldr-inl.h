@@ -48,6 +48,7 @@
  */
 
 #include "src/main/zlog.h"
+#include "src/loader/userspace.h"
 
 /* d'b: no checks, just does the work */
 static INLINE uintptr_t NaClUserToSysAddrNullOkay(uintptr_t uaddr)
@@ -69,11 +70,6 @@ static INLINE uintptr_t NaClSysToUser(uintptr_t sysaddr)
       "sysaddr 0x%08lx, mem_start 0x%08lx, addr space %d bits",
       sysaddr, MEM_START, ADDR_BITS);
   return sysaddr - MEM_START;
-}
-
-static INLINE uintptr_t NaClEndOfStaticText(struct NaClApp *nap)
-{
-  return nap->static_text_end;
 }
 
 static INLINE uintptr_t NaClSandboxCodeAddr(uintptr_t addr)

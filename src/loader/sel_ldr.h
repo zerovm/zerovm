@@ -39,12 +39,6 @@
 
 #include <stdint.h>
 
-/* from sel_ldr_x86.h */
-#define ADDR_BITS (32)
-#define NACL_HALT_OPCODE   0xf4
-#define NACL_HALT_LEN      1 /* length of halt instruction */
-
-#include "src/platform/gio.h"
 #include "src/main/config.h"
 #include "src/loader/sel_rt.h"
 #include "src/main/manifest.h"
@@ -92,52 +86,11 @@ struct ThreadContext    *nacl_user; /* user registers storage */
 struct ThreadContext    *nacl_sys;  /* zerovm registers storage */
 struct NaClApp              *gnap;  /* pointer to global NaClApp object */
 
-/*
- * Initializes a NaCl application with the default parameters.
- * nap is a pointer to the NaCl object that is being filled in.
- * assumes all fields already set to zeroes
- */
-void NaClAppCtor(struct NaClApp *nap);
-
-/* free app memory and globals */
-void NaClAppDtor(struct NaClApp *nap);
-
-/*
- * Loads a NaCl ELF file into memory in preparation for running it.
- *
- * gp is a pointer to a generic I/O object and should be a GioMem with
- * a memory buffer containing the file read entirely into memory if
- * the file system might be subject to race conditions (e.g., another
- * thread / process might modify a downloaded NaCl ELF file while we
- * are loading it here).
- *
- * nap is a pointer to the NaCl object that is being filled in.  it
- * should be properly constructed via NaClAppCtor.
- *
- * note: it may be necessary to flush the icache if the memory
- * allocated for use had already made it into the icache from another
- * NaCl application instance, and the icache does not detect
- * self-modifying code / data writes and automatically invalidate the
- * cache lines.
- */
-void AppLoadFile(struct Gio *gp, struct NaClApp *nap);
-
-/* TODO(d'b): replace spaces with format options and use macro */
-void PrintAppDetails(struct NaClApp *nap, int verbosity);
-
-/*
- * set an empty user stack and other context, then pass
- * control to user code
- */
-void RunSession(struct NaClApp *nap);
-
 #include "src/loader/sel_ldr-inl.h"
 
-void FillMemoryRegionWithHalt(void *start, size_t size);
-
-int ThreadContextCtor(struct ThreadContext  *ntcp,
-                      nacl_reg_t            prog_ctr,
-                      nacl_reg_t            stack_ptr);
+void ThreadContextCtor(struct ThreadContext *ntcp,
+                       nacl_reg_t            prog_ctr,
+                       nacl_reg_t            stack_ptr);
 
 EXTERN_C_END
 

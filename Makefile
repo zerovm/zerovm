@@ -26,7 +26,7 @@ debug: CXXFLAGS1 := -DDEBUG -g $(CXXFLAGS1)
 debug: CXXFLAGS2 := -DDEBUG -g $(CXXFLAGS2)
 debug: create_dirs zerovm tests
 
-OBJS=obj/elf_util.o obj/gio.o obj/gio_snapshot.o obj/manifest.o obj/setup.o obj/channel.o obj/qualify.o obj/report.o obj/zlog.o obj/signal_common.o obj/signal.o obj/to_app.o obj/switch_to_app.o obj/to_trap.o obj/syscall_hook.o obj/prefetch.o obj/preload.o obj/sel_ldr.o obj/sel.o obj/sel_rt.o obj/trap.o obj/etag.o obj/accounting.o obj/daemon.o obj/snapshot.o obj/ztrace.o obj/userspace.o obj/usermap.o obj/serializer.o
+OBJS=obj/manifest.o obj/setup.o obj/channel.o obj/qualify.o obj/report.o obj/zlog.o obj/signal_common.o obj/signal.o obj/to_app.o obj/switch_to_app.o obj/to_trap.o obj/syscall_hook.o obj/prefetch.o obj/preload.o obj/sel_rt.o obj/trap.o obj/etag.o obj/accounting.o obj/daemon.o obj/snapshot.o obj/ztrace.o obj/userspace.o obj/usermap.o obj/serializer.o
 CC=@gcc
 CXX=@g++
 
@@ -99,19 +99,10 @@ obj/to_trap.o: src/syscalls/to_trap.S
 obj/zerovm.o: src/main/zerovm.c
 	$(CC) $(CCFLAGS1) -o $@ $^
 
-obj/elf_util.o: src/loader/elf_util.c
-	$(CC) $(CCFLAGS1) -o $@ $^
-
 obj/signal_common.o: src/platform/signal_common.c
 	$(CC) $(CCFLAGS1) -o $@ $^
 
 obj/syscall_hook.o: src/syscalls/syscall_hook.c
-	$(CC) $(CCFLAGS1) -o $@ $^
-
-obj/sel_ldr.o: src/loader/sel_ldr.c
-	$(CC) $(CCFLAGS1) -o $@ $^
-
-obj/sel.o: src/loader/sel.c
 	$(CC) $(CCFLAGS1) -o $@ $^
 
 obj/switch_to_app.o: src/syscalls/switch_to_app.c
@@ -130,12 +121,6 @@ obj/report.o: src/main/report.c
 	$(CC) $(CCFLAGS1) -o $@ $^
 
 obj/zlog.o: src/main/zlog.c
-	$(CC) $(CCFLAGS1) -o $@ $^
-
-obj/gio.o: src/platform/gio.c
-	$(CC) $(CCFLAGS1) -o $@ $^
-
-obj/gio_snapshot.o: src/platform/gio_snapshot.c
 	$(CC) $(CCFLAGS1) -o $@ $^
 
 obj/etag.o: src/main/etag.c

@@ -55,12 +55,12 @@ void SelLdrTest::TearDown() {
 // set, get, setavail operations on the descriptor table
 // todo: test is almost useless and should be removed or updated
 TEST_F(SelLdrTest, DescTable) {
-  struct NaClApp app = {0};
+//  struct NaClApp app = {0};
 
-  NaClAppCtor(&app);
-  ASSERT_EQ(0u, app.static_text_end);
-  ASSERT_EQ(0u, app.rodata_start);
-  ASSERT_EQ(0u, app.data_start);
-  ASSERT_EQ(0u, app.data_end);
-  ASSERT_EQ(0u, app.initial_entry_pt);
+//  NaClAppCtor(&app);
+//  ASSERT_EQ(0u, app.static_text_end);
+//  ASSERT_EQ(0u, app.rodata_start);
+//  ASSERT_EQ(0u, app.data_start);
+//  ASSERT_EQ(0u, app.data_end);
+//  ASSERT_EQ(0u, app.initial_entry_pt);
 }

@@ -23,6 +23,7 @@
 /*
  * manifest parser. input: manifest file name. output: manifest structure
  */
+#include <stdio.h>
 #include <assert.h>
 #include <sys/un.h>
 #include <arpa/inet.h> /* convert ip to int */

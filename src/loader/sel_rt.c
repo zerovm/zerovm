@@ -38,9 +38,9 @@ void SetThreadCtxSp(struct ThreadContext *th_ctx, uintptr_t sp)
   th_ctx->rsp = (nacl_reg_t)sp;
 }
 
-int ThreadContextCtor(struct ThreadContext *ntcp,
-                      nacl_reg_t           prog_ctr,
-                      nacl_reg_t           stack_ptr)
+void ThreadContextCtor(struct ThreadContext *ntcp,
+                       nacl_reg_t            prog_ctr,
+                       nacl_reg_t            stack_ptr)
 {
   ntcp->rax = 0;
   ntcp->rbx = 0;
@@ -64,6 +64,4 @@ int ThreadContextCtor(struct ThreadContext *ntcp,
 
   ntcp->prog_ctr = NaClUserToSys(prog_ctr);
   ntcp->sysret = 0;
-
-  return 1;
 }

@@ -19,6 +19,9 @@
 #ifndef USERSPACE_H_
 #define USERSPACE_H_
 
+#define ADDR_BITS (32)
+#define NACL_HALT_OPCODE 0xf4
+
 /* return the end of user heap (system address) */
 uintptr_t UserHeapEnd();
 

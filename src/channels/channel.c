@@ -27,6 +27,14 @@
 static GTree *aliases;
 static int tree_reset = 0;
 
+/* TODO(d'b): find better place for the function */
+int64_t GetFileSize(const char *name)
+{
+  struct stat fs;
+  int handle = open(name, O_RDONLY);
+  return fstat(handle, &fs), close(handle) ? -1 : fs.st_size;
+}
+
 /* if the function called there is duplicate */
 static void DuplicateKey(gpointer key)
 {

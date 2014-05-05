@@ -22,6 +22,7 @@
  * limitations under the License.
  */
 
+#include <stdio.h>
 #include <assert.h>
 #include "src/main/setup.h"
 #include "src/main/report.h"
