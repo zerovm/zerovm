@@ -48,8 +48,8 @@ static void CommandLine(int argc, char **argv)
   g_string_free(cmd, TRUE);
 }
 
-/* parse given command line, manifest and initialize NaClApp object */
-static char *ParseCommandLine(struct NaClApp *nap, int argc, char **argv)
+/* parse given command line, manifest and initialize session settings */
+static char *ParseCommandLine(int argc, char **argv)
 {
   int opt;
   char *mft = NULL;
@@ -107,7 +107,7 @@ int main(int argc, char **argv)
 
   /* set logger in case it will be used during initialization */
   ZLogCtor(LOG_ERROR);
-  SessionCtor(&state, ParseCommandLine(&state, argc, argv));
+  SessionCtor(&state, ParseCommandLine(argc, argv));
 
   /* quit if fuzz testing specified */
   if(CommandPtr()->quit_after_load)

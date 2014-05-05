@@ -4,7 +4,7 @@
 Channel = /dev/null, /dev/stdin, 0, 65536, 4194304, 0, 0
 Channel = /dev/stdout, /dev/stdout, 0, 0, 0, 4194304, 4294967296
 Channel = /dev/stderr, /dev/stderr, 0, 0, 0, 65536, 4194304
-Channel = PWD/hello.nexe, /boot/elf, 1, 65536, 4194304, 0, 0
+Channel = PWD/../zhello/zhello.nexe, /boot/elf, 1, 65536, 4194304, 0, 0
 
 =====================================================================
 == switches for zerovm. some of them used to control nexe, some
@@ -13,10 +13,5 @@ Channel = PWD/hello.nexe, /boot/elf, 1, 65536, 4194304, 0, 0
 Version = 20140320
 Memory = 33554432, 0
 Timeout = 60000000
-
-== "Program" key will be renamed to "Boot" and it is not recommended to use
-== ".nexe" extension for the uboot code. ".img" or ".bin" will be ok
-== "Boot" can become optional key because it is possible to use default uboot
-== if it not provided in manifest
-Program = uboot.nexe
+Boot = uboot.bin
 

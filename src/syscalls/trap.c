@@ -185,7 +185,7 @@ static int32_t ZVMProtHandle(uintptr_t addr, uint32_t size, int prot)
       }
 
       /* validation failed */
-      if(NaClSegmentValidates((uint8_t*)sysaddr, size, addr) == 0)
+      if(Validate((uint8_t*)sysaddr, size, addr) != 0)
         result = -EPERM;
       /* validation ok, changing protection */
       else

@@ -23,8 +23,8 @@
 
 #define ZEROVM_PRIORITY 19
 #define HELP_SCREEN /* update command line switches here */\
-    "%s%s\033[1m\033[37mZeroVM tag%d\033[0m lightweight VM manager, build 2014-04-23\n"\
-    "Usage: <manifest> [-v#] [-T#] [-stFPQ]\n\n"\
+    "%s%s\033[1m\033[37mZeroVM tag%d\033[0m lightweight VM manager, build 2014-05-05\n"\
+    "Usage: <manifest> [-v#] [-T#] [-t#] [-stFPQ]\n\n"\
     " -s skip validation\n"\
     " -t <0..3> report to stdout/log/fast (default 0)\n"\
     " -v <0..3> log verbosity (default 0)\n"\
@@ -33,8 +33,11 @@
     " -Q disable platform qualification\n"\
     " -T enable trap calls tracing\n"
 
-/* validator function from libvalidator.so */
-int NaClSegmentValidates(uint8_t* mbase, size_t size, uint32_t vbase);
+/*
+ * wrapper. validate given buffer if it fits to nacl platform
+ * return 0 if ok, 1 if failed
+ */
+int Validate(uint8_t* mbase, size_t size, uint32_t vbase);
 
 /* the last frontier of defense. zerovm limits itself as much as possible */
 /* TODO(d'b): make it static after removing nap. use SessionCtor() in daemon */

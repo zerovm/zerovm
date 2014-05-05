@@ -43,7 +43,7 @@ NORETURN void SyscallHook()
    * sp_sys points to the top of user stack where there is a retaddr to
    * trampoline slot
    */
-  tramp_ret = *(uintptr_t *)sp_sys;
+  tramp_ret = *(uintptr_t*)sp_sys;
   sysnum = (tramp_ret - (MEM_START + NACL_SYSCALL_START_ADDR))
       >> NACL_SYSCALL_BLOCK_SHIFT;
 
@@ -51,7 +51,7 @@ NORETURN void SyscallHook()
    * getting user return address (the address where we need to return after
    * system call) from the user stack. (see stack layout above)
    */
-  nacl_user->prog_ctr = *(uintptr_t *)(sp_sys + NACL_USERRET_FIX);
+  nacl_user->prog_ctr = *(uintptr_t*)(sp_sys + NACL_USERRET_FIX);
 
   /*
    * Fix the user stack, throw away return addresses from the top of the stack.

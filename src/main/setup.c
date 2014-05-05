@@ -32,6 +32,9 @@
 #include "src/platform/qualify.h"
 #include "src/loader/uboot.h"
 
+/* validator function from libvalidator.so */
+int NaClSegmentValidates(uint8_t* mbase, size_t size, uint32_t vbase);
+
 static struct NaClApp *g_nap = NULL;
 
 /* set timeout. by design timeout must be specified in manifest */
@@ -88,6 +91,12 @@ void NaClAppDtor(struct NaClApp *nap)
   nacl_user = NULL;
 }
 /* }} */
+
+int Validate(uint8_t* mbase, size_t size, uint32_t vbase)
+{
+  return CommandPtr()->skip_validation ? 0
+      : 0 - !NaClSegmentValidates(mbase, size, vbase);
+}
 
 /* log user memory map */
 /* TODO(d'b): rewrite or remove. this function spams syslog */
@@ -171,8 +180,8 @@ static void Boot(struct Manifest *manifest)
   }
 
   /* validate boot and set untrusted context */
-  i = NaClSegmentValidates(buffer, size, NaClSysToUser((uintptr_t)buffer));
-  ZLOGFAIL(i == 0, ENOEXEC, "boot validation failed");
+  i = Validate(buffer, size, NaClSysToUser((uintptr_t)buffer));
+  ZLOGFAIL(i != 0, ENOEXEC, "boot validation failed");
   i = Zmprotect(buffer, ROUNDUP_64K(size), PROT_READ | PROT_EXEC);
   ZLOGFAIL(i != 0, EFAULT, "cannot protect boot");
   ThreadContextCtor(nacl_user, NaClSysToUser((uintptr_t)buffer), UserStackPtr());
