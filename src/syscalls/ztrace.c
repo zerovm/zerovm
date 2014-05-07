@@ -60,6 +60,7 @@ void ZTraceDtor(int mode)
   int result;
 
   if(timer == NULL || ztrace_log == NULL || ztrace_buf == NULL) return;
+  if(CommandPtr()->ztrace_name == NULL) return;
 
   /* drop buffer to log */
   if(mode != 0)
@@ -83,6 +84,7 @@ void ZTrace(const char *msg)
   double timing;
 
   if(timer == NULL || ztrace_log == NULL || ztrace_buf == NULL) return;
+  if(CommandPtr()->ztrace_name == NULL) return;
 
   timing = g_timer_elapsed(timer, NULL);
   ztrace_chrono += timing;

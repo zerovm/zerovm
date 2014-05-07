@@ -194,27 +194,35 @@ void SessionCtor(struct NaClApp *nap, char *mft)
   g_nap = nap;
   ZTraceCtor();
   nap->manifest = ManifestCtor(mft);
+  ZLOGS(LOG_DEBUG, "[manifest parsed]");
+  ZTrace("[manifest parsed]");
 
   /* test platform and install signal handler after that */
   if(CommandPtr()->skip_qualification == 0)
     RunSelQualificationTests();
   SignalHandlerInit();
+  ZLOGS(LOG_DEBUG, "[platform tested]");
+  ZTrace("[platform tested]");
 
   /* create user space */
   MakeUserSpace();
+  ZLOGS(LOG_DEBUG, "[user space created]");
+  ZTrace("[user space created]");
 
   /* initialize all channels */
   ChannelsCtor(nap->manifest);
-  ZLOGS(LOG_DEBUG, "channels constructed");
-  ZTrace("[channels mounting]");
+  ZLOGS(LOG_DEBUG, "[channels constructed]");
+  ZTrace("[channels constructed]");
 
   /* "defense in depth" */
-  ZLOGS(LOG_DEBUG, "Last preparations");
   LastDefenseLine(nap->manifest);
-  ZTrace("[last preparations]");
+  ZLOGS(LOG_DEBUG, "[duck'n'covered]");
+  ZTrace("[duck'n'covered]");
 
   /* set untrusted context switcher */
   InitSwitchToApp(nap);
+  ZLOGS(LOG_DEBUG, "[context switch initialized]");
+  ZTrace("[context switch initialized]");
 
   /* boot session from.. */
   if(g_strcmp0(nap->manifest->boot, ".") != 0)
@@ -222,11 +230,16 @@ void SessionCtor(struct NaClApp *nap, char *mft)
   {
     /* set user space areas */
     SetUserSpace();
+    ZLOGS(LOG_DEBUG, "[user space set]");
+    ZTrace("[user space set]");
     Boot(nap->manifest);
+    ZLOGS(LOG_DEBUG, "[booted]");
+    ZTrace("[booted]");
   }
   /* ..from image */
   else
     LoadSession(nap);
+  ZLOGS(LOG_DEBUG, "[session loaded]");
   ZTrace("[session loaded]");
 
   /* construct trusted context */
