@@ -4,12 +4,12 @@
 Channel = /dev/null, /dev/stdin, 0, 1024, 1024, 0, 0
 Channel = /dev/stdout, /dev/stdout, 0, 0, 0, 1024, 1024
 Channel = /dev/stderr, /dev/stderr, 0, 0, 0, 1024, 1024
+Channel = PWD/romb.nexe, /boot/elf, 1, 0x10000, 0x10000, 0, 0
 
 =====================================================================
 == switches for zerovm. some of them used to control nexe, some
 == for the internal zerovm needs
 =====================================================================
 Version = 20140509
-Program = romb.nexe
 Memory = 33554432, 1
 Timeout = 1

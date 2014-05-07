@@ -314,7 +314,6 @@ void _start() /* no return */
   FAILIF(zvm_mprotect(MANIFEST, mft_size, PROT_WRITE) < 0);
 
   /* update manifest */
-  /* TODO: return uboot space to the user heap */
   i = (uintptr_t)MANIFEST->heap_ptr + MANIFEST->heap_size; /* end of heap */
   MANIFEST->heap_ptr = (void*)break_addr;
   MANIFEST->heap_size = i - break_addr;
@@ -324,7 +323,6 @@ void _start() /* no return */
 
   /* PASS CONTROL TO LOADED ELF */
   register uint64_t addr = initial_entry_pt;
-//  register uint64_t self = (uint64_t)new; /* TODO: fix warning */
   register uint64_t self = (uint64_t)MANIFEST->heap_size
     + (uintptr_t)MANIFEST->heap_ptr - 0x10000 /* BOOTSIZE */;
 

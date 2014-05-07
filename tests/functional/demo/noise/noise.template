@@ -4,12 +4,12 @@
 Channel = /dev/null, /dev/stdin, 0, 1, 1, 0, 0
 Channel = PWD/output.data, /dev/stdout, 0, 0, 0, 0x10000, 0x1000000
 Channel = /dev/null, /dev/stderr, 0, 0, 0, 1, 1
+Channel = PWD/noise.nexe, /boot/elf, 1, 0x10000, 0x10000, 0, 0
 
 =====================================================================
 == switches for zerovm. some of them used to control nexe, some
 == for the internal zerovm needs
 =====================================================================
 Version = 20140509
-Program = noise.nexe
 Memory = 33554432, 0
 Timeout = 10
