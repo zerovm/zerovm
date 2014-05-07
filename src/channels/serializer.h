@@ -43,7 +43,8 @@ struct ChannelsSerial
 };
 
 /* serialize channels into structure. all integers represented in platform order */
-struct ChannelsSerial *ChannelsSerializer(struct Manifest *manifest, uintptr_t offset);
+struct ChannelsSerial *ChannelsSerializer(
+    const struct Manifest *manifest, uintptr_t offset);
 
 /*
  * deserialize channels to manifest. channels count will be taken from

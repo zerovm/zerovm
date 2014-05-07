@@ -23,6 +23,7 @@
 #include <stdint.h>
 #include <assert.h>
 #include "src/main/tools.h"
+#include "src/main/zlog.h"
 #include "src/syscalls/switch_to_app.h"
 
 /* AMD instruction sets */
@@ -84,13 +85,12 @@ static int CPUTest(void)
 #undef TEST_CPU
 }
 
-void InitSwitchToApp(struct NaClApp *nap)
+void InitSwitchToApp()
 {
   int cpu = CPUTest();
   char *name[] = {"no SSE", "SSE", "SSE2", "SSE3", "Supplementary SSE3",
                   "SSE4.1", "SSE4.2", "AVX", "AVX2 or better"};
 
-  UNREFERENCED_PARAMETER(nap);
   assert((unsigned)cpu < ARRAY_SIZE_SAFE(name));
 
   ZLOGS(LOG_DEBUG, "%s cpu detected", name[cpu]);

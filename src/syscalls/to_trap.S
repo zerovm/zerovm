@@ -66,7 +66,7 @@ IDENTIFIER(SyscallSeg):
 
         /* rax, rdi, rsi, rdx, rcx, r8, r9 are usable for scratch */
 
-        /* check ThreadContext in sel_rt_64.h for the offsets */
+        /* check ThreadContext in context.h for the offsets */
         leaq    IDENTIFIER(nacl_user)(%rip), %rdx
         movq    (%rdx), %rdx
 

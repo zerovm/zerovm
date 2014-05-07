@@ -1,9 +1,4 @@
 /*
- * Copyright 2009 The Native Client Authors.  All rights reserved.
- * Use of this source code is governed by a BSD-style license that can
- * be found in the LICENSE file.
- */
-/*
  * Copyright (c) 2012, LiteStack, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "src/loader/sel_ldr.h"
+#include "src/loader/context.h"
 
 nacl_reg_t GetStackPtr(void)
 {

@@ -19,9 +19,12 @@
  * limitations under the License.
  */
 
+#include <stdio.h>
+#include <errno.h>
 #include "src/platform/signal.h"
 #include "src/main/setup.h"
-#include "src/loader/sel_ldr.h"
+#include "src/main/config.h"
+#include "src/main/zlog.h"
 
 #define MAX_HANDLERS 16
 
@@ -218,7 +221,7 @@ void SignalHandlerInit()
 
   SignalHandlerInitPlatform();
 
-  /* In stand-alone mode (sel_ldr) we handle all signals. */
+  /* In stand-alone mode we handle all signals */
   SignalHandlerAdd(SignalHandleAll);
 }
 

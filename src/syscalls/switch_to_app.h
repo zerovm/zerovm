@@ -26,11 +26,11 @@
 #ifndef SWITCH_TO_APP_H__
 #define SWITCH_TO_APP_H__ 1
 
-#include "src/loader/sel_ldr.h"
+#include "src/loader/context.h"
 
 EXTERN_C_BEGIN
 
-void InitSwitchToApp(struct NaClApp *nap);
+void InitSwitchToApp();
 
 extern NORETURN void SwitchAVX(struct ThreadContext *context);
 extern NORETURN void SwitchSSE(struct ThreadContext *context);

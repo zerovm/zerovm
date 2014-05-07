@@ -15,7 +15,7 @@
  */
 
 #include <assert.h>
-#include "src/loader/sel_ldr.h" // ### to remove
+#include "src/main/zlog.h"
 #include "src/main/manifest.h"
 #include "src/channels/channel.h"
 #include "src/channels/serializer.h"
@@ -50,7 +50,8 @@ INLINE static void CopyStats(int64_t *dst, int64_t *src)
  * note: struct ChannelsSerial "size" field made 64-bit intentionally to
  *       avoid "alignement" problem
  */
-struct ChannelsSerial *ChannelsSerializer(struct Manifest *manifest, uintptr_t offset)
+struct ChannelsSerial *ChannelsSerializer(
+    const struct Manifest *manifest, uintptr_t offset)
 {
   struct ChannelRec *record;
   struct ChannelsSerial *buffer;

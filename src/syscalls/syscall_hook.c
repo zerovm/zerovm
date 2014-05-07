@@ -22,20 +22,20 @@
 /*
  * restore trusted context and call trap()
  */
+#include <errno.h>
+#include "src/main/config.h"
 #include "src/syscalls/switch_to_app.h"
 #include "src/syscalls/trap.h"
 
 /* serve trap invoked from the untrusted code */
 NORETURN void SyscallHook()
 {
-  struct NaClApp *nap;
   uintptr_t tramp_ret;
   size_t sysnum;
   uintptr_t sp_user;
   uintptr_t sp_sys;
 
   /* restore trusted side environment */
-  nap = gnap; /* restore NaClApp object */
   sp_user = GetThreadCtxSp(nacl_user);
   sp_sys = sp_user;
 
@@ -69,7 +69,7 @@ NORETURN void SyscallHook()
    * syscall_args must point to the first argument of a system call.
    * System call arguments are placed on the untrusted user stack.
    */
-  nacl_user->sysret = TrapHandler(nap, *(uint32_t*)sp_sys);
+  nacl_user->sysret = TrapHandler(*(uint32_t*)sp_sys);
 
   /*
    * before switching back to user module, we need to make sure that the

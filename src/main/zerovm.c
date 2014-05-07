@@ -23,9 +23,12 @@
  */
 
 #include <stdio.h>
+#include <stdint.h>
+#include <errno.h>
 #include <assert.h>
 #include "src/main/setup.h"
 #include "src/main/report.h"
+#include "src/main/zlog.h"
 #include "src/syscalls/switch_to_app.h"
 
 #define BADCMDLINE(msg) \
@@ -103,11 +106,9 @@ static char *ParseCommandLine(int argc, char **argv)
 
 int main(int argc, char **argv)
 {
-  struct NaClApp state = {0};
-
   /* set logger in case it will be used during initialization */
   ZLogCtor(LOG_ERROR);
-  SessionCtor(&state, ParseCommandLine(argc, argv));
+  SessionCtor(ParseCommandLine(argc, argv));
 
   /* quit if fuzz testing specified */
   if(CommandPtr()->quit_after_load)
@@ -115,7 +116,6 @@ int main(int argc, char **argv)
 
   /* switch to the user code flushing all buffers */
   fflush(NULL);
-  ZLOGS(LOG_DEBUG, "SESSION %s STARTED", state.manifest->node);
   ContextSwitch(nacl_user);
 
   return EFAULT; /* unreachable */

@@ -16,7 +16,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <time.h>
-#include "src/loader/sel_ldr.h"
+#include "src/main/zlog.h"
 #include "src/main/accounting.h"
 #include "src/channels/channel.h"
 

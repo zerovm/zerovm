@@ -19,7 +19,7 @@
 #ifndef SETUP_H__
 #define SETUP_H__ 1
 
-#include "src/loader/sel_ldr.h"
+#include "src/main/manifest.h"
 
 #define ZEROVM_PRIORITY 19
 #define HELP_SCREEN /* update command line switches here */\
@@ -44,9 +44,12 @@ int Validate(uint8_t* mbase, size_t size, uint32_t vbase);
 void LastDefenseLine(struct Manifest *manifest);
 
 /* session constructor. calls for all main constructors */
-void SessionCtor(struct NaClApp *nap, char *mft);
+void SessionCtor(char *mft);
 
 /* session destructor. calls for all main destructors, releases resources */
 void SessionDtor(int code, char *state);
+
+/* get system manifest */
+struct Manifest *GetManifest();
 
 #endif

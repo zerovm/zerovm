@@ -19,35 +19,37 @@
 #include "src/channels/channel.h"
 #include "src/main/report.h"
 #include "src/main/setup.h"
+#include "src/main/config.h"
+#include "src/main/zlog.h"
 #include "src/syscalls/snapshot.h"
 #include "src/syscalls/daemon.h"
 #include "src/syscalls/ztrace.h"
 #include "src/loader/userspace.h"
 #include "src/loader/usermap.h"
+#include "src/loader/context.h"
 
 /*
  * read specified amount of bytes from given desc/offset to buffer
  * return amount of read bytes or negative error code if call failed
  */
-static int32_t ZVMReadHandle(struct NaClApp *nap,
+static int32_t ZVMReadHandle(struct Manifest *manifest,
     int ch, char *buffer, int32_t size, int64_t offset)
 {
   struct ChannelDesc *channel;
   int64_t tail;
   char *sys_buffer;
 
-  assert(nap != NULL);
-  assert(nap->manifest != NULL);
-  assert(nap->manifest->channels != NULL);
+  assert(manifest != NULL);
+  assert(manifest->channels != NULL);
 
   /* check the channel number */
-  if(ch < 0 || ch >= nap->manifest->channels->len)
+  if(ch < 0 || ch >= manifest->channels->len)
   {
     ZLOGS(LOG_DEBUG, "channel_id=%d, buffer=%p, size=%d, offset=%ld",
         ch, buffer, size, offset);
     return -EINVAL;
   }
-  channel = CH_CH(nap->manifest, ch);
+  channel = CH_CH(manifest, ch);
   ZLOGS(LOG_INSANE, "channel %s, buffer=%p, size=%d, offset=%ld",
       channel->alias, buffer, size, offset);
 
@@ -91,25 +93,24 @@ static int32_t ZVMReadHandle(struct NaClApp *nap,
  * write specified amount of bytes from buffer to given desc/offset
  * return amount of read bytes or negative error code if call failed
  */
-static int32_t ZVMWriteHandle(struct NaClApp *nap,
+static int32_t ZVMWriteHandle(struct Manifest *manifest,
     int ch, const char *buffer, int32_t size, int64_t offset)
 {
   struct ChannelDesc *channel;
   int64_t tail;
   const char *sys_buffer;
 
-  assert(nap != NULL);
-  assert(nap->manifest != NULL);
-  assert(nap->manifest->channels != NULL);
+  assert(manifest != NULL);
+  assert(manifest->channels != NULL);
 
   /* check the channel number */
-  if(ch < 0 || ch >= nap->manifest->channels->len)
+  if(ch < 0 || ch >= manifest->channels->len)
   {
     ZLOGS(LOG_DEBUG, "channel_id=%d, buffer=%p, size=%d, offset=%ld",
         ch, buffer, size, offset);
     return -EINVAL;
   }
-  channel = CH_CH(nap->manifest, ch);
+  channel = CH_CH(manifest, ch);
   ZLOGS(LOG_INSANE, "channel %s, buffer=%p, size=%d, offset=%ld",
       channel->alias, buffer, size, offset);
 
@@ -205,31 +206,30 @@ static int32_t ZVMProtHandle(uintptr_t addr, uint32_t size, int prot)
 }
 
 /* user exit. session is finished. no return. */
-static void ZVMExitHandle(struct NaClApp *nap, uint64_t code)
+static void ZVMExitHandle(struct Manifest *manifest, uint64_t code)
 {
-  assert(nap != NULL);
+  assert(manifest != NULL);
 
   ReportSetupPtr()->user_code = code;
   if(ReportSetupPtr()->zvm_code == 0)
     ReportSetupPtr()->zvm_state = g_strdup(OK_STATE);
-  ZLOGS(LOG_DEBUG, "SESSION %s RETURNED %lu", nap->manifest->node, code);
+  ZLOGS(LOG_DEBUG, "SESSION %s RETURNED %lu", manifest->node, code);
   SessionDtor(0, OK_STATE);
 }
 
 /* handler for syscalls testing */
-static void ZVMTestHandle(struct NaClApp *nap)
+static void ZVMTestHandle(struct Manifest *manifest)
 {
-  assert(nap != NULL);
-  SaveSession(nap);
+  assert(manifest != NULL);
+
+  SaveSession(manifest);
 }
 
-int32_t TrapHandler(struct NaClApp *nap, uint32_t args)
+int32_t TrapHandler(uint32_t args)
 {
+  struct Manifest *manifest = GetManifest();
   uint64_t *sargs;
   int retcode = 0;
-
-  assert(nap != NULL);
-  assert(nap->manifest != NULL);
 
   /* test args address validity */
   if(args > -48u) return -EFAULT;
@@ -245,22 +245,22 @@ int32_t TrapHandler(struct NaClApp *nap, uint32_t args)
   switch(*sargs)
   {
     case TrapFork:
-      retcode = Daemon(nap);
+      retcode = Daemon(manifest);
       if(retcode) break;
       SyscallZTrace(*sargs, 0);
       SyscallZTrace(TrapExit, 0);
-      ZVMExitHandle(nap, 0);
+      ZVMExitHandle(manifest, 0);
       break;
     case TrapExit:
       SyscallZTrace(*sargs, sargs[2]);
-      ZVMExitHandle(nap, sargs[2]);
+      ZVMExitHandle(manifest, sargs[2]);
       break;
     case TrapRead:
-      retcode = ZVMReadHandle(nap,
+      retcode = ZVMReadHandle(manifest,
           (int)sargs[2], (char*)sargs[3], (int32_t)sargs[4], sargs[5]);
       break;
     case TrapWrite:
-      retcode = ZVMWriteHandle(nap,
+      retcode = ZVMWriteHandle(manifest,
           (int)sargs[2], (char*)sargs[3], (int32_t)sargs[4], sargs[5]);
       break;
     case TrapProt:
@@ -268,8 +268,8 @@ int32_t TrapHandler(struct NaClApp *nap, uint32_t args)
           (int)sargs[4]);
       break;
     case TrapTest:
-      ZVMTestHandle(nap);
-      ZVMExitHandle(nap, 0);
+      ZVMTestHandle(manifest);
+      ZVMExitHandle(manifest, 0);
       break;
     default:
       retcode = -EPERM;

@@ -16,14 +16,12 @@
 #ifndef DAEMON_H_
 #define DAEMON_H_
 
-#include "src/loader/sel_ldr.h"
-
 /*
  * convert current session to daemon mode. after each new session spawning
  * this function will return to trap to serve the new session. if there is
  * no "Job" in manifest just continue current session. return user session
  * code (0: finalize session , -1: continue session)
  */
-int Daemon(struct NaClApp *nap);
+int Daemon(struct Manifest *manifest);
 
 #endif /* DAEMON_H_ */

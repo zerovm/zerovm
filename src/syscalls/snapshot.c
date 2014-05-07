@@ -18,14 +18,15 @@
 #include <unistd.h>
 #include <sys/mman.h>
 #include <assert.h>
-#include "src/loader/sel_ldr.h"
 #include "src/main/zlog.h"
+#include "src/main/config.h"
 #include "src/main/setup.h"
 #include "src/main/report.h"
 #include "src/main/manifest.h"
 #include "src/syscalls/snapshot.h"
 #include "src/loader/userspace.h"
 #include "src/loader/usermap.h"
+#include "src/loader/context.h"
 #include "src/channels/serializer.h"
 
 #define R_FLAG (O_RDONLY)
@@ -79,7 +80,7 @@ static int SaveFixedSize(char *name, void *buffer, int size)
 }
 
 /* save user memory dump */
-static int SaveDump(struct NaClApp *nap, uint8_t *map)
+static int SaveDump(uint8_t *map)
 {
   int handle;
   int i;
@@ -111,7 +112,7 @@ static int LoadFixedSize(char *name, void *buffer, int size)
 }
 
 /* allocate user space (as usual, in safe way) and load dump */
-static int LoadDump(struct NaClApp *nap, void *map)
+static int LoadDump(void *map)
 {
   int handle;
   uintptr_t addr;
@@ -156,14 +157,14 @@ static int LoadDump(struct NaClApp *nap, void *map)
   return CloseImage(handle);
 }
 
-int SaveSession(struct NaClApp *nap)
+int SaveSession(struct Manifest *manifest)
 {
   void *map = GetUserMap();
-  struct ChannelsSerial *buffer = ChannelsSerializer(nap->manifest, 0);
+  struct ChannelsSerial *buffer = ChannelsSerializer(manifest, 0);
 
   if(SaveFixedSize(ID_MAP, map, USER_MAP_SIZE) < 0)
     return -1;
-  if(SaveDump(nap, map) < 0)
+  if(SaveDump(map) < 0)
     return -1;
   if(SaveFixedSize(ID_CONTEXT, nacl_user, sizeof *nacl_user) < 0)
     return -1;
@@ -190,7 +191,7 @@ int SaveSession(struct NaClApp *nap)
   return 0;
 }
 
-int LoadSession(struct NaClApp *nap)
+int LoadSession(struct Manifest *manifest)
 {
   uint8_t map[USER_MAP_SIZE];
   uint32_t size = GetFileSize(ID_CHANNELS);
@@ -198,7 +199,7 @@ int LoadSession(struct NaClApp *nap)
 
   if(LoadFixedSize(ID_MAP, map, USER_MAP_SIZE) < 0)
     return -1;
-  if(LoadDump(nap, map) < 0)
+  if(LoadDump(map) < 0)
     return -1;
   if(LoadFixedSize(ID_CONTEXT, nacl_user, sizeof *nacl_user) < 0)
     return -1;
@@ -217,7 +218,7 @@ int LoadSession(struct NaClApp *nap)
   /* set manifest from channels data */
   if(LoadFixedSize(ID_CHANNELS, channels, size) < 0)
     return -1;
-  if(ChannelsDeserializer(nap->manifest, channels) != 0)
+  if(ChannelsDeserializer(manifest, channels) != 0)
     return -1;
 
   g_free(channels);

@@ -30,7 +30,7 @@
  * to and from architecture dependent CPU state structures.
  */
 
-#include "src/loader/sel_rt.h"
+#include "src/loader/context.h"
 
 EXTERN_C_BEGIN
 

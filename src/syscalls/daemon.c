@@ -136,7 +136,7 @@ static int Job(int sock)
 }
 
 /* convert to the daemon mode */
-static int Daemonize(struct NaClApp *nap)
+static int Daemonize(struct Manifest *manifest)
 {
   char *bname;
   char *name;
@@ -145,8 +145,8 @@ static int Daemonize(struct NaClApp *nap)
   struct sockaddr_un remote = {AF_UNIX, ""};
 
   /* unmount channels, reset timeout */
-  ChannelsDtor(nap->manifest);
-  nap->manifest->timeout = 0;
+  ChannelsDtor(manifest);
+  manifest->timeout = 0;
   alarm(0);
 
   /* Become a session leader to lose controlling TTY */
@@ -178,14 +178,14 @@ static int Daemonize(struct NaClApp *nap)
   ZLOGFAIL(dup(0) != 2, EFAULT, "can't set stderr to /dev/null");
 
   /* open the command channel */
-  unlink(nap->manifest->job);
+  unlink(manifest->job);
   sock = socket(AF_UNIX, SOCK_STREAM, 0);
-  strcpy(remote.sun_path, nap->manifest->job);
+  strcpy(remote.sun_path, manifest->job);
   ZLOGFAIL(bind(sock, &remote, sizeof remote) < 0, EIO, "%s", strerror(errno));
   ZLOGFAIL(listen(sock, QUEUE_SIZE) < 0, EIO, "%s", strerror(errno));
 
   /* set name for daemon */
-  bname = g_path_get_basename(nap->manifest->job);
+  bname = g_path_get_basename(manifest->job);
   name = g_strdup_printf("%s%s", DAEMON_NAME, bname);
   prctl(PR_SET_NAME, name);
   g_free(bname);
@@ -195,14 +195,14 @@ static int Daemonize(struct NaClApp *nap)
   return sock;
 }
 
-int Daemon(struct NaClApp *nap)
+int Daemon(struct Manifest *manifest)
 {
   pid_t pid;
   siginfo_t info;
   int sock;
 
   /* can the daemon be started? */
-  if(nap->manifest->job == NULL) return -1;
+  if(manifest->job == NULL) return -1;
   ZLOGFAIL(ReportSetupPtr()->zvm_code != 0, EFAULT, "broken session");
 
   /* report the daemon mode launched */
@@ -215,7 +215,7 @@ int Daemon(struct NaClApp *nap)
 
   /* forked sessions are not in daemon mode */
   ReportSetupPtr()->daemon_state = 0;
-  sock = Daemonize(nap);
+  sock = Daemonize(manifest);
 
   for(;;)
   {
@@ -237,7 +237,7 @@ int Daemon(struct NaClApp *nap)
     pid = fork();
     if(pid == 0)
     {
-      UpdateSession(nap->manifest);
+      UpdateSession(manifest);
       break;
     }
 

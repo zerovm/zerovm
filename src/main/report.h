@@ -20,7 +20,7 @@
 #define EXIT_H_ 1
 
 #include "src/main/tools.h"
-#include "src/loader/sel_ldr.h"
+#include "src/main/manifest.h"
 
 #define UNKNOWN_STATE "unknown error, see syslog"
 #define OK_STATE "ok"

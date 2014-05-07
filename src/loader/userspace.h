@@ -19,6 +19,8 @@
 #ifndef USERSPACE_H_
 #define USERSPACE_H_
 
+#include "src/main/manifest.h"
+
 #define ADDR_BITS (32)
 #define NACL_HALT_OPCODE 0xf4
 
@@ -36,7 +38,7 @@ void FreeUserSpace();
  * trampoline [RX], heap [RW], manifest [RX] and stack [RW]
  * note: channels should be already set
  */
-void SetUserSpace();
+void SetUserSpace(struct Manifest *manifest);
 
 /* return system address of the 1st byte after user heap end */
 uintptr_t SysUserHeapEnd();

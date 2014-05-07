@@ -23,8 +23,8 @@
 #include <sys/mman.h>
 #include "src/platform/signal.h"
 #include "src/main/setup.h"
+#include "src/main/config.h"
 #include "src/main/tools.h"
-#include "src/loader/sel_ldr.h"
 
 /*
  * This module is based on the Posix signal model. See:

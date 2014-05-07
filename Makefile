@@ -26,7 +26,7 @@ debug: CXXFLAGS1 := -DDEBUG -g $(CXXFLAGS1)
 debug: CXXFLAGS2 := -DDEBUG -g $(CXXFLAGS2)
 debug: create_dirs zerovm tests
 
-OBJS=obj/manifest.o obj/setup.o obj/channel.o obj/qualify.o obj/report.o obj/zlog.o obj/signal_common.o obj/signal.o obj/to_app.o obj/switch_to_app.o obj/to_trap.o obj/syscall_hook.o obj/prefetch.o obj/preload.o obj/sel_rt.o obj/trap.o obj/etag.o obj/accounting.o obj/daemon.o obj/snapshot.o obj/ztrace.o obj/userspace.o obj/usermap.o obj/serializer.o
+OBJS=obj/manifest.o obj/setup.o obj/channel.o obj/qualify.o obj/report.o obj/zlog.o obj/signal_common.o obj/signal.o obj/to_app.o obj/switch_to_app.o obj/to_trap.o obj/syscall_hook.o obj/prefetch.o obj/preload.o obj/context.o obj/trap.o obj/etag.o obj/accounting.o obj/daemon.o obj/snapshot.o obj/ztrace.o obj/userspace.o obj/usermap.o obj/serializer.o
 CC=@gcc
 CXX=@g++
 
@@ -36,26 +36,9 @@ create_dirs:
 zerovm: obj/zerovm.o $(OBJS)
 	$(CC) -o $@ $(CXXFLAGS2) $^ $(LIBS)
 
-tests: test_compile
-	@printf "UNIT TESTS %048o\n" 0
-	@cd tests/unit;\
-	./manifest_parser_test;\
-	./service_runtime_tests;\
-	cd ..
-
-test_compile: tests/unit/manifest_parser_test tests/unit/service_runtime_tests
-
-obj/manifest_parser_test.o: tests/unit/manifest_parser_test.cc
-	$(CXX) $(CXXFLAGS1) -o $@ $^
-tests/unit/manifest_parser_test: obj/manifest_parser_test.o $(OBJS)
-	$(CXX) $(CXXFLAGS2) -o $@ $^ $(TESTLIBS)
-
-obj/sel_ldr_test.o: tests/unit/sel_ldr_test.cc
-	$(CXX) $(CXXFLAGS1) -o $@ $^
-obj/unittest_main.o: tests/unit/unittest_main.cc
-	$(CXX) $(CXXFLAGS1) -o $@ $^
-tests/unit/service_runtime_tests: obj/sel_ldr_test.o obj/unittest_main.o $(OBJS)
-	$(CXX) $(CXXFLAGS2) -o $@ $^ $(TESTLIBS)
+tests:
+	@printf "FUNCTIONAL TESTS %048o\n" 0
+	@ftests.sh
 
 .PHONY: clean clean_intermediate install
 
@@ -108,7 +91,7 @@ obj/syscall_hook.o: src/syscalls/syscall_hook.c
 obj/switch_to_app.o: src/syscalls/switch_to_app.c
 	$(CC) $(CCFLAGS1) -o $@ $^
 
-obj/sel_rt.o: src/loader/sel_rt.c
+obj/context.o: src/loader/context.c
 	$(CC) $(CCFLAGS1) -o $@ $^
 
 obj/signal.o: src/platform/signal.c

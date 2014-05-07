@@ -15,10 +15,12 @@
  */
 
 #include <assert.h>
-#include "src/main/report.h"
+#include "src/main/config.h"
+#include "src/main/zlog.h"
 #include "src/main/accounting.h"
 #include "src/main/etag.h"
 #include "src/loader/usermap.h"
+#include "src/main/report.h"
 
 #ifdef DEBUG
 #define REPORT_VALIDATOR "validator state = "

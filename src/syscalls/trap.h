@@ -29,7 +29,7 @@ EXTERN_C_BEGIN
  * notice about args: since nacl patches two 1st arguments if they are pointers,
  * arg[1] should not be used
  */
-int32_t TrapHandler(struct NaClApp *nap, uint32_t args);
+int32_t TrapHandler(uint32_t args);
 
 EXTERN_C_END
 

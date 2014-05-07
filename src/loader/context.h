@@ -1,9 +1,4 @@
 /*
- * Copyright (c) 2011 The Native Client Authors. All rights reserved.
- * Use of this source code is governed by a BSD-style license that can be
- * found in the LICENSE file.
- */
-/*
  * Copyright (c) 2012, LiteStack, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,37 +14,34 @@
  * limitations under the License.
  */
 
-/*
- * DO NOT INCLUDE EXCEPT FROM sel_ldr.h
- * THERE CANNOT BE ANY MULTIPLE INCLUSION GUARDS IN ORDER FOR
- * sel_ldr-inl.c TO WORK.
- */
+#ifndef CONTEXT_H_
+#define CONTEXT_H_
 
-/*
- * Routines to translate addresses between user and "system" or
- * service runtime addresses.  the *Addr* versions will return
- * kNaClBadAddress if the user address is outside of the user address
- * space, e.g., if the input addresses for *UserToSys* is outside of
- * (1 << ADDR_BITS), and correspondingly for *SysToUser* if the
- * input system address does not correspond to a user address.
- * Generally, the *Addr* versions are used when the addresses come
- * from untrusted usre code, and kNaClBadAddress would translate to an
- * EINVAL return from a syscall.  The *Range code ensures that the
- * entire address range is in the user address space.
- *
- * Note that just because an address is within the address space, it
- * doesn't mean that it is safe to acceess the memory: the page may be
- * protected against access.
- *
- * The non-*Addr* versions abort the program rather than return an
- * error indication.
- *
- * 0 is not a good error indicator, since 0 is a valid user address
- */
+#include <stdint.h>
 
+#include "src/main/config.h"
+#include "src/main/manifest.h"
 #include "src/main/zlog.h"
 #include "src/loader/userspace.h"
 
+typedef uint64_t nacl_reg_t; /* general purpose register type */
+
+struct ThreadContext {
+  nacl_reg_t  rax,  rbx,  rcx,  rdx,  rbp,  rsi,  rdi,  rsp;
+  /*          0x0,  0x8, 0x10, 0x18, 0x20, 0x28, 0x30, 0x38 */
+  nacl_reg_t  r8,     r9,  r10,  r11,  r12,  r13,  r14,  r15;
+  /*          0x40, 0x48, 0x50, 0x58, 0x60, 0x68, 0x70, 0x78 */
+  nacl_reg_t  prog_ctr;  /* rip */
+  /*          0x80 */
+  nacl_reg_t  sysret;
+  /*          0x88 */
+};
+
+/* global variables */
+struct ThreadContext    *nacl_user; /* user registers storage */
+struct ThreadContext    *nacl_sys;  /* zerovm registers storage */
+
+/* TODO(d'b): try to convert inline functions to macros */
 /* d'b: no checks, just does the work */
 static INLINE uintptr_t NaClUserToSysAddrNullOkay(uintptr_t uaddr)
 {
@@ -77,3 +69,15 @@ static INLINE uintptr_t NaClSandboxCodeAddr(uintptr_t addr)
   return (((addr & ~(((uintptr_t)NACL_INSTR_BLOCK_SIZE) - 1))
            & ((((uintptr_t) 1) << 32) - 1)) + MEM_START);
 }
+
+void ThreadContextCtor(struct ThreadContext *ntcp,
+                       nacl_reg_t            prog_ctr,
+                       nacl_reg_t            stack_ptr);
+
+uintptr_t GetThreadCtxSp(struct ThreadContext *th_ctx);
+
+void SetThreadCtxSp(struct ThreadContext *th_ctx, uintptr_t sp);
+
+nacl_reg_t GetStackPtr(void);
+
+#endif /* CONTEXT_H_ */

@@ -18,9 +18,8 @@
  */
 #include <assert.h>
 #include <sys/resource.h>
-#include "src/loader/sel_ldr.h"
-#include "src/loader/usermap.h"
-#include "src/loader/userspace.h"
+#include "src/main/zlog.h"
+#include "src/main/config.h"
 #include "src/main/setup.h"
 #include "src/main/report.h"
 #include "src/syscalls/switch_to_app.h"
@@ -30,12 +29,19 @@
 #include "src/channels/channel.h"
 #include "src/platform/signal.h"
 #include "src/platform/qualify.h"
+#include "src/loader/usermap.h"
+#include "src/loader/userspace.h"
 #include "src/loader/uboot.inc" /* auto generated, do not modify */
+
+static struct Manifest *s_manifest;
+
+struct Manifest *GetManifest()
+{
+  return s_manifest;
+}
 
 /* validator function from libvalidator.so */
 int NaClSegmentValidates(uint8_t* mbase, size_t size, uint32_t vbase);
-
-static struct NaClApp *g_nap = NULL;
 
 /* set timeout. by design timeout must be specified in manifest */
 static void SetTimeout(struct Manifest *manifest)
@@ -69,29 +75,6 @@ void LastDefenseLine(struct Manifest *manifest)
   GiveUpPrivileges();
 }
 
-/* TODO(d'b): should be removed after nap removal {{ */
-/*
- * Initializes a NaCl application with the default parameters.
- * nap is a pointer to the NaCl object that is being filled in.
- * assumes all fields already set to zeroes
- */
-void NaClAppCtor(struct NaClApp *nap)
-{
-  gnap = nap;
-  nacl_user = g_malloc(sizeof *nacl_user);
-  nacl_sys = g_malloc(sizeof *nacl_sys);
-}
-
-/* free app memory and globals */
-void NaClAppDtor(struct NaClApp *nap)
-{
-  g_free(nacl_sys);
-  g_free(nacl_user);
-  nacl_sys = NULL;
-  nacl_user = NULL;
-}
-/* }} */
-
 int Validate(uint8_t* mbase, size_t size, uint32_t vbase)
 {
   return CommandPtr()->skip_validation ? 0
@@ -124,7 +107,7 @@ static void LogMemMap()
   ZLOGS(LOG_DEBUG, "%08X:%08X %x", FOURGIG - STACK_SIZE, FOURGIG - 1, map[i - 1]);
 }
 
-static void FinalDump(struct NaClApp *nap)
+static void FinalDump()
 {
   ZLOGS(LOG_INSANE, "exiting -- printing NaClApp details");
   LogMemMap();
@@ -187,13 +170,17 @@ static void Boot(struct Manifest *manifest)
   ThreadContextCtor(nacl_user, NaClSysToUser((uintptr_t)buffer), UserStackPtr());
 }
 
-void SessionCtor(struct NaClApp *nap, char *mft)
+void SessionCtor(char *mft)
 {
+  struct Manifest *manifest;
+
   /* initialize globals, ztrace and manifest */
-  NaClAppCtor(nap);
-  g_nap = nap;
+  nacl_user = g_malloc(sizeof *nacl_user);
+  nacl_sys = g_malloc(sizeof *nacl_sys);
+
   ZTraceCtor();
-  nap->manifest = ManifestCtor(mft);
+  manifest = ManifestCtor(mft);
+  s_manifest = manifest;
   ZLOGS(LOG_DEBUG, "[manifest parsed]");
   ZTrace("[manifest parsed]");
 
@@ -210,37 +197,35 @@ void SessionCtor(struct NaClApp *nap, char *mft)
   ZTrace("[user space created]");
 
   /* initialize all channels */
-  ChannelsCtor(nap->manifest);
+  ChannelsCtor(manifest);
   ZLOGS(LOG_DEBUG, "[channels constructed]");
   ZTrace("[channels constructed]");
 
   /* "defense in depth" */
-  LastDefenseLine(nap->manifest);
+  LastDefenseLine(manifest);
   ZLOGS(LOG_DEBUG, "[duck'n'covered]");
   ZTrace("[duck'n'covered]");
 
   /* set untrusted context switcher */
-  InitSwitchToApp(nap);
+  InitSwitchToApp();
   ZLOGS(LOG_DEBUG, "[context switch initialized]");
   ZTrace("[context switch initialized]");
 
   /* boot session from.. */
-  if(g_strcmp0(nap->manifest->boot, ".") != 0)
+  if(g_strcmp0(manifest->boot, ".") != 0)
   /* ..scratch */
   {
     /* set user space areas */
-    SetUserSpace();
+    SetUserSpace(manifest);
     ZLOGS(LOG_DEBUG, "[user space set]");
     ZTrace("[user space set]");
-    Boot(nap->manifest);
+    Boot(manifest);
     ZLOGS(LOG_DEBUG, "[booted]");
     ZTrace("[booted]");
   }
   /* ..from image */
   else
-    LoadSession(nap);
-  ZLOGS(LOG_DEBUG, "[session loaded]");
-  ZTrace("[session loaded]");
+    LoadSession(manifest);
 
   /* construct trusted context */
   ThreadContextCtor(nacl_sys, 1, GetStackPtr());
@@ -255,19 +240,19 @@ void SessionDtor(int code, char *state)
   if(ReportSetupPtr()->zvm_code != 0)
   {
     ZLOGS(LOG_ERROR, "SESSION %s FAILED WITH ERROR %d: %s",
-        g_nap->manifest == NULL ? "unknown" : g_nap->manifest->node,
+        s_manifest == NULL ? "unknown" : s_manifest->node,
             ReportSetupPtr()->zvm_code, strerror(ReportSetupPtr()->zvm_code));
-    FinalDump(g_nap);
+    FinalDump();
     ZTrace("[final dump]");
   }
 
-  Report(g_nap->manifest);
+  Report(s_manifest);
   ZTrace("[report]");
-  ChannelsDtor(g_nap->manifest);
+  ChannelsDtor(s_manifest);
   ZTrace("[channels destructed]");
-  NaClAppDtor(g_nap);
+
   ZTrace("[untrusted context closed]");
-  ManifestDtor(g_nap->manifest); /* dispose manifest and channels */
+  ManifestDtor(s_manifest); /* dispose manifest and channels */
   ZTrace("[manifest deallocated]");
   FreeUserSpace();
   ZTrace("[user space deallocated]");
@@ -277,6 +262,12 @@ void SessionDtor(int code, char *state)
   /* free local resources and exit */
   g_free(ReportSetupPtr()->zvm_state);
   g_free(ReportSetupPtr()->cmd);
+
+  /* deallocate globals */
+  g_free(nacl_sys);
+  g_free(nacl_user);
+  nacl_sys = NULL;
+  nacl_user = NULL;
 
   ZTrace("[exit]");
   ZTraceDtor(1);

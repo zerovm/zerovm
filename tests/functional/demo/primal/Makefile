@@ -9,4 +9,4 @@ all: $(NAME).c
 	@$(ZEROVM_ROOT)/zerovm $(NAME).manifest
 
 clean:
-	rm -f $(NAME).nexe $(NAME).o *.log *.txt *.manifest
+	rm -f $(NAME).nexe $(NAME).o *.log *.txt *.manifest *.trc

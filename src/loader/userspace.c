@@ -16,9 +16,11 @@
 
 #include <assert.h>
 #include <sys/mman.h>
-#include "src/loader/sel_ldr.h" // ### to remove
+#include "src/main/config.h"
+#include "src/main/zlog.h"
 #include "src/loader/userspace.h"
 #include "src/loader/usermap.h"
+#include "src/loader/context.h"
 #include "src/channels/channel.h"
 #include "src/channels/serializer.h"
 
@@ -145,43 +147,16 @@ static void SetStack()
   ZLOGFAIL(0 != i, i, "cannot set stack protection");
 }
 
-/* calculate and allocate user heap. abort if fail */
-/* TODO(d'b): should be refactored after "uboot" will be done {{ */
-/* WARNING: should be called AFTER elf loaded until SEL will be removed */
-static void SetHeapTMP(struct NaClApp *nap)
-{
-  uintptr_t i;
-  int64_t heap;
-  void *p;
-
-  /* fail if memory size is invalid */
-  ZLOGFAIL(nap->manifest->mem_size <= 0 || nap->manifest->mem_size > FOURGIG,
-      ENOMEM, "invalid memory size");
-
-  /* calculate user heap size (must be allocated next to the data_end) */
-  p = (void*)ROUNDUP_64K(NACL_TRAMPOLINE_END);
-  heap = nap->manifest->mem_size - STACK_SIZE;
-  heap = ROUNDUP_64K(heap) - ROUNDUP_64K(NACL_TRAMPOLINE_END);
-  ZLOGFAIL(heap <= MIN_HEAP_SIZE, ENOMEM, "user heap size is too small");
-
-  /* make heap RW */
-  p = (void*)NaClUserToSys(NACL_TRAMPOLINE_END);
-  i = Zmprotect(p, heap, PROT_READ | PROT_WRITE);
-  ZLOGFAIL(0 != i, i, "cannot protection user heap");
-  heap_end = NaClSysToUser((uintptr_t)p + heap);
-}
-
 /* set user manifest and initialize heap */
-static void SetManifest()
+static void SetManifest(const struct Manifest *manifest)
 {
   struct ChannelsSerial *channels;
   struct UserManifest64 *user;
   int64_t size;
   int i;
 
-  assert(gnap != NULL);
-  assert(gnap->manifest != NULL);
-  assert(gnap->manifest->channels != NULL);
+  assert(manifest != NULL);
+  assert(manifest->channels != NULL);
 
   /* set user manifest to the user stack end */
   /*
@@ -198,19 +173,19 @@ static void SetManifest()
   user = (void*)NaClUserToSys(FOURGIG - STACK_SIZE);
 
   /* serialize channels and copy to user manifest */
-  channels = ChannelsSerializer(gnap->manifest, FOURGIG - STACK_SIZE + sizeof *user);
+  channels = ChannelsSerializer(manifest, FOURGIG - STACK_SIZE + sizeof *user);
   memcpy(&user->channels, channels->channels, channels->size);
 
   /* set user manifest fields */
   user->heap_ptr = NACL_TRAMPOLINE_END;
   user->heap_size = heap_end - NACL_TRAMPOLINE_END;
-  user->channels_count = gnap->manifest->channels->len;
+  user->channels_count = manifest->channels->len;
 
   /* calculate and set stack size */
   size = ROUNDUP_64K(channels->size + sizeof *user);
   user->stack_size = STACK_SIZE - size;
 
-  /* make the user manifest read only but not locked for uboot sake */
+  /* make the user manifest read only but not locked (for uboot) */
   /* TODO(d'b): avoid this hack */
   for(i = 0; i < size / NACL_MAP_PAGESIZE; ++i)
     GetUserMap()[i + (FOURGIG - STACK_SIZE) / NACL_MAP_PAGESIZE]
@@ -218,19 +193,35 @@ static void SetManifest()
   Zmprotect(user, size, PROT_READ);
 }
 
-/* set user manifest and initialize heap */
-static void SetHeap()
+/* calculate and set user heap */
+static void SetHeap(const struct Manifest *manifest)
 {
-  /* TODO(d'b): wrapper. content of SetHeapTMP() should be moved here */
-  SetHeapTMP(gnap);
-}
-/* }} */
+  uintptr_t i;
+  int64_t heap;
+  void *p;
 
-void SetUserSpace()
+  /* fail if memory size is invalid */
+  ZLOGFAIL(manifest->mem_size <= 0 || manifest->mem_size > FOURGIG,
+      ENOMEM, "invalid memory size");
+
+  /* calculate user heap size (must be allocated next to the data_end) */
+  p = (void*) ROUNDUP_64K(NACL_TRAMPOLINE_END);
+  heap = manifest->mem_size - STACK_SIZE;
+  heap = ROUNDUP_64K(heap) - ROUNDUP_64K(NACL_TRAMPOLINE_END);
+  ZLOGFAIL(heap <= MIN_HEAP_SIZE, ENOMEM, "user heap size is too small");
+
+  /* make heap RW */
+  p = (void*) NaClUserToSys(NACL_TRAMPOLINE_END);
+  i = Zmprotect(p, heap, PROT_READ | PROT_WRITE);
+  ZLOGFAIL(0 != i, i, "cannot protection user heap");
+  heap_end = NaClSysToUser((uintptr_t) p + heap);
+}
+
+void SetUserSpace(struct Manifest *manifest)
 {
   SetTrampoline();
   SetStack();
-  SetHeap();
-  SetManifest();
+  SetHeap(manifest);
+  SetManifest(manifest);
   LockRestrictedMemory();
 }

@@ -29,8 +29,8 @@
 #include <arpa/inet.h> /* convert ip to int */
 #include "src/main/manifest.h"
 #include "src/main/etag.h"
+#include "src/main/zlog.h"
 #include "src/channels/channel.h"
-#include "src/loader/sel_ldr.h"
 
 #define MFTFAIL ZLogTag("MANIFEST", cline), FailIf
 
