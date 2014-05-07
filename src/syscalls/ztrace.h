@@ -18,14 +18,11 @@
 #ifndef ZTRACE_H_
 #define ZTRACE_H_
 
-/* initialize "ztrace" service. if name == NULL exit silently */
-void ZTraceCtor(const char *name);
+/* initialize "ztrace" service */
+void ZTraceCtor();
 
 /* close "ztrace" service. mode = 0 designed for "spawned" sessions */
 void ZTraceDtor(int mode);
-
-/* free ztrace file name */
-void ZTraceNameDtor();
 
 /* log the string with the next time delta */
 void ZTrace(const char *msg);

@@ -189,9 +189,10 @@ static void Boot(struct Manifest *manifest)
 
 void SessionCtor(struct NaClApp *nap, char *mft)
 {
-  /* initialize globals and manifest */
+  /* initialize globals, ztrace and manifest */
   NaClAppCtor(nap);
   g_nap = nap;
+  ZTraceCtor();
   nap->manifest = ManifestCtor(mft);
 
   /* test platform and install signal handler after that */
@@ -266,6 +267,5 @@ void SessionDtor(int code, char *state)
 
   ZTrace("[exit]");
   ZTraceDtor(1);
-  ZTraceNameDtor();
   _exit(ReportSetupPtr()->zvm_code);
 }

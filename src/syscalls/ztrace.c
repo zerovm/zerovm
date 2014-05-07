@@ -19,7 +19,6 @@
 #include "src/channels/channel.h"
 #include "src/syscalls/ztrace.h"
 
-static char *ztrace_name = NULL;
 static GTimer *timer = NULL;
 static FILE *ztrace_log = NULL;
 static GString *ztrace_buf = NULL;
@@ -38,16 +37,14 @@ static char *fmt[] = {
     "" /* TrapFork */
 };
 
-void ZTraceCtor(const char *name)
+void ZTraceCtor()
 {
-  /* set ztrace file name */
-  if(ztrace_name == NULL && name == NULL) return;
-  if(ztrace_name == NULL)
-    ztrace_name = g_strdup(name);
+  /* exit if ztrace is not set */
+  if(CommandPtr()->ztrace_name == NULL) return;
 
   /* open ztrace file */
-  ztrace_log = fopen(ztrace_name, "a");
-  ZLOGFAIL(ztrace_log == NULL, errno, "cannot open %s", ztrace_name);
+  ztrace_log = fopen(CommandPtr()->ztrace_name, "a");
+  ZLOGFAIL(ztrace_log == NULL, errno, "cannot open %s", CommandPtr()->ztrace_name);
 
   /* initialize ztrace buffer */
   ztrace_buf = g_string_sized_new(BIG_ENOUGH_STRING);
@@ -77,12 +74,8 @@ void ZTraceDtor(int mode)
   /* free resources */
   g_string_free(ztrace_buf, TRUE);
   g_timer_destroy(timer);
-}
-
-void ZTraceNameDtor()
-{
-  g_free(ztrace_name);
-  ztrace_name = NULL;
+  g_free(CommandPtr()->ztrace_name);
+  CommandPtr()->ztrace_name = NULL;
 }
 
 void ZTrace(const char *msg)
@@ -118,7 +111,7 @@ void SyscallZTrace(int id, int retcode, ...)
   va_list ap;
 
   /* skip if ztrace is not initialized */
-  if(ztrace_name == NULL) return;
+  if(CommandPtr()->ztrace_name == NULL) return;
 
   va_start(ap, retcode);
   buf = g_strdup_vprintf(fmt[FunctionIdx(id)], ap);

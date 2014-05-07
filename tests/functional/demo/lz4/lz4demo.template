@@ -5,13 +5,13 @@ Channel = PWD/input.data, /dev/stdin, 0, 65536, 4294967296, 0, 0
 Channel = PWD/output.lz4, /dev/stdout, 0, 0, 0, 65536, 4294967296
 Channel = /dev/stdout, /dev/stderr, 0, 0, 0, 65536, 65536
 Channel = PWD/nvram, /dev/nvram, 0, 1, 8192, 0, 0
+Channel = PWD/lz4demo.nexe, /boot/elf, 1, 0x10000, 0x10000, 0, 0
 
 =====================================================================
 == switches for zerovm. some of them used to control nexe, some
 == for the internal zerovm needs
 =====================================================================
 Version = 20140509
-Program = lz4demo.nexe
 Memory = 4294967296, 0
 Timeout = 120
 

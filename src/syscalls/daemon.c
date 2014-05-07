@@ -78,7 +78,7 @@ static void UpdateSession(struct Manifest *manifest)
   ReportSetupPtr()->mode = 3;
   ReportSetupPtr()->handle = client;
 
-  ZTraceCtor(NULL);
+  ZTraceCtor();
   ZLOG(LOG_INSANE, "signals, report, log and trace reinitialized");
 
   /* read manifest */
