@@ -9,3 +9,14 @@ etag(s) = disable
 accounting = 0.00 0.00 0 0 0 0 0 0 0 0
 exit state = src/main/zerovm.c 146: validation failed
 command = /home/bortoq/git/zerovm/zerovm[7702] rdtsc.manifest
+
+update: for zerovm 2 uboot report will show:
+validator state = 1
+daemon = 0
+user return code = 300
+memtag = disabled
+accounting = 0.00 0.00 4 488 0 0 0 0 0 0
+exit state = ok
+command = /home/bortoq/git/zerovm/zerovm[34490] rdtsc.manifest
+
+where "user return code = 300" means "validation failed"

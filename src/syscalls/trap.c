@@ -186,7 +186,10 @@ static int32_t ZVMProtHandle(uintptr_t addr, uint32_t size, int prot)
 
       /* validation failed */
       if(Validate((uint8_t*)sysaddr, size, addr) != 0)
+      {
+        ++ReportSetupPtr()->validation_state;
         result = -EPERM;
+      }
       /* validation ok, changing protection */
       else
         if(Zmprotect((void*)sysaddr, size, prot) != 0)

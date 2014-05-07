@@ -30,7 +30,7 @@
 #include "src/channels/channel.h"
 #include "src/platform/signal.h"
 #include "src/platform/qualify.h"
-#include "src/loader/uboot.h"
+#include "src/loader/uboot.inc" /* auto generated, do not modify */
 
 /* validator function from libvalidator.so */
 int NaClSegmentValidates(uint8_t* mbase, size_t size, uint32_t vbase);

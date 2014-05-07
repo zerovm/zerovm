@@ -4,13 +4,13 @@
 Channel = PWD/input.data, /dev/stdin, 0, 1073741824, 1073741824, 0, 0
 Channel = PWD/output.data, /dev/stdout, 0, 0, 0, 1073741824, 1073741824
 Channel = /dev/null, /dev/stderr, 0, 0, 0, 65536, 65536
+Channel = PWD/copy.nexe, /boot/elf, 1, 0x10000, 0x10000, 0, 0
 
 =====================================================================
 == switches for zerovm. some of them used to control nexe, some
 == for the internal zerovm needs
 =====================================================================
-Version = 20140320
-Program = copy.nexe
+Version = 20140509
 Memory = 33554432, 1
 Timeout = 5
 

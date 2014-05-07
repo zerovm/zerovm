@@ -10,7 +10,7 @@ Channel = PWD/nvram, /dev/nvram, 0, 1, 8192, 0, 0
 == switches for zerovm. some of them used to control nexe, some
 == for the internal zerovm needs
 =====================================================================
-Version = 20140320
+Version = 20140509
 Program = lz4demo.nexe
 Memory = 4294967296, 0
 Timeout = 120

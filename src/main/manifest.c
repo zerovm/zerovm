@@ -37,7 +37,7 @@
 /* general */
 #define MIN_MFT_SIZE 124 /* can be calculated, but it will be complex */
 #define PTR_SIZE (sizeof(void*))
-#define MANIFEST_VERSION "20140320"
+#define MANIFEST_VERSION "20140509"
 #define MANIFEST_SIZE_LIMIT 0x80000
 #define MANIFEST_LINES_LIMIT 0x2000
 #define MANIFEST_TOKENS_LIMIT 0x10

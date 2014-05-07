@@ -9,7 +9,7 @@ Channel = tcp:127.0.0.1:50001; tcp:127.0.0.1:50002; tcp:127.0.0.1:50003, /dev/st
 == switches for zerovm. some of them used to control nexe, some
 == for the internal zerovm needs
 =====================================================================
-Version = 20140320
+Version = 20140509
 Program = hello.nexe
 Memory = 134217728, 0
 Timeout = 100000

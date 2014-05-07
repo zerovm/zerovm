@@ -10,7 +10,7 @@ Channel = PWD/memory.nexe, /boot/elf, 1, 0x10000, 0x10000, 0, 0
 == switches for zerovm. some of them used to control nexe, some
 == for the internal zerovm needs
 =====================================================================
-Version = 20140320
+Version = 20140509
 Timeout = 30
 
 4294967296 = 4gb; 2147483648 = 2gb; 1073741824 = 1gb; 536870912 = 512mb;

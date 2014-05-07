@@ -4,13 +4,13 @@
 Channel = /dev/null, /dev/stdin, 0, 999999, 999999, 0, 0
 Channel = PWD/stderr.data, /dev/stdout, 0, 0, 0, 999999, 999999
 Channel = /dev/null, /dev/stderr, 0, 0, 0, 999999, 999999
+Channel = PWD/calloc.nexe, /boot/elf, 1, 0x10000, 0x10000, 0, 0
 
 =====================================================================
 == switches for zerovm. some of them used to control nexe, some
 == for the internal zerovm needs
 =====================================================================
-Version = 20140320
-Program = calloc.nexe
+Version = 20140509
 Memory = 301989888, 1
 Timeout = 30
 

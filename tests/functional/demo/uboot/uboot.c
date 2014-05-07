@@ -59,6 +59,7 @@ void _start() /* no return */
       if(*((uint16_t*)(MANIFEST->channels[handle].name) + 4) == SELFNAME_2)
         break;
   FAILIF(handle >= MANIFEST->channels_count);
+  FAILIF((MANIFEST->channels[handle].type & 1) == 0); /* elf should be random read */
 
   /* LOAD ELF HEADERS */
   /* load elf headers */

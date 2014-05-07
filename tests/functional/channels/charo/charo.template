@@ -11,7 +11,7 @@ Channel = PWD/charo.nexe, /boot/elf, 1, 0x10000, 0x10000, 0, 0
 == switches for zerovm. some of them used to control nexe, some
 == for the internal zerovm needs
 =====================================================================
-Version = 20140320
+Version = 20140509
 Memory = 33554432, 1
 Timeout = 1
 

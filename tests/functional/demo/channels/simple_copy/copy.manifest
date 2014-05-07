@@ -9,7 +9,7 @@ Channel = /dev/null, /dev/stderr, 0, 0, 0, 0, 65536, 65536
 == switches for zerovm. some of them used to control nexe, some
 == for the internal zerovm needs
 =====================================================================
-Version = 20140320
+Version = 20140509
 Program = copy.nexe
 Memory = 0x2000000, 0
 Timeout = 5

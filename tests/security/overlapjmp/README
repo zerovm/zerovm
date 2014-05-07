@@ -46,3 +46,14 @@ VALIDATOR:     filesz 28 memsz 40 flags 6
 *** overlapjmp.nexe IS UNSAFE ***
 *** overlapjmp.nexe IS UNSAFE ***
 
+update: zerovm 2 uboot will return error code and session will end with report:
+validator state = 1
+daemon = 0
+user return code = 300
+memtag = disabled
+accounting = 0.00 0.00 4 600 0 0 0 0 0 0
+exit state = ok
+command = /home/bortoq/git/zerovm/zerovm[33641] overlapjmp.manifest
+
+note: "user return code = 300" shows in which line the error encountered and
+  it is line #300 with /* validation failed */ comment on it

@@ -1,15 +1,15 @@
 =====================================================================
 == computed goto test. the nexe has a weird (too large) rodata segment address
 =====================================================================
-Channel = /dev/null, /dev/stdin, 0, 0, 65536, 4194304, 0, 0
-Channel = /dev/stdout, /dev/stdout, 0, 0, 0, 0, 65536, 4194304
-Channel = /dev/stderr, /dev/stderr, 0, 0, 0, 0, 65536, 4194304
+Channel = /dev/null, /dev/stdin, 0, 65536, 4194304, 0, 0
+Channel = /dev/stdout, /dev/stdout, 0, 0, 0, 65536, 4194304
+Channel = /dev/stderr, /dev/stderr, 0, 0, 0, 65536, 4194304
+Channel = PWD/computed_goto.nexe, /boot/elf, 1, 65536, 4194304, 0, 0
 
 =====================================================================
 == control switches
 =====================================================================
-Version = 20130611
-Program = computed_goto.nexe
+Version = 20140509
 Memory = 0x2000000, 0
 Timeout = 1
 
