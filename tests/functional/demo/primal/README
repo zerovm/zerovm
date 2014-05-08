@@ -1,2 +1,4 @@
 "A small C program to print the biggest prime number" taken from
 http://www.bellard.org/mersenne.html ported to zerovm platform
+
+update: stopped working. doesn't work with zerovm 1 and with zerovm 2

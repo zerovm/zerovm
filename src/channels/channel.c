@@ -224,14 +224,14 @@ void ChannelsCtor(struct Manifest *manifest)
 
   /* mount channels */
   for(i = 0; i < manifest->channels->len; ++i)
-    ChannelCtor(CH_CH(manifest, i));
+    ChannelCtor(CHANNEL(manifest, i));
 
   /* reorder channels for user manifest */
   SortChannels(manifest->channels);
 
   /* check if all standard channels are specified */
   ZLOGFAIL(manifest->channels->len <= STDERR_FILENO
-      || g_strcmp0(CH_CH(manifest, STDERR_FILENO)->alias, STDERR),
+      || g_strcmp0(CHANNEL(manifest, STDERR_FILENO)->alias, STDERR),
       EFAULT, "missing standard channels in manifest");
   ResetAliases();
 }
@@ -246,7 +246,7 @@ void ChannelsDtor(struct Manifest *manifest)
   /* close channels */
   for(i = 0; i < manifest->channels->len; ++i)
   {
-    struct ChannelDesc *channel = CH_CH(manifest, i);
+    struct ChannelDesc *channel = CHANNEL(manifest, i);
     ChannelDtor(channel);
   }
   ResetAliases();

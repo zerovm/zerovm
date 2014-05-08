@@ -21,13 +21,6 @@
 #define CHANNEL_RIGHTS S_IRUSR | S_IWUSR
 #define DEV_NULL "/dev/null"
 
-static int disable_preallocation = 0;
-
-void PreloadAllocationDisable()
-{
-  disable_preallocation = 1;
-}
-
 /* detect and set source type */
 #define SET(f, p) if(f(fs.st_mode)) channel->protocol = Proto##p; else
 static void SetChannelSource(struct ChannelDesc *channel)
@@ -85,7 +78,7 @@ static void PreallocateChannel(const struct ChannelDesc *channel)
   int code;
   int handle = GPOINTER_TO_INT(channel->handle);
 
-  if(disable_preallocation) return;
+  if(CommandPtr()->preload_allocation_disable) return;
   code = ftruncate(handle, channel->limits[PutSizeLimit]);
   ZLOGFAIL(code == -1, errno, "cannot preallocate %s", channel->alias);
 }

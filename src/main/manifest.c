@@ -36,7 +36,6 @@
 
 /* general */
 #define MIN_MFT_SIZE 124 /* can be calculated, but it will be complex */
-#define PTR_SIZE (sizeof(void*))
 #define MANIFEST_VERSION "20140509"
 #define MANIFEST_SIZE_LIMIT 0x80000
 #define MANIFEST_LINES_LIMIT 0x2000
@@ -47,8 +46,6 @@
 #define LINE_DELIMITER "\n"
 #define KEY_DELIMITER "="
 #define VALUE_DELIMITER ","
-#define TOKEN_DELIMITER ";"
-#define CONNECTION_DELIMITER ":"
 
 /* key/value tokens */
 typedef enum {
@@ -179,7 +176,6 @@ static void Node(struct Manifest *manifest, char *value)
   manifest->node = g_strdup(g_strstrip(value));
 }
 
-/* TODO(d'b): call NetCtor() from here */
 static void Broker(struct Manifest *manifest, char *value)
 {
   manifest->broker = g_strdup(g_strstrip(value));
@@ -209,7 +205,6 @@ static void Channel(struct Manifest *manifest, char *value)
   /*
    * set name and protocol (network or local). exact protocol
    * for the local channel will be set later
-   * TODO(d'b): move to ChannelCtor()
    */
   if(g_str_has_prefix(tokens[Name], NAME_PREFIX_NET))
   {
@@ -332,8 +327,6 @@ void ManifestDtor(struct Manifest *manifest)
     g_free(channel);
   }
   g_ptr_array_free(manifest->channels, TRUE);
-
-  /* TODO(d'b): call NetDtor() from here */
 
   /* other */
   g_free(manifest->broker);

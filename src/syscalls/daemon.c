@@ -103,25 +103,25 @@ static void UpdateSession(struct Manifest *manifest)
 
   for(i = 0; i < manifest->channels->len; ++i)
   {
-#define CHECK(a) ZLOGFAIL(CH_CH(manifest, i)->a != CH_CH(tmp, i)->a, \
-    EFAULT, "difference in %s", CH_CH(manifest, i)->a)
+#define CHECK(a) ZLOGFAIL(CHANNEL(manifest, i)->a != CHANNEL(tmp, i)->a, \
+    EFAULT, "difference in %s", CHANNEL(manifest, i)->a)
 
-    ZLOGFAIL(strcmp(CH_CH(manifest, i)->alias, CH_CH(tmp, i)->alias) != 0,
-        EFAULT, "difference in %s", CH_CH(manifest, i)->alias);
+    ZLOGFAIL(strcmp(CHANNEL(manifest, i)->alias, CHANNEL(tmp, i)->alias) != 0,
+        EFAULT, "difference in %s", CHANNEL(manifest, i)->alias);
     CHECK(type);
     CHECK(limits[0]);
     CHECK(limits[1]);
     CHECK(limits[2]);
     CHECK(limits[3]);
 
-    CH_CH(manifest, i)->handle = CH_CH(tmp, i)->handle;
+    CHANNEL(manifest, i)->handle = CHANNEL(tmp, i)->handle;
 
     /*
      * copy new uri (->name) to forked nap. note that original "name"
      * should not be freed because it is shared memory and "daemon"
      * session will take care about it later
      */
-    CH_CH(manifest, i)->name = g_strdup(CH_CH(tmp, i)->name);
+    CHANNEL(manifest, i)->name = g_strdup(CHANNEL(tmp, i)->name);
   }
   ChannelsCtor(manifest);
   ZLOG(LOG_INSANE, "channels reconstructed");

@@ -16,6 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <stdio.h>
 #include <assert.h>
 #include <sys/resource.h>
 #include "src/main/zlog.h"
@@ -39,9 +40,6 @@ struct Manifest *GetManifest()
 {
   return s_manifest;
 }
-
-/* validator function from libvalidator.so */
-int NaClSegmentValidates(uint8_t* mbase, size_t size, uint32_t vbase);
 
 /* set timeout. by design timeout must be specified in manifest */
 static void SetTimeout(struct Manifest *manifest)
@@ -77,12 +75,14 @@ void LastDefenseLine(struct Manifest *manifest)
 
 int Validate(uint8_t* mbase, size_t size, uint32_t vbase)
 {
+  /* validator function from libvalidator.so */
+  int NaClSegmentValidates(uint8_t* mbase, size_t size, uint32_t vbase);
+
   return CommandPtr()->skip_validation ? 0
       : 0 - !NaClSegmentValidates(mbase, size, vbase);
 }
 
 /* log user memory map */
-/* TODO(d'b): rewrite or remove. this function spams syslog */
 static void LogMemMap()
 {
   int i;
@@ -91,20 +91,20 @@ static void LogMemMap()
   int prev_prot = map[0];
   int cur_prot;
 
-  ZLOGS(LOG_DEBUG, "user memory map:");
+  ZLOGS(LOG_ERROR, "user memory map:");
   for(i = 1; i < FOURGIG / NACL_MAP_PAGESIZE; ++i)
   {
     cur_prot = map[i];
     if(prev_prot != cur_prot)
     {
-      ZLOGS(LOG_DEBUG, "%08X:%08X %x", NACL_MAP_PAGESIZE * prev,
+      ZLOGS(LOG_ERROR, "%08X:%08X %x", NACL_MAP_PAGESIZE * prev,
           NACL_MAP_PAGESIZE * i - 1, prev_prot);
       prev = i;
       prev_prot = cur_prot;
     }
   }
 
-  ZLOGS(LOG_DEBUG, "%08X:%08X %x", FOURGIG - STACK_SIZE, FOURGIG - 1, map[i - 1]);
+  ZLOGS(LOG_ERROR, "%08X:%08X %x", FOURGIG - STACK_SIZE, FOURGIG - 1, map[i - 1]);
 }
 
 static void FinalDump()
@@ -211,6 +211,9 @@ void SessionCtor(char *mft)
   ZLOGS(LOG_DEBUG, "[context switch initialized]");
   ZTrace("[context switch initialized]");
 
+  /* construct trusted context */
+  ThreadContextCtor(nacl_sys, 1, GetStackPtr());
+
   /* boot session from.. */
   if(g_strcmp0(manifest->boot, ".") != 0)
   /* ..scratch */
@@ -227,8 +230,7 @@ void SessionCtor(char *mft)
   else
     LoadSession(manifest);
 
-  /* construct trusted context */
-  ThreadContextCtor(nacl_sys, 1, GetStackPtr());
+  fflush(NULL);
 }
 
 void SessionDtor(int code, char *state)

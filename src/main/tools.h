@@ -51,9 +51,7 @@
 
 /* gcc only */
 #define INLINE __inline__
-#define UNREFERENCED_PARAMETER(P) do {(void) P;} while (0)
 #define NORETURN __attribute__((noreturn))
-#define NACL_WUR __attribute__((__warn_unused_result__))
 
 /* generic constants */
 #define BIG_ENOUGH_STRING 1024
@@ -65,8 +63,6 @@
 #define TOINT(a) ((void*)(uintptr_t)(a))
 #define ROUNDDOWN_64K(a) ((a) & ~(NACL_MAP_PAGESIZE - 1LLU))
 #define ROUNDUP_64K(a) ROUNDDOWN_64K((a) + NACL_MAP_PAGESIZE - 1LLU)
-#define ROUNDDOWN_4K(a) ((a) & ~(NACL_PAGESIZE - 1LLU))
-#define ROUNDUP_4K(a) ROUNDDOWN_4K((a) + NACL_PAGESIZE - 1LLU)
 #define ARRAY_SIZE(arr) ((sizeof arr)/sizeof arr[0])
 #define ARRAY_SIZE_SAFE(arr) (NaClArrayCheckHelper( \
     __builtin_types_compatible_p(__typeof__(&arr[0]), \
@@ -100,8 +96,5 @@ static INLINE void *NaClArrayCheckHelper(void *arg)
 #define ASSERT_SAME_SIZE(t1, t2) \
   do {char tested_types_are_not_the_same_size[sizeof(t1) == sizeof(t2)]; \
       (void) tested_types_are_not_the_same_size;} while (0)
-
-/* return size of given file or negative error code */
-int64_t GetFileSize(const char *name);
 
 #endif /* TOOLS_H_ */

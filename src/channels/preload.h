@@ -22,9 +22,6 @@
 #include "api/zvm.h"
 #include "src/channels/channel.h"
 
-/* disable space preallocation */
-void PreloadAllocationDisable();
-
 /*
  * preload given file to channel.
  * return 0 if success, otherwise negative errcode

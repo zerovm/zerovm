@@ -1,10 +1,4 @@
 /*
- * Copyright (c) 2011 The Native Client Authors. All rights reserved.
- * Use of this source code is governed by a BSD-style license that can be
- * found in the LICENSE file.
- */
-
-/*
  * ZeroVM main
  *
  * Copyright (c) 2012, LiteStack, Inc.
@@ -21,7 +15,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #include <stdio.h>
 #include <stdint.h>
 #include <errno.h>
@@ -73,7 +66,7 @@ static char *ParseCommandLine(int argc, char **argv)
         CommandPtr()->skip_validation = 1;
         ZLOGS(LOG_ERROR, "VALIDATION DISABLED");
         break;
-      case 'F':
+      case 'F': /* TODO(d'b): obsolete switch */
         CommandPtr()->quit_after_load = 1;
         break;
       case 't':
@@ -114,8 +107,7 @@ int main(int argc, char **argv)
   if(CommandPtr()->quit_after_load)
     SessionDtor(0, OK_STATE);
 
-  /* switch to the user code flushing all buffers */
-  fflush(NULL);
+  /* switch to the user code */
   ContextSwitch(nacl_user);
 
   return EFAULT; /* unreachable */

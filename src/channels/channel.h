@@ -37,7 +37,6 @@ EXTERN_C_BEGIN
 
 /* CH_RW_TYPE returns 0..3 */
 #define IS_FILE(c) ((c)->protocol != ProtoSocket)
-#define IS_NIL(channel) (CH_RW_TYPE(channel) == 0)
 #define IS_RO(channel) (CH_RW_TYPE(channel) == 1)
 #define IS_WO(channel) (CH_RW_TYPE(channel) == 2)
 #define IS_RW(channel) (CH_RW_TYPE(channel) == 3)
@@ -45,7 +44,7 @@ EXTERN_C_BEGIN
     (((channel)->limits[GetsLimit] && (channel)->limits[GetSizeLimit]) \
     | ((channel)->limits[PutsLimit] && (channel)->limits[PutSizeLimit]) << 1)
 
-#define CH_CH(manifest, n) ((struct ChannelDesc*)manifest->channels->pdata[n])
+#define CHANNEL(manifest, n) ((struct ChannelDesc*)manifest->channels->pdata[n])
 #define CH_SEQ_READABLE(channel) (((channel)->type & 1) == 0)
 #define CH_SEQ_WRITEABLE(channel) (((channel)->type & 2) == 0)
 #define CH_RND_READABLE(channel) (((channel)->type & 1) == 1)

@@ -41,6 +41,7 @@
   0x48, 0xb8, 0xf4, 0xf4, 0xf4, 0xf4, 0xf4, 0xf4, 0xf4, 0xf4, 0xff, 0xe0
 #define NULL_SIZE 0x10000
 #define USER_PTR_SIZE sizeof(int32_t)
+#define HALT_OPCODE 0xf4
 
 /* should be kept in sync with struct UserManifest from api/zvm.h*/
 struct UserManifest64
@@ -72,7 +73,7 @@ static void MakeTrapProxy()
   ZLOGFAIL(PROXY_PTR != p, errno, "cannot allocate proxy");
 
   /* populate proxy area with halts */
-  memset(PROXY_PTR, NACL_HALT_OPCODE, PROXY_SIZE);
+  memset(PROXY_PTR, HALT_OPCODE, PROXY_SIZE);
 
   /* patch pattern with trap address and update proxy */
   *(uintptr_t*)(pattern + PROXY_IDX) = (uintptr_t)&SyscallSeg;

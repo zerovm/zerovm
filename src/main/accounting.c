@@ -72,7 +72,7 @@ static char *IOAccounting(struct Manifest *manifest)
   for(i = 0; i < manifest->channels->len; ++i)
   {
     static int64_t *io;
-    struct ChannelDesc *channel = CH_CH(manifest, i);
+    struct ChannelDesc *channel = CHANNEL(manifest, i);
 
     assert(channel != NULL);
 

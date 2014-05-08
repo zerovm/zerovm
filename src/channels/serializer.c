@@ -12,6 +12,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * TODO(d'b): add byte order to (de)serializer
  */
 
 #include <assert.h>
@@ -19,11 +21,6 @@
 #include "src/main/manifest.h"
 #include "src/channels/channel.h"
 #include "src/channels/serializer.h"
-
-/*
- * TODO(d'b): under construction
- * TODO(d'b): add byte order to (de)serializer
- */
 
 #define GETSTATS(c) ((void*)(is_mft ? (c)->limits : (c)->counters))
 
@@ -79,21 +76,21 @@ struct ChannelsSerial *ChannelsSerializer(
   for(i = 0; i < manifest->channels->len; ++i)
   {
     /* set type and limits (or counters) */
-    buffer->channels[i].type = CH_CH(manifest, i)->type;
-    CopyStats(buffer->channels[i].limits, GETSTATS(CH_CH(manifest, i)));
+    buffer->channels[i].type = CHANNEL(manifest, i)->type;
+    CopyStats(buffer->channels[i].limits, GETSTATS(CHANNEL(manifest, i)));
 
     /* set size */
     if(is_mft)
       buffer->channels[i].size =
-        CH_RND_READABLE(CH_CH(manifest, i)) || CH_RND_WRITEABLE(CH_CH(manifest, i))
-        ? CH_CH(manifest, i)->size : 0;
+        CH_RND_READABLE(CHANNEL(manifest, i)) || CH_RND_WRITEABLE(CHANNEL(manifest, i))
+        ? CHANNEL(manifest, i)->size : 0;
     else
-      buffer->channels[i].size = CH_CH(manifest, i)->size;
+      buffer->channels[i].size = CHANNEL(manifest, i)->size;
 
     /* copy alias to names area */
     buffer->channels[i].name = (uintptr_t)names_pos - (uintptr_t)names;
     buffer->channels[i].name += offset;
-    names_pos += CopyName(names_pos, CH_CH(manifest, i)->alias);
+    names_pos += CopyName(names_pos, CHANNEL(manifest, i)->alias);
   }
 
   /* set serialized channels size and align buffer */
@@ -121,7 +118,7 @@ int ChannelsDeserializer(struct Manifest *manifest, struct ChannelRec *channels)
   for(i = 0; i < manifest->channels->len; ++i)
   {
     /* ckeck alias */
-    if(g_strcmp0(CH_CH(manifest, i)->alias, name) != 0)
+    if(g_strcmp0(CHANNEL(manifest, i)->alias, name) != 0)
       return -1;
 
     /* rewind to the next alias */
@@ -129,9 +126,9 @@ int ChannelsDeserializer(struct Manifest *manifest, struct ChannelRec *channels)
     ++name; /* skip ending '\0' */
 
     /* copy fields */
-    CopyStats(GETSTATS(CH_CH(manifest, i)), channels[i].limits);
-    CH_CH(manifest, i)->size = channels[i].size;
-    CH_CH(manifest, i)->type = channels[i].type;
+    CopyStats(GETSTATS(CHANNEL(manifest, i)), channels[i].limits);
+    CHANNEL(manifest, i)->size = channels[i].size;
+    CHANNEL(manifest, i)->type = channels[i].type;
   }
 
   return 0;

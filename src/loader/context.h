@@ -41,34 +41,11 @@ struct ThreadContext {
 struct ThreadContext    *nacl_user; /* user registers storage */
 struct ThreadContext    *nacl_sys;  /* zerovm registers storage */
 
-/* TODO(d'b): try to convert inline functions to macros */
-/* d'b: no checks, just does the work */
-static INLINE uintptr_t NaClUserToSysAddrNullOkay(uintptr_t uaddr)
-{
-  return uaddr + MEM_START;
-}
-
-static INLINE uintptr_t NaClUserToSys(uintptr_t uaddr)
-{
-  ZLOGFAIL(0 == uaddr || ((uintptr_t) 1U << ADDR_BITS) <= uaddr, EFAULT,
-      "uaddr 0x%08lx, addr space %d bits", uaddr, ADDR_BITS);
-  return uaddr + MEM_START;
-}
-
-static INLINE uintptr_t NaClSysToUser(uintptr_t sysaddr)
-{
-  ZLOGFAIL(MEM_START + ((uintptr_t) 1U << ADDR_BITS) <= sysaddr
-      || sysaddr < MEM_START, EFAULT,
-      "sysaddr 0x%08lx, mem_start 0x%08lx, addr space %d bits",
-      sysaddr, MEM_START, ADDR_BITS);
-  return sysaddr - MEM_START;
-}
-
-static INLINE uintptr_t NaClSandboxCodeAddr(uintptr_t addr)
-{
-  return (((addr & ~(((uintptr_t)NACL_INSTR_BLOCK_SIZE) - 1))
-           & ((((uintptr_t) 1) << 32) - 1)) + MEM_START);
-}
+/* system <-> user address conversion routines */
+INLINE uintptr_t NaClUserToSysAddrNullOkay(uintptr_t uaddr);
+INLINE uintptr_t NaClUserToSys(uintptr_t uaddr);
+INLINE uintptr_t NaClSysToUser(uintptr_t sysaddr);
+INLINE uintptr_t NaClSandboxCodeAddr(uintptr_t addr);
 
 void ThreadContextCtor(struct ThreadContext *ntcp,
                        nacl_reg_t            prog_ctr,

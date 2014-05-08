@@ -27,6 +27,7 @@
 #include "src/loader/userspace.h"
 #include "src/loader/usermap.h"
 #include "src/loader/context.h"
+#include "src/channels/channel.h"
 #include "src/channels/serializer.h"
 
 #define R_FLAG (O_RDONLY)

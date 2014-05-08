@@ -1,11 +1,11 @@
 This document describes ZeroVM command line switches
-(up to date 2013-12-03, needs editing)
+(up to date 2014-05-08, needs editing)
 ----------------------------------------------------
 
 ZeroVM command line switches:
 
-  ZeroVM tag1 lightweight VM manager, build 2013-10-27
-  Usage: <manifest> [-v#] [-stFPQ]
+  ZeroVM tag1 lightweight VM manager, build 2014-05-07
+  Usage: <manifest> [-v#] [-T#] [-t#] [-stFPQ]
 
    -s skip validation
    -t <0..3> report to stdout/log/fast (default 0)
@@ -21,6 +21,8 @@ ZeroVM command line switches:
       github.com/ZeroVM/ZeroVM
 
 -s -- skips validation. used for "prevalidation" engine.
+      update: if specified validation disabled for whole session. neither user
+      elf nor dynamic code will be validated
 
 -t -- specifies report mode. valid arguments <0..2> 
       0 - put final report into /dev/stdout (default)
@@ -35,6 +37,7 @@ ZeroVM command line switches:
 
 -F -- specified NaCl application will be loaded but not run. used for 
       "prevalidation" engine.
+      update: the switch obsolete after untrusted loader was introduced
 
 -P -- if specified zerovm will not allocate space for "write" channels connected
       to local storage

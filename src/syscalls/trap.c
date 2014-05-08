@@ -49,7 +49,7 @@ static int32_t ZVMReadHandle(struct Manifest *manifest,
         ch, buffer, size, offset);
     return -EINVAL;
   }
-  channel = CH_CH(manifest, ch);
+  channel = CHANNEL(manifest, ch);
   ZLOGS(LOG_INSANE, "channel %s, buffer=%p, size=%d, offset=%ld",
       channel->alias, buffer, size, offset);
 
@@ -110,7 +110,7 @@ static int32_t ZVMWriteHandle(struct Manifest *manifest,
         ch, buffer, size, offset);
     return -EINVAL;
   }
-  channel = CH_CH(manifest, ch);
+  channel = CHANNEL(manifest, ch);
   ZLOGS(LOG_INSANE, "channel %s, buffer=%p, size=%d, offset=%ld",
       channel->alias, buffer, size, offset);
 

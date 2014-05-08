@@ -42,7 +42,7 @@
 
 struct ReportSetup *ReportSetupPtr()
 {
-    static struct ReportSetup report;
+  static struct ReportSetup report;
   return &report;
 }
 
