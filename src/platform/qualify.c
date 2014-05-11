@@ -113,5 +113,5 @@ static int AttemptToExecuteData()
 
 void RunSelQualificationTests()
 {
-  ZLOGFAIL(!AttemptToExecuteData(), EFAULT, "dep not supported");
+  ZLOGFAIL(!AttemptToExecuteData(), EFAULT, "DEP not supported");
 }
