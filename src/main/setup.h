@@ -1,5 +1,5 @@
 /*
- * zerovm help screen, "last line" defense and user manifest serializer
+ * session setup and zerovm help screen
  *
  * Copyright (c) 2012, LiteStack, Inc.
  *
@@ -40,7 +40,6 @@
 int Validate(uint8_t* mbase, size_t size, uint32_t vbase);
 
 /* the last frontier of defense. zerovm limits itself as much as possible */
-/* TODO(d'b): make it static after removing nap. use SessionCtor() in daemon */
 void LastDefenseLine(struct Manifest *manifest);
 
 /* session constructor. calls for all main constructors */

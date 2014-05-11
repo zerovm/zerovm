@@ -65,7 +65,8 @@ static char *GetCommand()
 }
 #undef CMD_FAIL
 
-/* child: update "nap" with the new manifest */
+/* child: update session with the new manifest */
+/* TODO(d'b): there is code doubling with SessionCtor() from setup.c */
 static void UpdateSession(struct Manifest *manifest)
 {
   int i;

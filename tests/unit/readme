@@ -1,9 +1,0 @@
-this folder contain zerovm unit tests
-
-manifest_parser_test.cc
-  unit test for manifest parser
-
-sel_ldr_test.cc
-sel_memory_unittest.cc
-unittest_main.cc
-  nexe loader test.

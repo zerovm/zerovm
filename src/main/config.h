@@ -4,6 +4,8 @@
  * found in the LICENSE file.
  */
 /*
+ * user space definitions
+ *
  * Copyright (c) 2012, LiteStack, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,11 +22,8 @@
  */
 
 /*
- * NaCl Simple/secure ELF loader (NaCl SEL).
- * TODO(d'b): NACL_* macros should be revised after finalizing "simple boot"
- *
- * NOTE: This header is ALSO included by assembler files and hence
- *       must not include any C code
+ * This header is ALSO included by assembler files and hence
+ * must not include any C code
  */
 #ifndef CONFIG_H_
 #define CONFIG_H_

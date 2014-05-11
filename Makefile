@@ -24,7 +24,9 @@ debug: CCFLAGS1 += -DDEBUG -g
 debug: CCFLAGS2 += -DDEBUG -g
 debug: CXXFLAGS1 := -DDEBUG -g $(CXXFLAGS1)
 debug: CXXFLAGS2 := -DDEBUG -g $(CXXFLAGS2)
-debug: create_dirs zerovm tests
+debug: create_dirs zerovm
+	@printf "FUNCTIONAL TESTS %048o\n" 0
+	@./ftests.sh
 
 OBJS=obj/manifest.o obj/setup.o obj/channel.o obj/qualify.o obj/report.o obj/zlog.o obj/signal_common.o obj/signal.o obj/to_app.o obj/switch_to_app.o obj/to_trap.o obj/syscall_hook.o obj/prefetch.o obj/preload.o obj/context.o obj/trap.o obj/etag.o obj/accounting.o obj/daemon.o obj/snapshot.o obj/ztrace.o obj/userspace.o obj/usermap.o obj/serializer.o
 CC=@gcc
@@ -36,20 +38,11 @@ create_dirs:
 zerovm: obj/zerovm.o $(OBJS)
 	$(CC) -o $@ $(CXXFLAGS2) $^ $(LIBS)
 
-tests:
-	@printf "FUNCTIONAL TESTS %048o\n" 0
-	@ftests.sh
+.PHONY: install
 
-.PHONY: clean clean_intermediate install
-
-clean: clean_intermediate
-	@rm -f zerovm
-	@echo ZeroVM has been deleted
-
-clean_intermediate:
-	@rm -f tests/unit/manifest_parser_test tests/unit/service_runtime_tests obj/*
-	@echo intermediate files has been deleted
-	@echo unit tests has been deleted
+clean:
+	@rm -f zerovm obj/*
+	@echo ZeroVM and intermediate files has been deleted
 
 install:
 	install -D -m 0755 zerovm $(DESTDIR)$(PREFIX)/bin/zerovm

@@ -36,8 +36,6 @@
 #define ID_DUMP "dump"
 #define ID_CONTEXT "context"
 #define ID_CHANNELS "channels"
-#define ID_REPORT "report"
-#define ID_SESSION "session"
 
 /* create file for "name" and  return handle or -1 */
 INLINE static int CreateImage(char *name)
@@ -170,21 +168,6 @@ int SaveSession(struct Manifest *manifest)
   if(SaveFixedSize(ID_CONTEXT, nacl_user, sizeof *nacl_user) < 0)
     return -1;
 
-  /*
-   * TODO(d'b): decide leave it or remove. seems that CommandPtr() can be
-   * safely removed. ReportSetupPtr() contains information about session
-   * state and perhaps it should be checked before snapshot, if only good
-   * session will be allowed to store, ReportSetupPtr() can be removed
-   * as well
-   * NOTE: disabled until "allocation" bug will not be resolved
-   */
-#if 0
-  if(SaveFixedSize(ID_REPORT, ReportSetupPtr(), sizeof *ReportSetupPtr()) < 0)
-    return -1;
-  if(SaveFixedSize(ID_SESSION, CommandPtr(), sizeof *CommandPtr()) < 0)
-    return -1;
-#endif
-
   if(SaveFixedSize(ID_CHANNELS, buffer->channels, buffer->size) < 0)
     return -1;
 
@@ -204,13 +187,6 @@ int LoadSession(struct Manifest *manifest)
     return -1;
   if(LoadFixedSize(ID_CONTEXT, nacl_user, sizeof *nacl_user) < 0)
     return -1;
-
-#if 0 /* see comment above */
-  if(LoadFixedSize(ID_REPORT, ReportSetupPtr(), sizeof *ReportSetupPtr()) < 0)
-    return -1;
-  if(LoadFixedSize(ID_SESSION, CommandPtr(), sizeof *CommandPtr()) < 0)
-    return -1;
-#endif
 
   /* calculate and allocate memory for channels */
   if(size < 0) return -1;
