@@ -63,7 +63,7 @@ void _start() /* no return */
   /* VALIDATE ELF HEADER */
   const Elf_Ehdr *hdr = &image->ehdr;
 
-  /* VALIDATE ELF HEADERS */      
+  /* VALIDATE ELF HEADERS */
   /*
    * Scan phdrs and do sanity checks in-line.  Verify that the load
    * address is NACL_TRAMPOLINE_END, that we have a single text
@@ -80,7 +80,7 @@ void _start() /* no return */
   int                 segnum;
   const Elf_Phdr      *php;
   size_t              j;
-  
+
   /* initialize phdr_check_data */
   SET_PHDR(phdr_check_data[0], PT_PHDR, PF_R, PCA_IGNORE, 0, 0); /* phdr */
   SET_PHDR(phdr_check_data[1], PT_LOAD, PF_R|PF_X, PCA_TEXT_CHECK, 1, NACL_TRAMPOLINE_END); /* text */

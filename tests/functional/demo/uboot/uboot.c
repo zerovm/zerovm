@@ -87,7 +87,7 @@ void _start() /* no return */
   FAILIF(EV_CURRENT != hdr->e_version); /* bad elf version */
 
 
-  /* VALIDATE ELF HEADERS */      
+  /* VALIDATE ELF HEADERS */
   /*
    * Scan phdrs and do sanity checks in-line.  Verify that the load
    * address is NACL_TRAMPOLINE_END, that we have a single text
@@ -105,7 +105,7 @@ void _start() /* no return */
   int                 segnum;
   const Elf_Phdr      *php;
   size_t              j;
-  
+
   /* initialize phdr_check_data */
   SET_PHDR(phdr_check_data[0], PT_PHDR, PF_R, PCA_IGNORE, 0, 0); /* phdr */
   SET_PHDR(phdr_check_data[1], PT_LOAD, PF_R|PF_X, PCA_TEXT_CHECK, 1, NACL_TRAMPOLINE_END); /* text */
@@ -217,8 +217,8 @@ void _start() /* no return */
   initial_entry_pt = image->ehdr.e_entry;
 
   /* Bad program entry point address */
-  FAILIF(0 != (initial_entry_pt & (NACL_INSTR_BLOCK_SIZE - 1)));  
-  FAILIF(initial_entry_pt >= static_text_end);  
+  FAILIF(0 != (initial_entry_pt & (NACL_INSTR_BLOCK_SIZE - 1)));
+  FAILIF(initial_entry_pt >= static_text_end);
 
   /* CHECK ADDRESS SPACE LAYOUT SANITY */
   /* fail if Data segment exists, but is not last segment */

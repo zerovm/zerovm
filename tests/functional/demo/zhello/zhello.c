@@ -15,6 +15,6 @@ void _start()
 {
   fput(stdout, "\033[1mhello from dev/stdout!\033[0m\n");
   fput(stderr, "\033[36mhello from dev/stderr!\033[0m\n");
-  
+
   exit(0);
 }

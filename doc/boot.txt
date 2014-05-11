@@ -63,3 +63,7 @@ how to make untrusted elf loader:
 - untrusted loader should modify user manifest according changes it made.
   at least heap_size and heap_ptr should be set properly
 - loader should take care about user stack
+
+NOTE: it is possible to write custom loader to load arbitrary code. not only
+      elf. so it is perhaps more correct to call untrusted elf loader simply
+      "untrusted loader"
