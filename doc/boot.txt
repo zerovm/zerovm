@@ -1,0 +1,65 @@
+This document describes untrusted elf loader for ZeroVM platform
+(up to date 2014-05-11, needs editing)
+-------------------------------------------------------------
+
+Description:
+untrusted elf loader responsible to load user code (nexe). the loader binary
+can be specified using "Boot" key in manifest. if untrusted loader is not
+specified the default loader (uboot) will be used
+
+uboot:
+this loader will be used by default if another loader is not provided. uboot
+expects user elf connected through channel "/boot/elf". the channel should
+be accessible for random reading with appropriate limits. uboot can only load
+statically linked 64-bit nexes. if fatal error encountered during the loading
+process uboot will terminate session with error code corresponding to uboot
+source code line where loader failed. here is the list of possible problems:
+
+61 -- cannot find "/boot/elf" channel
+62 -- "/boot/elf" channel is not randomly readable
+66 -- cannot read elf header
+69 -- too many elf headers
+72 -- too small elf header
+75 -- cannot load headers
+83 -- bad elf magic
+84 -- bad elf class
+85 -- non executable
+86 -- bad machine
+87 -- bad elf version
+141 -- unexpected type of segment
+143 -- Segment is a type that has been seen
+150 -- bad virtual address
+152 -- virtual address too low
+153 -- p_memsz caused integer overflow
+154 -- too large segment
+155 -- segment larger than memory size
+171 -- p_memsz == 0
+190 -- text segment is missing
+220 -- bad program entry point address
+221 -- bad program entry point address
+226 -- data segment is not last segment
+243 --
+247 -- read-only data segment overlaps data segment
+251 -- text segment overlaps rodata segment
+254 -- no rodata segment, and text segment overlaps data segment
+257 -- rodata_start not a multiple of allocation size
+260 -- data_start not a multiple of allocation size
+277 -- integer overflow
+284 -- the end virtual address exceeds user address space
+291 -- segment load failure
+300 -- validation failed
+306 -- cannot set read protection on user read only data
+314 -- cannot make user manifest writable
+322 -- cannot make user manifest read only
+
+how to make untrusted elf loader:
+- entry point should be 0x20000 and point to the ".text" beginning
+- no data are allowed
+- loader is a pure binary: ".text" segment extracted from elf.
+  to extract ".text" segment from elf following command can be used
+  objcopy -O binary --only-section=.text uboot.nexe uboot.bin
+- untrusted elf loader will be loaded by ZeroVM into last user heap pages
+- loader can return own space to user heap (see uboot.c for example)
+- untrusted loader should modify user manifest according changes it made.
+  at least heap_size and heap_ptr should be set properly
+- loader should take care about user stack

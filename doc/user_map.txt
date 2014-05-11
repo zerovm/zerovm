@@ -1,7 +1,7 @@
 This document describes user memory map
-(up to date 2014-04-01, needs editing)
-WARNING: the zerovm code is still under construction, and the document
-describes facts "as it should be")
+(up to date 2014-05-11, needs editing)
+WARNING: the ZeroVM code is still under construction, and the document
+describes facts "as it should be"
 ---------------------------------------
 
 the user session can have access to the address space 4gb large. size
@@ -10,17 +10,18 @@ manifest.txt). user address space have some predefined regions:
 
 NULL       -- 0x00000000..0x0000FFFF, system null (protection "none")
 TRAMPOLINE -- 0x00010000..0x0001FFFF, "trap" call area (protection "rx")
+HEAP       -- 0x00020000..0x????FFFF, user heap (protection "rw")
 HOLE       -- 0x????0000..0x????FFFF, "leftovers" of user address space. can
               be 0 if manifest have 4gb in "Memory" switch (protection "none")
-MANIFEST   -- 0x????0000..0xFEFFFFFF, user manifest (protection "r")(usually
+MANIFEST   -- 0xFF000000..0xFEFEFFFF, user manifest (protection "r")(usually
               64kb, but can be bigger)
-STACK      -- 0xFF000000..0xFFFFFFFF, user stack (protection "rw")
+STACK      -- 0xFEFF0000..0xFFFFFFFF, user stack (protection "rw")
 
-NOTE: untrusted code cannot change protection of predefined regions. 
+NOTE: untrusted code cannot change protection of NULL, TRAMPOLINE and STACK. 
 zvm_mprotect() will return -EACCESS (-13) for any attempt to do that.
 
-when zerovm calculates the memory amount available for usage it takes in
-account all regions mentioned above. so usually user have "Memory" - 0x1030000
+when ZeroVM calculates the memory amount available for usage it takes in
+account all regions mentioned above. so user have ("Memory" - 0x1020000)
 bytes, where "Memory" is a value specified by manifest switch of the same name
 
 untrusted code can use free memory at its discretion. however, standard way

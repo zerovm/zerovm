@@ -1,42 +1,58 @@
-This document describes zerovm trace module
+This document describes ZeroVM trace module
 (up to date 2013-10-29, needs editing)
 
-zerovm have trap call tracing capability. it can be used with "-T" command line
-option: zerovm my.manifest -T/my/path/to/trace.txt. specified file should have
+ZeroVM have trap call tracing capability. it can be used with "-T" command line
+option: ZeroVM my.manifest -T/my/path/to/trace.txt. specified file should have
 absolute path. this feature should only be used for debugging/profiling.
 
 following entities will be logged:
 - trap calls
 - invocations of the user code
-- some of internal zerovm calls
+- most important internal ZeroVM calls
 
-example of zerovm trace:
-[25547] 000000000000000000000000000000000000000000000000
-0.000842 [0.000842]: [memory snapshot]
-0.001639 [0.000797]: [user module loading]
-0.002008 [0.000369]: [user module validation]
-0.002009 [0.000001]: [snapshot deallocation]
-0.002231 [0.000222]: [channels mounting]
-0.002240 [0.000009]: [user memory preallocation]
-0.002278 [0.000038]: [user manifest construction]
-0.002296 [0.000018]: [last preparations]
-0.002308 [0.000012]: untrusted code
-0.002582 [0.000274]: TrapWrite(1, 0x30000, 32, 0) = 32
-0.002583 [0.000001]: untrusted code
-0.002858 [0.000275]: TrapWrite(2, 0x30020, 33, 0) = 33
-0.002860 [0.000002]: untrusted code
-0.002862 [0.000002]: TrapExit(0) = 0
-0.003081 [0.000219]: [channels destruction]
-0.004081 [0.001000]: [report]
-0.004145 [0.000064]: [untrusted context closing]
-0.004153 [0.000008]: [manifest deallocating]
-0.004171 [0.000018]: [thunk deallocating]
-0.004172 [0.000001]: [zlog deallocating]
-0.004173 [0.000001]: [exit]
+example of ZeroVM trace:
+[39318] 000000000000000000000000000000000000000000000000
+0.000683 [0.000683]: [manifest parsed]
+0.000727 [0.000044]: [platform tested]
+0.000760 [0.000033]: [user space created]
+0.000869 [0.000109]: [channels constructed]
+0.000957 [0.000088]: [duck'n'covered]
+0.000960 [0.000003]: [context switch initialized]
+0.001103 [0.000143]: [user space set]
+0.002046 [0.000943]: [booted]
+0.002050 [0.000004]: untrusted code
+0.010686 [0.008636]: TrapRead(3, 0xffffda80, 64, 0) = 64
+0.010690 [0.000004]: untrusted code
+0.010697 [0.000007]: TrapRead(3, 0xffffdac0, 280, 64) = 280
+0.010699 [0.000002]: untrusted code
+0.010718 [0.000019]: TrapRead(3, 0x20000, 288, 352) = 288
+0.010720 [0.000002]: untrusted code
+0.010728 [0.000008]: TrapRead(3, 0x30000, 128, 640) = 128
+0.010728 [0.000000]: untrusted code
+0.010796 [0.000068]: TrapProt(0x20000, 288, 5) = 0
+0.010797 [0.000001]: untrusted code
+0.010800 [0.000003]: TrapProt(0xff000000, 65536, 2) = 0
+0.010804 [0.000004]: untrusted code
+0.010807 [0.000003]: TrapProt(0xff000000, 65536, 1) = 0
+0.010807 [0.000000]: untrusted code
+0.010812 [0.000005]: TrapProt(0xff0000, 65536, 3) = 0
+0.010812 [0.000000]: untrusted code
+0.010959 [0.000147]: TrapWrite(1, 0x30000, 32, 0) = 32
+0.010959 [0.000000]: untrusted code
+0.011023 [0.000064]: TrapWrite(2, 0x30020, 33, 0) = 33
+0.011023 [0.000000]: untrusted code
+0.011024 [0.000001]: TrapExit() = 0
+0.011465 [0.000441]: [report]
+0.011544 [0.000079]: [channels destructed]
+0.011544 [0.000000]: [untrusted context closed]
+0.011548 [0.000004]: [manifest deallocated]
+0.011575 [0.000027]: [user space deallocated]
+0.011576 [0.000001]: [zlog deallocated]
+0.011576 [0.000000]: [exit]
 
-where the 1st line contain zerovm process [pid]. the columns are:
-1. time from the zerovm start in microseconds
+where the 1st line contain ZeroVM process [pid]. the columns are:
+1. time from the ZeroVM start in microseconds
 2. time delta between current and previous call in microseconds
-3. the name of trap call with arguments and return code. or zerovm module name
+3. the name of trap call with arguments and return code. or ZeroVM module name
    or "untrusted code" (time spent in the user code)
 

@@ -1,5 +1,5 @@
 This document describes manifest for ZeroVM NaCl application.
-(up to date 2014-03-19, needs editing)
+(up to date 2014-05-11, needs editing)
 -------------------------------------------------------------
 
 Description:
@@ -9,7 +9,7 @@ directory.
 
 list of available keywords:
 Version
-Program
+Boot
 Channel
 Memory
 Timeout
@@ -60,11 +60,12 @@ Channel
 Version
   (obligatory, string)
   currently ZeroVM is not backward compatible with the older manifest versions.
-  working version is 20130611
+  working version is 20140509
 
-Program
-  (obligatory, string)
-  NaCl module to validate and run, full path
+Boot
+  (optional, string)
+  path of untrusted elf loader. if skipped the default loader (uboot) will be
+  used. for more information about untrusted elf loader see boot.txt
 
 Timeout
   (obligatory, 32-bit integer)
