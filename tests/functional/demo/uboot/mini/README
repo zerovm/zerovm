@@ -1,0 +1,30 @@
+this is an untrusted boot prototype. in a few words, this code will replace SEL
+(secure/simple elf loader) in zerovm 2. uboot itended to work on untrusted side
+so any bug in code will not lead to sandbox compromising
+
+update: this is version of uboot with reduced checks
+
+how uboot (untrusted boot) works:
+1. seeks for /boot/elf channel in user manifest
+2. loads elf provided by this channel to addresses after trampoline
+3. put appropriate protection on loaded code, ro and rw data using zvm_mprotect
+4. changes mem_ptr / mem_size in user manifest
+5. passes control to loaded code using zvm_mprotect to return memory used for
+   uboot to user heap. this one is a little bit tricky: uboot cannot just call
+   trampoline because it will put wrong (uboot) return addres. so uboot should
+   place user code entry point to stack and then use nacl jump pattern to:
+   1. ask to change own protection to rw
+   2. pass control to loaded elf entry point
+
+how zerovm should serve uboot:
+- read uboot code (.text) to highest address of user heap
+- modify user stack to emulate zvm_protect(uboot area) call from untrusted side
+  or just call trap handler with same arguments allowing uboot to set up user
+  stack and all the work (preferable way)
+
+notes:
+- zerovm should set user manifest to real mem_size (put into account uboot size)
+- zerovm 2 allows to change the user manifest content. it is "must have" feature
+  for uboot, however this is the way to lost system information (user manifest)
+  when used inaccuratelly. therefore it is NOT recommended to untrusted code to
+  modify user manifest, only uboot should do that.

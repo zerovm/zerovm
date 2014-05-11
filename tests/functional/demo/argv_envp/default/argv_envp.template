@@ -1,0 +1,18 @@
+=====================================================================
+== command line and environment test
+== update: will not work since arguments and environment disabled in zerovm
+=====================================================================
+Channel = /dev/null, /dev/stdin, 0, 999999, 999999, 0, 0
+Channel = /dev/stdout, /dev/stdout, 0, 0, 0, 999999, 999999
+Channel = /dev/stderr, /dev/stderr, 0, 0, 0, 999999, 999999
+Channel = PWD/argv_envp.nexe, /boot/elf, 1, 999999, 999999, 0, 0
+
+=====================================================================
+== switches for zerovm. some of them used to control nexe, some
+== for the internal zerovm needs
+=====================================================================
+Version = 20140509
+Program = argv_envp.nexe
+Memory = 33554432, 1
+Timeout = 1
+
