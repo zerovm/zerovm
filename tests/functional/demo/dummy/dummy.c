@@ -5,5 +5,5 @@
 
 void _start()
 {
-  zvm_exit(0);
+  zvm_exit(123456789);
 }
