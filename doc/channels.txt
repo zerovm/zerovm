@@ -60,35 +60,22 @@ In case of the channels i/o error ZeroVM will not start. ZeroVM preallocates
 specified byte size for the local writable channels (this can be changed with
 -P switch, see zerovm_switches.txt).
 
-Network (socket based) channels
+Network (pipe) channels
 -------------------------------
-All socket based channels are either sequential read only or sequential write
-only. They represent unidirectional connection between two ZeroVM instances.
-You can have as many network channels as you want, although it's not advisable
-to have more than one channel in the same direction between the same two
-ZeroVM instances. All network channels use unix domain sockets through network
-broker (separate program). Write only channel will listen on socket while the
-read only channel will connect to the same socket from another instance. All
-the read operations on the guest side will block until some data is available.
-If you read a specific amount of data (using pread() for example) the read
-will block until this amount of data is available. There is no support for
-unblocking reads for ZeroVM channels, it's by design.
+ZeroVM can operate channels using domain name sockets (unix sockets) when
+network broker is available. in that case system manifest should contain
+"Broker" key with proper value (name of unix soket where broker will listen
+to request). system manifest also must contain "Node" key with not empty
+value. node name is part of agreement between network broker and ZeroVM (for
+further details see "broker.txt").
 
-Example of bidirectional connection between two ZeroVM instances:
-
-Instance #1
-Channel = ipc:12345, /dev/out/instance2, 0, 0, 0, 100, 1000
-Node = 54321
-
-Instance #2
-Channel = ipc:54321, /dev/in/instance1, 0, 100, 1000, 0, 0
-Node = 12345
+network channels names is part of broker protocol (see "broker.txt"). network
+channels are unidirectional. which means they are read only or write only.
+network channels can only have sequential access.
 
 Each read from read only network channel can result in zvm_eof indicator read.
 This means that the other party closed the channel, you will get the same
 zvm_eof each time you try to read from this channel again.
-
-note: "ipc:" is a prefix and only way to mark the channel as "network" one.
 
 Node identifiers
 ----------------
@@ -103,7 +90,7 @@ definition ZeroVM will do the following on startup:
    channel(s) definition to ask read or write only mode for the channel(s)
 
 After these operations the channels will be set up with correct unidirectional
-data paths. You can use zerovm networked samples to see the flow, namely
+data paths. You can use ZeroVM networked samples to see the flow, namely
 'netcopy' or 'demo/channels' sample. To find more info about broker consult
 broker.txt
 
