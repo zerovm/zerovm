@@ -59,14 +59,15 @@ zerovm api functions
   puts requested protection "prot" with limitations: "write/execute" 
   combination is prohibited, NULL, TRAMPOLINE, MANIFEST and STACK regions
   are not allowed to modify protection. if "execute" protection requested
-  validator will be invoked. the "buffer" pointer and size should be aligned
-  to mmap page size (64kb). if validation complete successfully memory area
-  specified by "buffer" and "size" will be marked as "read only" and
+  validator will be invoked. the "buffer" pointer should be aligned to mmap
+  page size (64kb). if validation complete successfully memory area specified
+  by "buffer" and "size" (aligned to page) will be marked as "read only" and
   "executable". in case of error the function will return -errno, otherwise
   0 will be returned
 
   zvm_exit(code)
-  terminates the program with "code"
+  terminates the program with "code".
+  NOTE: in ZeroVM platform return code size is 64-bit long
 
   zvm_fork()
   if manifest have "Job" field set and session has no errors converts running
@@ -91,7 +92,7 @@ variables
 struct UserManifest
   heap_ptr - the beginning of the user heap
   heap_size - user heap size in bytes
-  stack_size - user tack size in bytes
+  stack_size - user stack size in bytes
   channels_count - the channels number (there are 3 always available 
     channels: 0..2)
   channels - array of struct ZVMChannel (see struct ZVMChannel above)
@@ -137,15 +138,6 @@ channels
   and file mounted to channel is 10 bytes long, user will not able to read eof.
   instead of eof (0) user will get quota exceeded (-122)
 
-  TO DELETE {{
-  multiplexed channels (multichannels)
-  channels can have more than 1 source in the "name" field (see channel 
-  definition in channel.txt). reading from mulichannel means comparison
-  of data from diferent sources. if at least two of them contain same data
-  read operation successful and data avalable for the user, otherwise
-  (all sources)..
-  }}
-
   recommendations
   - user program can work faster if data will be read/written with big chunks
     (especially in sequential channels)
@@ -156,18 +148,23 @@ memory
   there are 3 MANIFEST fields available for the user: stack_size, heap_ptr
   and heap_size. the names are self explaining. note: since MANIFEST is read
   only, it is very unhealthy to use it after memory management initialized
-  these fields are for system/zrt use only
+  these fields are for system/zrt use only.
+  UPDATE: when zvm_mprotect() trap call was introduced it is possible to
+  change user manifest. however it is still not recommended to do something
+  with it except you are writing ZeroVM runtime library
 
 command line
 -----------------------------------------------------------------------
   command line accessible via "/dev/nvram". however this is not the part
-  of zerovm api. for the further details see toolchain/zrt documentation
+  of zerovm api. for the further details see toolchain/zrt documentation.
+  NOTE: ZeroVM provides only empty command line and environment variables
 
 environment variables
 -----------------------------------------------------------------------
   environment variables accessible via "/dev/nvram". however this is
   not the part of zerovm api. for the further details see toolchain/zrt
   documentation
+  NOTE: ZeroVM provides only empty command line and environment variables
 
 trap, trampoline and everything else (to know, but not to use)
 -----------------------------------------------------------------------
