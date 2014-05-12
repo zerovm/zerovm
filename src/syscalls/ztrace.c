@@ -59,8 +59,10 @@ void ZTraceDtor(int mode)
 {
   int result;
 
-  if(timer == NULL || ztrace_log == NULL || ztrace_buf == NULL) return;
   if(CommandPtr()->ztrace_name == NULL) return;
+
+  /* TODO(d'b): change it to assertions */
+  if(timer == NULL || ztrace_log == NULL || ztrace_buf == NULL) return;
 
   /* drop buffer to log */
   if(mode != 0)
@@ -83,8 +85,10 @@ void ZTrace(const char *msg)
 {
   double timing;
 
-  if(timer == NULL || ztrace_log == NULL || ztrace_buf == NULL) return;
   if(CommandPtr()->ztrace_name == NULL) return;
+
+  /* TODO(d'b): change it to assertions */
+  if(timer == NULL || ztrace_log == NULL || ztrace_buf == NULL) return;
 
   timing = g_timer_elapsed(timer, NULL);
   ztrace_chrono += timing;
@@ -114,6 +118,9 @@ void SyscallZTrace(int id, int retcode, ...)
 
   /* skip if ztrace is not initialized */
   if(CommandPtr()->ztrace_name == NULL) return;
+  assert(timer != NULL);
+  assert(ztrace_log != NULL);
+  assert(ztrace_buf != NULL);
 
   va_start(ap, retcode);
   buf = g_strdup_vprintf(fmt[FunctionIdx(id)], ap);

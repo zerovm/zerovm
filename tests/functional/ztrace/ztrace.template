@@ -1,0 +1,17 @@
+=====================================================================
+== test for zerovm trace engine
+== session i/o definition
+=====================================================================
+Channel = /dev/null, /dev/stdin, 0, 1, 1, 0, 0
+Channel = /dev/stdout, /dev/stdout, 0, 0, 0, 65536, 4194304
+Channel = PWD/result.log, /dev/stderr, 0, 0, 0, 65536, 4194304
+Channel = PWD/ztrace.trc, ztrace, 0, 0x10000, 0x10000, 0, 0
+Channel = PWD/ztrace.nexe, /boot/elf, 1, 0x10000, 0x10000, 0, 0
+
+=====================================================================
+== other session settings
+=====================================================================
+Version = 20140509
+Memory = 33554432, 0
+Timeout = 1
+
