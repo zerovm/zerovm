@@ -42,6 +42,10 @@
 #define NULL_SIZE 0x10000
 #define USER_PTR_SIZE sizeof(int32_t)
 #define HALT_OPCODE 0xf4
+#define MANIFEST_PTR_MOCK 0x3d /* cmp eax, ? */
+#define MANIFEST_PTR_MOCK_SIZE 1
+#define MANIFEST_PTR_MOCK_IDX 12
+#define MANIFEST_PTR (FOURGIG - STACK_SIZE)
 
 /* should be kept in sync with struct UserManifest from api/zvm.h*/
 struct UserManifest64
@@ -99,9 +103,16 @@ static void SetTrampoline()
   *(uintptr_t*)(pattern + TRAMP_IDX) = (uintptr_t)PROXY_PTR;
 
   /* populate trampoline area with it */
-  for(i = 0; i < NACL_TRAMPOLINE_SIZE / ARRAY_SIZE(pattern); ++i)
+  for(i = 1; i < NACL_TRAMPOLINE_SIZE / ARRAY_SIZE(pattern); ++i)
     memcpy((void*)(MEM_START + NACL_TRAMPOLINE_START) + i * ARRAY_SIZE(pattern),
         pattern, ARRAY_SIZE(pattern));
+
+  /* place manifest pointer to trap in trampoline */
+  pattern[MANIFEST_PTR_MOCK_IDX] = MANIFEST_PTR_MOCK;
+  *(uint32_t*)(pattern + MANIFEST_PTR_MOCK_IDX + MANIFEST_PTR_MOCK_SIZE)
+      = MANIFEST_PTR;
+  memcpy((void*)(MEM_START + NACL_TRAMPOLINE_START),
+      pattern, ARRAY_SIZE(pattern));
 
   /* change protection of area to RXL */
   i = Zmprotect((void*)(MEM_START + NACL_TRAMPOLINE_START),
@@ -160,21 +171,10 @@ static void SetManifest(const struct Manifest *manifest)
   assert(manifest->channels != NULL);
 
   /* set user manifest to the user stack end */
-  /*
-   * TODO(d'b): current user manifest address is not perfect. stack size
-   * is not intended to be constant. there are a few options:
-   * 1. return user manifest through trap function
-   * 2. find another fixed address. e.g. start of stack
-   * note: fixed address could be set for user manifest address only. possible
-   * solution can be placing this address into trampoline as part of nop
-   * instruction, like "cmp eax, address". another profit of this solution:
-   * this address cannot be changed by untrusted code (manifest can be changed
-   * by uboot)
-   */
-  user = (void*)NaClUserToSys(FOURGIG - STACK_SIZE);
+  user = (void*)NaClUserToSys(MANIFEST_PTR);
 
   /* serialize channels and copy to user manifest */
-  channels = ChannelsSerializer(manifest, FOURGIG - STACK_SIZE + sizeof *user);
+  channels = ChannelsSerializer(manifest, MANIFEST_PTR + sizeof *user);
   memcpy(&user->channels, channels->channels, channels->size);
 
   /* set user manifest fields */
@@ -189,7 +189,7 @@ static void SetManifest(const struct Manifest *manifest)
   /* make the user manifest read only but not locked (for uboot) */
   /* TODO(d'b): avoid this hack */
   for(i = 0; i < size / NACL_MAP_PAGESIZE; ++i)
-    GetUserMap()[i + (FOURGIG - STACK_SIZE) / NACL_MAP_PAGESIZE]
+    GetUserMap()[i + MANIFEST_PTR / NACL_MAP_PAGESIZE]
                  &= PROT_READ | PROT_WRITE;
   Zmprotect(user, size, PROT_READ);
 }

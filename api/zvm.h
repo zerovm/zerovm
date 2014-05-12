@@ -70,7 +70,7 @@ struct UserManifest
 };
 
 /* pointer to the user manifest (read only memory area) */
-#define MANIFEST ((const struct UserManifest const*)(uintptr_t)0xFF000000)
+#define MANIFEST ((const struct UserManifest const *)*((uintptr_t*)0x1000D))
 
 /* trap pointer. internal helper. DO NOT use it! */
 #define TRAP ((int32_t (*)(uint64_t*))0x10000)
