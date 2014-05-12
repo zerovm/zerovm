@@ -1,5 +1,5 @@
 This document describes manifest for ZeroVM NaCl application.
-(up to date 2014-05-11, needs editing)
+(up to date 2014-05-12, needs editing)
 -------------------------------------------------------------
 
 Description:
@@ -32,30 +32,25 @@ Structure:
 
 List of valid keywords:
 Channel
-  (obligatory, 8 comma separated fields strings and integers)
+  (obligatory, 7 comma separated fields strings and integers)
   Description of a channel. The order does matter. example:
-  Channel = /home/user/sort.log, /dev/stdout, 0, 1, 0, 0, 0x100, 0x1000
+  Channel = /home/user/sort.log, /dev/stdout, 0, 0, 0, 0x100, 0x1000
   where: 
     [1] trusted channel name (n/a for the user),
     [2] untrusted channel name,
     [3] access type (0..3),
-    [4] etag disabled/enabled (0..1), (obsolete, will be removed)
-    [5] gets limit,
-    [6] get size limits,
-    [7] puts limit,
-    [8] put size limits
+    [4] gets limit,
+    [5] get size limits,
+    [6] puts limit,
+    [7] put size limits
   Each manifest should have at least three channels configuration entries for
   the standard devices: /dev/stdin, /dev/stdout, /dev/stderr
   Example (maps all channels to /dev/null):
-    Channel = /dev/null, /dev/stdin, 0, 0, 1, 1, 0, 0
-    Channel = /dev/null, /dev/stdout, 0, 1, 0, 0, 1, 1
-    Channel = /dev/null, /dev/stderr, 0, 1, 0, 0, 1, 1
+    Channel = /dev/null, /dev/stdin, 0, 1, 1, 0, 0
+    Channel = /dev/null, /dev/stdout, 0, 0, 0, 1, 1
+    Channel = /dev/null, /dev/stderr, 0, 0, 0, 1, 1
   network channels has same fields, but the very 1st one (trusted channel 
-  name) has special form: protocol:address:port
-  where
-    protocol can be tcp (or udp for name server)
-    address is IPv4 or integer representaion of it
-    port is 16 bit integer or empty (if name server used)
+  name) has special format defined by network broker
 
 Version
   (obligatory, string)

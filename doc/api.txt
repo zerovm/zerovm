@@ -1,5 +1,5 @@
 this document describes zerovm user api
-(up to date 2013-10-20, needs editing)
+(up to date 2014-05-12, needs editing)
 
 definition, enumerations
 -----------------------------------------------------------------------
