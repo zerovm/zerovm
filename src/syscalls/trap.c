@@ -252,20 +252,20 @@ int32_t TrapHandler(uint32_t args)
       ZVMExitHandle(manifest, 0);
       break;
     case TrapExit:
-      SyscallZTrace(*sargs, sargs[2]);
-      ZVMExitHandle(manifest, sargs[2]);
+      SyscallZTrace(*sargs, sargs[1]);
+      ZVMExitHandle(manifest, sargs[1]);
       break;
     case TrapRead:
       retcode = ZVMReadHandle(manifest,
-          (int)sargs[2], (char*)sargs[3], (int32_t)sargs[4], sargs[5]);
+          (int)sargs[1], (char*)sargs[2], (int32_t)sargs[3], sargs[4]);
       break;
     case TrapWrite:
       retcode = ZVMWriteHandle(manifest,
-          (int)sargs[2], (char*)sargs[3], (int32_t)sargs[4], sargs[5]);
+          (int)sargs[1], (char*)sargs[2], (int32_t)sargs[3], sargs[4]);
       break;
     case TrapProt:
-      retcode = ZVMProtHandle((uint32_t)sargs[2], (uint32_t)sargs[3],
-          (int)sargs[4]);
+      retcode = ZVMProtHandle((uint32_t)sargs[1], (uint32_t)sargs[2],
+          (int)sargs[3]);
       break;
     case TrapTest:
       ZVMTestHandle(manifest);
@@ -279,6 +279,6 @@ int32_t TrapHandler(uint32_t args)
 
   /* ztrace and return */
   ZLOGS(LOG_DEBUG, "%s returned %d", FunctionName(*sargs), retcode);
-  SyscallZTrace(*sargs, retcode, sargs[2], sargs[3], sargs[4], sargs[5]);
+  SyscallZTrace(*sargs, retcode, sargs[1], sargs[2], sargs[3], sargs[4]);
   return retcode;
 }

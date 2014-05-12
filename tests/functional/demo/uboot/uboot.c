@@ -336,10 +336,10 @@ void _start() /* no return */
   asm(".att_syntax");
 
   /* set up trap function (with arguments) to return own page to heap */
+  asm("pushq $0x0"); /* 0x0 reserved TODO: remove it and fix stack */
   asm("pushq $0x3"); /* argument 3 */
   asm("pushq $0x10000"); /* argument 2 */
   asm volatile("pushq %0" : "+r" (self) : ); /* argument 1 */
-  asm("pushq $0x0"); /* 0x0 reserved */
   asm("pushq $0x746f7250"); /* trap function: TrapProt */
 
   /* emulate call to trap with different return address */

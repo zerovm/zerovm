@@ -97,12 +97,12 @@ struct UserManifest
  * zvm_unjail(buffer, size) => zvm_mprotect(buffer, size, PROT_READ | PROT_WRITE)
  */
 #define zvm_pread(desc, buffer, size, offset) \
-  TRAP((uint64_t[]){TrapRead, 0, desc, (uintptr_t)buffer, size, offset})
+  TRAP((uint64_t[]){TrapRead, desc, (uintptr_t)buffer, size, offset})
 #define zvm_pwrite(desc, buffer, size, offset) \
-  TRAP((uint64_t[]){TrapWrite, 0, desc, (uintptr_t)buffer, size, offset})
+  TRAP((uint64_t[]){TrapWrite, desc, (uintptr_t)buffer, size, offset})
 #define zvm_mprotect(buffer, size, prot) \
-  TRAP((uint64_t[]){TrapProt, 0, (uintptr_t)buffer, size, prot})
+  TRAP((uint64_t[]){TrapProt, (uintptr_t)buffer, size, prot})
 #define zvm_fork() TRAP((uint64_t[]){TrapFork})
-#define zvm_exit(code) TRAP((uint64_t[]){TrapExit, 0, code})
+#define zvm_exit(code) TRAP((uint64_t[]){TrapExit, code})
 
 #endif /* ZVM_API_H__ */
