@@ -220,6 +220,27 @@ inline int isdigit(int c)
   return (c >= '0' && c <= '9');
 }
 
+/* return string with removed leading and ending whitespace */
+char *trim(char *str)
+{
+  char *ptr;
+  char *end;
+
+  /* trim leading space */
+  while(isspace(*str))
+    ++str;
+
+  /* trim trailing space */
+  end = ptr = str;
+  while(*ptr)
+    if(!isspace(*ptr++))
+      end = ptr;
+
+  /* update terminator and return */
+  *end = '\0';
+  return str;
+}
+
 #define FL_UNSIGNED   1
 #define FL_NEG        2
 #define FL_OVERFLOW   4

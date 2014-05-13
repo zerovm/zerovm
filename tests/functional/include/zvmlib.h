@@ -115,6 +115,7 @@ inline int islower(int c);
 inline int isalpha(int c);
 inline int isspace(int c);
 inline int isdigit(int c);
+char *trim(char *str);
 inline char *strchr(const char *s, int c);
 inline char *strrchr(const char *s, int c);
 inline size_t strspn(const char *s1, const char *s2);
