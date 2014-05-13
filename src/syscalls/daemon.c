@@ -31,6 +31,7 @@
 #define QUEUE_SIZE 16
 
 static int client = -1;
+static char *ztrace_name = NULL;
 
 /*
  * get command from the daemon control channel
@@ -78,9 +79,9 @@ static void UpdateSession(struct Manifest *manifest)
   SignalHandlerInit();
   ReportSetupPtr()->mode = 3;
   ReportSetupPtr()->handle = client;
-
+  CommandPtr()->ztrace_name = ztrace_name;
   ZTraceCtor();
-  ZLOG(LOG_INSANE, "signals, report, log and trace reinitialized");
+  ZLOG(LOG_INSANE, "signals, report and trace reinitialized");
 
   /* read manifest */
   cmd = GetCommand();
@@ -166,6 +167,7 @@ static int Daemonize(struct Manifest *manifest)
   ZLOGFAIL(chdir("/") < 0, EFAULT, "can't change directory to /");
 
   /* finalize modules with handles before handles down */
+  ztrace_name = strdup(CommandPtr()->ztrace_name);
   ZTraceDtor(0);
 
   /* close standard descriptors */
