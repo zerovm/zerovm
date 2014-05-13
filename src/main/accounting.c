@@ -90,7 +90,6 @@ static char *IOAccounting(struct Manifest *manifest)
       net[PutsLimit], net[PutSizeLimit]);
 }
 
-/* returns string i/o statistics */
 char *Accounting(struct Manifest *manifest)
 {
   static char result[ACCOUNTING_SIZE];
@@ -101,4 +100,24 @@ char *Accounting(struct Manifest *manifest)
   g_free(time);
   g_free(io);
   return result;
+}
+
+void AccountingReset(struct Manifest *manifest)
+{
+  int i;
+
+  assert(manifest != NULL);
+  assert(manifest->channels != NULL);
+
+  for(i = 0; i < manifest->channels->len; ++i)
+  {
+    struct ChannelDesc *channel = CHANNEL(manifest, i);
+
+    assert(channel != NULL);
+
+    channel->counters[GetsLimit] = 0;
+    channel->counters[GetSizeLimit] = 0;
+    channel->counters[PutsLimit] = 0;
+    channel->counters[PutSizeLimit] = 0;
+  }
 }

@@ -95,7 +95,8 @@ static void UpdateSession(struct Manifest *manifest)
   manifest->node = g_strdup(tmp->node);
   manifest->job = tmp->job;
 
-  /* reset timeout, i/o limit, privileges e.t.c. */
+  /* reset accounting, timeout, limits e.t.c. */
+  AccountingReset(manifest);
   LastDefenseLine(manifest);
   ZLOG(LOG_INSANE, "'last defense line' reinitialized");
 

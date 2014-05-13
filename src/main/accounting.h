@@ -24,4 +24,7 @@
 /* returns string with time and i/o statistics */
 char *Accounting(struct Manifest *manifest);
 
+/* reset i/o accounting (for initialized sessions only) */
+void AccountingReset(struct Manifest *manifest);
+
 #endif /* ACCOUNTING_H_ */
