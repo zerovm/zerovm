@@ -23,9 +23,9 @@
 
 #define ZEROVM_PRIORITY 19
 #define HELP_SCREEN /* update command line switches here */\
-    "%s%s\033[1m\033[37mZeroVM tag%d\033[0m lightweight VM manager, build 2014-05-08\n"\
-    "Usage: <manifest> [-v#] [-T#] [-t#] [-stFPQ]\n\n"\
-    " -s skip validation\n"\
+    "%s%s\033[1m\033[37mZeroVM 2 tag%d\033[0m lightweight VM manager, build 2014-05-14\n"\
+    "Usage: <manifest> [-v#] [-T#] [-t#] [-s#] [-stFPQ]\n\n"\
+    " -s <0..2> validation do/skip/skip twice\n"\
     " -t <0..3> report to stdout/log/fast (default 0)\n"\
     " -v <0..3> log verbosity (default 0)\n"\
     " -F quit right before starting user session\n"\

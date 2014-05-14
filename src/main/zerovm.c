@@ -52,7 +52,7 @@ static char *ParseCommandLine(int argc, char **argv)
 
   CommandLine(argc, argv);
 
-  while((opt = getopt(argc, argv, "-PFQst:v:M:T:")) != -1)
+  while((opt = getopt(argc, argv, "-PFQs:t:v:M:T:")) != -1)
   {
     switch(opt)
     {
@@ -60,10 +60,20 @@ static char *ParseCommandLine(int argc, char **argv)
       case 'M':
         if(mft != NULL)
           BADCMDLINE("2nd manifest encountered");
-        mft = optarg;
+        mft = g_strdup(optarg);
         break;
       case 's':
-        CommandPtr()->skip_validation = 1;
+        /*
+         * patch to make prevalidation with uboot. skip validation 1st time
+         * for uboot itself and skip validation 2nd time for loaded elf.
+         * each time skip_validation will be decreased by 1. when it will
+         * reach 1 skip_validation value will be set to 0 and all other
+         * validations will trigger real validation process
+         */
+        opt = ToInt(optarg);
+        if(opt < 0 || opt > 2)
+          BADCMDLINE("invalid validation value");
+        CommandPtr()->skip_validation = opt > 1 ? 3 : opt;
         ZLOGS(LOG_ERROR, "VALIDATION DISABLED");
         break;
       case 'F': /* TODO(d'b): obsolete switch */
@@ -94,14 +104,18 @@ static char *ParseCommandLine(int argc, char **argv)
   }
 
   if(mft == NULL) BADCMDLINE(NULL);
-  return g_strdup(mft);
+  return mft;
 }
 
 int main(int argc, char **argv)
 {
+  char *mft;
+
   /* set logger in case it will be used during initialization */
   ZLogCtor(LOG_ERROR);
-  SessionCtor(ParseCommandLine(argc, argv));
+  mft = ParseCommandLine(argc, argv);
+  SessionCtor(mft);
+  g_free(mft);
 
   /* quit if fuzz testing specified */
   if(CommandPtr()->quit_after_load)

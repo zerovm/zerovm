@@ -73,13 +73,20 @@ void LastDefenseLine(struct Manifest *manifest)
   GiveUpPrivileges();
 }
 
-int Validate(uint8_t* mbase, size_t size, uint32_t vbase)
+int Validate(uint8_t *mbase, size_t size, uint32_t vbase)
 {
   /* validator function from libvalidator.so */
-  int NaClSegmentValidates(uint8_t* mbase, size_t size, uint32_t vbase);
+  int NaClSegmentValidates(uint8_t *mbase, size_t size, uint32_t vbase);
 
-  return CommandPtr()->skip_validation ? 0
-      : 0 - !NaClSegmentValidates(mbase, size, vbase);
+  if(CommandPtr()->skip_validation > 1)
+  {
+    if(--CommandPtr()->skip_validation == 1)
+      CommandPtr()->skip_validation = 0;
+    return 0;
+  }
+
+  return CommandPtr()->skip_validation == 1 ?
+      0 : 0 - !NaClSegmentValidates(mbase, size, vbase);
 }
 
 /* log user memory map */
