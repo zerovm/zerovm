@@ -197,10 +197,9 @@ static void SetManifest(const struct Manifest *manifest)
    * it modifies user manifest. if manifest will be locked uboot will fail at
    * line number 314, however that will mean that validation was successful
    */
-  if(CommandPtr()->quit_after_load)
-    Zmprotect(user, size, PROT_READ | PROT_LOCK);
-  else
-    Zmprotect(user, size, PROT_READ);
+  i = CommandPtr()->quit_after_load ? PROT_READ | PROT_LOCK : PROT_READ;
+  i = Zmprotect(user, size, i);
+  ZLOGFAIL(0 != i, i, "cannot set manifest protection");
 }
 
 /* calculate and set user heap */
