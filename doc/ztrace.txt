@@ -1,5 +1,5 @@
 This document describes ZeroVM trace module
-(up to date 2013-10-29, needs editing)
+(up to date 2014-05-14, needs editing)
 
 ZeroVM have trap call tracing capability. it can be used with "-T" command line
 option: ZeroVM my.manifest -T/my/path/to/trace.txt. specified file should have

@@ -1,0 +1,53 @@
+This document describes ZeroVM report
+(up to date 2014-05-14, needs editing)
+
+session report informs about the session results. the report is mostly
+needed for integration (now used by zerovm project swift middleware).
+report has two flavors: release and debug. here are examples of reports
+
+debug report:
+validator state = 0
+daemon = 0
+user return code = 0
+memtag = 34010ca11e2a98f23b8f3a95da90926b48a8848a
+accounting = 0.00 0.10 7 44144 14 22825 0 0 0 0
+exit state = ok
+command = /home/bortoq/git/zerovm/zerovm[18394] accounting.manifest -s2
+
+release report:
+0
+0
+0
+34010ca11e2a98f23b8f3a95da90926b48a8848a
+0.01 0.08 7 44144 14 22825 0 0 0 0
+ok
+
+explanation of report lines:
+1. state of validator. contains number of validation errors. 0 means all
+   validations of untrusted code were successfull
+2. daemon mode. if 0 the session is just regular session. if 1 - session
+   was converted to daemon mode
+3. user return code. 64-bit value returned by untrusted code via zvm_exit()
+4. memory tag. checksum of whole (available) untrusted memory
+5. accounting. i/o and time expenses of untrusted code. namely:
+   1. real time spent in untrusted code
+   2. i/o time (spent in system)
+   3. number of local reads
+   4. number of local bytes were read
+   5. number of local writes
+   6. number of local bytes were written
+   7. number of remote reads
+   8. number of remote bytes were read
+   9. number of remote writes
+   10. number of remote bytes were written
+6. session status. if session terminated without errors it is "ok". otherwise
+   it contains the short description of problem
+7. (debug report only) command line. contains the session command line with pid
+   (of zerovm process) in brakets
+
+NOTE: report can be written in
+  - /dev/stdout
+  - syslog
+  - unix domain socket (for sessions forked by daemon mode zerovm)
+  by default report will appear in console. the report output can be set by -t
+  command line switch (see command_line.txt)
