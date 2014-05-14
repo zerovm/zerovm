@@ -1,101 +1,71 @@
 /*
- * functional test of trap functions jail / unjail
+ * functional test of trap function zvm_mprotect()
  */
-#include <sys/mman.h> /* PROT_READ, PROT_EXEC, PROT_WRITE */
+#include <sys/mman.h>
 #include "include/zvmlib.h"
 #include "include/ztest.h"
 
-/*
- * should be large enough to hold one small function and
- * small enough to be less or equal than text segment size
- */
-#define SIZE 0x10000
-
-/* should pass validation */
-static void good()
-{
-  ZTEST("good function");
-}
-
-/* should not pass validation */
-static char bad[] = {0xf, 0x31, 0xc3};
-
-static int test_function(void(*func)())
-{
-  char *p, *g;
-  int i, result;
-
-  /* allocate and align buffer */
-  p = malloc(SIZE + PAGESIZE);
-  ZFAIL(p != NULL);
-  g = p;
-  p = (char*)(uintptr_t)(ROUNDUP_64K((uintptr_t)p));
-
-  /* store a good function to buffer */
-  memcpy(p, func, SIZE);
-
-  /* validate it (put r/x protection) */
-  result = zvm_mprotect(p, SIZE, PROT_READ | PROT_EXEC);
-
-  /* run it */
-  if(result == 0) ((void(*)())p)();
-
-  /*
-   * put r/w protection (release memory region from r/x)
-   * warning: "for" can produce signal #11
-   */
-  result |= zvm_mprotect(p, SIZE, PROT_READ | PROT_WRITE);
-  for(i = 0; i < SIZE; ++i)
-    p[i] = 0xdb;
-
-  free(g);
-  return result;
-}
+#define NULL_SIZE PAGESIZE
+#define TRAMPOLINE_SIZE PAGESIZE
+#define NOP 0x90
 
 int main()
 {
-  ZTEST(test_function(good) == 0);
-  ZTEST(test_function((void (*)())bad) != 0);
+  uintptr_t heap_end = (uintptr_t)MANIFEST->heap_ptr + MANIFEST->heap_size;
+  uintptr_t stack_end = 0x100000000ULL - MANIFEST->stack_size;
+  uint8_t *code = (void*)(uintptr_t)ROUNDUP_64K((uintptr_t)MANIFEST->heap_ptr);
 
-  /* try to change NULL protection */
-  ZTEST(zvm_mprotect(NULL, 0x10000, PROT_NONE) == -13);
-  ZTEST(zvm_mprotect(NULL, 0x10000, PROT_READ) == -13);
-  ZTEST(zvm_mprotect(NULL, 0x10000, PROT_READ | PROT_WRITE) == -13);
-  ZTEST(zvm_mprotect(NULL, 0x10000, PROT_WRITE) == -13);
-  ZTEST(zvm_mprotect(NULL, 0x10000, PROT_READ | PROT_EXEC) == -13);
+  /* is uboot region in heap already (not read only)? */
+  ZTEST(zvm_pread(0, heap_end - PAGESIZE, PAGESIZE, 0) >= 0);
 
-  /* try to change TRAMPOLINE protection */
-  ZTEST(zvm_mprotect(0x10000, 0x10000, PROT_NONE) == -13);
-  ZTEST(zvm_mprotect(0x10000, 0x10000, PROT_READ) == -13);
-  ZTEST(zvm_mprotect(0x10000, 0x10000, PROT_READ | PROT_WRITE) == -13);
-  ZTEST(zvm_mprotect(0x10000, 0x10000, PROT_WRITE) == -13);
-  ZTEST(zvm_mprotect(0x10000, 0x10000, PROT_READ | PROT_EXEC) == -13);
+  /* try to change NULL protection (locked region) */
+  ZTEST(zvm_mprotect(NULL, NULL_SIZE, PROT_NONE) < 0);
+  ZTEST(zvm_mprotect(NULL, NULL_SIZE, PROT_READ) < 0);
+  ZTEST(zvm_mprotect(NULL, NULL_SIZE, PROT_READ | PROT_WRITE) < 0);
+  ZTEST(zvm_mprotect(NULL, NULL_SIZE, PROT_WRITE) < 0);
+  ZTEST(zvm_mprotect(NULL, NULL_SIZE, PROT_READ | PROT_EXEC) < 0);
 
-  /* try to change MANIFEST protection */
-  ZTEST(zvm_mprotect(0xFEFF0000, 0x10000, PROT_NONE) == -13);
-  ZTEST(zvm_mprotect(0xFEFF0000, 0x10000, PROT_READ) == -13);
-  ZTEST(zvm_mprotect(0xFEFF0000, 0x10000, PROT_READ | PROT_WRITE) == -13);
-  ZTEST(zvm_mprotect(0xFEFF0000, 0x10000, PROT_WRITE) == -13);
-  ZTEST(zvm_mprotect(0xFEFF0000, 0x10000, PROT_READ | PROT_EXEC) == -13);
+  /* try to change TRAMPOLINE protection (locked region) */
+  ZTEST(zvm_mprotect(0x10000, TRAMPOLINE_SIZE, PROT_NONE) < 0);
+  ZTEST(zvm_mprotect(0x10000, TRAMPOLINE_SIZE, PROT_READ) < 0);
+  ZTEST(zvm_mprotect(0x10000, TRAMPOLINE_SIZE, PROT_READ | PROT_WRITE) < 0);
+  ZTEST(zvm_mprotect(0x10000, TRAMPOLINE_SIZE, PROT_WRITE) < 0);
+  ZTEST(zvm_mprotect(0x10000, TRAMPOLINE_SIZE, PROT_READ | PROT_EXEC) < 0);
 
-  /* try to change STACK protection */
-  ZTEST(zvm_mprotect(0xFF000000, 0x10000, PROT_NONE) == -13);
-  ZTEST(zvm_mprotect(0xFF000000, 0x10000, PROT_READ) == -13);
-  ZTEST(zvm_mprotect(0xFF000000, 0x10000, PROT_READ | PROT_WRITE) == -13);
-  ZTEST(zvm_mprotect(0xFF000000, 0x10000, PROT_WRITE) == -13);
-  ZTEST(zvm_mprotect(0xFF000000, 0x10000, PROT_READ | PROT_EXEC) == -13);
+  /* try to change HOLE protection (locked region) */
+  ZTEST(heap_end == ROUNDUP_64K(heap_end));
+  ZTEST(zvm_mprotect(heap_end, 0x10000, PROT_NONE) < 0);
+  ZTEST(zvm_mprotect(heap_end, 0x10000, PROT_READ) < 0);
+  ZTEST(zvm_mprotect(heap_end, 0x10000, PROT_READ | PROT_WRITE) < 0);
+  ZTEST(zvm_mprotect(heap_end, 0x10000, PROT_WRITE) < 0);
+  ZTEST(zvm_mprotect(heap_end, 0x10000, PROT_READ | PROT_EXEC) < 0);
 
-  /*
-   * change protection on TEXT
-   * WARNING: be careful here this is operation over working code!
-   */
-  ZTEST(zvm_mprotect(0x000A0000, 0x10000, PROT_NONE) == 0);
-  ZTEST(zvm_mprotect(0x000A0000, 0x10000, PROT_READ | PROT_EXEC) == -13);
-  ZTEST(zvm_mprotect(0x000A0000, 0x10000, PROT_READ) == 0);
-  ZTEST(zvm_mprotect(0x000A0000, 0x10000, PROT_READ | PROT_EXEC) == -1);
-  ZTEST(zvm_mprotect(0x00020000, 0x10000, PROT_READ | PROT_EXEC) == 0);
-  ZTEST(zvm_mprotect(0x00030000, 0x10000, PROT_WRITE) == 0);
-  ZTEST(zvm_mprotect(0x00030000, 0x10000, PROT_READ | PROT_EXEC) == -13);
+  /* try to change STACK protection (locked region) */
+  ZTEST(stack_end == ROUNDUP_64K(stack_end));
+  ZTEST(zvm_mprotect(stack_end, 0x10000, PROT_NONE) < 0);
+  ZTEST(zvm_mprotect(stack_end, 0x10000, PROT_READ) < 0);
+  ZTEST(zvm_mprotect(stack_end, 0x10000, PROT_READ | PROT_WRITE) < 0);
+  ZTEST(zvm_mprotect(stack_end, 0x10000, PROT_WRITE) < 0);
+  ZTEST(zvm_mprotect(stack_end, 0x10000, PROT_READ | PROT_EXEC) < 0);
+
+  /* prepare and test good code pattern. then return used page to heap */
+  memset(code, NOP, PAGESIZE);
+  ZTEST(zvm_mprotect(code, PAGESIZE, PROT_READ | PROT_EXEC) == 0);
+  ZTEST(zvm_mprotect(code, PAGESIZE, PROT_READ | PROT_WRITE) == 0);
+
+  /* prepare and test bad code pattern (RDTSC). then return used page to heap */
+  memset(code, NOP, PAGESIZE);
+  code[0] = 0xf;
+  code[1] = 0x31;
+  ZTEST(zvm_mprotect(code, PAGESIZE, PROT_READ | PROT_EXEC) < 0);
+  ZTEST(zvm_mprotect(code, PAGESIZE, PROT_READ | PROT_WRITE) == 0);
+
+  /* prepare and test bad code pattern (incomplete mov rax, ?). then return used page to heap */
+  memset(code, NOP, PAGESIZE);
+  code[PAGESIZE - 2] = 0x48;
+  code[PAGESIZE - 1] = 0xb8;
+  ZTEST(zvm_mprotect(code, PAGESIZE, PROT_READ | PROT_EXEC) < 0);
+  ZTEST(zvm_mprotect(code, PAGESIZE, PROT_READ | PROT_WRITE) == 0);
 
   ZREPORT;
   return 0; /* prevent warning */
