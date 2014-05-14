@@ -76,7 +76,7 @@ static char *ParseCommandLine(int argc, char **argv)
         CommandPtr()->skip_validation = opt > 1 ? 3 : opt;
         ZLOGS(LOG_ERROR, "VALIDATION DISABLED");
         break;
-      case 'F': /* TODO(d'b): obsolete switch */
+      case 'F':
         CommandPtr()->quit_after_load = 1;
         break;
       case 't':
@@ -116,10 +116,6 @@ int main(int argc, char **argv)
   mft = ParseCommandLine(argc, argv);
   SessionCtor(mft);
   g_free(mft);
-
-  /* quit if fuzz testing specified */
-  if(CommandPtr()->quit_after_load)
-    SessionDtor(0, OK_STATE);
 
   /* switch to the user code */
   ContextSwitch(nacl_user);

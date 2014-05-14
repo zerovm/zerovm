@@ -191,7 +191,16 @@ static void SetManifest(const struct Manifest *manifest)
   for(i = 0; i < size / NACL_MAP_PAGESIZE; ++i)
     GetUserMap()[i + MANIFEST_PTR / NACL_MAP_PAGESIZE]
                  &= PROT_READ | PROT_WRITE;
-  Zmprotect(user, size, PROT_READ);
+
+  /*
+   * yet another hack to make -F switch useful. when uboot finishes its work
+   * it modifies user manifest. if manifest will be locked uboot will fail at
+   * line number 314, however that will mean that validation was successful
+   */
+  if(CommandPtr()->quit_after_load)
+    Zmprotect(user, size, PROT_READ | PROT_LOCK);
+  else
+    Zmprotect(user, size, PROT_READ);
 }
 
 /* calculate and set user heap */

@@ -17,9 +17,9 @@
 #include "api/zvm.h"
 #include "uboot.h"
 
-/* todo: how to avoid redefining of MANIFEST (and warnings)? */
+/* MANIFEST for uboot is not constant */
 #undef MANIFEST
-#define MANIFEST ((struct UserManifest*)(uintptr_t)0xFF000000)
+#define MANIFEST ((struct UserManifest*)*((uintptr_t*)0x1000D))
 
 /* jump to absolute address */
 #define JUMP(entry_point) \
@@ -331,6 +331,8 @@ void _start() /* no return */
   asm("add %r15, %rsp");
 
   /* allocate stack space for trap function arguments */
+  asm("mov $0x455a494c4147454c, %r11");
+  asm("mov $0x534942414e4e4143, %rdi");
   asm(".intel_syntax noprefix");
   asm("lea edi, [rsp - 0x28]");
   asm(".att_syntax");
