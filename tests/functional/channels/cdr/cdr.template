@@ -14,6 +14,6 @@ Channel = PWD/cdr.nexe, /boot/elf, 1, 0x10000, 0x10000, 0, 0
 == for the internal zerovm needs
 =====================================================================
 Version = 20140509
-Memory = 33554432, 1
+Memory = 33554432, 0
 Timeout = 1
 

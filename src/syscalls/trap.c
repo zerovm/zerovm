@@ -214,6 +214,7 @@ static void ZVMExitHandle(struct Manifest *manifest, uint64_t code)
   if(ReportSetupPtr()->zvm_code == 0)
     ReportSetupPtr()->zvm_state = g_strdup(OK_STATE);
   ZLOGS(LOG_DEBUG, "SESSION %s RETURNED %lu", manifest->node, code);
+  SyscallZTrace(TrapExit, code);
   SessionDtor(0, OK_STATE);
 }
 
@@ -248,11 +249,9 @@ int32_t TrapHandler(uint32_t args)
       retcode = Daemon(manifest);
       if(retcode) break;
       SyscallZTrace(*sargs, 0);
-      SyscallZTrace(TrapExit, 0);
       ZVMExitHandle(manifest, 0);
       break;
     case TrapExit:
-      SyscallZTrace(*sargs, sargs[1]);
       ZVMExitHandle(manifest, sargs[1]);
       break;
     case TrapRead:
