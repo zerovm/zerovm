@@ -1,9 +1,9 @@
 #!/bin/sh
 
-echo "XQAAAAT//////////wA/kUWEaD2Jt+w/+vaX0uVChV11YbDTPTmNb6NPqLS2fHCP7AYVCu
-KRazdEZ9wCOxrCfZTxlOiKtmMqCCNWydNjIlQND72trKUWU0n4hm2E6/CzJZJ3u+8xaStym4gdxT
-MApjlOzBBiMrzPmDUWufOZFWloJY80LQAZ2F1ASFI7iCirT2cdwOODiWahH6vovgh4W0mn/gCSg0
-PcEmKZosEwP/+/x1hk"|base64 -d|lzma -dc>dummy.nexe
+echo "XQAAAAT//////////wA/kUWEaD2JptqKzJPiTPKE6ABIn6Yq8RMybhOCmsOLjJtLU4LtvO
+h0CgI3ilXVYqQKQJhr5B2p8AFk4lsGHSJTDR1FrSYDZGjkvl8VjYqZqkdC/ndeMHjnV1ENBm6iHP
+DtWBYpZfGPoNz4b0zCOUhmjDcIO1tjuUtDx4CJDREEhd/C4Xsxxrdt2E1nTVuTYc+tC5ih///FJB
+AA"|base64 -d|lzma -dc>dummy.nexe
 
 for i in `ls *.manifest`; do
   $ZEROVM_ROOT/zerovm $i > /dev/null
