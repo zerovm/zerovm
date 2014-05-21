@@ -36,6 +36,11 @@ static int CheckRAMAccess(struct NaClApp *nap, uintptr_t start, int64_t size, in
   start = NaClUserToSysAddrNullOkay(nap, start);
   for(i = LeftBumperIdx; i < MemMapSize; ++i)
   {
+
+    /* If it is true, there is a gap between
+       nap->mem_map[i-1].end and nap->mem_map[i].start */
+    if(start < nap->mem_map[i].start) return -1;
+
     /* skip until start hit block in mem_map */
     if(start >= nap->mem_map[i].end) continue;
 
