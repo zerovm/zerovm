@@ -15,6 +15,7 @@ statically linked 64-bit nexes. if fatal error encountered during the loading
 process uboot will terminate session with error code corresponding to uboot
 source code line where loader failed. here is the list of possible problems:
 
+return codes of uboot
 61 -- cannot find "/boot/elf" channel
 62 -- "/boot/elf" channel is not randomly readable
 66 -- cannot read elf header
@@ -46,7 +47,7 @@ source code line where loader failed. here is the list of possible problems:
 260 -- data_start not a multiple of allocation size
 277 -- integer overflow
 284 -- the end virtual address exceeds user address space
-291 -- segment load failure
+292 -- segment load failure
 300 -- validation failed
 306 -- cannot set read protection on user read only data
 314 -- cannot make user manifest writable
