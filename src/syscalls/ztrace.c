@@ -25,16 +25,16 @@ static GString *ztrace_buf = NULL;
 static double ztrace_chrono = 0;
 
 static int idx[] =
-    {TrapRead, TrapWrite, TrapProt, TrapExit, TrapFork};
+    {TrapREAD, TrapWRITE, TrapPROT, TrapEXIT, TrapFORK};
 static char *function[] =
-    {"TrapRead", "TrapWrite", "TrapProt", "TrapExit",
-     "TrapFork", "Invalid"};
+    {"TrapREAD", "TrapWRITE", "TrapPROT", "TrapEXIT",
+     "TrapFORK", "Invalid"};
 static char *fmt[] = {
-    "%d, %p, %d, %ld", /* TrapRead */
-    "%d, %p, %d, %ld", /* TrapWrite */
-    "%p, %d, %d", /* TrapProt */
-    "", /* TrapExit */
-    "" /* TrapFork */
+    "%d, %p, %d, %ld", /* TrapREAD */
+    "%d, %p, %d, %ld", /* TrapWRITE */
+    "%p, %d, %d", /* TrapPROT */
+    "", /* TrapEXIT */
+    "" /* TrapFORK */
 };
 
 void ZTraceCtor()

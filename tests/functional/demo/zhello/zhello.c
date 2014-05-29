@@ -8,8 +8,8 @@
 #define stderr 2
 
 /* functions */
-#define fput(handle, msg) zvm_pwrite(handle, msg, sizeof msg, 0)
-#define exit(c) zvm_exit(c)
+#define fput(handle, msg) z_pwrite(handle, msg, sizeof msg, 0)
+#define exit(c) z_exit(c)
 
 void _start()
 {

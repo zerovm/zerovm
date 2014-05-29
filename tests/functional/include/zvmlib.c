@@ -26,6 +26,11 @@
  * Copyright (C) 2002 Michael Ringgaard. All rights reserved.
  * (full (c) stuff see below)
  */
+/*
+ * TODO: replace printf implementation with a new one with floating point
+ * support. for example:
+ * https://github.com/jpbonn/coremark_lm32/blob/master/ee_printf.c
+ */
 #define LONG_MAX 2147483647L
 #define LONG_MIN (-LONG_MAX - 1L)
 #define ULONG_MAX (LONG_MAX * 2UL + 1UL)
@@ -454,7 +459,7 @@ static int get_nvram_data(char *buffer)
   int i = OPEN(ENVIRONMENT);
 
   if(i >= 0)
-    i = zvm_pread(i, buffer, ENVIRONMENT_MAX_SIZE, 0);
+    i = z_pread(i, buffer, ENVIRONMENT_MAX_SIZE, 0);
   return i == ENVIRONMENT_MAX_SIZE || i < 1 ? -1 : i;
 }
 
@@ -527,7 +532,7 @@ void _start(uint32_t *info)
   char **envp = (void*)&p[argc + 2];
 
   /* call the user main and exit to zerovm */
-  zvm_exit(main(argc, argv, envp));
+  z_exit(main(argc, argv, envp));
 }
 
 /*

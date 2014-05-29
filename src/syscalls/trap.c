@@ -214,11 +214,12 @@ static void ZVMExitHandle(struct Manifest *manifest, uint64_t code)
   if(ReportSetupPtr()->zvm_code == 0)
     ReportSetupPtr()->zvm_state = g_strdup(OK_STATE);
   ZLOGS(LOG_DEBUG, "SESSION %s RETURNED %lu", manifest->node, code);
-  SyscallZTrace(TrapExit, code);
+  SyscallZTrace(TrapEXIT, code);
   SessionDtor(0, OK_STATE);
 }
 
 /* handler for syscalls testing */
+/* TODO(d'b): to remove before release */
 static void ZVMTestHandle(struct Manifest *manifest)
 {
   assert(manifest != NULL);
@@ -245,31 +246,74 @@ int32_t TrapHandler(uint32_t args)
 
   switch(*sargs)
   {
+#ifndef REMOVE_DEPRECATED
+    /* DEPRECATED. API version 1 */
     case TrapFork:
+      retcode = Daemon(manifest);
+      if(retcode) break;
+      SyscallZTrace(TrapFORK, 0);
+      ZVMExitHandle(manifest, 0);
+      break;
+    case TrapExit:
+      ZVMExitHandle(manifest, sargs[2]);
+      break;
+    case TrapRead:
+      retcode = ZVMReadHandle(manifest,
+          (int)sargs[2], (char*)sargs[3], (int32_t)sargs[4], sargs[5]);
+      ZLOGS(LOG_DEBUG, "%s returned %d", FunctionName(TrapREAD), retcode);
+      SyscallZTrace(TrapREAD, retcode, sargs[2], sargs[3], sargs[4], sargs[5]);
+      return retcode;
+      break;
+    case TrapWrite:
+      retcode = ZVMWriteHandle(manifest,
+          (int)sargs[2], (char*)sargs[3], (int32_t)sargs[4], sargs[5]);
+      ZLOGS(LOG_DEBUG, "%s returned %d", FunctionName(TrapWRITE), retcode);
+      SyscallZTrace(TrapWRITE, retcode, sargs[2], sargs[3], sargs[4], sargs[5]);
+      return retcode;
+      break;
+    case TrapJail:
+      retcode = ZVMProtHandle((uint32_t)sargs[2], (uint32_t)sargs[3],
+          PROT_READ | PROT_EXEC);
+      ZLOGS(LOG_DEBUG, "%s returned %d", FunctionName(TrapPROT), retcode);
+      SyscallZTrace(TrapPROT, retcode, sargs[2], sargs[3], PROT_READ | PROT_EXEC);
+      return retcode;
+      break;
+    case TrapUnjail:
+      retcode = ZVMProtHandle((uint32_t)sargs[2], (uint32_t)sargs[3],
+          PROT_READ | PROT_WRITE);
+      ZLOGS(LOG_DEBUG, "%s returned %d", FunctionName(TrapPROT), retcode);
+      SyscallZTrace(TrapPROT, retcode, sargs[2], sargs[3], PROT_READ | PROT_EXEC);
+      return retcode;
+      break;
+#endif
+
+    /* API version 2 */
+    case TrapFORK:
       retcode = Daemon(manifest);
       if(retcode) break;
       SyscallZTrace(*sargs, 0);
       ZVMExitHandle(manifest, 0);
       break;
-    case TrapExit:
+    case TrapEXIT:
       ZVMExitHandle(manifest, sargs[1]);
       break;
-    case TrapRead:
+    case TrapREAD:
       retcode = ZVMReadHandle(manifest,
           (int)sargs[1], (char*)sargs[2], (int32_t)sargs[3], sargs[4]);
       break;
-    case TrapWrite:
+    case TrapWRITE:
       retcode = ZVMWriteHandle(manifest,
           (int)sargs[1], (char*)sargs[2], (int32_t)sargs[3], sargs[4]);
       break;
-    case TrapProt:
+    case TrapPROT:
       retcode = ZVMProtHandle((uint32_t)sargs[1], (uint32_t)sargs[2],
           (int)sargs[3]);
       break;
-    case TrapTest:
+    case TrapTest: /* TODO(d'b): to remove before release */
       ZVMTestHandle(manifest);
       ZVMExitHandle(manifest, 0);
       break;
+
     default:
       retcode = -EPERM;
       ZLOG(LOG_ERROR, "function %ld is not supported", *sargs);

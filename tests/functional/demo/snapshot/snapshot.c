@@ -3,13 +3,13 @@
  */
 #include "include/zvmlib.h"
 
-#define zvm_test() TRAP((uint64_t[]){TrapTest})
+#define z_test() TRAP((uint64_t[]){TrapTest})
 
 #define DUMP(fmt, a) \
   do { \
     char buf[BIG_ENOUGH]; \
     tfp_sprintf(buf, "%s = " fmt "\n", #a, a); \
-    zvm_pwrite(1, buf, STRLEN(buf), 0); \
+    z_pwrite(1, buf, STRLEN(buf), 0); \
   } while(0)
 
 int main()
@@ -41,7 +41,7 @@ int main()
 
   /* ..and call snapshot */
   DUMP("%s", "snapshotting...");
-  zvm_test();
+  z_test();
   DUMP("%s", "restored successfully!");
 
   return 0;

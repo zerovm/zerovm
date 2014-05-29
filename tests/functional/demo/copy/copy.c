@@ -9,12 +9,12 @@ void _start()
 
   for(;;)
   {
-    int i = zvm_pread(0, buf, BIG_ENOUGH, 0);
+    int i = z_pread(0, buf, BIG_ENOUGH, 0);
     if(i > 0)
-      i = zvm_pwrite(1, buf, i, 0);
+      i = z_pwrite(1, buf, i, 0);
     else
       break;
   }
 
-  zvm_exit(0);
+  z_exit(0);
 }

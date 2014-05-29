@@ -22,8 +22,15 @@
 #include "src/main/manifest.h"
 
 #define ZEROVM_PRIORITY 19
+
+#define BUILD "build 2014-05-29"
+#ifndef REMOVE_DEPRECATED
+#define VERSION  "\033[1m\033[37mZeroVM 2*"
+#else
+#define VERSION  "\033[1m\033[37mZeroVM 2"
+#endif
 #define HELP_SCREEN /* update command line switches here */\
-    "%s%s\033[1m\033[37mZeroVM 2 tag%d\033[0m lightweight VM manager, build 2014-05-14\n"\
+    "%s%s" VERSION " tag%d\033[0m lightweight VM manager, " BUILD "\n"\
     "Usage: <manifest> [-v#] [-T#] [-t#] [-s#] [-stFPQ]\n\n"\
     " -s <0..2> validation do/skip/skip twice\n"\
     " -t <0..3> report to stdout/log/fast (default 0)\n"\

@@ -7,7 +7,7 @@
   do { \
     char buf[BIG_ENOUGH]; \
     tfp_sprintf(buf, "%s = " fmt "\n", #a, a); \
-    zvm_pwrite(1, buf, STRLEN(buf), 0); \
+    z_pwrite(1, buf, STRLEN(buf), 0); \
   } while(0)
 
 int main()

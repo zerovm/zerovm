@@ -22,7 +22,7 @@
 #define _eoutput(_str)\
   do {\
     FPRINTF(STDERR, "Error in %s() at %u: %s\n", __func__, __LINE__, (_str));\
-    zvm_exit(1);\
+    z_exit(1);\
   } while(0)
 
 #ifdef DEBUG

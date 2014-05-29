@@ -9,6 +9,6 @@
 void _start()
 {
   uint64_t hi[] = {HELLO, WORLD};
-  zvm_pwrite(1, hi, 14, 0);
-  zvm_exit(0);
+  z_pwrite(1, hi, 14, 0);
+  z_exit(0);
 }

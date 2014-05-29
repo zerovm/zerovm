@@ -15,5 +15,5 @@ void _start()
   int b = 0x22222222;
   int c = 0x33333333;
 
-  zvm_exit(dummy(a, b, c));
+  z_exit(dummy(a, b, c));
 }

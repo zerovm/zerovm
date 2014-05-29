@@ -54,10 +54,10 @@ void _start() /* no return */
   FAILIF((MANIFEST->channels[handle].type & 1) == 0); /* elf should be random read */
 
   /* load elf headers */
-  zvm_pread(handle, &image->ehdr, sizeof image->ehdr, 0);
+  z_pread(handle, &image->ehdr, sizeof image->ehdr, 0);
 
   /* fail if cannot load tp prog headers */
-  zvm_pread(handle, &image->phdrs[0], image->ehdr.e_phnum
+  z_pread(handle, &image->phdrs[0], image->ehdr.e_phnum
     * sizeof image->phdrs[0], (off_t)image->ehdr.e_phoff);
 
   /* VALIDATE ELF HEADER */
@@ -190,26 +190,26 @@ void _start() /* no return */
      * NB: php->p_offset may not be a valid off_t on 64-bit systems, but
      * in that case Seek() will error out.
      */
-    zvm_pread(handle, (void*)(uintptr_t)php->p_vaddr, php->p_filesz, (off_t)php->p_offset);
+    z_pread(handle, (void*)(uintptr_t)php->p_vaddr, php->p_filesz, (off_t)php->p_offset);
     /* region from p_filesz to p_memsz should already be zero filled */
   }
 
   /* SET PROTECTIONS */
   /* change protection of user .text to RX */
-  i = zvm_mprotect((void*)NACL_TRAMPOLINE_END,
+  i = z_mprotect((void*)NACL_TRAMPOLINE_END,
     static_text_end - NACL_TRAMPOLINE_END, PROT_READ | PROT_EXEC);
   FAILIF(i != 0); /* validation failed */
 
   /* change protection of read only data to R if it is not NULL */
   if(data_start != 0)
-    zvm_mprotect((void*)rodata_start, data_start - rodata_start, PROT_READ);
+    z_mprotect((void*)rodata_start, data_start - rodata_start, PROT_READ);
 
   /* UPDATE USER MANIFEST */
   uint32_t mft_size = ROUNDUP_64K(sizeof(struct UserManifest)
     + MANIFEST->channels_count * sizeof(struct ZVMChannel));
 
   /* make user manifest writable */
-  zvm_mprotect(MANIFEST, mft_size, PROT_WRITE);
+  z_mprotect(MANIFEST, mft_size, PROT_WRITE);
 
   /* update manifest */
   i = (uintptr_t)MANIFEST->heap_ptr + MANIFEST->heap_size; /* end of heap */
@@ -217,7 +217,7 @@ void _start() /* no return */
   MANIFEST->heap_size = i - break_addr;
 
   /* protect user manifest */
-  FAILIF(zvm_mprotect(MANIFEST, mft_size, PROT_READ) < 0);
+  FAILIF(z_mprotect(MANIFEST, mft_size, PROT_READ) < 0);
 
   /* PASS CONTROL TO LOADED ELF */
   register uint64_t addr = initial_entry_pt;

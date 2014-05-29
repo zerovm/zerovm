@@ -22,9 +22,9 @@ int main(int argc, char **argv)
   ZTEST(PREAD(CHARO, buf, 0, -1) < 0);
 
   /* incorrect handle */
-  ZTEST(zvm_pread(-1, buf, 1, 0) < 0);
-  ZTEST(zvm_pread(0xffff, buf, 1, 0) < 0);
-  ZTEST(zvm_pread(MANIFEST->channels_count, buf, 1, 0) < 0);
+  ZTEST(z_pread(-1, buf, 1, 0) < 0);
+  ZTEST(z_pread(0xffff, buf, 1, 0) < 0);
+  ZTEST(z_pread(MANIFEST->channels_count, buf, 1, 0) < 0);
 
   /* incorrect requests: NULL buffer */
   ZTEST(PREAD(CHARO, NULL, 0, 0) == 0);

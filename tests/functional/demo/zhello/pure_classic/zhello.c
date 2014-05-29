@@ -5,6 +5,6 @@
 
 void _start()
 {
-  zvm_pwrite(1, "hello, world!\n", 14, 0);
-  zvm_exit(0);
+  z_pwrite(1, "hello, world!\n", 14, 0);
+  z_exit(0);
 }

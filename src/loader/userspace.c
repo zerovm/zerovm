@@ -47,14 +47,19 @@
 #define MANIFEST_PTR_MOCK_IDX 12
 #define MANIFEST_PTR (FOURGIG - STACK_SIZE)
 
-/* should be kept in sync with struct UserManifest from api/zvm.h*/
+/* should be kept in sync with struct UserManifest from api/zvm.h */
 struct UserManifest64
 {
   uint32_t heap_ptr;
   uint32_t heap_size;
   uint32_t stack_size;
   int32_t channels_count;
+
+#ifndef REMOVE_DEPRECATED
+  uint32_t channels;
+#else
   struct ChannelRec channels[0];
+#endif
 };
 
 static uintptr_t heap_end = 0;
@@ -174,8 +179,15 @@ static void SetManifest(const struct Manifest *manifest)
   user = (void*)NaClUserToSys(MANIFEST_PTR);
 
   /* serialize channels and copy to user manifest */
+#ifndef REMOVE_DEPRECATED
+  channels = ChannelsSerializer(manifest, MANIFEST_PTR + sizeof *user);
+  user->channels = (uint32_t)(NaClSysToUser((uintptr_t)&user->channels) + sizeof(uint32_t));
+  memcpy((void*)NaClUserToSys(MANIFEST_PTR + sizeof *user),
+      channels->channels, channels->size);
+#else
   channels = ChannelsSerializer(manifest, MANIFEST_PTR + sizeof *user);
   memcpy(&user->channels, channels->channels, channels->size);
+#endif
 
   /* set user manifest fields */
   user->heap_ptr = NACL_TRAMPOLINE_END;
@@ -200,6 +212,8 @@ static void SetManifest(const struct Manifest *manifest)
   i = CommandPtr()->quit_after_load ? PROT_READ | PROT_LOCK : PROT_READ;
   i = Zmprotect(user, size, i);
   ZLOGFAIL(0 != i, i, "cannot set manifest protection");
+
+  g_free(channels);
 }
 
 /* calculate and set user heap */
@@ -226,11 +240,69 @@ static void SetHeap(const struct Manifest *manifest)
   heap_end = NaClSysToUser((uintptr_t) p + heap);
 }
 
+#ifndef REMOVE_DEPRECATED
+/*
+ * place pointer to user manifest to the 0xFEFFFFFC in user address space.
+ * only need to support DEPRECATED API version 1. should be removed with
+ * DEPRECATED API version 1
+ * this patch affects:
+ * - user manifest "heap_size"
+ * - heap_end
+ * - hole (if exist) or heap (if hole does not exist)
+ * - user memory map (can unlock locked areas)
+ * TODO(d'b): remove it with DEPRECATED API version 1
+ */
+#define OLD_MFT_PTR 0xFEFFFFFC
+static void PatchForOldAPI(struct Manifest *manifest)
+{
+  int i;
+  void *p;
+
+  /* make user manifest writable */
+  p = (void*)NaClUserToSys(MANIFEST_PTR);
+  i = Zmprotect(p, NACL_MAP_PAGESIZE, PROT_READ | PROT_WRITE);
+  ZLOGFAIL(0 != i, i, "cannot set user manifest writable");
+
+  /* edit user manifest "heap_size" */
+  ((struct UserManifest64*)p)->heap_size -= NACL_MAP_PAGESIZE;
+  heap_end -= NACL_MAP_PAGESIZE;
+
+  /* re-protect user manifest */
+  i = Zmprotect(p, NACL_MAP_PAGESIZE, PROT_READ);
+  ZLOGFAIL(0 != i, i, "cannot protect user manifest");
+
+  /* make page with user manifest pointer writable */
+  p = (void*)NaClUserToSys(MANIFEST_PTR - NACL_MAP_PAGESIZE);
+  i = Zmprotect(p, NACL_MAP_PAGESIZE, PROT_READ | PROT_WRITE);
+  ZLOGFAIL(0 != i, i, "cannot set compatibility user manifest pointer");
+
+  /* set user manifest pointer */
+  *(uint32_t*)NaClUserToSys(OLD_MFT_PTR) = MANIFEST_PTR;
+
+  /* protect user manifest pointer */
+  i = Zmprotect(p, NACL_MAP_PAGESIZE, PROT_READ | PROT_LOCK);
+  ZLOGFAIL(0 != i, i, "cannot protect compatibility user manifest pointer");
+
+  /* increase hole if exist */
+  if(manifest->mem_size < FOURGIG)
+  {
+    p = (void*)NaClUserToSys(manifest->mem_size - STACK_SIZE - NACL_MAP_PAGESIZE);
+    i = Zmprotect(p, NACL_MAP_PAGESIZE, PROT_NONE | PROT_LOCK);
+    ZLOGFAIL(0 != i, i, "cannot add page to hole");
+  }
+}
+#endif
+
 void SetUserSpace(struct Manifest *manifest)
 {
   SetTrampoline();
   SetStack();
   SetHeap(manifest);
   SetManifest(manifest);
+
+#ifndef REMOVE_DEPRECATED
+  PatchForOldAPI(manifest);
+#endif
+
   LockRestrictedMemory();
 }

@@ -23,7 +23,7 @@
 #define SELFNAME_2 ((uint16_t)0x66) /* "f\000" */
 
 /* macros */
-#define FAILIF(c) do { if(c) zvm_exit(__LINE__); } while(0)
+#define FAILIF(c) do { if(c) z_exit(__LINE__); } while(0)
 #define ARRAY_SIZE(arr) ((sizeof arr)/sizeof arr[0])
 #define ROUNDUP_64K(a) ROUNDDOWN_64K((a) + NACL_MAP_PAGESIZE - 1LLU)
 #define ROUNDDOWN_64K(a) ((a) & ~(NACL_MAP_PAGESIZE - 1LLU))

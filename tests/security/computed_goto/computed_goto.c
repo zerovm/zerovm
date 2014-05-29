@@ -10,7 +10,7 @@
   if(!(cond)) \
   { \
     fprintf(STDERR, "assert failed at %d\n", __LINE__); \
-    zvm_exit(-1); \
+    z_exit(-1); \
   }
 
 /* This tests for two former nacl-gcc bugs:

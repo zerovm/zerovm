@@ -78,12 +78,12 @@
 #define SRAND(s) srand(s)
 #define OPEN(alias) handle(alias) /* will be fixed */
 #define CLOSE(handle)
-#define EXIT(code) zvm_exit(code)
-#define exit(code) zvm_exit(code)
-#define READ(alias, buf, size) zvm_pread(handle(alias), buf, size, 0)
-#define WRITE(alias, buf, size) zvm_pwrite(handle(alias), buf, size, 0)
-#define PREAD(alias, buf, size, offset) zvm_pread(handle(alias), buf, size, offset)
-#define PWRITE(alias, buf, size, offset) zvm_pwrite(handle(alias), buf, size, offset)
+#define EXIT(code) z_exit(code)
+#define exit(code) z_exit(code)
+#define READ(alias, buf, size) z_pread(handle(alias), buf, size, 0)
+#define WRITE(alias, buf, size) z_pwrite(handle(alias), buf, size, 0)
+#define PREAD(alias, buf, size, offset) z_pread(handle(alias), buf, size, offset)
+#define PWRITE(alias, buf, size, offset) z_pwrite(handle(alias), buf, size, offset)
 #define SPRINTF tfp_sprintf
 #define FPRINTF(alias, ...) \
   do {\

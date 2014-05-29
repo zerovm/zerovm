@@ -6,5 +6,5 @@
 void _start()
 {
   asm("rdtsc");
-  zvm_exit(0);
+  z_exit(0);
 }

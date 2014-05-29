@@ -29,8 +29,8 @@ void _start()
 
   do {
     set_random(buffer, sizeof buffer);
-    result = zvm_pwrite(1, buffer, sizeof buffer, 0);
+    result = z_pwrite(1, buffer, sizeof buffer, 0);
   } while(result > 0);
 
-  zvm_exit(result);
+  z_exit(result);
 }

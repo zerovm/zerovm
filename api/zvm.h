@@ -26,11 +26,22 @@ enum TrapCalls
 {
   TrapTest = 0x74736554, /* TODO(d'b): should be removed before release */
 
+#ifndef REMOVE_DEPRECATED
+  /* DEPRECATED. API version 1 */
   TrapRead = 0x64616552,
   TrapWrite = 0x74697257,
-  TrapProt = 0x746f7250,
+  TrapJail = 0x6c69614a,
+  TrapUnjail = 0x6c6a6e55,
   TrapFork = 0x6b726f46,
-  TrapExit = 0x74697845
+  TrapExit = 0x74697845,
+#endif
+
+  /* API version 2 */
+  TrapREAD = 0x44414552,
+  TrapWRITE = 0x54495257,
+  TrapPROT = 0x544f5250,
+  TrapFORK = 0x4b524f46,
+  TrapEXIT = 0x54495845
 };
 
 /* channel types */
@@ -59,18 +70,23 @@ struct ZVMChannel
   char *name;
 };
 
-/* system data available for the user */
+/* system data available for the user. linked with struct UserManifest64 */
 struct UserManifest
 {
   void *heap_ptr;
   uint32_t heap_size;
   uint32_t stack_size;
   int32_t channels_count;
+
+#ifndef REMOVE_DEPRECATED
+  struct ZVMChannel *channels;
+#else
   struct ZVMChannel channels[0];
+#endif
 };
 
 /* pointer to the user manifest (read only memory area) */
-#define MANIFEST ((const struct UserManifest const *)*((uintptr_t*)0x1000D))
+#define MANIFEST ((const struct UserManifest const*)*((uintptr_t*)0x1000D))
 
 /* trap pointer. internal helper. DO NOT use it! */
 #define TRAP ((int32_t (*)(uint64_t*))0x10000)
@@ -91,18 +107,29 @@ struct UserManifest
  *
  * all trap functions (except zvm_fork) has same return as libc ones, but
  * instead of setting errno and returning -1 it returns -errno
- *
- * note: zvm_jail, zvm_unjail removed, but can be emulated with zvm_mprotect:
- * zvm_jail(buffer, size) => zvm_mprotect(buffer, size, PROT_READ | PROT_EXEC)
- * zvm_unjail(buffer, size) => zvm_mprotect(buffer, size, PROT_READ | PROT_WRITE)
  */
+#ifndef REMOVE_DEPRECATED
+/* DEPRECATED. API version 1 */
 #define zvm_pread(desc, buffer, size, offset) \
-  TRAP((uint64_t[]){TrapRead, desc, (uintptr_t)buffer, size, offset})
+  TRAP((uint64_t[]){TrapRead, 0, desc, (uintptr_t)buffer, size, offset})
 #define zvm_pwrite(desc, buffer, size, offset) \
-  TRAP((uint64_t[]){TrapWrite, desc, (uintptr_t)buffer, size, offset})
-#define zvm_mprotect(buffer, size, prot) \
-  TRAP((uint64_t[]){TrapProt, (uintptr_t)buffer, size, prot})
+  TRAP((uint64_t[]){TrapWrite, 0, desc, (uintptr_t)buffer, size, offset})
+#define zvm_jail(buffer, size) \
+  TRAP((uint64_t[]){TrapJail, 0, (uintptr_t)buffer, size})
+#define zvm_unjail(buffer, size) \
+  TRAP((uint64_t[]){TrapUnjail, 0, (uintptr_t)buffer, size})
+#define zvm_exit(code) TRAP((uint64_t[]){TrapExit, 0, code})
 #define zvm_fork() TRAP((uint64_t[]){TrapFork})
-#define zvm_exit(code) TRAP((uint64_t[]){TrapExit, code})
+#endif
+
+/* API version 2 */
+#define z_pread(desc, buffer, size, offset) \
+  TRAP((uint64_t[]){TrapREAD, desc, (uintptr_t)buffer, size, offset})
+#define z_pwrite(desc, buffer, size, offset) \
+  TRAP((uint64_t[]){TrapWRITE, desc, (uintptr_t)buffer, size, offset})
+#define z_mprotect(buffer, size, prot) \
+  TRAP((uint64_t[]){TrapPROT, (uintptr_t)buffer, size, prot})
+#define z_fork() TRAP((uint64_t[]){TrapFORK})
+#define z_exit(code) TRAP((uint64_t[]){TrapEXIT, code})
 
 #endif /* ZVM_API_H__ */

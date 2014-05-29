@@ -63,7 +63,7 @@ void _start() /* no return */
 
   /* LOAD ELF HEADERS */
   /* load elf headers */
-  FAILIF(zvm_pread(handle, &image->ehdr, sizeof image->ehdr, 0) != sizeof image->ehdr);
+  FAILIF(z_pread(handle, &image->ehdr, sizeof image->ehdr, 0) != sizeof image->ehdr);
 
   /* read program headers. fail if too many prog headers */
   FAILIF(image->ehdr.e_phnum > NACL_MAX_PROGRAM_HEADERS);
@@ -72,7 +72,7 @@ void _start() /* no return */
   FAILIF(image->ehdr.e_phentsize < sizeof image->phdrs[0]);
 
   /* fail if cannot load tp prog headers */
-  FAILIF(zvm_pread(handle, &image->phdrs[0], image->ehdr.e_phnum
+  FAILIF(z_pread(handle, &image->phdrs[0], image->ehdr.e_phnum
     * sizeof image->phdrs[0], (off_t)image->ehdr.e_phoff)
     != (image->ehdr.e_phnum * sizeof image->phdrs[0]));
 
@@ -288,21 +288,21 @@ void _start() /* no return */
      * in that case Seek() will error out.
      * d'b: fail if ELF executable segment header parameter error
      */
-    FAILIF(zvm_pread(handle, (void*)(uintptr_t)php->p_vaddr, php->p_filesz,
+    FAILIF(z_pread(handle, (void*)(uintptr_t)php->p_vaddr, php->p_filesz,
       (off_t)php->p_offset) != php->p_filesz); /* segment load failure */
     /* region from p_filesz to p_memsz should already be zero filled */
   }
 
   /* SET PROTECTIONS */
   /* change protection of user .text to RX */
-  i = zvm_mprotect((void*)NACL_TRAMPOLINE_END,
+  i = z_mprotect((void*)NACL_TRAMPOLINE_END,
     static_text_end - NACL_TRAMPOLINE_END, PROT_READ | PROT_EXEC);
   FAILIF(i != 0); /* validation failed */
 
   /* change protection of read only data to R if it is not NULL */
   if(data_start != 0)
   {
-    i = zvm_mprotect((void*)rodata_start, data_start - rodata_start, PROT_READ);
+    i = z_mprotect((void*)rodata_start, data_start - rodata_start, PROT_READ);
     FAILIF(i != 0); /* cannot set R protection on user R data */
   }
 
@@ -311,7 +311,7 @@ void _start() /* no return */
     + MANIFEST->channels_count * sizeof(struct ZVMChannel));
 
   /* make user manifest writable */
-  FAILIF(zvm_mprotect(MANIFEST, mft_size, PROT_WRITE) < 0);
+  FAILIF(z_mprotect(MANIFEST, mft_size, PROT_WRITE) < 0);
 
   /* update manifest */
   i = (uintptr_t)MANIFEST->heap_ptr + MANIFEST->heap_size; /* end of heap */
@@ -319,7 +319,7 @@ void _start() /* no return */
   MANIFEST->heap_size = i - break_addr;
 
   /* protect user manifest */
-  FAILIF(zvm_mprotect(MANIFEST, mft_size, PROT_READ) < 0);
+  FAILIF(z_mprotect(MANIFEST, mft_size, PROT_READ | PROT_WRITE) < 0); // ### remove PROT_WRITE!
 
   /* PASS CONTROL TO LOADED ELF */
   register uint64_t addr = initial_entry_pt;
@@ -342,7 +342,7 @@ void _start() /* no return */
   asm("pushq $0x3"); /* argument 3 */
   asm("pushq $0x10000"); /* argument 2 */
   asm volatile("pushq %0" : "+r" (self) : ); /* argument 1 */
-  asm("pushq $0x746f7250"); /* trap function: TrapProt */
+  asm("pushq $0x544f5250"); /* trap function: TrapPROT */
 
   /* emulate call to trap with different return address */
   asm volatile("pushq %0" : "+r" (addr) : );

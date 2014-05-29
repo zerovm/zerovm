@@ -5,7 +5,7 @@
 static inline void repeat(int n, char a)
 {
   while(n-- > 0)
-    zvm_pwrite(1, &a, 1, 0);
+    z_pwrite(1, &a, 1, 0);
 }
 
 /* draw full line of the figure */
@@ -14,7 +14,7 @@ static void draw_line(int n, int size)
   char endl = '\n';
   repeat(size - n, ' ');
   repeat(2 * n - 1, 'X');
-  zvm_pwrite(1, &endl, 1, 0);
+  z_pwrite(1, &endl, 1, 0);
 }
 
 void _start()
@@ -29,5 +29,5 @@ void _start()
   for(i = SIZE - 1; i >= 0; --i)
     draw_line(i, SIZE);
 
-  zvm_exit(0);
+  z_exit(0);
 }
