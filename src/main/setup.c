@@ -252,13 +252,13 @@ void SessionDtor(int code, char *state)
         s_manifest == NULL ? "unknown" : s_manifest->node,
             ReportSetupPtr()->zvm_code, strerror(ReportSetupPtr()->zvm_code));
     FinalDump();
-    ZTrace("[final dump]");
+    ZTrace("[crash dump]");
   }
 
   Report(s_manifest);
   ZTrace("[report]");
   ChannelsDtor(s_manifest);
-  ZTrace("[channels destructed]");
+  ZTrace("[channels deallocated]");
 
   ZTrace("[untrusted context closed]");
   ManifestDtor(s_manifest); /* dispose manifest and channels */
