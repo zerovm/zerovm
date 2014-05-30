@@ -319,7 +319,7 @@ void _start() /* no return */
   MANIFEST->heap_size = i - break_addr;
 
   /* protect user manifest */
-  FAILIF(z_mprotect(MANIFEST, mft_size, PROT_READ | PROT_WRITE) < 0); // ### remove PROT_WRITE!
+  FAILIF(z_mprotect(MANIFEST, mft_size, PROT_READ) < 0);
 
   /* PASS CONTROL TO LOADED ELF */
   register uint64_t addr = initial_entry_pt;
