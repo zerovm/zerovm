@@ -152,14 +152,17 @@ static int deprecated = 0;
 int64_t ToInt(char *a)
 {
   int64_t result;
+  char dbg[BIG_ENOUGH_STRING];
 
-  MFTFAIL(a == NULL, EFAULT, "empty numeric value '%s'", a);
+  ZLOGFAIL(a == NULL, EFAULT, "empty numeric value '%s'", a);
 
   errno = 0;
   a = g_strstrip(a);
+  strncpy(dbg, a, ARRAY_SIZE(dbg));
+
   result = g_ascii_strtoll(a, &a, 0);
-  MFTFAIL(*a != '\0' || errno != 0, EFAULT,
-      "invalid numeric value '%s'", a);
+  ZLOGFAIL(*a != '\0' || errno != 0, EFAULT,
+      "invalid numeric value '%s'", dbg);
 
   return result;
 }
@@ -334,7 +337,6 @@ static void Channel(struct Manifest *manifest, char *value)
   tokens = g_strsplit(value, VALUE_DELIMITER, MANIFEST_TOKENS_LIMIT);
 
   /* deprecated manifest? than switch to old channel parser */
-//  if(tokens[ChannelTokensNumber] != NULL || tokens[PutSize] == NULL)
   if(CountTokens(tokens) != ChannelTokensNumber)
   {
     deprecated = 1;
