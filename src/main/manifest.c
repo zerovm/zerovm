@@ -22,6 +22,9 @@
 
 /*
  * manifest parser. input: manifest file name. output: manifest structure
+ * TODO(d'b): since networking removed from zerovm, all net stuff need no
+ * more and must be removed (addresses, nodes, server e.t.c. just the string
+ * which are part of broker's api)
  */
 #include <stdio.h>
 #include <assert.h>
@@ -42,6 +45,11 @@
 #define MANIFEST_TOKENS_LIMIT 0x10
 #define NAME_PREFIX_NET "net:"
 
+/* DEPRECATED. API version 1. channel definition contains extra field etag */
+#ifndef REMOVE_DEPRECATED
+#define OLD_VERSION "20130611"
+#endif
+
 /* delimiters */
 #define LINE_DELIMITER "\n"
 #define KEY_DELIMITER "="
@@ -61,6 +69,22 @@ typedef enum {
   MemoryTokensNumber
 } MemoryTokens;
 
+/* DEPRECATED. API version 1. channel definition contains extra field etag */
+#ifndef REMOVE_DEPRECATED
+/* deprecated channel tokens */
+typedef enum {
+  OldName,
+  OldAlias,
+  OldType,
+  OldEtag, /* will be ignored */
+  OldGets,
+  OldGetSize,
+  OldPuts,
+  OldPutSize,
+  OldChannelTokensNumber
+} OldChannelTokens;
+#endif
+
 /* channel tokens */
 typedef enum {
   Name,
@@ -73,6 +97,20 @@ typedef enum {
   ChannelTokensNumber
 } ChannelTokens;
 
+/* DEPRECATED. API version 1. includes removed "Program" */
+#ifndef REMOVE_DEPRECATED
+/* (x-macro): manifest keywords (name, obligatory, singleton) */
+#define KEYWORDS \
+  X(Channel, 1, 0) \
+  X(Version, 1, 1) \
+  X(Boot, 0, 1) \
+  X(Program, 0, 1) \
+  X(Memory, 1, 1) \
+  X(Timeout, 1, 1) \
+  X(Node, 0, 1) \
+  X(Job, 0, 1) \
+  X(Broker, 0, 1)
+#else
 /* (x-macro): manifest keywords (name, obligatory, singleton) */
 #define KEYWORDS \
   X(Channel, 1, 0) \
@@ -83,6 +121,7 @@ typedef enum {
   X(Node, 0, 1) \
   X(Job, 0, 1) \
   X(Broker, 0, 1)
+#endif
 
 /* (x-macro): manifest enumeration, array and statistics */
 #define XENUM(a) enum ENUM_##a {a};
@@ -105,9 +144,16 @@ typedef enum {
  */
 static int cline = 0;
 
+/* DEPRECATED. API version 1 */
+#ifndef REMOVE_DEPRECATED
+static int deprecated = 0;
+#endif
+
 int64_t ToInt(char *a)
 {
   int64_t result;
+
+  MFTFAIL(a == NULL, EFAULT, "empty numeric value '%s'", a);
 
   errno = 0;
   a = g_strstrip(a);
@@ -132,18 +178,47 @@ static XTYPE(KEYWORDS) GetKey(char *key)
   return -1;
 }
 
+#ifndef REMOVE_DEPRECATED
+/* test manifest version */
+static void Version(struct Manifest *manifest, char *value)
+{
+  manifest->version = g_strdup(g_strstrip(value));
+  if(g_strcmp0(MANIFEST_VERSION, manifest->version) != 0)
+    if(g_strcmp0(OLD_VERSION, manifest->version) != 0)
+      MFTFAIL(1, EFAULT, "invalid manifest version");
+}
+#else
 /* test manifest version */
 static void Version(struct Manifest *manifest, char *value)
 {
   MFTFAIL(g_strcmp0(MANIFEST_VERSION, g_strstrip(value)) != 0,
       EFAULT, "invalid manifest version");
 }
+#endif
 
 /* set program field (should be g_free later) */
 static void Boot(struct Manifest *manifest, char *value)
 {
   manifest->boot = g_strdup(g_strstrip(value));
 }
+
+/* DEPRECATED. API version 1. includes removed "Program" */
+#ifndef REMOVE_DEPRECATED
+static void Program(struct Manifest *manifest, char *value)
+{
+  struct ChannelDesc *channel = g_malloc0(sizeof *channel);
+
+  /* set "/boot/elf" fields */
+  channel->alias = g_strdup("/boot/elf");
+  channel->limits[GetsLimit] = 0x1000000;
+  channel->limits[GetSizeLimit] = 0x1000000;
+  channel->name = g_strdup(g_strstrip(value));
+  channel->type = RGetSPut;
+
+  /* add it to user channels */
+  g_ptr_array_add(manifest->channels, channel);
+}
+#endif
 
 /* set mem_size and mem_tag field */
 static void Memory(struct Manifest *manifest, char *value)
@@ -187,6 +262,125 @@ static void Job(struct Manifest *manifest, char *value)
   manifest->job = g_strdup(g_strstrip(value));
 }
 
+/*
+ * DEPRECATED. API version 1. channel definition contains extra field etag
+ * the code contains doubling. hopefully deprecated API/ABI/manifest support
+ * will be removed soon together with this code
+ */
+#ifndef REMOVE_DEPRECATED
+static int CountTokens(char **tokens)
+{
+  int i;
+  for(i = 0; tokens[i] != NULL; ++i)
+    ;
+  return i;
+}
+/* old channel parser */
+static void OldChannel(struct Manifest *manifest, char **tokens)
+{
+  int i;
+  struct ChannelDesc *channel = g_malloc0(sizeof *channel);
+
+  MFTFAIL(CountTokens(tokens) != OldChannelTokensNumber,
+      EFAULT, "invalid channel tokens number");
+
+  /* strip passed tokens */
+  for(i = 0; tokens[i] != NULL; ++i)
+    g_strstrip(tokens[i]);
+
+  /*
+   * set name and protocol (network or local). exact protocol
+   * for the local channel will be set later
+   */
+  if(g_str_has_prefix(tokens[OldName], NAME_PREFIX_NET))
+  {
+    channel->protocol = ProtoSocket;
+    channel->name = g_strdup(tokens[OldName] + strlen(NAME_PREFIX_NET));
+  }
+  else
+  {
+    MFTFAIL(!g_path_is_absolute(tokens[OldName]), EFAULT,
+        "only absolute path channels are allowed");
+    channel->protocol = ProtoRegular;
+    channel->name = g_strdup(tokens[OldName]);
+  }
+
+  /* initialize the rest of fields */
+  channel->alias = g_strdup(tokens[OldAlias]);
+  channel->handle = NULL;
+  channel->type = ToInt(tokens[OldType]);
+
+  /* parse limits */
+  for(i = 0; i < LimitsNumber; ++i)
+  {
+    channel->limits[i] = ToInt(tokens[i + OldGets]);
+    MFTFAIL(channel->limits[i] < 0, EFAULT,
+        "negative limits for %s", channel->alias);
+  }
+
+  /* append a new channel */
+  g_ptr_array_add(manifest->channels, channel);
+  g_strfreev(tokens);
+}
+
+/* new channel parser */
+static void Channel(struct Manifest *manifest, char *value)
+{
+  int i;
+  char **tokens;
+  struct ChannelDesc *channel = g_malloc0(sizeof *channel);
+
+  /* get tokens from channel description */
+  tokens = g_strsplit(value, VALUE_DELIMITER, MANIFEST_TOKENS_LIMIT);
+
+  /* deprecated manifest? than switch to old channel parser */
+//  if(tokens[ChannelTokensNumber] != NULL || tokens[PutSize] == NULL)
+  if(CountTokens(tokens) != ChannelTokensNumber)
+  {
+    deprecated = 1;
+    OldChannel(manifest, tokens);
+    return;
+  }
+
+  MFTFAIL(deprecated, EFAULT, "mixed version manifest detected");
+  for(i = 0; tokens[i] != NULL; ++i)
+    g_strstrip(tokens[i]);
+
+  /*
+   * set name and protocol (network or local). exact protocol
+   * for the local channel will be set later
+   */
+  if(g_str_has_prefix(tokens[Name], NAME_PREFIX_NET))
+  {
+    channel->protocol = ProtoSocket;
+    channel->name = g_strdup(tokens[Name] + strlen(NAME_PREFIX_NET));
+  }
+  else
+  {
+    MFTFAIL(!g_path_is_absolute(tokens[Name]), EFAULT,
+        "only absolute path channels are allowed");
+    channel->protocol = ProtoRegular;
+    channel->name = g_strdup(tokens[Name]);
+  }
+
+  /* initialize the rest of fields */
+  channel->alias = g_strdup(tokens[Alias]);
+  channel->handle = NULL;
+  channel->type = ToInt(tokens[Type]);
+
+  /* parse limits */
+  for(i = 0; i < LimitsNumber; ++i)
+  {
+    channel->limits[i] = ToInt(tokens[i + Gets]);
+    MFTFAIL(channel->limits[i] < 0, EFAULT,
+        "negative limits for %s", channel->alias);
+  }
+
+  /* append a new channel */
+  g_ptr_array_add(manifest->channels, channel);
+  g_strfreev(tokens);
+}
+#else
 /* set channels field */
 static void Channel(struct Manifest *manifest, char *value)
 {
@@ -236,6 +430,7 @@ static void Channel(struct Manifest *manifest, char *value)
   g_ptr_array_add(manifest->channels, channel);
   g_strfreev(tokens);
 }
+#endif
 
 /*
  * check if obligatory keywords appeared and check if the fields

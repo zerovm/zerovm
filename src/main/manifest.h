@@ -67,6 +67,7 @@ struct ChannelDesc {
 
 /* zerovm manifest structure */
 struct Manifest {
+  char *version; /* for backward compatibiity reason */
   char *node; /* own node id from manifest */
   char *boot; /* untrusted loader */
   char *job; /* daemon: job file name. child: manifest file name */
