@@ -257,18 +257,23 @@ static void PatchForOldAPI(struct Manifest *manifest)
   int i;
   void *p;
 
-  /* make user manifest writable */
-  p = (void*)NaClUserToSys(MANIFEST_PTR);
-  i = Zmprotect(p, NACL_MAP_PAGESIZE, PROT_READ | PROT_WRITE);
-  ZLOGFAIL(0 != i, i, "cannot set user manifest writable");
+  /* edit user manifest if there is no hole */
+  p = (void*)ROUNDDOWN_64K(NaClUserToSys(OLD_MFT_PTR));
+  if(CheckUserMap((uintptr_t)p, NACL_MAP_PAGESIZE, 0) != -1)
+  {
+    /* make user manifest writable */
+    p = (void*)NaClUserToSys(MANIFEST_PTR);
+    i = Zmprotect(p, NACL_MAP_PAGESIZE, PROT_READ | PROT_WRITE);
+    ZLOGFAIL(0 != i, i, "cannot set user manifest writable");
 
-  /* edit user manifest "heap_size" */
-  ((struct UserManifest64*)p)->heap_size -= NACL_MAP_PAGESIZE;
-  heap_end -= NACL_MAP_PAGESIZE;
+    /* edit user manifest "heap_size" */
+    ((struct UserManifest64*)p)->heap_size -= NACL_MAP_PAGESIZE;
+    heap_end -= NACL_MAP_PAGESIZE;
 
-  /* re-protect user manifest */
-  i = Zmprotect(p, NACL_MAP_PAGESIZE, PROT_READ);
-  ZLOGFAIL(0 != i, i, "cannot protect user manifest");
+    /* re-protect user manifest */
+    i = Zmprotect(p, NACL_MAP_PAGESIZE, PROT_READ);
+    ZLOGFAIL(0 != i, i, "cannot protect user manifest");
+  }
 
   /* make page with user manifest pointer writable */
   p = (void*)NaClUserToSys(MANIFEST_PTR - NACL_MAP_PAGESIZE);
@@ -281,14 +286,6 @@ static void PatchForOldAPI(struct Manifest *manifest)
   /* protect user manifest pointer */
   i = Zmprotect(p, NACL_MAP_PAGESIZE, PROT_READ | PROT_LOCK);
   ZLOGFAIL(0 != i, i, "cannot protect compatibility user manifest pointer");
-
-  /* increase hole if exist */
-  if(manifest->mem_size < FOURGIG)
-  {
-    p = (void*)NaClUserToSys(manifest->mem_size - STACK_SIZE - NACL_MAP_PAGESIZE);
-    i = Zmprotect(p, NACL_MAP_PAGESIZE, PROT_NONE | PROT_LOCK);
-    ZLOGFAIL(0 != i, i, "cannot add page to hole");
-  }
 }
 #endif
 
