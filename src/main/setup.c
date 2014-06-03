@@ -122,23 +122,6 @@ static void FinalDump()
   SignalHandlerFini();
 }
 
-/* set user stack and return its pointer (system address) */
-static uintptr_t UserStackPtr()
-{
-  uintptr_t stack_ptr;
-
-  /* calculate stack address */
-  stack_ptr = MEM_START + ((uintptr_t)1U << ADDR_BITS);
-  stack_ptr -= STACK_USER_DATA_SIZE;
-
-  /* set argc, argv, envp */
-  memset((void*)stack_ptr, 0, STACK_USER_DATA_SIZE);
-  ((uint32_t*)stack_ptr)[4] = 1;
-  ((uint32_t*)stack_ptr)[5] = 0xfffffff0;
-
-  return stack_ptr;
-}
-
 /* load boot to the user memory */
 static void Boot(struct Manifest *manifest)
 {
@@ -167,6 +150,9 @@ static void Boot(struct Manifest *manifest)
   {
     buffer = (uint8_t*)UserHeapEnd() - ROUNDUP_64K(size);
     memcpy(buffer, uboot_bin, size);
+
+    /* to make re-protection of uboot possible w/o knowledge of its size */
+    memset(buffer + size, HALT_OPCODE, ROUNDUP_64K(size) - size);
   }
 
   /* validate boot and set untrusted context */
@@ -174,7 +160,8 @@ static void Boot(struct Manifest *manifest)
   ZLOGFAIL(i != 0, ENOEXEC, "boot validation failed");
   i = Zmprotect(buffer, ROUNDUP_64K(size), PROT_READ | PROT_EXEC);
   ZLOGFAIL(i != 0, EFAULT, "cannot protect boot");
-  ThreadContextCtor(nacl_user, NaClSysToUser((uintptr_t)buffer), UserStackPtr());
+  ThreadContextCtor(nacl_user, NaClSysToUser((uintptr_t)buffer),
+      MEM_START + ((uintptr_t)1U << ADDR_BITS));
 }
 
 void SessionCtor(char *mft)

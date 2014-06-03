@@ -6,7 +6,12 @@
  *    be processed by zerovm. so, do not use strings, static arrays e.t.c.
  * 2. entry point should be 1st byte in .text section (zerovm will not read
  *    entry point and will always assume it started from the .text beginning)
- * 3. only zerovm api should be used (no zrt!)
+ * 3. only zerovm api should be used (no zrt!). update: actualy library can
+ *    be used if you know what you are doing
+ * 4. user stack is uboot responsibility. also untrusted stack should follow
+ *    nacl user stack convention. detailed information about it can be found
+ *    in doc/other/untrusted_loader/nacl_stack_layout.txt. uboot itself will
+ *    get empty stack
  *
  * note: in case of error uboot returns the line number where encountered
  *
@@ -17,9 +22,12 @@
 #include "api/zvm.h"
 #include "uboot.h"
 
-/* MANIFEST for uboot is not constant */
+/* MANIFEST for uboot should not be constant */
 #undef MANIFEST
 #define MANIFEST ((struct UserManifest*)*((uintptr_t*)0x1000D))
+
+/* switch between the jump/call (0/1) method */
+#define PASS_CONTROL 0
 
 /* jump to absolute address */
 #define JUMP(entry_point) \
@@ -316,12 +324,20 @@ void _start() /* no return */
   /* update manifest */
   i = (uintptr_t)MANIFEST->heap_ptr + MANIFEST->heap_size; /* end of heap */
   MANIFEST->heap_ptr = (void*)break_addr;
-  MANIFEST->heap_size = i - break_addr;
+  MANIFEST->heap_size = i - break_addr - NACL_MAP_PAGESIZE; // ###
 
   /* protect user manifest */
   FAILIF(z_mprotect(MANIFEST, mft_size, PROT_READ) < 0);
 
   /* PASS CONTROL TO LOADED ELF */
+
+/*
+ * pass control via mprotect deallocating own space. however this will not
+ * allow uboot to set user stack properly. user code will get stack with junk.
+ * since current zerovm runtime library does not support junk in stack this
+ * method to pass control to user code will not work
+ */
+#if PASS_CONTROL
   register uint64_t addr = initial_entry_pt;
   register uint64_t self = (uint64_t)MANIFEST->heap_size
     + (uintptr_t)MANIFEST->heap_ptr - 0x10000 /* BOOTSIZE */;
@@ -329,7 +345,7 @@ void _start() /* no return */
   /* restore rsp */
   asm("mov $0xffffffc0, %esp");
   asm("add %r15, %rsp");
-
+  
   /* allocate stack space for trap function arguments */
   asm("mov $0x455a494c4147454c, %r11");
   asm("mov $0x534942414e4e4143, %rdi");
@@ -347,5 +363,36 @@ void _start() /* no return */
   /* emulate call to trap with different return address */
   asm volatile("pushq %0" : "+r" (addr) : );
   JUMP(0x10000);
+
+/*
+ * pass control via simple jump. user have to deallocate uboot space. user
+ * stack will be set properly and contain correct information for nacl
+ * prologue (_start). if user not deallocate uboot space it is also ok
+ * since uboot is not part of heap and user code will not try to access
+ * to uboot space
+ */
+#else
+  /*
+   * set user stack. note that everything in stack already is junk and
+   * can be safely rewritten
+   */
+  uint32_t *rsp = (void*)(uintptr_t)(0x100000000LLU - USER_STACK_SIZE);
+  rsp[8] = 0; /* unknown */
+  rsp[7] = 0; /* AT_NULL */
+  rsp[6] = initial_entry_pt; /* user elf entry point */
+  rsp[5] = 9; /* AT_ENTRY */
+  rsp[4] = 0; /* envp[0] == NULL */
+  rsp[3] = 0; /* argv[0] == NULL */
+  rsp[2] = 0; /* argc */
+  rsp[1] = 0; /* envc */
+  rsp[0] = 0; /* Cleanup function pointer, always NULL */
+
+  /* restore stack position to USER_STACK_SIZE + 20 of reserved space */
+  asm("mov $0xFFFFFFC8, %esp");
+  asm("add %r15, %rsp");
+  
+  /* jump to user elf entry point */
+  JUMP(initial_entry_pt);
+#endif
 }
 

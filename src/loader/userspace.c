@@ -41,7 +41,6 @@
   0x48, 0xb8, 0xf4, 0xf4, 0xf4, 0xf4, 0xf4, 0xf4, 0xf4, 0xf4, 0xff, 0xe0
 #define NULL_SIZE 0x10000
 #define USER_PTR_SIZE sizeof(int32_t)
-#define HALT_OPCODE 0xf4
 #define MANIFEST_PTR_MOCK 0x3d /* cmp eax, ? */
 #define MANIFEST_PTR_MOCK_SIZE 1
 #define MANIFEST_PTR_MOCK_IDX 12

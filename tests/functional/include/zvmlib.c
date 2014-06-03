@@ -514,6 +514,43 @@ static void _init()
   bpool(MANIFEST->heap_ptr, MANIFEST->heap_size);
 }
 
+/* free uboot page if it exists */
+/*
+ * TODO: make it universal. this version only works with uboot (or any other
+ * one page long boot)
+ */
+#define PROT_READ 1
+#define PROT_WRITE 2
+#define PROT_EXEC 4
+#define PAGESIZE 0x10000
+#define ROUNDDOWN_64K(a) ((a) & ~(PAGESIZE - 1LLU))
+#define ROUNDUP_64K(a) ROUNDDOWN_64K((a) + PAGESIZE - 1LLU)
+static void free_uboot()
+{
+  void *uboot_ptr;
+  uint32_t mft_size = ROUNDUP_64K(sizeof(struct UserManifest)
+    + MANIFEST->channels_count * sizeof(struct ZVMChannel));
+
+  /* calculate uboot_ptr address */
+  uboot_ptr = MANIFEST->heap_ptr + MANIFEST->heap_size;
+
+  /* if the page after heap end is not r/x just leave */
+  if(z_mprotect(uboot_ptr, PAGESIZE, PROT_READ | PROT_EXEC) < 0)
+    return;
+
+  /* ..otherwise try re-protect it */
+  if(z_mprotect(uboot_ptr, PAGESIZE, PROT_READ | PROT_WRITE) < 0)
+    return;
+
+  /* ..and if successful add this page to heap */
+  /* make user manifest writable, edit it and re-protect */
+  if(z_mprotect(MANIFEST, mft_size, PROT_WRITE) < 0)
+    return;
+  ((struct UserManifest*)MANIFEST)->heap_size += PAGESIZE;
+  if(z_mprotect(MANIFEST, mft_size, PROT_READ) < 0)
+    z_exit(400); /* should not happen. but just in case.. */
+}
+
 /* the standard glibc prologue replacement */
 /*
  * the standard glibc prologue replacement. command line arguments
@@ -523,6 +560,9 @@ static void _init()
 int main(int argc, char **argv, char **envp);
 void _start(uint32_t *info)
 {
+  /* deallocate uboot page if need */
+  free_uboot();
+
   /* initialize zerovm library */
   _init();
 

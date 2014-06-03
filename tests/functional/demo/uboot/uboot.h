@@ -5,6 +5,7 @@
 #define BOOT_H__ 1
 
 /* constants */
+#define USER_STACK_SIZE (36 + 12) /* occupied + reserved */
 #define ADDR_BITS (32)
 #define NACL_MAX_PROGRAM_HEADERS 128
 #define NACL_NULL_REGION_SHIFT   16
