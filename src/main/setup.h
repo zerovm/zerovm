@@ -23,7 +23,7 @@
 
 #define ZEROVM_PRIORITY 19
 
-#define BUILD "build 2014-05-29"
+#define BUILD "build 2014-06-03"
 #ifndef REMOVE_DEPRECATED
 #define VERSION  "\033[1m\033[37mZeroVM 2*"
 #else
