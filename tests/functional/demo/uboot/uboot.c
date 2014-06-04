@@ -377,6 +377,7 @@ void _start() /* no return */
    * can be safely rewritten
    */
   uint32_t *rsp = (void*)(uintptr_t)(0x100000000LLU - USER_STACK_SIZE);
+#if 0
   rsp[8] = 0; /* unknown */
   rsp[7] = 0; /* AT_NULL */
   rsp[6] = initial_entry_pt; /* user elf entry point */
@@ -386,6 +387,24 @@ void _start() /* no return */
   rsp[2] = 0; /* argc */
   rsp[1] = 0; /* envc */
   rsp[0] = 0; /* Cleanup function pointer, always NULL */
+#else
+  rsp[8] = 0; /* unknown */
+  rsp[7] = 0; /* AT_NULL */
+  rsp[6] = 0; /* user elf entry point */
+  rsp[5] = 0; /* AT_ENTRY */
+  rsp[4] = 0; /* envp[0] == NULL */
+  rsp[3] = 0xFFFFFFF0; /* argv[0] == NULL */
+  rsp[2] = 1; /* argc */
+  rsp[1] = 0; /* envc */
+  rsp[0] = 0; /* Cleanup function pointer, always NULL */
+
+  /* reset registers */  
+  asm("xor %rax, %rax");
+  asm("xor %rax, %rax");
+  asm("xor %rax, %rax");
+  asm("xor %rax, %rax");
+
+#endif
 
   /* restore stack position to USER_STACK_SIZE + 20 of reserved space */
   asm("mov $0xFFFFFFC8, %esp");
