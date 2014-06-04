@@ -258,8 +258,7 @@ static void PatchForOldAPI(struct Manifest *manifest)
   void *p;
 
   /* edit user manifest if there is no hole */
-  p = (void*)ROUNDDOWN_64K(NaClUserToSys(OLD_MFT_PTR));
-  if(CheckUserMap((uintptr_t)p, NACL_MAP_PAGESIZE, 0) != -1)
+  if(ROUNDUP_64K(manifest->mem_size) == FOURGIG)
   {
     /* make user manifest writable */
     p = (void*)NaClUserToSys(MANIFEST_PTR);

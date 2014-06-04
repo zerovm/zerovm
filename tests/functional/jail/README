@@ -6,3 +6,16 @@ read/write protection of area (should be ok)
 read/execute protection of area (should be ok)
 read/write/execute protection of area (should fail)
 e.t.c.
+
+comments about validation:
+after test finished, report show something like this:
+validator state = 3
+daemon = 0
+user return code = 0
+memtag = disabled
+accounting = 0.00 0.03 6 34448 30 2003 0 0 0 0
+exit state = ok
+command = /home/bortoq/git/zerovm/zerovm[59263] jail.manifest
+
+"validator state = 3" means there were 3 unsuccessful attempts to mark
+memory areas as "executable". this is ok for this test
