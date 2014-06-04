@@ -324,7 +324,14 @@ void _start() /* no return */
   /* update manifest */
   i = (uintptr_t)MANIFEST->heap_ptr + MANIFEST->heap_size; /* end of heap */
   MANIFEST->heap_ptr = (void*)break_addr;
-  MANIFEST->heap_size = i - break_addr - NACL_MAP_PAGESIZE; // ###
+  
+  /* "call" way to pass control returns uboot's space to heap */
+#if PASS_CONTROL
+  MANIFEST->heap_size = i - break_addr;
+#else
+  /* .."jump" way does not */
+  MANIFEST->heap_size = i - break_addr - NACL_MAP_PAGESIZE;
+#endif
 
   /* protect user manifest */
   FAILIF(z_mprotect(MANIFEST, mft_size, PROT_READ) < 0);
@@ -372,46 +379,53 @@ void _start() /* no return */
  * to uboot space
  */
 #else
+  /* store user elf entry point */
+  register uint64_t addr = initial_entry_pt;
+  asm volatile("pushq %0" : "+r" (addr) : );
+  asm("popq %rcx");
+
   /*
    * set user stack. note that everything in stack already is junk and
    * can be safely rewritten
    */
-  uint32_t *rsp = (void*)(uintptr_t)(0x100000000LLU - USER_STACK_SIZE);
-#if 0
-  rsp[8] = 0; /* unknown */
-  rsp[7] = 0; /* AT_NULL */
-  rsp[6] = initial_entry_pt; /* user elf entry point */
-  rsp[5] = 9; /* AT_ENTRY */
-  rsp[4] = 0; /* envp[0] == NULL */
-  rsp[3] = 0; /* argv[0] == NULL */
-  rsp[2] = 0; /* argc */
-  rsp[1] = 0; /* envc */
-  rsp[0] = 0; /* Cleanup function pointer, always NULL */
-#else
-  rsp[8] = 0; /* unknown */
-  rsp[7] = 0; /* AT_NULL */
-  rsp[6] = 0; /* user elf entry point */
-  rsp[5] = 0; /* AT_ENTRY */
-  rsp[4] = 0; /* envp[0] == NULL */
-  rsp[3] = 0xFFFFFFF0; /* argv[0] == NULL */
-  rsp[2] = 1; /* argc */
-  rsp[1] = 0; /* envc */
-  rsp[0] = 0; /* Cleanup function pointer, always NULL */
+  /* assuming top of stack = 0 pushing of 0 can be omitted */
+  asm("mov $0xFFFFFFF8, %esp");
+  asm("add %r15, %rsp");
+
+  /* put to user stack other values */
+  asm("push $0x0");
+  asm("push $0x0");
+  asm("push $0x0");
+  asm("push $0x0");
+  asm("movl $0x1, (%rsp)");
+  asm("movl $0xFFFFFFF0, 4(%rsp)");
+  asm("push $0x0");
+  asm("push $0x0");
 
   /* reset registers */  
   asm("xor %rax, %rax");
-  asm("xor %rax, %rax");
-  asm("xor %rax, %rax");
-  asm("xor %rax, %rax");
-
-#endif
-
-  /* restore stack position to USER_STACK_SIZE + 20 of reserved space */
-  asm("mov $0xFFFFFFC8, %esp");
-  asm("add %r15, %rsp");
+  asm("xor %rbx, %rbx");
+  asm("xor %rdx, %rdx");
+  asm("xor %rsi, %rsi");
+  asm("xor %rsi, %rsi");
+  asm("xor %r8, %r8");
+  asm("xor %r9, %r9");
+  asm("xor %r10, %r10");
+  asm("xor %r11, %r11");
+  asm("xor %r12, %r12");
+  asm("xor %r13, %r13");
+  asm("xor %r14, %r14");
+  asm("mov %rsp, %rbp");
+  
+  asm("mov $-0x20, %rdi");
   
   /* jump to user elf entry point */
-  JUMP(initial_entry_pt);
+  asm("push %rcx");
+  asm("pop %rcx");
+  
+  asm("and $0xffffffe0,%ecx");
+  asm("add %r15,%rcx");
+  asm("jmpq *%rcx");
 #endif
 }
 
