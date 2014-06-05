@@ -1,6 +1,6 @@
 PREFIX ?= /usr/local
 DESTDIR ?=
-FLAGS0=-fPIE -Wall -Wno-long-long -fvisibility=hidden -fstack-protector --param ssp-buffer-size=4
+FLAGS0=-fPIE -Wall -Wno-long-long -fvisibility=hidden -fstack-protector --param ssp-buffer-size=4 $(EXTRA_CFLAGS)
 GLIB=`pkg-config --cflags glib-2.0`
 TAG_ENCRYPTION ?= G_CHECKSUM_SHA1
 CCFLAGS0=-c -m64 -fPIC -D_GNU_SOURCE -DTAG_ENCRYPTION=$(TAG_ENCRYPTION) -I. -I/usr/local/include $(GLIB)
@@ -36,7 +36,7 @@ create_dirs:
 	@mkdir obj -p
 
 zerovm: obj/zerovm.o $(OBJS)
-	$(CC) -o $@ $(CXXFLAGS2) $^ $(LIBS)
+	$(CC) -o $@ $(CXXFLAGS2) $^ $(LIBS) $(EXTRA_LDFLAGS)
 
 .PHONY: install
 
