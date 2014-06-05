@@ -26,7 +26,14 @@
 #define REPORT_VALIDATOR "validator state = "
 #define REPORT_DAEMON "daemon = "
 #define REPORT_RETCODE "user return code = "
+
+/* DEPRECATED. API version 1. */
+#ifndef REMOVE_DEPRECATED
+#define REPORT_ETAG "etag(s) = "
+#else
 #define REPORT_ETAG "memtag = "
+#endif
+
 #define REPORT_ACCOUNTING "accounting = "
 #define REPORT_STATE "exit state = "
 #define REPORT_CMD ReportSetupPtr()->cmd
