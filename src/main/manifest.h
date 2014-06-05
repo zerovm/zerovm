@@ -37,7 +37,8 @@ EXTERN_C_BEGIN
     X(Block) \
     X(FIFO) \
     X(Link) \
-    X(Socket)
+    X(Socket) \
+    X(Opaque)
 
 /* (x-macro): manifest enumeration and array */
 #define XENUM(a) enum ENUM_##a {a};

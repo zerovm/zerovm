@@ -22,12 +22,6 @@
 #include "src/channels/channel.h"
 #include "src/main/manifest.h"
 
-/* prepare network context */
-void NetCtor(const struct Manifest *manifest);
-
-/* deallocate network context */
-void NetDtor(struct Manifest *manifest);
-
 /* construct network channel */
 void PrefetchChannelCtor(struct ChannelDesc *channel);
 

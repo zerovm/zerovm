@@ -219,9 +219,6 @@ void ChannelsCtor(struct Manifest *manifest)
   ZLOGFAIL(manifest->channels->len < MIN_CHANNELS_NUMBER,
       EFAULT, "not enough channels: %d", manifest->channels->len);
 
-  /* construct prefetch class before usage */
-  NetCtor(manifest);
-
   /* mount channels */
   for(i = 0; i < manifest->channels->len; ++i)
     ChannelCtor(CHANNEL(manifest, i));
@@ -250,7 +247,4 @@ void ChannelsDtor(struct Manifest *manifest)
     ChannelDtor(channel);
   }
   ResetAliases();
-
-  /* release prefetch class */
-  NetDtor(manifest);
 }

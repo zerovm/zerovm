@@ -36,7 +36,7 @@ EXTERN_C_BEGIN
 #define STDERR "/dev/stderr"
 
 /* CH_RW_TYPE returns 0..3 */
-#define IS_FILE(c) ((c)->protocol != ProtoSocket)
+#define IS_FILE(c) ((c)->protocol != ProtoOpaque)
 #define IS_RO(channel) (CH_RW_TYPE(channel) == 1)
 #define IS_WO(channel) (CH_RW_TYPE(channel) == 2)
 #define IS_RW(channel) (CH_RW_TYPE(channel) == 3)

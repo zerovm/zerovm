@@ -43,7 +43,7 @@
 #define MANIFEST_SIZE_LIMIT 0x80000
 #define MANIFEST_LINES_LIMIT 0x2000
 #define MANIFEST_TOKENS_LIMIT 0x10
-#define NAME_PREFIX_NET "net:"
+#define NAME_PREFIX_NET "opaque"
 
 /* DEPRECATED. API version 1. channel definition contains extra field etag */
 #ifndef REMOVE_DEPRECATED
@@ -268,7 +268,8 @@ static void Job(struct Manifest *manifest, char *value)
 /*
  * DEPRECATED. API version 1. channel definition contains extra field etag
  * the code contains doubling. hopefully deprecated API/ABI/manifest support
- * will be removed soon together with this code
+ * will be removed soon together with this code, otherwise zerovm code will
+ * be re-factored
  */
 #ifndef REMOVE_DEPRECATED
 static int CountTokens(char **tokens)
@@ -295,17 +296,17 @@ static void OldChannel(struct Manifest *manifest, char **tokens)
    * set name and protocol (network or local). exact protocol
    * for the local channel will be set later
    */
-  if(g_str_has_prefix(tokens[OldName], NAME_PREFIX_NET))
+  if(g_path_is_absolute(tokens[OldName]))
   {
-    channel->protocol = ProtoSocket;
-    channel->name = g_strdup(tokens[OldName] + strlen(NAME_PREFIX_NET));
+    channel->protocol = ProtoRegular;
+    channel->name = g_strdup(tokens[OldName]);
   }
   else
   {
-    MFTFAIL(!g_path_is_absolute(tokens[OldName]), EFAULT,
-        "only absolute path channels are allowed");
-    channel->protocol = ProtoRegular;
-    channel->name = g_strdup(tokens[OldName]);
+    MFTFAIL(g_str_has_prefix(tokens[OldName], NAME_PREFIX_NET) == 0,
+        EFAULT, "only absolute path channels are allowed");
+    channel->protocol = ProtoOpaque;
+    channel->name = g_strdup(tokens[OldName] + sizeof NAME_PREFIX_NET);
   }
 
   /* initialize the rest of fields */
@@ -352,17 +353,17 @@ static void Channel(struct Manifest *manifest, char *value)
    * set name and protocol (network or local). exact protocol
    * for the local channel will be set later
    */
-  if(g_str_has_prefix(tokens[Name], NAME_PREFIX_NET))
+  if(g_path_is_absolute(tokens[OldName]))
   {
-    channel->protocol = ProtoSocket;
-    channel->name = g_strdup(tokens[Name] + strlen(NAME_PREFIX_NET));
+    channel->protocol = ProtoRegular;
+    channel->name = g_strdup(tokens[OldName]);
   }
   else
   {
-    MFTFAIL(!g_path_is_absolute(tokens[Name]), EFAULT,
-        "only absolute path channels are allowed");
-    channel->protocol = ProtoRegular;
-    channel->name = g_strdup(tokens[Name]);
+    MFTFAIL(g_str_has_prefix(tokens[OldName], NAME_PREFIX_NET) == 0,
+        EFAULT, "only absolute path channels are allowed");
+    channel->protocol = ProtoOpaque;
+    channel->name = g_strdup(tokens[OldName] + sizeof NAME_PREFIX_NET);
   }
 
   /* initialize the rest of fields */

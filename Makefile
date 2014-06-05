@@ -3,10 +3,10 @@ DESTDIR ?=
 FLAGS0=-fPIE -Wall -Wno-long-long -fvisibility=hidden -fstack-protector --param ssp-buffer-size=4
 GLIB=`pkg-config --cflags glib-2.0`
 TAG_ENCRYPTION ?= G_CHECKSUM_SHA1
-CCFLAGS0=-c -m64 -fPIC -D_GNU_SOURCE -DTAG_ENCRYPTION=$(TAG_ENCRYPTION) -I. $(GLIB)
+CCFLAGS0=-c -m64 -fPIC -D_GNU_SOURCE -DTAG_ENCRYPTION=$(TAG_ENCRYPTION) -I. -I/usr/local/include $(GLIB)
 
 CXXFLAGS0=-m64 -Wno-variadic-macros $(GLIB)
-LIBS=-lglib-2.0 -lvalidator -lstdc++
+LIBS=-lglib-2.0 -lvalidator -lstdc++ -L/usr/local/lib -lzvm_zpipes -lzbroker_cli -lzmtp
 TESTLIBS=-Llib/gtest -lgtest $(LIBS)
 
 CCFLAGS1=-std=gnu89 -Wdeclaration-after-statement $(FLAGS0) $(CCFLAGS0)
