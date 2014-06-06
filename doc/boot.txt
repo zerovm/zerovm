@@ -1,5 +1,5 @@
 This document describes untrusted elf loader for ZeroVM platform
-(up to date 2014-05-11, needs editing)
+(up to date 2014-06-06, needs editing)
 -------------------------------------------------------------
 
 Description:

@@ -1,5 +1,5 @@
 This document describes manifest for ZeroVM NaCl application.
-(up to date 2014-05-12, needs editing)
+(up to date 2014-06-06, needs editing)
 -------------------------------------------------------------
 
 Description:
@@ -15,7 +15,7 @@ Memory
 Timeout
 Node
 Job
-Broker
+Broker (deprecated)
 
 Structure:
 - each valid line must contain exactly only one key and value(s) separated
@@ -52,10 +52,22 @@ Channel
   network channels has same fields, but the very 1st one (trusted channel 
   name) has special format defined by network broker
 
+  update:
+  for compatibility ZeroVM 2* version deprecated field etag added. the field
+  will be ignored any integer is ok. the field's position is between [3]
+  and [4]. channels declaration should not be mixed. manifest must have
+  all channels declared with etag, or all channels declared without it. 
+
 Version
   (obligatory, string)
   currently ZeroVM is not backward compatible with the older manifest versions.
   working version is 20140509
+
+  update:
+  for compatibility ZeroVM 2* also works with old manifest with version:
+  20130611. manifest should only have one "Version" key. it's value will
+  be ignored (until it is 20140509 or 20130611) since ZeroVM 2* supports
+  both
 
 Boot
   (optional, string)
@@ -79,6 +91,9 @@ Memory
 Broker
   (optional*, string)
   absolute path to the network broker (unix socket)
+
+  update: this key marked deprecated since Zerovm 2 (and 2*) uses zbroker
+  for networking
 
 Node
   (optional*, string)
