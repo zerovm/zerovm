@@ -1,5 +1,5 @@
 this document describes zerovm user api
-(up to date 2014-05-12, needs editing)
+(up to date 2014-06-06, needs editing)
 
 definition, enumerations
 -----------------------------------------------------------------------
@@ -23,6 +23,16 @@ enum TrapCalls - Trap functions (see trap.txt)
   TrapFork - convert running zerovm to daemon. daemon can spawn new sessions
              by request through unix socket. new sessions will start from
              the address next after zvm_fork()
+             
+to make zerovm 2 compatible with old nexes zerovm 2 api call names were
+renamed and the full list is
+  TrapREAD = read from channel
+  TrapWRITE = write to channel
+  TrapPROT = put protection on the memory block
+  TrapFORK = convert running zerovm to daemon. daemon can spawn new sessions
+             by request through unix socket. new sessions will start from
+             the address next after zvm_fork()
+  TrapEXIT = terminate user program
 
 zerovm data types
 -----------------------------------------------------------------------
@@ -87,6 +97,14 @@ zerovm api functions
   - to receive a report from daemon session just read unix socket "Job". format
     of message is same as above (8 bytes length followed by report)
 
+to make zerovm 2 compatible with old nexes zerovm 2 api functions were
+renamed. there is no difference in their description or arguments. the list:
+  z_pread(desc, buffer, size, offset)
+  z_pwrite(desc, buffer, size, offset)
+  z_mprotect(buffer, size, prot)
+  z_fork()
+  z_exit(code)
+
 variables
 -----------------------------------------------------------------------
 struct UserManifest
@@ -100,6 +118,10 @@ struct UserManifest
   
   user program have an access to the MANIFEST (definition) containing all
   information mentioned above. the MANIFEST memory area is read only
+  
+  update: for zerovm 2 it is possible to change protection of user manifest
+  for example make it writable. however it is not recommended to do, only
+  untrusted loader should change the user manifest protection
 
 channels
 -----------------------------------------------------------------------
@@ -142,6 +164,12 @@ channels
   - user program can work faster if data will be read/written with big chunks
     (especially in sequential channels)
   - it is suggested to use buffers aligned to 0x10000 bound
+  
+  update:
+  in zerovm 2 there is default untrusted elf loader - uboot. it uses special
+  channel "/boot/elf". however this name is not reserved. other untrusted
+  elf loader can alter the channel's name, use more than one channel or even
+  do not use channels at all
 
 memory
 -----------------------------------------------------------------------
@@ -164,7 +192,9 @@ environment variables
   environment variables accessible via "/dev/nvram". however this is
   not the part of zerovm api. for the further details see toolchain/zrt
   documentation
-  NOTE: ZeroVM provides only empty command line and environment variables
+  NOTE: ZeroVM does not provide untrusted code with any stack content.
+  user code will not receive any command line or environment. default elf
+  loader, however, provides user code with empty command line and environment
 
 trap, trampoline and everything else (to know, but not to use)
 -----------------------------------------------------------------------
@@ -172,16 +202,22 @@ trap, trampoline and everything else (to know, but not to use)
     one element size 0x20. further information can be found in google
     documentation
   trap - syscall number 0 (not used by the nacl). should not be used directly
+  
+  update:
+  zerovm 2 trap (in trampoline) contains address of the user manifest by
+  address 0x1000d. this address value is the part of assembly instruction.
+  it is not reccomended to use this pointer directly. MANIFEST definition
+  should be used instead.
 
 terminology
 -----------------------------------------------------------------------
   system manifest - text file passed to zerovm. contains description of
-    the user session: channels, node id, memory size e.t.c.
+    the user session: channels, node id, memory size e.t.c. (not a part
+    of zerovm api)
   user manifest - read only memory with part of system manifest available
     for the user (see struct UserManifest).
-    
+
 api usage
 -----------------------------------------------------------------------
   examples can be found in zerovm repository in the tests/functional/demo
   folder
-
