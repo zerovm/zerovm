@@ -16,7 +16,6 @@
 
 /*
  * wrapper for zvm_pipes
- * TODO(d'b): add logging and checks
  * TODO(d'b): should be removed after re-factoring channels class
  */
 #include <zvm_zpipes.h>
@@ -39,7 +38,7 @@ void PrefetchChannelCtor(struct ChannelDesc *channel)
 {
   ZLOGS(LOG_DEBUG, "PrefetchChannelCtor(%s)", channel->alias);
   channel->handle = zvm_pipe_open(channel->name);
-  ZLOGFAIL(channel->handle == 0, EIO, "cannot open %s", channel->name);
+  ZLOGFAIL(channel->handle == NULL, EIO, "cannot open %s", channel->name);
   channel->size = 0;
   ZLOGS(LOG_DEBUG, "%s opened", channel->alias);
 }
