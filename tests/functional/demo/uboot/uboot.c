@@ -416,9 +416,9 @@ void _start() /* no return */
   asm("xor %r13, %r13");
   asm("xor %r14, %r14");
   asm("mov %rsp, %rbp");
-  
+
   asm("mov $-0x20, %rdi");
-  
+
   /* jump to user elf entry point */
   asm("push %rcx");
   asm("pop %rcx");

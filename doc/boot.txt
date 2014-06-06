@@ -15,7 +15,7 @@ statically linked 64-bit nexes. if fatal error encountered during the loading
 process uboot will terminate session with error code corresponding to uboot
 source code line where loader failed. here is the list of possible problems:
 
-return codes of uboot
+return codes of uboot (obsolete! will be updated asap)
 61 -- cannot find "/boot/elf" channel
 62 -- "/boot/elf" channel is not randomly readable
 66 -- cannot read elf header
@@ -63,7 +63,7 @@ how to make untrusted elf loader:
 - loader can return own space to user heap (see uboot.c for example)
 - untrusted loader should modify user manifest according changes it made.
   at least heap_size and heap_ptr should be set properly
-- loader should take care about user stack
+- loader should take care about user stack and registers
 
 NOTE: it is possible to write custom loader to load arbitrary code. not only
       elf. so it is perhaps more correct to call untrusted elf loader simply

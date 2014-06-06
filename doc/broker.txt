@@ -1,5 +1,6 @@
 broker definition
 (up to date 2014-03-19, needs editing)
+(outdated. should be updated or removed. zerovm 2 uses zbroker)
 ---------------------------
 
 this document defines requirements to the network broker - separate program
