@@ -1,0 +1,39 @@
+This document describes how to recompile ZeroVM after changing 
+compilation options
+(up to date 2014-06-06, needs editing)
+(this is temporary document. can be removed after makefiles / scripts
+will be fixed)
+-------------------------------------------------------------
+
+Description:
+ZeroVM has uboot (default untrusted elf loader) which included to ZeroVM
+binary as data. ZeroVM also has "compatibility mode" introduced to make
+ZeroVM 2 run old ZeroVM 1 nexes and use the old format manifests. there
+is possibility to create 2 flavors of ZeroVM 2: "ZeroVM 2*" (compatible)
+and "ZeroVM 2".
+
+build "ZeroVM 2*" (compatible)
+1. cd $ZEROVM_ROOT/tests/functional/include
+2. make clean all
+3. cd $ZEROVM_ROOT/tests/functional/demo/uboot
+4. make clean all (ignore errors if will be)
+5. cp uboot.inc $ZEROVM_ROOT/src/loader/uboot.inc
+6. cd $ZEROVM_ROOT
+7. make clean debug (will run tests)
+   or
+   make clean all (will build release version)
+
+"ZeroVM 2"
+sequence just the same, but in all makefiles should be added
+"-DREMOVE_DEPRECATED" to compilation switched. it should include:
+ZeroVM Makefile
+zvmlib Makefile
+uboot Makefile
+all tests Makefiles
+
+to do:
+REMOVE_DEPRECATED should be specified in ZeroVM Makefile in command line
+and than should be passed from there to zvmlib, uboot and tests. ZeroVM
+Makefile should be modified to contain appropriate logic to make and copy
+uboot inc-file to ZeroVM src folder (and better place should be found
+for uboot sources)
