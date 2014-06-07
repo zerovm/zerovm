@@ -1,9 +1,13 @@
 This document describes ZeroVM report
-(up to date 2014-05-14, needs editing)
+(up to date 2014-06-06, needs editing)
 
 session report informs about the session results. the report is mostly
 needed for integration (now used by zerovm project swift middleware).
 report has two flavors: release and debug. here are examples of reports
+
+update:
+ZeroVM 2* (compatible) if built with debug information will show "etag(s)"
+instead of "memtag". however it can contain only memory etag 
 
 debug report:
 validator state = 0

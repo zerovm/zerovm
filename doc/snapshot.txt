@@ -1,5 +1,5 @@
 ZeroVM session snapshot description
-(up to date 2014-04-24, needs editing)
+(up to date 2014-06-06, needs editing)
 ---------------------------
 
 ZeroVM has ability to store session "on the fly" and restore it later. for
@@ -17,3 +17,7 @@ for now if ZeroVM gets "." in manifest "Program" value it will try to read all
 necessary data from the current directory. "." will be upgraded to image file
 path soon. if stored session data loaded successfully ZeroVM sets other
 settings and pass control to the untrusted code where it was stopped
+
+update:
+snapshot engine is going to be moved to the untrusted side. the method how to
+do that is incoming and will be described in this document
