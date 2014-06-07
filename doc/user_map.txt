@@ -1,5 +1,5 @@
 This document describes user memory map
-(up to date 2014-05-11, needs editing)
+(up to date 2014-06-06, needs editing)
 WARNING: the ZeroVM code is still under construction, and the document
 describes facts "as it should be"
 ---------------------------------------
@@ -29,3 +29,15 @@ to spend free space is:
 TEXT      -- 0x00020000..0x????FFFF, user executable (protection "rx")
 R/O DATA  -- 0x????0000..0x????FFFF, read only user data (protection "r")
 R/W DATA  -- 0x????0000..0x????FFFF, user heap (protection "rw")
+
+update:
+ZeroVM 2* (compatible) contains extra region (64kb long) at address 0xFEFF0000.
+this region is read only (not locked, protection can be changed). the region
+contains compatibility pointer (0xFEFFFFFC) to user manifest
+
+update:
+since ZeroVM 2* (compatible) needs user stack and registers set properly uboot
+(default untrusted elf loader) use jump instead of z_mprotect() and does not
+deallocate own space. zerovm runtime library can deallocate it on its own
+initiative, zvmlib can be used as example, see free_uboot(). the procedure is
+safe and can be used with both ZeroVM 2* (compatible) and ZeroVM 2
