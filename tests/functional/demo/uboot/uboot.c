@@ -1,21 +1,13 @@
 /*
- * untrusted boot (UBOOT) prototype
+ * untrusted elf loader prototype: UBOOT. can be used as example
+ * note: in case of error UBOOT returns error's line number
  *
- * several suggestions how to make own uboot:
- * 1. ro data and rw data will not be loaded! only .text elf section will
- *    be processed by zerovm. so, do not use strings, static arrays e.t.c.
- * 2. entry point should be 1st byte in .text section (zerovm will not read
- *    entry point and will always assume it started from the .text beginning)
- * 3. only zerovm api should be used (no zrt!). update: actualy library can
- *    be used if you know what you are doing
- * 4. user stack is uboot responsibility. also untrusted stack should follow
- *    nacl user stack convention. detailed information about it can be found
- *    in doc/other/untrusted_loader/nacl_stack_layout.txt. uboot itself will
- *    get empty stack
+ * to make it easy to keep error codes synchronized..
+ * (empty space)
+ * (empty space)
+ * (empty space)
  *
- * note: in case of error uboot returns the line number where encountered
- *
- * TODO: fix most ugly hacks: hardcodded offsets, magical numbers,
+ * TODO: fix most ugly hacks: hardcoded offsets, magical numbers,
  *   pseudo-"strcmp" e.t.c.
  */
 #include <sys/mman.h>
@@ -428,4 +420,3 @@ void _start() /* no return */
   asm("jmpq *%rcx");
 #endif
 }
-

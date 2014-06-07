@@ -15,7 +15,7 @@ statically linked 64-bit nexes. if fatal error encountered during the loading
 process uboot will terminate session with error code corresponding to uboot
 source code line where loader failed. here is the list of possible problems:
 
-return codes of uboot (obsolete! will be updated asap)
+return codes of uboot
 61 -- cannot find "/boot/elf" channel
 62 -- "/boot/elf" channel is not randomly readable
 66 -- cannot read elf header
@@ -39,7 +39,7 @@ return codes of uboot (obsolete! will be updated asap)
 220 -- bad program entry point address
 221 -- bad program entry point address
 226 -- data segment is not last segment
-243 --
+243 -- (should no appear)
 247 -- read-only data segment overlaps data segment
 251 -- text segment overlaps rodata segment
 254 -- no rodata segment, and text segment overlaps data segment
@@ -51,7 +51,7 @@ return codes of uboot (obsolete! will be updated asap)
 300 -- validation failed
 306 -- cannot set read protection on user read only data
 314 -- cannot make user manifest writable
-322 -- cannot make user manifest read only
+329 -- cannot make user manifest read only
 
 how to make untrusted elf loader:
 - entry point should be 0x20000 and point to the ".text" beginning
