@@ -68,3 +68,11 @@ how to make untrusted elf loader:
 NOTE: it is possible to write custom loader to load arbitrary code. not only
       elf. so it is perhaps more correct to call untrusted elf loader simply
       "untrusted loader"
+      
+update:
+uboot ZeroVM 2* (compatible) differ from uboot ZeroVM 2. since old nexes await
+properly set stack and registers, uboot cannot use z_mprotect() to pass control
+to the untrusted code. because z_mprotect() leaves junk in the user stack.
+instead of that uboot jumps to the user entry point and does not deallocate
+own space. space can be deallocated later by user code. otherwise user heap
+will be 64kb less
