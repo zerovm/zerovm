@@ -1,5 +1,5 @@
 This document describes the trap() call
-(up to date 2013-10-20, needs editing)
+(up to date 2014-06-06, needs editing)
 ------------------------------
 
 Trap is a syscall number 0 from trampoline and the only available syscall 
@@ -19,3 +19,24 @@ trap() supports the following functions:
   TrapFork
   
 detailed information regarding trap functions can be found in "api.txt"
+
+update:
+for ZeroVM 2 (but not ZeroVM 2*) the arguments of trap will be:
+arg[0] == function number (element of TrapCalls enum from "zvm.h")
+arg[1] .. arg[N] = arguments to this function
+
+the difference is there is no "reserved" argument. 
+
+how untrusted code calls ZeroVM for service (example):
+user code invokes z_pwrite(1, buffer, size, offset). that will be translated
+to call to trampoline to trap address (0x10000). by this address trampoline
+contains instructions to call "call proxy" - a page allocated by known
+constant address (0x5AFECA110000). proxy contains jump to trusted code.
+thus user code does not know where trusted code resides. upon receiving
+control the trusted code stores registers and extracts 2 values from the
+untrusted stack. the top value contains trampoline address next to trap
+(otherwise zerovm will terminate the session). the 2nd value is the user
+return code. this address will be used after trap handler will write
+"size" bytes from "buffer" to channel number 1 by "offset". before passing
+control back to the untrusted side zerovm restores saved registers (and stack
+pointer as well). registers which were not stored will be zeroed.
