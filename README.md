@@ -1,13 +1,13 @@
 # ZeroVM
 
-ZeroVM is a simple virtual machine.
-ZeroVM can run (and isolate) 64-bit x86 applications in a 32-bit address space.
+ZeroVM is a lightweight virtualization platfrom.
+ZeroVM hypervisor can run and isolate applications built with its toolchain.
 ZeroVM works under Linux x86_64.
 For more information check out [ZeroVM.org](http://zerovm.org)
 
 ## Installation:
 
-Everything has been tested on Ubuntu 10.04 and Ubuntu 12.04. No issues with VMWare Player. 
+Everything has been tested on Ubuntu 10.04 and Ubuntu 12.04. No issues with VMWare Player.
 VirtualBox [doesn't support SSE4.1](https://www.virtualbox.org/ticket/8651), which is used by several of the provided samples.
 
 ## Installing ZeroVM
@@ -22,9 +22,9 @@ Proceeed only after checking the link above.
    3. Download and install [EGit plugin][egit-plugin] for Eclipse
    4. Point EGit to `git://github.com/zerovm/zerovm.git` and pull the most recent ZeroVM sources.
    5. Select 'create C/C++ project from makefile" to create a new Eclipse project.
-   6. Run the makefile to build the project and run unit tests.
+   6. Run the makefile to build the project and run tests.
 
-   If everything is ok you will see output of the unit tests. Now if you've got `RUN OK PASSED` messages, you have successfully compiled ZeroVM for your platform! You'll find the `zerovm` executable in the project root directory.
+   If everything is ok you will see output of the unit tests. Now if you've got `* test has passed` messages, you have successfully compiled ZeroVM for your platform! You'll find the `zerovm` executable in the project root directory.
 
 [eclipse-dl]: http://www.eclipse.org/downloads/
 [egit-plugin]: http://www.eclipse.org/egit/download/
@@ -33,26 +33,22 @@ Proceeed only after checking the link above.
 
     $ cd ~/zerovm
     $ ./zerovm
-    ZeroVM tag1 lightweight VM manager, build 2013-10-08
-    Usage: <manifest> [-l#] [-v#] [-T#] [-stFPQ]
+    ZeroVM 2* tag1 lightweight VM manager, build 2014-06-05
+    Usage: <manifest> [-v#] [-T#] [-t#] [-s#] [-stFPQ]
 
-     -l <gigabytes> file size limit (default 4Gb)
-     -s skip validation
-     -t <0..2> report to stdout/log/fast (default 0)
+     -s <0..2> validation do/skip/skip twice
+     -t <0..3> report to stdout/log/fast (default 0)
      -v <0..3> log verbosity (default 0)
      -F quit right before starting user session
      -P disable channels space preallocation
      -Q disable platform qualification
-     -T enable time/call tracing
+     -T enable trap calls tracing
 
    You should see a usage message similar to the one above. If not check out the [troubleshooting](#troubleshooting) section below.
 
    Some samples can be found in the `tests/functional/` directory. More can be found in the [zerovm/zrt project](https://github.com/zerovm/zrt).
 
 ## Troubleshooting:
-    error: expected specifier-qualifier-list before ‘AES_KEY’
-**Solution:** missing libssl-dev library. Check the [system prerequisites](#install-system-prerequisites) above
-
     /usr/bin/ld: cannot find -lvalidator
     collect2: error: ld returned 1 exit status
     make: *** [zerovm] Error 1
