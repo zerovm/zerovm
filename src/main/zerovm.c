@@ -52,7 +52,7 @@ static char *ParseCommandLine(int argc, char **argv)
 
   CommandLine(argc, argv);
 
-  while((opt = getopt(argc, argv, "-PFQs:t:v:M:T:")) != -1)
+  while((opt = getopt(argc, argv, "-PFQs::t:v:M:T:")) != -1)
   {
     switch(opt)
     {
@@ -70,7 +70,7 @@ static char *ParseCommandLine(int argc, char **argv)
          * reach 1 skip_validation value will be set to 0 and all other
          * validations will trigger real validation process
          */
-        opt = ToInt(optarg);
+        opt = optarg ? ToInt(optarg) : 2;
         if(opt < 0 || opt > 2)
           BADCMDLINE("invalid validation value");
         CommandPtr()->skip_validation = opt > 1 ? 3 : opt;
