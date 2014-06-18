@@ -403,17 +403,17 @@ static void Channel(struct Manifest *manifest, char *value)
    * set name and protocol (network or local). exact protocol
    * for the local channel will be set later
    */
-  if(g_str_has_prefix(tokens[Name], NAME_PREFIX_NET))
+  if(g_path_is_absolute(tokens[OldName]))
   {
-    channel->protocol = ProtoSocket;
-    channel->name = g_strdup(tokens[Name] + strlen(NAME_PREFIX_NET));
+    channel->protocol = ProtoRegular;
+    channel->name = g_strdup(tokens[OldName]);
   }
   else
   {
-    MFTFAIL(!g_path_is_absolute(tokens[Name]), EFAULT,
-        "only absolute path channels are allowed");
-    channel->protocol = ProtoRegular;
-    channel->name = g_strdup(tokens[Name]);
+    MFTFAIL(g_str_has_prefix(tokens[OldName], NAME_PREFIX_NET) == 0,
+        EFAULT, "only absolute path channels are allowed");
+    channel->protocol = ProtoOpaque;
+    channel->name = g_strdup(tokens[OldName] + sizeof NAME_PREFIX_NET);
   }
 
   /* initialize the rest of fields */

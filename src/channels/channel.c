@@ -71,7 +71,7 @@ int32_t ChannelRead(struct ChannelDesc *channel,
       if(result == -1)
         result = -errno;
       break;
-    case ProtoSocket:
+    case ProtoOpaque:
       FetchData(channel, buffer, size);
       break;
     default: /* design error */
@@ -113,7 +113,7 @@ int32_t ChannelWrite(struct ChannelDesc *channel,
     case ProtoFIFO:
       result = fwrite(buffer, 1, size, channel->handle);
       break;
-    case ProtoSocket:
+    case ProtoOpaque:
       result = SendData(channel, buffer, size);
       break;
     default: /* design error */
