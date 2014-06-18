@@ -1,6 +1,24 @@
 history of zerovm hypervisor project. please note that only most important
 news go here, otherwise github commits history can be used
 
+2014-06-18 dmitri bortoq <bortoq@gmail.com>
+  * version: new zerovm released. there are 2 flavors: zerovm 2 and
+    zerovm 2* (compatible with old zerovm). main features of the version
+    listed below. by default make will build zerovm 2* (compatible). to
+    create zerovm 2 the compilation variable REMOVE_DEPRECATED should be
+    defined
+  * feature: opaque channel support. opaque channels use zbroker
+    (for details see project https://github.com/zeromq/zbroker)
+  * feature: untrusted elf loader. SEL (secure/simple elf loader inherited
+    from nacl project) reworked and moved to untrusted side (see uboot.txt).
+    also user allowed to provide own untrusted loader
+  * feature: prototype of session storing/loading. the feature is under
+    construction and can be removed or moved to untrusted side
+  * feature: static linking. zerovm 2/2* can be linked statically. however
+    it is not part of makefile yet, it is a script. when validator library
+    will be changed to get rid of warnings this feature will be added to
+    makefile
+
 2014-03-31 dmitri bortoq <bortoq@gmail.com>
   * memory: new user memory management replaced an old one. a lot of fields
     removed from "nap" object (and sel_ldr.h). zvm_mprotect() from the new
