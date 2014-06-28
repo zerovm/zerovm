@@ -1,5 +1,5 @@
-this document describes zerovm user api
-(up to date 2014-06-06, needs editing)
+this document describes the zerovm user api
+(up to date 2014-06-06)
 
 definition, enumerations
 -----------------------------------------------------------------------
@@ -23,7 +23,7 @@ enum TrapCalls - Trap functions (see trap.txt)
   TrapFork - convert running zerovm to daemon. daemon can spawn new sessions
              by request through unix socket. new sessions will start from
              the address next after zvm_fork()
-             
+
 to make zerovm 2 compatible with old nexes zerovm 2 api call names were
 renamed and the full list is
   TrapREAD = read from channel
@@ -44,14 +44,14 @@ struct ZVMChannel - channel record (see channels.txt)
 
 nacl syscalls
 -----------------------------------------------------------------------
-  no support
+  zerovm provides no support for nacl syscalls by design.
 
 zerovm api functions
 -----------------------------------------------------------------------
-  zerovm has the only system call - trap. trap address is 0 in nacl
-  trampoline (0x10000 in user address space). trap supports 5 functions
-  (see enum TrapCalls above). user encouaraged to use wrappers defined
-  in api/zvm.h:
+  zerovm has a single system call - trap. the trap address is 0 in the
+  nacl trampoline (0x10000 in user address space). trap supports 5
+  functions (see enum TrapCalls above). users are encouraged to use the
+  wrappers defined in api/zvm.h:
 
   zvm_pread(desc, buffer, size, offset)
   reads from channel "desc" to memory addressed by "buffer" "size" bytes.
@@ -66,36 +66,39 @@ zerovm api functions
   eof reached and -errno in case of error
 
   zvm_mprotect(buffer, size, prot)
-  puts requested protection "prot" with limitations: "write/execute" 
-  combination is prohibited, NULL, TRAMPOLINE, MANIFEST and STACK regions
-  are not allowed to modify protection. if "execute" protection requested
-  validator will be invoked. the "buffer" pointer should be aligned to mmap
-  page size (64kb). if validation complete successfully memory area specified
-  by "buffer" and "size" (aligned to page) will be marked as "read only" and
-  "executable". in case of error the function will return -errno, otherwise
-  0 will be returned
+  puts requested protection "prot" with limitations: the "write/execute"
+  combination is prohibited, and it is not permissible to modify
+  protection on memory locations in the NULL, TRAMPOLINE, MANIFEST and
+  STACK regions . if "execute" protection requested, the validator will
+  be invoked. the "buffer" pointer should be aligned to the mmap page
+  size (64kb). if validation completes successfully, the memory area
+  specified by "buffer" and "size" (aligned to page) will be marked as
+  "read only" and "executable". the function returns 0 if successful and
+  -errno in case of error.
 
   zvm_exit(code)
   terminates the program with "code".
   NOTE: in ZeroVM platform return code size is 64-bit long
 
   zvm_fork()
-  if manifest have "Job" field set and session has no errors converts running
-  zerovm to daemon. current session will be terminated. "daemonized" zerovm
-  will have name "zvm.????????????" where "????????????" is the filename
-  extracted from manifest "Job" field. "daemon" session can be accessed via
-  unix socket specified by "Job" value. unix socket specified in "Job" will be
-  created (rewritten) when zerovm started (however zerovm does not remove it
-  if daemon killed). the previously written data (before daemon started) will
-  be lost for spawned sessions! new manifests can have different channels uris
+  if the manifest has the "Job" field set and the session has no errors,
+  converts running zerovm into a daemon. the current session will be
+  terminated. "daemonized" zerovm will have the name "zvm.????????????"
+  where "????????????" is the filename extracted from manifest "Job" field.
+  the "daemon" session can be accessed via unix socket specified by "Job"
+  value. the unix socket specified in "Job" will be created (rewritten)
+  when zerovm starts, but zerovm will not remove the socket if the daemon
+  is killed. any data written before the daemon started will be lost for
+  spawned sessions! new manifests can have different channels uris, but
   other fields in the new manifests should be same as in the old one. for
   further details see daemon.txt
   The protocol:
   - to send task to daemon a message should be sent to unix socket "Job". where
     1st 8 bytes are the length of a new manifest and the rest of message is
     a new manifest itself.
-  - to receive a report from daemon session just read unix socket "Job". format
-    of message is same as above (8 bytes length followed by report)
+  - to receive a report from daemon session just read unix socket "Job".
+    the format of the message is same as above: 8 bytes for length followed
+    by the report.
 
 to make zerovm 2 compatible with old nexes zerovm 2 api functions were
 renamed. there is no difference in their description or arguments. the list:
@@ -111,90 +114,92 @@ struct UserManifest
   heap_ptr - the beginning of the user heap
   heap_size - user heap size in bytes
   stack_size - user stack size in bytes
-  channels_count - the channels number (there are 3 always available 
-    channels: 0..2)
+  channels_count - the total number of channels (there are always
+    at least 3 available: channels: 0..2)
   channels - array of struct ZVMChannel (see struct ZVMChannel above)
     for available channels
-  
-  user program have an access to the MANIFEST (definition) containing all
-  information mentioned above. the MANIFEST memory area is read only
-  
-  update: for zerovm 2 it is possible to change protection of user manifest
-  for example make it writable. however it is not recommended to do, only
-  untrusted loader should change the user manifest protection
+
+  the user program has access to the MANIFEST (definition) containing all
+  of the information mentioned above. the MANIFEST memory area is read only
+
+  update: for zerovm 2 it is possible to change the protection of the user
+  manifest -- for example, to make it writable. however, it is not recommended
+  to do so: only the untrusted loader should change the user manifest protection
 
 channels
 -----------------------------------------------------------------------
-  the channels implements the file abstraction over host i/o. channels can
-  wrap network connections, pipes, character devices and regular files.
+  channels implement the file abstraction over host i/o. channels can
+  wrap network connections, pipes, character devices, and regular files.
   the number of channels is constant during the user session. it is
-  guaranteed that session have 3 standard channels: 0 - /dev/stdin,
-  1 - /dev/stdout, 2 - /dev/stderr. for further details about channels
-  see channels.txt
+  guaranteed that each session has at a minimum 3 standard channels:
+  0 - /dev/stdin, 1 - /dev/stdout, and 2 - /dev/stderr. for further
+  details about channels, see channels.txt
 
   special (guaranteed) channels:
   /dev/stdin - standard input. record 0 in MANIFEST->channels. usually
-    it is read only channel with sequential access. however system manifest
-    can redefine it to any type
+    it is a read only channel with sequential access. however, the system
+    manifest can redefine it to any type
   /dev/stdout - standard output. record 1 in MANIFEST->channels. usually
-    it is write only channel with sequential access. however system manifest
-    can redefine it to any type
+    it is a write only channel with sequential access. however, the system
+    manifest can redefine it to any type
   /dev/stderr - standard error. record 2 in MANIFEST->channels. usually
-    it is write only channel with sequential access. however system manifest
-    can redefine it to any type
-          
+    it is a write only channel with sequential access. however, the system
+    manifest can redefine it to any type
+
   channel types:
   - sequential read only
   - random read only
   - sequential write only
   - random write only
   - appendable (cdr). random read / sequential write channel. if the channel
-    is not empty the 1st write position follows the last byte
+    is not empty, the initial write position follows the last byte
   - random read / write
 
   size of channel and end of channel:
-  size defined for channels with random access (see "size" field in struct 
-  ZVMChannel). channels with sequential access does not have size, but eof.
-  zvm_pread will return 0 if end of channel reached. note: end of channel
-  accounted against limits. for example, if channel read limited to 10 bytes
-  and file mounted to channel is 10 bytes long, user will not able to read eof.
-  instead of eof (0) user will get quota exceeded (-122)
+  size is defined for channels with random access (see "size" field in struct
+  ZVMChannel). channels with sequential access do not have size, and use eof
+  instead. zvm_pread will return 0 if the end of a channel is reached. note:
+  end of channel is accounted against limits. for example, if channel read
+  limited to 10 bytes and the file mounted to channel is 10 bytes long,
+  user will not able to read the eof. instead of eof (0), the user will
+  get quota exceeded (-122)
 
   recommendations
-  - user program can work faster if data will be read/written with big chunks
+  - most user programs will work faster if data is read/written with big chunks
     (especially in sequential channels)
   - it is suggested to use buffers aligned to 0x10000 bound
-  
+
   update:
-  in zerovm 2 there is default untrusted elf loader - uboot. it uses special
-  channel "/boot/elf". however this name is not reserved. other untrusted
-  elf loader can alter the channel's name, use more than one channel or even
-  do not use channels at all
+  in zerovm 2 there is a default untrusted elf loader - uboot. it uses a special
+  channel, "/boot/elf". however, this name is not reserved. other untrusted
+  elf loader implementations could choose another channel name, use more
+  than one channel, or even avoid channels entirely.
 
 memory
 -----------------------------------------------------------------------
   there are 3 MANIFEST fields available for the user: stack_size, heap_ptr
-  and heap_size. the names are self explaining. note: since MANIFEST is read
-  only, it is very unhealthy to use it after memory management initialized
+  and heap_size. the names are self explanatory. note: since MANIFEST is read
+  only, it is very unhealthy to use it after memory management is initialized.
   these fields are for system/zrt use only.
   UPDATE: when zvm_mprotect() trap call was introduced it is possible to
-  change user manifest. however it is still not recommended to do something
-  with it except you are writing ZeroVM runtime library
+  change user manifest. however it is still not recommended to do anything
+  with it except you are writing a ZeroVM runtime library
 
 command line
 -----------------------------------------------------------------------
-  command line accessible via "/dev/nvram". however this is not the part
-  of zerovm api. for the further details see toolchain/zrt documentation.
+  the command line is accessible via "/dev/nvram". however, this is not part
+  of the zerovm api. for the further details, see the toolchain/zrt
+  documentation.
   NOTE: ZeroVM provides only empty command line and environment variables
 
 environment variables
 -----------------------------------------------------------------------
-  environment variables accessible via "/dev/nvram". however this is
-  not the part of zerovm api. for the further details see toolchain/zrt
-  documentation
+  environment variables are accessible via "/dev/nvram". however this is
+  not part of the zerovm api. for the further details see the toolchain/zrt
+  documentation.
   NOTE: ZeroVM does not provide untrusted code with any stack content.
-  user code will not receive any command line or environment. default elf
-  loader, however, provides user code with empty command line and environment
+  user code will not receive any command line or environment. the default elf
+  loader, however, provides user code with an empty command line and environment
 
 trap, trampoline and everything else (to know, but not to use)
 -----------------------------------------------------------------------
@@ -202,7 +207,7 @@ trap, trampoline and everything else (to know, but not to use)
     one element size 0x20. further information can be found in google
     documentation
   trap - syscall number 0 (not used by the nacl). should not be used directly
-  
+
   update:
   zerovm 2 trap (in trampoline) contains address of the user manifest by
   address 0x1000d. this address value is the part of assembly instruction.
@@ -211,7 +216,7 @@ trap, trampoline and everything else (to know, but not to use)
 
 terminology
 -----------------------------------------------------------------------
-  system manifest - text file passed to zerovm. contains description of
+  system manifest - a text file passed to zerovm. contains description of
     the user session: channels, node id, memory size e.t.c. (not a part
     of zerovm api)
   user manifest - read only memory with part of system manifest available
