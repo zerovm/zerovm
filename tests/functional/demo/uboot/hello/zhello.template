@@ -1,0 +1,17 @@
+=====================================================================
+== custom untrusted elf loader. this example shows the way how to
+== run the user code without loading nexe. "hello world" will work
+== instead of uboot
+=====================================================================
+Channel = /dev/null, /dev/stdin, 0, 1, 1, 0, 0
+Channel = /dev/stdout, /dev/stdout, 0, 0, 0, 1, 64
+Channel = /dev/stderr, /dev/stderr, 0, 0, 0, 1, 64
+
+=====================================================================
+== switches for zerovm. some of them used to control nexe, some
+== for the internal zerovm needs
+=====================================================================
+Version = 20140509
+Memory = 33554432, 0
+Timeout = 1
+Boot = PWD/zhello.bin

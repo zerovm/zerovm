@@ -1,6 +1,6 @@
 /*
- * this sample only usefull to generate assembly code and
- * see the call invokation
+ * this sample only useful to generate assembly code and
+ * see the call invocation
  */
 #include "api/zvm.h"
 
