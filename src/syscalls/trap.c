@@ -233,8 +233,12 @@ int32_t TrapHandler(uint32_t args)
   uint64_t *sargs;
   int retcode = 0;
 
-  /* test args address validity */
-  if(args > -48u) return -EFAULT;
+  /*
+   * to avoid provoking signal 11 we need to be sure that trusted code
+   * will not overrun 4gb bound when accessing trap arguments. and longest
+   * trap function has five arguments 8 bytes long each
+   */
+  if(args > -5 * sizeof *sargs) return -EFAULT;
 
   /*
    * translate address from user space to system
