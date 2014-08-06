@@ -24,8 +24,6 @@
 /* zerovm system calls */
 enum TrapCalls
 {
-  TrapTest = 0x74736554, /* TODO(d'b): should be removed before release */
-
 #ifndef REMOVE_DEPRECATED
   /* DEPRECATED. API version 1 */
   TrapRead = 0x64616552,

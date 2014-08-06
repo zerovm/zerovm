@@ -21,7 +21,6 @@
 #include "src/main/setup.h"
 #include "src/main/config.h"
 #include "src/main/zlog.h"
-#include "src/syscalls/snapshot.h"
 #include "src/syscalls/daemon.h"
 #include "src/syscalls/ztrace.h"
 #include "src/loader/userspace.h"
@@ -218,15 +217,6 @@ static void ZVMExitHandle(struct Manifest *manifest, uint64_t code)
   SessionDtor(0, OK_STATE);
 }
 
-/* handler for syscalls testing */
-/* TODO(d'b): to remove before release */
-static void ZVMTestHandle(struct Manifest *manifest)
-{
-  assert(manifest != NULL);
-
-  SaveSession(manifest);
-}
-
 int32_t TrapHandler(uint32_t args)
 {
   struct Manifest *manifest = GetManifest();
@@ -313,11 +303,6 @@ int32_t TrapHandler(uint32_t args)
       retcode = ZVMProtHandle((uint32_t)sargs[1], (uint32_t)sargs[2],
           (int)sargs[3]);
       break;
-    case TrapTest: /* TODO(d'b): to remove before release */
-      ZVMTestHandle(manifest);
-      ZVMExitHandle(manifest, 0);
-      break;
-
     default:
       retcode = -EPERM;
       ZLOG(LOG_ERROR, "function %ld is not supported", *sargs);

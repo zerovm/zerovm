@@ -24,7 +24,6 @@
 #include "src/main/setup.h"
 #include "src/main/report.h"
 #include "src/syscalls/switch_to_app.h"
-#include "src/syscalls/snapshot.h"
 #include "src/syscalls/ztrace.h"
 #include "src/syscalls/trap.h"
 #include "src/channels/channel.h"
@@ -208,21 +207,14 @@ void SessionCtor(char *mft)
   /* construct trusted context */
   ThreadContextCtor(nacl_sys, 1, GetStackPtr());
 
-  /* boot session from.. */
-  if(g_strcmp0(manifest->boot, ".") != 0)
-  /* ..scratch */
-  {
-    /* set user space areas */
-    SetUserSpace(manifest);
-    ZLOGS(LOG_DEBUG, "[user space set]");
-    ZTrace("[user space set]");
-    Boot(manifest);
-    ZLOGS(LOG_DEBUG, "[booted]");
-    ZTrace("[booted]");
-  }
-  /* ..from image */
-  else
-    LoadSession(manifest);
+  /* boot session */
+  ZLOGFAIL(g_strcmp0(manifest->boot, ".") == 0, EFAULT, "snapshot boot disabled");
+  SetUserSpace(manifest);
+  ZLOGS(LOG_DEBUG, "[user space set]");
+  ZTrace("[user space set]");
+  Boot(manifest);
+  ZLOGS(LOG_DEBUG, "[booted]");
+  ZTrace("[booted]");
 
   fflush(NULL);
 }
