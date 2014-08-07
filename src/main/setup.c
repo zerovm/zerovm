@@ -208,7 +208,6 @@ void SessionCtor(char *mft)
   ThreadContextCtor(nacl_sys, 1, GetStackPtr());
 
   /* boot session */
-  ZLOGFAIL(g_strcmp0(manifest->boot, ".") == 0, EFAULT, "snapshot boot disabled");
   SetUserSpace(manifest);
   ZLOGS(LOG_DEBUG, "[user space set]");
   ZTrace("[user space set]");

@@ -89,23 +89,6 @@ struct UserManifest
 /* trap pointer. internal helper. DO NOT use it! */
 #define TRAP ((int32_t (*)(uint64_t*))0x10000)
 
-/*
- * trap functions
- *
- * zvm_pread
- *   read from "offset" position of "desc" channel "size" bytes to "buffer"
- * zvm_pwrite
- *   write to "offset" position of "desc" channel "size" bytes from "buffer"
- * zvm_mprotect
- *   protect "size" bytes from "buffer" with "prot"
- * zvm_fork
- *   ask for fork (for further details see "daemon mode")
- * zvm_exit
- *   terminate program with "code"
- *
- * all trap functions (except zvm_fork) has same return as libc ones, but
- * instead of setting errno and returning -1 it returns -errno
- */
 #ifndef REMOVE_DEPRECATED
 /* DEPRECATED. API version 1 */
 #define zvm_pread(desc, buffer, size, offset) \
@@ -121,6 +104,21 @@ struct UserManifest
 #endif
 
 /* API version 2 */
+/*
+ * z_pread
+ *   read from "offset" position of "desc" channel "size" bytes to "buffer"
+ * z_pwrite
+ *   write to "offset" position of "desc" channel "size" bytes from "buffer"
+ * z_mprotect
+ *   protect "size" bytes from "buffer" with "prot"
+ * z_fork
+ *   ask for fork (for further details see "daemon mode")
+ * z_exit
+ *   terminate program with "code"
+ *
+ * all trap functions (except zvm_fork) has same return as libc ones, but
+ * instead of setting errno and returning -1 it returns -errno
+ */
 #define z_pread(desc, buffer, size, offset) \
   TRAP((uint64_t[]){TrapREAD, desc, (uintptr_t)buffer, size, offset})
 #define z_pwrite(desc, buffer, size, offset) \
