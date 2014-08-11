@@ -30,8 +30,8 @@ EXTERN_C_BEGIN
 struct ReportSetup {
   uint8_t zvm_code;
   uint8_t validation_state;
-  uint8_t daemon_state;
   uint8_t mode;
+  pid_t daemon_pid;
   int handle;
   uint64_t user_code;
   char *zvm_state;
