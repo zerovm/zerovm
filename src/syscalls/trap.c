@@ -68,6 +68,9 @@ static int32_t ZVMReadHandle(struct Manifest *manifest,
   /* prevent reading beyond the end of the random access channels */
   else
   {
+    /* prevent signed overflow. (pointed out by bobot issue #272) */
+    if(channel->size < offset)
+      return 0;
     size = MIN(channel->size - offset, size);
     if(size == 0) return 0;
   }
