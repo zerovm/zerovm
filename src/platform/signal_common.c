@@ -154,7 +154,7 @@ static enum SignalResult SignalHandleAll(int signum, void *ctx)
         SignalContextIsUntrusted(&sigCtx) ? "un" : "", sigCtx.prog_ctr);
 
   /* in case the signal came from trusted side return different code */
-  SessionDtor(SignalContextIsUntrusted(&sigCtx) ? EINTR : ENOTTY, msg);
+  SessionDtor(SignalContextIsUntrusted(&sigCtx) ? EINTR : ENOTTY);
   return NACL_SIGNAL_RETURN; /* unreachable */
 }
 
