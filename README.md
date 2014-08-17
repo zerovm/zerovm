@@ -16,6 +16,15 @@ VirtualBox [doesn't support SSE4.1](https://www.virtualbox.org/ticket/8651), whi
 
 Proceeed only after checking the link above.
 
+### Additional Prerequisites for zbroker component
+   1. zmtp - https://github.com/zeromq/libzmtp
+   2. zyre - https://github.com/zeromq/zyre/tree/master
+   3. zmq/czmq - https://github.com/zeromq/zeromq4-x/releases/tag/v4.0.4
+   4. zbroker - https://github.com/zeromq/zbroker 
+        last release version of zbroker v0.1 is missing some required features, so try to build version at branch master.
+   5. libzbroker_cli - cd zbroker/clients; sudo make install
+   6. zvm_zpipes - https://github.com/rpedde/zvm-zpipes.git
+
 ### Eclipse CDT installation
    1. If your system doesn't have JRE, install a recent JRE. 
    2. Download Eclipse CDT from the [Eclipse download site][eclipse-dl]. No installation necessary, just unpack and run executable.
