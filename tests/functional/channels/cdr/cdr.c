@@ -112,7 +112,7 @@ int main(int argc, char **argv)
   ZTEST(PREAD(STDCDR_GOAT, buf, 0, -1) < 0); /* proper size, invalid offset = fail */
   ZTEST(PREAD(STDCDR_GOAT, buf, 1, -1) < 0); /* valid size, invalid offset = fail */
   ZTEST(PREAD(STDCDR_GOAT, buf, 0, MANIFEST->channels[OPEN(STDCDR_GOAT)].limits[PutSizeLimit] + 1) == 0);
-  ZTEST(PREAD(STDCDR_GOAT, buf, 1, MANIFEST->channels[OPEN(STDCDR_GOAT)].limits[PutSizeLimit] + 1) < 0);
+  ZTEST(PREAD(STDCDR_GOAT, buf, 1, MANIFEST->channels[OPEN(STDCDR_GOAT)].limits[PutSizeLimit] + 1) == 0);
   overall_errors += ERRCOUNT;
   FPRINTF(STDERR, ERRCOUNT ? "TEST FAILED\n\n" : "TEST SUCCEED\n\n");
 

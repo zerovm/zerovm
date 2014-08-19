@@ -45,7 +45,7 @@ int main(int argc, char **argv)
   /* incorrect requests: read attempt */
   ZTEST(PREAD(SEQWO, buf, 1, 0) < 0);
   ZTEST(PREAD(SEQWO, buf, 1,
-      MANIFEST->channels[OPEN(SEQWO)].limits[PutSizeLimit]) < 0);
+      MANIFEST->channels[OPEN(SEQWO)].limits[PutSizeLimit]) == 0);
 
   /* incorrect requests: exhausted */
   ZTEST(PWRITE(SEQWO, buf, 30, 0) == 29);

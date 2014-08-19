@@ -11,4 +11,6 @@ all: $(NAME).c
 
 clean:
 	rm -f $(NAME).nexe $(NAME).o *.log *.data *.manifest fork_test LOG *.trc *.ctrl
-	pkill zvm. | true
+#	pkill zvm. | true
+	start-stop-daemon --stop --name zvm.fork_test | true
+
