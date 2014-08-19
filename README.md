@@ -17,13 +17,59 @@ VirtualBox [doesn't support SSE4.1](https://www.virtualbox.org/ticket/8651), whi
 Proceeed only after checking the link above.
 
 ### Additional Prerequisites for zbroker component
-   1. zmtp - https://github.com/zeromq/libzmtp
-   2. zyre - https://github.com/zeromq/zyre/tree/master
-   3. zmq/czmq - https://github.com/zeromq/zeromq4-x/releases/tag/v4.0.4
-   4. zbroker - https://github.com/zeromq/zbroker 
-        last release version of zbroker v0.1 is missing some required features, so try to build version at branch master.
-   5. libzbroker_cli - cd zbroker/clients; sudo make install
-   6. zvm_zpipes - https://github.com/rpedde/zvm-zpipes.git
+
+~~~~
+wget https://github.com/zeromq/zeromq4-x/archive/v4.0.4.tar.gz
+tar xf v4.0.4.tar.gz
+cd zeromq4-x-4.0.4/
+./autogen.sh
+./configure
+make
+sudo make install
+sudo ldconfig
+
+git clone https://github.com/zerovm/libzmtp
+cd libzmtp
+./autogen.sh
+./configure
+make
+sudo make install
+sudo ldconfig
+
+git clone https://github.com/zerovm/czmq
+cd czmq
+./autogen.sh
+./configure
+make
+sudo make install
+sudo ldconfig
+
+git clone https://github.com/zerovm/zyre
+cd zyre
+./autogen.sh
+./configure
+make
+sudo make install
+sudo ldconfig
+
+git clone https://github.com/zerovm/zbroker
+cd zbroker
+./autogen.sh
+./configure
+make
+sudo make install
+cd clients
+sudo make install
+sudo ldconfig
+
+git clone https://github.com/zerovm/zvm-zpipes
+cd zvm-zpipes
+./autogen.sh
+./configure
+make
+sudo make install
+sudo ldconfig
+~~~~
 
 ### Eclipse CDT installation
    1. If your system doesn't have JRE, install a recent JRE. 
