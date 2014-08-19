@@ -192,6 +192,7 @@ static int Daemonize(struct Manifest *manifest)
   bname = g_path_get_basename(manifest->job);
   name = g_strdup_printf("%s%s", DAEMON_NAME, bname);
   prctl(PR_SET_NAME, name);
+
   g_free(bname);
   g_free(name);
 
@@ -209,16 +210,14 @@ int Daemon(struct Manifest *manifest)
   if(manifest->job == NULL) return -1;
   ZLOGFAIL(ReportSetupPtr()->zvm_code != 0, EFAULT, "broken session");
 
-  /* report the daemon mode launched */
-  ReportSetupPtr()->daemon_state = 1;
-
-  /* finalize user session */
+  /* finalize user session. report daemon pid */
   umask(0);
   pid = fork();
+  ReportSetupPtr()->daemon_pid = pid;
   if(pid != 0) return 0;
 
-  /* forked sessions are not in daemon mode */
-  ReportSetupPtr()->daemon_state = 0;
+  /* forked sessions are not in daemon mode therefore doesn't need pid in report */
+  ReportSetupPtr()->daemon_pid = 0;
   sock = Daemonize(manifest);
 
   for(;;)

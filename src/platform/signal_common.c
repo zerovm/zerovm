@@ -153,7 +153,8 @@ static enum SignalResult SignalHandleAll(int signum, void *ctx)
         "Signal %d from %strusted code: Halting at 0x%012lX", signum,
         SignalContextIsUntrusted(&sigCtx) ? "un" : "", sigCtx.prog_ctr);
 
-  SessionDtor(EINTR, msg);
+  /* in case the signal came from trusted side return different code */
+  SessionDtor(SignalContextIsUntrusted(&sigCtx) ? EINTR : ENOTTY, msg);
   return NACL_SIGNAL_RETURN; /* unreachable */
 }
 

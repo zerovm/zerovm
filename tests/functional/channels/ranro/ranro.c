@@ -15,6 +15,11 @@ int main(int argc, char **argv)
   FPRINTF(STDERR, "TEST RANDOM READ ONLY CHANNEL\n");
   FPRINTF(STDERR, "channel size = %d\n", MANIFEST->channels[OPEN(RANRO)].size);
   ZTEST(MANIFEST->channels[OPEN(RANRO)].size != 0);
+
+// ### {{
+  ZTEST(PREAD(RANRO, buf, 5, 4294967300LL) == 0);
+// ""
+
   ZTEST(PREAD(RANRO, buf, 0, 0) == 0);
   ZTEST(PREAD(RANRO, buf, 0, 1) == 0);
   ZTEST(PREAD(RANRO, buf, 1, 0) == 1);

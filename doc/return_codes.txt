@@ -1,0 +1,12 @@
+This document describes ZeroVM return codes
+(up to date 2014-08-13, needs editing)
+
+normally zerovm returns 0 and it means that session terminated successfully.
+in case of error zerovm return errno(3).
+
+special cases:
+EINTR(4) -- zerovm received signal from untrusted side
+ENOTTY(25) -- zerovm received signal from trusted side
+
+other return codes usually mean that zerovm experienced problem during
+initialization

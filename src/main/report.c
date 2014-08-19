@@ -126,7 +126,7 @@ void Report(struct Manifest *manifest)
 
   /* report validator state and user return code */
   REP(r, "%s%d%s", REPORT_VALIDATOR, ReportSetupPtr()->validation_state, eol);
-  REP(r, "%s%d%s", REPORT_DAEMON, ReportSetupPtr()->daemon_state, eol);
+  REP(r, "%s%d%s", REPORT_DAEMON, ReportSetupPtr()->daemon_pid, eol);
   REP(r, "%s%lu%s", REPORT_RETCODE, ReportSetupPtr()->user_code, eol);
   REP(r, "%s%s%s", REPORT_ETAG, GetMemoryDigest(manifest), eol);
   REP(r, "%s%s%s", REPORT_ACCOUNTING, Accounting(manifest), eol);
