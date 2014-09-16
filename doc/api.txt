@@ -40,10 +40,10 @@ nacl syscalls
 
 zerovm api functions
 -----------------------------------------------------------------------
-  zerovm has the only system call - trap. trap address is 0 in nacl
-  trampoline (0x10000 in user address space). trap supports 6 functions
-  (see enum TrapCalls above). user encouaraged to use wrappers defined
-  in api/zvm.h:
+  zerovm has only six system calls, implemented using a "trap" interface.
+  trap address is 0 in nacl trampoline (0x10000 in user address space).
+  trap supports 6 functions (see enum TrapCalls above). user encouaraged to use
+  wrappers defined in api/zvm.h:
 
   zvm_pread(desc, buffer, size, offset)
   reads from channel "desc" to memory addressed by "buffer" "size" bytes.
