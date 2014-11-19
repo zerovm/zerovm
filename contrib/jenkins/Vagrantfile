@@ -1,0 +1,11 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+VAGRANTFILE_API_VERSION = "2"
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+  config.vm.box = "/var/lib/jenkins/zerovm-precise64-lxc.box"
+  # Folder to share artifacts with jenkins
+  config.vm.synced_folder "../..", "/jenkins"
+  config.vm.provision "shell", privileged: false, path: "jenkins.sh"
+end
