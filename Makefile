@@ -14,7 +14,7 @@ PREFETCH ?= zmq
 CCFLAGS0=-c -m64 -fPIC -D$(PREFETCH) -D_GNU_SOURCE -DTAG_ENCRYPTION=$(TAG_ENCRYPTION) -I. $(GLIB)
 
 CXXFLAGS0=-m64 -Wno-variadic-macros $(GLIB)
-LIBS=-l$(PREFETCH) -lglib-2.0 -lvalidator
+LIBS=-l$(PREFETCH) -lglib-2.0 -lvalidator -pthread
 TESTLIBS=-Llib/gtest -lgtest $(LIBS)
 
 CCFLAGS1=-std=gnu89 -Wdeclaration-after-statement $(FLAGS0) $(CCFLAGS0)
